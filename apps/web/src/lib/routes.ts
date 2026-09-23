@@ -22,6 +22,12 @@
  * A path that carries a parameter is a function below rather than a member here, so the members
  * stay literal and comparable.
  */
+/**
+ * The id of S-27's notification-preferences section, and the fragment every way to it names (task 52's close review):
+ * one spelling, so the section and the four links that land on it cannot come apart.
+ */
+export const ACCOUNT_PREFERENCES_SECTION = 'notifications';
+
 export const ROUTES = {
   /** The marketing home — `(public)`, and the only address with no segment. */
   LANDING: '/',
@@ -70,6 +76,10 @@ export const ROUTES = {
   ORGANIZATION_USERS: '/organization/users',
   /** S-26 — the notification centre (task 50.2.1), reached from the global tier's count. */
   NOTIFICATIONS: '/notifications',
+  /** S-27 — the person's profile, languages and notification preferences (task 52.3). */
+  ACCOUNT: '/account',
+  /** S-27's notification preferences, the section S-26, its panel and S-38 each lead to (task 52.3). */
+  ACCOUNT_PREFERENCES: `/account#${ACCOUNT_PREFERENCES_SECTION}`,
   /** S-28 — credentials and linked identities (task 27.7). The destination S-01's
    *  provider-collision refusal names, which is why it is a route constant and not a literal. */
   ACCOUNT_CREDENTIALS: '/account/credentials',

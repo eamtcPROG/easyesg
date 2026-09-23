@@ -9,22 +9,6 @@
   margin-inline: auto;
 }
 
-/* The save/discard pair, with the dirty-state line beside them. It wraps rather than compressing:
-   at 390 the sentence is longer than the two buttons together, and a +40% catalogue makes that
-   true at every width. */
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-.dirtyHint {
-  flex: 1 1 22ch;
-  margin: 0;
-  color: var(--text-muted);
-}
-
 .footnote {
   margin: 0;
   color: var(--text-muted);

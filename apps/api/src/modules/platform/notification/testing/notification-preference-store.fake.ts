@@ -1,3 +1,4 @@
+import type { NotificationRecipientsPort } from '@api/contracts/notification-recipients.port';
 import { isNotificationCategoryKey, NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
 import { pairKey } from '../domain/offered-preferences';
 import type { NotificationCategoryBehaviours } from '../interfaces/notification-category-behaviours.interface';
@@ -74,3 +75,13 @@ export const plainTokens: UnsubscribeTokens = {
       : null;
   },
 };
+
+/** The accounts that exist, by id, each at its address — the recipients port a followed link names its reader from. */
+export const accountsAt = (addresses: Readonly<Record<string, string>>): NotificationRecipientsPort => ({
+  resolve: ({ userIds }) =>
+    Promise.resolve(
+      userIds.flatMap((userId) =>
+        addresses[userId] === undefined ? [] : [{ userId, email: addresses[userId], locale: 'ro' as const }],
+      ),
+    ),
+});

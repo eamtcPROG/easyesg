@@ -70,6 +70,8 @@ export function AccountCorner({ email, displayName, monogram }: AccountCornerPro
         displayName={displayName}
         monogram={monogram}
         items={[
+          // S-27, the global tier's way to it (task 52.3; `design_spec.md` S-27's entry points).
+          { key: 'profile', node: <Link href={ROUTES.ACCOUNT}>{t('accountMenu.profile')}</Link> },
           {
             key: 'credentials',
             node: <Link href={ROUTES.ACCOUNT_CREDENTIALS}>{t('accountMenu.credentials')}</Link>,

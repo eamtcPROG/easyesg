@@ -3,17 +3,17 @@ import { CALLOUT_INTENT } from '@easyesg/ui';
 import type { Organization } from '@easyesg/contracts';
 import type { Notice } from '@/lib/notice';
 import {
-  PROFILE_EVENT,
-  PROFILE_REPORT,
-  initialProfileState,
-  profileReducer,
+  RECORD_EVENT,
+  RECORD_REPORT,
+  initialRecordState,
+  recordReducer,
   visibleNotice,
-  type ProfileEvent,
-  type ProfileState,
-} from './profile-state';
+  type RecordEvent,
+  type RecordState,
+} from './record-state';
 
 /**
- * S-15's transitions (task 129).
+ * A Record screen's transitions (task 129; generic since task 52.3), over S-15's record as the example.
  *
  * **Every branch is asserted on the whole state, not on the field the event names.** That is the
  * point of the reducer over three setters: the defects it exists to prevent are always the field
@@ -33,23 +33,23 @@ const notice = (intent: Notice['intent']): Notice => ({
 const SUCCESS = notice(CALLOUT_INTENT.SUCCESS);
 const FAILURE = notice(CALLOUT_INTENT.ERROR);
 
-const after = (state: ProfileState, ...events: readonly ProfileEvent[]): ProfileState =>
-  events.reduce(profileReducer, state);
+const after = (state: RecordState<Organization>, ...events: readonly RecordEvent<Organization>[]): RecordState<Organization> =>
+  events.reduce(recordReducer, state);
 
-describe('profileReducer', () => {
-  const start = initialProfileState(record('Brutăria'));
+describe('recordReducer', () => {
+  const start = initialRecordState(record('Brutăria'));
 
   it('starts with the record it was given and nothing to report', () => {
     expect(start).toStrictEqual({ report: null, record: record('Brutăria') });
   });
 
   it('clears the previous outcome when the next save starts', () => {
-    const settled = after(start, { kind: PROFILE_EVENT.REFUSED, notice: FAILURE });
-    expect(settled.report).toStrictEqual({ kind: PROFILE_REPORT.REFUSED, notice: FAILURE });
+    const settled = after(start, { kind: RECORD_EVENT.REFUSED, notice: FAILURE });
+    expect(settled.report).toStrictEqual({ kind: RECORD_REPORT.REFUSED, notice: FAILURE });
 
     // The defect this branch exists for: a refusal — or a success — framing a request that is still
     // in flight. Asserted on the record too, because "clears the report" must not move anything else.
-    expect(after(settled, { kind: PROFILE_EVENT.SUBMITTED })).toStrictEqual({
+    expect(after(settled, { kind: RECORD_EVENT.SUBMITTED })).toStrictEqual({
       report: null,
       record: record('Brutăria'),
     });
@@ -57,13 +57,26 @@ describe('profileReducer', () => {
 
   it('takes the stored record from the API answer on a save, not from what was typed', () => {
     expect(
-      after(start, { kind: PROFILE_EVENT.SUBMITTED }, {
-        kind: PROFILE_EVENT.SAVED,
+      after(start, { kind: RECORD_EVENT.SUBMITTED }, {
+        kind: RECORD_EVENT.SAVED,
         stored: record('Brutăria SRL'),
         notice: SUCCESS,
       }),
     ).toStrictEqual({
-      report: { kind: PROFILE_REPORT.SAVED, notice: SUCCESS },
+      report: { kind: RECORD_REPORT.SAVED, notice: SUCCESS },
+      record: record('Brutăria SRL'),
+    });
+  });
+
+  it('moves the stored record to what a refused save had already written (task 52.3)', () => {
+    expect(
+      after(start, { kind: RECORD_EVENT.SUBMITTED }, {
+        kind: RECORD_EVENT.REFUSED,
+        notice: FAILURE,
+        stored: record('Brutăria SRL'),
+      }),
+    ).toStrictEqual({
+      report: { kind: RECORD_REPORT.REFUSED, notice: FAILURE },
       record: record('Brutăria SRL'),
     });
   });
@@ -72,20 +85,20 @@ describe('profileReducer', () => {
     // The branch a bare `setCurrent` makes easy to get wrong: nothing was stored, so what a discard
     // restores and what `isDirty` is measured against are still the record we had.
     expect(
-      after(start, { kind: PROFILE_EVENT.SUBMITTED }, {
-        kind: PROFILE_EVENT.REFUSED,
+      after(start, { kind: RECORD_EVENT.SUBMITTED }, {
+        kind: RECORD_EVENT.REFUSED,
         notice: FAILURE,
       }),
     ).toStrictEqual({
-      report: { kind: PROFILE_REPORT.REFUSED, notice: FAILURE },
+      report: { kind: RECORD_REPORT.REFUSED, notice: FAILURE },
       record: record('Brutăria'),
     });
   });
 
   it('reports nothing after a discard, including a refusal the reader has just undone', () => {
-    const refused = after(start, { kind: PROFILE_EVENT.REFUSED, notice: FAILURE });
+    const refused = after(start, { kind: RECORD_EVENT.REFUSED, notice: FAILURE });
 
-    expect(after(refused, { kind: PROFILE_EVENT.DISCARDED })).toStrictEqual({
+    expect(after(refused, { kind: RECORD_EVENT.DISCARDED })).toStrictEqual({
       report: null,
       record: record('Brutăria'),
     });
@@ -96,10 +109,10 @@ describe('profileReducer', () => {
     // one the API confirmed — not the record the screen opened with.
     const state = after(
       start,
-      { kind: PROFILE_EVENT.SAVED, stored: record('Brutăria SRL'), notice: SUCCESS },
-      { kind: PROFILE_EVENT.SUBMITTED },
-      { kind: PROFILE_EVENT.REFUSED, notice: FAILURE },
-      { kind: PROFILE_EVENT.DISCARDED },
+      { kind: RECORD_EVENT.SAVED, stored: record('Brutăria SRL'), notice: SUCCESS },
+      { kind: RECORD_EVENT.SUBMITTED },
+      { kind: RECORD_EVENT.REFUSED, notice: FAILURE },
+      { kind: RECORD_EVENT.DISCARDED },
     );
 
     expect(state).toStrictEqual({ report: null, record: record('Brutăria SRL') });
@@ -107,12 +120,12 @@ describe('profileReducer', () => {
 
   it('leaves a settled report standing until the next submit or discard', () => {
     const saved = after(start, {
-      kind: PROFILE_EVENT.SAVED,
+      kind: RECORD_EVENT.SAVED,
       stored: record('Brutăria SRL'),
       notice: SUCCESS,
     });
 
-    expect(saved.report).toStrictEqual({ kind: PROFILE_REPORT.SAVED, notice: SUCCESS });
+    expect(saved.report).toStrictEqual({ kind: RECORD_REPORT.SAVED, notice: SUCCESS });
   });
 });
 
@@ -126,13 +139,13 @@ describe('profileReducer', () => {
  * pair a single "it clears when dirty" case would have left half-tested.
  */
 describe('visibleNotice', () => {
-  const start = initialProfileState(record('Brutăria'));
+  const start = initialRecordState(record('Brutăria'));
   const saved = after(start, {
-    kind: PROFILE_EVENT.SAVED,
+    kind: RECORD_EVENT.SAVED,
     stored: record('Brutăria SRL'),
     notice: SUCCESS,
   });
-  const refused = after(start, { kind: PROFILE_EVENT.REFUSED, notice: FAILURE });
+  const refused = after(start, { kind: RECORD_EVENT.REFUSED, notice: FAILURE });
 
   it('shows nothing before anything has settled, dirty or not', () => {
     expect(visibleNotice(start, false)).toBeNull();

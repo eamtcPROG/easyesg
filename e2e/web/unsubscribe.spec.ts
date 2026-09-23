@@ -29,7 +29,10 @@ test('a signed-out reader unsubscribes from an email in one press, and the link 
 
   await page.goto(`/unsubscribe/${token}`);
   await expect(page.getByRole('heading', { level: 1, name: 'Dezabonare de la e-mailuri' })).toBeVisible();
-  await expect(page.getByText('Nu veți mai primi prin e-mail mesajele din categoria „Mementouri”.')).toBeVisible();
+  // Named by category and by whose address, masked — the reader may not be the recipient (task 52's close).
+  await expect(
+    page.getByText('Mesajele din categoria „Mementouri” nu vor mai fi trimise prin e-mail la t•••@example.md.'),
+  ).toBeVisible();
   // Opening the page changed nothing: a scanner that prefetches the link stops here.
   expect(await switchedOffFor(accountId)).toEqual([]);
   const ready = await new AxeBuilder({ page }).withTags(WCAG).analyze();

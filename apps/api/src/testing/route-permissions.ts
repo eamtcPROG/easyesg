@@ -240,7 +240,7 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /admin/credentials/recovery-codes': OPERATORS,
 
   // ── A person's own account: credentials, second factor, linked identities, and since task 52.1 notification
-  // preferences, which follow the person across organizations (FR-163) (actors.md §5's first
+  // preferences, which follow the person across organizations (FR-163), and since task 52.3 the profile (FR-9) (actors.md §5's first
   // row — CA, held by every other human actor "via CA"). `account` and not `role`, because these
   // belong to a person rather than to an organization and are reachable before one is bound.
   'GET /account/notification-preferences': PERMISSION.ACCOUNT,
@@ -250,6 +250,8 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /account/notification-preferences/unsubscribe': PERMISSION.PUBLIC,
   'POST /account/notification-preferences/unsubscribe/preview': PERMISSION.PUBLIC,
   'POST /account/password': PERMISSION.ACCOUNT,
+  'GET /account/profile': PERMISSION.ACCOUNT,
+  'PUT /account/profile': PERMISSION.ACCOUNT,
   'GET /account/totp': PERMISSION.ACCOUNT,
   'POST /account/totp/enrolment': PERMISSION.ACCOUNT,
   'POST /account/totp/confirmation': PERMISSION.ACCOUNT,

@@ -20,10 +20,14 @@ export const UNSUBSCRIBE_STANDING = {
 
 export type UnsubscribeStanding = (typeof UNSUBSCRIBE_STANDING)[keyof typeof UNSUBSCRIBE_STANDING];
 
-/** S-38's read: the standing, and the category it is about wherever the link can be trusted to name one. */
+/**
+ * S-38's read: the standing, and — wherever the link can be trusted to name them — the category it is about and whose
+ * emails it stops, as `maskedAddress` names them (task 52's close), since the reader may not be the recipient.
+ */
 export type UnsubscribePreview =
   | {
       readonly standing: typeof UNSUBSCRIBE_STANDING.AVAILABLE | typeof UNSUBSCRIBE_STANDING.SWITCHED_OFF;
       readonly categoryKey: NotificationCategoryKey;
+      readonly recipient: string;
     }
   | { readonly standing: typeof UNSUBSCRIBE_STANDING.UNUSABLE };

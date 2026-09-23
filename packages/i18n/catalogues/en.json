@@ -220,6 +220,10 @@
       "not_pending": "This account is already set up, so there is nothing left to complete. Continue to the application.",
       "password_already_set": "This account already has a password, so a first one was not set. Continue with the next step.",
       "names_required": "Both your given name and your family name are needed, so nothing was saved. Fill in both and save again."
+    },
+    "profile": {
+      "names_required": "Both your given name and your family name are required, so the profile was not saved. Fill in both and save again.",
+      "phone_malformed": "The phone number is not in international form, so the profile was not saved. Write it with “+” and the country code, for example +373 69 123 456."
     }
   },
   "core": {
@@ -263,10 +267,12 @@
   "notification": {
     "identity": {
       "email_verification": {
+        "name": "Email address confirmation",
         "subject": "Confirm your email address",
         "body": "Hello,\n\nSomeone created an easyesg account with this email address. Open the link below to confirm the address and activate the account:\n\n{link}\n\nThe link is valid for 24 hours and works only once.\n\nIf you did not create the account, ignore this message: without confirmation the account cannot be used, and it is deleted automatically after 7 days."
       },
       "password_reset": {
+        "name": "Password reset",
         "subject": "Reset your password",
         "body": "Hello,\n\nWe received a request to reset the password for the easyesg account with this email address. Open the link below to choose a new password:\n\n{link}\n\nThe link is valid for 60 minutes and works only once. After the password changes, every existing session is signed out and you will need to sign in again.\n\nIf you did not ask for a reset, ignore this message: your current password stays unchanged."
       },
@@ -275,6 +281,7 @@
         "body": "Hello,\n\nWe received a request to set a password for the easyesg account with this email address. The account signs in through a provider and has no password yet. Open the link below to choose one:\n\n{link}\n\nThe link is valid for 60 minutes and works only once. After the password is set, every existing session is signed out and you will need to sign in again.\n\nIf you did not ask for this, ignore this message: the account stays without a password, and you keep signing in through your provider."
       },
       "invitation": {
+        "name": "Invitations to organizations",
         "subject": "You have been invited to {organizationName}",
         "body": "Hello,\n\nYou have been invited to join {organizationName} on easyesg, the sustainability reporting platform. Open the link below to accept the invitation:\n\n{link}\n\nThe link is valid for 7 days, works only once, and works only for this email address.\n\nIf you were not expecting this invitation, ignore this message: no access is created unless you accept it."
       }

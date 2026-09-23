@@ -24143,3 +24143,158 @@ full-set-and-three-reviews by reflex. **The three review agents and `gates:clean
 after 52.3, which is the group whose diff they are worth reading whole. What a cold run would add here is stale
 build state, and the runs above rebuilt every artefact this change touches — the web bundle by `pree2e:web`,
 `packages/i18n` by `pretest:e2e`; `packages/contracts` has no `dist`. CI runs the full set on the push.
+
+## Task 52.3 — S-27's profile, languages and notification preferences, and task 52's close · 2026-09-23
+
+UC-13, UC-14 and UC-168 on one Record screen, and with it the API half UC-13 and UC-14 never had a row for. It
+closes task 52.
+
+### Decisions (project owner, one batch, before the code)
+
+Recorded as §12.5.6's new task-52.3 row; FR-9 and `design_spec.md` S-27 amended.
+
+- **(1) One task, `api+web`** (over the recommended two sub-steps): `GET`/`PUT /account/profile` and the screen.
+- **(2) The contact email is the sign-in address** (recommended), shown and not edited — task 49.3's recorded
+  assumption, made the decision.
+- **(3) Three languages, as the artboard draws them** (over the recommended two): interface, email and the export
+  default. `email_locale` is what every message is written in from this task; `export_locale` is **read by nothing
+  until the export tasks**, which the owner chose knowingly over storing it later.
+- **(4) An optional job title and phone number** (over the recommended *spec as written*): FR-9 amended; the phone
+  used only for support to reach the person; the photo stays out.
+
+### What the design settled that the batch did not ask
+
+- **The profile has its own model and store** rather than three more members on `Account`, which every sign-in
+  maps. **Every mail path reads `email_locale`**: the recipients adapter, and the invitation's language for an
+  address that holds an account — searched for every `SELECT … locale FROM identity.account`, and those were the two.
+- **The new languages are defaulted by the database**, a `BEFORE INSERT` trigger, because an account is inserted by
+  registration, a provider sign-up and a great many suites as `(email, locale)`; a `NOT NULL` column with a default
+  per insert path would have failed each forgotten one somewhere unrelated.
+- **A phone is stored in one spelling**, `+` and the digits (E.164's bound), a `CHECK` holding it; the api strips
+  what a person types between the digits, and international form is required because the platform is not one
+  country's. The rule is the api's alone — the form carries no pattern, so the refusal arrives in the api's words.
+- **The derived display name S-27 shows is the api's**, re-read after a save, not a preview computed in the
+  browser: UX-137's rule has one implementation, and a second in the web tier would be free to disagree.
+- **One Save, two resources, preferences first**: a new interface language ends the profile's write in a
+  navigation to the screen in that language, and nothing after a navigation runs. A refusal after the preferences
+  were written keeps them written — the form re-seeds with `keepValues`, so the unsaved profile fields are the only
+  dirty ones, and the Record reducer's `REFUSED` gained an optional `stored` so a discard restores what is stored.
+- **Two things moved up on `shared-how-many-siblings`**, S-27 being the second reader of each: S-15's save/discard
+  controls to `src/shared/record-controls.tsx`, their words now the caller's, and S-15's reducer to
+  `src/lib/record-state.ts`, generic over the record — it knew nothing of organizations but its type. Searched both
+  old names across `apps/web/src` and `e2e/`: one import each, both changed.
+- **A save renews the session**, as S-36's does, so the global tier's name changes at once; the browser journey's
+  rename case was mutated red without it.
+- **The ways in arrived with the screen**: the account menu's *Profile and preferences*, S-26's *choose what reaches
+  you*, the panel's *Preferences* — the artboard's *and preferences* 50.2.2 deferred — and S-38's success states,
+  which its spec had promised would name S-27 once it existed. The 52.1 read now names the three mandatory
+  categories, whose rows S-27 draws.
+
+### The journey found an accessibility defect
+
+The first browser run failed on `getByLabel('E-mail', { exact: true })` resolving to two elements: the address and
+the email-language select were both labelled *E-mail*, as the artboard draws them under a *Languages* heading. A
+screen reader cannot tell those apart either, so each language control is now named for what it sets. The locator
+stays exact — a test that had used `.first()` there would have kept the defect permanently invisible.
+
+### What is drawn differently from the artboard, and why
+
+Recorded in `design_spec.md` S-27's *As built*: the preferences are a group per category rather than a table, so a
+checkbox's accessible name carries the category and the channel; there is no route-level `loading — initial`, since
+a `loading.tsx` at `/account` would also wrap S-28; and the *last saved … by you* attribution is not drawn, since on
+a record only its owner edits it says nothing.
+
+### Task 52's close: three reviews, on `opus`, per the agents' frontmatter
+
+Run over the whole parent diff — `git diff e2c3cb5`, 52.1 through 52.3. A first cold run was stopped after its
+hermetic half passed (api unit 1,353, web 1,026, admin 246, i18n 130, lint, typecheck, boundaries), because the
+reviews' fixes changed the contract and several suites and would have superseded it.
+
+**Four findings needed the owner, and got the recommended answer each** (recorded in the task-52.2 row (5), (6) and
+the task-52.3 row (5), (6)):
+
+- **Rotating `UNSUBSCRIBE_SIGNING_KEY` retires links already sent** — accepted and recorded, against FR-169's
+  *working*; the token's `v1` label is the room for a `v2` that also accepts the previous key.
+- **The phone had no reader and the privacy notice did not name it** — kept, and **task 167 appended** for the
+  console's read beside A-08 and S-30's sentence.
+- **S-27 promised export behaviour that does not exist** — the help now says what the setting is, the saved
+  message no longer mentions an export, and **task 47.2's row gains *starts from the account's export default***.
+- **S-38 told a forwarded link's reader *we no longer send you***, which was false for them — the preview and the
+  switch now answer the recipient's address masked (`maskedAddress`), and S-38's sentences name it. A link whose
+  account no longer exists is now `unusable`; the shared step is `use-cases/followed-link.ts`.
+
+**Spec review — nine findings, every one a document left behind by a decision already taken**: UC-173 and
+FR-169's acceptance criterion still said *interface language*; UC-13 and FR §9's data list predated the amended
+FR-9; `design_spec.md` §9.3, S-27's controls and its two FR lists; the two general token rows, which now name the
+unsubscribe token as a fourth kind outside them; §7.1's `notification` row, which listed neither 51.4's suppressed
+addresses nor the preferences; the task-49.3 row (4)'s assumption and the task-26.1 row, both now marked decided; and
+three docblocks claiming a `loading.tsx` S-27 did not have. Also recorded, unverified: **RFC 8058 wants its two
+headers under the message's DKIM signature, and whether Gmail's relay signs them is unchecked** — what verifies it
+is the first real message's headers. The stale identifier list at `architecture.md`'s head (S-01 … S-28) was
+corrected whole, not only the screen range.
+
+**Convention review — six violations, all fixed**:
+
+- **`RecordControls` took its words as a `labels` prop**, and the two copies had already drifted in Russian: it now
+  reads `forms.record`, S-15's authored Russian kept, both screens' duplicates deleted.
+- **S-27 had no `loading — initial`**: a `Suspense` boundary in the page with `ProfileLoading`, not a `loading.tsx`,
+  which at `/account` would also wrap S-28.
+- **S-38's press wrote the RFC 9457 fallback inline**: one notice through `failureNotice`, rendered by
+  `RecordNotice`.
+- **Two controllers recorded no entitlement decision**: one sentence each, the preferences controller's reason.
+- **A channel list joined with `' · '` inside a sentence**: `format.list(…, 'enumeration')`.
+- **`ProfileSection` drew its own error arm**: `states/profile-unreachable.tsx`.
+
+Among its *not rules*, taken: the orphaned S-28 docblock in `routes.ts`; the preferences anchor spelled once
+(`ACCOUNT_PREFERENCES_SECTION`, which the section's id and the four links read); `categoryNameKey` for the two
+services that name a category alone; and `ProfileForm`'s `Ok` with no body, which left the screen after
+`SUBMITTED` with no report and is now drawn as the unreachable arm. Left: the `sessionAccount()` helper repeated
+across account services, which predates task 52 and has four copies to unify at once.
+
+**Gate-integrity review — seven checks that would not fail on their subject, all fixed**:
+
+1. **`delivery_read_state_delivered_only`'s proof updated both of the editor's rows**, and the email row broke the
+   rule on its own — scoped to `channel = 'in_app'`, the fix 52.2.1 had made in the neighbouring suite and missed here.
+2. **`export_locale` equalled `locale` in every fixture** — the api's unit and e2e fixtures and the web's now carry
+   three different languages, and the web spec asserts each lands in its own member.
+3. **The insert trigger was tested only in the source locale, and its keep-if-named branch not at all** — the
+   profile suite now inserts in `ru`, and once naming the email language.
+4. **The invitation's switch to `email_locale` could be reverted green** — the invitee now registers in `en` with
+   its email language set to `ru`, so only the new column can produce the `ru` it expects.
+5. **Three new `CHECK`s were never violated** — `account_job_title_bounded`, `preference_category_key` and
+   `preference_channel_known` each have a case writing past the api.
+6. **The footer's absence was checked by a word no footer contains** — it now checks the footer's own opening line.
+7. **Two refusal tests named a reason they did not isolate** — retitled to what they prove.
+
+And the three paths nothing covered: **the save order** — one journey now saves a switch and a new language
+together, so the preferences written second would be lost and fail it; **the language cookie** — after the switch a
+bare `/home` must open in English; and **the partial write** — a switch and a malformed phone in one save: the refusal is shown, and
+a reload finds the switch kept and the phone unchanged.
+
+### Verification, and the run this was closed on
+
+**`pnpm gates:clean`**, and the cases in the root file are why it had to be the cold run: the diff moves and deletes
+files (`ProfileControls` and S-15's reducer), changes `packages/contracts` and `packages/i18n`, and regenerates the
+contract. It passed everything through `migrations:check` — lint, `eslint:prove`, typecheck, `image:check`,
+`docs:check` **46**, api unit **1,359**, web **1,028**, admin **246**, i18n **130**, `boundaries` (1,942 modules) and
+its proof, the build, `openapi:check` (99 paths), `facade:check`, `routes:check`, `migrations:check` (**61**
+invariants) — and then **failed `pnpm e2e` on two expectations this close had moved**: the preferences suite's preview
+did not expect the new masked `recipient`, and the centre's suite expected the invitation category to have no name,
+which 52.3 gave it. Both were stale fixtures rather than defects, and the centre's still proves the property it was
+written for: a category with no in-app wording omits its title, body and action. Fixed, and the rest of the set run
+over the cold run's build — `pnpm e2e` **1,364**, `pnpm e2e:worker` **8**, `pnpm e2e:web` **267 of 268**.
+
+**The one browser failure was a list this task had made stale**: `address-states.spec.ts` still counted `/account`
+among the addresses answering *not yet available*, where S-27 now lives. Removed, and the spec re-run alone, **11**
+passing. It found a second stale claim: both `CLAUDE.md` files said *fifteen* such addresses, and there are fourteen
+— a count `docs:check` does not guard, so nothing but reading it could have said so. The browser log's eight *destination
+stream closed early* lines are the client-abandoned stream `apps/web/CLAUDE.md` documents; none from S-27's or S-38's
+specs. Both e2e logs are free of dependency warnings and unhandled rejections.
+
+**Mutations over task 52**, each run and restored: the preference store's `DELETE` filter replaced by `TRUE`
+(52.1's standing-switch-off case fails); dispatch's opt-out read short-circuited (52.2.1's reminder case fails); S-27's
+`renewSession` removed (the rename journey fails). The gate-integrity review's seven were fixed by construction — each
+now meets a fixture only the correct code satisfies — and are recorded above rather than re-mutated.
+
+**Task 52 closes**: 52.1, 52.2 (with 52.2.1 and 52.2.2) and 52.3 are `DONE`, and the group has moved to
+`archived_tasks.md` under Phase 6 beside 49 and 50.

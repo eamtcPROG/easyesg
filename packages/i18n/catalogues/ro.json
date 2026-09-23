@@ -220,6 +220,10 @@
       "not_pending": "Contul este deja configurat, deci nu mai este nimic de finalizat. Continuați în aplicație.",
       "password_already_set": "Contul are deja o parolă, așa că nu a fost setată una nouă. Continuați cu pasul următor.",
       "names_required": "Sunt necesare atât prenumele, cât și numele de familie, așa că nu s-a salvat nimic. Completați ambele câmpuri și salvați din nou."
+    },
+    "profile": {
+      "names_required": "Numele și prenumele sunt obligatorii, așa că profilul nu a fost salvat. Completați ambele câmpuri și salvați din nou.",
+      "phone_malformed": "Numărul de telefon nu este în format internațional, așa că profilul nu a fost salvat. Scrieți-l cu „+” și prefixul țării, de exemplu +373 69 123 456."
     }
   },
   "core": {
@@ -263,10 +267,12 @@
   "notification": {
     "identity": {
       "email_verification": {
+        "name": "Confirmarea adresei de e-mail",
         "subject": "Confirmați-vă adresa de e-mail",
         "body": "Bună ziua,\n\nCineva a creat un cont easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a confirma adresa și a activa contul:\n\n{link}\n\nLinkul este valabil 24 de ore și poate fi folosit o singură dată.\n\nDacă nu dumneavoastră ați creat contul, ignorați acest mesaj: fără confirmare contul nu poate fi folosit și se șterge automat după 7 zile."
       },
       "password_reset": {
+        "name": "Resetarea parolei",
         "subject": "Resetați-vă parola",
         "body": "Bună ziua,\n\nAm primit o cerere de resetare a parolei pentru contul easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a alege o parolă nouă:\n\n{link}\n\nLinkul este valabil 60 de minute și poate fi folosit o singură dată. După schimbarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.\n\nDacă nu dumneavoastră ați cerut resetarea, ignorați acest mesaj: parola actuală rămâne neschimbată."
       },
@@ -275,6 +281,7 @@
         "body": "Bună ziua,\n\nAm primit o cerere de setare a unei parole pentru contul easyesg cu această adresă de e-mail. Contul se autentifică prin furnizor și nu are încă o parolă. Deschideți linkul de mai jos pentru a alege una:\n\n{link}\n\nLinkul este valabil 60 de minute și poate fi folosit o singură dată. După setarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.\n\nDacă nu dumneavoastră ați cerut acest lucru, ignorați mesajul: contul rămâne fără parolă și continuați să vă autentificați prin furnizor."
       },
       "invitation": {
+        "name": "Invitații în organizații",
         "subject": "Ați fost invitat în organizația {organizationName}",
         "body": "Bună ziua,\n\nAți fost invitat să vă alăturați organizației {organizationName} pe easyesg, platforma de raportare privind durabilitatea. Deschideți linkul de mai jos pentru a accepta invitația:\n\n{link}\n\nLinkul este valabil 7 zile, poate fi folosit o singură dată și funcționează numai pentru această adresă de e-mail.\n\nDacă nu așteptați această invitație, ignorați acest mesaj: fără acceptare nu se creează niciun acces."
       }

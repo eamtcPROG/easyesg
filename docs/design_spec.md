@@ -870,13 +870,19 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Archetype:** Record.
 - **Entry points:** the global tier user menu; S-26.
 - **Layout and regions:** identity header, grouped fields, save/cancel affordance.
-- **Content and data shown:** **given name and family name, with the derived display name shown as it will appear elsewhere** (FR-9, UX-137 — amended 12 Sep 2026 from *"display name"*, which named a field the schema never carried); contact email; interface language; notification preferences **per category and per channel**, with transactional categories — security, account, invoice delivery, payment failure — shown as mandatory and non-disableable **with the reason stated** (UX-65, FR-163).
-- **Controls and actions:** edit profile; set interface language; set per-category, per-channel preferences.
+- **Content and data shown:** **given name and family name, with the derived display name shown as it will appear elsewhere** (FR-9, UX-137 — amended 12 Sep 2026 from *"display name"*, which named a field the schema never carried); **an optional job title and an optional phone number** (FR-9, amended 23 Sep 2026, task 52.3 — the artboard drew both); **the contact email, which is the sign-in address, shown and not edited here** (amended 23 Sep 2026: it is how the person signs in, and a second address would be one nobody confirmed); **three languages, chosen independently** — the interface's, the default for exports (overridable on every export, FR-52), and email's (FR-169) — as the artboard draws them and `architecture.md` §9 states (amended 23 Sep 2026, from *"interface language"* alone); notification preferences **per category and per channel**, with transactional categories — security, account, invoice delivery, payment failure — shown as mandatory and non-disableable **with the reason stated** (UX-65, FR-163).
+- **Controls and actions:** edit profile; set interface, email and export-default languages; set per-category, per-channel preferences.
 - **States:** loading — initial; error — recoverable; success; read-only for the mandatory categories.
-- **Validation behaviour:** email format; language selection persists to the profile and applies on every subsequent login and device (FR-10). Preferences follow the user across organizations.
+- **Validation behaviour:** both name parts required, as at registration; a phone number in international form; language selection persists to the profile and applies on every subsequent login and device (FR-10). Preferences follow the user across organizations. *(This read "email format" until 23 Sep 2026, for a contact address the screen no longer edits.)*
 - **Exits:** S-26; S-28.
+- **As built (task 52.3).** The notification preferences are a group per category — a `Fieldset` whose legend names it,
+  a checkbox per channel — rather than the artboard's table, so each checkbox's accessible name carries both the category
+  and the channel. The three language controls are named for what each sets (*interface language*, *default export
+  language*, *email language*): the artboard's bare *Email* collided with the address above it. There is no route-level
+  `loading — initial`, S-28's precedent, because a `loading.tsx` at `/account` would also wrap S-28 beneath it. The
+  artboard's *last saved … by you* attribution is not drawn: on a record only its owner edits it says nothing.
 - **Use cases:** UC-13, UC-14, UC-168.
-- **FRs:** FR-9, FR-10, FR-163.
+- **FRs:** FR-9, FR-10, FR-52, FR-163, FR-169.
 
 ### S-28 — Credentials and linked identities
 
@@ -1052,8 +1058,10 @@ email, and the project owner chose a page rather than a link that switches on be
   product links to it. A mail client's own unsubscribe control does not open it: that posts to the same switch
   directly, RFC 8058's one-click, with no page at all.
 - **Layout and regions:** single column, centred (the Focus fixed elements).
-- **Content and data shown:** which kind of email the link stops, by the category's name, and that it stops it
-  **by email only** — whatever reaches the notification centre still does.
+- **Content and data shown:** which kind of email the link stops, by the category's name, **and whose — the recipient's
+  address, masked** (`a•••@lina.md`; amended at task 52's close, project owner): a forwarded link is followed by someone
+  else, and a sentence saying *you* would be untrue for them; and that it stops it **by email only** — whatever reaches
+  the notification centre still does.
 - **Controls and actions:** one — *unsubscribe*. **Opening the page changes nothing**, which is the reason it is a
   page: a mail scanner prefetching the link reaches the read and never the switch.
 - **States:** loading — initial; ready (the category named, the one action); pending — async (the switch's
@@ -1063,8 +1071,9 @@ email, and the project owner chose a page rather than a link that switches on be
   way out is the link in the latest such email); error — recoverable (no answer arrived).
 - **Validation behaviour:** none a reader can meet; the link carries everything, and the api refuses one it did
   not sign.
-- **Exits:** none of its own. **S-27 is where the choice is reversed**, and the success state names it once S-27
-  exists (task 52.3); until then the screen promises no way back it cannot show.
+- **Exits:** S-27's notification preferences, from the success and already-off states — where the choice is reversed
+  (added 23 Sep 2026 with task 52.3, which built S-27; reaching it asks for a sign-in, which the global tier's gate
+  does).
 - **Use cases:** UC-173, UC-168.
 - **FRs:** FR-169, FR-163.
 
@@ -1859,8 +1868,8 @@ Interface language, export language and email language are three independent sel
 | Selection | Where set | Rule |
 |---|---|---|
 | Interface language | S-27, per user profile | Persists across devices and sessions (FR-10) |
-| Export language | S-11, per export | Independent of interface language (UX-47, UC-48, FR-52); recorded in export history |
-| Email language | Resolved per recipient | Email renders in the recipient's own language, resolved per recipient rather than per notification (UX-66, FR-169) |
+| Export language | S-11, per export — starting from the default chosen on S-27 (amended 23 Sep 2026, task 52.3) | Independent of interface language (UX-47, UC-48, FR-52); recorded in export history |
+| Email language | S-27, per user profile — chosen apart from the interface language, and starting as it (amended 23 Sep 2026, task 52.3) | Email renders in the recipient's own language, resolved per recipient rather than per notification (UX-66, FR-169) |
 
 **UX-98** The platform-authored-label caveat (§6.9, UX-47) shall appear at the point of export language selection and on the exported document itself, not only in documentation. **Amended 31 Aug 2026** with UX-47: it read *"the Russian caveat"*, and at `2026-05-01` it covers **Romanian as well** — including the source locale, which is the one most readers will export in.
 
@@ -2340,7 +2349,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-24 | Subscription status and history | OA | UC-99 … 107 | FR-90, FR-94, FR-95, FR-96, FR-97, FR-98 (consumes FR-103, FR-104) |
 | S-25 | Enterprise request | OA | UC-153 | FR-142 |
 | S-26 | Notification centre | CA | UC-165 … 167 | FR-160, FR-161, FR-162 |
-| S-27 | Profile, language, notification preferences | CA, all | UC-13, 14, 168 | FR-9, FR-10, FR-163 |
+| S-27 | Profile, language, notification preferences | CA, all | UC-13, 14, 168 | FR-9, FR-10, FR-52, FR-163, FR-169 |
 | S-28 | Credentials and linked identities | CA | UC-10 … 12, UC-193 | FR-7, FR-8, NFR-95 |
 | S-29 | Marketing home | VI | UC-177 | — (G-9) |
 | S-30 | Legal documents (terms · privacy · cookies) | VI, all | UC-178 | — (G-9); NFR-5 is the obligation this screen discharges |

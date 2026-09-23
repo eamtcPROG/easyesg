@@ -16,6 +16,9 @@ import { NotificationUnsubscribeService } from '../services/notification-unsubsc
  *
  * **Two calls, because a link is followed by more than people**: `preview` changes nothing, so the scanners that
  * prefetch a message's links stop there; the switch is an explicit `POST` from S-38's button or from a mail client.
+ *
+ * **No `@RequiresEntitlement`**, the preferences' reason: no plan decides whether a person may stop an email, and a
+ * public route has no organization whose plan could be asked.
  */
 @ApiTags('platform')
 @Controller('account/notification-preferences/unsubscribe')

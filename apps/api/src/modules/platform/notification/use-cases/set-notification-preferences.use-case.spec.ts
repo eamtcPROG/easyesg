@@ -53,7 +53,9 @@ describe('SetNotificationPreferences (task 52.1)', () => {
     expect(store.replaced).toEqual([]);
   });
 
-  it('refuses the operators’ invitation, which no tenant account receives', async () => {
+  // Refused on either of two grounds — it is operator-only and mandatory; which one excludes it from the read is
+  // `offered-preferences.spec.ts`'s exact list (task 52's close review).
+  it('refuses the operators’ invitation', async () => {
     await expect(
       new SetNotificationPreferences(new FakeNotificationPreferenceStore(), reminderTravellingOn(NOTIFICATION_CHANNEL.IN_APP)).execute({
         accountId: ACCOUNT,

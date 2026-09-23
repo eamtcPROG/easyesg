@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { translate } from '@api/app/messages/catalogue';
+import { categoryNameKey } from '../domain/category-name-key';
 import { requestContext, requestLocale } from '@api/infrastructure/persistence/request-context';
 import { AuthenticationRequiredError } from '@api/modules/identity/membership/errors/membership.errors';
 import type {
@@ -47,6 +48,6 @@ const named = (categories: readonly CategoryPreferences[]): CategoryPreferencesI
   const locale = requestLocale();
   return categories.map((category) => ({
     ...category,
-    categoryName: translate(locale, `notification.${category.categoryKey}.name`),
+    categoryName: translate(locale, categoryNameKey(category.categoryKey)),
   }));
 };

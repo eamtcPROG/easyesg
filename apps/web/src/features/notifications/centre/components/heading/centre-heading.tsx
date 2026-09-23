@@ -1,4 +1,6 @@
-import { BADGE_TONE, BUTTON_VARIANT, Badge } from '@easyesg/ui';
+import { BADGE_TONE, BUTTON_VARIANT, Badge, TextLink } from '@easyesg/ui';
+import { Link } from '@/i18n/navigation';
+import { ROUTES } from '@/lib/routes';
 import { getTranslations } from 'next-intl/server';
 import { NoticeMarkAll } from '../../../shared/components/notice-mark-all';
 import { NOTICE_LIST_MESSAGES } from '../../../shared/components/notice-messages';
@@ -30,6 +32,11 @@ export async function CentreHeading({ unread, view }: { readonly unread: number 
           ) : null}
         </div>
         <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
+        {/* S-26's route to preferences (`design_spec.md` S-26's exits), arrived with S-27 in task 52.3: the section of
+            S-27 that says what reaches the reader and where. */}
+        <TextLink asChild>
+          <Link href={ROUTES.ACCOUNT_PREFERENCES}>{t('preferences')}</Link>
+        </TextLink>
       </div>
       {unread === null ? null : (
         <div className={styles.controls}>

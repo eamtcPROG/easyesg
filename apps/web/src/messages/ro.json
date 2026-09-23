@@ -53,7 +53,8 @@
     "accountMenu": {
       "label": "Contul dumneavoastră",
       "credentials": "Date de autentificare",
-      "signOut": "Ieșiți din cont"
+      "signOut": "Ieșiți din cont",
+      "profile": "Profil și preferințe"
     },
     "workspaceNav": {
       "label": "Secțiunile organizației",
@@ -100,7 +101,13 @@
   "forms": {
     "show": "Arătați",
     "hide": "Ascundeți",
-    "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua"
+    "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
+    "record": {
+      "save": "Salvați modificările",
+      "discard": "Renunțați",
+      "unsaved": "Aveți modificări nesalvate.",
+      "pristine": "Nimic modificat încă — salvarea rămâne inactivă până când o valoare diferă."
+    }
   },
   "identity": {
     "unreachable": {
@@ -460,19 +467,20 @@
     "unsubscribe": {
       "title": "Dezabonare de la e-mailuri",
       "loading": "Se verifică linkul…",
-      "intro": "Nu veți mai primi prin e-mail mesajele din categoria „{category}”. Ce vedeți în centrul de notificări rămâne neschimbat.",
-      "introUnnamed": "Nu veți mai primi prin e-mail acest tip de mesaje. Ce vedeți în centrul de notificări rămâne neschimbat.",
+      "intro": "Mesajele din categoria „{category}” nu vor mai fi trimise prin e-mail la {recipient}. Ce apare în centrul de notificări rămâne neschimbat.",
+      "introUnnamed": "Acest tip de mesaje nu va mai fi trimis prin e-mail la {recipient}. Ce apare în centrul de notificări rămâne neschimbat.",
       "confirm": "Dezabonați-mă",
       "doneTitle": "V-ați dezabonat",
-      "doneBody": "Nu vă mai trimitem prin e-mail mesajele din categoria „{category}”. Celelalte e-mailuri și notificările din aplicație continuă ca până acum.",
-      "doneBodyUnnamed": "Nu vă mai trimitem prin e-mail acest tip de mesaje. Celelalte e-mailuri și notificările din aplicație continuă ca până acum.",
+      "doneBody": "Mesajele din categoria „{category}” nu mai sunt trimise prin e-mail la {recipient}. Celelalte e-mailuri și notificările din aplicație continuă ca până acum.",
+      "doneBodyUnnamed": "Acest tip de mesaje nu mai este trimis prin e-mail la {recipient}. Celelalte e-mailuri și notificările din aplicație continuă ca până acum.",
       "alreadyTitle": "Sunteți deja dezabonat",
-      "alreadyBody": "Mesajele din categoria „{category}” nu vă mai sunt trimise prin e-mail, așa că nu este nimic de schimbat.",
-      "alreadyBodyUnnamed": "Acest tip de mesaje nu vă mai este trimis prin e-mail, așa că nu este nimic de schimbat.",
+      "alreadyBody": "Mesajele din categoria „{category}” nu mai sunt trimise prin e-mail la {recipient}, așa că nu este nimic de schimbat.",
+      "alreadyBodyUnnamed": "Acest tip de mesaje nu mai este trimis prin e-mail la {recipient}, așa că nu este nimic de schimbat.",
       "unusableTitle": "Linkul nu poate fi folosit",
       "unusableBody": "Acest link de dezabonare nu poate opri niciun e-mail, așa că nu s-a schimbat nimic. Folosiți linkul din cel mai recent e-mail de acest fel primit de la noi.",
       "problemTitle": "Dezabonarea nu a reușit",
-      "problemBody": "Ceva a împiedicat dezabonarea, așa că e-mailurile vă vor fi trimise în continuare. Reîncărcați pagina și încercați din nou."
+      "problemBody": "Ceva a împiedicat dezabonarea, așa că e-mailurile vă vor fi trimise în continuare. Reîncărcați pagina și încercați din nou.",
+      "profileAction": "Alegeți ce e-mailuri primiți"
     }
   },
   "organization": {
@@ -606,10 +614,6 @@
     "profile": {
       "title": "Profilul organizației",
       "lede": "Identitatea juridică ce se tipărește pe fiecare raport pe care îl depuneți.",
-      "save": "Salvați modificările",
-      "discard": "Renunțați",
-      "pristine": "Nimic modificat încă — salvarea rămâne inactivă până când o valoare diferă.",
-      "unsaved": "Aveți modificări nesalvate.",
       "saved": {
         "title": "Profilul a fost salvat",
         "body": "Valorile noi se aplică rapoartelor create de acum înainte. Rapoartele deja depuse păstrează valorile din momentul depunerii."
@@ -1396,7 +1400,8 @@
           "title": "Notificările nu au putut fi încărcate",
           "body": "Serviciul nu a răspuns, deci nu știm ce a sosit. Nimic nu se pierde: fiecare notificare rămâne aici până o citiți. Reîncărcați pagina peste câteva momente."
         }
-      }
+      },
+      "preferences": "Alegeți ce vă parvine și unde"
     },
     "panel": {
       "title": "Notificări",
@@ -1420,7 +1425,8 @@
         "action": "Încercați din nou"
       },
       "note": "Starea de citire este doar a dumneavoastră.",
-      "all": "Toate notificările"
+      "all": "Toate notificările",
+      "preferences": "Preferințe"
     },
     "item": {
       "untitled": "Notificare",
@@ -1441,5 +1447,59 @@
       },
       "markAll": "Marcați toate ca citite"
     }
+  },
+  "profile": {
+    "title": "Profil și preferințe",
+    "lede": "Numele, limbile și ce vă parvine. Aceste setări vă aparțin dumneavoastră, nu unei organizații, și vă însoțesc în orice organizație vă alăturați.",
+    "saved": {
+      "title": "Profil salvat",
+      "body": "Numele nou apare peste tot de acum înainte, iar limbile alese se aplică la următoarea autentificare și următorul mesaj."
+    },
+    "problemTitle": "Modificarea nu a putut fi salvată",
+    "problemBody": "Profilul a rămas neschimbat, deoarece cererea nu a putut fi procesată. Reîncărcați pagina și încercați din nou.",
+    "unreachable": {
+      "title": "Profilul nu a putut fi încărcat",
+      "body": "Serverul nu a răspuns, așa că nu vă putem arăta profilul acum. Nimic nu s-a schimbat.",
+      "action": "Reîncărcați pagina peste câteva momente."
+    },
+    "identity": {
+      "heading": "Despre dumneavoastră",
+      "lede": "Cum vă vede echipa și cum vă putem contacta.",
+      "givenName": "Prenume",
+      "familyName": "Nume de familie",
+      "givenNameRequired": "Prenumele lipsește. Completați-l înainte de a salva.",
+      "familyNameRequired": "Numele de familie lipsește. Completați-l înainte de a salva.",
+      "nameTooLong": "Numele depășește 100 de caractere. Scurtați-l înainte de a salva.",
+      "shownAs": "Apare în aplicație ca: {name}",
+      "jobTitle": "Funcția",
+      "optional": "Opțional.",
+      "jobTitleTooLong": "Funcția depășește 100 de caractere. Scurtați-o înainte de a salva.",
+      "email": "E-mail",
+      "emailHelp": "Este adresa cu care vă autentificați și la care vă scriem.",
+      "phone": "Telefon",
+      "phoneHelp": "Opțional, cu prefixul țării. Folosit doar dacă asistența trebuie să vă contacteze despre acest cont.",
+      "phoneTooLong": "Numărul de telefon este prea lung. Verificați-l înainte de a salva."
+    },
+    "languages": {
+      "heading": "Limbi",
+      "lede": "Trei alegeri separate. Faptul că citiți interfața în engleză nu vă obligă să raportați în engleză.",
+      "interface": "Limba interfeței",
+      "interfaceHelp": "Limba în care citiți aplicația.",
+      "export": "Limba implicită a exporturilor",
+      "exportHelp": "Limba în care vor porni exporturile dumneavoastră.",
+      "email": "Limba e-mailurilor",
+      "emailHelp": "Limba fiecărui mesaj pe care vi-l trimite platforma."
+    },
+    "notifications": {
+      "heading": "Ce vă parvine și unde",
+      "lede": "Notificările din aplicație apar în centrul de notificări; e-mailurile vin în limba aleasă mai sus.",
+      "unnamed": "Alte notificări",
+      "locked": "Nu poate fi dezactivată — contul depinde de ea. Vă parvine: {channels}.",
+      "channel": {
+        "in_app": "În aplicație",
+        "email": "Prin e-mail"
+      }
+    },
+    "loading": "Se încarcă profilul dumneavoastră."
   }
 }

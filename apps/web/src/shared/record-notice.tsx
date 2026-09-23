@@ -4,7 +4,8 @@ import { Callout } from '@easyesg/ui';
 import type { Notice } from '@/lib/notice';
 
 /**
- * What the last save did, at the head of a record — S-15's and S-13's, and any Record screen's.
+ * What the last save did, at the head of a record — S-15's, S-13's and S-27's, and any Record screen's — and since
+ * task 52's close what S-38's one press did, the same notice over a different surface.
  *
  * **In `src/shared/` because two features read it** (task 134's parent-close review found
  * `EntityNotice` a byte-for-byte copy of `ProfileNotice`, which is the drift shape this repository

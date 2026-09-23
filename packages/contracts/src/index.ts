@@ -351,3 +351,14 @@ export { UNSUBSCRIBE_STANDING, type UnsubscribeStanding } from './notification';
 export type UnsubscribeTokenRequest = components['schemas']['UnsubscribeTokenRequestDto'];
 export type UnsubscribeAnswer = components['schemas']['UnsubscribeResponseDto'];
 export type UnreadCount = components['schemas']['UnreadCountResponseDto'];
+
+// identity — S-27's profile (FR-9, FR-10, FR-52, FR-169; task 52.3): the name as two parts and as every surface shows
+// it, the sign-in address, the optional job title and phone, and three languages chosen independently.
+export type AccountProfile = components['schemas']['AccountProfileResponseDto'];
+export type SaveAccountProfileRequest = components['schemas']['SaveAccountProfileRequestDto'];
+
+// platform — S-27's notification preferences (FR-163; task 52.1): every category the account can receive, each on the
+// channels it travels on, and the write that replaces the set switched off.
+export type NotificationPreferences = components['schemas']['NotificationPreferencesResponseDto'];
+export type CategoryPreferences = components['schemas']['CategoryPreferencesResponseDto'];
+export type SetNotificationPreferencesRequest = components['schemas']['SetNotificationPreferencesRequestDto'];

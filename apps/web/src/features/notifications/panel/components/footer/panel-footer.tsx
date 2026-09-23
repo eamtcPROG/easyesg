@@ -9,8 +9,8 @@ import styles from '../styles/panel.module.css';
 
 /**
  * The panel's foot, as the artboard draws it (task 50.2.2): that read state is the reader's own (UX-64), and the way
- * to S-26 — *All notifications*. The artboard's *and preferences* half arrives with S-27 (task 52.3), the global
- * tier's rule that an entry arrives with its screen.
+ * to S-26 — *All notifications* — and since task 52.3 the artboard's *and preferences*: the way to S-27, which arrived
+ * with its screen, the global tier's rule.
  */
 export function PanelFooter() {
   const t = useTranslations(PANEL_MESSAGES);
@@ -19,6 +19,9 @@ export function PanelFooter() {
       <p className={styles.note}>{t('note')}</p>
       <TextLink asChild>
         <Link href={ROUTES.NOTIFICATIONS}>{t('all')}</Link>
+      </TextLink>
+      <TextLink asChild>
+        <Link href={ROUTES.ACCOUNT_PREFERENCES}>{t('preferences')}</Link>
       </TextLink>
     </div>
   );

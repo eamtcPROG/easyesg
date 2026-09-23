@@ -44,13 +44,24 @@ export class UnsubscribeResponseDto {
   })
   categoryName?: string;
 
+  @ApiProperty({
+    required: false,
+    example: 'a•••@lina.md',
+    description:
+      'Whose emails the link stops: the recipient’s address, masked, for a reader who may not be that person. ' +
+      'Absent when unusable.',
+  })
+  recipient?: string;
+
   constructor(answer: {
     readonly standing: UnsubscribeStanding;
     readonly categoryKey?: NotificationCategoryKey;
     readonly categoryName?: string;
+    readonly recipient?: string;
   }) {
     this.standing = answer.standing;
     if (answer.categoryKey !== undefined) this.categoryKey = answer.categoryKey;
     if (answer.categoryName !== undefined) this.categoryName = answer.categoryName;
+    if (answer.recipient !== undefined) this.recipient = answer.recipient;
   }
 }

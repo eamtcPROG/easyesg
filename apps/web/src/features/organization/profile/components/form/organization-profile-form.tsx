@@ -8,15 +8,11 @@ import { useForm, useWatch } from 'react-hook-form';
 import type { Organization } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { failureNotice, successNotice } from '@/lib/notice';
+import { RecordControls } from '@/shared/record-controls';
 import { RecordNotice } from '@/shared/record-notice';
 import { updateOrganizationProfileAction } from '../../actions/actions';
 import { toFields, toPatch, type ProfileFields } from '../../tools/profile-fields';
-import {
-  PROFILE_EVENT,
-  initialProfileState,
-  profileReducer,
-  visibleNotice,
-} from '../../tools/profile-state';
+import { RECORD_EVENT, initialRecordState, recordReducer, visibleNotice } from '@/lib/record-state';
 import { AddressSection } from '../sections/address-section';
 import { ContactsSection } from '../sections/contacts-section';
 import { IdentifiersSection } from '../sections/identifiers-section';
@@ -24,7 +20,6 @@ import { IdentitySection } from '../sections/identity-section';
 import { PROFILE_MESSAGES } from '../shared/profile-messages';
 import type { CountryOption } from '../shared/vocabulary';
 import { ProfileAttribution } from './profile-attribution';
-import { ProfileControls } from './profile-controls';
 
 /**
  * S-15's body — UC-50 and UC-51 on the Record archetype (FR-15, FR-16).
@@ -38,7 +33,7 @@ import { ProfileControls } from './profile-controls';
  * sections each commit their own thing because each is a separate credential operation; here §5's
  * Controls row is *edit; save; cancel* for the record, and the artboard draws a single Discard/Save
  * pair at the foot. So `sections/` is grouping, not scope — four groups of fields over one
- * `control`, and `ProfileControls` is the only thing that submits.
+ * `control`, and `RecordControls` is the only thing that submits.
  *
  * **Save is inert until a field differs**, which the artboard states in words. `formState.isDirty` is
  * what react-hook-form computes against `defaultValues`, so the screen re-seeds them from the API's
@@ -46,7 +41,7 @@ import { ProfileControls } from './profile-controls';
  * LEI), and a form left holding what the reader typed would show a permanently dirty field they
  * cannot clean.
  *
- * **State is one reducer, not three `useState`s** — `tools/profile-state.ts` carries the argument and
+ * **State is one reducer, not three `useState`s** — `@/lib/record-state.ts` carries the argument and
  * the transitions are a unit spec. The tell was mechanical: every handler here called two or three
  * different setters.
  *
@@ -85,7 +80,7 @@ export function OrganizationProfileForm({
   const tCommon = useTranslations('identity');
 
   const [pending, startTransition] = useTransition();
-  const [state, dispatch] = useReducer(profileReducer, organization, initialProfileState);
+  const [state, dispatch] = useReducer(recordReducer<Organization>, organization, initialRecordState);
 
   const { control, handleSubmit, reset, formState } = useForm<ProfileFields>({
     mode: 'onTouched',
@@ -111,7 +106,7 @@ export function OrganizationProfileForm({
   const legalForms = countries.find((country) => country.value === chosenCountry)?.legalForms ?? [];
 
   const submit = handleSubmit((fields) => {
-    dispatch({ kind: PROFILE_EVENT.SUBMITTED });
+    dispatch({ kind: RECORD_EVENT.SUBMITTED });
 
     startTransition(async () => {
       const outcome = await updateOrganizationProfileAction(toPatch(fields));
@@ -120,7 +115,7 @@ export function OrganizationProfileForm({
         // Re-seed from what was STORED, not from what was typed — see the docblock.
         reset(toFields(outcome.value));
         dispatch({
-          kind: PROFILE_EVENT.SAVED,
+          kind: RECORD_EVENT.SAVED,
           stored: outcome.value,
           notice: successNotice({ copy: { title: t('saved.title'), body: t('saved.body') } }),
         });
@@ -128,7 +123,7 @@ export function OrganizationProfileForm({
       }
 
       dispatch({
-        kind: PROFILE_EVENT.REFUSED,
+        kind: RECORD_EVENT.REFUSED,
         notice:
           outcome.status === API_OUTCOME.Unreachable
             ? // Nothing reached the server, so the screen owns the whole sentence including the
@@ -160,11 +155,11 @@ export function OrganizationProfileForm({
         summary={t('lede')}
         attribution={<ProfileAttribution lastChange={state.record.lastChange} />}
         actions={
-          <ProfileControls
+          <RecordControls
             dirty={formState.isDirty}
             busy={pending}
             onDiscardAction={() => {
-              dispatch({ kind: PROFILE_EVENT.DISCARDED });
+              dispatch({ kind: RECORD_EVENT.DISCARDED });
               reset(toFields(state.record));
             }}
           />

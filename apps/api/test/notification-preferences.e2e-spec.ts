@@ -90,9 +90,25 @@ describe('notification preferences (UC-168, FR-163)', () => {
     const read = await http().get(PATH).set(ana.authorization).expect(200);
 
     expect(categoriesOf(read)).toEqual([
-      { categoryKey: 'identity.email_verification', mandatory: true, channels: [{ channel: 'email', enabled: true }] },
-      { categoryKey: 'identity.password_reset', mandatory: true, channels: [{ channel: 'email', enabled: true }] },
-      { categoryKey: 'identity.invitation', mandatory: true, channels: [{ channel: 'email', enabled: true }] },
+      // Named since task 52.3, whose S-27 draws a row for each.
+      {
+        categoryKey: 'identity.email_verification',
+        categoryName: 'Confirmarea adresei de e-mail',
+        mandatory: true,
+        channels: [{ channel: 'email', enabled: true }],
+      },
+      {
+        categoryKey: 'identity.password_reset',
+        categoryName: 'Resetarea parolei',
+        mandatory: true,
+        channels: [{ channel: 'email', enabled: true }],
+      },
+      {
+        categoryKey: 'identity.invitation',
+        categoryName: 'Invitații în organizații',
+        mandatory: true,
+        channels: [{ channel: 'email', enabled: true }],
+      },
       {
         categoryKey: REMINDER,
         categoryName: 'Mementouri',
@@ -167,7 +183,9 @@ describe('notification preferences (UC-168, FR-163)', () => {
   // A channel the category does not travel on is the use case's spec since task 52.2.2: the seed publishes the reminder
   // on both channels, so no seeded category leaves one to refuse here.
 
-  it('refuses a category or a channel outside the vocabulary before anything is read', async () => {
+  // The DTO's `@IsIn` and the use case's own refusal answer the same 400, so this pins the refusal, not which layer
+  // gave it (task 52's close review).
+  it('refuses a category or a channel outside the vocabulary', async () => {
     await http()
       .put(PATH)
       .set(ana.authorization)
@@ -209,7 +227,13 @@ describe('notification preferences (UC-168, FR-163)', () => {
     it('reads what a link would switch off, with no session and without switching it', async () => {
       const preview = await http().post(`${UNSUBSCRIBE}/preview`).send({ token: reminderEmailOf(ana) }).expect(200);
 
-      expect(objectOf(preview)).toEqual({ standing: 'available', categoryKey: REMINDER, categoryName: 'Mementouri' });
+      // Whose emails, masked, since task 52's close: the reader of a forwarded link may not be the recipient.
+      expect(objectOf(preview)).toEqual({
+        standing: 'available',
+        categoryKey: REMINDER,
+        categoryName: 'Mementouri',
+        recipient: 'a•••@preferences.test',
+      });
       expect(await storedFor(ana)).toEqual([]);
     });
 
@@ -254,6 +278,19 @@ describe('notification preferences (UC-168, FR-163)', () => {
       }
       expect(await storedFor(ana)).toEqual([]);
     });
+  });
+
+  it.each([
+    ['a category key not in the catalogue’s shape', 'Not A Key', 'in_app', 'preference_category_key'],
+    ['a channel the platform does not have', REMINDER, 'sms', 'preference_channel_known'],
+  ])('refuses %s in the database, whoever writes it', async (_case, categoryKey, channel, constraint) => {
+    await expect(
+      owner.query(`INSERT INTO notification.preference (account_id, category_key, channel) VALUES ($1, $2, $3)`, [
+        ana.accountId,
+        categoryKey,
+        channel,
+      ]),
+    ).rejects.toThrow(constraint);
   });
 
   it('asks for a session', async () => {

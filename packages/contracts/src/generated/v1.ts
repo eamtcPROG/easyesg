@@ -224,6 +224,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the signed-in person’s profile
+         * @description Their name as two parts and as every surface shows it, the address they sign in with, an optional job title and phone number, and the three languages they chose: the interface’s, email’s and the export default.
+         */
+        get: operations["ProfileController_read"];
+        /**
+         * Save the signed-in person’s profile
+         * @description Replaces every field but the address, which is how the person signs in. A rename shows everywhere at once; a new interface language applies on every later sign-in and device, and a new email language to the next message sent.
+         */
+        put: operations["ProfileController_save"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/session": {
         parameters: {
             query?: never;
@@ -2190,6 +2214,58 @@ export interface components {
             /** @description End the account’s **other** active sessions. Opt-in, because FR-7 says *where the user elects it* — and the session making this request is never one of them, so the device the change was made from keeps working. */
             terminateOtherSessions?: boolean;
         };
+        AccountProfileResponseDto: {
+            /** @description The sign-in address, which is also where the platform writes to. Changed nowhere on this route. */
+            email: string;
+            /** @description Null for an account that has never given one. */
+            givenName: string | null;
+            /** @description Null for an account that has never given one. */
+            familyName: string | null;
+            /** @description The name every surface shows, derived from the two parts and never stored — the address where neither is given. */
+            displayName: string;
+            /** @description The initials beside it; null where no part is given. */
+            monogram: string | null;
+            jobTitle: string | null;
+            /** @description International form, digits only after the `+`. */
+            phone: string | null;
+            /** @enum {string} */
+            locale: "ro" | "en" | "ru";
+            /** @enum {string} */
+            emailLocale: "ro" | "en" | "ru";
+            /** @enum {string} */
+            exportLocale: "ro" | "en" | "ru";
+        };
+        SaveAccountProfileRequestDto: {
+            /** @example Ana */
+            givenName: string;
+            /** @example Rusu */
+            familyName: string;
+            /**
+             * @description Optional. Omitted, null or blank clears it.
+             * @example Financial controller
+             */
+            jobTitle?: string | null;
+            /**
+             * @description Optional, in international form — `+`, the country code and the number; spaces, dashes and brackets are accepted and not kept. Used only for support to reach the person about their account. Omitted, null or blank clears it.
+             * @example +373 69 123 456
+             */
+            phone?: string | null;
+            /**
+             * @description The interface’s language (FR-10).
+             * @enum {string}
+             */
+            locale: "ro" | "en" | "ru";
+            /**
+             * @description The language every message to this person is written in (FR-169).
+             * @enum {string}
+             */
+            emailLocale: "ro" | "en" | "ru";
+            /**
+             * @description The language an export starts from; each export can choose another (FR-52).
+             * @enum {string}
+             */
+            exportLocale: "ro" | "en" | "ru";
+        };
         SessionAccountDto: {
             /** Format: uuid */
             id: string;
@@ -3367,6 +3443,11 @@ export interface components {
             categoryKey?: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
             /** @description The category’s name in the negotiated language. Absent when unusable, or when none is written. */
             categoryName?: string;
+            /**
+             * @description Whose emails the link stops: the recipient’s address, masked, for a reader who may not be that person. Absent when unusable.
+             * @example a•••@lina.md
+             */
+            recipient?: string;
         };
         UnsubscribeTokenRequestDto: {
             /** @description The signed token from the unsubscribe link. In the body, as the invitation’s is, so the api’s own logs never carry it; the link that holds it is a page on the tenant application. */
@@ -4346,6 +4427,63 @@ export interface operations {
             };
             /** @description Too many re-authentication attempts for this account in the window (§12.5.6). It bounds the route without touching FR-4’s lockout, so a mistype here cannot sign the user out. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ProfileController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The profile. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AccountProfileResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ProfileController_save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveAccountProfileRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The profile, as saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["AccountProfileResponseDto"];
+                    };
+                };
+            };
+            /** @description A name part is missing, or the phone number is not in international form (problem type validation-failed). Nothing was saved. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -24,9 +24,9 @@ export async function UnsubscribeSection({ token }: { readonly token: string }) 
     <>
       <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
       {view.kind === UNSUBSCRIBE_VIEW.CONFIRM ? (
-        <ConfirmUnsubscribe token={token} categoryName={view.categoryName} />
+        <ConfirmUnsubscribe token={token} categoryName={view.categoryName} recipient={view.recipient} />
       ) : view.kind === UNSUBSCRIBE_VIEW.SWITCHED_OFF ? (
-        <SwitchedOff categoryName={view.categoryName} />
+        <SwitchedOff categoryName={view.categoryName} recipient={view.recipient} />
       ) : view.kind === UNSUBSCRIBE_VIEW.UNUSABLE ? (
         <Unusable />
       ) : (

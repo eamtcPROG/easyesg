@@ -15,6 +15,12 @@ import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { ACCOUNT_STORE, type AccountStore } from './interfaces/account-store.interface';
 import { AccountService } from './services/account.service';
 import { PasswordService } from './services/password.service';
+import { ProfileService } from './services/profile.service';
+import { ProfileController } from './controllers/profile.controller';
+import { ACCOUNT_PROFILE_STORE, type AccountProfileStore } from './interfaces/account-profile-store.interface';
+import { ReadAccountProfile } from './use-cases/read-account-profile.use-case';
+import { SaveAccountProfile } from './use-cases/save-account-profile.use-case';
+import { AccountProfileStoreRepository } from '@api/infrastructure/persistence/identity/account-profile-store.repository';
 import { TotpService } from './services/totp.service';
 import { PASSWORD_HASHER, type PasswordHasher } from './interfaces/password-hasher.interface';
 import { RegisterAccount } from './use-cases/register-account.use-case';
@@ -66,7 +72,20 @@ const httpProviders: Provider[] = [
   AccountService,
   TotpService,
   PasswordService,
+  ProfileService,
   { provide: ACCOUNT_STORE, useClass: AccountStoreRepository },
+  // S-27's profile (task 52.3): its own narrow store, since nothing but that screen reads what it adds.
+  { provide: ACCOUNT_PROFILE_STORE, useClass: AccountProfileStoreRepository },
+  {
+    provide: ReadAccountProfile,
+    inject: [ACCOUNT_PROFILE_STORE],
+    useFactory: (store: AccountProfileStore) => new ReadAccountProfile(store),
+  },
+  {
+    provide: SaveAccountProfile,
+    inject: [ACCOUNT_PROFILE_STORE],
+    useFactory: (store: AccountProfileStore) => new SaveAccountProfile(store),
+  },
   {
     /**
      * The store seals `identity.totp_credential.secret` (task 27.1's `SecretCipher`), so the
@@ -177,7 +196,7 @@ const workerProviders: Provider[] = [VerificationEmailHandler, PasswordResetEmai
   // (ISP). Nothing else here is exported, so `ManageTotp`'s password-gated methods stay
   // unreachable from an unauthenticated route.
   exports: mode === APP_MODE.WORKER ? [] : [SECOND_FACTOR],
-  controllers: mode === APP_MODE.WORKER ? [] : [AuthController, TotpController, PasswordController],
+  controllers: mode === APP_MODE.WORKER ? [] : [AuthController, TotpController, PasswordController, ProfileController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
 })
 export class AccountModule {}

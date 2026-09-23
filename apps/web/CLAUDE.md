@@ -10,10 +10,10 @@ every screen. Cite them; do not re-derive them.
 
 ## Current state
 
-Identity, organization, periods, reports, entities, the wizard and the notification centre are live; the
+Identity, organization, periods, reports, entities, the wizard, the notification centre and the profile are live; the
 calculator, validation, preview and export, checkout and billing and the public tier are the
-fifteen addresses `AddressNotice` answers for. What exists: 47 page routes across six route groups,
-7 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 15 feature folders (nine built),
+fourteen addresses `AddressNotice` answers for (fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across six route groups,
+7 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (ten built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
 browser (`pnpm e2e:web`). The root `CLAUDE.md`'s table names the live screens; `docs/archived_tasks.md`
@@ -309,7 +309,7 @@ phone's width the count was only in the drawer. Five things to know before touch
   Radix unmounts on close — so every opening starts on *Unread*, as the artboards draw it.
 
 **Every address answers something (task 103).** `shared/address-notice.tsx` is the anatomy under §8.1's two
-address states, `not-yet-available.tsx` and `address-not-found.tsx` — `error — not yet available` for the fifteen routes whose screens have not
+address states, `not-yet-available.tsx` and `address-not-found.tsx` — `error — not yet available` for the fourteen routes whose screens have not
 shipped, and `error — not found` for an address that does not exist. `design_spec.md` §4.5
 records them as **patterns, not screens**: UX-7 governs destinations serving a use case, and
 these are the answer when none applies, so §4.4's count stays at 52 and neither gained an
@@ -401,7 +401,7 @@ src/
 ├─ proxy.ts        Next 16's middleware. Locale AND session — see below
 ├─ i18n/           next-intl: routing · navigation · request · formats · page (the per-page ritual)
 ├─ app/            routes only, thin. No logic, no data access
-├─ features/       15 domains, mirroring apps/api/src/modules names
+├─ features/       16 domains, mirroring apps/api/src/modules names where one exists (`credentials` and `profile` are S-28's and S-27's)
 │                 └─ a domain serving SEVERAL screens splits per screen — see below
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter), S-37's gate
 ├─ server/         server-only: session/ · api/ · sealed/ · data/ · messages/
@@ -937,7 +937,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **123 files here are Client Components** (23 Sep 2026: one since task 52.2.2, S-38's confirm-unsubscribe part, the screen's one press; one since task 51.4, S-16's standing cell, which draws FR-171's undeliverable chip beside the standing; 22 Sep 2026: five since task 50.3, S-16's reminder panel under
+  **127 files here are Client Components** (23 Sep 2026: four since task 52.3, S-27's form and its three sections; one since task 52.2.2, S-38's confirm-unsubscribe part, the screen's one press; one since task 51.4, S-16's standing cell, which draws FR-171's undeliverable chip beside the standing; 22 Sep 2026: five since task 50.3, S-16's reminder panel under
   `organization/access/components/remind/`; twelve since task 50.2.2, the notification panel's under
   `notifications/panel/components/`, with the band's old bell corner gone into it; seven since task 50.2.1 — the
   unread count's hook under `client/notifications/`, the drawer's row under `notifications/count/components/`, the

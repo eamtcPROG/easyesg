@@ -115,11 +115,12 @@ export class InvitationStoreRepository
    * Reads `identity.account` unjoined and therefore across every tenant, which is correct and worth
    * being explicit about: the table carries no `organization_id` and no policy, because an account
    * precedes every organization. What comes back is one column that is not personal data and never
-   * reaches the administrator — only the language their colleague's email is written in.
+   * reaches the administrator — only the language their colleague's email is written in: the account's **email**
+   * language since task 52.3, chosen apart from its interface language (§12.5.6's task-52.3 row (3)).
    */
   async findAccountLocale(email: string): Promise<Locale | null> {
     const rows = await this.manager.query<{ locale: string }[]>(
-      `SELECT locale FROM identity.account WHERE lower(email) = $1`,
+      `SELECT email_locale AS locale FROM identity.account WHERE lower(email) = $1`,
       [emailIdentityKey(email)],
     );
 

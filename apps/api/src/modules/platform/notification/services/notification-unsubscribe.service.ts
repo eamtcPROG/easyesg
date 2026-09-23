@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { translate } from '@api/app/messages/catalogue';
+import { categoryNameKey } from '../domain/category-name-key';
 import { requestLocale } from '@api/infrastructure/persistence/request-context';
 import type { UnsubscribePreview } from '../models/unsubscribe.model';
 import { PreviewUnsubscribe, type UnsubscribeTokenQuery } from '../use-cases/preview-unsubscribe.use-case';
@@ -30,5 +31,5 @@ export type NamedUnsubscribe = UnsubscribePreview & { readonly categoryName?: st
 
 const named = (answer: UnsubscribePreview): NamedUnsubscribe =>
   'categoryKey' in answer
-    ? { ...answer, categoryName: translate(requestLocale(), `notification.${answer.categoryKey}.name`) }
+    ? { ...answer, categoryName: translate(requestLocale(), categoryNameKey(answer.categoryKey)) }
     : answer;

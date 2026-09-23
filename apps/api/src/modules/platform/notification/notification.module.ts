@@ -212,9 +212,13 @@ const preferenceUseCases: Provider[] = [ReadNotificationPreferences, SetNotifica
 /** FR-169's one-click unsubscribe (task 52.2.2): the token, the catalogue and the store, for its read and its switch. */
 const unsubscribeUseCases: Provider[] = [PreviewUnsubscribe, Unsubscribe].map((useCase) => ({
   provide: useCase,
-  inject: [UNSUBSCRIBE_TOKENS, NotificationCategoryCatalog, NOTIFICATION_PREFERENCE_STORE],
-  useFactory: (tokens: UnsubscribeTokens, catalog: NotificationCategoryCatalog, store: NotificationPreferenceStore) =>
-    new useCase(tokens, catalog, store),
+  inject: [UNSUBSCRIBE_TOKENS, NotificationCategoryCatalog, NOTIFICATION_PREFERENCE_STORE, NOTIFICATION_RECIPIENTS],
+  useFactory: (
+    tokens: UnsubscribeTokens,
+    catalog: NotificationCategoryCatalog,
+    store: NotificationPreferenceStore,
+    recipients: NotificationRecipientsPort,
+  ) => new useCase(tokens, catalog, store, recipients),
 }));
 
 /**
@@ -232,6 +236,9 @@ const httpProviders: Provider[] = [
   ...preferenceUseCases,
   NotificationPreferencesService,
   unsubscribeTokens,
+  // Whose emails a followed link stops (task 52's close): the worker's account read, on the request tier as `esg_app`,
+  // which reads `identity.account` as every `/account/*` route does.
+  { provide: NOTIFICATION_RECIPIENTS, useClass: NotificationRecipientsRepository },
   ...unsubscribeUseCases,
   NotificationUnsubscribeService,
 ];

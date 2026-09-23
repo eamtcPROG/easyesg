@@ -13,7 +13,8 @@ Identity, organization and the reporting core are live (tasks 19 … 36, 89, 91,
 notification core (49) — categories, one mail path, `raise()` and delivery by category — with its store since
 50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre
 since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, and its first
-producer through `raise()` since 50.3, UC-175's reminder; the calculator, validation, export, notification preferences, billing, the console's screens, edge and
+producer through `raise()` since 50.3, UC-175's reminder, and each person's preferences, honoured at dispatch, with FR-169's
+one-click unsubscribe since task 52; the calculator, validation, export, billing, the console's screens, edge and
 deploy, the
 public tier and the Comprehensive Module are not (37 onward). `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
@@ -63,7 +64,7 @@ traps each one left — grouped by area rather than by the task that built it.
   social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`), and the
   setup a provider registration completes (`GET /account/setup`, `POST /account/setup/{password,profile}`,
   `POST /auth/account-setup/password`) (155);
-  opt-in TOTP and password change (27); memberships and roles (`GET/PATCH/DELETE /members`,
+  opt-in TOTP and password change (27); the profile (`GET/PUT /account/profile`, 52.3); memberships and roles (`GET/PATCH/DELETE /members`,
   `GET /memberships`), and choosing among them (`PUT /session/organization`, 83.1); invitations and acceptance (`GET/POST /invitations`,
   `POST /invitations/{id}/email`, `DELETE /invitations/{id}`,
   `POST /invitations/{preview,acceptance}`); and S-16's union read model (`GET /access`, 131).
@@ -78,7 +79,7 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  the outstanding-report and deadline notices (51.2), the preferences' screen (52.3), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
+  the outstanding-report and deadline notices (51.2), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -523,7 +524,7 @@ caller would be a second place to forget them. Four things to know:
 
 **A person's preferences follow the person, so they bind no tenant** (task 52.1; §12.5.6's task-52.1 row; FR-163,
 UC-168). `GET`/`PUT /account/notification-preferences` are `platform/notification`'s routes on the account's prefix,
-under `@RequiresAccount()`, and work with no organization bound. Three things to know:
+under `@RequiresAccount()`, and work with no organization bound. What to know:
 
 - **`notification.preference` holds switch-offs only, with no `organization_id` and no RLS** — `identity.account`'s
   shape, not the rest of this schema's. What confines a statement to one person is the account id every statement
@@ -547,6 +548,13 @@ under `@RequiresAccount()`, and work with no organization bound. Three things to
   `mayBeSwitchedOff` allows, and `renderEmail` appends `notification.unsubscribe.footer` to it — or throws, since an
   optional email without its unsubscribe is the FR-169 breach. **The token is dotless on purpose** (`~`-separated):
   it is a path segment of S-38's address, and `apps/web`'s proxy reads a dotted path as a file.
+
+**The profile's two new languages are the database's to default** (task 52.3; §12.5.6's task-52.3 row).
+`identity.account` gained `email_locale` and `export_locale`, both `NOT NULL`, and `account_language_defaults` — a
+`BEFORE INSERT` trigger — starts each at the account's `locale` wherever an insert names none. So registration, a
+provider sign-up and every suite that seeds `INSERT INTO identity.account (email, locale)` keep working; **an insert
+that must differ names the column**. `email_locale` is the language every message is written in: the recipients adapter
+and the invitation's language read it, never `locale`, which is the interface's alone.
 
 **A cancellation outlives its notice, and every job carries its outbox row's time** (task 50.1.3; §12.5.6's
 task-50.1 rows (12), (13)). `NotificationPort.cancel()` names the raise's key and writes an outbox event on the

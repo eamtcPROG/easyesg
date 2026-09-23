@@ -5,15 +5,19 @@ import { unsubscribeView } from './unsubscribe';
 describe('unsubscribeView', () => {
   it('offers the switch while the link can still switch the category off', () => {
     expect(
-      unsubscribeView({ standing: 'available', categoryKey: 'reporting.manual_reminder', categoryName: 'Mementouri' }),
-    ).toEqual({ kind: 'confirm', categoryName: 'Mementouri' });
+      unsubscribeView({
+        standing: 'available',
+        categoryKey: 'reporting.manual_reminder',
+        categoryName: 'Mementouri',
+        recipient: 'a•••@lina.md',
+      }),
+    ).toEqual({ kind: 'confirm', categoryName: 'Mementouri', recipient: 'a•••@lina.md' });
   });
 
   it('says it is already off, and words a category with no name written without one', () => {
-    expect(unsubscribeView({ standing: 'switched_off', categoryKey: 'reporting.manual_reminder' })).toEqual({
-      kind: 'switched_off',
-      categoryName: null,
-    });
+    expect(
+      unsubscribeView({ standing: 'switched_off', categoryKey: 'reporting.manual_reminder', recipient: 'a•••@lina.md' }),
+    ).toEqual({ kind: 'switched_off', categoryName: null, recipient: 'a•••@lina.md' });
   });
 
   it('draws an unusable link as unusable, naming nothing', () => {

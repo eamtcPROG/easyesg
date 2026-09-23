@@ -33,7 +33,7 @@ const PUBLIC_ADDRESSES = [
 
 /** `(app)/(workspace)` — the proxy bounces these to sign-in without a session, so they need one. */
 const WORKSPACE_ADDRESSES = [
-  '/account',
+  // `/account` left this list with task 52.3, which built S-27 there.
   '/billing',
   '/billing/plans',
   '/billing/subscription',

@@ -2,6 +2,7 @@ import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
 import { UnsubscribeLinkUnusableError } from '../errors/notification.errors';
 import { NOTIFICATION_CHANNEL } from '../models/notification-category.model';
 import {
+  accountsAt,
   FakeNotificationPreferenceStore,
   plainTokens,
   REMINDER_EMAIL,
@@ -11,6 +12,7 @@ import {
 import { Unsubscribe } from './unsubscribe.use-case';
 
 const ACCOUNT = '0192f000-0000-7000-8000-00000000a001';
+const ANA = accountsAt({ [ACCOUNT]: 'ana@lina.md' });
 
 /** FR-169's switch (task 52.2.2): one pair off for the person the link names, and nothing else. */
 describe('Unsubscribe (task 52.2.2)', () => {
@@ -19,22 +21,34 @@ describe('Unsubscribe (task 52.2.2)', () => {
 
   it('switches the link’s category off on its channel, and leaves the rest as it stands', async () => {
     const store = new FakeNotificationPreferenceStore([REMINDER_IN_APP]);
-    const answer = await new Unsubscribe(plainTokens, optional, store).execute({ token });
+    const answer = await new Unsubscribe(plainTokens, optional, store, ANA).execute({ token });
 
-    expect(answer).toEqual({ standing: 'switched_off', categoryKey: 'reporting.manual_reminder' });
+    expect(answer).toEqual({
+      standing: 'switched_off',
+      categoryKey: 'reporting.manual_reminder',
+      recipient: 'a•••@lina.md',
+    });
     expect(await store.switchedOff()).toEqual([REMINDER_IN_APP, REMINDER_EMAIL]);
   });
 
   it('succeeds again without writing twice', async () => {
     const store = new FakeNotificationPreferenceStore([REMINDER_EMAIL]);
-    await new Unsubscribe(plainTokens, optional, store).execute({ token });
+    await new Unsubscribe(plainTokens, optional, store, ANA).execute({ token });
 
     expect(await store.switchedOff()).toEqual([REMINDER_EMAIL]);
   });
 
   it('refuses a link nobody signed, and writes nothing', async () => {
     const store = new FakeNotificationPreferenceStore();
-    await expect(new Unsubscribe(plainTokens, optional, store).execute({ token: 'forged' })).rejects.toBeInstanceOf(
+    await expect(new Unsubscribe(plainTokens, optional, store, ANA).execute({ token: 'forged' })).rejects.toBeInstanceOf(
+      UnsubscribeLinkUnusableError,
+    );
+    expect(await store.switchedOff()).toEqual([]);
+  });
+
+  it('refuses a link whose account no longer exists, and writes nothing', async () => {
+    const store = new FakeNotificationPreferenceStore();
+    await expect(new Unsubscribe(plainTokens, optional, store, accountsAt({})).execute({ token })).rejects.toBeInstanceOf(
       UnsubscribeLinkUnusableError,
     );
     expect(await store.switchedOff()).toEqual([]);
@@ -47,7 +61,7 @@ describe('Unsubscribe (task 52.2.2)', () => {
       channel: NOTIFICATION_CHANNEL.EMAIL,
     });
     await expect(
-      new Unsubscribe(plainTokens, optional, new FakeNotificationPreferenceStore()).execute({ token: mandatory }),
+      new Unsubscribe(plainTokens, optional, new FakeNotificationPreferenceStore(), ANA).execute({ token: mandatory }),
     ).rejects.toBeInstanceOf(UnsubscribeLinkUnusableError);
   });
 });

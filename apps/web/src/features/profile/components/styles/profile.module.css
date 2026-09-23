@@ -1,0 +1,33 @@
+/* S-27. Values from EasyESG Identity.dc.html's S-27 artboard (OQ-10); the Record archetype's own spacing is
+   `RecordShell`'s and is not restated here. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin-inline: auto;
+}
+
+/* The derived display name, read-only beside the two parts it is made from. */
+.derived {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* The notification preferences: one group per category, the two channels side by side where they fit. */
+.categories {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+}
+
+.locked {
+  margin: 0;
+  color: var(--text-muted);
+}

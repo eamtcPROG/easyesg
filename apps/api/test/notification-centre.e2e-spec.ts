@@ -193,11 +193,14 @@ describe('the notification centre (tasks 50.1.2, 50.2.1)', () => {
     expect(page.objects[0]).toEqual({
       id: NOTICE.anaLatest,
       categoryKey: 'identity.invitation',
+      // Named since task 52.3, whose S-27 draws a row for each mandatory category.
+      categoryName: 'Invitații în organizații',
       deepLink: `/reports/${NOTICE.anaLatest}`,
       receivedAt: expect.any(Number) as number,
       readAt: null,
     });
-    // Row (10): no category has in-app wording yet, so the members are absent — never the key in their place.
+    // Row (10): this category has no in-app wording, so its title, body and action are absent — never the key in their
+    // place.
     expect(JSON.stringify(page)).not.toContain('in_app');
     expect(JSON.stringify(page)).not.toContain('Centru SRL');
     expect(await unread(ana)).toBe(3);

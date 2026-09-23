@@ -159,3 +159,26 @@ export class TotpNotEnrolledError extends DomainError {
     super('identity.totp.not_enrolled');
   }
 }
+
+/**
+ * S-27's save named a person with a part missing (task 52.3; FR-9) — both name parts are required, as at registration
+ * and setup, and a part that is only whitespace is not one. Nothing was saved.
+ */
+export class ProfileNamesRequiredError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('identity.profile.names_required');
+  }
+}
+
+/** S-27's save carried a phone number not in international form (task 52.3; `domain/phone-number.ts`). */
+export class PhoneNumberMalformedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('identity.profile.phone_malformed');
+  }
+}

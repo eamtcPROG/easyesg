@@ -665,8 +665,8 @@ their numbers put them.
 - **Preconditions:** The user is authenticated.
 - **Trigger:** The user opens their profile.
 - **Main success scenario:**
-  1. The user views their display name, contact email and notification preferences.
-  2. The user edits and saves them.
+  1. The user views their name, contact email, job title, phone number, languages and notification preferences.
+  2. The user edits and saves them — all but the contact email, which is the address they sign in with and is shown rather than edited (amended 23 Sep 2026, task 52.3).
 - **Business rules:** Profile data is personal to the user and independent of any organization they belong to, since one account may hold roles in several organizations.
 - **Related FRs:** FR-9
 - **Related UCs:** UC-16, UC-168
@@ -2808,11 +2808,11 @@ their numbers put them.
 
 - **Primary actor:** SYS
 - **Module:** Notifications
-- **Preconditions:** A notification has been raised; the recipient's contact address and interface language are known.
+- **Preconditions:** A notification has been raised; the recipient's contact address and **email language** are known (amended 23 Sep 2026, task 52.3: the email language is a setting of its own, `architecture.md` §12.5.6's task-52.3 row (3)).
 - **Trigger:** Dispatch of a notification on the email channel.
 - **Main success scenario:**
   1. The system sends the notification to the recipient's contact address.
-  2. The message is rendered in that recipient's own interface language.
+  2. The message is rendered in that recipient's own email language — chosen on S-27 apart from the interface's, and starting as it.
   3. Delivery runs through an email provider reached behind the standard provider adapter.
 - **Business rules:** Email exists because the target user is an SME owner who does not log in between reporting sessions and would otherwise never see an in-app notice at all. Optional-category emails carry a working unsubscribe link.
 - **Related FRs:** FR-169

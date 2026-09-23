@@ -1,10 +1,14 @@
 'use client';
 
 import type { UnsubscribeAnswer } from '@easyesg/contracts';
-import { Button, Callout, CALLOUT_INTENT, Panel } from '@easyesg/ui';
+import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
+import { Link } from '@/i18n/navigation';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
+import { failureNotice } from '@/lib/notice';
+import { ROUTES } from '@/lib/routes';
+import { RecordNotice } from '@/shared/record-notice';
 import styles from '../../../shared/styles/identity-screens.module.css';
 import { unsubscribeAction } from '../../actions/actions';
 import { UNSUBSCRIBE_MESSAGES } from '../shared/unsubscribe-messages';
@@ -19,7 +23,15 @@ import { UNSUBSCRIBE_MESSAGES } from '../shared/unsubscribe-messages';
  * root file's *mutually exclusive → one value*). States (§8.1 subset): ready · pending — async · success · error —
  * recoverable (the api's own three-part wording) · unreachable.
  */
-export function ConfirmUnsubscribe({ token, categoryName }: { token: string; categoryName: string | null }) {
+export function ConfirmUnsubscribe({
+  token,
+  categoryName,
+  recipient,
+}: {
+  token: string;
+  categoryName: string | null;
+  recipient: string;
+}) {
   const t = useTranslations(UNSUBSCRIBE_MESSAGES);
   const tCommon = useTranslations('identity');
   const [pending, startTransition] = useTransition();
@@ -27,8 +39,19 @@ export function ConfirmUnsubscribe({ token, categoryName }: { token: string; cat
 
   if (outcome?.status === API_OUTCOME.Ok) {
     return (
-      <Callout intent={CALLOUT_INTENT.SUCCESS} title={t('doneTitle')} action={null}>
-        {categoryName === null ? t('doneBodyUnnamed') : t('doneBody', { category: categoryName })}
+      // Its way on is S-27 since task 52.3, where the choice is reversed.
+      <Callout
+        intent={CALLOUT_INTENT.SUCCESS}
+        title={t('doneTitle')}
+        action={
+          <TextLink asChild>
+            <Link href={ROUTES.ACCOUNT_PREFERENCES}>{t('profileAction')}</Link>
+          </TextLink>
+        }
+      >
+        {categoryName === null
+          ? t('doneBodyUnnamed', { recipient })
+          : t('doneBody', { category: categoryName, recipient })}
       </Callout>
     );
   }
@@ -41,22 +64,27 @@ export function ConfirmUnsubscribe({ token, categoryName }: { token: string; cat
 
   return (
     <div className={styles.stack}>
-      {outcome?.status === API_OUTCOME.Problem ? (
-        // The api's own words, in the reader's language: its detail already says what to do next.
-        <Callout intent={CALLOUT_INTENT.ERROR} title={outcome.problem.title ?? t('problemTitle')} action={null}>
-          {outcome.problem.detail ?? t('problemBody')}
-        </Callout>
-      ) : null}
-
-      {outcome?.status === API_OUTCOME.Unreachable ? (
-        <Callout intent={CALLOUT_INTENT.ERROR} title={tCommon('unreachable.title')} action={tCommon('unreachable.action')}>
-          {tCommon('unreachable.body')}
-        </Callout>
-      ) : null}
+      {/* One notice for either failure, through `@/lib/notice`'s rule: the api's own words member by member where it
+          answered, and the bundled unreachable copy where it did not (task 52's close review). */}
+      <RecordNotice
+        notice={
+          outcome === undefined
+            ? null
+            : outcome.status === API_OUTCOME.Unreachable
+              ? failureNotice({
+                  outcome,
+                  unreachable: { title: tCommon('unreachable.title'), body: tCommon('unreachable.body') },
+                  action: tCommon('unreachable.action'),
+                })
+              : failureNotice({ outcome, unreachable: { title: t('problemTitle'), body: t('problemBody') } })
+        }
+      />
 
       <Panel className={styles.formPanel}>
         <p className={styles.bodyText}>
-          {categoryName === null ? t('introUnnamed') : t('intro', { category: categoryName })}
+          {categoryName === null
+            ? t('introUnnamed', { recipient })
+            : t('intro', { category: categoryName, recipient })}
         </p>
         <Button busy={pending} onClick={unsubscribe}>
           {t('confirm')}

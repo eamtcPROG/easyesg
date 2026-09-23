@@ -322,7 +322,10 @@ describe('the manual reminder (UC-175, task 50.3)', () => {
     await http().post(`/api/v1/notifications/${notificationId}/read`).set(editor.authorization).expect(404);
     await expect(
       asOrganization(owner, ORG, (run) =>
-        run(`UPDATE notification.delivery SET read_at = now() WHERE notification_id = $1 AND recipient_account_id = $2`, [
+        // The in-app row alone: the email row breaks the rule on its own, and would prove nothing about opted_out (task 52's
+        // close review).
+        run(`UPDATE notification.delivery SET read_at = now()
+              WHERE notification_id = $1 AND recipient_account_id = $2 AND channel = 'in_app'`, [
           notificationId,
           editor.accountId,
         ]),

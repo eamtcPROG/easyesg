@@ -343,9 +343,14 @@ describe('invitations (UC-60, UC-61)', () => {
    * administrator's own requests carry no header at all and negotiate to the source locale. One
    * invitation therefore comes out `ru` and the other `ro` — which is the whole decision, and a
    * single-invitation assertion could not tell it from "the inviter's locale happens to be right".
+   *
+   * **Since task 52.3 it is the invitee's *email* language**, chosen apart from their interface's: the account is
+   * registered in `ru`, then its email language set on its own, so the invitation's `ru` could only come from the
+   * column the store reads — `locale` would say otherwise (task 52's close review).
    */
-  it('writes the email in the invitee’s language, falling back to the inviter’s', async () => {
-    await registerFreshAccount({ server: app.getHttpServer(), email: RUSSIAN_SPEAKER, acceptLanguage: 'ru' });
+  it('writes the email in the invitee’s email language, falling back to the inviter’s', async () => {
+    await registerFreshAccount({ server: app.getHttpServer(), email: RUSSIAN_SPEAKER, acceptLanguage: 'en' });
+    await owner.query(`UPDATE identity.account SET email_locale = 'ru' WHERE email = $1`, [RUSSIAN_SPEAKER]);
 
     await invite(admin, { email: RUSSIAN_SPEAKER }).expect(201);
     await invite(admin, { email: INVITEE }).expect(201);

@@ -53,7 +53,8 @@
     "accountMenu": {
       "label": "Your account",
       "credentials": "Sign-in details",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "profile": "Profile and preferences"
     },
     "workspaceNav": {
       "label": "Organisation sections",
@@ -100,7 +101,13 @@
   "forms": {
     "show": "Show",
     "hide": "Hide",
-    "summaryTitle": "A few fields need attention before you can continue"
+    "summaryTitle": "A few fields need attention before you can continue",
+    "record": {
+      "save": "Save changes",
+      "discard": "Discard",
+      "unsaved": "You have unsaved changes.",
+      "pristine": "Nothing changed yet — save stays inert until a value differs."
+    }
   },
   "identity": {
     "unreachable": {
@@ -460,19 +467,20 @@
     "unsubscribe": {
       "title": "Unsubscribe from emails",
       "loading": "Checking the link…",
-      "intro": "You will no longer receive “{category}” messages by email. What you see in the notification centre stays as it is.",
-      "introUnnamed": "You will no longer receive this kind of message by email. What you see in the notification centre stays as it is.",
+      "intro": "“{category}” messages will no longer be emailed to {recipient}. What appears in the notification centre stays as it is.",
+      "introUnnamed": "This kind of message will no longer be emailed to {recipient}. What appears in the notification centre stays as it is.",
       "confirm": "Unsubscribe",
       "doneTitle": "You have unsubscribed",
-      "doneBody": "We no longer send you “{category}” messages by email. Your other emails and the notifications in the app carry on as before.",
-      "doneBodyUnnamed": "We no longer send you this kind of message by email. Your other emails and the notifications in the app carry on as before.",
+      "doneBody": "“{category}” messages are no longer emailed to {recipient}. Other emails and the notifications in the app carry on as before.",
+      "doneBodyUnnamed": "This kind of message is no longer emailed to {recipient}. Other emails and the notifications in the app carry on as before.",
       "alreadyTitle": "You are already unsubscribed",
-      "alreadyBody": "“{category}” messages are no longer sent to you by email, so there is nothing to change.",
-      "alreadyBodyUnnamed": "This kind of message is no longer sent to you by email, so there is nothing to change.",
+      "alreadyBody": "“{category}” messages are no longer emailed to {recipient}, so there is nothing to change.",
+      "alreadyBodyUnnamed": "This kind of message is no longer emailed to {recipient}, so there is nothing to change.",
       "unusableTitle": "This link cannot be used",
       "unusableBody": "This unsubscribe link cannot stop any email, so nothing was changed. Use the link in the most recent email of this kind you received from us.",
       "problemTitle": "Unsubscribing did not work",
-      "problemBody": "Something stopped the unsubscribe, so these emails will still be sent to you. Reload the page and try again."
+      "problemBody": "Something stopped the unsubscribe, so these emails will still be sent to you. Reload the page and try again.",
+      "profileAction": "Choose which emails you receive"
     }
   },
   "organization": {
@@ -606,10 +614,6 @@
     "profile": {
       "title": "Organisation profile",
       "lede": "The legal identity printed on every report you file.",
-      "save": "Save changes",
-      "discard": "Discard",
-      "pristine": "Nothing changed yet — save stays inert until a value differs.",
-      "unsaved": "You have unsaved changes.",
       "saved": {
         "title": "Profile saved",
         "body": "The new values apply to reports created from now on. Reports already filed keep the values in force when they were prepared."
@@ -1396,7 +1400,8 @@
           "title": "Your notifications could not be loaded",
           "body": "The service did not answer, so we do not know what has arrived. Nothing is lost: each notification stays here until you read it. Reload the page in a moment."
         }
-      }
+      },
+      "preferences": "Choose what reaches you, and where"
     },
     "panel": {
       "title": "Notifications",
@@ -1420,7 +1425,8 @@
         "action": "Try again"
       },
       "note": "Read state is yours alone.",
-      "all": "All notifications"
+      "all": "All notifications",
+      "preferences": "Preferences"
     },
     "item": {
       "untitled": "Notification",
@@ -1441,5 +1447,59 @@
       },
       "markAll": "Mark all as read"
     }
+  },
+  "profile": {
+    "title": "Profile and preferences",
+    "lede": "Your name, your languages and what reaches you. These settings belong to you, not to an organization, and follow you to any organization you join.",
+    "saved": {
+      "title": "Profile saved",
+      "body": "Your new name shows everywhere from now on, and the languages you chose apply to your next sign-in and message."
+    },
+    "problemTitle": "The change could not be saved",
+    "problemBody": "Your profile is unchanged because the request could not be processed. Reload the page and try again.",
+    "unreachable": {
+      "title": "Your profile could not be loaded",
+      "body": "The server did not answer, so your profile cannot be shown right now. Nothing has changed.",
+      "action": "Reload the page in a few moments."
+    },
+    "identity": {
+      "heading": "About you",
+      "lede": "How your team sees you, and how we can reach you.",
+      "givenName": "Given name",
+      "familyName": "Family name",
+      "givenNameRequired": "Your given name is missing. Fill it in before saving.",
+      "familyNameRequired": "Your family name is missing. Fill it in before saving.",
+      "nameTooLong": "The name is longer than 100 characters. Shorten it before saving.",
+      "shownAs": "Shown in the application as: {name}",
+      "jobTitle": "Job title",
+      "optional": "Optional.",
+      "jobTitleTooLong": "The job title is longer than 100 characters. Shorten it before saving.",
+      "email": "Email",
+      "emailHelp": "It is the address you sign in with, and the one we write to.",
+      "phone": "Phone",
+      "phoneHelp": "Optional, with the country code. Used only if support needs to reach you about this account.",
+      "phoneTooLong": "The phone number is too long. Check it before saving."
+    },
+    "languages": {
+      "heading": "Languages",
+      "lede": "Three separate choices. Reading the interface in English does not oblige you to file in English.",
+      "interface": "Interface language",
+      "interfaceHelp": "What you read the application in.",
+      "export": "Default export language",
+      "exportHelp": "The language your exports will start in.",
+      "email": "Email language",
+      "emailHelp": "The language of every message this platform sends you."
+    },
+    "notifications": {
+      "heading": "What reaches you, and where",
+      "lede": "In-app notices arrive in the notification centre; emails follow the language above.",
+      "unnamed": "Other notifications",
+      "locked": "Cannot be turned off — the account depends on it. Reaches you: {channels}.",
+      "channel": {
+        "in_app": "In the app",
+        "email": "By email"
+      }
+    },
+    "loading": "Loading your profile."
   }
 }

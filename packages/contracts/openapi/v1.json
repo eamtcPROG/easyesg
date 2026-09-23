@@ -511,6 +511,88 @@
         ]
       }
     },
+    "/api/v1/account/profile": {
+      "get": {
+        "description": "Their name as two parts and as every surface shows it, the address they sign in with, an optional job title and phone number, and the three languages they chose: the interface’s, email’s and the export default.",
+        "operationId": "ProfileController_read",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The profile.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AccountProfileResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Read the signed-in person’s profile",
+        "tags": [
+          "identity"
+        ]
+      },
+      "put": {
+        "description": "Replaces every field but the address, which is how the person signs in. A rename shows everywhere at once; a new interface language applies on every later sign-in and device, and a new email language to the next message sent.",
+        "operationId": "ProfileController_save",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAccountProfileRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The profile, as saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/AccountProfileResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A name part is missing, or the phone number is not in international form (problem type validation-failed). Nothing was saved.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Save the signed-in person’s profile",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
     "/api/v1/auth/session": {
       "post": {
         "description": "Verifies the credential and issues a session: a short-lived access token and a single-use refresh token. Failures are uniform for unknown addresses and wrong passwords alike, rate-limited per address, and locked out after repeated failure.",
@@ -6234,6 +6316,144 @@
           "password"
         ]
       },
+      "AccountProfileResponseDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "The sign-in address, which is also where the platform writes to. Changed nowhere on this route."
+          },
+          "givenName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for an account that has never given one."
+          },
+          "familyName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for an account that has never given one."
+          },
+          "displayName": {
+            "type": "string",
+            "description": "The name every surface shows, derived from the two parts and never stored — the address where neither is given."
+          },
+          "monogram": {
+            "type": "string",
+            "nullable": true,
+            "description": "The initials beside it; null where no part is given."
+          },
+          "jobTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "International form, digits only after the `+`."
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ]
+          },
+          "emailLocale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ]
+          },
+          "exportLocale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "givenName",
+          "familyName",
+          "displayName",
+          "monogram",
+          "jobTitle",
+          "phone",
+          "locale",
+          "emailLocale",
+          "exportLocale"
+        ]
+      },
+      "SaveAccountProfileRequestDto": {
+        "type": "object",
+        "properties": {
+          "givenName": {
+            "type": "string",
+            "example": "Ana",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "familyName": {
+            "type": "string",
+            "example": "Rusu",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "jobTitle": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100,
+            "example": "Financial controller",
+            "description": "Optional. Omitted, null or blank clears it."
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 32,
+            "example": "+373 69 123 456",
+            "description": "Optional, in international form — `+`, the country code and the number; spaces, dashes and brackets are accepted and not kept. Used only for support to reach the person about their account. Omitted, null or blank clears it."
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ],
+            "description": "The interface’s language (FR-10)."
+          },
+          "emailLocale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ],
+            "description": "The language every message to this person is written in (FR-169)."
+          },
+          "exportLocale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ],
+            "description": "The language an export starts from; each export can choose another (FR-52)."
+          }
+        },
+        "required": [
+          "givenName",
+          "familyName",
+          "locale",
+          "emailLocale",
+          "exportLocale"
+        ]
+      },
       "SessionAccountDto": {
         "type": "object",
         "properties": {
@@ -9059,6 +9279,11 @@
           "categoryName": {
             "type": "string",
             "description": "The category’s name in the negotiated language. Absent when unusable, or when none is written."
+          },
+          "recipient": {
+            "type": "string",
+            "example": "a•••@lina.md",
+            "description": "Whose emails the link stops: the recipient’s address, masked, for a reader who may not be that person. Absent when unusable."
           }
         },
         "required": [

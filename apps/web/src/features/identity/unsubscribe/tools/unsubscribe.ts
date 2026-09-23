@@ -23,6 +23,11 @@ export type UnsubscribeView =
       readonly kind: typeof UNSUBSCRIBE_VIEW.CONFIRM | typeof UNSUBSCRIBE_VIEW.SWITCHED_OFF;
       /** The category's name as the api resolved it, or `null` where none is written — worded without one. */
       readonly categoryName: string | null;
+      /**
+       * Whose emails the link stops, masked by the api — named because the reader may not be the recipient (a forwarded
+       * link; task 52's close). Empty only for an answer from before the api named it.
+       */
+      readonly recipient: string;
     }
   | { readonly kind: typeof UNSUBSCRIBE_VIEW.UNUSABLE | typeof UNSUBSCRIBE_VIEW.UNREACHABLE };
 
@@ -30,11 +35,12 @@ export type UnsubscribeView =
 export const unsubscribeView = (preview: UnsubscribeAnswer | null): UnsubscribeView => {
   if (preview === null) return { kind: UNSUBSCRIBE_VIEW.UNREACHABLE };
   const categoryName = preview.categoryName ?? null;
+  const recipient = preview.recipient ?? '';
   switch (preview.standing) {
     case UNSUBSCRIBE_STANDING.AVAILABLE:
-      return { kind: UNSUBSCRIBE_VIEW.CONFIRM, categoryName };
+      return { kind: UNSUBSCRIBE_VIEW.CONFIRM, categoryName, recipient };
     case UNSUBSCRIBE_STANDING.SWITCHED_OFF:
-      return { kind: UNSUBSCRIBE_VIEW.SWITCHED_OFF, categoryName };
+      return { kind: UNSUBSCRIBE_VIEW.SWITCHED_OFF, categoryName, recipient };
     case UNSUBSCRIBE_STANDING.UNUSABLE:
       return { kind: UNSUBSCRIBE_VIEW.UNUSABLE };
   }

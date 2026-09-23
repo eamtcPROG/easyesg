@@ -98,7 +98,11 @@ describe('email template rendering (OQ-43)', () => {
     expect(withFooter.body.startsWith(without.body)).toBe(true);
     expect(withFooter.body).toContain(UNSUBSCRIBE.link);
     expect(withFooter.body).not.toContain(UNSUBSCRIBE.oneClickUrl);
-    expect(without.body).not.toContain('unsubscribe');
+    // The footer's own words, absent from the bare body — a renderer appending it to every email, link empty, would
+    // leave them there (task 52's close review; the footers never contain the word *unsubscribe*).
+    const footerOpening = withFooter.body.slice(without.body.length).trim().split('\n')[0];
+    expect(footerOpening.length).toBeGreaterThan(0);
+    expect(without.body).not.toContain(footerOpening);
   });
 
   it('renders differently per locale, so nothing is falling back to one language', () => {
