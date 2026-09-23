@@ -52,6 +52,7 @@ interface AccessRowWire {
   readonly displayName: string | null;
   readonly role: MembershipRole;
   readonly standing: AccessStanding;
+  readonly emailSuppressed: boolean;
   readonly accountId: string | null;
   readonly joinedAt: number | null;
   readonly lastActiveAt: number | null;
@@ -74,6 +75,7 @@ const toAccessRow = (row: AccessRowWire): AccessRow =>
         email: row.email,
         role: row.role,
         standing: row.standing,
+        emailSuppressed: row.emailSuppressed,
         accountId: row.accountId as string,
         // Asserted with `accountId` and for the same reason: the API derives it with `email` as
         // the last fallback, so the member half of the union can never answer null.
@@ -87,6 +89,7 @@ const toAccessRow = (row: AccessRowWire): AccessRow =>
         email: row.email,
         role: row.role,
         standing: row.standing,
+        emailSuppressed: row.emailSuppressed,
         issuedAt: row.issuedAt as number,
         expiresAt: row.expiresAt as number,
       };

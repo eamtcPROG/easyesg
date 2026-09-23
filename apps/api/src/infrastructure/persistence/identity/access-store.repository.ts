@@ -17,6 +17,20 @@ import {
   type AccessStanding,
 } from '@api/modules/identity/access/models/access.model';
 
+/**
+ * Whether this address is on FR-171's list (task 51.4; §12.5.6's task-51.4 row).
+ *
+ * **A join from rows the tenant already owns**, which is what makes reading a table with no RLS safe here:
+ * `notification.suppressed_address` is platform-wide because a bounced mailbox is undeliverable for
+ * everyone, and this correlated `EXISTS` can only ever ask about an address already on a membership or an
+ * invitation of the bound organization. An administrator learns nothing about a mailbox they do not hold.
+ *
+ * `lower()` rather than `suppressionKey()`: the column is written normalised and carries a `CHECK` saying
+ * so, so this is the same normalisation on the reading side, in the one language that can do it here.
+ */
+const SUPPRESSED_SQL = (address: string): string =>
+  `EXISTS (SELECT 1 FROM notification.suppressed_address s WHERE s.address_key = lower(${address}))`;
+
 interface AccessDbRow {
   kind: string;
   id: string;
@@ -29,6 +43,7 @@ interface AccessDbRow {
   last_active_at: Date | null;
   issued_at: Date | null;
   expires_at: Date | null;
+  email_suppressed: boolean;
 }
 
 /**
@@ -121,7 +136,8 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
            '${ACCESS_STANDING.ACTIVE}' AS standing,
            COALESCE(m.last_active_at, m.created_at) AS activity_at,
            m.account_id, m.created_at AS joined_at, m.last_active_at,
-           NULL::timestamptz AS issued_at, NULL::timestamptz AS expires_at
+           NULL::timestamptz AS issued_at, NULL::timestamptz AS expires_at,
+           ${SUPPRESSED_SQL('a.email')} AS email_suppressed
       FROM identity.membership m
       JOIN identity.account a ON a.id = m.account_id
      WHERE m.status = '${MEMBERSHIP_STATUS.ACTIVE}'
@@ -136,7 +152,8 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
                 ELSE '${ACCESS_STANDING.INVITED}' END,
            i.issued_at,
            NULL::uuid, NULL::timestamptz, NULL::timestamptz,
-           i.issued_at, i.expires_at
+           i.issued_at, i.expires_at,
+           ${SUPPRESSED_SQL('i.invited_email')}
       FROM identity.invitation i
      WHERE i.status = '${INVITATION_STATUS.PENDING}'
   `;
@@ -174,7 +191,7 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
     const rows = await this.manager.query<AccessDbRow[]>(
       `WITH access AS (${this.union})
        SELECT kind, id, email, display_name, role, standing, account_id, joined_at, last_active_at,
-              issued_at, expires_at
+              issued_at, expires_at, email_suppressed
          FROM access
         WHERE ${this.matches}
         ORDER BY ${AccessStoreRepository.ORDER_BY[query.sort]} ${query.descending ? 'DESC' : 'ASC'},
@@ -211,6 +228,7 @@ const toAccessRow = (row: AccessDbRow): AccessRow =>
         displayName: row.display_name as string,
         role: row.role,
         standing: ACCESS_STANDING.ACTIVE,
+        emailSuppressed: row.email_suppressed,
         accountId: row.account_id as string,
         lastActiveAt: row.last_active_at,
         joinedAt: row.joined_at as Date,
@@ -221,6 +239,7 @@ const toAccessRow = (row: AccessDbRow): AccessRow =>
         email: row.email,
         role: row.role,
         standing: row.standing,
+        emailSuppressed: row.email_suppressed,
         issuedAt: row.issued_at as Date,
         expiresAt: row.expires_at as Date,
       };

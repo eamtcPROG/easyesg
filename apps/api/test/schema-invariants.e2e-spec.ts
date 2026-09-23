@@ -528,9 +528,14 @@ const NOTIFICATION_PRIVILEGES = [
   'esg_admin_ro notification.cancellation SELECT table',
   'esg_admin_ro notification.delivery SELECT table',
   'esg_admin_ro notification.notification SELECT table',
+  // FR-171's list (task 51.4). The worker learns and writes; the request tier only reads, because S-16 shows a
+  // suppressed member; `esg_admin_ro` reads it like everything else. Nobody may DELETE — an address coming back
+  // to life is a support action, not an application one.
+  'esg_admin_ro notification.suppressed_address SELECT table',
   'esg_app notification.delivery SELECT table',
   'esg_app notification.delivery UPDATE columns',
   'esg_app notification.notification SELECT columns',
+  'esg_app notification.suppressed_address SELECT table',
   'esg_worker notification.cancellation INSERT table',
   'esg_worker notification.cancellation SELECT table',
   'esg_worker notification.cancellation UPDATE table',
@@ -539,6 +544,8 @@ const NOTIFICATION_PRIVILEGES = [
   'esg_worker notification.notification INSERT table',
   'esg_worker notification.notification SELECT table',
   'esg_worker notification.notification UPDATE table',
+  'esg_worker notification.suppressed_address INSERT table',
+  'esg_worker notification.suppressed_address SELECT table',
 ];
 
 const notificationPrivileges = (x: Executor) =>

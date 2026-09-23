@@ -497,6 +497,30 @@ reading to see:
   category's name from `notification.<category>.name` (§12.5.6's task-50.2 row (3)); a key with no entry leaves the
   member absent.
 
+**What the provider reports back, and the address it refuses** (task 51.4; §12.5.6's task-51.4 row; FR-170,
+FR-171, NFR-107). `EmailChannelService` owns both ends, because it is the one caller of `EmailPort` — a second
+caller would be a second place to forget them. Four things to know:
+
+- **A hard bounce needs evidence about the ADDRESS, not a 5xx.** The adapter classifies onto `EMAIL_FAILURE`'s
+  two members, and only a *rejected recipient* carrying a 5xx reply is permanent: `535` is *authentication
+  failed*, so a reply-code check would have suppressed every address a mistyped SMTP password was written to,
+  with no `DELETE` grant to undo it. The two mistakes are not symmetric — a real bounce read as transient costs
+  eleven retries and a visible failed job. **`sendMail` resolves when some recipient was accepted**, so the
+  resolved path is read for `rejected` too, or a refusal would be recorded as an acceptance.
+- **`notification.suppressed_address` carries no `organization_id` and no RLS**, like `audit.outbox_event`: a
+  bounced mailbox is undeliverable for every tenant. The worker writes it, `esg_app` only reads it, and S-16's
+  read is a correlated `EXISTS` from rows the tenant already owns, so an administrator learns nothing about a
+  mailbox they do not hold. The key is `suppressionKey`'s — lower-cased — and a `CHECK` says so, so a writer
+  that skips it is refused rather than trusted.
+- **A hard bounce must not throw**, and that asymmetry is NFR-107. The channel records `bounced` and returns, so
+  the job succeeds; only a transient failure throws, and only a throw retries. `DELIVERY_RETRY` in the outbox
+  dispatcher is eleven attempts on an exponential backoff from a minute — about 17 hours, inside the 24 the
+  requirement fixes, where a twelfth would put it past 34.
+- **A suite that suppresses an address must clear it** (`clearSuppressedAddresses`). Nothing cascades: the table
+  hangs off no notice and has no organization. The first run of `notification-store.e2e-spec.ts`'s bounce case
+  left the row behind and the *second* run watched four unrelated cases send nothing — the cleanup rule's mirror
+  image, *what does this suite create that it does not remove?*
+
 **A cancellation outlives its notice, and every job carries its outbox row's time** (task 50.1.3; §12.5.6's
 task-50.1 rows (12), (13)). `NotificationPort.cancel()` names the raise's key and writes an outbox event on the
 producer's transaction; `NotificationCancelledHandler` applies it. Four things hold the ordering, and each has a case

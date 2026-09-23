@@ -1,5 +1,6 @@
 import type { Locale } from '@easyesg/i18n';
 import type { NotificationCategoryKey } from '@api/contracts/notification.port';
+import type { DeliveryOutcome } from '../models/notification-record.model';
 
 /**
  * One category's email to one address, as the channel hands it to the provider. It was `NOTIFICATION_EMAIL_PORT`'s
@@ -33,8 +34,16 @@ export interface NotificationEmail {
  * use case records it once this resolves. A resolved `send` is the provider's acceptance, and a rejected one records
  * nothing.
  */
+/**
+ * What became of one message (task 51.4). `accepted`, `bounced` or `suppressed` — the three the channel can
+ * answer with, where a transient failure throws instead so the job retries (NFR-107).
+ */
+export interface EmailChannelResult {
+  readonly outcome: DeliveryOutcome;
+}
+
 export interface EmailChannel {
-  send(email: NotificationEmail): Promise<void>;
+  send(email: NotificationEmail): Promise<EmailChannelResult>;
 }
 
 export const EMAIL_CHANNEL = Symbol('EMAIL_CHANNEL');

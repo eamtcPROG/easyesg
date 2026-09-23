@@ -2,7 +2,13 @@ import { randomUUID } from 'node:crypto';
 import type { DataSource } from 'typeorm';
 import { SOURCE_LOCALE } from '@easyesg/i18n';
 import { NOTICE_APPLICATION } from '../src/contracts/notification-delivery.port';
-import type { EmailDispatched, EmailMessage, EmailPort } from '../src/contracts/email.port';
+import {
+  EMAIL_FAILURE,
+  EmailSendFailed,
+  type EmailDispatched,
+  type EmailMessage,
+  type EmailPort,
+} from '../src/contracts/email.port';
 import { NOTIFICATION_CATEGORY } from '../src/contracts/notification.port';
 import { NotificationRecipientsRepository } from '../src/infrastructure/persistence/identity/notification-recipients.repository';
 import { NotificationOutboxRepository } from '../src/infrastructure/persistence/platform/notification-outbox.repository';
@@ -19,7 +25,7 @@ import { CancelNotification } from '../src/modules/platform/notification/use-cas
 import { NOTIFICATION_CHANNEL } from '../src/modules/platform/notification/models/notification-category.model';
 import { DeliverNotification } from '../src/modules/platform/notification/use-cases/deliver-notification.use-case';
 import { asOrganization, connectAs } from './support/database';
-import { asJob, deleteNotificationsOf, notificationStore, OCCURRED_MICROS } from './support/notification-store';
+import { asJob, clearSuppressedAddresses, deleteNotificationsOf, notificationStore, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
 
 /**
  * **The notification store** — task 50.1.1's expected result over the real schema, grants and policies: a raised
@@ -89,6 +95,7 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
     };
     ana = await account('ana', 'ro');
     ivan = await account('ivan', 'ru');
+    await clearSuppressedAddresses(owner, [addressFor('ana'), addressFor('ivan')]);
   }, 30_000);
 
   /** The raised notice's handler over the real store, the channel decision answering both channels. */
@@ -96,7 +103,7 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
     new NotificationRaisedHandler(
       new DeliverNotification(
         new NotificationRecipientsRepository(worker),
-        new EmailChannelService(emailPort),
+        new EmailChannelService(emailPort, suppressionStore(worker)),
         { channelsFor: () => [NOTIFICATION_CHANNEL.IN_APP, NOTIFICATION_CHANNEL.EMAIL] },
         notificationStore(worker),
         'https://app.easyesg.md',
@@ -117,6 +124,10 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
       ORG,
     ]);
     if (owner) await deleteNotificationsOf(owner, ORG);
+    // Task 51.4: nothing cascades to the suppression list, and a run that leaves an address on it makes
+    // the NEXT run watch four unrelated cases send nothing. Cleared at both ends, so a crashed run
+    // cannot poison the one after it either.
+    if (owner) await clearSuppressedAddresses(owner, [addressFor('ana'), addressFor('ivan')]);
     await owner?.query(`DELETE FROM identity.account WHERE email LIKE $1`, [`${SUITE}-%@example.md`]);
     for (const source of [app, owner, worker]) if (source?.isInitialized) await source.destroy();
   });
@@ -217,6 +228,18 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
         run(`SELECT state FROM notification.notification WHERE id = $1`, [notificationId]),
       )) as { state: string }[]
     )[0]?.state;
+
+  /** FR-170's evidence for one recipient on the email channel (task 51.4). */
+  const outcomeOf = async (notificationId: string, accountId: string): Promise<string | undefined> =>
+    (
+      (await asOrganization(worker, ORG, (run) =>
+        run(
+          `SELECT outcome FROM notification.delivery
+            WHERE notification_id = $1 AND recipient_account_id = $2 AND channel = 'email'`,
+          [notificationId, accountId],
+        ),
+      )) as { outcome: string }[]
+    )[0]?.outcome;
 
   const noticesAbout = (subjectRef: string) =>
     asOrganization(
@@ -407,6 +430,45 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
 
     expect(provider.sent).toEqual([]);
     expect(await stateOf(opened)).toBe('cancelled');
+  });
+
+  /**
+   * FR-171 and NFR-107 end to end (task 51.4): the refusal, the list it writes, and the send it stops.
+   *
+   * **The second dispatch is the point.** A bounce recorded and nothing else would leave the platform writing to a
+   * dead mailbox for every later notice, which is the failure UC-174 names — an undeliverable address indistinguishable
+   * from a person ignoring their notices. So this asserts the row's outcome AND that the next notice never reaches the
+   * provider at all.
+   */
+  it('suppresses a hard-bounced address, records why, and never asks the provider again', async () => {
+    const bouncing: EmailPort = {
+      send: (message) =>
+        message.to === addressFor('ivan')
+          ? Promise.reject(new EmailSendFailed(EMAIL_FAILURE.HARD_BOUNCE, '550 5.1.1 no such user'))
+          : provider.send(message),
+    };
+    handler = raisedHandlerWith(bouncing);
+
+    const first = await raise({ recipientUserIds: [ivan], subjectRef: `${SUITE}:bounced` });
+    // It does NOT throw: a hard bounce is terminal, so the job succeeds and NFR-107's retry never spends an
+    // attempt on an address that will refuse every one of them.
+    await dispatch(first);
+
+    expect(await outcomeOf(first, ivan)).toBe('bounced');
+    const [row] = await worker.query<{ reason: string; detail: string }[]>(
+      `SELECT reason, detail FROM notification.suppressed_address WHERE address_key = $1`,
+      [addressFor('ivan').toLowerCase()],
+    );
+    expect(row).toEqual({ reason: 'hard_bounce', detail: '550 5.1.1 no such user' });
+
+    // A different notice, a provider that would happily accept it, and nothing is sent.
+    handler = raisedHandlerWith(provider);
+    provider.sent.length = 0;
+    const second = await raise({ recipientUserIds: [ivan], subjectRef: `${SUITE}:after-bounce` });
+    await dispatch(second);
+
+    expect(provider.sent).toEqual([]);
+    expect(await outcomeOf(second, ivan)).toBe('suppressed');
   });
 
   // Row (12)'s tie: a raise and a cancellation in one transaction share a time, and the cancellation wins either way.

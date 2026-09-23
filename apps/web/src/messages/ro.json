@@ -1035,6 +1035,7 @@
         "invited": "Invitat",
         "invitation_expired": "Invitație expirată"
       },
+      "suppressed": "Adresă nelivrabilă",
       "filters": {
         "role": "Rolul",
         "anyRole": "Toate rolurile",

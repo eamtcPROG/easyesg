@@ -48,6 +48,7 @@ const member = (over: Partial<MemberRow> = {}): MemberRow => ({
   displayName: 'Ana Popescu',
   role: MEMBERSHIP_ROLE.EDITOR,
   standing: ACCESS_STANDING.ACTIVE,
+  emailSuppressed: false,
   accountId: 'acc-1',
   lastActiveAt: null,
   joinedAt: 0,
@@ -73,6 +74,7 @@ describe('access · row identity', () => {
       email: 'b@example.md',
       role: MEMBERSHIP_ROLE.VIEWER,
       standing: ACCESS_STANDING.INVITED,
+      emailSuppressed: false,
       issuedAt: 0,
       expiresAt: 1,
     });
@@ -203,6 +205,7 @@ describe('access · FR-60 seen from the screen', () => {
       email: 'pending@example.md',
       role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
       standing: ACCESS_STANDING.INVITED,
+      emailSuppressed: false,
       issuedAt: 0,
       expiresAt: 1,
     };

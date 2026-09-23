@@ -9,6 +9,7 @@ import type {
   RecordEmailAcceptedCommand,
 } from '../interfaces/notification-store.interface';
 import type { NotificationChannel } from '../models/notification-category.model';
+import { DELIVERY_OUTCOME } from '../models/notification-record.model';
 import { DeliverLinkNotice, type LinkNoticeStore } from './deliver-link-notice.use-case';
 
 /**
@@ -64,7 +65,7 @@ describe('DeliverLinkNotice (task 50.1.4)', () => {
     const email: EmailChannel = {
       send: (message) => {
         sent.push(message);
-        return Promise.resolve();
+        return Promise.resolve({ outcome: DELIVERY_OUTCOME.ACCEPTED });
       },
     };
     const store = new FakeStore();

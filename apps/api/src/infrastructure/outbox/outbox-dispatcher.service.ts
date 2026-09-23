@@ -40,6 +40,28 @@ interface PendingEvent {
  * `SKIP LOCKED` is what lets more than one worker run: each claims a disjoint batch instead of
  * queueing behind the same rows.
  */
+/**
+ * NFR-107's bounded retry, as job options (task 51.4; §12.5.6's task-51.4 row).
+ *
+ * **Eleven attempts on an exponential backoff from a minute** — 60s, 120s, 240s … 61440s — which sums to
+ * about 17 hours and therefore lands the last attempt inside the 24 the requirement fixes. A twelfth would
+ * put it past 34 hours and outside it, which is why the count is stated here rather than rounded up to a
+ * comfortable number.
+ *
+ * **It belongs on the job rather than on a schedule of its own** because `DeliverNotification` already
+ * derives what is owed from what is recorded: a retried job re-sends only the recipients with no delivery
+ * row, so retrying the whole job costs nothing and reaches nobody twice. A second scheduler beside AD-10's
+ * would be the dual-write that decision exists to refuse.
+ *
+ * **A hard bounce never takes this path.** The channel records it and returns, so the job succeeds; only a
+ * transient failure throws, and only a throw retries. Retrying a refused address would spend all eleven
+ * attempts learning the same thing eleven times.
+ */
+export const DELIVERY_RETRY = {
+  attempts: 11,
+  backoff: { type: 'exponential', delay: 60_000 },
+} as const;
+
 @Injectable()
 export class OutboxDispatcher implements OnModuleInit, OnApplicationShutdown {
   private readonly logger = new Logger(OutboxDispatcher.name);
@@ -121,7 +143,7 @@ export class OutboxDispatcher implements OnModuleInit, OnApplicationShutdown {
             organizationId: event.organization_id,
             occurredAtMicros: Number(event.occurred_micros),
           },
-          { jobId: event.idempotency_key },
+          { jobId: event.idempotency_key, ...DELIVERY_RETRY },
         );
       }
 

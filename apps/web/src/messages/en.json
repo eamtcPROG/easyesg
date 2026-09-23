@@ -1035,6 +1035,7 @@
         "invited": "Invited",
         "invitation_expired": "Invitation expired"
       },
+      "suppressed": "Undeliverable address",
       "filters": {
         "role": "Role",
         "anyRole": "All roles",

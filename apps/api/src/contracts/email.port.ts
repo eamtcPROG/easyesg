@@ -51,6 +51,43 @@ export interface EmailDispatched {
   readonly providerMessageId?: string;
 }
 
+/**
+ * Why a send did not happen, as a platform fact rather than a provider's (task 51.4; §12.5.6's
+ * task-51.4 row). §12.5.2's third rule in practice: an SMTP reply code, a nodemailer error class and a
+ * future ESP's webhook payload all normalise to one of these two at the adapter, so no module branches
+ * on a vendor's spelling of *mailbox not found*.
+ *
+ * The distinction is the whole of NFR-107: one of them must never be retried and the other must.
+ */
+export const EMAIL_FAILURE = {
+  /** The provider refused the address outright — a 5xx reply, or the recipient rejected at send time. */
+  HARD_BOUNCE: 'hard_bounce',
+  /** A 4xx, a timeout, a dropped connection: the same message may well succeed on a later attempt. */
+  TRANSIENT: 'transient',
+} as const;
+
+export type EmailFailure = (typeof EMAIL_FAILURE)[keyof typeof EMAIL_FAILURE];
+
+/**
+ * What an adapter throws when a send does not happen.
+ *
+ * Not a `DomainError`: nothing here becomes an HTTP response. Mail is sent on the worker, where the
+ * caller is a queue consumer and the audience is a delivery record and an operator reading a log.
+ *
+ * `detail` is the provider's own words, kept for support and **never shown to anyone** — it is the one
+ * place a vendor string is allowed to survive, because a bounce nobody can diagnose is a support ticket
+ * that ends in a shrug. It is written to `notification.suppressed_address.detail` and nowhere else.
+ */
+export class EmailSendFailed extends Error {
+  constructor(
+    readonly failure: EmailFailure,
+    readonly detail: string,
+  ) {
+    super(`email send failed: ${failure}`);
+    this.name = 'EmailSendFailed';
+  }
+}
+
 export interface EmailPort {
   send(message: EmailMessage): Promise<EmailDispatched>;
 }

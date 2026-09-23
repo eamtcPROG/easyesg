@@ -136,7 +136,8 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
           command.organizationId,
           toAccount ? command.recipient.accountId : command.recipient.address,
           NOTIFICATION_CHANNEL.EMAIL,
-          DELIVERY_OUTCOME.ACCEPTED,
+          // The channel decided it (task 51.4), not this adapter: accepted, bounced or suppressed.
+          command.outcome,
         ],
       );
     });

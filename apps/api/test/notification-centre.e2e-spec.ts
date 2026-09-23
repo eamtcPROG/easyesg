@@ -10,6 +10,7 @@ import { NOTIFICATION_CATEGORY, type NotificationCategoryKey } from '../src/cont
 import { configureHttpApp } from '../src/main.http';
 import { returnedRows } from '../src/infrastructure/persistence/returned-rows';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
+import { DELIVERY_OUTCOME } from '../src/modules/platform/notification/models/notification-record.model';
 import { asOrganization, connectAs } from './support/database';
 import { deleteNotificationsOf, notificationStore } from './support/notification-store';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
@@ -98,7 +99,7 @@ describe('the notification centre (tasks 50.1.2, 50.2.1)', () => {
       params: { organizationName: 'Centru SRL' },
     });
     if (input.inApp.length > 0) await store.deliverInApp({ ...ref, recipientIds: input.inApp });
-    for (const accountId of input.email ?? []) await store.recordEmailAccepted({ ...ref, recipient: { accountId } });
+    for (const accountId of input.email ?? []) await store.recordEmailAccepted({ ...ref, outcome: DELIVERY_OUTCOME.ACCEPTED, recipient: { accountId } });
     await store.markDelivered(ref);
   };
 

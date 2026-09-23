@@ -6898,6 +6898,10 @@
             ],
             "description": "Derived server-side from now(): a member is always active, and a pending invitation is invited or invitation_expired according to its own expiry. Expired invitations are published rather than hidden — an expired one is what refuses a re-invite with a 409, so hiding it would leave an administrator holding a conflict they cannot see or resend."
           },
+          "emailSuppressed": {
+            "type": "boolean",
+            "description": "FR-171: this address hard-bounced, so nothing is sent to it any more. Cuts across standing rather than replacing it — an invitation can be both invited and undeliverable, which is the case an administrator most needs to see, since no acceptance can ever arrive."
+          },
           "accountId": {
             "type": "object",
             "format": "uuid",
@@ -6932,6 +6936,7 @@
           "displayName",
           "role",
           "standing",
+          "emailSuppressed",
           "accountId",
           "joinedAt",
           "lastActiveAt",

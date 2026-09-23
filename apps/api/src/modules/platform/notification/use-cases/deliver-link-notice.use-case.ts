@@ -92,7 +92,9 @@ export class DeliverLinkNotice {
     if (record.state === NOTIFICATION_STATE.CANCELLED) return { skipped: null };
 
     if (!record.delivered.some((delivery) => delivery.channel === NOTIFICATION_CHANNEL.EMAIL)) {
-      await this.email.send({
+      // Task 51.4: accepted, bounced or suppressed. A verification link to a dead mailbox is recorded as
+      // refused rather than as sent, which is what lets support tell those two apart.
+      const { outcome } = await this.email.send({
         categoryKey: command.categoryKey,
         ...(command.templateKey === undefined ? {} : { templateKey: command.templateKey }),
         to: recipient.address,
@@ -100,7 +102,7 @@ export class DeliverLinkNotice {
         params: { ...command.params, link },
         idempotencyKey: command.issuanceKey,
       });
-      await this.store.recordEmailAccepted({ ...ref, recipient: recipient.recorded });
+      await this.store.recordEmailAccepted({ ...ref, recipient: recipient.recorded, outcome });
     }
     await this.store.markDelivered(ref);
     return { skipped: null };

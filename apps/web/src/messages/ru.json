@@ -1035,6 +1035,7 @@
         "invited": "Приглашён",
         "invitation_expired": "Приглашение истекло"
       },
+      "suppressed": "Недоставляемый адрес",
       "filters": {
         "role": "Роль",
         "anyRole": "Все роли",

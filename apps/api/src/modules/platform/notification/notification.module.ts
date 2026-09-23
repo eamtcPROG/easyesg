@@ -11,6 +11,7 @@ import { NotificationRecipientsRepository } from '@api/infrastructure/persistenc
 import { NotificationCentreStoreRepository } from '@api/infrastructure/persistence/platform/notification-centre-store.repository';
 import { NotificationOutboxRepository } from '@api/infrastructure/persistence/platform/notification-outbox.repository';
 import { NotificationStoreRepository } from '@api/infrastructure/persistence/platform/notification-store.repository';
+import { SuppressionStoreRepository } from '@api/infrastructure/persistence/platform/suppression-store.repository';
 import { NotificationCancelledHandler } from './consumers/notification-cancelled.handler';
 import { NotificationRaisedHandler } from './consumers/notification-raised.handler';
 import { NotificationCentreController } from './controllers/notification-centre.controller';
@@ -24,6 +25,7 @@ import {
   type NotificationCentreStore,
 } from './interfaces/notification-centre-store.interface';
 import { NOTIFICATION_STORE, type NotificationStore } from './interfaces/notification-store.interface';
+import { SUPPRESSION_STORE } from './interfaces/suppression-store.interface';
 import { CategoryChannels } from './services/category-channels.service';
 import { EmailChannelService } from './services/email-channel.service';
 import { NotificationCategoryCatalog } from './services/notification-category-catalog.service';
@@ -88,6 +90,9 @@ const workerProviders: Provider[] = [
   { provide: NOTIFICATION_STORE, useClass: NotificationStoreRepository },
   // One repository, two narrow ports: the delivery flow never withdraws and the withdrawal never delivers.
   { provide: NOTIFICATION_CANCELLATION_STORE, useExisting: NOTIFICATION_STORE },
+  // FR-171's list (task 51.4). Its own repository rather than the notice store's third face: it binds no
+  // tenant, because the table it writes carries none.
+  { provide: SUPPRESSION_STORE, useClass: SuppressionStoreRepository },
   {
     // Framework-free, so `useFactory` over its ports (`apps/api/CLAUDE.md`, "No `@Injectable` means no `useClass`").
     provide: DeliverNotification,

@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import type { EmailMessage } from '@api/contracts/email.port';
+import { EMAIL_FAILURE, EmailSendFailed, type EmailMessage } from '@api/contracts/email.port';
 import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
 import { initialiseCatalogue } from '@api/app/messages/catalogue';
 
@@ -97,7 +97,63 @@ describe('SmtpEmailAdapter', () => {
    */
   it('propagates a send failure instead of reporting success', async () => {
     sendMail.mockRejectedValue(new Error('535 authentication failed'));
-    await expect(new SmtpEmailAdapter(SETTINGS).send(MESSAGE)).rejects.toThrow(/535/);
+    await expect(new SmtpEmailAdapter(SETTINGS).send(MESSAGE)).rejects.toThrow(EmailSendFailed);
+  });
+
+  /**
+   * Task 51.4's classification, and **this case is why it is not a reply-code check**.
+   *
+   * `535` is *authentication failed* — this platform's own credentials, not the recipient's mailbox.
+   * Read as a hard bounce it would suppress every address the misconfigured transport wrote to, with
+   * no `DELETE` grant to undo it. The two mistakes are not symmetric, so the evidence must name the
+   * recipient before anything is suppressed.
+   */
+  it('calls an authentication failure TRANSIENT, whatever its 5xx code, so no address is suppressed', async () => {
+    sendMail.mockRejectedValue(Object.assign(new Error('535 authentication failed'), { responseCode: 535 }));
+
+    await expect(new SmtpEmailAdapter(SETTINGS).send(MESSAGE)).rejects.toMatchObject({
+      failure: EMAIL_FAILURE.TRANSIENT,
+      detail: '535 authentication failed',
+    });
+  });
+
+  it('calls a rejected recipient with a 5xx reply a hard bounce', async () => {
+    sendMail.mockRejectedValue(
+      Object.assign(new Error('550 no such user'), {
+        rejected: ['ana@example.md'],
+        rejectedErrors: [{ responseCode: 550 }],
+      }),
+    );
+
+    await expect(new SmtpEmailAdapter(SETTINGS).send(MESSAGE)).rejects.toMatchObject({
+      failure: EMAIL_FAILURE.HARD_BOUNCE,
+    });
+  });
+
+  // A 4xx rejection is *not now*: greylisting answers exactly this way, and suppressing on it would
+  // make a routine delay permanent.
+  it('calls a rejected recipient with a 4xx reply transient', async () => {
+    sendMail.mockRejectedValue(
+      Object.assign(new Error('450 try later'), {
+        rejected: ['ana@example.md'],
+        rejectedErrors: [{ responseCode: 450 }],
+      }),
+    );
+
+    await expect(new SmtpEmailAdapter(SETTINGS).send(MESSAGE)).rejects.toMatchObject({
+      failure: EMAIL_FAILURE.TRANSIENT,
+    });
+  });
+
+  // `sendMail` RESOLVES when some recipient was accepted, so reading only the thrown case would
+  // record a refusal as an acceptance.
+  it('reads a rejected recipient on a RESOLVED send as a hard bounce', async () => {
+    sendMail.mockResolvedValue({ messageId: 'm-1', rejected: ['ana@example.md'], response: '550 no such user' });
+
+    await expect(new SmtpEmailAdapter(SETTINGS).send(MESSAGE)).rejects.toMatchObject({
+      failure: EMAIL_FAILURE.HARD_BOUNCE,
+      detail: '550 no such user',
+    });
   });
 
   /** NFR-30: an operational log line carries no recipient address. */

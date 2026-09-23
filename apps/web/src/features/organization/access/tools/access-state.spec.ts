@@ -22,6 +22,7 @@ import {
 const ROW: AccessRow = {
   kind: ACCESS_ROW_KIND.INVITATION,
   standing: ACCESS_STANDING.INVITED,
+  emailSuppressed: false,
   id: 'i-1',
   email: 'bogdan@example.md',
   role: MEMBERSHIP_ROLE.EDITOR,

@@ -3,6 +3,7 @@ import type { EmailPort } from '@api/contracts/email.port';
 import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
 import { NotificationRecipientsRepository } from '@api/infrastructure/persistence/identity/notification-recipients.repository';
 import { NotificationStoreRepository } from '@api/infrastructure/persistence/platform/notification-store.repository';
+import { SuppressionStoreRepository } from '@api/infrastructure/persistence/platform/suppression-store.repository';
 import { NOTIFICATION_CHANNEL } from '@api/modules/platform/notification/models/notification-category.model';
 import { EmailChannelService } from '@api/modules/platform/notification/services/email-channel.service';
 import { NotificationDeliveryService } from '@api/modules/platform/notification/services/notification-delivery.service';
@@ -15,6 +16,10 @@ import { required } from './database';
  */
 export const notificationStore = (worker: DataSource): NotificationStoreRepository =>
   new NotificationStoreRepository(worker, new AesGcmSecretCipher(required('SECRET_ENCRYPTION_KEY')));
+
+/** `SUPPRESSION_STORE` over the same connection (task 51.4). It binds no tenant: the table carries none. */
+export const suppressionStore = (worker: DataSource): SuppressionStoreRepository =>
+  new SuppressionStoreRepository(worker);
 
 /**
  * `NOTIFICATION_DELIVERY` as the worker builds it, over a connection as `esg_worker` and a provider the suite records
@@ -32,7 +37,7 @@ export const linkNoticeDelivery = (input: {
   new NotificationDeliveryService(
     new DeliverLinkNotice(
       new NotificationRecipientsRepository(input.worker),
-      new EmailChannelService(input.provider),
+      new EmailChannelService(input.provider, suppressionStore(input.worker)),
       { channelsFor: () => [NOTIFICATION_CHANNEL.EMAIL] },
       notificationStore(input.worker),
       { web: input.webOrigin, console: input.consoleOrigin ?? 'http://localhost:3200' },
@@ -108,4 +113,26 @@ export const deleteNoticesAbout = async (owner: DataSource, subjectRefs: readonl
   } finally {
     await runner.release();
   }
+};
+
+/**
+ * Clears FR-171's list for the addresses a suite bounced (task 51.4).
+ *
+ * **A suite that suppresses an address and does not clear it is not repeatable**, and this helper exists
+ * because that is exactly what happened: the first run of `notification-store.e2e-spec.ts`'s bounce case
+ * left the address suppressed, and the second run watched four unrelated cases send nothing and fail on
+ * an empty `provider.sent`. Nothing cascades here — the table hangs off no notice and has no
+ * `organization_id` — so it is cleaned by name or not at all.
+ *
+ * **As the owner, and no `FORCE` dance**: the table carries no RLS, because a bounced mailbox is
+ * undeliverable for every tenant. It is the one table in this schema a `DELETE` reaches plainly.
+ */
+export const clearSuppressedAddresses = async (
+  owner: DataSource,
+  addresses: readonly string[],
+): Promise<void> => {
+  if (addresses.length === 0) return;
+  await owner.query(`DELETE FROM notification.suppressed_address WHERE address_key = ANY($1)`, [
+    addresses.map((address) => address.toLowerCase()),
+  ]);
 };

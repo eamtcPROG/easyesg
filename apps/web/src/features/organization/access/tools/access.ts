@@ -73,6 +73,15 @@ interface AccessRowShared {
    * response. The screen renders what the filter matched on.
    */
   readonly standing: AccessStanding;
+  /**
+   * FR-171: this address hard-bounced, so nothing is sent to it any more (task 51.4).
+   *
+   * **Derived by the server like `standing` above**, and for the same reason: the fact lives in a table
+   * only the api can read. It cuts across standing rather than replacing it — an invitation can be both
+   * invited and undeliverable, which is exactly the row an administrator needs to notice, since no
+   * acceptance can ever arrive.
+   */
+  readonly emailSuppressed: boolean;
 }
 
 export interface MemberRow extends AccessRowShared {

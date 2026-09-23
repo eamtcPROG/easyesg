@@ -2,7 +2,7 @@ import type { NoticeApplication } from '@api/contracts/notification-delivery.por
 import type { NotificationCategoryKey } from '@api/contracts/notification.port';
 import type { EpochMicros } from '@api/contracts/types/time';
 import type { NotificationChannel } from '../models/notification-category.model';
-import type { NotificationState } from '../models/notification-record.model';
+import type { DeliveryOutcome, NotificationState } from '../models/notification-record.model';
 
 /**
  * The notification store, as the delivery flow asks it (task 50.1.1; §12.5.6's task-50.1 row; FR-160, FR-167,
@@ -66,6 +66,12 @@ export interface DeliverInAppCommand extends NoticeRef {
 
 export interface RecordEmailAcceptedCommand extends NoticeRef {
   readonly recipient: RecordedRecipient;
+  /**
+   * What became of it (task 51.4): `accepted`, `bounced` or `suppressed`. The row is the evidence FR-170 asks
+   * for, so a refusal is recorded as deliberately as an acceptance — an address nobody wrote to and an address
+   * that refused are different answers to UC-174's question.
+   */
+  readonly outcome: DeliveryOutcome;
 }
 
 /** Whom a delivery names: an account, or — for someone who holds none — the address it went to (row (16)). */

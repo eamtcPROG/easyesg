@@ -82,6 +82,7 @@ const rows = (): AccessRow[] => [
     displayName: 'Ana Popescu',
     role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
     standing: ACCESS_STANDING.ACTIVE,
+    emailSuppressed: false,
     lastActiveAt: NOW - DAY,
     joinedAt: NOW - 30 * DAY,
   },
@@ -91,6 +92,7 @@ const rows = (): AccessRow[] => [
     email: 'bogdan@example.md',
     role: MEMBERSHIP_ROLE.EDITOR,
     standing: ACCESS_STANDING.INVITED,
+    emailSuppressed: false,
     issuedAt: NOW - DAY,
     expiresAt: NOW + 6 * DAY,
   },
@@ -100,6 +102,7 @@ const rows = (): AccessRow[] => [
     email: 'corina@example.md',
     role: MEMBERSHIP_ROLE.VIEWER,
     standing: ACCESS_STANDING.INVITED,
+    emailSuppressed: false,
     issuedAt: NOW - DAY,
     expiresAt: NOW + 6 * DAY,
   },
@@ -269,6 +272,26 @@ describe('AccessBoard · the person column (UX-137, task 140)', () => {
     // equality rather than two `toHaveTextContent`s: it is what fails if either line is dropped
     // AND if a third thing is ever rendered into the cell.
     expect(personCell(0).textContent).toBe('Ana Popescuana@example.md');
+  });
+
+  // FR-171 on screen (task 51.4): a chip beside the standing, not instead of it.
+  it('says an invitation is undeliverable WITHOUT replacing what standing it holds', () => {
+    const suppressed = rows();
+    suppressed[1] = { ...suppressed[1], emailSuppressed: true };
+    render(board(suppressed));
+
+    const row = screen.getAllByRole('row')[2];
+
+    // Both, because they answer different questions — the acceptance is still pending AND can never
+    // arrive. A single chip would make the administrator choose which fact to be told.
+    expect(row).toHaveTextContent('Invitat');
+    expect(row).toHaveTextContent('Adresă nelivrabilă');
+  });
+
+  it('says nothing about deliverability for an address that still reaches someone', () => {
+    render(board());
+
+    expect(screen.queryByText('Adresă nelivrabilă')).not.toBeInTheDocument();
   });
 
   it('draws an invitation’s address alone, because no account holds it yet', () => {

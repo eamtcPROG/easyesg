@@ -91,7 +91,9 @@ export class DeliverNotification {
 
     for (const recipient of owed(NOTIFICATION_CHANNEL.EMAIL)) {
       const link = noticeLink({ origin: this.webOrigin, path: record.deepLink, locale: recipient.locale });
-      await this.email.send({
+      // The outcome is the channel's to decide — accepted, bounced or suppressed (task 51.4). A transient
+      // failure throws instead, and the job's retry re-derives what is owed from what these rows record.
+      const { outcome } = await this.email.send({
         categoryKey: notice.categoryKey,
         to: recipient.email,
         locale: recipient.locale,
@@ -99,7 +101,7 @@ export class DeliverNotification {
         params: { ...record.params, link },
         idempotencyKey: `${record.notificationId}:${recipient.userId}`,
       });
-      await this.store.recordEmailAccepted({ ...ref, recipient: { accountId: recipient.userId } });
+      await this.store.recordEmailAccepted({ ...ref, recipient: { accountId: recipient.userId }, outcome });
     }
 
     await this.store.markDelivered(ref);

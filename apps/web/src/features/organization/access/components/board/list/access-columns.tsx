@@ -1,6 +1,6 @@
 'use client';
 
-import { StatusChip, STATUS_TONE, type DataTableColumn, type StatusTone } from '@easyesg/ui';
+import type { DataTableColumn } from '@easyesg/ui';
 import { ACCESS_MESSAGES } from '../../shared/access-messages';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
@@ -10,10 +10,10 @@ import {
   ACCESS_STANDING,
   type AccessColumnKey,
   type AccessRow,
-  type AccessStanding,
 } from '../../../tools/access';
 import { PersonCell } from './person-cell';
 import { RoleCell } from './role-cell';
+import { StandingCell } from './standing-cell';
 import { RowActions } from './row-actions';
 
 /**
@@ -33,12 +33,6 @@ import { RowActions } from './row-actions';
  * exists: an expired invitation is not an error the reader made, it is a thing that has quietly
  * stopped working and wants a resend. `error` would overstate it; `pending` would hide it.
  */
-const STANDING_TONE: Record<AccessStanding, StatusTone> = {
-  [ACCESS_STANDING.ACTIVE]: STATUS_TONE.POSITIVE,
-  [ACCESS_STANDING.INVITED]: STATUS_TONE.PENDING,
-  [ACCESS_STANDING.INVITATION_EXPIRED]: STATUS_TONE.ATTENTION,
-};
-
 export function useAccessColumns(): readonly DataTableColumn<AccessRow, AccessColumnKey>[] {
   const t = useTranslations(ACCESS_MESSAGES);
   const format = useFormatter();
@@ -73,9 +67,7 @@ export function useAccessColumns(): readonly DataTableColumn<AccessRow, AccessCo
         // The server derived it, in the statement that filtered on it (task 131). Reading it off
         // the row is what makes "admitted as invited" and "drawn as invited" the same fact rather
         // than two evaluations that agree most of the time.
-        cell: (row: AccessRow) => (
-          <StatusChip tone={STANDING_TONE[row.standing]}>{t(`standings.${row.standing}`)}</StatusChip>
-        ),
+        cell: (row: AccessRow) => <StandingCell row={row} />,
       },
       {
         key: ACCESS_COLUMN.ACTIVITY,

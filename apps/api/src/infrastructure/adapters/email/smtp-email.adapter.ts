@@ -1,6 +1,12 @@
 import { Logger } from '@nestjs/common';
-import { createTransport, type Transporter } from 'nodemailer';
-import type { EmailDispatched, EmailMessage, EmailPort } from '@api/contracts/email.port';
+import { createTransport, type SentMessageInfo, type Transporter } from 'nodemailer';
+import {
+  EMAIL_FAILURE,
+  EmailSendFailed,
+  type EmailDispatched,
+  type EmailMessage,
+  type EmailPort,
+} from '@api/contracts/email.port';
 import { renderEmail } from './email-template.renderer';
 
 /**
@@ -68,7 +74,7 @@ export class SmtpEmailAdapter implements EmailPort {
     // error rather than as a provider error — the logging adapter's order, for the same reason.
     const { subject, body } = renderEmail(message.locale, message.templateKey, message.params);
 
-    const sent = await this.transport.sendMail({
+    const sent = await this.sendOrClassify({
       from: this.settings.from,
       to: message.to,
       subject,
@@ -87,4 +93,69 @@ export class SmtpEmailAdapter implements EmailPort {
 
     return { providerMessageId: typeof sent.messageId === 'string' ? sent.messageId : undefined };
   }
+
+  /**
+   * The send, with every way it can fail turned into one of `EMAIL_FAILURE`'s two (task 51.4).
+   *
+   * **This is the seam §12.5.2's third rule describes**, and the reason 51.1's transport being
+   * provider-neutral did not make the whole channel so: a reply code is SMTP's vocabulary, a webhook
+   * payload would be an ESP's, and above this line neither exists. When an ESP is configured, its
+   * adapter writes this function again and nothing else changes.
+   *
+   * **A hard bounce needs evidence about the ADDRESS, and a 5xx alone is not that.** The first draft
+   * read any 5xx reply as a refusal of the recipient, which an existing spec caught in one line:
+   * `535` is *authentication failed*, a fact about this platform's own credentials — so a mistyped
+   * SMTP password would have suppressed every address it was used to write to, permanently, with no
+   * `DELETE` grant to undo it. The consequences of the two mistakes are not symmetric: classifying a
+   * real bounce as transient costs eleven retries and a job in the failed set, while classifying a
+   * configuration error as a bounce quietly destroys a mailing list.
+   *
+   * So a refusal is permanent only when the provider **names the recipient it rejected**:
+   *
+   * - **A resolved send with `rejected` recipients.** `sendMail` resolves when *some* recipient was
+   *   accepted, so reading only the thrown case would record that refusal as an acceptance.
+   * - **A thrown error carrying `rejected`**, which nodemailer sets when every recipient was refused,
+   *   with `rejectedErrors` holding each one's reply. Permanent only if those replies are 5xx — a
+   *   4xx rejection is *not now*, which is exactly what the retry is for.
+   *
+   * Everything else — an auth failure, a timeout, a dropped socket, DNS — is transient, and lands in
+   * BullMQ's failed set after NFR-107's schedule where an operator can see it.
+   */
+  private async sendOrClassify(mail: Parameters<Transporter['sendMail']>[0]): Promise<SentMessageInfo> {
+    const sent: SentMessageInfo = await this.transport.sendMail(mail).catch((cause: unknown) => {
+      throw new EmailSendFailed(
+        recipientRefused(cause) ? EMAIL_FAILURE.HARD_BOUNCE : EMAIL_FAILURE.TRANSIENT,
+        cause instanceof Error ? cause.message : String(cause),
+      );
+    });
+
+    if (Array.isArray(sent.rejected) && sent.rejected.length > 0) {
+      throw new EmailSendFailed(
+        EMAIL_FAILURE.HARD_BOUNCE,
+        typeof sent.response === 'string' ? sent.response : 'recipient rejected',
+      );
+    }
+    return sent;
+  }
 }
+
+/** A 5xx reply is permanent; `undefined` is not a reply at all, so it is not. */
+const permanentReply = (code: unknown): boolean => typeof code === 'number' && code >= 500 && code < 600;
+
+/**
+ * Whether the provider refused **this recipient**, as opposed to refusing us or failing to answer.
+ *
+ * Read off `rejected` rather than the reply code, for the reason `sendOrClassify` states at length:
+ * only a per-recipient refusal is evidence about the address, and only that may suppress it.
+ */
+const recipientRefused = (cause: unknown): boolean => {
+  const { rejected, rejectedErrors, responseCode } = cause as {
+    rejected?: unknown;
+    rejectedErrors?: unknown;
+    responseCode?: unknown;
+  };
+  if (!Array.isArray(rejected) || rejected.length === 0) return false;
+  return Array.isArray(rejectedErrors) && rejectedErrors.length > 0
+    ? rejectedErrors.every((error) => permanentReply((error as { responseCode?: unknown }).responseCode))
+    : permanentReply(responseCode);
+};

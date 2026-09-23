@@ -19,11 +19,20 @@ export type NotificationState = (typeof NOTIFICATION_STATE)[keyof typeof NOTIFIC
 
 /**
  * FR-170's outcome. In-app is `delivered` the moment its row is written — the centre is the store (FR-168); an
- * email is `accepted` when the provider takes it, and what the provider reports afterwards is 51.4's.
+ * email is `accepted` when the provider takes it.
+ *
+ * **Two of these are terminal and neither retries** (task 51.4; §12.5.6's task-51.4 row): `bounced` is a send the
+ * provider refused outright, `suppressed` one this platform declined to attempt because the address had already
+ * bounced. Mirrors `delivery_outcome_known`, which is the database's own copy — the two change together by hand.
+ *
+ * **There is deliberately no `failed`.** A transient failure that exhausts NFR-107's attempts leaves no row to
+ * mark, since a row is written only once the provider accepts; the job lands in BullMQ's failed set instead.
  */
 export const DELIVERY_OUTCOME = {
   DELIVERED: 'delivered',
   ACCEPTED: 'accepted',
+  BOUNCED: 'bounced',
+  SUPPRESSED: 'suppressed',
 } as const;
 
 export type DeliveryOutcome = (typeof DELIVERY_OUTCOME)[keyof typeof DELIVERY_OUTCOME];

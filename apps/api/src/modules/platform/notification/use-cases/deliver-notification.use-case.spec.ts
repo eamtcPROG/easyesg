@@ -3,7 +3,7 @@ import type {
   NotificationRecipientsPort,
 } from '@api/contracts/notification-recipients.port';
 import type { NotificationRaised } from '../constants/notification.constants';
-import type { EmailChannel, NotificationEmail } from '../interfaces/email-channel.interface';
+import type { EmailChannel, EmailChannelResult, NotificationEmail } from '../interfaces/email-channel.interface';
 import type {
   DeliverInAppCommand,
   NoticeRef,
@@ -14,7 +14,7 @@ import type {
   RecordedDelivery,
 } from '../interfaces/notification-store.interface';
 import type { NotificationChannel } from '../models/notification-category.model';
-import type { NotificationState } from '../models/notification-record.model';
+import { DELIVERY_OUTCOME, type NotificationState } from '../models/notification-record.model';
 import type { NotificationChannelDecision } from '../interfaces/notification-channel-decision.interface';
 import { DeliverNotification } from './deliver-notification.use-case';
 
@@ -31,11 +31,11 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
     readonly sent: NotificationEmail[] = [];
     failWith: Error | null = null;
 
-    send(email: NotificationEmail): Promise<void> {
+    send(email: NotificationEmail): Promise<EmailChannelResult> {
       if (this.failWith) return Promise.reject(this.failWith);
       this.sent.push(email);
       events.push(`email:${email.to}`);
-      return Promise.resolve();
+      return Promise.resolve({ outcome: DELIVERY_OUTCOME.ACCEPTED });
     }
   }
 

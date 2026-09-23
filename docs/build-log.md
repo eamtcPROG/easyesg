@@ -23842,3 +23842,85 @@ question to raise, not one to close by deleting code. What a later reader needs 
 were taken about *how* to pad the api and the prior one — is the thing being simulated real here —
 was never asked, though the catalogues that answer it sit in the repository and took ninety seconds
 to measure. A specced number was treated as a settled fact rather than as a claim.
+
+## Task 51.4 — Delivery outcome and suppression · 2026-09-23
+
+UC-174's question — *is this address undeliverable, or is this person ignoring their notices?* — and the
+first half of task 51 that is about mail arriving rather than mail leaving. The row was written on
+25 Aug 2026 for *the provider's bounce and complaint webhook*; task 51.1 then configured **Gmail SMTP**
+(OQ-17), which has neither. Establishing that before writing anything is what shaped the whole task.
+
+### Decisions (project owner, one batch, before the code)
+
+Recorded as §12.5.6's new task-51.4 row.
+
+- **(1) The bounce signal is what SMTP actually reports** (recommended): a rejected recipient at send
+  time is a hard bounce, a 4xx or a network failure is transient. Both arrive synchronously and both
+  are real. What it does **not** see is an asynchronous bounce, which returns as a DSN to the sender
+  mailbox and would need IMAP — and **complaints are out of reach entirely**, a feedback loop being an
+  ESP relationship. Neither is modelled: a `complained` outcome with no producer is the
+  interface-with-one-implementation this repository refuses.
+- **(2) Suppression is platform-wide** (recommended), one row per normalised address, no
+  `organization_id` and no RLS. A bounce is a property of the mailbox; per-organization suppression
+  would leave every other organization writing to a mailbox already known to be gone.
+- **(3) Retry is the queue's** (recommended) — eleven attempts, exponential from a minute, ~17 hours,
+  inside NFR-107's 24 — rather than a second scheduler beside AD-10's. It costs nothing to make
+  correct because `DeliverNotification` already derives what is owed from what is recorded.
+- **(4) The administrator sees it on S-16** (recommended), or FR-171's last clause goes unmet.
+
+### The most important thing this task got wrong first
+
+The first classification read **any 5xx reply as a hard bounce**, and an existing spec caught it in one
+line: `sendMail.mockRejectedValue(new Error('535 authentication failed'))`. **`535` is the platform's
+own credentials, not the recipient's mailbox** — so a mistyped `EMAIL_PASSWORD` would have suppressed
+every address the transport was used to write to, permanently, against a table with no `DELETE` grant.
+
+The fix is that **a hard bounce needs evidence about the address**: only a *rejected recipient* carrying
+a 5xx reply, read from `rejected`/`rejectedErrors`, never from a bare `responseCode`. The asymmetry is
+the argument — a real bounce misread as transient costs eleven retries and a visible failed job, while a
+configuration error misread as a bounce quietly destroys a mailing list. Four cases now pin it: the auth
+failure, the 5xx rejection, a 4xx rejection (greylisting answers exactly that way), and a **resolved**
+send carrying `rejected`, which `sendMail` does when any recipient was accepted and which reading only
+the thrown path would have recorded as an acceptance.
+
+### The second one, which only a second run could see
+
+The new e2e case suppresses an address, and nothing cleaned it up. The table hangs off no notice and has
+no organization, so nothing cascades — and the **first** run passed 27/27 while the **second** watched
+four unrelated cases send nothing and fail on an empty `provider.sent`. It surfaced only because the
+mutation proof happened to be a second run.
+
+`clearSuppressedAddresses` now runs at both ends of the suite, and the suite is proven repeatable by
+running it twice. `apps/api/CLAUDE.md` asks *what does this suite need that it does not create?*; this is
+the mirror image, and it belongs beside it: **what does it create that it does not remove?** A table with
+no cascade and no tenant column has no cleanup path unless somebody writes one.
+
+### What shipped
+
+- **The migration**: `bounced` and `suppressed` on the delivery `CHECK`, and
+  `notification.suppressed_address` — `address_key` normalised by a `CHECK`, one reason, the worker
+  writing and `esg_app` only reading. Its grants are declared in the schema-invariant list, which
+  failed until they were (and then once more on alphabetical order, the list being `ORDER BY 1`).
+- **`EMAIL_FAILURE` and `EmailSendFailed`** in the port surface, so §12.5.2's third rule holds: the SMTP
+  reply codes stop at the adapter and no module branches on a vendor's spelling of *mailbox not found*.
+- **`EmailChannelService` owns both ends of FR-171** — it refuses a suppressed address without asking
+  the provider, and suppresses on a hard bounce *before* answering — because it is the one caller of
+  `EmailPort` and a second one would be a second place to forget them.
+- **`DELIVERY_RETRY`** on every enqueued job, and the delivery use cases recording the channel's outcome
+  instead of a constant `accepted`.
+- **S-16's second chip**, beside the standing rather than replacing it: an invitation can be both
+  *invited* and *undeliverable*, and that row is the one an administrator most needs to notice, since no
+  acceptance can ever arrive. Wording authored in all three locales.
+
+### Verification
+
+`pnpm lint`, `pnpm typecheck`, `pnpm boundaries` (1,864 modules), `pnpm openapi:check` (the DTO gained a
+member; the regenerated contract was staged, which is what that gate compares against),
+`pnpm migrations:check` (61 invariants, after declaring the new grants), api unit **1,280**, web unit
+**992**, `pnpm e2e` **1,304**, `pnpm e2e:worker` **8**, `pnpm e2e:web` **252** across all three projects,
+`pnpm docs:check` **46**. Three mutations, each run and restored: the suppression write removed (the e2e
+bounce case fails), the chip removed (S-16's case fails), and the earlier 5xx classification (the adapter
+spec fails on the auth case).
+
+**Task 51's parent stays `TODO`** — 51.2 waits on task 41.3, which is Stage 2's — so 51.4 closes in place
+and no row moves to the archive.

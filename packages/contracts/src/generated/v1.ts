@@ -2521,6 +2521,8 @@ export interface components {
              * @enum {string}
              */
             standing: "active" | "invited" | "invitation_expired";
+            /** @description FR-171: this address hard-bounced, so nothing is sent to it any more. Cuts across standing rather than replacing it — an invitation can be both invited and undeliverable, which is the case an administrator most needs to see, since no acceptance can ever arrive. */
+            emailSuppressed: boolean;
             /**
              * Format: uuid
              * @description The account holding the membership. Null when kind is invitation — nobody holds it yet.

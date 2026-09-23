@@ -88,6 +88,18 @@ export interface AccessRowShared {
   readonly email: string;
   readonly role: MembershipRole;
   readonly standing: AccessStanding;
+  /**
+   * FR-171: this address hard-bounced, so nothing is sent to it any more (task 51.4).
+   *
+   * **On the shared half deliberately.** It is a fact about the mailbox, and both a member and a pending
+   * invitation have one — an invitation to a dead address is the case where it matters most, since the
+   * administrator is otherwise waiting for an acceptance that can never arrive.
+   *
+   * **It is not a `standing`.** A standing says where a person is in the access lifecycle and exactly one
+   * is true at a time; suppression cuts across all of them, and folding it in would make *invited* and
+   * *undeliverable* a choice rather than two things a row can say at once.
+   */
+  readonly emailSuppressed: boolean;
 }
 
 export interface MemberAccessRow extends AccessRowShared {
