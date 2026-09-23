@@ -102,6 +102,11 @@
     "show": "Arătați",
     "hide": "Ascundeți",
     "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
+    "scriptingRequired": {
+      "title": "Această pagină are nevoie de JavaScript",
+      "body": "Fără el formularul nu poate fi trimis, iar nimic din ce ați scris nu a fost trimis.",
+      "action": "Activați JavaScript în setările browserului, apoi reîncărcați pagina."
+    },
     "record": {
       "save": "Salvați modificările",
       "discard": "Renunțați",

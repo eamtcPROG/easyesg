@@ -1,81 +1,162 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Browser, type Locator, type Page, type Request } from '@playwright/test';
+import { cleanupAccounts, verificationTokenFor } from './support/db';
 
 /**
- * Task 96's deliverable, literally: **no form can submit its fields into a URL**, proven with
- * scripting disabled.
+ * A credential form **fails explicitly without scripting** — task 153's deliverable (§12.5.6's task-153 row; NFR-81,
+ * NFR-79, NFR-30), over task 96's, which it keeps.
  *
- * The exposure was never a broken build. Every form in both front ends is `<form onSubmit={…}>`,
- * and the handler exists only once React has hydrated — but the markup is interactive before that,
- * so Enter on a field submits with the browser's own default: a GET to the current URL with every
- * field in the query string. Observed while diagnosing task 36.2's browser run, as
- * `/register?email=…&password=Parola123%21`. A password in a URL reaches the access log, the
- * browser history and the `Referer` of whatever loads next, which is what NFR-30 forbids of
- * personal data in the first place.
+ * Task 96 found every form's handler existing only once React had hydrated, while its markup was interactive before
+ * that, so Enter submitted with the browser's default: a GET with every field in the URL. `method="post"` stopped the
+ * leak and left a 405. **Task 153 closes the rest**: each credential form keeps its submit disabled until the page
+ * has hydrated, so a press before then submits nothing — no request, no 405 — and, with scripting off, says why in a
+ * notice inside `<noscript>`. Working without scripting was the alternative; no requirement asks for it, and the row
+ * records what would change that.
  *
- * **Scripting off is the honest reproduction, not a contrivance.** It is the same window a fast
- * typist opens, held open — the realistic trigger is Enter before hydration, and a chunk that 404s
- * or JS switched off are that same failure with a longer window. `eslint:prove`'s `form-method`
- * selector is what keeps a new form from regressing it; this file is what proves the selector's
- * subject is real, by driving the thing a person actually does.
+ * **Scripting off is the honest reproduction, not a contrivance.** It is the window a fast typist opens, held open —
+ * the realistic trigger is Enter before hydration, and a chunk that fails to load or scripting switched off are that
+ * same failure with a longer window.
  *
- * **What is asserted is the absence of a query string, not a successful submit.** `method="post"`
- * moves the fields into a request body and leaves the submit unhandled — the page has no route
- * handler for a POST, so the browser gets a 405. That is the remedy working: a 405 is a visible
- * failure a person can report, where a leaked credential is an invisible one nobody sees. Making
- * these flows *work* without JS is progressive enhancement and is task 153's, not this file's.
+ * **Which forms, and which this file drives.** Seven forms exist as markup before hydration: S-01's sign-in and its
+ * factor step, S-01's registration, S-02's reset request and new password, S-36's first password and S-28's password
+ * section. This file drives four — the three a signed-out visitor reaches, and S-28's, by carrying a session signed in
+ * with scripting on into a browser with it off. The other three sit behind a sign-in challenge, a reset link or a setup
+ * state, and share one component with the four (`shared/credential-submit.tsx`, whose spec pins the disabled HTML);
+ * the `form-method` selector keeps any of them from losing `method="post"`. The re-authentication dialogue and S-28's
+ * second-factor form appear only after scripting runs and are not on the list. **The console** is a static SPA that
+ * renders nothing without its script, so it has no such window — its `index.html` says so in a `<noscript>` of its own.
  */
+const RUN_PREFIX = `e2e-web-form-method-${process.pid}-${Date.now()}`;
 const PASSWORD = 'Parola123!';
-const EMAIL = 'e2e-form-method@example.md';
+const EMAIL = `${RUN_PREFIX}@example.md`;
 
-/** The credential-carrying screens reachable without a session. The remaining three of task 96's
- *  eight sit behind one (S-28's password section and factor body) or inside the admin realm, and
- *  are covered by the `form-method` selector rather than by a journey — reaching them needs a
- *  sign-in, which needs the scripting this suite has switched off. */
+test.afterAll(async () => {
+  await cleanupAccounts(RUN_PREFIX);
+});
+
+/** The notice's title, as `forms.scriptingRequired.title` reads in Romanian. */
+const NOTICE = 'Această pagină are nevoie de JavaScript';
+
 interface Screen {
   readonly what: string;
   readonly path: string;
   readonly submit: RegExp;
-  readonly fields: Readonly<Record<string, string>>;
+  readonly fields: readonly { readonly label: string; readonly value: string }[];
 }
 
-const SCREENS: readonly Screen[] = [
-  { what: 'S-01 sign in', path: '/sign-in', submit: /Intrați în cont/i, fields: { email: EMAIL, password: PASSWORD } },
-  { what: 'S-01 register', path: '/register', submit: /Creați contul/i, fields: { email: EMAIL, password: PASSWORD } },
-  { what: 'S-02 request a reset', path: '/reset', submit: /Trimiteți/i, fields: { email: EMAIL } },
+const SIGNED_OUT: readonly Screen[] = [
+  {
+    what: 'S-01 sign in',
+    path: '/sign-in',
+    submit: /Intrați în cont/i,
+    fields: [
+      { label: 'Adresa de e-mail', value: EMAIL },
+      { label: 'Parolă', value: PASSWORD },
+    ],
+  },
+  {
+    what: 'S-01 register',
+    path: '/register',
+    submit: /Creați contul/i,
+    fields: [
+      { label: 'E-mail de serviciu', value: EMAIL },
+      { label: 'Parolă', value: PASSWORD },
+    ],
+  },
+  { what: 'S-02 request a reset', path: '/reset', submit: /Trimiteți/i, fields: [{ label: 'Adresa de e-mail', value: EMAIL }] },
 ];
 
-test.describe('a submit that beats hydration cannot put fields in the URL (task 96, NFR-30)', () => {
+/**
+ * Fills a screen's fields, presses Enter in the last — what a person does before a page has hydrated — and answers
+ * every request the page made to its own address meanwhile. **The requests are what is asserted**, not the address
+ * bar, and task 96's two vacuous versions of this file are why: a submit that never happened and a POST to the same
+ * path both leave the address unchanged.
+ */
+async function pressEnterIn(page: Page, screen: Screen, within: Locator | Page): Promise<Request[]> {
+  const sent: Request[] = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname.endsWith(screen.path)) sent.push(request);
+  });
+  for (const field of screen.fields) {
+    await within.getByLabel(field.label, { exact: true }).fill(field.value);
+  }
+  await within.getByLabel(screen.fields[screen.fields.length - 1].label, { exact: true }).press('Enter');
+  // Long enough for a submit to leave; a request that was going to be sent is sent at once.
+  await page.waitForTimeout(1_500);
+  return sent;
+}
+
+async function expectExplicitFailure(input: {
+  readonly page: Page;
+  readonly screen: Screen;
+  readonly within?: Locator;
+}): Promise<void> {
+  const { page, screen } = input;
+  const within = input.within ?? page;
+  // The failure is explicit: the form carries the notice — what happened, and what to do — inside `<noscript>`.
+  // **Read as the form's markup, not by text**, because text did not work and the reason is not known. Measured:
+  // `getByText` finds nothing inside this `<noscript>` under `javaScriptEnabled: false` and under a browser launched
+  // with scripting off in its own settings alike — while that browser draws the notice above the form (screenshot,
+  // task 153's build-log), and while the console's `<noscript>`, directly in `<body>`, IS found by text. The markup is
+  // what ships and what a browser with scripting off draws, so the markup is what is asserted.
+  const notice = (await within.locator('form noscript').first().innerHTML()).replaceAll('&nbsp;', ' ');
+  expect(notice, `${screen.what}: the notice's title`).toContain(NOTICE);
+  expect(notice, `${screen.what}: the notice's way out`).toContain(
+    'Activați JavaScript în setările browserului, apoi reîncărcați pagina.',
+  );
+  // The mechanism: the default button is disabled, so the browser does not submit the form on Enter.
+  await expect(within.getByRole('button', { name: screen.submit })).toBeDisabled();
+
+  const sent = await pressEnterIn(page, screen, within);
+  expect(sent.map((request) => `${request.method()} ${request.url()}`), `${screen.what} sent a request`).toEqual([]);
+}
+
+test.describe('a credential form fails explicitly without scripting (task 153, NFR-81)', () => {
   test.use({ javaScriptEnabled: false });
 
-  for (const screen of SCREENS) {
-    test(`${screen.what} submits nothing into the query string`, async ({ page }) => {
+  for (const screen of SIGNED_OUT) {
+    test(`${screen.what} says it needs JavaScript and sends nothing`, async ({ page }) => {
       await page.goto(screen.path);
-
-      // The form is present as markup with no JavaScript at all — which is precisely why the
-      // browser default was reachable.
-      await expect(page.locator('form').first()).toBeVisible();
-
-      for (const [type, value] of Object.entries(screen.fields)) {
-        await page.locator(`input[type="${type}"]`).first().fill(value);
-      }
-
-      // **The REQUEST is what is asserted, not the address bar**, and two earlier versions of this
-      // file are why. The first called `form.evaluate(el => el.submit())` — with
-      // `javaScriptEnabled: false` Playwright cannot evaluate in the page, so nothing submitted and
-      // the URL assertions passed with the fix REVERTED. The second clicked and waited for the URL
-      // to change, which never happens: a POST to the same path leaves the address bar identical,
-      // which is the remedy working. Observing the outgoing request settles both — it proves a
-      // submit occurred, proves which verb it used, and reads the fields' actual destination.
-      const [request] = await Promise.all([
-        page.waitForRequest((r) => r.url().includes(screen.path), { timeout: 10_000 }),
-        page.getByRole('button', { name: screen.submit }).click(),
-      ]);
-
-      const url = new URL(request.url());
-      expect(url.search, `${screen.what}: fields reached the URL as ${url.search}`).toBe('');
-      expect(decodeURIComponent(request.url())).not.toContain(PASSWORD);
-      // The verb is the mechanism behind the two lines above rather than a substitute for them.
-      expect(request.method(), `${screen.what} submitted as ${request.method()}`).toBe('POST');
+      await expectExplicitFailure({ page, screen });
     });
   }
+
+  test('S-28’s password section says it needs JavaScript and sends nothing', async ({ page, browser }) => {
+    await page.context().addCookies(await signedInCookies(browser));
+    await page.goto('/account/credentials');
+    await expectExplicitFailure({
+      page,
+      screen: {
+        what: 'S-28 password',
+        path: '/account/credentials',
+        submit: /Schimbați parola/i,
+        fields: [{ label: 'Parola nouă', value: 'Parola456!' }],
+      },
+      within: page.getByRole('region', { name: 'Parolă' }),
+    });
+  });
 });
+
+/** A session, signed in where scripting runs — the only way to get one — and handed to a browser where it does not. */
+async function signedInCookies(browser: Browser) {
+  const context = await browser.newContext({ ...test.info().project.use, javaScriptEnabled: true });
+  const page = await context.newPage();
+  await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
+  await page.getByLabel('E-mail de serviciu').fill(EMAIL);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(EMAIL)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+  await expect(page.getByText('Adresa este confirmată')).toBeVisible();
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(EMAIL);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  // A member of nothing lands on S-04, which is a session all the same.
+  await page.waitForURL('**/create-organization');
+  const cookies = await context.cookies();
+  await context.close();
+  return cookies;
+}

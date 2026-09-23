@@ -102,6 +102,11 @@
     "show": "Show",
     "hide": "Hide",
     "summaryTitle": "A few fields need attention before you can continue",
+    "scriptingRequired": {
+      "title": "This page needs JavaScript",
+      "body": "The form cannot be sent without it, and nothing you typed has been sent.",
+      "action": "Turn JavaScript on in your browser’s settings, then reload the page."
+    },
     "record": {
       "save": "Save changes",
       "discard": "Discard",

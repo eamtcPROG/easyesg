@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { FormSummary } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
@@ -15,6 +15,8 @@ import type { SetPasswordKind } from '../tools/set-password-kind';
 import styles from '../../shared/styles/identity-screens.module.css';
 import { SignedInElsewhere } from '../../shared/components/signed-in-elsewhere';
 import { SET_PASSWORD_MESSAGES, setPasswordWordingFor } from './set-password-messages';
+import { CredentialSubmit } from '@/shared/credential-submit';
+import { ScriptingRequired } from '@/shared/scripting-required';
 
 /**
  * S-02 · Set a new password from a reset link (FR-6, UC-09) — `/set-password?token=…`.
@@ -90,6 +92,7 @@ export function SetPasswordForm({ token, kind }: { token: string; kind: SetPassw
 
   return (
     <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
+      <ScriptingRequired />
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
       {result?.status === API_OUTCOME.Problem ? (
@@ -128,9 +131,9 @@ export function SetPasswordForm({ token, kind }: { token: string; kind: SetPassw
         <div className={styles.fields}>
           <PolicyPasswordField control={control} name="password" label={worded('passwordLabel')} />
 
-          <Button type="submit" busy={pending}>
+          <CredentialSubmit busy={pending}>
             {worded('submit')}
-          </Button>
+          </CredentialSubmit>
         </div>
       </Panel>
     </form>

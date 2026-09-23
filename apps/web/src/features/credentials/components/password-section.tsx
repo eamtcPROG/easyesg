@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, RecordSection } from '@easyesg/ui';
+import { RecordSection } from '@easyesg/ui';
 import { FormPasswordField, FormSummary } from '@easyesg/ui/forms';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
@@ -8,6 +8,8 @@ import { changePasswordAction } from '../actions/actions';
 import { CREDENTIALS_SECTION } from '../tools/credentials-state';
 import { useCredentials, useSectionBusy } from './credentials-context';
 import styles from './credentials.module.css';
+import { CredentialSubmit } from '@/shared/credential-submit';
+import { ScriptingRequired } from '@/shared/scripting-required';
 
 /**
  * S-28's password section — FR-7, UC-10.
@@ -73,6 +75,7 @@ export function PasswordSection() {
       description={t('description')}
     >
       <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.form}>
+        <ScriptingRequired />
         <FormSummary control={control} title={tForms('summaryTitle')} />
 
         <FormPasswordField
@@ -96,9 +99,9 @@ export function PasswordSection() {
           </span>
         </label>
 
-        <Button type="submit" busy={busy}>
+        <CredentialSubmit busy={busy}>
           {t('submit')}
-        </Button>
+        </CredentialSubmit>
       </form>
     </RecordSection>
   );

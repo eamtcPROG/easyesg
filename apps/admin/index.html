@@ -38,6 +38,16 @@
     <title>easyesg</title>
   </head>
   <body>
+    <!--
+      Task 153 (§12.5.6's task-153 row, NFR-81): the console renders nothing until its script runs, so with scripting
+      off a browser would show a blank page — a silent failure. This is the explicit one. **A literal here, not a
+      catalogue key**: the catalogue is loaded by the script this sentence exists for the absence of, and the console
+      is Romanian-only (OQ-42). NFR-79's three parts: what happened, so what, what now.
+    -->
+    <noscript>
+      <p>Consola de administrare are nevoie de JavaScript. Fără el nu se poate afișa nimic, nici autentificarea.
+        Activați JavaScript în setările browserului, apoi reîncărcați pagina.</p>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/app/entry/main.tsx"></script>
   </body>

@@ -24942,3 +24942,82 @@ reaches, with no `pnpm gates` and no review agents.
 - **Whole repo**: `docs:check`, lint.
 - **Skipped**: the api's `pnpm e2e`, because the one api change is a log line in the worker's bootstrap, which the
   HTTP suites never run.
+
+## Task 153 — A credential form fails explicitly without scripting · 2026-09-23
+
+Task 96's trade is closed. A submit before hydration used to answer a 405. Now it sends nothing, and with scripting
+off the form says why.
+
+### Decisions (project owner, one batch, before the code)
+
+Recorded in a new §12.5.6 row, *A credential form fails explicitly without scripting*. Both took the recommended
+option.
+
+- **(1) The web's credential forms state their limitation; they do not work without scripting.** No requirement asks
+  for scripting-off operation. NFR-81 asks for an explicit failure rather than a silent one. The row records what would
+  change it: a requirement for scripting-off operation, which would turn each form into a form `action` over
+  `useActionState`.
+- **(2) The console has no pre-hydration window**, since a static SPA renders nothing until its script runs. Its
+  `index.html` gets a `<noscript>` sentence, so a browser with scripting off doesn't get a blank page.
+
+### What the design settled that the batch did not ask
+
+- **Two parts in `src/shared/`**, because identity's forms and S-28's read them:
+  - `CredentialSubmit` keeps the submit disabled until hydration, read through `useHydrated`, which is a
+    `useSyncExternalStore` whose server snapshot is `false`. So the server's HTML carries `disabled` and hydration
+    matches it.
+  - `ScriptingRequired` is the notice, inside `<noscript>`.
+
+  A form whose default button is disabled is not submitted by Enter, so the press sends nothing at all. Task 96's
+  `method="post"` stays underneath.
+- **Seven forms, not eight.** The row counted task 96's eight, and the set has changed since. Seven exist as markup
+  before hydration:
+  - S-01's sign-in and factor step, and registration;
+  - S-02's reset request and new password;
+  - S-36's first password;
+  - S-28's password section.
+
+  S-28's second-factor form, which the batch had named, appears only after a press, like the re-authentication
+  dialogue. The row now says so.
+- **The wording is `forms.scriptingRequired`**, in NFR-79's three parts and authored in all three locales. The
+  console's sentence is a literal in `index.html`, because the catalogue is loaded by the very script whose absence it
+  describes; the console is Romanian-only (OQ-42).
+
+### Playwright could not see the notice, and the reason is not known
+
+The first full run failed all four journeys on the notice while the submit was correctly disabled. The served HTML
+carried the notice inside the form's `<noscript>`. A browser launched with scripting off in its own settings
+(`--blink-settings=scriptEnabled=false`) drew it above the form, as the screenshot shows. But `getByText` found
+nothing in that `<noscript>`, either that way or under `javaScriptEnabled: false`. The console's body-level
+`<noscript>` is found by text. I did not pin down the difference, and the spec says so. It asserts the form's
+`<noscript>` markup, which is what ships and what a browser with scripting off draws. I first wrote *"Playwright's
+locators never look inside a `<noscript>`"*; the console's passing case disproved that, and the comment was
+rewritten to what was measured.
+
+### The gate, and what bites it
+
+`e2e/web/form-method.spec.ts` now asserts task 153 over task 96, with scripting off, for sign-in, registration, the
+reset request and S-28's password section. S-28 is reached by carrying a session signed in with scripting on into a
+page with it off. Each case checks three things: the notice in the form, the submit disabled, and nothing sent on
+Enter. `e2e/admin/scripting.spec.ts` holds the console's sentence and checks there is no input to type into.
+`shared/credential-submit.spec.tsx` pins the disabled HTML.
+
+| Mutation | Result |
+| --- | --- |
+| `CredentialSubmit` never disables | sign-in, reset and S-28 fail on `toBeDisabled` |
+| Registration's notice removed | registration fails on the notice |
+| `useHydrated`'s server snapshot `true` | the unit spec's disabled-HTML case fails |
+
+### Verification
+
+A single-row group closing as its own parent, so it ran the gates its change reaches, per the owner's standing
+decision.
+
+- **web**: unit **1,090**, typecheck and lint.
+- **The full `e2e:web`**, all three projects: **271 passed** on the first run. The only failures were the four
+  journeys above, and they pass since.
+- **Then after the mutation build**: the form journeys and the console's, **5 passed**.
+- **The worker's e2e was not needed.**
+- **`docs:check`**: 46 claims, with the Client Component count now at 134.
+- **The build race was checked, not assumed.** A mutation made while the pre-hook was building could have reached the
+  bundle. The failing run's snapshot showed the submit `[disabled]`, which a mutated build would not have.

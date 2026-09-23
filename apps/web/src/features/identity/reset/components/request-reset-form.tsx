@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
@@ -11,6 +11,8 @@ import { requestPasswordResetAction } from '../actions/actions';
 import type { RequestResetResult } from '../actions/action-results';
 import styles from '../../shared/styles/identity-screens.module.css';
 import { ROUTES } from '@/lib/routes';
+import { CredentialSubmit } from '@/shared/credential-submit';
+import { ScriptingRequired } from '@/shared/scripting-required';
 
 /**
  * S-02 · Request a password reset (FR-6, UC-08) — the reset-request route from S-01.
@@ -64,6 +66,7 @@ export function RequestResetForm() {
 
   return (
     <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
+      <ScriptingRequired />
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
       {result?.status === API_OUTCOME.Problem ? (
@@ -107,9 +110,9 @@ export function RequestResetForm() {
             }}
           />
 
-          <Button type="submit" busy={pending}>
+          <CredentialSubmit busy={pending}>
             {t('submit')}
-          </Button>
+          </CredentialSubmit>
         </div>
       </Panel>
 

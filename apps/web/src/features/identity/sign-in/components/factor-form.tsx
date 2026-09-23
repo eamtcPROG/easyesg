@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from "@easyesg/ui";
+import { Callout, CALLOUT_INTENT, Panel, TextLink } from "@easyesg/ui";
 import { FormCodeField, FormSummary, FormTextField } from "@easyesg/ui/forms";
 import { useTranslations } from "next-intl";
 import {
@@ -24,6 +24,8 @@ import {
   isLockout,
 } from "../tools/factor-state";
 import styles from "../../shared/styles/identity-screens.module.css";
+import { CredentialSubmit } from "@/shared/credential-submit";
+import { ScriptingRequired } from "@/shared/scripting-required";
 
 /**
  * S-01's staged second-factor step (UC-194, UC-195).
@@ -153,6 +155,7 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
       noValidate
       className={styles.stack}
     >
+      <ScriptingRequired />
       {/* **Not `forms.summaryTitle`**, and the exception is the point: this step has exactly one
           field, so its heading is singular — "the field below needs attention" — where the shared
           one is plural. Authored that way in all three locales when the step was built (task 27.8),
@@ -229,9 +232,9 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
             />
           )}
 
-          <Button type="submit" busy={pending}>
+          <CredentialSubmit busy={pending}>
             {t("submit")}
-          </Button>
+          </CredentialSubmit>
         </div>
       </Panel>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { PROBLEM_TYPE } from '@easyesg/contracts';
-import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { FormCheckbox, FormPasswordField, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -14,6 +14,8 @@ import { rememberPendingVerification } from '../../shared/store/pending-verifica
 import type { SignInFailure } from '../actions/action-results';
 import styles from '../../shared/styles/identity-screens.module.css';
 import { ROUTES } from '@/lib/routes';
+import { CredentialSubmit } from '@/shared/credential-submit';
+import { ScriptingRequired } from '@/shared/scripting-required';
 
 /**
  * S-01 · Sign in (FR-4, UC-04) — email + password. Provider sign-in shares this surface per
@@ -102,6 +104,7 @@ export function SignInForm({
 
   return (
     <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
+      <ScriptingRequired />
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
       {problem ? (
@@ -174,9 +177,9 @@ export function SignInForm({
 
           <FormCheckbox control={control} name="remember" label={t('remember')} />
 
-          <Button type="submit" busy={pending}>
+          <CredentialSubmit busy={pending}>
             {t('submit')}
-          </Button>
+          </CredentialSubmit>
 
           {/* Inside the card, below the rule — the artboard's arrangement. Streamed, so an
               unreachable API leaves the credential form standing on its own. */}

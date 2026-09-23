@@ -847,6 +847,14 @@ conditional render, which is how it ends up half-suppressed on one screen.
   Route Handler support alone does not unblock it. Migrate when both are supported. Logged as
   OQ-39 in `architecture.md` §18.
 
+- **A credential form fails explicitly without scripting; it does not work without it** (task 153; §12.5.6's
+  task-153 row). Every credential form that exists as markup before hydration submits through
+  `shared/credential-submit.tsx`, disabled until the page has hydrated (`client/hydration/use-hydrated.ts`), and draws
+  `shared/scripting-required.tsx` — a notice inside `<noscript>`. A form whose default button is disabled is not
+  submitted by Enter, so a press before hydration sends nothing; task 96's `method="post"` stays beneath it. **A new
+  credential form takes both**, and `e2e/web/form-method.spec.ts` drives four of the seven with scripting off. A form
+  that appears only after a press — the re-authentication dialogue, S-28's second factor — needs neither.
+
 - **Everything polls, and two surfaces are also pushed to — never instead** (AD-15, task 149).
   `client/push/` holds one socket per tab to the api's origin (`PUBLIC_API_URL`, read at request
   time; unset, no socket opens), wanted only while the tab is visible and a surface subscribes. A
@@ -949,7 +957,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **131 files here are Client Components** (23 Sep 2026: four since task 149, AD-15's provider, `useFrame`, `useRefreshPoll` and S-16's poll; four since task 52.3, S-27's form and its three sections; one since task 52.2.2, S-38's confirm-unsubscribe part, the screen's one press; one since task 51.4, S-16's standing cell, which draws FR-171's undeliverable chip beside the standing; 22 Sep 2026: five since task 50.3, S-16's reminder panel under
+  **134 files here are Client Components** (23 Sep 2026: three since task 153, `useHydrated` and the two credential-form parts in `shared/`; four since task 149, AD-15's provider, `useFrame`, `useRefreshPoll` and S-16's poll; four since task 52.3, S-27's form and its three sections; one since task 52.2.2, S-38's confirm-unsubscribe part, the screen's one press; one since task 51.4, S-16's standing cell, which draws FR-171's undeliverable chip beside the standing; 22 Sep 2026: five since task 50.3, S-16's reminder panel under
   `organization/access/components/remind/`; twelve since task 50.2.2, the notification panel's under
   `notifications/panel/components/`, with the band's old bell corner gone into it; seven since task 50.2.1 — the
   unread count's hook under `client/notifications/`, the drawer's row under `notifications/count/components/`, the

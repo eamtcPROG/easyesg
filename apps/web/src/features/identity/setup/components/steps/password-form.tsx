@@ -1,7 +1,7 @@
 'use client';
 
 import { PROBLEM_TYPE } from '@easyesg/contracts';
-import { Button, Callout, CALLOUT_INTENT, Panel } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, Panel } from '@easyesg/ui';
 import { FormSummary } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition, type ReactNode } from 'react';
@@ -13,6 +13,8 @@ import { SETUP_GRANT_LAPSED } from '../../tools/password-step';
 import { SETUP_STEP, SETUP_STEP_COUNT, SETUP_STEP_POSITION } from '../../tools/setup-step';
 import styles from '../../../shared/styles/identity-screens.module.css';
 import { SETUP_MESSAGES } from '../shared/setup-messages';
+import { CredentialSubmit } from '@/shared/credential-submit';
+import { ScriptingRequired } from '@/shared/scripting-required';
 
 /**
  * S-36's password step — the form `session-password-step.tsx` and `grant-password-step.tsx` share
@@ -71,6 +73,7 @@ export function PasswordForm({ intro, submit, staleAction, lapsed, children }: P
 
   return (
     <form method="post" onSubmit={(event) => void onSubmit(event)} noValidate className={styles.stack}>
+      <ScriptingRequired />
       <p className={`t-body ${styles.subtitle}`}>
         {t('stepPosition', {
           current: SETUP_STEP_POSITION[SETUP_STEP.PASSWORD],
@@ -108,9 +111,9 @@ export function PasswordForm({ intro, submit, staleAction, lapsed, children }: P
 
           {children}
 
-          <Button type="submit" busy={pending}>
+          <CredentialSubmit busy={pending}>
             {t('passwordSubmit')}
-          </Button>
+          </CredentialSubmit>
         </div>
       </Panel>
     </form>

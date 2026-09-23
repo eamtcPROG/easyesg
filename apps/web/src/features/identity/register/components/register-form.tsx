@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
@@ -13,6 +13,8 @@ import { PolicyPasswordField } from '../../shared/components/policy-password-fie
 import { rememberPendingVerification } from '../../shared/store/pending-verification-store';
 import styles from '../../shared/styles/identity-screens.module.css';
 import { ROUTES } from '@/lib/routes';
+import { CredentialSubmit } from '@/shared/credential-submit';
+import { ScriptingRequired } from '@/shared/scripting-required';
 
 /**
  * S-01 · Register (UC-01) — email + password per the S-01 content list and the task-19 API.
@@ -97,6 +99,7 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
 
   return (
     <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
+      <ScriptingRequired />
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
       {failure?.status === API_OUTCOME.Problem ? (
@@ -168,9 +171,9 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
 
           <PolicyPasswordField control={control} name="password" label={t('passwordLabel')} />
 
-          <Button type="submit" busy={pending}>
+          <CredentialSubmit busy={pending}>
             {t('submit')}
-          </Button>
+          </CredentialSubmit>
         </div>
       </Panel>
 
