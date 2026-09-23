@@ -3,8 +3,8 @@ import { Client } from 'pg';
 
 /**
  * FR-169's signed unsubscribe link, minted the way the worker mints it (task 52.2.2) — and one place a second copy of
- * the format is the point rather than drift. The browser suite runs no worker, so nothing here can ask for a link a
- * delivered email carried; restating `HmacUnsubscribeTokens`' format (`apps/api`'s adapter, whose spec owns it) means
+ * the format is the point rather than drift. The worker the browser suite has run since task 150 sends to the log
+ * provider, so no delivered email is there to read a link from; restating `HmacUnsubscribeTokens`' format (`apps/api`'s adapter, whose spec owns it) means
  * a change there turns S-38's journey red as *this link cannot be used*, rather than going unseen. The key is
  * `playwright.config.ts`'s, the one the api under test holds.
  */

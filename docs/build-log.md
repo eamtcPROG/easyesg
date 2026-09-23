@@ -24866,3 +24866,79 @@ reaches, with no `pnpm gates` and no review agents.
 - **Skipped**: `e2e:web --project admin`. The console's change is a docblock.
 - **Not run: `pnpm gates`, `gates:clean` and the three review agents**, by the owner's standing decision
   (13 Sep 2026). CI runs the full set on the push.
+
+## Task 150 — The two drivers, each proven twice · 2026-09-23
+
+AD-15's proof in a browser. Each driver is proven twice in a real browser. With the socket connected, a change made
+elsewhere arrives within NFR-110's 3 s, and no poll could have brought it. With the socket refused, the change
+arrives on the poll and not before.
+
+### Decisions (project owner, one batch, before the code)
+
+Recorded in §12.5.6's task-149 row, beside task 149's. All four took the recommended option.
+
+- **(1) The browser suite runs the worker.** Each driver takes the real path: the write, its outbox row, the worker,
+  Redis, the api, the browser. The test publishes nothing itself.
+- **(2) S-26's list is the panel's, and its floor is the count's poll.** This corrects task 149, which let a frame
+  invalidate the open panel's list although that list has no poll, so an open panel updated only by push. Now:
+  - the frame invalidates the count alone;
+  - a count read that answers a different number, from the poll or a frame, invalidates the panel's lists
+    (`countMoved`);
+  - the centre page itself is not accelerated.
+- **(3) The S-26 driver is a delivered notice**: an administrator's manual reminder (task 50.3), which the worker
+  delivers in-app.
+- **(4) Disabled and on the poll are test-level, on the shipped build.**
+  - `page.routeWebSocket` refuses the socket.
+  - `page.clock` moves time forward to the poll.
+  - Connected, the clock is held.
+
+### What the design settled that the batch did not ask
+
+- **The clock is held and moved in 100 ms ticks, not frozen.** TanStack Query hands each answer to React through
+  `setTimeout(…, 0)` (read in `@tanstack/query-core` 5.101.4), so a frozen clock would stall a fetch that had already
+  answered, frame or poll alike. Ticking keeps page time far short of either poll over NFR-110's three seconds, so
+  only the frame can explain an arrival. Before any "nothing yet" check, a few ticks let anything already answered
+  reach the screen.
+- **Radix's popover opens on an animation frame**, which a held clock also stops. So the reader's panel is opened
+  first and the clock held after.
+- **A refused case checks the page tried and was refused.** Otherwise a page that never opened a socket would pass
+  the disabled half vacuously.
+- **The connected half is measured from the change's commit.** For S-16 that is the acceptance's answer. For S-26 it
+  is the worker's in-app delivery, which the journey waits for in the database (`inAppDeliveriesTo`). That is
+  NFR-110's commit-to-refetch.
+- **The worker logs one readiness line** (`main.worker.ts`), because it has no port. Playwright's `webServer.wait`
+  matches it. The installed 1.62.1 source reads `wait` with its own listener, so the worker's stdout stays out of the
+  run while its stderr still shows. Its credentials are its own role's and its mail goes to the log provider, both
+  stated in the config rather than taken from the untracked `.env`.
+- **Two helpers**: `addMember`, because `grantMembership` founds a new organization every call; and
+  `inAppDeliveriesTo`. Five comments that said the suite runs no worker are corrected: `seedNotices`,
+  `remindersRaisedFor`, `users-access.spec.ts`, `unsubscribe.ts` and `registration.spec.ts`.
+- **Found while writing it**: the reminder form offers people by display name. The reader and the administrator
+  were both registered as *Ana Popescu*, so the reader is *Maria*. Second browsers are closed after each case, or a
+  later case's failure report shows a stale page.
+
+### Proven to bite
+
+Four mutations, each built and run on the shipped build, then restored:
+
+| Mutation | Journeys that fail |
+| --- | --- |
+| The count's `refetchInterval` removed | refused, S-26 |
+| S-16's poll timer never refreshes | refused, S-16 |
+| Frames dropped at the surface (`useFrame`) | both connected journeys |
+| A count that moved no longer re-reads the panel | both S-26 journeys: the open panel never moves |
+
+### Verification
+
+A single-row group closing as its own parent. Per the owner's standing decision it runs the gates its change
+reaches, with no `pnpm gates` and no review agents.
+
+- **web**: unit **1,086**, typecheck, lint; `e2e:web --project identity --project expansion` **250 passed**, with the
+  worker in the stack for the first time, and it wrote nothing to stderr. Seven `destination stream closed early`
+  lines (three in task 149's run), each beside a journey that navigates away mid-render (entities, the profile, the
+  switcher, post-sign-in, the wizard), none in the new spec or S-16: `apps/web/CLAUDE.md`'s abandoned-stream case.
+- **admin**: `--project admin` **23 passed**. The console changed nothing, but its stack gained the worker.
+- **api**: typecheck; `pnpm e2e:worker` **9 passed** for the entrypoint the readiness line changed.
+- **Whole repo**: `docs:check`, lint.
+- **Skipped**: the api's `pnpm e2e`, because the one api change is a log line in the worker's bootstrap, which the
+  HTTP suites never run.

@@ -16,6 +16,20 @@ export interface UnreadCountState {
   readonly failures: number;
 }
 
+/**
+ * Whether a settled read answered a different number from the one before it (task 150; §12.5.6's task-149 row, (2) of
+ * task 150's batch) — the one signal that the panel's open list is stale, since that list has no poll of its own and
+ * the count's poll is its floor. A first read, and a failed one, move nothing: there is no earlier number to differ
+ * from, and a failure keeps the last.
+ */
+export const countMoved = (input: {
+  readonly previous: UnreadCountState | undefined;
+  readonly next: UnreadCountState;
+}): boolean => {
+  const before = input.previous?.unread ?? null;
+  return before !== null && input.next.unread !== null && input.next.unread !== before;
+};
+
 export const settleUnreadCount = (input: {
   readonly previous: UnreadCountState | undefined;
   /** What this poll read — `null` when it could not. */

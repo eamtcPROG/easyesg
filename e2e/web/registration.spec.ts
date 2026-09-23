@@ -6,8 +6,8 @@ import { cleanupAccounts, verificationTokenFor } from './support/db';
  *
  * The journey runs in Romanian — the source locale — through the shipped screens against the
  * real api and database: register on S-01, land on S-02's challenge with the address stated,
- * fetch the token the way the api e2e does (from the outbox row, as `esg_worker` — no worker
- * process runs, because the token exists the moment registration commits, P-8), follow the
+ * fetch the token the way the api e2e does (from the outbox row, as `esg_worker` — the token
+ * exists the moment registration commits, P-8, whatever the suite's worker has sent), follow the
  * link shape the email would carry, and confirm with the explicit button the mail-scanner
  * defence requires (task 19).
  */

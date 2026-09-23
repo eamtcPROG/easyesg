@@ -22,6 +22,13 @@ export const NOTIFICATIONS_QUERY_SCOPE = ['notifications'] as const;
 export const unreadCountQueryKey = (organizationId: string) =>
   [...NOTIFICATIONS_QUERY_SCOPE, organizationId, 'unread-count'] as const;
 
+/**
+ * The active organization's panel lists, both views — what a count read that moved invalidates (task 150), since the
+ * panel's list has no poll of its own and the count's is its floor.
+ */
+export const panelScopeKey = (organizationId: string) =>
+  [...NOTIFICATIONS_QUERY_SCOPE, organizationId, 'panel'] as const;
+
 /** One of the panel's two lists — unread, or all — so switching tabs does not refetch the one already read. */
 export const panelQueryKey = (input: { readonly organizationId: string; readonly show: NoticeShow }) =>
-  [...NOTIFICATIONS_QUERY_SCOPE, input.organizationId, 'panel', input.show] as const;
+  [...panelScopeKey(input.organizationId), input.show] as const;

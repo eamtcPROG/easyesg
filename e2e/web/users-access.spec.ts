@@ -312,7 +312,8 @@ test('the administrator reminds a colleague about an open report, and the remind
 
   await expect(page.getByText(`Mementoul a fost trimis către ${colleague}.`)).toBeVisible();
   // What the send committed: one reminder to the colleague, about that report, carrying the note. Its delivery is
-  // the worker's, which this suite does not run — the api's `report-reminder.e2e-spec.ts` carries it to the centre.
+  // the worker's — `accelerated-surfaces.spec.ts` follows one into a centre, and the api's `report-reminder.e2e-spec.ts`
+  // carries the rest.
   const raised = await remindersRaisedFor(organizationId);
   expect(raised).toHaveLength(1);
   expect(raised[0]).toMatchObject({

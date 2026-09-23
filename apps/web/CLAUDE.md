@@ -290,7 +290,10 @@ phone's width the count was only in the drawer. Five things to know before touch
 
 - **The count is the browser's poll**, `client/notifications/use-unread-count.ts` on OQ-36's minute
   (`client/polling/poll-schedule.ts`), stopped while the tab is hidden — and sooner on a
-  `notification.unread_changed` frame since task 149, which invalidates the scope as a mark does. **Its run of failures lives in the query's own
+  `notification.unread_changed` frame since task 149, which invalidates **the count alone**. **The count's poll is
+  the open panel's floor** (task 150): a read that answers a different number, the poll's or a frame's, invalidates
+  the panel's lists, which have no poll of their own. Task 149 had the frame invalidate them directly, so an open
+  panel moved only by push; `e2e/web/accelerated-surfaces.spec.ts` fails on that shape. **Its run of failures lives in the query's own
   data**, because TanStack Query resets `fetchFailureCount` at the start of every fetch — with retries off it never
   passes one, and OQ-36's backoff reads the run across polls.
 - **Every mark invalidates it**, from S-26 or the panel, so the badge follows the reader's own mark rather than the

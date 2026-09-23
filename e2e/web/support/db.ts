@@ -149,6 +149,37 @@ export async function grantMembership(input: {
 }
 
 /**
+ * Gives an existing account an active membership in an existing organization (task 150) — for a journey that needs
+ * two people who can each sign in inside one organization, where `grantMembership` founds a new one every call.
+ * Bound to the organization, because `identity.membership`'s `INSERT` policy is the organization's alone; a grant
+ * that matched no account is a fixture that did not do what the test believes it did.
+ */
+export async function addMember(input: {
+  readonly email: string;
+  readonly organizationId: string;
+  readonly role: 'editor' | 'viewer' | 'organization_administrator';
+}): Promise<void> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('app.current_org', $1, true)`, [input.organizationId]);
+    const added = await client.query(
+      `INSERT INTO identity.membership (account_id, organization_id, role)
+       SELECT a.id, $2, $3 FROM identity.account a WHERE lower(a.email) = lower($1)`,
+      [input.email, input.organizationId, input.role],
+    );
+    if (added.rowCount !== 1) throw new Error(`addMember matched ${added.rowCount} accounts`);
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
+/**
  * Withdraws an account's membership in one organization the way S-16's removal does (FR-59) — the row
  * stays and stops granting — so a choice left stale by a removal can be met (task 83.3). Bound to the
  * organization, because `identity.membership`'s `UPDATE` policy is the organization's alone.
@@ -754,8 +785,9 @@ export async function endSessionsOf(input: { readonly email: string }): Promise<
  * notice with one in-app delivery to the account, reaching it `minutesAgo` minutes ago, and read already where
  * `read` says so. Returns their ids in the order given.
  *
- * **Seeded, because this suite runs no worker** — the manual reminder (task 50.3) is raised by a route, but its
- * delivery is the worker's, so no browser journey can carry one into a centre. As `esg_worker`, bound to the
+ * **Seeded, because a journey needs its notices in a known state at once** — read, unread, minutes old — which a
+ * producer cannot give it: the suite has run the worker since task 150, and a reminder raised through S-16 does reach
+ * a centre (`accelerated-surfaces.spec.ts`), but on the worker's time and only as a fresh unread notice. As `esg_worker`, bound to the
  * organization, because that is the one role that writes the schema and the binding its policies read; the
  * account's id is looked up first as the owner.
  *
@@ -872,8 +904,8 @@ export async function cleanupNotifications(organizationIds: readonly string[]): 
 
 /**
  * The manual reminders an organization's outbox holds, oldest first (task 50.3) — what S-16's send committed, read
- * as `esg_worker`, the one role that reads the outbox. What the worker makes of them is the api's e2e suite's to
- * prove; this suite runs no worker, so the committed raise is where a browser journey's evidence ends.
+ * as `esg_worker`, the one role that reads the outbox. The outbox is append-only, so the row is there whether or not
+ * the worker this suite runs since task 150 has dispatched it yet.
  */
 export async function remindersRaisedFor(organizationId: string): Promise<
   { readonly recipientUserIds: readonly string[]; readonly deepLink: string; readonly params: Record<string, unknown> }[]
@@ -894,5 +926,42 @@ export async function remindersRaisedFor(organizationId: string): Promise<
     }));
   } finally {
     await client.end();
+  }
+}
+
+/**
+ * How many notices an account's centre has received in one organization — delivered in-app rows (task 150). What a
+ * journey waits on before it runs a page's clock to the poll: the worker delivers on its own time, and a poll run
+ * before the delivery commits would find nothing and prove nothing. As `esg_worker` bound to the organization, the
+ * role and binding the schema's policies read.
+ */
+export async function inAppDeliveriesTo(input: { readonly organizationId: string; readonly email: string }): Promise<number> {
+  // The account is looked up as the owner, as `seedNotices` does: the worker's role reads the notification schema.
+  const owner = new Client(asOwner());
+  await owner.connect();
+  let accountId: string;
+  try {
+    const found = await owner.query<{ id: string }>(`SELECT id FROM identity.account WHERE lower(email) = lower($1)`, [
+      input.email,
+    ]);
+    if (!found.rows[0]) throw new Error(`No account for ${input.email}`);
+    accountId = found.rows[0].id;
+  } finally {
+    await owner.end();
+  }
+  const worker = new Client(asWorker());
+  await worker.connect();
+  try {
+    await worker.query('BEGIN');
+    await worker.query(`SELECT set_config('app.current_org', $1, true)`, [input.organizationId]);
+    const counted = await worker.query<{ count: string }>(
+      `SELECT count(*) FROM notification.delivery
+        WHERE organization_id = $1 AND recipient_account_id = $2 AND channel = 'in_app' AND outcome = 'delivered'`,
+      [input.organizationId, accountId],
+    );
+    await worker.query('COMMIT');
+    return Number(counted.rows[0]?.count ?? 0);
+  } finally {
+    await worker.end();
   }
 }

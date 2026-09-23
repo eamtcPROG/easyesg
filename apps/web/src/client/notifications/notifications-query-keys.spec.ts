@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { NOTICE_SHOW } from '@/features/notifications/shared/tools/notice-list-query';
-import { NOTIFICATIONS_QUERY_SCOPE, panelQueryKey, unreadCountQueryKey } from './notifications-query-keys';
+import { NOTIFICATIONS_QUERY_SCOPE, panelQueryKey, panelScopeKey, unreadCountQueryKey } from './notifications-query-keys';
 
 const FIRST = '0b8a1f3e-0000-4000-8000-000000000001';
 const SECOND = '0b8a1f3e-0000-4000-8000-000000000002';
@@ -20,6 +20,13 @@ describe('the notification query keys', () => {
     expect(panelQueryKey({ organizationId: FIRST, show: NOTICE_SHOW.UNREAD })).not.toEqual(
       panelQueryKey({ organizationId: FIRST, show: NOTICE_SHOW.ALL }),
     );
+  });
+
+  it("keep both of an organization's panel views under its panel scope, and the count outside it", () => {
+    expect(under(panelQueryKey({ organizationId: FIRST, show: NOTICE_SHOW.UNREAD }), panelScopeKey(FIRST))).toBe(true);
+    expect(under(panelQueryKey({ organizationId: FIRST, show: NOTICE_SHOW.ALL }), panelScopeKey(FIRST))).toBe(true);
+    expect(under(panelQueryKey({ organizationId: SECOND, show: NOTICE_SHOW.ALL }), panelScopeKey(FIRST))).toBe(false);
+    expect(under(unreadCountQueryKey(FIRST), panelScopeKey(FIRST))).toBe(false);
   });
 
   it('keep every key under the one scope a mark invalidates', () => {

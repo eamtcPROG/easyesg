@@ -180,6 +180,28 @@ export default defineConfig({
     },
     {
       ...STARTED_BY_THIS_RUN,
+      // **The worker, since task 150** (§12.5.6's task-149 row, (1) of task 150's batch): the same artefact
+      // in `MODE=worker`, draining the outbox, delivering notices and publishing AD-15's hints — without it no
+      // write a journey makes ever reaches a socket, and a connected assertion would prove nothing. It has
+      // no port, so Playwright waits for the one line `main.worker.ts` logs once it is up — read by `wait`'s
+      // own listener, so its stdout stays out of the run while its stderr still shows. Its credentials
+      // are its own role's (`esg_worker`, never `esg_app`), and its mail goes to the log provider, which is
+      // why the suite reads tokens from the outbox rather than from an inbox.
+      name: 'Worker',
+      command: 'node dist/main.js',
+      cwd: '../apps/api',
+      wait: { stdout: /The worker is running/ },
+      env: {
+        ...apiEnv,
+        MODE: 'worker',
+        DB_WORKER_USER: process.env.DB_WORKER_USER ?? 'esg_worker',
+        DB_WORKER_PASSWORD: process.env.DB_WORKER_PASSWORD ?? 'devonly-worker',
+        EMAIL_PROVIDER: 'log',
+        PUBLIC_WEB_URL: STACK_ORIGIN.WEB,
+      },
+    },
+    {
+      ...STARTED_BY_THIS_RUN,
       command: 'node apps/web/.next/standalone/apps/web/server.js',
       cwd: '..',
       url: `${STACK_ORIGIN.WEB}/health`,

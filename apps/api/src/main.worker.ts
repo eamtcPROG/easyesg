@@ -1,6 +1,10 @@
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { initialiseCatalogue } from './app/messages/catalogue';
+
+/** What a started worker logs, once — the browser suite waits on it (`e2e/playwright.config.ts`). */
+const WORKER_READY = 'The worker is running: queues consumed and the outbox dispatched.';
 
 /**
  * Worker mode. Same image as `api`, different entrypoint (AD-1, §5.4) — one build, one
@@ -18,4 +22,9 @@ export async function bootstrapWorker(): Promise<void> {
 
   const app = await NestFactory.createApplicationContext(AppModule);
   app.enableShutdownHooks();
+  // The one line that says the worker is up — every module initialised, the consumers and the outbox dispatcher
+  // started. An HTTP process has a port to answer on; this one has only its log, which is what an operator reads and
+  // what the browser suite waits for before its first journey (task 150).
+  new Logger('Worker').log(WORKER_READY);
 }
+
