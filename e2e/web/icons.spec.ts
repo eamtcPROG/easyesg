@@ -76,7 +76,18 @@ test.describe('the head declares the favicon set', () => {
 
     // `themeColor` left on `metadata` warns at build and emits nothing — the quiet variant of
     // the icons trap, and the reason this is asserted rather than assumed.
-    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#2E6A4F');
+    // One per scheme since task 152 (UX-80): the chrome follows `prefers-color-scheme`, `--accent` as each resolves it.
+    // An exact count, so a third copy or a lost pair is a failure rather than a match on the first.
+    const themeColors = page.locator('meta[name="theme-color"]');
+    await expect(themeColors).toHaveCount(2);
+    await expect(themeColors.and(page.locator('[media="(prefers-color-scheme: light)"]'))).toHaveAttribute(
+      'content',
+      '#2E6A4F',
+    );
+    await expect(themeColors.and(page.locator('[media="(prefers-color-scheme: dark)"]'))).toHaveAttribute(
+      'content',
+      '#58B085',
+    );
   });
 });
 

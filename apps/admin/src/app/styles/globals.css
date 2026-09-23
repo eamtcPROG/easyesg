@@ -21,7 +21,7 @@
    masked it by making the UA's own canvas dark, which is a coincidence to rely on rather than a
    rule. The page is painted from the token in both schemes because the token is the authority. */
 body {
-  font: 400 15px/24px var(--font-text);
+  /* The type role is `.t-body`, on `<body>` in `index.html` since task 152 — its one authored copy. */
   color: var(--text-default);
   background: var(--surface-default);
 }

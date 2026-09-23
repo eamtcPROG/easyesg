@@ -5,6 +5,7 @@ import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
+import { RESTATED_TOKEN } from '@/lib/restated-tokens';
 
 /**
  * The root layout. There is deliberately no `src/app/layout.tsx` above this one: every path
@@ -98,11 +99,18 @@ export const metadata: Metadata = {
  *
  * **It belongs to `viewport` and not to `metadata`.** Next moved it, and a `themeColor` left on
  * `metadata` is not an error — it warns at build and emits nothing, which is the quiet half of
- * the same failure mode as the icons above. The value is `--pine-600`, restated because a
- * `<meta>` tag cannot read a custom property; `app/manifest.ts` holds the manifest's copy and
- * the two must move together.
+ * the same failure mode as the icons above. The value is `--accent`, restated because a
+ * `<meta>` tag cannot read a custom property — **in each scheme** since task 152 (UX-80): `--pine-600`
+ * in light and `--pine-dark-400` in dark, so a dark-preferring device's chrome matches the dark app
+ * behind it. `app/manifest.ts` holds the manifest's copy, which cannot follow the scheme, and the
+ * light pair must move with it.
  */
-export const viewport: Viewport = { themeColor: '#2E6A4F' };
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: RESTATED_TOKEN.ACCENT_LIGHT },
+    { media: '(prefers-color-scheme: dark)', color: RESTATED_TOKEN.ACCENT_DARK },
+  ],
+};
 
 export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
@@ -120,7 +128,9 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <html lang={locale}>
-      <body>
+      {/* The `body` type role as a class, like every other surface's role (task 152): `.t-body` is its
+          one authored copy, where `globals.css` used to restate its literals. */}
+      <body className="t-body">
         {/*
           **One provider, at the root, with no props — task 99.**
 

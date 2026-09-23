@@ -25108,3 +25108,54 @@ decision.
 - **Browser**: `e2e:web` across all three projects **276 passed**, and afterwards the outbox holds **no rows at all**, which is the cleanup fix proven where it matters.
 - **web**: unit for the catalogues' parity, 11.
 - **Not run**: the worker e2e, since no consumer or worker provider changed.
+
+## Task 152 — The browser chrome follows the scheme; the `body` role has one copy · 2026-09-23
+
+The two surfaces task 82's dark scheme did not reach. A dark-preferring device now gets dark browser chrome from both
+applications. The splash screen stays light, as a recorded limitation. And the body type role is authored once.
+
+### Decisions
+
+The row prescribed both halves, so no batch was asked. What was settled is recorded in a new §12.5.6 row, *The browser
+chrome follows the scheme; the manifest cannot*.
+
+- **(a) The chrome is a light/dark pair**: `--accent` as each scheme resolves it, `--pine-600` and `--pine-dark-400`.
+  - In the tenant application it is `viewport.themeColor` with `prefers-color-scheme` media.
+  - In the console it is two `<meta name="theme-color">` tags. The row named only the tenant application's files, but
+    the console's `index.html` had the same light-only tag and is corrected in the same change.
+  - The rule is the one the files already stated: the token's value, restated. The dark accent follows from it and
+    is not a new colour choice.
+- **The manifest stays light, and the limitation is recorded with what changes it.** A manifest's colours are single
+  values with no media query, so the splash screen is light on a dark device. A scheme-dependent manifest colour
+  reaching the standard and the supported browsers (NFR-81) would change that.
+- **(b) `<body>` takes `.t-body`** in both applications, as every other surface takes its role. The two `globals.css`
+  rules keep only the ink and the ground.
+
+### What the row did not ask, and why it is here
+
+- **Every restated hex now has a failing state.** The manifest's docblock predicted *"if either token moves, this file
+  is the copy that will not notice"*. The tenant application's three values moved into `lib/restated-tokens.ts`, which
+  the manifest and the layout both import. Its spec, and one in the console over `index.html` (the theme colours and
+  the mask icon's colour), hold each value to `tokens.css`. Moving `--pine-dark-400` by one digit failed both specs;
+  that was run and restored.
+
+### Verification
+
+This is a single-row group closing as its own parent, so it ran the gates its change reaches.
+
+- **web**: unit **1,093**, typecheck.
+- **console**: unit **277**, typecheck.
+- **Both**: lint.
+- **`e2e:web` across all three projects: 273 passed, 3 failed** on the first run.
+  - **Two failures were the change working.** Both `icons.spec.ts` files asserted a single `theme-color` and met a
+    pair. They now assert the exact pair: count two, each scheme's `media` and value. A lost or a third copy is then a
+    failure rather than a match on the first.
+  - **One failure I cannot explain.** A-01's *a read that finds the session gone* timed out waiting for the sign-in
+    field to become editable. It passed on the re-run, beside the icon specs (**29 passed** across the two
+    projects), and passed in task 167's full run. Nothing in this change reaches that screen's behaviour, so it is
+    recorded as seen once rather than explained.
+  - The rest of the run, including axe and the +40% expansion project, passed with the role class on every page.
+- **The served HTML, read, not assumed.** The tenant application's `/sign-in` carries both `theme-color` tags and
+  `<body class="t-body">`, and so does the console's `dist/index.html`. A first read showed the old markup. It came
+  from a server I had started for task 153's check, still holding the port; the stale process was stopped and the
+  read repeated.

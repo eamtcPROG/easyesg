@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { RESTATED_TOKEN } from '@/lib/restated-tokens';
 
 /**
  * The web app manifest, from the favicon set's `site.webmanifest` (design handoff, 11 Sep 2026).
@@ -18,7 +19,15 @@ import type { MetadataRoute } from 'next';
  * **The two colours are tier-1 token values, restated here because a manifest is JSON and
  * cannot read CSS.** `#2E6A4F` is `--pine-600`, the single accent; `#F4F6F8` is `--slate-50`,
  * which `--surface-sunken` resolves to — the page ground, so the splash screen matches the app
- * behind it. If either token moves, this file is the copy that will not notice.
+ * behind it. Both are `lib/restated-tokens.ts`'s since task 152, whose spec fails when either token moves.
+ *
+ * **Light only, and that is a recorded limitation rather than an oversight** (task 152; §12.5.6's
+ * task-152 row). A manifest's colours are single values — the standard has no media query for them —
+ * so a dark-preferring device shows a light splash screen before the dark app paints. The browser
+ * chrome is not this file's: `[locale]/layout.tsx`'s `viewport.themeColor` follows the scheme, and a
+ * browser that honours both uses the `<meta>` over the manifest once the page loads. **What changes
+ * it**: a manifest member for a scheme-dependent colour reaching the standard and the supported
+ * browsers (NFR-81), which would give this file a dark pair of its own.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -29,8 +38,8 @@ export default function manifest(): MetadataRoute.Manifest {
     // (`src/i18n/routing.ts`), so an installed app opens on a real page rather than a 307.
     start_url: '/',
     display: 'standalone',
-    background_color: '#F4F6F8',
-    theme_color: '#2E6A4F',
+    background_color: RESTATED_TOKEN.PAGE_GROUND_LIGHT,
+    theme_color: RESTATED_TOKEN.ACCENT_LIGHT,
     icons: [
       { src: '/favicon/icon-192.png', sizes: '192x192', type: 'image/png' },
       { src: '/favicon/icon-512.png', sizes: '512x512', type: 'image/png' },

@@ -29,7 +29,10 @@
     <link rel="icon" href="/favicon/favicon-16.png" sizes="16x16" />
     <link rel="apple-touch-icon" href="/favicon/apple-touch-icon.png" />
     <link rel="mask-icon" href="/favicon/safari-pinned-tab.svg" color="#2E6A4F" />
-    <meta name="theme-color" content="#2E6A4F" />
+    <!-- The browser chrome, in each scheme since task 152 (UX-80): `--accent` as light and dark resolve it —
+         `--pine-600`, `--pine-dark-400` — restated because a <meta> cannot read a custom property. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#2E6A4F" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#58B085" />
     <!--
       A product name, not copy — the one string here that is not a message key. Everything a
       person reads inside the app resolves through the catalogue (FR-61, FR-62); a sentence in
@@ -37,7 +40,7 @@
     -->
     <title>easyesg</title>
   </head>
-  <body>
+  <body class="t-body">
     <!--
       Task 153 (§12.5.6's task-153 row, NFR-81): the console renders nothing until its script runs, so with scripting
       off a browser would show a blank page — a silent failure. This is the explicit one. **A literal here, not a

@@ -21,9 +21,10 @@
    token layer wins any collision. */
 @import '@easyesg/ui/src/styles/tokens.css';
 
-/* Base typography: the body role and default ink, from the cascade. */
+/* Base ink and ground, from the cascade. The body TYPE role is `.t-body`, on `<body>` in
+   `[locale]/layout.tsx` since task 152 — its one authored copy, where this rule used to restate its
+   literals (UX-127: a value living in two places is a defect). */
 body {
-  font: 400 15px/24px var(--font-text);
   color: var(--text-default);
   background: var(--surface-default);
 }
