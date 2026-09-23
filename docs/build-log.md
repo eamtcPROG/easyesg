@@ -24671,3 +24671,82 @@ one defect and one gap. The owner asked for both to be fixed before commit.
 
 **Verification**: api unit **1,409**, `pnpm e2e` **1,402** in 56 suites, `pnpm e2e:worker` **8**, lint and `boundaries`.
 The run's output carries no presence or adapter lines.
+
+## Task 148 — The frame, its publisher, and the authority it accelerates · 2026-09-23
+
+AD-15's server half is complete: a change now reaches the sockets it concerns as a three-field frame. Task 149 is the
+client, and task 150 proves each driver on screen.
+
+### Decisions (project owner, one batch, before the code)
+
+Recorded in the task-148 row of §12.5.6, and in the 150 row. Both were the recommended option.
+
+- **(1) Task 148 registers and publishes both drivers' events**, so its fan-out is proven by a real change:
+  - `access.changed` goes to the organization, and its authority is `GET /api/v1/access`;
+  - `notification.unread_changed` goes to the account, and its authority is
+    `GET /api/v1/notifications/unread-count`.
+- **(2) An event is raised by every write that changes its authority's answer**, not only by the driver that named
+  it:
+  - for `access.changed`: an invitation issued, resent, revoked or accepted, and a member's role changed or a member
+    removed;
+  - for `notification.unread_changed`: an in-app notice delivered, read, dismissed or all marked read — and, found
+    while building and recorded, a notice withdrawn, which leaves its recipients' centres.
+
+### What the design settled that the batch did not ask
+
+- **Two paths, and each producer takes the one its write is on.**
+  - *A request-tier write* hints through `PUSH_HINTS`, in the service layer after its use case succeeded. That is an
+    outbox row, `push.hint`, on the request's own transaction, so it commits with the change. The worker's
+    `PushHintHandler` publishes it once the row is readable, so a refetch never sees the state before the change.
+    `since` is the row's own time.
+  - *A worker's own write* — the in-app delivery in `DeliverNotification`, a withdrawal in `CancelNotification` —
+    publishes through `PUSH_PUBLISHER` directly, after the write.
+- **The internal hint may name accounts; the browser frame never does.** `frameOf` builds `{event, organizationId,
+  since}` by naming each field rather than stripping the hint, so a field added to the hint cannot reach a browser by
+  default. The contracts half is `EventFrame`, whose three keys `event-frame.proof.ts` holds at compile time.
+- **Routing by organization uses the account's memberships at admission.** `AdmitSocket` now answers them beside the
+  account, and the frame's `organizationId` is what lets a client showing another organization ignore the frame. A
+  membership that ended since the socket opened costs one refetch that returns nothing forbidden.
+- **The api declares the events again**, in `contracts/push.port.ts`, because it may not import `@easyesg/contracts`.
+  `events:check` loads that file directly and fails when the two copies disagree — which the new self-proof also
+  exercises. The root script names the one warning it silences (`MODULE_TYPELESS_PACKAGE_JSON`), because the api
+  package declares no module type.
+- **Each replica subscribes to the hints from its first socket**, as the presence does, so idle replicas and every
+  api suite open no Redis connection.
+
+### Found by the full e2e run
+
+- **An account's first acceptance returned 500.** A request bound to no organization opens no transaction — NFR-63's
+  fail-closed default — and an account accepting its first invitation is exactly that request. Only the full suite
+  saw it; this task's own spec had used members of existing organizations. `PushHintOutboxRepository` now writes the
+  row on the request's transaction where there is one. Where there is none, it writes in a transaction of its own
+  after the acceptance committed: still never before the change, and at worst lost.
+- **About a hundred `push.hint` rows were left behind** by the suites whose writes now hint. `outbox.e2e-spec.ts`
+  named them as strays, as it should, because an api e2e run has no worker to drain them. Following the repository's
+  rule — *what does this suite create that it does not remove?* — each of the eight suites now calls a new helper,
+  `deleteHintsOf`, scoped to its own organizations. A sweep in the outbox suite would be the cross-suite deletion that
+  file was corrected for. The first pass missed `organization-register`, whose member removal uses a random
+  organization id; querying the stray rows' organizations found it.
+
+### Verification
+
+This is a single-row group closing as its own parent. It runs the gates its change reaches, per the owner's standing
+decision: no `pnpm gates` and no review agents.
+
+- **Checks run**:
+  - api unit **1,414**;
+  - `pnpm e2e` **1,406** in 57 suites, with no stray hint left afterwards;
+  - `pnpm e2e:worker` **9** — the new job routes to its handler;
+  - `events:check`, `openapi:check` (contract unchanged), lint, typecheck, `boundaries` and `docs:check`.
+- **Skipped**: the browser suite. No screen consumes a frame until task 149.
+
+**Mutations, each run and restored:**
+
+| Mutation | Result |
+| --- | --- |
+| The frame spreads the hint | The account case fails, on the frame's keys |
+| `hintReaches` answers true | Three cases fail |
+| Issuing an invitation stops hinting | The first case fails |
+| The api routes `access.changed` by account | `events:check` refuses it and names both sides |
+| `EventFrame` gains `accountIds` | The contracts `typecheck` fails |
+| Delivery (spec) | Hinted after the in-app write; a recipient who switched in-app off is not hinted; an email-only notice hints nobody |

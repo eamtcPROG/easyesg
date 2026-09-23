@@ -8,7 +8,7 @@ import { ProblemType, problemTypeUri } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { PERMISSION, SURFACE, type Permission } from '../src/testing/route-permissions';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, deleteHintsOf } from './support/database';
 import {
   cleanupSignedInAccounts,
   signInFreshAccount,
@@ -291,6 +291,8 @@ describe('the permission matrix reaches every route (task 28.2, actors.md §5)',
   }, 120_000);
 
   afterAll(async () => {
+    // The AD-15 hints this suite's writes committed (task 148); no worker drains them here.
+    await deleteHintsOf({ owner, organizationIds: [ORG] });
     await cleanupSignedInAccounts({ owner });
     await removeFixtures();
     await owner?.query(`DELETE FROM identity.auth_attempt`);

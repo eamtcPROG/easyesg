@@ -8,6 +8,7 @@ import { OutboxConsumer } from '../src/infrastructure/queue/outbox-consumer';
 import { EMAIL_VERIFICATION_REQUESTED, PASSWORD_RESET_REQUESTED } from '../src/modules/identity/account/constants/account.constants';
 import { INVITATION_ISSUED } from '../src/modules/identity/invitation/constants/invitation.constants';
 import { AuthGuard } from '../src/modules/identity/session/guards/auth.guard';
+import { PUSH_HINT_EVENT } from '../src/modules/platform/push/constants/push.constants';
 import { ADMIN_INVITATION_ISSUED } from '../src/modules/platform/admin/constants/admin-invitation.constants';
 import {
   NOTIFICATION_CANCELLED,
@@ -91,6 +92,8 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
       PASSWORD_RESET_REQUESTED,
       INVITATION_ISSUED,
       ADMIN_INVITATION_ISSUED,
+      // Task 148: a request-tier hint, published by the worker as the outbox drains.
+      PUSH_HINT_EVENT,
     ])('routes %s to its handler', async (name) => {
       const job = { id: 'boot-probe', name, data: {}, attemptsMade: 0 } as unknown as Job<Record<string, unknown>>;
 

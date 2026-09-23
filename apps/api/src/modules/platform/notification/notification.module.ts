@@ -1,3 +1,6 @@
+import { PUSH_HINTS, PUSH_PUBLISHER, type PushPublisher } from '@api/contracts/push.port';
+import { RedisPushPublisher } from '@api/infrastructure/adapters/push/redis-push-publisher';
+import { PushHintOutboxRepository } from '@api/infrastructure/persistence/platform/push-hint-outbox.repository';
 import { Module, type Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import configuration, { APP_MODE, type AppConfig } from '@api/config/configuration';
@@ -109,6 +112,9 @@ const unsubscribeTokens: Provider = {
  */
 const workerProviders: Provider[] = [
   unsubscribeTokens,
+  // AD-15's hints for the in-app deliveries and withdrawals this module writes (task 148). Its own instance: importing
+  // `PushModule` would close a module cycle through the session module.
+  { provide: PUSH_PUBLISHER, useClass: RedisPushPublisher },
   NotificationCategoryCatalog,
   CategoryChannels,
   { provide: EMAIL_CHANNEL, useClass: EmailChannelService },
@@ -145,6 +151,7 @@ const workerProviders: Provider[] = [
       NotificationCategoryCatalog,
       NOTIFICATION_OPT_OUTS,
       UNSUBSCRIBE_TOKENS,
+      PUSH_PUBLISHER,
     ],
     useFactory: (
       recipients: NotificationRecipientsPort,
@@ -155,6 +162,7 @@ const workerProviders: Provider[] = [
       catalog: NotificationCategoryCatalog,
       optOuts: NotificationOptOuts,
       tokens: UnsubscribeTokens,
+      hints: PushPublisher,
     ) =>
       new DeliverNotification(
         recipients,
@@ -165,13 +173,14 @@ const workerProviders: Provider[] = [
         catalog,
         optOuts,
         tokens,
+        hints,
       ),
   },
   NotificationRaisedHandler,
   {
     provide: CancelNotification,
-    inject: [NOTIFICATION_CANCELLATION_STORE],
-    useFactory: (store: NotificationCancellationStore) => new CancelNotification(store),
+    inject: [NOTIFICATION_CANCELLATION_STORE, PUSH_PUBLISHER],
+    useFactory: (store: NotificationCancellationStore, hints: PushPublisher) => new CancelNotification(store, hints),
   },
   NotificationCancelledHandler,
   {
@@ -273,6 +282,8 @@ const httpProviders: Provider[] = [
   { provide: NOTIFICATION_PORT, useClass: NotificationOutboxRepository },
   { provide: NOTIFICATION_CENTRE_STORE, useClass: NotificationCentreStoreRepository },
   ...centreUseCases,
+  // The reader's other tabs hinted when their count changes (task 148), on the request's own transaction.
+  { provide: PUSH_HINTS, useClass: PushHintOutboxRepository },
   NotificationCentreService,
   NotificationCategoryCatalog,
   { provide: NOTIFICATION_PREFERENCE_STORE, useClass: NotificationPreferenceStoreRepository },

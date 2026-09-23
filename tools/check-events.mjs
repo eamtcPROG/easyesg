@@ -23,6 +23,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { EVENT_CATALOGUE, EVENT_ROUTING_KEY } from '../packages/contracts/src/events/catalogue.ts';
+import { PUSH_EVENT_ROUTING } from '../apps/api/src/contracts/push.port.ts';
 
 const at = (relative) => fileURLToPath(new URL(`../${relative}`, import.meta.url));
 const OPENAPI = at('packages/contracts/openapi/v1.json');
@@ -67,8 +68,43 @@ if (inert.length > 0) {
   process.exit(1);
 }
 
+/**
+ * **The api's copy agrees with the catalogue** (task 148): the api may not import this package, so it declares the
+ * events and their audiences again (`apps/api/src/contracts/push.port.ts`). Every event on either side must be on the
+ * other, with the same routing key — or the api publishes a hint no client knows, or a client waits for one the api
+ * never sends.
+ */
+const mirrorFailures = ({ entries, mirror }) => {
+  const failures = [];
+  const catalogued = new Map(entries.map((entry) => [entry.name, entry.routingKey]));
+  for (const [name, routingKey] of Object.entries(mirror)) {
+    if (!catalogued.has(name)) failures.push(`${name}: the api publishes it and the catalogue does not declare it`);
+    else if (catalogued.get(name) !== routingKey) {
+      failures.push(`${name}: the api routes it by ${routingKey}, the catalogue by ${catalogued.get(name)}`);
+    }
+  }
+  for (const name of catalogued.keys()) {
+    if (!Object.hasOwn(mirror, name)) failures.push(`${name}: the catalogue declares it and the api does not`);
+  }
+  return failures;
+};
+
+const mirrorProof = [
+  mirrorFailures({ entries: [], mirror: { 'proof.only_in_api': EVENT_ROUTING_KEY.ACCOUNT } }).length === 0 &&
+    'an event only the api declares was admitted',
+  mirrorFailures({ entries: [proof('proof.routed', readable ?? '')], mirror: { 'proof.routed': EVENT_ROUTING_KEY.ACCOUNT } })
+    .length === 0 && 'an event routed differently on the two sides was admitted',
+].filter(Boolean);
+if (mirrorProof.length > 0) {
+  console.error(`events:check — the mirror check failed its own proof: ${mirrorProof.join('; ')}.`);
+  process.exit(1);
+}
+
 // ── The catalogue ──
-const failures = catalogueFailures({ entries: EVENT_CATALOGUE, contract });
+const failures = [
+  ...catalogueFailures({ entries: EVENT_CATALOGUE, contract }),
+  ...mirrorFailures({ entries: EVENT_CATALOGUE, mirror: PUSH_EVENT_ROUTING }),
+];
 if (failures.length > 0) {
   console.error(`events:check — ${failures.length} event(s) refused:\n\n${failures.map((f) => `  ✗ ${f}`).join('\n')}`);
   process.exit(1);
@@ -79,6 +115,7 @@ const events = [...EVENT_CATALOGUE]
   .sort((a, b) => a.name.localeCompare(b.name));
 writeFileSync(ARTEFACT, `${JSON.stringify({ events }, null, 2)}\n`);
 console.log(
-  `events:check — ${events.length} event(s), each naming a readable path in the contract; the check proved it refuses ` +
-    'a missing and a write-only authority. Emitted packages/contracts/events/v1.json.',
+  `events:check — ${events.length} event(s), each naming a readable path in the contract and routed as the api routes ` +
+    'it; the check proved it refuses a missing and a write-only authority and a disagreeing mirror. ' +
+    'Emitted packages/contracts/events/v1.json.',
 );

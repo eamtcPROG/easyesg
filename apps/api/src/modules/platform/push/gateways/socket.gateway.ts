@@ -9,13 +9,14 @@ import {
 } from '@nestjs/websockets';
 import type { WebSocket } from 'ws';
 import { SOCKET_CLOSE, SOCKET_LIMIT, SOCKET_PATH } from '../constants/socket.constants';
+import { frameOf, hintReaches, type HintAudience, type PushHint } from '../domain/push-hint';
+import { PUSH_FEED, type PushFeed } from '../interfaces/push-feed.interface';
 import { SOCKET_PRESENCE, type SocketPresence } from '../interfaces/socket-presence.interface';
 import { SocketAdmissionService } from '../services/socket-admission.service';
 
 /** What a replica keeps about a connection it holds: its id in the presence, and whose it is (AD-15). */
-interface HeldConnection {
+interface HeldConnection extends HintAudience {
   readonly connectionId: string;
-  readonly accountId: string;
   /**
    * Its registration in the presence, still in flight or done. **A removal waits for it**: a connection closed before
    * its registration reached Redis would otherwise be removed first — removing nothing — and then added, counted
@@ -37,7 +38,10 @@ interface HeldConnection {
  * the connection (`1008`), since frames are server→client only and the gateway declares no message handler; `ws`
  * refuses a payload over 1 KiB before it is buffered; and a heartbeat ends connections that stop answering pings.
  *
- * **It sends nothing yet**: the frames and their fan-out are task 148's. Nothing here reads tenant data (AD-2).
+ * **It sends frames, and only frames** (task 148): with its first connection it subscribes to the worker's hints, and
+ * each hint goes to the connections it reaches — an account's own, or every member of an organization — as the
+ * three-field frame `frameOf` builds, so the accounts a hint was routed by never reach a browser. Nothing here reads
+ * tenant data (AD-2); what a frame makes a client do is its own authorized refetch.
  */
 @WebSocketGateway({ path: SOCKET_PATH, maxPayload: SOCKET_LIMIT.MAX_CLIENT_PAYLOAD_BYTES })
 export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnApplicationShutdown {
@@ -51,6 +55,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   constructor(
     private readonly admissions: SocketAdmissionService,
     @Inject(SOCKET_PRESENCE) private readonly presence: SocketPresence,
+    @Inject(PUSH_FEED) private readonly feed: PushFeed,
   ) {}
 
   afterInit(): void {
@@ -62,15 +67,22 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
 
   handleConnection(connection: WebSocket, request: IncomingMessage): void {
-    const accountId = this.admissions.accountOf(request);
+    const audience = this.admissions.audienceOf(request);
     // Unreachable while the adapter is `TicketWsAdapter`; closed rather than trusted if that ever changes.
-    if (accountId === null) {
+    if (audience === null) {
       connection.close(SOCKET_CLOSE.CLIENT_FRAME, 'not admitted');
       return;
     }
+    const { accountId, organizationIds } = audience;
     const connectionId = randomUUID();
     this.byId.set(connectionId, connection);
-    this.held.set(connection, { connectionId, accountId, registered: this.presence.register({ accountId, connectionId }) });
+    this.held.set(connection, {
+      connectionId,
+      accountId,
+      organizationIds,
+      registered: this.presence.register({ accountId, connectionId }),
+    });
+    void this.feed.start((hint) => this.deliver(hint));
     this.answered.add(connection);
     connection.on('pong', () => this.answered.add(connection));
     connection.on('message', () => connection.close(SOCKET_CLOSE.CLIENT_FRAME, 'frames are server to client only'));
@@ -87,6 +99,17 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   onApplicationShutdown(): void {
     clearInterval(this.heartbeat);
     for (const connection of this.byId.values()) connection.close(SOCKET_CLOSE.SHUTTING_DOWN, 'shutting down');
+  }
+
+  /** One hint to every connection here it reaches, as the frame. A connection closing is skipped, not an error. */
+  private deliver(hint: PushHint): void {
+    const frame = JSON.stringify(frameOf(hint));
+    for (const connection of this.byId.values()) {
+      const held = this.held.get(connection);
+      if (held !== undefined && connection.readyState === connection.OPEN && hintReaches(hint, held)) {
+        connection.send(frame);
+      }
+    }
   }
 
   private sweep(): void {

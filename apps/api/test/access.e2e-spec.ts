@@ -12,7 +12,7 @@ import {
   ACCESS_STANDING,
   ACCESS_SORT,
 } from '../src/modules/identity/access/models/access.model';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, deleteHintsOf } from './support/database';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
@@ -209,6 +209,8 @@ describe('access — the union of members and invitations (UC-59, FR-56)', () =>
   });
 
   afterAll(async () => {
+    // The AD-15 hints this suite's writes committed (task 148); no worker drains them here.
+    await deleteHintsOf({ owner, organizationIds: [ALPHA, BETA] });
     await unseed();
     await cleanupSignedInAccounts({ owner });
     await owner.destroy();

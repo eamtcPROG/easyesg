@@ -17,7 +17,7 @@ import {
 } from '../src/modules/identity/invitation/interfaces/invitation-store.interface';
 import { INVITED_ROLE } from '../src/modules/identity/invitation/models/invitation.model';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, deleteHintsOf } from './support/database';
 import {
   cleanupSignedInAccounts,
   signInFreshAccount,
@@ -250,6 +250,8 @@ describe('the interim seat ceiling (task 142)', () => {
   }, 180_000);
 
   afterAll(async () => {
+    // The AD-15 hints this suite's writes committed (task 148); no worker drains them here.
+    await deleteHintsOf({ owner, organizationIds: [ORG] });
     await cleanupSignedInAccounts({ owner });
     await unseed();
     if (owner?.isInitialized) await owner.destroy();

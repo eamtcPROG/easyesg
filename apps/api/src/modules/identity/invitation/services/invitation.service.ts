@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { PUSH_EVENT, PUSH_HINTS, type PushHints } from '@api/contracts/push.port';
 
 import { requestContext, requestLocale } from '@api/infrastructure/persistence/request-context';
 import type { Invitation, PendingInvitation } from '../models/invitation.model';
@@ -60,7 +61,16 @@ export class InvitationService {
     private readonly revokeInvitation: RevokeInvitation,
     private readonly previewInvitation: PreviewInvitation,
     private readonly acceptInvitation: AcceptInvitation,
+    @Inject(PUSH_HINTS) private readonly hints: PushHints,
   ) {}
+
+  /**
+   * S-16's list changed (task 148; §12.5.6's task-148 row (2)) — hinted on the request's own transaction after the
+   * use case succeeded, so a refusal hints nothing and the hint commits with the change.
+   */
+  private accessChanged(organizationId: string): Promise<void> {
+    return this.hints.hint({ event: PUSH_EVENT.ACCESS_CHANGED, organizationId });
+  }
 
   list(): Promise<PendingInvitation[]> {
     return this.listInvitations.execute();
@@ -81,23 +91,29 @@ export class InvitationService {
     return organizationId;
   }
 
-  issue(input: InvitationServiceInput<IssueInvitationCommand>): Promise<Invitation> {
-    return this.issueInvitation.execute({
+  async issue(input: InvitationServiceInput<IssueInvitationCommand>): Promise<Invitation> {
+    const organizationId = this.boundOrganization();
+    const invitation = await this.issueInvitation.execute({
       ...input,
-      organizationId: this.boundOrganization(),
+      organizationId,
       // Used only where the invited address has no account of its own — the fallback, not the
       // answer. `IssueInvitation` prefers the invitee's own stored locale, because FR-169 resolves
       // email language per recipient and this administrator is not the recipient.
       inviterLocale: requestLocale(),
     });
+    await this.accessChanged(organizationId);
+    return invitation;
   }
 
-  resend(input: InvitationServiceInput<ResendInvitationCommand>): Promise<void> {
-    return this.resendInvitation.execute({ ...input, organizationId: this.boundOrganization() });
+  async resend(input: InvitationServiceInput<ResendInvitationCommand>): Promise<void> {
+    const organizationId = this.boundOrganization();
+    await this.resendInvitation.execute({ ...input, organizationId });
+    await this.accessChanged(organizationId);
   }
 
-  revoke(command: RevokeInvitationCommand): Promise<void> {
-    return this.revokeInvitation.execute(command);
+  async revoke(command: RevokeInvitationCommand): Promise<void> {
+    await this.revokeInvitation.execute(command);
+    await this.accessChanged(this.boundOrganization());
   }
 
   preview(command: PreviewInvitationCommand): Promise<InvitationPreview> {
@@ -115,16 +131,20 @@ export class InvitationService {
    * `listOwn`'s reason — the guard is a declaration, and this is the layer that would otherwise
    * write a membership for `undefined`.
    */
-  accept(input: AcceptInvitationServiceInput): Promise<AcceptedInvitation> {
+  async accept(input: AcceptInvitationServiceInput): Promise<AcceptedInvitation> {
     const context = requestContext();
     if (!context?.actorId || !context.sessionId) throw new AuthenticationRequiredError();
 
-    return this.acceptInvitation.execute({
+    const accepted = await this.acceptInvitation.execute({
       ...input,
       accountId: context.actorId,
       sessionId: context.sessionId,
       clientIp: context.clientIp,
     });
+    // The inviting organization's list — the acceptance's own transaction has committed; this row commits with the
+    // request, so the worker publishes it after both (the owner's driver: S-16 gains the row someone just accepted).
+    await this.accessChanged(accepted.organizationId);
+    return accepted;
   }
 }
 

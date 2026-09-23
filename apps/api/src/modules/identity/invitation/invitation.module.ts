@@ -1,3 +1,5 @@
+import { PUSH_HINTS } from '@api/contracts/push.port';
+import { PushHintOutboxRepository } from '@api/infrastructure/persistence/platform/push-hint-outbox.repository';
 import { Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
@@ -46,6 +48,9 @@ import { RevokeInvitation } from './use-cases/revoke-invitation.use-case';
 const { mode } = configuration();
 
 const httpProviders: Provider[] = [
+  // S-16's list hinted on the request's own transaction (task 148); the adapter is the request tier's, one per module
+  // that hints, as each provides its own clock.
+  { provide: PUSH_HINTS, useClass: PushHintOutboxRepository },
   InvitationService,
   { provide: INVITATION_STORE, useClass: InvitationStoreRepository },
   /**

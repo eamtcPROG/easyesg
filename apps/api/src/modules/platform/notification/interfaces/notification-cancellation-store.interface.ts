@@ -13,8 +13,11 @@ export interface NotificationCancellationStore {
    * is no later — **in one transaction, holding the key's lock**, the lock `NotificationStore.open` takes too, so a
    * raise and a cancellation of one key running at once each see the other's commit. A key with no open notice
    * still records the time, which is what refuses a raise from before it that arrives afterwards.
+   *
+   * **Answers the accounts that held it in their centre** (task 148) — in-app deliveries of the notices it closed — so
+   * their open screens can be hinted that their counts moved; empty when it closed nothing.
    */
-  cancel(command: CancelNoticeCommand): Promise<void>;
+  cancel(command: CancelNoticeCommand): Promise<{ readonly inAppRecipientIds: readonly string[] }>;
 }
 
 export interface CancelNoticeCommand {

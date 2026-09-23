@@ -93,3 +93,19 @@ export const databaseNow = async (connection: DataSource): Promise<Date> => {
   const rows: { at: Date }[] = await connection.query('SELECT now() AS at');
   return rows[0].at;
 };
+
+/**
+ * Removes the AD-15 hints a suite's writes committed (task 148). Every tenant write that changes S-16's list or a
+ * reader's unread count now leaves a `push.hint` outbox row with the change, and no worker drains it in an api e2e run —
+ * so a suite making such writes owes this in its `afterAll`, or `outbox.e2e-spec.ts` names its rows as strays. Scoped
+ * by the suite's own organizations, never a sweep.
+ */
+export const deleteHintsOf = async (input: {
+  /** A connection as `esg_migrator` — the only role holding DELETE on `audit.outbox_event`. */
+  readonly owner: DataSource;
+  readonly organizationIds: readonly string[];
+}): Promise<void> => {
+  await input.owner.query(`DELETE FROM audit.outbox_event WHERE event_type = 'push.hint' AND organization_id = ANY($1::uuid[])`, [
+    [...input.organizationIds],
+  ]);
+};

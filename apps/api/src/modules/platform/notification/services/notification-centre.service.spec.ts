@@ -34,6 +34,8 @@ describe('NotificationCentreService (tasks 50.1.2, 50.2.1)', () => {
       {} as MarkNotificationRead,
       {} as DismissNotification,
       {} as MarkAllNotificationsRead,
+      // The list reads; it hints nothing (task 148).
+      { hint: () => Promise.resolve() },
     );
   const query = { readState: null, categories: [], newestFirst: true, skip: 0, take: 25 };
   const translated = jest.mocked(translate);

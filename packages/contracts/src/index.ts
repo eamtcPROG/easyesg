@@ -376,6 +376,7 @@ export {
   EVENT_CATALOGUE,
   EVENT_ROUTING_KEY,
   type EventCatalogueEntry,
+  type EventFrame,
   type EventName,
   type EventRoutingKey,
   type ReadablePath,

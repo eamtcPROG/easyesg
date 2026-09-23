@@ -2,6 +2,7 @@ import type { IncomingMessage } from 'node:http';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AppConfig } from '@api/config/configuration';
+import type { HintAudience } from '../domain/push-hint';
 import { judgeUpgrade } from '../domain/upgrade-request';
 import { SocketTicketService } from './socket-ticket.service';
 
@@ -23,7 +24,7 @@ export type UpgradeVerdict = { readonly admitted: true } | { readonly admitted: 
 @Injectable()
 export class SocketAdmissionService {
   private readonly logger = new Logger(SocketAdmissionService.name);
-  private readonly admitted = new WeakMap<IncomingMessage, string>();
+  private readonly admitted = new WeakMap<IncomingMessage, HintAudience>();
   private readonly allowedOrigin: string;
 
   constructor(
@@ -40,7 +41,7 @@ export class SocketAdmissionService {
     try {
       const admission = await this.tickets.admit({ ticket: judgement.ticket });
       if (admission === null) return { admitted: false, status: UNAUTHORIZED };
-      this.admitted.set(request, admission.accountId);
+      this.admitted.set(request, admission);
       return { admitted: true };
     } catch (error) {
       // Never the ticket in the log: it is a credential until it is spent.
@@ -49,8 +50,8 @@ export class SocketAdmissionService {
     }
   }
 
-  /** The account an admitted upgrade was for — null for a request this service never admitted. */
-  accountOf(request: IncomingMessage): string | null {
+  /** Whose an admitted upgrade was, and where that account belonged — null for a request this service never admitted. */
+  audienceOf(request: IncomingMessage): HintAudience | null {
     return this.admitted.get(request) ?? null;
   }
 }

@@ -177,7 +177,7 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
    * outstanding again, and stays open. A cancellation and a raise made in one transaction share a time, and the
    * cancellation wins: it is the later call.
    */
-  cancel(command: CancelNoticeCommand): Promise<void> {
+  cancel(command: CancelNoticeCommand): Promise<{ readonly inAppRecipientIds: readonly string[] }> {
     return this.inOrganization(command.organizationId, async (runner) => {
       await holdKeyLock(runner, command);
       const key = [command.organizationId, command.categoryKey, command.subjectRef, command.recipientScope];
@@ -189,12 +189,19 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
          DO UPDATE SET cancelled_at = GREATEST(notification.cancellation.cancelled_at, EXCLUDED.cancelled_at)`,
         [...key, command.cancelledAtMicros],
       );
-      await runner.query(
-        `UPDATE notification.notification SET state = $6, cancelled_at = ${atMicros('$5')}
-          WHERE organization_id = $1 AND category_key = $2 AND subject_ref = $3 AND recipient_scope = $4
-            AND state <> $6 AND last_raised_at <= ${atMicros('$5')}`,
-        [...key, command.cancelledAtMicros, NOTIFICATION_STATE.CANCELLED],
-      );
+      // One statement: the notices it closes, and — for task 148's hint — the accounts that held them in their centre.
+      const recipients = (await runner.query(
+        `WITH closed AS (
+           UPDATE notification.notification SET state = $6, cancelled_at = ${atMicros('$5')}
+            WHERE organization_id = $1 AND category_key = $2 AND subject_ref = $3 AND recipient_scope = $4
+              AND state <> $6 AND last_raised_at <= ${atMicros('$5')}
+           RETURNING id)
+         SELECT DISTINCT d.recipient_account_id AS id
+           FROM notification.delivery d JOIN closed ON d.notification_id = closed.id
+          WHERE d.channel = $7 AND d.outcome = $8 AND d.recipient_account_id IS NOT NULL`,
+        [...key, command.cancelledAtMicros, NOTIFICATION_STATE.CANCELLED, NOTIFICATION_CHANNEL.IN_APP, DELIVERY_OUTCOME.DELIVERED],
+      )) as { id: string }[];
+      return { inAppRecipientIds: recipients.map((row) => row.id) };
     });
   }
 

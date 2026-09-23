@@ -18,7 +18,9 @@ import type { paths } from '../generated/v1';
  * under Node's type stripping, which resolves no extensionless relative specifier. The one import is `import type`,
  * erased before Node sees it.
  *
- * **Zero events**, on task 3's precedent: the gate exists before the first entry, so the first entry meets it.
+ * **The first two events arrived with task 148** (§12.5.6's task-148 row): the gate existed before them, on task 3's
+ * precedent, so they met it. **The api declares them again** in its port surface (`apps/api/src/contracts/push.port.ts`),
+ * since it may not import this package, and `events:check` fails when the two copies disagree.
  */
 
 /**
@@ -49,7 +51,28 @@ export interface EventCatalogueEntry {
   readonly authority: ReadablePath;
 }
 
-export const EVENT_CATALOGUE = [] as const satisfies readonly EventCatalogueEntry[];
+export const EVENT_CATALOGUE = [
+  /** S-16's list of members and invitations changed — any write that changes `GET /access`'s answer. */
+  { name: 'access.changed', routingKey: EVENT_ROUTING_KEY.ORGANIZATION, authority: '/api/v1/access' },
+  /** A person's unread count changed — an in-app notice delivered, read, dismissed, all marked read, or withdrawn. */
+  {
+    name: 'notification.unread_changed',
+    routingKey: EVENT_ROUTING_KEY.ACCOUNT,
+    authority: '/api/v1/notifications/unread-count',
+  },
+] as const satisfies readonly EventCatalogueEntry[];
 
-/** The name of an event the catalogue declares — none yet, so nothing can be published. */
+/** The name of an event the catalogue declares. */
 export type EventName = (typeof EVENT_CATALOGUE)[number]['name'];
+
+/**
+ * **The frame a browser receives — exactly three fields, and no tenant data** (AD-15's first constraint; §12.5.6's
+ * task-148 row). Its only effect is to make the screen refetch its authority, sooner than its poll would. `since` is
+ * when the change was made, in epoch milliseconds; `organizationId` is what lets a client showing another
+ * organization ignore it. `event-frame.proof.ts` fails `typecheck` if a field is added.
+ */
+export interface EventFrame {
+  readonly event: EventName;
+  readonly organizationId: string;
+  readonly since: number;
+}

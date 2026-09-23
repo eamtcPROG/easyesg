@@ -8,7 +8,7 @@ import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
-import { asOrganization, connectAs, databaseNow } from './support/database';
+import { asOrganization, connectAs, databaseNow, deleteHintsOf } from './support/database';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
@@ -146,6 +146,8 @@ describe('members (UC-59, UC-62, UC-63, UC-64)', () => {
   }, 180_000);
 
   afterAll(async () => {
+    // The AD-15 hints this suite's writes committed (task 148); no worker drains them here.
+    await deleteHintsOf({ owner, organizationIds: [ORG, OTHER_ORG] });
     await cleanupSignedInAccounts({ owner });
     await unseed();
     if (owner?.isInitialized) await owner.destroy();

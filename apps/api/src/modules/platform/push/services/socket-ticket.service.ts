@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
 import { AuthenticationRequiredError } from '@api/modules/identity/membership/errors/membership.errors';
-import { AdmitSocket } from '../use-cases/admit-socket.use-case';
+import { AdmitSocket, type SocketAudience } from '../use-cases/admit-socket.use-case';
 import { IssueSocketTicket } from '../use-cases/issue-socket-ticket.use-case';
 
 /**
@@ -22,7 +22,7 @@ export class SocketTicketService {
     return this.issueTicket.execute({ sessionId });
   }
 
-  admit(input: { readonly ticket: string }): Promise<{ readonly accountId: string } | null> {
+  admit(input: { readonly ticket: string }): Promise<SocketAudience | null> {
     return this.admitSocket.execute(input);
   }
 }

@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { PUSH_EVENT, PUSH_HINTS, type PushHints } from '@api/contracts/push.port';
 import type { Locale } from '@easyesg/i18n';
 import { DEFAULT_ON_PAGE } from '@api/app/constants/pagination.constants';
 import { translate } from '@api/app/messages/catalogue';
 import type { ListQueryInput } from '@api/contracts/types/list-query';
-import { requestLocale } from '@api/infrastructure/persistence/request-context';
+import { requestContext, requestLocale } from '@api/infrastructure/persistence/request-context';
 import { toNotificationCentreQuery } from '../domain/notification-centre-query';
 import type {
   NotificationCentreEntry,
@@ -38,7 +39,22 @@ export class NotificationCentreService {
     private readonly markNotificationRead: MarkNotificationRead,
     private readonly dismissNotification: DismissNotification,
     private readonly markAllNotificationsRead: MarkAllNotificationsRead,
+    @Inject(PUSH_HINTS) private readonly hints: PushHints,
   ) {}
+
+  /**
+   * The reader's count changed (task 148; §12.5.6's task-148 row (2)) — their own other tabs show it too. Hinted on the
+   * request's transaction; a request bound to no organization or actor has no centre to hint about.
+   */
+  private async unreadChanged(): Promise<void> {
+    const context = requestContext();
+    if (!context?.organizationId || !context.actorId) return;
+    await this.hints.hint({
+      event: PUSH_EVENT.NOTIFICATION_UNREAD_CHANGED,
+      organizationId: context.organizationId,
+      accountIds: [context.actorId],
+    });
+  }
 
   /** The parsed list query, narrowed to what the centre can be asked — the read model's decision, not HTTP's. */
   narrow(list: ListQueryInput): NotificationCentreQuery {
@@ -59,16 +75,19 @@ export class NotificationCentreService {
     return this.countUnread.execute();
   }
 
-  markRead(command: { readonly notificationId: string }): Promise<void> {
-    return this.markNotificationRead.execute(command);
+  async markRead(command: { readonly notificationId: string }): Promise<void> {
+    await this.markNotificationRead.execute(command);
+    await this.unreadChanged();
   }
 
-  dismiss(command: { readonly notificationId: string }): Promise<void> {
-    return this.dismissNotification.execute(command);
+  async dismiss(command: { readonly notificationId: string }): Promise<void> {
+    await this.dismissNotification.execute(command);
+    await this.unreadChanged();
   }
 
-  markAllRead(): Promise<void> {
-    return this.markAllNotificationsRead.execute();
+  async markAllRead(): Promise<void> {
+    await this.markAllNotificationsRead.execute();
+    await this.unreadChanged();
   }
 }
 

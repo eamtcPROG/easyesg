@@ -481,6 +481,23 @@ Four things to know before touching it:
     `test/push-socket.e2e-spec.ts` listens on `127.0.0.1` itself, since an upgrade needs a real port, and proves the
     cap across replicas with a second application in the same process.
 
+- **The frames are the worker's hints, and a suite that writes owes their cleanup** (task 148; §12.5.6's task-148
+  row). A write that changes S-16's list or a reader's unread count hints through `PUSH_HINTS`, in the service layer
+  after its use case succeeded: an outbox row, `push.hint`, on the request's own transaction — or, for a request
+  bound to no organization (a first acceptance), in its own transaction after the change committed. The worker's
+  `PushHintHandler` publishes it on Redis; the worker's own writes — an in-app delivery, a withdrawal — publish
+  through `PUSH_PUBLISHER` directly. Every api replica holding a socket hears them (`RedisPushFeed`, subscribed from
+  its first socket) and sends `frameOf`'s three fields to the connections `hintReaches`. Three things to know:
+  - **An api e2e run has no worker, so every hint a suite's writes commit stays in the outbox**, and
+    `outbox.e2e-spec.ts` names it as a stray. A suite that issues, resends, revokes or accepts an invitation, changes
+    or removes a member, or reads or dismisses a notice calls `deleteHintsOf({ owner, organizationIds })` in its
+    `afterAll` — eight suites do. Deleting them in the outbox suite instead is the sweep that file was corrected for.
+  - **The api declares the events again**, in `contracts/push.port.ts`, because it may not import
+    `@easyesg/contracts`; `events:check` loads that file directly and fails when it and the catalogue disagree, so
+    it must keep no runtime import.
+  - **The notification module provides its own `PUSH_PUBLISHER`** on the worker rather than importing
+    `PushModule`, which would close a module cycle through the session module.
+
 **Notification**
 
 **The store is the worker's, and nothing else writes it** (task 50.1.1; §12.5.6's task-50.1 row). The

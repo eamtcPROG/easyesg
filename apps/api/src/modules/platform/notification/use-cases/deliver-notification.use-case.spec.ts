@@ -197,6 +197,13 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
       options.categories ?? classified(NOTIFICATION_CLASSIFICATION.TRANSACTIONAL),
       optOuts,
       plainTokens,
+      // AD-15's hint (task 148), recorded in the same sequence as the store's writes, so its order is assertable.
+      {
+        publish: (hint) => {
+          events.push(`hint:${hint.event}:${'accountIds' in hint ? hint.accountIds.join(',') : ''}`);
+          return Promise.resolve();
+        },
+      },
     );
     const run = (raised: NotificationRaised, deliveryId: string, raisedAtMicros = 1_790_726_400_000_000) =>
       deliver.execute({ notice: raised, organizationId: ORGANIZATION, deliveryId, raisedAtMicros });
@@ -276,7 +283,23 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
     const { run } = build(answering(['in_app', 'email']));
     await run(notice(), 'outbox-key-1');
 
-    expect(events).toEqual([`in_app:${ANA},${IVAN}`, 'email:ana@example.md', 'email:ivan@example.md']);
+    expect(events).toEqual([
+      `in_app:${ANA},${IVAN}`,
+      `hint:notification.unread_changed:${ANA},${IVAN}`,
+      'email:ana@example.md',
+      'email:ivan@example.md',
+    ]);
+  });
+
+  // Task 148: the hint follows the in-app write — a refetch it triggers finds the delivery — and an email-only notice,
+  // which moves no centre's count, hints nobody.
+  it('hints the in-app recipients once their deliveries are written, and nobody for an email-only notice', async () => {
+    await build(answering(['in_app'])).run(notice(), 'outbox-key-1');
+    expect(events).toEqual([`in_app:${ANA},${IVAN}`, `hint:notification.unread_changed:${ANA},${IVAN}`]);
+
+    events = [];
+    await build(answering(['email'])).run(notice(), 'outbox-key-2');
+    expect(events.filter((event) => event.startsWith('hint:'))).toEqual([]);
   });
 
   it('keeps in-app delivered through a provider failure, and completes only the email when run again', async () => {
@@ -373,7 +396,12 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
 
       expect(email.sent.map((sent) => sent.to)).toEqual(['ana@example.md']);
       expect(store.optedOut).toEqual([{ recipientId: IVAN, channel: 'email' }]);
-      expect(events).toEqual([`opted_out:email:${IVAN}`, `in_app:${ANA},${IVAN}`, 'email:ana@example.md']);
+      expect(events).toEqual([
+        `opted_out:email:${IVAN}`,
+        `in_app:${ANA},${IVAN}`,
+        `hint:notification.unread_changed:${ANA},${IVAN}`,
+        'email:ana@example.md',
+      ]);
     });
 
     it('keeps an in-app notice out of the centre of a recipient who switched it off there', async () => {
@@ -383,7 +411,8 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
       });
       await run(notice({ categoryKey: REMINDER }), 'outbox-key-1');
 
-      expect(events).toEqual([`opted_out:in_app:${ANA}`, `in_app:${IVAN}`]);
+      // Only the recipient whose centre gained the notice is hinted (task 148): Ana's count did not move.
+      expect(events).toEqual([`opted_out:in_app:${ANA}`, `in_app:${IVAN}`, `hint:notification.unread_changed:${IVAN}`]);
       expect(store.notices[0].state).toBe('delivered');
     });
 

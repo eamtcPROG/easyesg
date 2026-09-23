@@ -15,7 +15,7 @@ import { configureHttpApp } from '../src/main.http';
 import { INVITATION_ISSUED } from '../src/modules/identity/invitation/constants/invitation.constants';
 import { INVITED_ROLE } from '../src/modules/identity/invitation/models/invitation.model';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, deleteHintsOf } from './support/database';
 import { cleanupSignedInAccounts, registerFreshAccount, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
@@ -206,6 +206,8 @@ describe('invitations (UC-60, UC-61)', () => {
   }, 180_000);
 
   afterAll(async () => {
+    // The AD-15 hints this suite's writes committed (task 148); no worker drains them here.
+    await deleteHintsOf({ owner, organizationIds: [ORG, OTHER_ORG] });
     await cleanupSignedInAccounts({ owner });
     await unseed();
     if (owner?.isInitialized) await owner.destroy();
@@ -630,6 +632,8 @@ describe('invitations — the mail-amplifier throttle (task 141)', () => {
   }, 180_000);
 
   afterAll(async () => {
+    // The AD-15 hints this suite's writes committed (task 148); no worker drains them here.
+    await deleteHintsOf({ owner, organizationIds: [ORGANIZATION, OTHER_ORGANIZATION] });
     await unseed();
     await cleanupSignedInAccounts({ owner });
     if (owner?.isInitialized) await owner.destroy();

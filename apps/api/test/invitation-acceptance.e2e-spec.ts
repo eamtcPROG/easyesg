@@ -13,7 +13,7 @@ import { MEMBERSHIP_GRANT_KIND } from '../src/modules/identity/invitation/interf
 import { INVITED_ROLE } from '../src/modules/identity/invitation/models/invitation.model';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { EMAIL_VERIFICATION_REQUESTED } from '../src/modules/identity/account/constants/account.constants';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, deleteHintsOf } from './support/database';
 import { PASSWORD, cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
@@ -210,6 +210,8 @@ describe('invitation acceptance (UC-15)', () => {
   }, 240_000);
 
   afterAll(async () => {
+    // The AD-15 hints this suite's writes committed (task 148); no worker drains them here.
+    await deleteHintsOf({ owner, organizationIds: [ALPHA, BETA] });
     await cleanupSignedInAccounts({ owner });
     await unseed();
     if (owner?.isInitialized) await owner.destroy();

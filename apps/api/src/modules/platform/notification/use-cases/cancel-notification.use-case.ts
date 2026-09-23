@@ -1,3 +1,4 @@
+import { PUSH_EVENT, type PushPublisher } from '@api/contracts/push.port';
 import type {
   CancelNoticeCommand,
   NotificationCancellationStore,
@@ -12,9 +13,19 @@ import type {
  * here from two reads would be the read-then-write the lock exists to prevent.
  */
 export class CancelNotification {
-  constructor(private readonly store: NotificationCancellationStore) {}
+  constructor(
+    private readonly store: NotificationCancellationStore,
+    /** A withdrawn notice leaves its in-app recipients' centres, so their counts move (task 148). */
+    private readonly hints: PushPublisher,
+  ) {}
 
-  execute(command: CancelNoticeCommand): Promise<void> {
-    return this.store.cancel(command);
+  async execute(command: CancelNoticeCommand): Promise<void> {
+    const { inAppRecipientIds } = await this.store.cancel(command);
+    if (inAppRecipientIds.length === 0) return;
+    await this.hints.publish({
+      event: PUSH_EVENT.NOTIFICATION_UNREAD_CHANGED,
+      organizationId: command.organizationId,
+      accountIds: inAppRecipientIds,
+    });
   }
 }

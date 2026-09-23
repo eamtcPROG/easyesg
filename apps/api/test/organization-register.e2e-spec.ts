@@ -16,7 +16,7 @@ import {
 } from '../src/modules/platform/admin/domain/admin-cookie-codec';
 import { ADMIN_ROLE } from '../src/modules/platform/admin/models/admin-session.model';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
-import { asOrganization, connectAs, databaseNow, required } from './support/database';
+import { asOrganization, connectAs, databaseNow, deleteHintsOf, required } from './support/database';
 import {
   cleanupSignedInAccounts,
   signInFreshAccount,
@@ -211,6 +211,8 @@ describe('the organization register (A-02, UC-69; task 67.3)', () => {
   afterAll(async () => {
     await cleanupSignedInOperators({ owner });
     await cleanupSignedInAccounts({ owner });
+    // The AD-15 hint its member removal committed (task 148); no worker drains it here.
+    await deleteHintsOf({ owner, organizationIds: [alfaId, betaId].filter(Boolean) });
     // Entities, periods, reports and memberships cascade from the organization.
     for (const id of [alfaId, betaId].filter(Boolean)) {
       await asOrganization(owner, id, (run) => run(`DELETE FROM core.organization WHERE id = $1`, [id]));

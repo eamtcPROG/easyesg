@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { PUSH_EVENT, PUSH_HINTS, type PushHints } from '@api/contracts/push.port';
 import { ChangeMemberRole, type ChangeMemberRoleCommand } from '../use-cases/change-member-role.use-case';
 import { ListMembers } from '../use-cases/list-members.use-case';
 import { ListOwnMemberships } from '../use-cases/list-own-memberships.use-case';
@@ -41,7 +42,15 @@ export class MembershipService {
     private readonly changeMemberRole: ChangeMemberRole,
     private readonly removeMemberUseCase: RemoveMember,
     private readonly switchActiveOrganization: SwitchActiveOrganization,
+    @Inject(PUSH_HINTS) private readonly hints: PushHints,
   ) {}
+
+  /** S-16's list changed (task 148): hinted on the request's own transaction, after the use case succeeded. */
+  private async accessChanged(): Promise<void> {
+    const organizationId = requestContext()?.organizationId;
+    if (!organizationId) throw new AuthenticationRequiredError();
+    await this.hints.hint({ event: PUSH_EVENT.ACCESS_CHANGED, organizationId });
+  }
 
   list(): Promise<OrganizationMember[]> {
     return this.listMembers.execute();
@@ -90,11 +99,13 @@ export class MembershipService {
     });
   }
 
-  changeRole(command: ChangeMemberRoleCommand): Promise<void> {
-    return this.changeMemberRole.execute(command);
+  async changeRole(command: ChangeMemberRoleCommand): Promise<void> {
+    await this.changeMemberRole.execute(command);
+    await this.accessChanged();
   }
 
-  remove(command: RemoveMemberCommand): Promise<void> {
-    return this.removeMemberUseCase.execute(command);
+  async remove(command: RemoveMemberCommand): Promise<void> {
+    await this.removeMemberUseCase.execute(command);
+    await this.accessChanged();
   }
 }

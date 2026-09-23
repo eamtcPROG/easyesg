@@ -112,6 +112,8 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
         { behaviourOf: () => null },
         optOuts(worker),
         unsubscribeTokens(),
+        // AD-15's hint (task 148) is `push-hints.e2e-spec.ts`'s subject; here it goes nowhere.
+        { publish: () => Promise.resolve() },
       ),
     );
 
@@ -119,7 +121,7 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
     provider = new RecordingEmailPort();
     handler = raisedHandlerWith(provider);
     cancelledHandler = new NotificationCancelledHandler(
-      new CancelNotification(notificationStore(worker)),
+      new CancelNotification(notificationStore(worker), { publish: () => Promise.resolve() }),
     );
   });
 

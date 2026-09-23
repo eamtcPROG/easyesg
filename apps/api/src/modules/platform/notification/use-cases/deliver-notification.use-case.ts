@@ -1,3 +1,4 @@
+import { PUSH_EVENT, type PushPublisher } from '@api/contracts/push.port';
 import { NOTICE_APPLICATION } from '@api/contracts/notification-delivery.port';
 import type { NotificationRecipientsPort } from '@api/contracts/notification-recipients.port';
 import type { EpochMicros } from '@api/contracts/types/time';
@@ -74,6 +75,12 @@ export class DeliverNotification {
     private readonly optOuts: NotificationOptOuts,
     /** Signs FR-169's one-click unsubscribe into a switchable category's email (task 52.2.2). */
     private readonly unsubscribeTokens: UnsubscribeTokens,
+    /**
+     * Hints each in-app recipient's open screens that their count changed (task 148; §12.5.6's task-148 row) — once
+     * the delivery rows are written, so the refetch it triggers finds them. Lossy by design: the centre's poll is the
+     * authority, and a publish that fails does not fail the delivery.
+     */
+    private readonly hints: PushPublisher,
   ) {}
 
   async execute(command: DeliverNotificationCommand): Promise<DeliverNotificationResult> {
@@ -124,7 +131,9 @@ export class DeliverNotification {
 
     const inApp = owed(NOTIFICATION_CHANNEL.IN_APP);
     if (inApp.length > 0) {
-      await this.store.deliverInApp({ ...ref, recipientIds: inApp.map((recipient) => recipient.userId) });
+      const accountIds = inApp.map((recipient) => recipient.userId);
+      await this.store.deliverInApp({ ...ref, recipientIds: accountIds });
+      await this.hints.publish({ event: PUSH_EVENT.NOTIFICATION_UNREAD_CHANGED, organizationId, accountIds });
     }
 
     for (const recipient of owed(NOTIFICATION_CHANNEL.EMAIL)) {

@@ -55,7 +55,7 @@ describe('IssueSocketTicket and AdmitSocket (task 147)', () => {
     const { ticket } = await new IssueSocketTicket(tickets, now).execute({ sessionId: 'session-1' });
     const admit = admission(tickets, identity());
 
-    await expect(admit.execute({ ticket })).resolves.toEqual({ accountId: 'account-ana' });
+    await expect(admit.execute({ ticket })).resolves.toEqual({ accountId: 'account-ana', organizationIds: [] });
     await expect(admit.execute({ ticket })).resolves.toBeNull();
   });
 

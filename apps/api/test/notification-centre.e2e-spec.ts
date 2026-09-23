@@ -11,7 +11,7 @@ import { configureHttpApp } from '../src/main.http';
 import { returnedRows } from '../src/infrastructure/persistence/returned-rows';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { DELIVERY_OUTCOME } from '../src/modules/platform/notification/models/notification-record.model';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, deleteHintsOf } from './support/database';
 import { deleteNotificationsOf, notificationStore } from './support/notification-store';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
@@ -178,6 +178,8 @@ describe('the notification centre (tasks 50.1.2, 50.2.1)', () => {
 
   afterAll(async () => {
     if (owner) {
+      // The AD-15 hints this suite's writes committed (task 148); no worker drains them here.
+      await deleteHintsOf({ owner, organizationIds: [ORG] });
       await unseed();
       await cleanupSignedInAccounts({ owner });
     }

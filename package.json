@@ -37,7 +37,7 @@
     "gates:clean": "pnpm clean && pnpm gates",
     "openapi:emit": "pnpm --filter @easyesg/api openapi:emit",
     "openapi:check": "pnpm openapi:emit && pnpm --filter @easyesg/contracts generate && git diff --exit-code packages/contracts/openapi/v1.json packages/contracts/src/generated",
-    "events:check": "node tools/check-events.mjs && git diff --exit-code packages/contracts/events",
+    "events:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tools/check-events.mjs && git diff --exit-code packages/contracts/events",
     "image:check": "node tools/check-image-dependencies.mjs",
     "docs:check": "node tools/check-docs-claims.mjs",
     "routes:check": "pnpm --filter @easyesg/admin build && git diff --exit-code apps/admin/src/app/route-tree.gen.ts",

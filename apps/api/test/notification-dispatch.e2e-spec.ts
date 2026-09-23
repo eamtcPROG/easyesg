@@ -176,6 +176,8 @@ describe('a notification raised and dispatched by category (task 49.3)', () => {
         new NotificationCategoryCatalog(store),
         optOuts(worker),
         unsubscribeTokens(),
+        // AD-15's hint (task 148) is `push-hints.e2e-spec.ts`'s subject; here it goes nowhere.
+        { publish: () => Promise.resolve() },
       ),
     );
 
