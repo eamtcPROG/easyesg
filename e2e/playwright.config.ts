@@ -76,6 +76,8 @@ const apiEnv = {
   // Task 27.1 — the admin store opens `totp_secret` on every sign-in, and
   // `provisionOperator` seals it on the way in. Both are this one key.
   SECRET_ENCRYPTION_KEY: process.env.SECRET_ENCRYPTION_KEY ?? 'devonly-secret-encryption-key',
+  // Task 52.2.2 — FR-169's one-click unsubscribe is checked here, and S-38's journey signs its link under it.
+  UNSUBSCRIBE_SIGNING_KEY: process.env.UNSUBSCRIBE_SIGNING_KEY ?? 'devonly-unsubscribe-signing-key-for-local-runs',
   ADMIN_ORIGIN: STACK_ORIGIN.CONSOLE,
   BILLING_ENABLED: process.env.BILLING_ENABLED ?? 'true',
 };

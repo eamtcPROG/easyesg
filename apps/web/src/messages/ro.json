@@ -456,6 +456,23 @@
       "failedTitle": "Acțiunea nu a putut fi finalizată",
       "unreachableBody": "Nu am primit un răspuns, așa că nimic nu a fost modificat. Încercați din nou.",
       "doneAction": "Nu mai aveți nimic de făcut."
+    },
+    "unsubscribe": {
+      "title": "Dezabonare de la e-mailuri",
+      "loading": "Se verifică linkul…",
+      "intro": "Nu veți mai primi prin e-mail mesajele din categoria „{category}”. Ce vedeți în centrul de notificări rămâne neschimbat.",
+      "introUnnamed": "Nu veți mai primi prin e-mail acest tip de mesaje. Ce vedeți în centrul de notificări rămâne neschimbat.",
+      "confirm": "Dezabonați-mă",
+      "doneTitle": "V-ați dezabonat",
+      "doneBody": "Nu vă mai trimitem prin e-mail mesajele din categoria „{category}”. Celelalte e-mailuri și notificările din aplicație continuă ca până acum.",
+      "doneBodyUnnamed": "Nu vă mai trimitem prin e-mail acest tip de mesaje. Celelalte e-mailuri și notificările din aplicație continuă ca până acum.",
+      "alreadyTitle": "Sunteți deja dezabonat",
+      "alreadyBody": "Mesajele din categoria „{category}” nu vă mai sunt trimise prin e-mail, așa că nu este nimic de schimbat.",
+      "alreadyBodyUnnamed": "Acest tip de mesaje nu vă mai este trimis prin e-mail, așa că nu este nimic de schimbat.",
+      "unusableTitle": "Linkul nu poate fi folosit",
+      "unusableBody": "Acest link de dezabonare nu poate opri niciun e-mail, așa că nu s-a schimbat nimic. Folosiți linkul din cel mai recent e-mail de acest fel primit de la noi.",
+      "problemTitle": "Dezabonarea nu a reușit",
+      "problemBody": "Ceva a împiedicat dezabonarea, așa că e-mailurile vă vor fi trimise în continuare. Reîncărcați pagina și încercați din nou."
     }
   },
   "organization": {

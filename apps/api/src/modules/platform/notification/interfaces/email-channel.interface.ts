@@ -1,4 +1,5 @@
 import type { Locale } from '@easyesg/i18n';
+import type { EmailUnsubscribe } from '@api/contracts/email.port';
 import type { NotificationCategoryKey } from '@api/contracts/notification.port';
 import type { DeliveryOutcome } from '../models/notification-record.model';
 
@@ -19,6 +20,8 @@ export interface NotificationEmail {
   readonly params: Record<string, unknown>;
   /** §8.4's idempotency key, so a redelivered job asks the provider for the same message rather than a second. */
   readonly idempotencyKey: string;
+  /** FR-169's one-click unsubscribe, on a category the recipient may switch off and no other (task 52.2.2). */
+  readonly unsubscribe?: EmailUnsubscribe;
 }
 
 /**

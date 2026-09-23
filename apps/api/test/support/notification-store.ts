@@ -1,6 +1,7 @@
 import type { DataSource } from 'typeorm';
 import type { EmailPort } from '@api/contracts/email.port';
 import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
+import { HmacUnsubscribeTokens } from '@api/infrastructure/adapters/unsubscribe-token/hmac-unsubscribe-tokens';
 import { NotificationRecipientsRepository } from '@api/infrastructure/persistence/identity/notification-recipients.repository';
 import { NotificationPreferenceStoreRepository } from '@api/infrastructure/persistence/platform/notification-preference-store.repository';
 import { NotificationStoreRepository } from '@api/infrastructure/persistence/platform/notification-store.repository';
@@ -28,6 +29,13 @@ export const suppressionStore = (worker: DataSource): SuppressionStoreRepository
  */
 export const optOuts = (worker: DataSource): NotificationPreferenceStoreRepository =>
   new NotificationPreferenceStoreRepository(worker);
+
+/**
+ * `UNSUBSCRIBE_TOKENS` under the key the entrypoints hold (task 52.2.2), so a link a suite's delivery signs is one the
+ * api it drives will read — `notificationStore`'s rule for the cipher, for the same reason.
+ */
+export const unsubscribeTokens = (): HmacUnsubscribeTokens =>
+  new HmacUnsubscribeTokens(required('UNSUBSCRIBE_SIGNING_KEY'));
 
 /**
  * `NOTIFICATION_DELIVERY` as the worker builds it, over a connection as `esg_worker` and a provider the suite records

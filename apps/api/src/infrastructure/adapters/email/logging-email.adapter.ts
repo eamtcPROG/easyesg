@@ -32,7 +32,7 @@ export class LoggingEmailAdapter implements EmailPort {
   send(message: EmailMessage): Promise<EmailDispatched> {
     // Rendered before anything is claimed to have been sent, so a missing or malformed template
     // fails here — in development, on the first send — rather than at task 51 against a provider.
-    const { subject, body } = renderEmail(message.locale, message.templateKey, message.params);
+    const { subject, body } = renderEmail(message);
 
     this.logger.log(
       `${message.templateKey} → ${this.pseudonym(message.to)} [${message.locale}] ` +

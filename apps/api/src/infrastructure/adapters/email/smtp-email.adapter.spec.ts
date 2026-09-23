@@ -85,6 +85,23 @@ describe('SmtpEmailAdapter', () => {
     expect(sent.headers['X-Idempotency-Key']).toBe(MESSAGE.idempotencyKey);
   });
 
+  /** RFC 8058 (task 52.2.2): both headers on a message carrying an unsubscribe, neither on one that does not. */
+  it('sends the one-click unsubscribe headers with an unsubscribe, and none without', async () => {
+    const oneClickUrl = 'https://app.easyesg.md/mail/unsubscribe/v1~abc~def';
+    await new SmtpEmailAdapter(SETTINGS).send({
+      ...MESSAGE,
+      templateKey: NOTIFICATION_CATEGORY.MANUAL_REMINDER,
+      params: { ...MESSAGE.params, senderName: 'Ana', entityName: 'Lina', fiscalYear: '2026', noteGiven: 'none' },
+      unsubscribe: { link: 'https://app.easyesg.md/ro/unsubscribe/v1~abc~def', oneClickUrl },
+    });
+    await new SmtpEmailAdapter(SETTINGS).send(MESSAGE);
+
+    const [[optional], [mandatory]] = sendMail.mock.calls as [[{ headers: Record<string, string> }], [{ headers: Record<string, string> }]];
+    expect(optional.headers['List-Unsubscribe']).toBe(`<${oneClickUrl}>`);
+    expect(optional.headers['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
+    expect(Object.keys(mandatory.headers)).toEqual(['X-Idempotency-Key']);
+  });
+
   it("returns the provider's handle, which is what bounce matching will join on", async () => {
     const result = await new SmtpEmailAdapter(SETTINGS).send(MESSAGE);
     expect(result.providerMessageId).toBe('<provider-handle@smtp>');

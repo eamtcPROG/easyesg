@@ -84,6 +84,7 @@ function configFrom(config: ConfigService<AppConfig, true>): AppConfig {
     redis: config.get('redis', { infer: true }),
     auth: config.get('auth', { infer: true }),
     secrets: config.get('secrets', { infer: true }),
+    notification: config.get('notification', { infer: true }),
     admin: config.get('admin', { infer: true }),
     email: config.get('email', { infer: true }),
     web: config.get('web', { infer: true }),

@@ -1239,6 +1239,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/notification-preferences/unsubscribe/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read what an unsubscribe link would switch off, without switching it
+         * @description The link’s standing and the category it is about. Changes nothing, so a link opened by a mail scanner unsubscribes nobody.
+         */
+        post: operations["NotificationUnsubscribeController_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/notification-preferences/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop one optional category’s email, as the unsubscribe link names it
+         * @description Switches the link’s category off by email for the person it was sent to, and changes nothing else. Pressing again is not an error. The person can switch it back on from their profile.
+         */
+        post: operations["NotificationUnsubscribeController_switchOff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/{id}/prior-period": {
         parameters: {
             query?: never;
@@ -3313,6 +3353,24 @@ export interface components {
         SetNotificationPreferencesRequestDto: {
             /** @description Every pair the person has switched off, among those the read offers; every offered pair not named is switched on. A pair the read does not offer — a mandatory category, or a channel the category does not travel on — refuses the whole write. Empty switches everything on. */
             switchedOff: components["schemas"]["NotificationPreferencePairDto"][];
+        };
+        UnsubscribeResponseDto: {
+            /**
+             * @description What the link can do: `available` — the category still reaches the person by email and the link can switch it off; `switched_off` — it no longer does; `unusable` — the link can switch nothing off.
+             * @enum {string}
+             */
+            standing: "available" | "switched_off" | "unusable";
+            /**
+             * @description The category the link is about — a key to act on, never text to show. Absent when unusable.
+             * @enum {string}
+             */
+            categoryKey?: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            /** @description The category’s name in the negotiated language. Absent when unusable, or when none is written. */
+            categoryName?: string;
+        };
+        UnsubscribeTokenRequestDto: {
+            /** @description The signed token from the unsubscribe link. In the body, as the invitation’s is, so the api’s own logs never carry it; the link that holds it is a page on the tenant application. */
+            token: string;
         };
         PriorReportPinDto: {
             /** Format: uuid */
@@ -6474,6 +6532,67 @@ export interface operations {
                 };
             };
             /** @description The body is malformed, or names a pair the read does not offer — a mandatory category, or a channel the category does not travel on (problem type validation-failed). Nothing was changed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    NotificationUnsubscribeController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnsubscribeTokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description What the link can do. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["UnsubscribeResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    NotificationUnsubscribeController_switchOff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnsubscribeTokenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Switched off. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["UnsubscribeResponseDto"];
+                    };
+                };
+            };
+            /** @description The link can switch nothing off — it was not issued by this platform, or its category may no longer be switched off (problem type validation-failed). Nothing changed. */
             400: {
                 headers: {
                     [name: string]: unknown;

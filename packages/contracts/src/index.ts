@@ -344,4 +344,10 @@ export type IdentityProviderPublication = components['schemas']['IdentityProvide
 // request's language, each absent where none is written; the category key is for the client to act on, never to show.
 /** One notice in the recipient's centre, with this recipient's read state. */
 export type NotificationItem = components['schemas']['NotificationItemResponseDto'];
+
+// platform — FR-169's one-click unsubscribe (task 52.2.2): S-38's read and its switch, both public and both taking the
+// signed token in a POST body. The standing is the one vocabulary a screen branches on.
+export { UNSUBSCRIBE_STANDING, type UnsubscribeStanding } from './notification';
+export type UnsubscribeTokenRequest = components['schemas']['UnsubscribeTokenRequestDto'];
+export type UnsubscribeAnswer = components['schemas']['UnsubscribeResponseDto'];
 export type UnreadCount = components['schemas']['UnreadCountResponseDto'];

@@ -63,6 +63,14 @@ export class NotificationPreferenceStoreRepository implements NotificationPrefer
     );
   }
 
+  async switchOff(command: { readonly accountId: string; readonly pair: NotificationPreferencePair }): Promise<void> {
+    await this.dataSource.query(
+      `INSERT INTO notification.preference (account_id, category_key, channel) VALUES ($1, $2, $3)
+       ON CONFLICT (account_id, category_key, channel) DO NOTHING`,
+      [command.accountId, command.pair.categoryKey, command.pair.channel],
+    );
+  }
+
   async replace(command: ReplaceNotificationPreferencesCommand): Promise<void> {
     const offered = columns(command.offered);
     const switchedOff = columns(command.switchedOff);

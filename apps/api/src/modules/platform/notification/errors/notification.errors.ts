@@ -37,3 +37,18 @@ export class NotificationPreferenceNotOfferedError extends DomainError {
     super('platform.notification.preference_not_offered');
   }
 }
+
+/**
+ * A one-click unsubscribe whose link cannot switch anything off — not signed by this platform, or naming a category
+ * that may no longer be switched off (task 52.2.2; FR-169). **400**: what was sent does not belong to anyone's
+ * preferences. One refusal for both causes, `UNSUBSCRIBE_STANDING.UNUSABLE`'s reason, and its wording's way out is
+ * S-27, which the reader can reach whichever it was.
+ */
+export class UnsubscribeLinkUnusableError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('platform.notification.unsubscribe_link_unusable');
+  }
+}

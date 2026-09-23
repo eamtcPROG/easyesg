@@ -17,7 +17,7 @@ import { isLocale } from '@easyesg/i18n';
 /**
  * Every first path segment this module has an opinion about, spelled once.
  *
- * **Three sets below are drawn from these eight members and each used to spell its own literals**
+ * **Three sets below are drawn from these members and each used to spell its own literals**
  * — `'sign-in'` appeared in all three and `'register'` in two, so a renamed route desynchronised
  * them silently and in the worst direction: two of the three are the closed-by-default gate and its
  * reverse, and a drifted copy either stops bouncing an authenticated route or stops bouncing a
@@ -41,6 +41,7 @@ const SEGMENT = {
   RESET: 'reset',
   SET_PASSWORD: 'set-password',
   INVITATION: 'invitation',
+  UNSUBSCRIBE: 'unsubscribe',
   // (identity), behind a session — task 155
   COMPLETE_ACCOUNT: 'complete-account',
   // (app), and in no organization's scope — task 83.3
@@ -64,6 +65,8 @@ export const UNAUTHENTICATED_SEGMENTS = new Set<string>([
   SEGMENT.RESET,
   SEGMENT.SET_PASSWORD,
   SEGMENT.INVITATION,
+  // S-38 (task 52.2.2): an optional email's reader is usually signed out, and the signed token is the whole proof.
+  SEGMENT.UNSUBSCRIBE,
 ]);
 
 /**

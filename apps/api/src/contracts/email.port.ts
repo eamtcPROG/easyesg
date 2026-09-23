@@ -39,6 +39,21 @@ export interface EmailMessage {
    * Here it is the outbox row's key, so a redelivered job sends one message rather than two.
    */
   readonly idempotencyKey: string;
+  /**
+   * FR-169's one-click unsubscribe, present on every email of a category a person may switch off and on no other
+   * (task 52.2.2; §12.5.6's task-52.2 row) — **the one addition to §12.5.2's vocabulary**, and a provider-neutral one:
+   * RFC 8058's two headers are the internet's, not a vendor's. The adapter renders `link` as the footer the renderer
+   * appends, and sends `oneClickUrl` as `List-Unsubscribe` with `List-Unsubscribe-Post`.
+   */
+  readonly unsubscribe?: EmailUnsubscribe;
+}
+
+/** The two addresses a switchable category's email carries (task 52.2.2). */
+export interface EmailUnsubscribe {
+  /** S-38, in the recipient's language: the page a person opens from the message. */
+  readonly link: string;
+  /** RFC 8058's target, which a mail client posts to on the person's behalf. */
+  readonly oneClickUrl: string;
 }
 
 /** A platform result, not a provider response. §12.5.2 says so in terms. */

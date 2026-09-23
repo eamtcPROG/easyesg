@@ -3439,6 +3439,100 @@
         ]
       }
     },
+    "/api/v1/account/notification-preferences/unsubscribe/preview": {
+      "post": {
+        "description": "The link’s standing and the category it is about. Changes nothing, so a link opened by a mail scanner unsubscribes nobody.",
+        "operationId": "NotificationUnsubscribeController_preview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnsubscribeTokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What the link can do.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/UnsubscribeResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Read what an unsubscribe link would switch off, without switching it",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/account/notification-preferences/unsubscribe": {
+      "post": {
+        "description": "Switches the link’s category off by email for the person it was sent to, and changes nothing else. Pressing again is not an error. The person can switch it back on from their profile.",
+        "operationId": "NotificationUnsubscribeController_switchOff",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnsubscribeTokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Switched off.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/UnsubscribeResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The link can switch nothing off — it was not issued by this platform, or its category may no longer be switched off (problem type validation-failed). Nothing changed.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Stop one optional category’s email, as the unsubscribe link names it",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/api/v1/reports/{id}/prior-period": {
       "get": {
         "description": "Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.",
@@ -8937,6 +9031,52 @@
         },
         "required": [
           "switchedOff"
+        ]
+      },
+      "UnsubscribeResponseDto": {
+        "type": "object",
+        "properties": {
+          "standing": {
+            "type": "string",
+            "enum": [
+              "available",
+              "switched_off",
+              "unusable"
+            ],
+            "description": "What the link can do: `available` — the category still reaches the person by email and the link can switch it off; `switched_off` — it no longer does; `unusable` — the link can switch nothing off."
+          },
+          "categoryKey": {
+            "type": "string",
+            "enum": [
+              "identity.email_verification",
+              "identity.password_reset",
+              "identity.invitation",
+              "platform.admin_invitation",
+              "reporting.manual_reminder"
+            ],
+            "description": "The category the link is about — a key to act on, never text to show. Absent when unusable."
+          },
+          "categoryName": {
+            "type": "string",
+            "description": "The category’s name in the negotiated language. Absent when unusable, or when none is written."
+          }
+        },
+        "required": [
+          "standing"
+        ]
+      },
+      "UnsubscribeTokenRequestDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The signed token from the unsubscribe link. In the body, as the invitation’s is, so the api’s own logs never carry it; the link that holds it is a page on the tenant application.",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "token"
         ]
       },
       "PriorReportPinDto": {

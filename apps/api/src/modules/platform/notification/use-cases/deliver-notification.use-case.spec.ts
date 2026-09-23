@@ -19,6 +19,7 @@ import type { NotificationOptOuts, OptedOutRecipient } from '../interfaces/notif
 import { NOTIFICATION_CLASSIFICATION, type NotificationChannel } from '../models/notification-category.model';
 import { DELIVERY_OUTCOME, type NotificationState } from '../models/notification-record.model';
 import type { NotificationChannelDecision } from '../interfaces/notification-channel-decision.interface';
+import { plainTokens } from '../testing/notification-preference-store.fake';
 import { DeliverNotification } from './deliver-notification.use-case';
 
 /**
@@ -195,6 +196,7 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
       'https://app.easyesg.md',
       options.categories ?? classified(NOTIFICATION_CLASSIFICATION.TRANSACTIONAL),
       optOuts,
+      plainTokens,
     );
     const run = (raised: NotificationRaised, deliveryId: string, raisedAtMicros = 1_790_726_400_000_000) =>
       deliver.execute({ notice: raised, organizationId: ORGANIZATION, deliveryId, raisedAtMicros });
@@ -396,6 +398,31 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
       expect(optOuts.asked).toBe(0);
       expect(email.sent.map((sent) => sent.to)).toEqual(['ana@example.md', 'ivan@example.md']);
       expect(store.optedOut).toEqual([]);
+    });
+
+    it('carries a signed unsubscribe, in each recipient’s language, on a category they may switch off (task 52.2.2)', async () => {
+      const { run, email } = build(answering(['email']), {
+        categories: classified(NOTIFICATION_CLASSIFICATION.OPTIONAL),
+      });
+      await run(notice({ categoryKey: REMINDER }), 'outbox-key-1');
+
+      expect(email.sent.map((sent) => sent.unsubscribe)).toEqual([
+        {
+          link: `https://app.easyesg.md/ro/unsubscribe/signed:${ANA}:${REMINDER}:email`,
+          oneClickUrl: `https://app.easyesg.md/mail/unsubscribe/signed:${ANA}:${REMINDER}:email`,
+        },
+        {
+          link: `https://app.easyesg.md/ru/unsubscribe/signed:${IVAN}:${REMINDER}:email`,
+          oneClickUrl: `https://app.easyesg.md/mail/unsubscribe/signed:${IVAN}:${REMINDER}:email`,
+        },
+      ]);
+    });
+
+    it('carries no unsubscribe on a category nobody may switch off', async () => {
+      const { run, email } = build(answering(['email']));
+      await run(notice(), 'outbox-key-1');
+
+      expect(email.sent.map((sent) => sent.unsubscribe)).toEqual([undefined, undefined]);
     });
 
     it('does not decide twice: a job run again sends nothing to whom it recorded opted out', async () => {

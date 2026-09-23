@@ -6,8 +6,9 @@ import { AppModule } from '../src/app.module';
 import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { seedConfiguration } from '../src/infrastructure/configuration/seed-configuration';
+import { HmacUnsubscribeTokens } from '../src/infrastructure/adapters/unsubscribe-token/hmac-unsubscribe-tokens';
 import { configureHttpApp } from '../src/main.http';
-import { connectAs } from './support/database';
+import { connectAs, required } from './support/database';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
@@ -96,7 +97,11 @@ describe('notification preferences (UC-168, FR-163)', () => {
         categoryKey: REMINDER,
         categoryName: 'Mementouri',
         mandatory: false,
-        channels: [{ channel: 'in_app', enabled: true }],
+        // By email too since task 52.2.2 published it.
+        channels: [
+          { channel: 'in_app', enabled: true },
+          { channel: 'email', enabled: true },
+        ],
       },
     ]);
   });
@@ -113,9 +118,13 @@ describe('notification preferences (UC-168, FR-163)', () => {
       .send({ switchedOff: [{ categoryKey: REMINDER, channel: 'in_app' }] })
       .expect(200);
 
-    expect(reminderOf(saved)?.channels).toEqual([{ channel: 'in_app', enabled: false }]);
+    expect(reminderOf(saved)?.channels).toEqual([
+      { channel: 'in_app', enabled: false },
+      { channel: 'email', enabled: true },
+    ]);
     expect(reminderOf(await http().get(PATH).set(ana.authorization).expect(200))?.channels).toEqual([
       { channel: 'in_app', enabled: false },
+      { channel: 'email', enabled: true },
     ]);
     expect(await storedFor(ana)).toEqual([{ category_key: REMINDER, channel: 'in_app' }]);
 
@@ -155,14 +164,8 @@ describe('notification preferences (UC-168, FR-163)', () => {
     expect(await storedFor(ana)).toEqual([]);
   });
 
-  it('refuses a channel the category does not travel on', async () => {
-    await http()
-      .put(PATH)
-      .set(ana.authorization)
-      .send({ switchedOff: [{ categoryKey: REMINDER, channel: 'email' }] })
-      .expect(400);
-    expect(await storedFor(ana)).toEqual([]);
-  });
+  // A channel the category does not travel on is the use case's spec since task 52.2.2: the seed publishes the reminder
+  // on both channels, so no seeded category leaves one to refuse here.
 
   it('refuses a category or a channel outside the vocabulary before anything is read', async () => {
     await http()
@@ -178,19 +181,79 @@ describe('notification preferences (UC-168, FR-163)', () => {
   });
 
   it('leaves standing a switch-off the read does not offer, and writes only its own account', async () => {
-    // A choice made while the reminder travelled by email — which the seed does not publish until task 52.2.
+    // A row the read offers no switch for — a locked category's, as a category later made mandatory would leave behind.
     await owner.query(
-      `INSERT INTO notification.preference (account_id, category_key, channel) VALUES ($1, $2, 'email'), ($3, $2, 'in_app')`,
-      [ana.accountId, REMINDER, ion.accountId],
+      `INSERT INTO notification.preference (account_id, category_key, channel)
+       VALUES ($1, 'identity.invitation', 'email'), ($2, $3, 'in_app')`,
+      [ana.accountId, ion.accountId, REMINDER],
     );
 
     await http().put(PATH).set(ana.authorization).send({ switchedOff: [] }).expect(200);
 
-    expect(await storedFor(ana)).toEqual([{ category_key: REMINDER, channel: 'email' }]);
+    expect(await storedFor(ana)).toEqual([{ category_key: 'identity.invitation', channel: 'email' }]);
     expect(await storedFor(ion)).toEqual([{ category_key: REMINDER, channel: 'in_app' }]);
     expect(reminderOf(await http().get(PATH).set(ion.authorization).expect(200))?.channels).toEqual([
       { channel: 'in_app', enabled: false },
+      { channel: 'email', enabled: true },
     ]);
+  });
+
+  describe('the one-click unsubscribe (task 52.2.2, FR-169)', () => {
+    const UNSUBSCRIBE = `${PATH}/unsubscribe`;
+    // The key the api under test holds, so a token signed here is one it will read — as the worker's would be.
+    const tokens = () => new HmacUnsubscribeTokens(required('UNSUBSCRIBE_SIGNING_KEY'));
+    const reminderEmailOf = (account: SignedInAccount) =>
+      tokens().sign({ accountId: account.accountId, categoryKey: REMINDER, channel: 'email' });
+    const objectOf = (res: { body: unknown }) => (res.body as { object: Record<string, unknown> }).object;
+
+    it('reads what a link would switch off, with no session and without switching it', async () => {
+      const preview = await http().post(`${UNSUBSCRIBE}/preview`).send({ token: reminderEmailOf(ana) }).expect(200);
+
+      expect(objectOf(preview)).toEqual({ standing: 'available', categoryKey: REMINDER, categoryName: 'Mementouri' });
+      expect(await storedFor(ana)).toEqual([]);
+    });
+
+    it('switches off the link’s category by email for the person it names, and nothing else, twice over', async () => {
+      await http()
+        .put(PATH)
+        .set(ion.authorization)
+        .send({ switchedOff: [] })
+        .expect(200);
+      const token = reminderEmailOf(ana);
+
+      const done = await http().post(UNSUBSCRIBE).send({ token }).expect(200);
+      expect(objectOf(done)).toMatchObject({ standing: 'switched_off', categoryKey: REMINDER });
+      // A mail client posting after the person pressed S-38's button is the same wish, not an error.
+      await http().post(UNSUBSCRIBE).send({ token }).expect(200);
+
+      expect(await storedFor(ana)).toEqual([{ category_key: REMINDER, channel: 'email' }]);
+      expect(await storedFor(ion)).toEqual([]);
+      expect(objectOf(await http().post(`${UNSUBSCRIBE}/preview`).send({ token }).expect(200)).standing).toBe(
+        'switched_off',
+      );
+    });
+
+    it('refuses a link it did not sign, and one whose category may not be switched off, writing nothing', async () => {
+      const forged = new HmacUnsubscribeTokens('a-key-this-platform-does-not-hold-0000000000').sign({
+        accountId: ana.accountId,
+        categoryKey: REMINDER,
+        channel: 'email',
+      });
+      const mandatory = tokens().sign({
+        accountId: ana.accountId,
+        categoryKey: 'identity.password_reset',
+        channel: 'email',
+      });
+
+      for (const token of [forged, mandatory]) {
+        expect(objectOf(await http().post(`${UNSUBSCRIBE}/preview`).send({ token }).expect(200))).toEqual({
+          standing: 'unusable',
+        });
+        const refused = await http().post(UNSUBSCRIBE).send({ token }).expect(400);
+        expect((refused.body as { type: string }).type).toBe(`${PROBLEM_BASE_URI}/validation-failed`);
+      }
+      expect(await storedFor(ana)).toEqual([]);
+    });
   });
 
   it('asks for a session', async () => {

@@ -7,6 +7,7 @@ import { NOTIFICATION_RECIPIENTS, type NotificationRecipientsPort } from '@api/c
 import { SECRET_CIPHER } from '@api/contracts/secret-cipher.port';
 import { EmailModule } from '@api/infrastructure/adapters/email/email.module';
 import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
+import { HmacUnsubscribeTokens } from '@api/infrastructure/adapters/unsubscribe-token/hmac-unsubscribe-tokens';
 import { NotificationRecipientsRepository } from '@api/infrastructure/persistence/identity/notification-recipients.repository';
 import { NotificationCentreStoreRepository } from '@api/infrastructure/persistence/platform/notification-centre-store.repository';
 import { NotificationOutboxRepository } from '@api/infrastructure/persistence/platform/notification-outbox.repository';
@@ -17,6 +18,7 @@ import { NotificationCancelledHandler } from './consumers/notification-cancelled
 import { NotificationRaisedHandler } from './consumers/notification-raised.handler';
 import { NotificationCentreController } from './controllers/notification-centre.controller';
 import { NotificationPreferencesController } from './controllers/notification-preferences.controller';
+import { NotificationUnsubscribeController } from './controllers/notification-unsubscribe.controller';
 import { EMAIL_CHANNEL, type EmailChannel } from './interfaces/email-channel.interface';
 import {
   NOTIFICATION_CANCELLATION_STORE,
@@ -33,12 +35,14 @@ import {
 } from './interfaces/notification-preference-store.interface';
 import { NOTIFICATION_STORE, type NotificationStore } from './interfaces/notification-store.interface';
 import { SUPPRESSION_STORE } from './interfaces/suppression-store.interface';
+import { UNSUBSCRIBE_TOKENS, type UnsubscribeTokens } from './interfaces/unsubscribe-tokens.interface';
 import { CategoryChannels } from './services/category-channels.service';
 import { EmailChannelService } from './services/email-channel.service';
 import { NotificationCategoryCatalog } from './services/notification-category-catalog.service';
 import { NotificationCentreService } from './services/notification-centre.service';
 import { NotificationDeliveryService } from './services/notification-delivery.service';
 import { NotificationPreferencesService } from './services/notification-preferences.service';
+import { NotificationUnsubscribeService } from './services/notification-unsubscribe.service';
 import { CancelNotification } from './use-cases/cancel-notification.use-case';
 import { CountUnreadNotifications } from './use-cases/count-unread-notifications.use-case';
 import { DeliverLinkNotice } from './use-cases/deliver-link-notice.use-case';
@@ -47,8 +51,10 @@ import { DismissNotification } from './use-cases/dismiss-notification.use-case';
 import { ListNotifications } from './use-cases/list-notifications.use-case';
 import { MarkAllNotificationsRead } from './use-cases/mark-all-notifications-read.use-case';
 import { MarkNotificationRead } from './use-cases/mark-notification-read.use-case';
+import { PreviewUnsubscribe } from './use-cases/preview-unsubscribe.use-case';
 import { ReadNotificationPreferences } from './use-cases/read-notification-preferences.use-case';
 import { SetNotificationPreferences } from './use-cases/set-notification-preferences.use-case';
+import { Unsubscribe } from './use-cases/unsubscribe.use-case';
 
 /**
  * `platform/notification` — FR-157, FR-160 … FR-173
@@ -75,12 +81,25 @@ import { SetNotificationPreferences } from './use-cases/set-notification-prefere
 const { mode } = configuration();
 
 /**
+ * FR-169's signed token (task 52.2.2), in **both** modes: the worker signs it into an optional category's email and the
+ * HTTP tier checks it when the link is followed — each has a caller, so each holds `UNSUBSCRIBE_SIGNING_KEY`, and the
+ * adapter throws at boot when it is absent.
+ */
+const unsubscribeTokens: Provider = {
+  provide: UNSUBSCRIBE_TOKENS,
+  inject: [ConfigService],
+  useFactory: (config: ConfigService<AppConfig, true>) =>
+    new HmacUnsubscribeTokens(config.get('notification.unsubscribeSigningKey', { infer: true })),
+};
+
+/**
  * What sends: the category catalogue and the channel seam over it, the one email channel, the notice a handler
  * delivers from its producer's own event, who a notice reaches, the store a notice is recorded in, the raised notice's use
  * case and handler, and since task 50.1.3 the withdrawn notice's. **All of it on the worker** — the catalogue included
  * until task 52.1, whose preferences ask it which categories a person is offered, and which provides its own below.
  */
 const workerProviders: Provider[] = [
+  unsubscribeTokens,
   NotificationCategoryCatalog,
   CategoryChannels,
   { provide: EMAIL_CHANNEL, useClass: EmailChannelService },
@@ -116,6 +135,7 @@ const workerProviders: Provider[] = [
       ConfigService,
       NotificationCategoryCatalog,
       NOTIFICATION_OPT_OUTS,
+      UNSUBSCRIBE_TOKENS,
     ],
     useFactory: (
       recipients: NotificationRecipientsPort,
@@ -125,6 +145,7 @@ const workerProviders: Provider[] = [
       config: ConfigService<AppConfig, true>,
       catalog: NotificationCategoryCatalog,
       optOuts: NotificationOptOuts,
+      tokens: UnsubscribeTokens,
     ) =>
       new DeliverNotification(
         recipients,
@@ -134,6 +155,7 @@ const workerProviders: Provider[] = [
         config.get('web.publicUrl', { infer: true }),
         catalog,
         optOuts,
+        tokens,
       ),
   },
   NotificationRaisedHandler,
@@ -187,6 +209,14 @@ const preferenceUseCases: Provider[] = [ReadNotificationPreferences, SetNotifica
   useFactory: (store: NotificationPreferenceStore, catalog: NotificationCategoryCatalog) => new useCase(store, catalog),
 }));
 
+/** FR-169's one-click unsubscribe (task 52.2.2): the token, the catalogue and the store, for its read and its switch. */
+const unsubscribeUseCases: Provider[] = [PreviewUnsubscribe, Unsubscribe].map((useCase) => ({
+  provide: useCase,
+  inject: [UNSUBSCRIBE_TOKENS, NotificationCategoryCatalog, NOTIFICATION_PREFERENCE_STORE],
+  useFactory: (tokens: UnsubscribeTokens, catalog: NotificationCategoryCatalog, store: NotificationPreferenceStore) =>
+    new useCase(tokens, catalog, store),
+}));
+
 /**
  * What raises — an outbox row on the producer's own request transaction — the recipient's centre (task 50.1.2), which
  * reads the store under the request's tenant binding and writes nothing but the recipient's own read state, and since
@@ -201,11 +231,17 @@ const httpProviders: Provider[] = [
   { provide: NOTIFICATION_PREFERENCE_STORE, useClass: NotificationPreferenceStoreRepository },
   ...preferenceUseCases,
   NotificationPreferencesService,
+  unsubscribeTokens,
+  ...unsubscribeUseCases,
+  NotificationUnsubscribeService,
 ];
 
 @Module({
   imports: mode === APP_MODE.WORKER ? [EmailModule] : [],
-  controllers: mode === APP_MODE.WORKER ? [] : [NotificationCentreController, NotificationPreferencesController],
+  controllers:
+    mode === APP_MODE.WORKER
+      ? []
+      : [NotificationCentreController, NotificationPreferencesController, NotificationUnsubscribeController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
   exports: mode === APP_MODE.WORKER ? [NOTIFICATION_DELIVERY] : [NOTIFICATION_PORT],
 })

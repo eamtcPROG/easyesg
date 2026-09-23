@@ -245,6 +245,10 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // belong to a person rather than to an organization and are reachable before one is bound.
   'GET /account/notification-preferences': PERMISSION.ACCOUNT,
   'PUT /account/notification-preferences': PERMISSION.ACCOUNT,
+  // FR-169's one-click unsubscribe (task 52.2.2): public, because the signed token in the body is the whole of who
+  // and what — an optional email's reader is usually signed out, and one click is the requirement's word.
+  'POST /account/notification-preferences/unsubscribe': PERMISSION.PUBLIC,
+  'POST /account/notification-preferences/unsubscribe/preview': PERMISSION.PUBLIC,
   'POST /account/password': PERMISSION.ACCOUNT,
   'GET /account/totp': PERMISSION.ACCOUNT,
   'POST /account/totp/enrolment': PERMISSION.ACCOUNT,

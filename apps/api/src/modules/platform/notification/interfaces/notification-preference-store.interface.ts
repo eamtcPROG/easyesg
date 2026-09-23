@@ -14,6 +14,11 @@ export interface NotificationPreferenceStore {
    * other stored pair as it stands. A pair already off keeps the time it was first switched off.
    */
   replace(command: ReplaceNotificationPreferencesCommand): Promise<void>;
+  /**
+   * Switches one pair off, leaving every other as it stands — FR-169's one-click unsubscribe (task 52.2.2). Switching
+   * off a pair already off keeps the time it was first switched off.
+   */
+  switchOff(command: { readonly accountId: string; readonly pair: NotificationPreferencePair }): Promise<void>;
 }
 
 export interface ReplaceNotificationPreferencesCommand {

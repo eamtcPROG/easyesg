@@ -108,13 +108,13 @@ describe('NotificationCategoryCatalog (task 49.1)', () => {
       expect(logged).toEqual([]);
     });
 
-    // The manual reminder (§12.5.6's task-50.3 row (2)): optional, and in-app alone until task 52.2's one-click
-    // unsubscribe lets an optional category send email.
-    it('reads the manual reminder as in-app only and optional', () => {
+    // The manual reminder (§12.5.6's task-50.3 row (2)): optional, in-app alone until task 52.2.2's one-click
+    // unsubscribe let an optional category send email, and by email too since.
+    it('reads the manual reminder as optional, in-app and by email', () => {
       const catalog = new NotificationCategoryCatalog(seedConfigurationStore(readSeedEntries()));
 
       expect(catalog.behaviourOf({ categoryKey: NOTIFICATION_CATEGORY.MANUAL_REMINDER })).toEqual({
-        channels: ['in_app'],
+        channels: ['in_app', 'email'],
         classification: 'optional',
       });
       expect(logged).toEqual([]);

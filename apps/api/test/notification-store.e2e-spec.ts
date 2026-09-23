@@ -25,7 +25,7 @@ import { CancelNotification } from '../src/modules/platform/notification/use-cas
 import { NOTIFICATION_CHANNEL } from '../src/modules/platform/notification/models/notification-category.model';
 import { DeliverNotification } from '../src/modules/platform/notification/use-cases/deliver-notification.use-case';
 import { asOrganization, connectAs } from './support/database';
-import { asJob, clearSuppressedAddresses, deleteNotificationsOf, notificationStore, optOuts, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
+import { asJob, clearSuppressedAddresses, deleteNotificationsOf, notificationStore, optOuts, unsubscribeTokens, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
 
 /**
  * **The notification store** — task 50.1.1's expected result over the real schema, grants and policies: a raised
@@ -111,6 +111,7 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
         // subject is the record, and the preference at dispatch is `report-reminder.e2e-spec.ts`'s.
         { behaviourOf: () => null },
         optOuts(worker),
+        unsubscribeTokens(),
       ),
     );
 

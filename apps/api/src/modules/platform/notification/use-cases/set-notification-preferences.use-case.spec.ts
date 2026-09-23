@@ -11,7 +11,7 @@ import { SetNotificationPreferences } from './set-notification-preferences.use-c
 
 const ACCOUNT = '0192f000-0000-7000-8000-00000000a001';
 
-/** S-27's save (task 52.1; FR-163, BR-NOT-2; §12.5.6's task-52.1 row (4)). The reminder travels in-app alone, as it does until 52.2. */
+/** S-27's save (task 52.1; FR-163, BR-NOT-2; §12.5.6's task-52.1 row (4)). The reminder travels in-app alone here, so a channel it does not travel on has one to refuse. */
 describe('SetNotificationPreferences (task 52.1)', () => {
   it('stores a switch-off and answers the read with it', async () => {
     const store = new FakeNotificationPreferenceStore();

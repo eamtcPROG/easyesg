@@ -78,8 +78,7 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  the outstanding-report and deadline notices (51.2), the one-click unsubscribe and the preferences' screen
-  (52.2.2, 52.3), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
+  the outstanding-report and deadline notices (51.2), the preferences' screen (52.3), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -541,6 +540,13 @@ under `@RequiresAccount()`, and work with no organization bound. Three things to
   `opted_out` *before* sending anything, so a redelivered job never decides twice. **The centre reads only
   `delivered` in-app rows**, and `delivery_read_state_delivered_only` refuses a read or dismissed marker on any other
   row, so a notice a person chose not to receive can never be marked read. A new outcome must keep both true.
+- **FR-169's one-click unsubscribe is two public routes and a footer** (task 52.2.2). `POST
+  /account/notification-preferences/unsubscribe/preview` reads and `…/unsubscribe` switches one pair, idempotently;
+  both take a token `HmacUnsubscribeTokens` signed on the worker, and `@Public()` is safe because the token names one
+  account, category and channel and nothing else. `DeliverNotification` signs one into every email of a category
+  `mayBeSwitchedOff` allows, and `renderEmail` appends `notification.unsubscribe.footer` to it — or throws, since an
+  optional email without its unsubscribe is the FR-169 breach. **The token is dotless on purpose** (`~`-separated):
+  it is a path segment of S-38's address, and `apps/web`'s proxy reads a dotted path as a file.
 
 **A cancellation outlives its notice, and every job carries its outbox row's time** (task 50.1.3; §12.5.6's
 task-50.1 rows (12), (13)). `NotificationPort.cancel()` names the raise's key and writes an outbox event on the
@@ -1406,6 +1412,11 @@ and each throws at boot when its own is missing. That is least privilege rather 
 api hashes passwords and never sends mail, the worker sends mail and never hashes, and neither
 should hold a secret it has no caller for. `AccountModule` splits its providers on `MODE` to make
 it so, the way `OutboxModule` already splits the dispatcher.
+
+**`UNSUBSCRIBE_SIGNING_KEY` (task 52.2.2) is held by both entrypoints**, each with a caller: the worker signs FR-169's
+link into an optional email, the HTTP tier checks it when the link is followed. `HmacUnsubscribeTokens` throws at boot
+without it (at least 32 characters). Its lifetime is its own — a rotation only makes links already sent unusable —
+which is why it is not a label on any other secret.
 
 `SECRET_ENCRYPTION_KEY` (task 27.1) joins the HTTP tier's list, and it is the one secret that is
 **also** read outside the tier: **the worker holds it since task 50.1.4**, which gave it a caller — the

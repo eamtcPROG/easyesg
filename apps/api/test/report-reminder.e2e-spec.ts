@@ -21,7 +21,7 @@ import { EmailChannelService } from '../src/modules/platform/notification/servic
 import { NotificationCategoryCatalog } from '../src/modules/platform/notification/services/notification-category-catalog.service';
 import { DeliverNotification } from '../src/modules/platform/notification/use-cases/deliver-notification.use-case';
 import { asOrganization, connectAs } from './support/database';
-import { asJob, deleteNotificationsOf, notificationStore, optOuts, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
+import { asJob, deleteNotificationsOf, notificationStore, optOuts, unsubscribeTokens, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
@@ -32,7 +32,8 @@ import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } fro
  * **The worker's half is driven by hand**, as `notification-dispatch.e2e-spec.ts` drives it: the outbox row the
  * request committed is handed to the notification consumer as the dispatcher would enqueue it, over the worker's own
  * role. What that proves and a unit spec cannot is the join of the halves — the producer's parameters and the
- * catalogue's words agreeing, the category's artefact deciding in-app alone, and the centre's policies showing the
+ * catalogue's words agreeing, the category's artefact deciding its channels (in-app, and by email since task 52.2.2),
+ * and the centre's policies showing the
  * reminder to its recipient.
  */
 const ORG = '01930000-0000-7000-8000-0000000005e1';
@@ -120,6 +121,7 @@ describe('the manual reminder (UC-175, task 50.3)', () => {
         'https://app.easyesg.md',
         new NotificationCategoryCatalog(store),
         optOuts(worker),
+        unsubscribeTokens(),
       ),
     );
     await handler.handle(asJob(row), { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1 });
@@ -228,7 +230,7 @@ describe('the manual reminder (UC-175, task 50.3)', () => {
     for (const source of [owner, worker, application]) if (source?.isInitialized) await source.destroy();
   });
 
-  it("reaches the member's centre in their language, naming the sender, the report and the note, and sends no email", async () => {
+  it("reaches the member's centre and their inbox in their language, the email carrying its unsubscribe", async () => {
     await remind({ reportId: openReport, membershipId: membershipOf[viewer.accountId], note: NOTE }).expect(202);
 
     const [row] = await raised();
@@ -252,8 +254,21 @@ describe('the manual reminder (UC-175, task 50.3)', () => {
     // The same notice in the reader's other language, resolved per request (the task-50.1 row's (10)).
     const [inRussian] = await centre(viewer, 'ru');
     expect(inRussian.title).toBe('Ana Popescu напоминает вам об отчёте Brutăria Lina за 2026 год');
-    // In-app alone until task 52.2 (row (2)).
-    expect(email.sent).toEqual([]);
+    // By email too since task 52.2.2, and — an optional category — with FR-169's one-click unsubscribe, signed for this
+    // reader and this category, which the api's own public route reads back.
+    expect(email.sent).toHaveLength(1);
+    const [sent] = email.sent;
+    expect(sent).toMatchObject({ to: EMAILS.viewer, templateKey: 'reporting.manual_reminder' });
+    const token = sent.unsubscribe?.link.split('/unsubscribe/')[1] ?? '';
+    expect(sent.unsubscribe?.oneClickUrl?.endsWith(`/mail/unsubscribe/${token}`)).toBe(true);
+    const preview = await http()
+      .post('/api/v1/account/notification-preferences/unsubscribe/preview')
+      .send({ token })
+      .expect(200);
+    expect((preview.body as { object: unknown }).object).toMatchObject({
+      standing: 'available',
+      categoryKey: 'reporting.manual_reminder',
+    });
     // And to nobody else: the sender's own centre holds none of it.
     expect(await centre(admin)).toEqual([]);
   });
@@ -290,11 +305,14 @@ describe('the manual reminder (UC-175, task 50.3)', () => {
     expect(await centre(editor)).toEqual([]);
     const deliveries = (await asOrganization(owner, ORG, (run) =>
       run(
-        `SELECT notification_id, channel, outcome FROM notification.delivery WHERE recipient_account_id = $1`,
+        `SELECT notification_id, channel, outcome FROM notification.delivery
+          WHERE recipient_account_id = $1 ORDER BY channel`,
         [editor.accountId],
       ),
     )) as { notification_id: string; channel: string; outcome: string }[];
+    // Switched off in-app alone, so the email still goes (task 52.2.2 published it): one choice, one channel.
     expect(deliveries.map(({ channel, outcome }) => ({ channel, outcome }))).toEqual([
+      { channel: 'email', outcome: 'accepted' },
       { channel: 'in_app', outcome: 'opted_out' },
     ]);
 

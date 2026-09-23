@@ -36,6 +36,7 @@ const config: AppConfig = {
     },
   },
   secrets: { encryptionKey: 'not-a-real-encryption-key' },
+  notification: { unsubscribeSigningKey: 'not-a-real-signing-key' },
   admin: { origin: 'http://localhost:3200' },
   email: {
     provider: 'log',

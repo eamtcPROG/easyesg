@@ -12,8 +12,8 @@ every screen. Cite them; do not re-derive them.
 
 Identity, organization, periods, reports, entities, the wizard and the notification centre are live; the
 calculator, validation, preview and export, checkout and billing and the public tier are the
-fifteen addresses `AddressNotice` answers for. What exists: 46 page routes across six route groups,
-7 layouts, a not-found boundary, 7 route handlers, the next-intl wiring, 15 feature folders (nine built),
+fifteen addresses `AddressNotice` answers for. What exists: 47 page routes across six route groups,
+7 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 15 feature folders (nine built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
 browser (`pnpm e2e:web`). The root `CLAUDE.md`'s table names the live screens; `docs/archived_tasks.md`
@@ -188,6 +188,14 @@ rail's and the exit's probe, and nothing flushes until the dialogue resumes it; 
 to the page's account** — it signs in the address the page was rendered for, refuses while this browser
 holds someone else's session, and restores the organization the page was read under. A reload, a typed
 address and the global tier's links still meet the proxy's `?return=`.
+
+**FR-169's one-click unsubscribe** (task 52.2.2). S-38, `/[locale]/unsubscribe/{token}`, is a Focus page in
+`(identity)` that **reads on render and switches only on a press** — a mail scanner prefetching the link reaches the
+preview and never the switch. Its twin, `POST /mail/unsubscribe/{token}`, is RFC 8058's target, and **the one write
+this tier forwards without a same-origin proof**: the caller is a mail provider's server, and the signed token is the
+whole proof, naming one account, one category and one channel. It lives under `/mail`, excluded from `proxy.ts`'s
+matcher like `/auth`, because the source locale is served unprefixed — S-38's Romanian path and a handler at the same
+address would be one route. The flow is `features/identity/unsubscribe/handlers/one-click.ts`.
 
 **The provider flow** (task 24). `/auth/social/{provider}/start|callback` are Route
 Handlers OUTSIDE `[locale]` — they are the redirect URIs registered at the providers, so they
@@ -409,7 +417,7 @@ issues a session and is never gated:
 | Group | Layout it establishes | Screens |
 | --- | --- | --- |
 | `(public)` | None. **The only zone where `"use cache"` is legal** (§14.2) | Marketing, legal, help |
-| `(identity)` | Focus archetype — one task, no navigation | S-01, S-02, S-03, S-36 |
+| `(identity)` | Focus archetype — one task, no navigation | S-01, S-02, S-03, S-36, S-38 |
 | `(identity)/(session-issuing)` | None of its own. **UX-136's gate, once for the group** (task 112) — membership of the directory *is* what makes a screen refuse a caller who already holds a session | S-01 sign in and its factor step, S-01 register |
 | `(app)` | Global tier | S-04, S-35 and S-37 — the three authenticated screens in no inner group |
 | `(app)/(workspace)` | Global tier + workspace tier | S-05, S-06, S-13…S-28 |
@@ -929,7 +937,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **122 files here are Client Components** (23 Sep 2026: one since task 51.4, S-16's standing cell, which draws FR-171's undeliverable chip beside the standing; 22 Sep 2026: five since task 50.3, S-16's reminder panel under
+  **123 files here are Client Components** (23 Sep 2026: one since task 52.2.2, S-38's confirm-unsubscribe part, the screen's one press; one since task 51.4, S-16's standing cell, which draws FR-171's undeliverable chip beside the standing; 22 Sep 2026: five since task 50.3, S-16's reminder panel under
   `organization/access/components/remind/`; twelve since task 50.2.2, the notification panel's under
   `notifications/panel/components/`, with the band's old bell corner gone into it; seven since task 50.2.1 — the
   unread count's hook under `client/notifications/`, the drawer's row under `notifications/count/components/`, the

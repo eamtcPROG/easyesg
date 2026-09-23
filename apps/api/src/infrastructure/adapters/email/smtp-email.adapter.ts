@@ -72,7 +72,7 @@ export class SmtpEmailAdapter implements EmailPort {
   async send(message: EmailMessage): Promise<EmailDispatched> {
     // Rendered before the transport is touched, so a missing catalogue key fails as a template
     // error rather than as a provider error — the logging adapter's order, for the same reason.
-    const { subject, body } = renderEmail(message.locale, message.templateKey, message.params);
+    const { subject, body } = renderEmail(message);
 
     const sent = await this.sendOrClassify({
       from: this.settings.from,
@@ -82,7 +82,7 @@ export class SmtpEmailAdapter implements EmailPort {
       // The idempotency key travels as the message id's local part so a provider-side duplicate is
       // traceable to the outbox row that caused it (§8.4). It is not a deduplication mechanism —
       // the outbox's `jobId` already is one; this is what makes a redelivery diagnosable.
-      headers: { 'X-Idempotency-Key': message.idempotencyKey },
+      headers: { 'X-Idempotency-Key': message.idempotencyKey, ...oneClickHeaders(message) },
     });
 
     // NFR-30: the address is never logged here. The idempotency key identifies the send, and the
@@ -159,3 +159,16 @@ const recipientRefused = (cause: unknown): boolean => {
     ? rejectedErrors.every((error) => permanentReply((error as { responseCode?: unknown }).responseCode))
     : permanentReply(responseCode);
 };
+
+/**
+ * RFC 8058's one-click unsubscribe (task 52.2.2; FR-169), on a message that carries one and on no other. **Both
+ * headers or neither**: `List-Unsubscribe` alone invites a mail client to open the URL with a `GET`, which S-38's
+ * route handler does not answer; `List-Unsubscribe-Post` is what tells it to `POST`, with no page and no second click.
+ */
+const oneClickHeaders = (message: EmailMessage): Record<string, string> =>
+  message.unsubscribe
+    ? {
+        'List-Unsubscribe': `<${message.unsubscribe.oneClickUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      }
+    : {};

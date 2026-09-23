@@ -456,6 +456,23 @@
       "failedTitle": "That could not be completed",
       "unreachableBody": "No answer came back, so nothing was changed. Try again.",
       "doneAction": "Nothing more to do."
+    },
+    "unsubscribe": {
+      "title": "Unsubscribe from emails",
+      "loading": "Checking the link…",
+      "intro": "You will no longer receive “{category}” messages by email. What you see in the notification centre stays as it is.",
+      "introUnnamed": "You will no longer receive this kind of message by email. What you see in the notification centre stays as it is.",
+      "confirm": "Unsubscribe",
+      "doneTitle": "You have unsubscribed",
+      "doneBody": "We no longer send you “{category}” messages by email. Your other emails and the notifications in the app carry on as before.",
+      "doneBodyUnnamed": "We no longer send you this kind of message by email. Your other emails and the notifications in the app carry on as before.",
+      "alreadyTitle": "You are already unsubscribed",
+      "alreadyBody": "“{category}” messages are no longer sent to you by email, so there is nothing to change.",
+      "alreadyBodyUnnamed": "This kind of message is no longer sent to you by email, so there is nothing to change.",
+      "unusableTitle": "This link cannot be used",
+      "unusableBody": "This unsubscribe link cannot stop any email, so nothing was changed. Use the link in the most recent email of this kind you received from us.",
+      "problemTitle": "Unsubscribing did not work",
+      "problemBody": "Something stopped the unsubscribe, so these emails will still be sent to you. Reload the page and try again."
     }
   },
   "organization": {

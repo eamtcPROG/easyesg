@@ -56,6 +56,7 @@ export class EmailChannelService implements EmailChannel {
         templateKey: email.templateKey ?? email.categoryKey,
         params: email.params,
         idempotencyKey: email.idempotencyKey,
+        unsubscribe: email.unsubscribe,
       });
       return { outcome: DELIVERY_OUTCOME.ACCEPTED };
     } catch (cause) {

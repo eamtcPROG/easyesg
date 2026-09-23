@@ -195,7 +195,7 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
 
 export const config = {
   /**
-   * next-intl's recommended matcher, plus `health` and `auth`.
+   * next-intl's recommended matcher, plus `health`, `auth` and `mail`.
    *
    * Excluding `api` is not cosmetic: `src/app/api/[...path]` is the token-attaching proxy the
    * browser calls, and a locale rewrite applied to it would corrupt the forwarded path. `health`
@@ -203,7 +203,8 @@ export const config = {
    * means at none. `auth` is task 24's OAuth redirect surface (`/auth/social/…`): its paths are
    * registered at the identity providers, so they cannot vary by language, and the provider's
    * callback arrives sessionless by definition — the closed-by-default session gate must not
-   * bounce it to sign-in.
+   * bounce it to sign-in. `mail` is RFC 8058's one-click target (task 52.2.2): a mail client posts
+   * to it with no session and no language, for `auth`'s two reasons at once.
    */
-  matcher: '/((?!api|auth|health|_next|_vercel|.*\\..*).*)',
+  matcher: '/((?!api|auth|mail|health|_next|_vercel|.*\\..*).*)',
 };

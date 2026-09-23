@@ -48,7 +48,7 @@ This document is one of seven baseline files. Each register is owned by exactly 
 | `functional_requirements.md` | `FR-1` … `FR-173` |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred) |
 | `architecture.md` | `AD-1` … `AD-14`, `DR-1` … `DR-11` — this file consolidates, and replaces, the two source titles *Architecture Overview (MVP)* and *System Architecture (MVP)* |
-| `design_spec.md` (this file) | `UX-1` … `UX-138`, `S-01` … `S-37`, `A-01` … `A-20` |
+| `design_spec.md` (this file) | `UX-1` … `UX-138`, `S-01` … `S-38`, `A-01` … `A-20` |
 
 Where this document and any of those disagree, they win on their subject and this document is amended.
 
@@ -321,6 +321,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | S-35 | Organization unavailable | CA | UC-16 (failure path) | Focus |
 | S-36 | Complete your account | CA | UC-02, UC-03 | Focus |
 | S-37 | Choose organization | CA | UC-16 | Focus |
+| S-38 | Unsubscribe from an email | CA | UC-173, UC-168 | Focus |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | Focus |
 | A-02 | Organization register | PA | UC-69 | Index |
 | A-03 | Content and translation console | PA | UC-71 … 74 | Editor + Publish |
@@ -342,7 +343,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | A-19 | My credentials (operator's own password, second factor, recovery codes) | PA, BO | UC-212 | Record |
 | A-20 | Accept an administrator invitation | PA, BO | UC-87 | Focus |
 
-**Count:** 57 screens — 37 tenant (`S-01 … S-37`) and 20 administrative (`A-01 … A-20`). **S-37 was added 15 Sep 2026** with task 83, when §4.3's *Choose organization* step became a screen of its own rather than a prompt in the global tier. **S-36 was added 14 Sep 2026** with task 155, when a provider registration gained its password and name steps. **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
+**Count:** 58 screens — 38 tenant (`S-01 … S-38`) and 20 administrative (`A-01 … A-20`). **S-38 was added 23 Sep 2026** with task 52.2.2, when FR-169's one-click unsubscribe needed a page: a link that switched off on `GET` would be followed by the scanners that prefetch a message's links. **S-37 was added 15 Sep 2026** with task 83, when §4.3's *Choose organization* step became a screen of its own rather than a prompt in the global tier. **S-36 was added 14 Sep 2026** with task 155, when a provider registration gained its password and name steps. **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
 
 ### 4.5 Use cases served without a dedicated screen
 
@@ -1036,6 +1037,36 @@ task-83 row carries the decisions.
   — as S-01's `?return=` is honoured — and the chosen organization's S-05 otherwise.
 - **Use cases:** UC-16.
 - **FRs:** FR-12.
+
+### S-38 — Unsubscribe from an email
+
+**Added 23 Sep 2026 (task 52.2.2), and an addition to the inventory** — UX-7 makes a new screen an amendment, and
+the identifier is appended after S-37. FR-169 requires a working one-click unsubscribe in every optional-category
+email, and the project owner chose a page rather than a link that switches on being opened; `architecture.md`
+§12.5.6's task-52.2 row carries the decisions.
+
+- **Purpose:** let the reader of an optional email stop receiving that kind of email, without signing in.
+- **Primary actors:** CA — the person the email was sent to, signed in or not.
+- **Archetype:** Focus.
+- **Entry points:** the unsubscribe link at the foot of every optional-category email (UX-66). Nothing in the
+  product links to it. A mail client's own unsubscribe control does not open it: that posts to the same switch
+  directly, RFC 8058's one-click, with no page at all.
+- **Layout and regions:** single column, centred (the Focus fixed elements).
+- **Content and data shown:** which kind of email the link stops, by the category's name, and that it stops it
+  **by email only** — whatever reaches the notification centre still does.
+- **Controls and actions:** one — *unsubscribe*. **Opening the page changes nothing**, which is the reason it is a
+  page: a mail scanner prefetching the link reaches the read and never the switch.
+- **States:** loading — initial; ready (the category named, the one action); pending — async (the switch's
+  submission); success (switched off, saying what stopped and that nothing else did); already switched off (the
+  same sentence, from an earlier press or from S-27 — pressing again is not a mistake); error — recoverable (the
+  link can switch nothing off: not issued by the platform, or its category may no longer be switched off; the
+  way out is the link in the latest such email); error — recoverable (no answer arrived).
+- **Validation behaviour:** none a reader can meet; the link carries everything, and the api refuses one it did
+  not sign.
+- **Exits:** none of its own. **S-27 is where the choice is reversed**, and the success state names it once S-27
+  exists (task 52.3); until then the screen promises no way back it cannot show.
+- **Use cases:** UC-173, UC-168.
+- **FRs:** FR-169, FR-163.
 
 ### 5.1b Public tier screens
 
@@ -2320,6 +2351,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-35 | Organization unavailable | CA | UC-16 (failure path) | FR-12 |
 | S-36 | Complete your account | CA | UC-02, UC-03 | FR-2, FR-3, FR-9 |
 | S-37 | Choose organization | CA | UC-16 | FR-12 |
+| S-38 | Unsubscribe from an email | CA | UC-173, UC-168 | FR-169, FR-163 |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68, UC-212 | FR-75, FR-80 |
 | A-02 | Organization register | PA | UC-69 | FR-76, FR-77 |
 | A-03 | Content and translation console | PA | UC-71 … 74 | FR-61, FR-62, FR-63, FR-64, FR-74 |

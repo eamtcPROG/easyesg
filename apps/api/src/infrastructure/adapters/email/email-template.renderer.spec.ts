@@ -25,7 +25,7 @@ describe('email template rendering (OQ-43)', () => {
   };
 
   it.each(LOCALES)('renders the verification template in %s', (locale: Locale) => {
-    const { subject, body } = renderEmail(locale, NOTIFICATION_CATEGORY.EMAIL_VERIFICATION, params);
+    const { subject, body } = renderEmail({ locale, templateKey: NOTIFICATION_CATEGORY.EMAIL_VERIFICATION, params });
 
     expect(subject.trim()).not.toBe('');
     expect(body).toContain(params.link);
@@ -40,15 +40,19 @@ describe('email template rendering (OQ-43)', () => {
   it.each(LOCALES.flatMap((locale: Locale) => WORDINGS.map((wording) => [locale, wording] as const)))(
     'puts the link into %s %s',
     (locale, wording) => {
-      const { body } = renderEmail(locale, wording, { ...params, organizationName: 'Brutăria', ...REMINDER });
+      const { body } = renderEmail({
+        locale,
+        templateKey: wording,
+        params: { ...params, organizationName: 'Brutăria', ...REMINDER },
+      });
 
       expect(body).toContain(params.link);
     },
   );
 
   /**
-   * The manual reminder's email (task 50.3; §12.5.6's task-50.3 row (2)), authored for task 52.2 and sent by nothing
-   * yet — so this is where its wording is exercised. **The note's two sentences are an ICU `select`**, and the
+   * The manual reminder's email (task 50.3; §12.5.6's task-50.3 row (2)), sent since task 52.2.2 — and exercised here
+   * word by word. **The note's two sentences are an ICU `select`**, and the
    * no-note one is asserted positively: a body that lost its `other` branch renders an empty pair of quotation
    * marks, which "does not contain the note" cannot see. Its in-app twin is
    * `modules/core/disclosure/models/report-reminder.wording.spec.ts`, which may not import this renderer.
@@ -57,13 +61,16 @@ describe('email template rendering (OQ-43)', () => {
   const NOTE = 'Mai lipsesc datele despre energie.';
 
   it.each(LOCALES)('writes the reminder in %s against the link, with the note only when one was given', (locale) => {
-    const given = renderEmail(locale, NOTIFICATION_CATEGORY.MANUAL_REMINDER, {
-      ...params,
-      ...REMINDER,
-      noteGiven: 'given',
-      note: NOTE,
+    const given = renderEmail({
+      locale,
+      templateKey: NOTIFICATION_CATEGORY.MANUAL_REMINDER,
+      params: { ...params, ...REMINDER, noteGiven: 'given', note: NOTE },
     });
-    const none = renderEmail(locale, NOTIFICATION_CATEGORY.MANUAL_REMINDER, { ...params, ...REMINDER });
+    const none = renderEmail({
+      locale,
+      templateKey: NOTIFICATION_CATEGORY.MANUAL_REMINDER,
+      params: { ...params, ...REMINDER },
+    });
 
     expect(given.subject).toContain(REMINDER.senderName);
     expect(given.body).toContain(params.link);
@@ -73,9 +80,31 @@ describe('email template rendering (OQ-43)', () => {
     expect(none.body).not.toMatch(QUOTES);
   });
 
+  /**
+   * FR-169's footer (task 52.2.2): an email carrying an unsubscribe ends with it, in the recipient's language, naming
+   * S-38's link — and one that carries none has no footer at all, since a mandatory notice has nothing to unsubscribe
+   * from and saying otherwise would be untrue.
+   */
+  const UNSUBSCRIBE = {
+    link: 'https://app.easyesg.md/ro/unsubscribe/v1~abc~def',
+    oneClickUrl: 'https://app.easyesg.md/mail/unsubscribe/v1~abc~def',
+  };
+
+  it.each(LOCALES)('appends the unsubscribe footer in %s, and only when the message carries one', (locale) => {
+    const reminder = { locale, templateKey: NOTIFICATION_CATEGORY.MANUAL_REMINDER, params: { ...params, ...REMINDER } };
+    const withFooter = renderEmail({ ...reminder, unsubscribe: UNSUBSCRIBE });
+    const without = renderEmail(reminder);
+
+    expect(withFooter.body.startsWith(without.body)).toBe(true);
+    expect(withFooter.body).toContain(UNSUBSCRIBE.link);
+    expect(withFooter.body).not.toContain(UNSUBSCRIBE.oneClickUrl);
+    expect(without.body).not.toContain('unsubscribe');
+  });
+
   it('renders differently per locale, so nothing is falling back to one language', () => {
     const subjects = LOCALES.map(
-      (locale: Locale) => renderEmail(locale, NOTIFICATION_CATEGORY.EMAIL_VERIFICATION, params).subject,
+      (locale: Locale) =>
+        renderEmail({ locale, templateKey: NOTIFICATION_CATEGORY.EMAIL_VERIFICATION, params }).subject,
     );
     expect(new Set(subjects).size).toBe(LOCALES.length);
   });
@@ -86,13 +115,17 @@ describe('email template rendering (OQ-43)', () => {
    * stop the send.
    */
   it('throws rather than sending an email with no subject', () => {
-    expect(() => renderEmail('ro', 'identity.no_such_template', {})).toThrow(
+    expect(() => renderEmail({ locale: 'ro', templateKey: 'identity.no_such_template', params: {} })).toThrow(
       /no subject in the ro catalogue/,
     );
   });
 
   it('carries no internal identifier into what a person reads', () => {
-    const { subject, body } = renderEmail('ro', NOTIFICATION_CATEGORY.EMAIL_VERIFICATION, params);
+    const { subject, body } = renderEmail({
+      locale: 'ro',
+      templateKey: NOTIFICATION_CATEGORY.EMAIL_VERIFICATION,
+      params,
+    });
     // CLAUDE.md names these by shape: no FR-/UC-/NFR-/OQ- identifier, no enum member, no key.
     expect(`${subject}\n${body}`).not.toMatch(/\b(FR|UC|NFR|AD|DR|UX|OQ|BR)-\d+/);
     expect(`${subject}\n${body}`).not.toContain(NOTIFICATION_CATEGORY.EMAIL_VERIFICATION);

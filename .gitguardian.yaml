@@ -80,6 +80,8 @@ secret:
       match: devonly-admin-secret
     - name: 'devonly — SECRET_ENCRYPTION_KEY, the NFR-61 at-rest key'
       match: devonly-secret-encryption-key
+    - name: 'devonly — UNSUBSCRIBE_SIGNING_KEY, FR-169's one-click unsubscribe signing key'
+      match: devonly-unsubscribe-signing-key-for-local-runs
     - name: 'devonly — AUTH_SOCIAL_GOOGLE_CLIENT_SECRET'
       match: devonly-google-secret
     - name: 'devonly — AUTH_SOCIAL_MICROSOFT_CLIENT_SECRET'

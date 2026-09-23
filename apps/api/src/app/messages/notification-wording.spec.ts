@@ -46,17 +46,23 @@ const NOTIFICATION_CHANNEL = { EMAIL: 'email', IN_APP: 'in_app' } as const;
 
 interface CategoryArtefact {
   readonly channels: readonly string[];
+  readonly classification: string;
 }
 
+/** Literal on purpose, as the channels above are: the seed's own spelling, which this file reads. */
+const OPTIONAL = 'optional';
+/** FR-169's footer (task 52.2.2), which the renderer appends to every email a person may switch off. */
+const UNSUBSCRIBE_FOOTER = 'notification.unsubscribe.footer';
+
 /** Every registered category and the channels it publishes, read from the seed the store is filled from. */
-const registeredCategories = (): { key: string; channels: readonly string[] }[] =>
+const registeredCategories = (): { key: string; channels: readonly string[]; classification: string }[] =>
   readdirSync(SEED_ROOT)
     .map((name) => ({ name, match: CATEGORY_ARTEFACT.exec(name) }))
     .filter((entry): entry is { name: string; match: RegExpExecArray } => entry.match !== null)
-    .map(({ name, match }) => ({
-      key: match[1],
-      channels: (JSON.parse(readFileSync(join(SEED_ROOT, name), 'utf8')) as CategoryArtefact).channels,
-    }));
+    .map(({ name, match }) => {
+      const artefact = JSON.parse(readFileSync(join(SEED_ROOT, name), 'utf8')) as CategoryArtefact;
+      return { key: match[1], channels: artefact.channels, classification: artefact.classification };
+    });
 
 /** Every `*_TEMPLATE` constant under `modules/`, found by walking rather than by a maintained list. */
 const templateOverrides = (directory: string = MODULES_ROOT): string[] =>
@@ -79,11 +85,16 @@ const resolves = (messages: Record<string, unknown>, key: string): boolean => {
   return typeof node === 'string' && node.length > 0;
 };
 
-/** The members a category owes, given what it publishes. */
-const requiredKeys = (key: string, channels: readonly string[]): string[] => [
+/**
+ * The members a category owes, given what it publishes — and, since task 52.2.2, the unsubscribe footer where it emails
+ * a person who may switch it off, since the renderer throws on that email without one. Code's mandatory set is not
+ * consulted: every mandatory category is classified `transactional` in its seed, or the catalogue refuses it.
+ */
+const requiredKeys = (key: string, channels: readonly string[], classification: string): string[] => [
   ...(channels.includes(NOTIFICATION_CHANNEL.EMAIL)
     ? [`notification.${key}.subject`, `notification.${key}.body`]
     : []),
+  ...(channels.includes(NOTIFICATION_CHANNEL.EMAIL) && classification === OPTIONAL ? [UNSUBSCRIBE_FOOTER] : []),
   ...(channels.includes(NOTIFICATION_CHANNEL.IN_APP)
     ? [`notification.${key}.name`, `notification.${key}.in_app.title`, `notification.${key}.in_app.body`]
     : []),
@@ -104,11 +115,19 @@ describe('every notification category and template is worded in every locale (ta
 
   it.each(LOCALES)('every registered category carries what its channels need in %s', (locale) => {
     const messages = catalogue(locale);
-    const missing = categories.flatMap(({ key, channels }) =>
-      requiredKeys(key, channels).filter((required) => !resolves(messages, required)),
+    const missing = categories.flatMap(({ key, channels, classification }) =>
+      requiredKeys(key, channels, classification).filter((required) => !resolves(messages, required)),
     );
 
     expect(missing).toEqual([]);
+  });
+
+  // The footer is the link's only carrier in the body: one without `{link}` renders an unsubscribe that goes nowhere.
+  it.each(LOCALES)('writes the unsubscribe footer against the link in %s (task 52.2.2)', (locale) => {
+    expect(String(UNSUBSCRIBE_FOOTER.split('.').reduce<unknown>(
+      (node, segment) => (node as Record<string, unknown> | undefined)?.[segment],
+      catalogue(locale),
+    ))).toContain('{link}');
   });
 
   it.each(LOCALES)('every template a category overrides with is worded in %s', (locale) => {

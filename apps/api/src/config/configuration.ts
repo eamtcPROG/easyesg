@@ -113,6 +113,17 @@ export interface AppConfig {
      */
     encryptionKey: string | undefined;
   };
+  notification: {
+    /**
+     * FR-169's one-click unsubscribe (task 52.2.2; §12.5.6's task-52.2 row (4)): the key its signed link is made and
+     * checked under. **Both entrypoints hold it** — the worker signs the link into an optional category's email and
+     * the HTTP tier checks it when the link is followed — which is the per-entrypoint rule's own test: each has a
+     * caller. Undefaulted for the pepper's reason, and its own variable rather than a label on another secret: this
+     * one rotates freely (a rotation only makes older unsubscribe links unusable, and each email can be switched off
+     * on S-27), which is the opposite of `SECRET_ENCRYPTION_KEY`'s lifetime.
+     */
+    unsubscribeSigningKey: string | undefined;
+  };
   admin: {
     /**
      * The console's exact origin — what CORS allows with credentials and what the Origin proof
@@ -196,6 +207,7 @@ export default (): AppConfig => ({
     },
   },
   secrets: { encryptionKey: process.env.SECRET_ENCRYPTION_KEY },
+  notification: { unsubscribeSigningKey: process.env.UNSUBSCRIBE_SIGNING_KEY },
   // 3200 is `apps/admin`'s dev port, so a host run works with no .env entry (same convention
   // as `web.publicUrl` below).
   admin: { origin: process.env.ADMIN_ORIGIN ?? 'http://localhost:3200' },

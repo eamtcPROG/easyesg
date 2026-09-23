@@ -24050,3 +24050,96 @@ The gates this change reaches: `pnpm lint`, api typecheck, api unit **1,304**, `
 dependencies, so its boot is the proof that matters — and `pnpm migrations:check` (**61** invariants, the worker's
 new `SELECT` declared). Both run logs read for dependency warnings and unhandled rejections: none. **Skipped**:
 `openapi:check`, since no controller or DTO changed, and `e2e:web`, which no part of this reaches.
+
+## Task 52.2.2 — The one-click unsubscribe, and the reminder's email · 2026-09-23
+
+FR-169's *working one-click unsubscribe in every optional-category message*, end to end, and with it the first
+optional category's email: `reporting.manual_reminder`, in-app alone since task 50.3 because this is what it
+waited for. It closes 52.2.
+
+### Decisions (project owner, 52.2's one batch, before the code)
+
+Recorded as §12.5.6's task-52.2 rows (2) … (4); all three as recommended.
+
+- **(2) A page and a mail header.** The email's link opens **S-38**, a new public Focus screen that reads on render
+  and switches only on a press — a link that switched on `GET` would be followed by the scanners that prefetch
+  links. And RFC 8058's `List-Unsubscribe` / `List-Unsubscribe-Post` headers point at a route handler, so a mail
+  client's own control is one action. `design_spec.md` gained S-38 (inventory row, §5 entry, count 57 → 58).
+- **(3) A footer the renderer appends**, one wording in three catalogues, rather than a placeholder each
+  category's author places.
+- **(4) A signed token, not a stored one**: HMAC over account, category and channel under a new
+  `UNSUBSCRIBE_SIGNING_KEY`, held by both entrypoints.
+
+### What the design settled that the batch did not ask
+
+- **Where the one-click target lives was forced, not chosen.** The api has no public origin until task 71, and
+  `apps/web`'s `/api` pass-through refuses a cross-origin write — which a mail provider's `POST` is by definition.
+  So the target is a route handler on the tenant origin, and the first path tried for it could not work: the
+  source locale is served unprefixed, so `/unsubscribe/{token}` is *also* S-38's Romanian address, and a page and
+  a handler cannot share one. It lives at `/mail/unsubscribe/{token}`, excluded from `proxy.ts`'s matcher as
+  `/auth` is. It is **the one write the web tier forwards without a same-origin proof**, and `apps/web/CLAUDE.md`
+  now says so beside the provider flow, since the next person to add a handler will read there.
+- **The email port gained one member**, `unsubscribe?: { link, oneClickUrl }` — the one addition to §12.5.2's
+  deliberately narrow vocabulary, and a provider-neutral one, since RFC 8058's headers are the internet's rather
+  than a vendor's. The renderer took the message as one object rather than three positional parameters on the
+  way: `(locale, templateKey, …)` compiled with the two swapped.
+- **What a link may switch off is `mayBeSwitchedOff` again** (52.2.1's predicate), asked at the moment it is
+  followed: a token minted while a category was optional is refused once the category is locked. The refusal
+  and the unsigned token are **one standing, `unusable`**, because the reader's way out is the same and telling
+  them apart would describe the signature check to whoever is probing it.
+- **The switch is idempotent in the database and sets one pair** — `switchOff`, `ON CONFLICT DO NOTHING`, not
+  52.1's replace: a mail client posting after the person pressed S-38's button is the same wish, and nothing else
+  they chose on S-27 moves. An earlier draft routed the switch through the preview use case and read the token
+  twice; with the insert idempotent there was nothing for the preview to decide, and both now share one pure
+  check, `unsubscribable`.
+- **No wording promises S-27**, which does not exist until task 52.3: the footer says how to stop the emails,
+  the unusable link's sentence points to the latest email's link, and S-38's success says what stopped and that
+  nothing else did. Task 23's precedent — a sentence the product cannot honour yet is omitted, not shipped.
+- **`Unreachable` moved up** from S-03's `states/` to `identity/shared/components/`, on `shared-how-many-siblings`:
+  S-38 is its second reader. Searched for the old path in `apps/web/src` and `e2e/` — mocks included — and found
+  only the one import, now changed.
+- **The browser suite mints its tokens with a second copy of the format** (`e2e/web/support/unsubscribe.ts`),
+  because it runs no worker and so no email ever carries one. The copy is the point rather than drift: a change to
+  the adapter's format turns S-38's journey red as *this link cannot be used*.
+
+### Two expectations the new email changed, and what they were standing in for
+
+52.1's e2e used *the reminder does not travel by email* in three places: its listed channels, a refusal of a
+channel the category does not travel on, and a stored switch-off the read does not offer. Publishing the email
+removed that fixture from under all three. The first two now say what is true; the third now uses a **locked
+category's** row, the one pair the seed will never offer; and the channel refusal is left to the use case's spec,
+since no seeded category has a channel to refuse. Recorded because a fixture that goes away quietly is how a case
+ends up proving nothing.
+
+### Verification
+
+**The first browser run failed all six S-38 cases, and the cause was the token's alphabet.** The page answered
+Next's unlocalised 404 at `/unsubscribe/v1.…`, in both languages: `proxy.ts`'s matcher skips any path containing a
+dot, reading it as a file, so the locale routing never ran. Every unit spec and the api's suites were green, because
+none of them puts the token in a URL — the one place the browser suite does. The separator became `~`, URL-safe and
+outside base64url's alphabet, and the adapter's spec now pins *dotless* so the next format change cannot quietly
+reintroduce it; the architecture row records it. The one-click `POST` had passed throughout, since `/mail` is
+outside the matcher for its own reason. **A token that travels in a path segment is a path segment first**, and only
+a real route can say what a path segment may contain.
+
+**The second was a copy of the seed's channels** in `notification-categories.e2e-spec.ts`, still reading the
+reminder as in-app alone; searched for the phrase and the literal across `apps/api`, `apps/web`, `e2e` and
+`config` — the comments that still said *until 52.2* were corrected, no other assertion carried it.
+
+The gates this change reaches, and it reaches everything — `apps/api`, `apps/web`, `packages/contracts` and
+`packages/i18n` — so every dependent's row: `pnpm lint`, `pnpm typecheck` (all three apps), `pnpm boundaries`
+(1,912 modules), api unit **1,335**, web unit **1,008** (S-38's branch and the one-click handler among them),
+admin unit **246**, i18n **130**, `pnpm e2e` **1,340**, `pnpm e2e:worker` **8** — the worker now holds
+`UNSUBSCRIBE_SIGNING_KEY` and signs, so its boot is the proof — `pnpm e2e:web` **259** across all three projects
+(S-38's four journeys with an axe scan of its ready arm, and its padded copy at three frames), `pnpm openapi:check`
+(98 paths, staged), `pnpm docs:check` **46**. The browser log's seven *destination stream closed early* lines are
+the client-abandoned stream `apps/web/CLAUDE.md` documents, none from S-38's specs. `migrations:check` was not
+rerun: 52.2.2 adds no migration.
+
+### 52.2 closes, and what did not run at its close
+
+52.2 is a parent of two, so its close is a judgement under the owner's 13 Sep 2026 rule rather than the
+full-set-and-three-reviews by reflex. **The three review agents and `gates:clean` are deferred to task 52's close**,
+after 52.3, which is the group whose diff they are worth reading whole. What a cold run would add here is stale
+build state, and the runs above rebuilt every artefact this change touches — the web bundle by `pree2e:web`,
+`packages/i18n` by `pretest:e2e`; `packages/contracts` has no `dist`. CI runs the full set on the push.

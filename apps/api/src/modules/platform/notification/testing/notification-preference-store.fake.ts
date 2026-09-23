@@ -1,11 +1,13 @@
-import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
+import { isNotificationCategoryKey, NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
 import { pairKey } from '../domain/offered-preferences';
 import type { NotificationCategoryBehaviours } from '../interfaces/notification-category-behaviours.interface';
 import type {
   NotificationPreferenceStore,
   ReplaceNotificationPreferencesCommand,
 } from '../interfaces/notification-preference-store.interface';
+import type { UnsubscribeTokens } from '../interfaces/unsubscribe-tokens.interface';
 import {
+  isNotificationChannel,
   NOTIFICATION_CHANNEL,
   NOTIFICATION_CLASSIFICATION,
   type NotificationChannel,
@@ -23,6 +25,11 @@ export class FakeNotificationPreferenceStore implements NotificationPreferenceSt
 
   switchedOff(): Promise<readonly NotificationPreferencePair[]> {
     return Promise.resolve([...this.rows]);
+  }
+
+  switchOff(command: { readonly pair: NotificationPreferencePair }): Promise<void> {
+    if (!this.rows.some((row) => pairKey(row) === pairKey(command.pair))) this.rows.push(command.pair);
+    return Promise.resolve();
   }
 
   replace(command: ReplaceNotificationPreferencesCommand): Promise<void> {
@@ -49,4 +56,21 @@ export const REMINDER_IN_APP: NotificationPreferencePair = {
 export const REMINDER_EMAIL: NotificationPreferencePair = {
   categoryKey: NOTIFICATION_CATEGORY.MANUAL_REMINDER,
   channel: NOTIFICATION_CHANNEL.EMAIL,
+};
+
+/** What stands in for a signature: a token without it is one nobody signed. */
+const PLAIN_SIGNATURE = 'signed';
+
+/**
+ * `UnsubscribeTokens` with no cryptography: a token is its subject spelled out, and anything else reads as unsigned.
+ * The signature is `HmacUnsubscribeTokens`' spec; the use cases' specs are about what a subject may switch off.
+ */
+export const plainTokens: UnsubscribeTokens = {
+  sign: (subject) => `${PLAIN_SIGNATURE}:${subject.accountId}:${subject.categoryKey}:${subject.channel}`,
+  read: (token) => {
+    const [marker, accountId, categoryKey, channel] = token.split(':');
+    return marker === PLAIN_SIGNATURE && isNotificationCategoryKey(categoryKey) && isNotificationChannel(channel)
+      ? { accountId, categoryKey, channel }
+      : null;
+  },
 };

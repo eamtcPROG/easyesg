@@ -68,8 +68,8 @@ describe('notification categories as configuration (task 49.1)', () => {
 
     const { catalog } = await replicaCatalog();
 
-    // The four mandatory categories by email alone, and the manual reminder (task 50.3) in-app alone and optional
-    // until task 52.2's unsubscribe lets an optional category send email.
+    // The four mandatory categories by email alone, and the manual reminder (task 50.3) optional — in-app alone until
+    // task 52.2.2's unsubscribe let an optional category send email, and by email too since.
     for (const categoryKey of MANDATORY_NOTIFICATION_CATEGORIES) {
       expect(catalog.behaviourOf({ categoryKey })).toEqual({
         channels: ['email'],
@@ -77,7 +77,7 @@ describe('notification categories as configuration (task 49.1)', () => {
       });
     }
     expect(catalog.behaviourOf({ categoryKey: NOTIFICATION_CATEGORY.MANUAL_REMINDER })).toEqual({
-      channels: ['in_app'],
+      channels: ['in_app', 'email'],
       classification: 'optional',
     });
   });

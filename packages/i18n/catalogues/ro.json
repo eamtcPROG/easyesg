@@ -296,6 +296,9 @@
           "action": "Deschideți raportul"
         }
       }
+    },
+    "unsubscribe": {
+      "footer": "Pentru a nu mai primi astfel de mesaje prin e-mail, deschideți acest link:\n\n{link}"
     }
   },
   "platform": {
@@ -356,7 +359,8 @@
     },
     "notification": {
       "not_found": "Această notificare nu se află printre notificările dumneavoastră, așa că nu a fost modificat nimic. Reîncărcați pagina pentru a vedea notificările actuale.",
-      "preference_not_offered": "Una dintre opțiunile trimise nu poate fi dezactivată aici, așa că preferințele dumneavoastră nu au fost modificate. Reîncărcați pagina pentru a vedea ce puteți alege."
+      "preference_not_offered": "Una dintre opțiunile trimise nu poate fi dezactivată aici, așa că preferințele dumneavoastră nu au fost modificate. Reîncărcați pagina pentru a vedea ce puteți alege.",
+      "unsubscribe_link_unusable": "Acest link de dezabonare nu poate fi folosit, așa că nu a fost modificat nimic. Folosiți linkul din cel mai recent e-mail primit de la noi."
     }
   }
 }

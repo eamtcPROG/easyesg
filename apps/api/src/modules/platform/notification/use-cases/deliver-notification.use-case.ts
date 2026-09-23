@@ -5,11 +5,13 @@ import type { NotificationRaised } from '../constants/notification.constants';
 import { mayBeSwitchedOff } from '../domain/may-be-switched-off';
 import { noticeLink } from '../domain/notice-link';
 import { stillOwed } from '../domain/still-owed';
+import { unsubscribeLinks } from '../domain/unsubscribe-links';
 import type { EmailChannel } from '../interfaces/email-channel.interface';
 import type { NotificationCategoryBehaviours } from '../interfaces/notification-category-behaviours.interface';
 import type { NotificationChannelDecision } from '../interfaces/notification-channel-decision.interface';
 import type { NotificationOptOuts } from '../interfaces/notification-opt-outs.interface';
 import type { NotificationStore } from '../interfaces/notification-store.interface';
+import type { UnsubscribeTokens } from '../interfaces/unsubscribe-tokens.interface';
 import { NOTIFICATION_CHANNEL, type NotificationChannel } from '../models/notification-category.model';
 import { NOTIFICATION_STATE } from '../models/notification-record.model';
 
@@ -54,6 +56,8 @@ export interface DeliverNotificationResult {
  *    with no provider in the path (FR-168), and a provider failure fails the job with in-app already done. An email
  *    is recorded once the provider accepts it (row (7)); its key is the notice and the recipient, so a job run again
  *    after a crash between the two asks the provider for the same message rather than a second.
+ *    **An email of a category a person may switch off carries FR-169's one-click unsubscribe** (task 52.2.2), signed
+ *    for that recipient and that category, as S-38's link and RFC 8058's target.
  * 6. **The notice marked delivered**, once its dispatch has finished.
  */
 export class DeliverNotification {
@@ -68,11 +72,15 @@ export class DeliverNotification {
     private readonly categories: NotificationCategoryBehaviours,
     /** Who among the recipients switched it off, and on which channel (task 52.2.1). */
     private readonly optOuts: NotificationOptOuts,
+    /** Signs FR-169's one-click unsubscribe into a switchable category's email (task 52.2.2). */
+    private readonly unsubscribeTokens: UnsubscribeTokens,
   ) {}
 
   async execute(command: DeliverNotificationCommand): Promise<DeliverNotificationResult> {
     const { notice, organizationId } = command;
     const channels = this.channels.channelsFor({ categoryKey: notice.categoryKey });
+    // One reading of the category's behaviour for both of what it decides here: whose choice to honour, and whether
+    // the email carries an unsubscribe — so a publication landing mid-dispatch cannot split the two.
     const switchable = mayBeSwitchedOff({
       categoryKey: notice.categoryKey,
       behaviour: this.categories.behaviourOf({ categoryKey: notice.categoryKey }),
@@ -130,6 +138,18 @@ export class DeliverNotification {
         // `link` is the placeholder a raised category's templates are written against (§12.5.6's task-49.3 row).
         params: { ...record.params, link },
         idempotencyKey: `${record.notificationId}:${recipient.userId}`,
+        // FR-169: every email a person may switch off carries the way to, signed for them and this category alone.
+        unsubscribe: switchable
+          ? unsubscribeLinks({
+              origin: this.webOrigin,
+              locale: recipient.locale,
+              token: this.unsubscribeTokens.sign({
+                accountId: recipient.userId,
+                categoryKey: notice.categoryKey,
+                channel: NOTIFICATION_CHANNEL.EMAIL,
+              }),
+            })
+          : undefined,
       });
       await this.store.recordEmailAccepted({ ...ref, recipient: { accountId: recipient.userId }, outcome });
     }

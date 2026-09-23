@@ -10,7 +10,7 @@ import { AcceptInvitation } from '../parts/accept-invitation';
 import { InvitationSummary } from '../parts/invitation-summary';
 import { INVITATION_MESSAGES } from '../shared/invitation-messages';
 import { SignedOut } from '../states/signed-out';
-import { Unreachable } from '../states/unreachable';
+import { Unreachable } from '../../../shared/components/unreachable';
 import { Unusable } from '../states/unusable';
 import { WrongAccount } from '../states/wrong-account';
 

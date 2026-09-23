@@ -15,7 +15,7 @@ import { EmailChannelService } from '../src/modules/platform/notification/servic
 import { NotificationCategoryCatalog } from '../src/modules/platform/notification/services/notification-category-catalog.service';
 import { DeliverNotification } from '../src/modules/platform/notification/use-cases/deliver-notification.use-case';
 import { connectAs } from './support/database';
-import { asJob, deleteNotificationsOf, notificationStore, optOuts, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
+import { asJob, deleteNotificationsOf, notificationStore, optOuts, unsubscribeTokens, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
 
 /**
  * **A notification raised and dispatched by category through the outbox** — task 49.3's expected result, over the
@@ -175,6 +175,7 @@ describe('a notification raised and dispatched by category (task 49.3)', () => {
         'https://app.easyesg.md',
         new NotificationCategoryCatalog(store),
         optOuts(worker),
+        unsubscribeTokens(),
       ),
     );
 
