@@ -2,6 +2,7 @@ import type { OrganizationRegisterRow } from '@easyesg/contracts';
 import { BUTTON_VARIANT, Button, CALLOUT_INTENT, Callout, Panel, TextLink } from '@easyesg/ui';
 import { Link } from '@tanstack/react-router';
 import { useFormatter, useTranslations } from 'use-intl';
+import { OrganizationMembers } from './organization-members';
 
 /**
  * An organization's account-level record (task 67.3; §5.2 A-02's *open an organization's
@@ -14,9 +15,10 @@ import { useFormatter, useTranslations } from 'use-intl';
  * 67.9**: A-07's request form, opened for this organization — which asks the organization and grants
  * nothing, so the boundary the callout states stays true after the click.
  *
- * **What it shows is the row the table already holds**, re-read with nothing added — the register's
- * columns are the whole of what an account-level record is today, and a second route that could
- * publish more would be a second place for report content to leak through.
+ * **What it shows is the row the table already holds, and since task 167 the organization's people**
+ * (`organization-members.tsx`; §12.5.6's task-167 row) — who each account belongs to and a phone where one was
+ * given, one reveal at a time. That second route publishes contact data and nothing an organization reports, so the
+ * boundary the callout states stays true.
  */
 export function OrganizationRecord({
   row,
@@ -48,6 +50,7 @@ export function OrganizationRecord({
               : format.dateTime(row.lastSignInAt, 'stamp')}
           </dd>
         </dl>
+        <OrganizationMembers organizationId={row.id} />
         <Callout
           intent={CALLOUT_INTENT.INFO}
           title={t('record.boundaryTitle')}

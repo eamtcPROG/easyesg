@@ -203,6 +203,9 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'GET /admin/organizations': PLATFORM_ADMINISTRATORS,
   // One organization's register row — what A-07's request form names the organization with (task 67.9).
   'GET /admin/organizations/:organizationId': PLATFORM_ADMINISTRATORS,
+  // Task 167 — A-02's record's people, and one member's phone at a time, logged.
+  'GET /admin/organizations/:organizationId/members': PLATFORM_ADMINISTRATORS,
+  'POST /admin/organizations/:organizationId/members/:accountId/phone-disclosure': PLATFORM_ADMINISTRATORS,
   // ── A-07 (task 67.9): support access — the log, a request, ending a grant, and the reads a live grant
   // opens. The request and the end declare audit actions; the grant itself is the organization's, on the
   // tenant surface below, and a grant-scoped read admits only the operator the grant was given to.

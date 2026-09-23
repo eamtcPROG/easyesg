@@ -101,6 +101,11 @@ export const AUDIT_ACTION = {
   ADMIN_NOTIFICATION_CATEGORY_PUBLISHED: 'admin.notification_category.published',
   /** A category's previous behaviour was put back — UX-123's one-step revert, itself a publication (task 67.10). */
   ADMIN_NOTIFICATION_CATEGORY_REVERTED: 'admin.notification_category.reverted',
+  /**
+   * A Platform Administrator read a person's phone on A-02's record (task 167; §12.5.6's task-167 row), to reach them
+   * about their account (FR-9). The target is the person's account, which A-08's log names by its address.
+   */
+  ADMIN_MEMBER_PHONE_DISCLOSED: 'admin.member_phone.disclosed',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];

@@ -277,6 +277,10 @@ export {
 } from './admin';
 /** One organization in A-02's register (task 67.3) — account-level metadata, never report content. */
 export type OrganizationRegisterRow = components['schemas']['OrganizationRegisterRowResponseDto'];
+/** Task 167 — a person in an organization, as A-02's record lists them: whether they gave a phone, never the number. */
+export type OrganizationMember = components['schemas']['OrganizationMemberResponseDto'];
+/** Task 167 — one member's phone, disclosed to one operator and recorded in the system audit log. */
+export type DisclosedPhone = components['schemas']['DisclosedPhoneResponseDto'];
 
 // platform — A-08's accounts, invitations and log, and A-20's acceptance (FR-80, FR-81; task 67.4).
 /** One row of A-08's account table: an account in either realm, or a pending invitation. */

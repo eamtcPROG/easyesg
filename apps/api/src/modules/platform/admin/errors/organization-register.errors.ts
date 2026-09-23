@@ -12,3 +12,17 @@ export class OrganizationNotRegisteredError extends DomainError {
     super('platform.admin.organization_not_found');
   }
 }
+
+/**
+ * The account is not an active member of this organization, or gave no phone (task 167) — one refusal for both,
+ * since the record offers the control only where both hold, so either means the record the operator acted on is
+ * out of date.
+ */
+export class MemberPhoneNotFoundError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.NotFound;
+  readonly status = 404;
+
+  constructor() {
+    super('platform.admin.member_phone_not_found');
+  }
+}

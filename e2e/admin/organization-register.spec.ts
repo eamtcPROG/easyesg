@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { cleanupOrganizations, seedOrganization } from './support/organizations';
+import { cleanupOrganizations, seedMember, seedOrganization } from './support/organizations';
 import { OPERATOR_ROLE, cleanupOperators, provisionOperator, type OperatorRole } from './support/provision';
 import { currentTotpCode } from './support/totp';
 
@@ -72,6 +72,62 @@ test('a Platform Administrator finds an organization and opens its record, which
   await page.reload();
   await expect(recordPanel(page)).toContainText(ORGANIZATION);
   await expect(page.getByLabel('Căutați după nume sau IDNO')).toHaveValue(TOKEN);
+});
+
+/**
+ * Task 167 (§12.5.6's task-167 row): the record lists the organization's people, and a phone is shown one person at a
+ * time — each disclosure an entry in A-08's log naming the person by their address.
+ */
+test('the record lists the organization’s people, and shows a phone one person at a time, logged', async ({ page }) => {
+  const email = emailFor('pa-people');
+  provision(email, OPERATOR_ROLE.PLATFORM_ADMINISTRATOR);
+  const name = `Persoane e2e ${TOKEN}`;
+  const organizationId = await seedOrganization({ name, idno: `6${randomOf('0123456789', 12)}` });
+  const reachable = `${RUN_PREFIX}-maria@lina.md`;
+  await seedMember({
+    organizationId,
+    email: reachable,
+    givenName: 'Maria',
+    familyName: 'Popescu',
+    phone: '+37369123456',
+    role: 'organization_administrator',
+  });
+  await seedMember({
+    organizationId,
+    email: `${RUN_PREFIX}-ion@lina.md`,
+    givenName: 'Ion',
+    familyName: 'Rusu',
+    phone: null,
+    role: 'editor',
+  });
+
+  await page.goto('/sign-in');
+  await signIn(page, email);
+  await page.waitForURL('**/organizations');
+  await page.getByLabel('Căutați după nume sau IDNO').fill(name);
+  await page.getByRole('button', { name: 'Căutați', exact: true }).click();
+  await page.getByRole('button', { name }).click();
+
+  const people = recordPanel(page).getByRole('region', { name: 'Persoanele organizației' });
+  const maria = people.getByRole('listitem').filter({ hasText: 'Maria Popescu' });
+  const ion = people.getByRole('listitem').filter({ hasText: 'Ion Rusu' });
+  await expect(people.getByRole('listitem')).toHaveCount(2);
+  await expect(maria).toContainText(reachable);
+  await expect(maria).toContainText('Administrator al organizației');
+  await expect(ion).toContainText('Editare');
+  await expect(ion).toContainText('Nu a lăsat un număr de telefon.');
+  await expect(ion.getByRole('button', { name: 'Arătați telefonul' })).toHaveCount(0);
+  // The number is not on the page until someone asks for it.
+  await expect(recordPanel(page)).not.toContainText('+37369123456');
+
+  await maria.getByRole('button', { name: 'Arătați telefonul' }).click();
+  await expect(maria.getByRole('link', { name: '+37369123456' })).toHaveAttribute('href', 'tel:+37369123456');
+
+  // A-08's log names what was done and whose number it was.
+  await page.goto('/accounts');
+  await expect(
+    page.getByRole('row').filter({ hasText: 'A văzut numărul de telefon al unei persoane' }).filter({ hasText: reachable }),
+  ).toHaveCount(1);
 });
 
 test('a Billing Operator who follows the register’s address is told who can read it', async ({ page }) => {

@@ -343,6 +343,7 @@
       "reenrolment_code_invalid": "That code does not match the new authenticator right now, so your second factor was not changed. Enter the code the new authenticator is showing now.",
       "recovery_refused": "The address, the password or the recovery code is not right, or that code has already been used, so no session was created. Check all three and try again with an unused code.",
       "organization_not_found": "The organization is not in the register, so it cannot be shown. Search for it again in the organization register.",
+      "member_phone_not_found": "The person is no longer a member of the organization or left no phone number, so there is no number to show. Open the organization's record again for the current list.",
       "identity_provider_not_found": "There is no identity provider by that name, so nothing was changed. Choose one of the providers the console lists.",
       "identity_provider_changed": "Another administrator saved a new configuration for this provider after you opened it, so your change was not applied. Check the current values and save again if it is still needed.",
       "identity_provider_incomplete": {

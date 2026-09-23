@@ -257,7 +257,23 @@
         "activity": "Ultima autentificare a unui membru",
         "boundaryTitle": "Conținutul rapoartelor nu este afișat",
         "boundaryBody": "Fișa cuprinde doar date la nivel de cont. Pentru a citi conținutul unei organizații este nevoie de un acces de suport, acordat cu un motiv și referința tichetului, care expiră singur și este înregistrat în jurnal.",
-        "requestAccess": "Cereți acces de suport"
+        "requestAccess": "Cereți acces de suport",
+        "members": {
+          "heading": "Persoanele organizației",
+          "loading": "Se încarcă persoanele organizației…",
+          "none": "Organizația nu are încă niciun membru activ.",
+          "noPhone": "Nu a lăsat un număr de telefon.",
+          "show": "Arătați telefonul",
+          "problemTitle": "Numărul nu a putut fi arătat",
+          "problemBody": "Numărul acestei persoane nu a putut fi citit acum, așa că nu îl puteți vedea. Încercați din nou peste câteva momente.",
+          "unavailableTitle": "Persoanele nu au putut fi citite",
+          "unavailableBody": "Lista persoanelor nu este disponibilă acum, iar restul fișei rămâne valabil. Încercați din nou peste câteva momente.",
+          "roles": {
+            "organizationAdministrator": "Administrator al organizației",
+            "editor": "Editare",
+            "viewer": "Doar vizualizare"
+          }
+        }
       },
       "loading": "Se încarcă registrul organizațiilor",
       "unavailable": {
@@ -450,7 +466,8 @@
           "identityProviderEnabled": "A activat un furnizor de identitate",
           "identityProviderDisabled": "A dezactivat un furnizor de identitate",
           "notificationCategoryPublished": "A publicat setările unei categorii de notificări",
-          "notificationCategoryReverted": "A readus setările anterioare ale unei categorii de notificări"
+          "notificationCategoryReverted": "A readus setările anterioare ale unei categorii de notificări",
+          "memberPhoneDisclosed": "A văzut numărul de telefon al unei persoane"
         }
       }
     },

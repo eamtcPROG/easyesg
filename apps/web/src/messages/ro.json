@@ -1506,5 +1506,10 @@
       }
     },
     "loading": "Se încarcă profilul dumneavoastră."
+  },
+  "legal": {
+    "privacy": {
+      "phone": "Numărul de telefon, dacă îl adăugați în profil, este păstrat doar pentru ca echipa de asistență să vă poată contacta în legătură cu contul dumneavoastră. Îl pot vedea numai administratorii platformei, câte o persoană odată, iar fiecare vizualizare este înregistrată. Îl puteți șterge oricând din profil."
+    }
   }
 }

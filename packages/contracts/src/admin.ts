@@ -93,6 +93,8 @@ export const SYSTEM_AUDIT_ACTION = {
   /** Task 67.10 — A-17's publication of a notification category, and its one-step revert. */
   ADMIN_NOTIFICATION_CATEGORY_PUBLISHED: 'admin.notification_category.published',
   ADMIN_NOTIFICATION_CATEGORY_REVERTED: 'admin.notification_category.reverted',
+  /** Task 167 — a member's phone shown on A-02's record, one person at a time. */
+  ADMIN_MEMBER_PHONE_DISCLOSED: 'admin.member_phone.disclosed',
 } as const;
 
 export type SystemAuditAction = (typeof SYSTEM_AUDIT_ACTION)[keyof typeof SYSTEM_AUDIT_ACTION];

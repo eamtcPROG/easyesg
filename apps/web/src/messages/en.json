@@ -1506,5 +1506,10 @@
       }
     },
     "loading": "Loading your profile."
+  },
+  "legal": {
+    "privacy": {
+      "phone": "If you add a phone number to your profile, it is kept only so that support can reach you about your account. Only the platform’s administrators can see it, one person at a time, and each time they do is recorded. You can remove it from your profile at any time."
+    }
   }
 }

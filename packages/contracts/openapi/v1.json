@@ -4625,6 +4625,142 @@
         ]
       }
     },
+    "/api/v1/admin/organizations/{organizationId}/members": {
+      "get": {
+        "description": "Task 167. Each person’s name, sign-in address and role, and whether they gave a phone number — never the number itself, and never report content. Recorded in the support access log before it runs.",
+        "operationId": "OrganizationMembersController_list",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every active member, by name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/OrganizationMemberResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No organization in the register holds this id (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "The organization’s active members",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/organizations/{organizationId}/members/{accountId}/phone-disclosure": {
+      "post": {
+        "description": "Task 167. The number the person gave for support to reach them about their account. Each disclosure is recorded in the system audit log, naming the operator and the person, and in the support access log.",
+        "operationId": "OrganizationMembersController_disclose",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The number, in international form.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/DisclosedPhoneResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The account is not an active member of this organization, or gave no phone number (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Show one member’s phone number",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/api/v1/admin/accounts": {
       "get": {
         "description": "UC-87. Accounts in both realms, removed ones included because their entries stay attributed to them, followed by pending invitations — each with its one-word state and its last sign-in or expiry. Never a credential.",
@@ -5302,7 +5438,8 @@
                 "admin.identity_provider.enabled",
                 "admin.identity_provider.disabled",
                 "admin.notification_category.published",
-                "admin.notification_category.reverted"
+                "admin.notification_category.reverted",
+                "admin.member_phone.disclosed"
               ],
               "type": "string"
             }
@@ -10321,6 +10458,57 @@
           "lastSignInAt"
         ]
       },
+      "OrganizationMemberResponseDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Ana Popescu",
+            "description": "Both name parts, or the one given, or the sign-in address where the person gave neither."
+          },
+          "email": {
+            "type": "string",
+            "example": "ana@lina.md",
+            "description": "The sign-in address."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "editor",
+              "viewer",
+              "organization_administrator"
+            ]
+          },
+          "hasPhone": {
+            "type": "boolean",
+            "description": "Whether the person gave a phone number, which support may then ask to see."
+          }
+        },
+        "required": [
+          "accountId",
+          "displayName",
+          "email",
+          "role",
+          "hasPhone"
+        ]
+      },
+      "DisclosedPhoneResponseDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "+37369123456",
+            "description": "In international form: a plus sign and the digits, as the person saved it on their profile."
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
       "AdminRosterRowResponseDto": {
         "type": "object",
         "properties": {
@@ -10578,7 +10766,8 @@
               "admin.identity_provider.enabled",
               "admin.identity_provider.disabled",
               "admin.notification_category.published",
-              "admin.notification_category.reverted"
+              "admin.notification_category.reverted",
+              "admin.member_phone.disclosed"
             ],
             "description": "What happened."
           },

@@ -386,6 +386,10 @@ export async function cleanupOrganizations(organizationIds: readonly string[]): 
     for (const organizationId of organizationIds) {
       await client.query('BEGIN');
       await client.query(`SELECT set_config('app.current_org', $1, true)`, [organizationId]);
+      // **Its outbox rows too** (task 167, found by the api's outbox suite): S-16's and the centre's writes hint since
+      // task 148, a hint is an outbox row naming the organization, and the outbox carries no foreign key to cascade
+      // along (AD-6). Left behind, they are rows `outbox.e2e-spec.ts` re-dispatches as its own. Only this organization's.
+      await client.query(`DELETE FROM audit.outbox_event WHERE organization_id = $1`, [organizationId]);
       await client.query(`DELETE FROM core.organization WHERE id = $1`, [organizationId]);
       await client.query('COMMIT');
     }

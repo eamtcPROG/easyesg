@@ -25021,3 +25021,90 @@ decision.
 - **`docs:check`**: 46 claims, with the Client Component count now at 134.
 - **The build race was checked, not assumed.** A mutation made while the pre-hook was building could have reached the
   bundle. The failing run's snapshot showed the submit `[disabled]`, which a mutated build would not have.
+
+## Task 167 — Support reads a person's phone, one reveal at a time · 2026-09-23
+
+The phone task 52.3 collects is now read by the one reader it was collected for. A Platform Administrator can see an
+organization's people on A-02 and show a member's number, one person at a time, and every reveal is on A-08's log.
+S-30's sentence naming the phone is written ahead of S-30.
+
+### Decisions (project owner, two batches, before the code)
+
+Recorded in a new §12.5.6 row, *Support reads a person's phone, one reveal at a time*. Row (5) of task 52.3, A-02's
+spec, and the rows for 167 and 75.3 are amended to match.
+
+- **(1) The read is on A-02, not beside A-08.** The row said *beside A-08's account rows*, but A-08 lists only the
+  platform's operator accounts, and no console screen listed a tenant's people. A-02's record now lists the
+  organization's active members, and each phone sits behind *Show*.
+  - The owner chose this over a plain list and over a lookup by address.
+  - Each reveal writes one system audit log row: the operator, whose phone, when.
+- **(2) S-30's sentence is written now**, before the privacy notice exists. It is `legal.privacy.phone` in all three
+  of the tenant application's catalogues, and task 75.3 renders it. The owner chose this over moving that half of
+  the task into 75.3.
+
+### What the design settled that the batch did not ask
+
+- **The disclosure is a POST carrying `@AuditAction`.** `AuditInterceptor` records only admin-realm writes, and
+  the route-permission gate refuses an audit action on a GET. So the one act that must be accounted for person by
+  person travels as a write, and its log row comes from the same mechanism as every other operator action.
+- **The list reads whether a phone was given, never the number** (`phone IS NOT NULL`). Opening a record exposes
+  nobody's number, and the console keeps a disclosed number only in that row's own state: not in the query cache,
+  not in the address.
+- **No migration was needed.** `esg_admin_ro` already reads `identity.account` and `identity.membership` in full. Both
+  reads are acquisitions logged before they run, under the register's purpose, since the record is the register's.
+- **A port of its own** (`ORGANIZATION_MEMBERS_STORE`), rather than two more methods on the register's store, because
+  its readers are the record's.
+- **The name comes from `displayName`**, the one helper every other surface uses, rather than a third copy of the SQL
+  form.
+- **A-08's log names the person by address.** One more `LEFT JOIN identity.account` in the log reader handles it. The
+  action `admin.member_phone.disclosed` is mirrored in the contracts' `SYSTEM_AUDIT_ACTION`, and the console's
+  `satisfies` table failed to compile until it had a label, which is that gate working.
+- **No support-access grant is needed.** The phone was given for support to reach the person about their account
+  (FR-9), and it is not report content (FR-77, D-5). The row records that the organization's consent is not the
+  person's.
+- **The S-30 sentence says the phone can be removed**, because S-27 clears it when saved blank. That is the profile
+  DTO's own stated behaviour, checked rather than assumed.
+
+### Found by the full api run: the browser suite left hints behind
+
+`outbox.e2e-spec.ts`'s redelivery case failed with ten rows where it expected one. Nine were `access.changed` hints
+from organizations the browser suite had already deleted, three per full run, left by my runs for tasks 149–153.
+- S-16's writes have hinted since task 148, and a hint is an outbox row with no foreign key to cascade along, so
+  `cleanupOrganizations` removed the organization and left the row.
+- Before task 150 those rows sat pending. The suite's worker now dispatches them, and this case resets every row's
+  `dispatched_at`.
+
+**The fix is the rule the api suites already follow**, *what does this suite create that it does not remove?*: the
+web helper's `cleanupOrganizations` now deletes its own organizations' outbox rows first. It is not a sweep in the
+outbox suite. The nine local strays were deleted, scoped to `push.hint` rows of organizations that no longer exist.
+
+### The gates, and what bites them
+
+- `organization-members.e2e-spec.ts`, five cases:
+  - the list's exact keys, with no phone anywhere in the body;
+  - a disclosure answers the number, writes one log row as the operator, and A-08's log names the person by address;
+  - a member with no phone and an account that is not a member are both refused, with nothing logged;
+  - a Billing Operator is refused both routes;
+  - an unknown organization answers not found.
+- `organization-members.use-cases.spec.ts` covers both use cases.
+- The console's `organization-register.spec.ts` gains a journey over the real stack: the members, the role labels,
+  *no phone given*, no number on the page before *Show*, the `tel:` link after, and A-08's log row naming the person.
+
+| Mutation | Result |
+| --- | --- |
+| The log reader's `identity.account` join removed | the e2e case on A-08's naming fails |
+| A new audit action without a console label | the console's `typecheck` fails (`LOG_ACTION_LABEL satisfies`) |
+| A disclosure route with no `@AuditAction` | `route-permissions.spec.ts` fails (the task-67.4 gate) |
+
+### Verification
+
+A single-row group closing as its own parent, so it ran the gates its change reaches, per the owner's standing
+decision.
+
+- **api**: unit **1,419**, typecheck, and `pnpm e2e` **1,418 / 1,419** on its first run. The one failure was the
+  outbox finding above; that suite passes (9) once the rows are cleaned.
+- **Contract**: `openapi:check` **green** once the regenerated contract is staged, with 106 paths.
+- **Console**: unit **275**, `routes:check`, typecheck and lint.
+- **Browser**: `e2e:web` across all three projects **276 passed**, and afterwards the outbox holds **no rows at all**, which is the cleanup fix proven where it matters.
+- **web**: unit for the catalogues' parity, 11.
+- **Not run**: the worker e2e, since no consumer or worker provider changed.

@@ -13,6 +13,7 @@ import { AuditModule } from '@api/modules/platform/audit/audit.module';
 import { AdminSessionStoreRepository } from '@api/infrastructure/persistence/platform/admin-session-store.repository';
 import { IdentityProviderConfigurationStoreRepository } from '@api/infrastructure/persistence/platform/identity-provider-configuration-store.repository';
 import { ConfigProviderEnvironment } from '@api/infrastructure/adapters/provider-environment/config-provider-environment.adapter';
+import { OrganizationMembersStoreRepository } from '@api/infrastructure/persistence/platform/organization-members-store.repository';
 import { OrganizationRegisterStoreRepository } from '@api/infrastructure/persistence/platform/organization-register-store.repository';
 import { SupportAccessRequestCountsRepository } from '@api/infrastructure/persistence/platform/support-access-request-counts.repository';
 import { SYSTEM_AUDIT_LOG, type SystemAuditLog } from '@api/contracts/system-audit-log.port';
@@ -28,6 +29,7 @@ import { AdminInvitationAcceptanceController } from './controllers/admin-invitat
 import { AdminNotificationCategoriesController } from './controllers/admin-notification-categories.controller';
 import { AdminInvitationsController } from './controllers/admin-invitations.controller';
 import { AdminSessionController } from './controllers/admin-session.controller';
+import { OrganizationMembersController } from './controllers/organization-members.controller';
 import { OrganizationRegisterController } from './controllers/organization-register.controller';
 import { SystemAuditLogController } from './controllers/system-audit-log.controller';
 import { AdminOriginGuard } from './guards/admin-origin.guard';
@@ -72,6 +74,7 @@ import { AdminInvitationAcceptanceService } from './services/admin-invitation-ac
 import { AdminInvitationsService } from './services/admin-invitations.service';
 import { AdminSessionService } from './services/admin-session.service';
 import { IdentityProvidersService } from './services/identity-providers.service';
+import { OrganizationMembersService } from './services/organization-members.service';
 import { OrganizationRegisterService } from './services/organization-register.service';
 import { SystemAuditLogService } from './services/system-audit-log.service';
 import { AcceptAdminInvitation } from './use-cases/accept-admin-invitation.use-case';
@@ -92,6 +95,12 @@ import { ListSystemAuditLog } from './use-cases/list-system-audit-log.use-case';
 import { PreviewAdminInvitation } from './use-cases/preview-admin-invitation.use-case';
 import { ReadAdminCredentials } from './use-cases/read-admin-credentials.use-case';
 import { ReadOrganizationRegisterRow } from './use-cases/read-organization-register-row.use-case';
+import { DiscloseMemberPhone } from './use-cases/disclose-member-phone.use-case';
+import { ListOrganizationMembers } from './use-cases/list-organization-members.use-case';
+import {
+  ORGANIZATION_MEMBERS_STORE,
+  type OrganizationMembersStore,
+} from './interfaces/organization-members-store.interface';
 import { RecoverAdminSignIn } from './use-cases/recover-admin-sign-in.use-case';
 import { ReleaseAdminLockout } from './use-cases/release-admin-lockout.use-case';
 import { ResendAdminInvitation } from './use-cases/resend-admin-invitation.use-case';
@@ -154,6 +163,19 @@ const httpProviders: Provider[] = [
     provide: ReadOrganizationRegisterRow,
     inject: [ORGANIZATION_REGISTER_STORE],
     useFactory: (store: OrganizationRegisterStore) => new ReadOrganizationRegisterRow(store),
+  },
+  // Task 167 — A-02's record's people, and one member's phone at a time.
+  { provide: ORGANIZATION_MEMBERS_STORE, useClass: OrganizationMembersStoreRepository },
+  OrganizationMembersService,
+  {
+    provide: ListOrganizationMembers,
+    inject: [ORGANIZATION_MEMBERS_STORE],
+    useFactory: (store: OrganizationMembersStore) => new ListOrganizationMembers(store),
+  },
+  {
+    provide: DiscloseMemberPhone,
+    inject: [ORGANIZATION_MEMBERS_STORE],
+    useFactory: (store: OrganizationMembersStore) => new DiscloseMemberPhone(store),
   },
   // A-08's support-access column (task 67.9): a count across every organization, so through `esg_admin_ro`.
   { provide: SUPPORT_ACCESS_REQUEST_COUNTS, useClass: SupportAccessRequestCountsRepository },
@@ -362,6 +384,7 @@ const workerProviders: Provider[] = [AdminInvitationEmailHandler];
       : [
           AdminSessionController,
           OrganizationRegisterController,
+          OrganizationMembersController,
           AdminAccountsController,
           AdminInvitationsController,
           AdminInvitationAcceptanceController,

@@ -39,7 +39,9 @@ import { AdminReadOnly } from '../admin-readonly';
  * attempts and is not a thing to show. **Since task 67.11 a target may be a configuration version** — A-18's
  * writes name the version they put in force, a provider having no id of its own — and it is named by the
  * provider it configures, read from `config.entry_version`, which this role reads already — and since task 67.10 A-17's
- * writes name theirs the same way, by the notification category the version configures.
+ * writes name theirs the same way, by the notification category the version configures. **Since task 167 a target may be a
+ * person** — a Platform Administrator disclosing a member's phone names the member's account — named by its address from
+ * `identity.account`, which this role reads whole already; ids are UUIDs, so one id matches one of the four joins.
  */
 @Injectable()
 export class SystemAuditLogReaderRepository implements SystemAuditLogReader {
@@ -64,12 +66,13 @@ export class SystemAuditLogReaderRepository implements SystemAuditLogReader {
         const rows = (await runner.query(
           `SELECT l.id, l.occurred_at, l.action,
                   l.actor_id, actor.email AS actor_email,
-                  l.target_id, coalesce(target_account.email, target_invitation.email) AS target_email,
+                  l.target_id, coalesce(target_account.email, target_invitation.email, target_person.email) AS target_email,
                   target_configuration.kind AS target_kind, target_configuration.scope AS target_scope
              FROM audit.system_audit_log l
              LEFT JOIN identity.admin_account    actor                ON actor.id = l.actor_id
              LEFT JOIN identity.admin_account    target_account       ON target_account.id = l.target_id
              LEFT JOIN identity.admin_invitation target_invitation    ON target_invitation.id = l.target_id
+             LEFT JOIN identity.account          target_person        ON target_person.id = l.target_id
              LEFT JOIN config.entry_version      target_configuration ON target_configuration.id = l.target_id
                                                                      AND target_configuration.kind = ANY($8::text[])
             WHERE ${PLATFORM} AND ${MATCHES}

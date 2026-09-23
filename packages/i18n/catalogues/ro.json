@@ -343,6 +343,7 @@
       "reenrolment_code_invalid": "Codul nu corespunde în acest moment noii aplicații de autentificare, așa că al doilea factor nu a fost schimbat. Introduceți codul afișat acum de noua aplicație.",
       "recovery_refused": "Adresa, parola sau codul de recuperare nu sunt corecte ori codul a fost deja folosit, așa că sesiunea nu a fost creată. Verificați toate trei și încercați din nou cu un cod nefolosit.",
       "organization_not_found": "Organizația nu se află în registru, așa că nu poate fi afișată. Căutați-o din nou în registrul organizațiilor.",
+      "member_phone_not_found": "Persoana nu mai este membră a organizației sau nu a lăsat un număr de telefon, așa că nu există niciun număr de arătat. Redeschideți fișa organizației pentru lista actuală.",
       "identity_provider_not_found": "Nu există un furnizor de identitate cu acest nume, așa că nu s-a modificat nimic. Alegeți unul dintre furnizorii afișați în consolă.",
       "identity_provider_changed": "Alt administrator a salvat o configurare nouă pentru acest furnizor după ce ați deschis-o, așa că modificarea dumneavoastră nu a fost aplicată. Verificați valorile actuale și salvați din nou, dacă este încă nevoie.",
       "identity_provider_incomplete": {

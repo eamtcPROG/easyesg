@@ -13,6 +13,8 @@ import { Client } from 'pg';
  * matching no policy removes nothing and says nothing.
  */
 const seeded = new Set<string>();
+/** Accounts seeded as members (task 167). An account hangs off no organization, so the cascade does not take it. */
+const seededAccounts = new Set<string>();
 
 const connect = async (): Promise<Client> => {
   const client = new Client({
@@ -53,6 +55,34 @@ export async function seedOrganization(input: { name: string; idno: string }): P
   return id;
 }
 
+/**
+ * A person with an active membership in a seeded organization (task 167) — an account as a registration would leave
+ * it, with the name parts and, where given, the phone S-27 stores (`+` and the digits). Returns the account's id.
+ */
+export async function seedMember(input: {
+  readonly organizationId: string;
+  readonly email: string;
+  readonly givenName: string;
+  readonly familyName: string;
+  readonly phone: string | null;
+  readonly role: 'editor' | 'viewer' | 'organization_administrator';
+}): Promise<string> {
+  const accountId = randomUUID();
+  await inTransaction(input.organizationId, async (client) => {
+    await client.query(
+      `INSERT INTO identity.account (id, email, locale, given_name, family_name, phone)
+       VALUES ($1, $2, 'ro', $3, $4, $5)`,
+      [accountId, input.email, input.givenName, input.familyName, input.phone],
+    );
+    await client.query(
+      `INSERT INTO identity.membership (account_id, organization_id, role) VALUES ($1, $2, $3)`,
+      [accountId, input.organizationId, input.role],
+    );
+  });
+  seededAccounts.add(accountId);
+  return accountId;
+}
+
 export async function cleanupOrganizations(): Promise<void> {
   for (const id of seeded) {
     await inTransaction(id, async (client) => {
@@ -60,4 +90,13 @@ export async function cleanupOrganizations(): Promise<void> {
     });
   }
   seeded.clear();
+  if (seededAccounts.size > 0) {
+    const client = await connect();
+    try {
+      await client.query(`DELETE FROM identity.account WHERE id = ANY($1::uuid[])`, [[...seededAccounts]]);
+    } finally {
+      await client.end();
+    }
+    seededAccounts.clear();
+  }
 }
