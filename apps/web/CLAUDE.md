@@ -1052,7 +1052,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
 The root `CLAUDE.md`'s "Closing a task" says which run a sub-step and a parent each get, and
 whichever applies is necessary rather than sufficient: the gates prove the code *runs*, not that it
 *belongs here*. Every finding the project owner has raised on
-this app and on `apps/admin` was invisible to all sixteen — a screen carrying the wrong idiom, a
+this app and on `apps/admin` was invisible to all seventeen — a screen carrying the wrong idiom, a
 screen that did not match its artboard, components in the wrong folder, no memoization anywhere.
 Gates cannot see any of those, so a convention pass is part of finishing, not a courtesy after it.
 

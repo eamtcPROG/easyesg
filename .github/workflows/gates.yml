@@ -101,7 +101,7 @@ jobs:
 
       - run: pnpm build
 
-      # All three diff a generated artefact against the committed one. Two of them need the build
+      # All four diff a generated artefact against the committed one. Two of them need the build
       # above; `facade:check` does not — it reads `config/seed` — and it is here rather than earlier
       # so that this list is the `pnpm gates` chain in the same order, which is what lets CLAUDE.md
       # say CI runs exactly the root scripts. A pull request that changes a route, the admin route
@@ -111,6 +111,9 @@ jobs:
       # `facade:check` had NO line here until task 90, while `pnpm gates` had run it since task 85 —
       # the same drift, one layer up, found by checking that claim instead of repeating it.
       - run: pnpm openapi:check
+      # Task 146: AD-15's event catalogue — emitted and diffed like the contract, and every event's authority checked
+      # against the contract just proven current, which is why it follows `openapi:check`.
+      - run: pnpm events:check
       - run: pnpm facade:check
       - run: pnpm routes:check
 

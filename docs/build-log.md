@@ -24413,3 +24413,63 @@ controller and DTOs, `apps/admin`, `packages/contracts` and `packages/i18n`.
   - the api e2e's audit rows and `targetCategory`;
   - the preview's two consequences;
   - the preferences read locking the reminder the moment it is published.
+
+## Task 146 — The event catalogue and `events:check` · 2026-09-23
+
+This is AD-15's contract half: the second contract, which every pushed hint must go through. It ships empty,
+following task 3's precedent that a gate exists before the first entry it guards. Tasks 147–150 build the gateway,
+the frame, the client and the two drivers against it.
+
+### Decisions (project owner, one batch, before the code)
+
+Both are recorded as the task-146 row in §12.5.6, and both answers were the recommended option.
+
+- **(1) A routing key is the event's audience.** It is a closed vocabulary of two: `organization` or `account`.
+  Routing is the gateway's subscription, never the frame's content, so the frame stays exactly
+  `{event, organizationId, since}` (the task-148 row). No document had defined the term. The row's plural became one
+  key per entry, because an event has one audience.
+- **(2) The authority must be a path that answers a GET.** A frame's only effect is a refetch, and a path that only
+  writes cannot be refetched.
+
+### What the design settled that the batch did not ask
+
+- **The catalogue is one TypeScript module that Node loads directly.** The checker imports it under Node 26's type
+  stripping, which resolves no extensionless relative import. So the vocabulary, the entry type and the entries share
+  `events/catalogue.ts`, and its single import is `import type`, which is erased before Node sees it. This avoids a
+  second copy of the catalogue in JSON and a new dependency (`tsx`) just to read TypeScript.
+- **The GET rule is enforced twice.** `ReadablePath` narrows the authority to the contract's readable paths at compile
+  time. `readable-path.proof.ts` holds one line that must compile and one that must not. Widening the type to every
+  path failed `typecheck` on the unused `@ts-expect-error`; that was tried, then restored.
+- **Both gates run in one command**, in `openapi:check`'s shape. `tools/check-events.mjs` checks every authority
+  against `openapi/v1.json` and writes `events/v1.json`. The root script then runs `git diff --exit-code` over it, so
+  **the regenerated artefact must be staged**, exactly as with the contract.
+- **The checker proves itself before judging the catalogue.** A check over zero entries passes whether it works or
+  not. So it first runs on three synthetic entries:
+  - one naming no path, which must be refused;
+  - one naming a write-only path, which must be refused;
+  - one naming a readable path, which must be admitted.
+
+  It exits if any of the three answers is wrong. Disabling the GET test failed exactly that proof.
+- **Placement in the gate chain**: after `openapi:check` in the `gates` chain and in CI's `hermetic` job, because
+  authorities are checked against the contract that step has just proven current. It needs no build. The scoped
+  runner runs it when either `apps/api` or `packages/contracts` is selected, since either side can break it.
+
+### Verification
+
+This is a single-row group, so it closes as its own parent. **`pnpm gates` was not run**, on the owner's standing
+decision to run heavy gates only where the change reaches (13 Sep 2026). What does run:
+
+- **The change** reaches `packages/contracts`, a root tool and root scripts. It adds no screen, no runtime code path
+  and no endpoint.
+- **The review agents were not run**, by the same decision. That is recorded here, not implied.
+- **Checks run**: `events:check`, contracts `typecheck`, the workspace `typecheck`, `lint` and `boundaries`, the
+  admin unit suite (275) and the web unit suite (1,028), and `docs:check` (46). Five counted claims moved with the
+  gate and the archive: the chain's script count in two files, and the archive's numbers and rows in three.
+- **Skipped**: the browser suite and the api e2e. Neither reads anything this change touches; the new exports have no
+  reader yet.
+
+**The row's deliverable: both gates proven to fail.** Each mutation was run and restored.
+
+- An **undeclared event**, a valid entry added to the catalogue without committing the artefact, exits 1 at the diff.
+- An **authority naming no path** exits 1 at the check, naming the event and the path.
+- The restored catalogue passes.

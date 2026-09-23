@@ -677,7 +677,7 @@ Two things came out of that and both are load-bearing:
 **`emit-openapi.ts` uses `preview: true`, and that is load-bearing.** `PersistenceModule` opens
 connections at boot, so a full boot would make `openapi:check` require Docker. Preview mode builds
 the module graph without instantiating providers and emits a byte-identical document, because
-Swagger reads decorator metadata. Twelve of the sixteen gates run with no database and it is worth
+Swagger reads decorator metadata. Thirteen of the seventeen gates run with no database and it is worth
 keeping that true. The accepted cost: emission no longer proves the DI graph resolves, so a missing
 provider surfaces at startup instead of at the gate.
 
@@ -1565,7 +1565,7 @@ pass baked into finishing a task since 24 Aug 2026, and `apps/api` — the works
 
 - **Load `nestjs-best-practices` and read it against the diff.** Not recalled — opened. The gates
   prove code runs; they say nothing about whether it belongs, and every finding a review has raised
-  here was invisible to all sixteen of them.
+  here was invisible to all seventeen of them.
 - **Load `one-idea-per-file` too** (task 132) whenever a use case, service, controller, repository
   or consumer is added or grows — one behaviour per file, a vocabulary whole. The folder skill does
   not reach this app.

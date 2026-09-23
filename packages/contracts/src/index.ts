@@ -366,6 +366,17 @@ export type CategoryConsequence = components['schemas']['CategoryConsequenceResp
 /** The configuration revision a publication or a revert just put in force. */
 export type CategoryPublication = components['schemas']['CategoryPublicationResponseDto'];
 
+// platform — AD-15's event catalogue (task 146): each event a pushed hint may name, its audience, and the readable path
+// that is its authority. Empty until the first accelerated surface; `pnpm events:check` holds it to the contract.
+export {
+  EVENT_CATALOGUE,
+  EVENT_ROUTING_KEY,
+  type EventCatalogueEntry,
+  type EventName,
+  type EventRoutingKey,
+  type ReadablePath,
+} from './events/catalogue';
+
 // platform — S-26's notification centre (FR-161, FR-162; tasks 50.1.2, 50.2.1). The words arrive resolved in the
 // request's language, each absent where none is written; the category key is for the client to act on, never to show.
 /** One notice in the recipient's centre, with this recipient's read state. */

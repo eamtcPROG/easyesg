@@ -151,6 +151,13 @@ phase boundaries "pnpm boundaries"
 [ -n "$SELECTED" ] && phase units "pnpm -r --filter '...[$BASE]' test"
 if selected /apps/api; then
   phase openapi-check "pnpm openapi:check"
+fi
+# Task 146: the event catalogue lives in `packages/contracts`, and its authorities are the api's paths — so either
+# side changing can break it.
+if selected /apps/api || selected /packages/contracts; then
+  phase events-check "pnpm events:check"
+fi
+if selected /apps/api; then
   phase routes-check "pnpm routes:check"
   phase migrations "pnpm migrations:check"
   phase e2e-api "pnpm e2e"
