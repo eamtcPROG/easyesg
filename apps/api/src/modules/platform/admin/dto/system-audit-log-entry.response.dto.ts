@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { SOCIAL_PROVIDER, type SocialProvider } from '@api/contracts/identity-provider.port';
+import { NOTIFICATION_CATEGORY, type NotificationCategoryKey } from '@api/contracts/notification.port';
 import type { EpochMillis } from '@api/contracts/types/time';
 import {
   AUDIT_ACTION,
@@ -44,8 +45,8 @@ export class SystemAuditLogEntryResponseDto {
     nullable: true,
     format: 'uuid',
     description:
-      'The account, invitation or provider configuration version the event acted on. Null for an event that ' +
-      'acted on none.',
+      'The account, invitation, or provider or notification-category configuration version the event acted on. ' +
+      'Null for an event that acted on none.',
   })
   readonly targetId: string | null;
 
@@ -64,6 +65,13 @@ export class SystemAuditLogEntryResponseDto {
   })
   readonly targetProvider: SocialProvider | null;
 
+  @ApiProperty({
+    enum: Object.values(NOTIFICATION_CATEGORY),
+    nullable: true,
+    description: 'The notification category, where the target is a category’s configuration version (task 67.10).',
+  })
+  readonly targetCategory: NotificationCategoryKey | null;
+
   constructor(entry: SystemAuditLogEntry) {
     this.id = entry.id;
     this.occurredAt = entry.occurredAt.getTime();
@@ -73,5 +81,6 @@ export class SystemAuditLogEntryResponseDto {
     this.targetId = entry.target?.id ?? null;
     this.targetEmail = entry.target?.email ?? null;
     this.targetProvider = entry.target?.provider ?? null;
+    this.targetCategory = entry.target?.category ?? null;
   }
 }

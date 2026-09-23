@@ -5300,7 +5300,9 @@
                 "admin.support_access.ended",
                 "admin.identity_provider.configured",
                 "admin.identity_provider.enabled",
-                "admin.identity_provider.disabled"
+                "admin.identity_provider.disabled",
+                "admin.notification_category.published",
+                "admin.notification_category.reverted"
               ],
               "type": "string"
             }
@@ -5935,6 +5937,322 @@
           }
         },
         "summary": "Disable a provider",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/notification-categories": {
+      "get": {
+        "description": "UC-176. Every category this release raises: whether the platform declares it mandatory or a notice sent to an address, the behaviour in force and who published it, how many people switched it off, and its wording in every language rendered with example values — read-only, since wording ships with a release.",
+        "operationId": "AdminNotificationCategoriesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Every category, in a fixed order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ConsoleCategoryResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "List the notification categories and the behaviour of each",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/notification-categories/{category}/preview": {
+      "post": {
+        "description": "UX-123’s scope disclosure: the people whose choices stop counting, and the channels gained or lost.",
+        "operationId": "AdminNotificationCategoriesController_preview",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "path",
+            "description": "The category.",
+            "schema": {
+              "enum": [
+                "identity.email_verification",
+                "identity.password_reset",
+                "identity.invitation",
+                "platform.admin_invitation",
+                "reporting.manual_reminder"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryBehaviourRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What would change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/CategoryPreviewResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A rule the platform declares forbids the behaviour — a mandatory category must be transactional and travel by email, a notice sent to an address never travels in-app, and a channel needs its wording in every language (problem type validation-failed). Nothing was published.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The path names no category this release raises (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Say what publishing a behaviour would change for recipients, without publishing it",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/notification-categories/{category}/publication": {
+      "post": {
+        "description": "UC-176. In force within seconds with no redeploy. Recorded in the system audit log. The wording does not change here — it ships with a release.",
+        "operationId": "AdminNotificationCategoriesController_publish",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "path",
+            "description": "The category.",
+            "schema": {
+              "enum": [
+                "identity.email_verification",
+                "identity.password_reset",
+                "identity.invitation",
+                "platform.admin_invitation",
+                "reporting.manual_reminder"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryPublicationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The revision now in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/CategoryPublicationResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A rule the platform declares forbids the behaviour — a mandatory category must be transactional and travel by email, a notice sent to an address never travels in-app, and a channel needs its wording in every language (problem type validation-failed). Nothing was published.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The path names no category this release raises (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "A newer revision is in force (problem type notification-category-changed), or the change is what is already in force, or there is nothing to revert to (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Publish a category’s channels and classification",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/notification-categories/{category}/reversion": {
+      "post": {
+        "description": "UX-123’s one-step revert: the previous revision’s behaviour, published again, so a second revert undoes the first. Recorded in the system audit log.",
+        "operationId": "AdminNotificationCategoriesController_revert",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "path",
+            "description": "The category.",
+            "schema": {
+              "enum": [
+                "identity.email_verification",
+                "identity.password_reset",
+                "identity.invitation",
+                "platform.admin_invitation",
+                "reporting.manual_reminder"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryReversionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The revision now in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/CategoryPublicationResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A rule the platform declares forbids the behaviour — a mandatory category must be transactional and travel by email, a notice sent to an address never travels in-app, and a channel needs its wording in every language (problem type validation-failed). Nothing was published.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "The path names no category this release raises (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "A newer revision is in force (problem type notification-category-changed), or the change is what is already in force, or there is nothing to revert to (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Put back the behaviour before the one in force",
         "tags": [
           "platform"
         ]
@@ -10218,7 +10536,9 @@
               "admin.support_access.ended",
               "admin.identity_provider.configured",
               "admin.identity_provider.enabled",
-              "admin.identity_provider.disabled"
+              "admin.identity_provider.disabled",
+              "admin.notification_category.published",
+              "admin.notification_category.reverted"
             ],
             "description": "What happened."
           },
@@ -10238,7 +10558,7 @@
             "type": "string",
             "nullable": true,
             "format": "uuid",
-            "description": "The account, invitation or provider configuration version the event acted on. Null for an event that acted on none."
+            "description": "The account, invitation, or provider or notification-category configuration version the event acted on. Null for an event that acted on none."
           },
           "targetEmail": {
             "type": "string",
@@ -10254,6 +10574,18 @@
             ],
             "nullable": true,
             "description": "The social provider, where the target is a provider’s configuration version (task 67.11)."
+          },
+          "targetCategory": {
+            "type": "string",
+            "enum": [
+              "identity.email_verification",
+              "identity.password_reset",
+              "identity.invitation",
+              "platform.admin_invitation",
+              "reporting.manual_reminder"
+            ],
+            "nullable": true,
+            "description": "The notification category, where the target is a category’s configuration version (task 67.10)."
           }
         },
         "required": [
@@ -10264,7 +10596,8 @@
           "actorEmail",
           "targetId",
           "targetEmail",
-          "targetProvider"
+          "targetProvider",
+          "targetCategory"
         ]
       },
       "AdminCredentialsResponseDto": {
@@ -10540,6 +10873,379 @@
         },
         "required": [
           "revision"
+        ]
+      },
+      "CategoryBehaviourDto": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "in_app",
+                "email"
+              ]
+            }
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "transactional",
+              "optional"
+            ]
+          }
+        },
+        "required": [
+          "channels",
+          "classification"
+        ]
+      },
+      "CategoryInForceDto": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "array",
+            "nullable": true,
+            "description": "Null where the artefact cannot be read.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "in_app",
+                "email"
+              ]
+            }
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "transactional",
+              "optional"
+            ],
+            "nullable": true,
+            "description": "Null where the artefact cannot be read."
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "publishedAt": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Unix epoch milliseconds, UTC."
+          },
+          "publishedBy": {
+            "type": "string",
+            "nullable": true,
+            "description": "The publishing operator; null for a seeded revision."
+          },
+          "previousRevision": {
+            "type": "integer",
+            "nullable": true,
+            "description": "What a one-step revert would restore; null where none."
+          },
+          "previous": {
+            "nullable": true,
+            "description": "What a one-step revert would put in force — previewed as a publication is. Null where there is no previous revision, or it cannot be read.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryBehaviourDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "channels",
+          "classification",
+          "revision",
+          "publishedAt",
+          "publishedBy",
+          "previousRevision",
+          "previous"
+        ]
+      },
+      "CategorySwitchOffsDto": {
+        "type": "object",
+        "properties": {
+          "inApp": {
+            "type": "integer"
+          },
+          "email": {
+            "type": "integer"
+          },
+          "people": {
+            "type": "integer",
+            "description": "Distinct people with a switch-off on any channel."
+          }
+        },
+        "required": [
+          "inApp",
+          "email",
+          "people"
+        ]
+      },
+      "CategoryEmailWordingDto": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject",
+          "body"
+        ]
+      },
+      "CategoryInAppWordingDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "body"
+        ]
+      },
+      "CategoryWordingResponseDto": {
+        "type": "object",
+        "properties": {
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "The category’s name in this locale; absent where none is written."
+          },
+          "email": {
+            "description": "Absent where no email wording is written.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryEmailWordingDto"
+              }
+            ]
+          },
+          "inApp": {
+            "description": "Absent where no in-app wording is written.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryInAppWordingDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "locale"
+        ]
+      },
+      "ConsoleCategoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "categoryKey": {
+            "type": "string",
+            "enum": [
+              "identity.email_verification",
+              "identity.password_reset",
+              "identity.invitation",
+              "platform.admin_invitation",
+              "reporting.manual_reminder"
+            ],
+            "description": "A key for the console to act on, never text to show."
+          },
+          "mandatory": {
+            "type": "boolean",
+            "description": "Code declares it mandatory: its classification is fixed and it travels by email."
+          },
+          "addressNotice": {
+            "type": "boolean",
+            "description": "A notice sent to an address with a token in its link: it never travels in-app."
+          },
+          "inForce": {
+            "nullable": true,
+            "description": "Null where nothing is in force.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoryInForceDto"
+              }
+            ]
+          },
+          "switchOffs": {
+            "$ref": "#/components/schemas/CategorySwitchOffsDto"
+          },
+          "wording": {
+            "description": "Its words in every locale, rendered with its example values; read-only — wording ships with a release.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryWordingResponseDto"
+            }
+          }
+        },
+        "required": [
+          "categoryKey",
+          "mandatory",
+          "addressNotice",
+          "inForce",
+          "switchOffs",
+          "wording"
+        ]
+      },
+      "CategoryConsequenceResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "switch_offs_overridden",
+              "becomes_switchable",
+              "channel_removed",
+              "channel_added"
+            ]
+          },
+          "people": {
+            "type": "integer",
+            "description": "People whose switch-offs stop counting."
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "in_app",
+              "email"
+            ]
+          },
+          "stayingOff": {
+            "type": "integer",
+            "description": "People who switched it off on the channel added before, whose choice holds again."
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "CategoryPreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "consequences": {
+            "description": "What the change would do for recipients; empty where it changes nothing for anyone.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryConsequenceResponseDto"
+            }
+          }
+        },
+        "required": [
+          "consequences"
+        ]
+      },
+      "CategoryBehaviourRequestDto": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "description": "Where it travels.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "in_app",
+                "email"
+              ]
+            }
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "transactional",
+              "optional"
+            ],
+            "description": "Whether a recipient may switch it off (FR-163)."
+          }
+        },
+        "required": [
+          "channels",
+          "classification"
+        ]
+      },
+      "CategoryPublicationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The configuration version now in force."
+          },
+          "revision": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "revision"
+        ]
+      },
+      "CategoryPublicationRequestDto": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "description": "Where it travels.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "in_app",
+                "email"
+              ]
+            }
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "transactional",
+              "optional"
+            ],
+            "description": "Whether a recipient may switch it off (FR-163)."
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The revision in force when the change was made — 0 where none is. Any other refuses the write."
+          }
+        },
+        "required": [
+          "channels",
+          "classification",
+          "expectedRevision"
+        ]
+      },
+      "CategoryReversionRequestDto": {
+        "type": "object",
+        "properties": {
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The revision in force when the revert was asked for."
+          }
+        },
+        "required": [
+          "expectedRevision"
         ]
       }
     }

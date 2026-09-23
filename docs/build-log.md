@@ -24298,3 +24298,118 @@ now meets a fixture only the correct code satisfies — and are recorded above r
 
 **Task 52 closes**: 52.1, 52.2 (with 52.2.1 and 52.2.2) and 52.3 are `DONE`, and the group has moved to
 `archived_tasks.md` under Phase 6 beside 49 and 50.
+
+## Task 67.10 — A-17's notification categories · 2026-09-23
+
+UC-176 and FR-173 over task 49.1's catalogue. A Platform Administrator can change a category's channels and
+classification without a release. Each publication goes through UX-123's preview, scope disclosure, confirmation and
+result, and can be reverted in one step. The wording is shown in every language, read-only (OQ-43). Parent 67 stays
+open: 67.5 … 67.8 remain.
+
+### Decisions (project owner, one batch, before the code)
+
+Recorded as §12.5.6's new task-67.10 row. Both answers were the recommended option.
+
+- **(1) Wording is rendered with a specimen.** Each category declares its example values in code, beside the
+  vocabulary (`contracts/notification-specimens.ts`). The operator reads a message, not a placeholder.
+- **(2) The disclosure names people, not organizations.** A category names no organization. What changes for a
+  recipient is:
+  - whose switch-off stops counting;
+  - that recipients may now switch it off;
+  - a channel it stops travelling on;
+  - a channel it starts on, with how many people stay switched off there.
+
+### What the design settled that the batch did not ask
+
+- **The rules are the ones earlier rows had already decided, enforced where the write happens.**
+  `publicationRefusal` refuses the same things on a publication and a revert:
+  - a mandatory category made optional;
+  - a mandatory category without email;
+  - an address notice sent in-app (the task-50.1 row (20));
+  - a channel with no words in some language.
+
+  The last exists because task 51.3's wording gate holds the seed, not what an operator publishes. A channel added
+  from the console with no words would have thrown in `renderEmail` at the send.
+- **Revert republishes the previous revision's payload.** Nothing is erased, and a second revert undoes the first.
+  **The read carries what a revert would restore**, so the console previews a revert through the same disclosure as
+  a publication. The first draft confirmed a revert blind, knowing only a revision number.
+- **Publishing what is already in force is refused**, compared as a set of channels. A-18's reasoning: the audit
+  log should hold changes, not button presses. `sameBehaviour`'s spec caught the first draft comparing channels in
+  one direction only, where `[in_app, in_app]` matched `[in_app, email]`.
+- **The console names categories in its own catalogue.** The operator invitation reaches no tenant and has no name
+  in the tenant catalogue. The table that maps keys to labels
+  (`features/platform/shared/notification-category-label.ts`) is read by A-17 and A-08's log. It sits in
+  `features/platform/shared/` on `shared-how-many-siblings`, the lowest level both readers can see.
+- **A control fixed by code is shown fixed, with its reason.** The editor reads what code fixes from the api's
+  `mandatory` and `addressNotice`. The four mandatory categories are all address notices, so none of them has
+  anything to edit. Their record says so and draws no form (§5.2 A-17 as amended 21 Sep 2026).
+- **The artboard is older than OQ-43**, and the amended §5.2 row wins. The artboard edits template text and offers
+  a test send. Neither is among the row's controls (edit behaviour, publish, revert), so neither was built.
+
+### Moved after the worker failed to boot
+
+A-17's controller first lived in `platform/notification`, the module that owns FR-173. To reach the realm's guard,
+that module imported `AdminModule`. But `AdminModule` already imports the notification module on the worker, for
+the invitation email.
+
+- **What caught it.** The full HTTP suite passed: 1,386 tests. `pnpm e2e:worker` failed with only *process.exit
+  called with "1"*, because the boot spec runs with `logger: false`. `pnpm boundaries` then named the cycle in one
+  line.
+- **The fix follows A-18's layout** (the task-67.11 row). The controller moved into `AdminModule` beside A-18's.
+  The notification module exports `CategoryConsoleService` on the HTTP side, and `AdminModule` imports it in both
+  modes.
+- **This is the root file's paired boot proof doing its job.** It is also a second reason not to skip
+  `boundaries` at a sub-step whose change adds a module import. Recorded here and in `apps/api/CLAUDE.md`. The
+  §12.5.6 row's build notes were written for the first layout and are amended.
+
+### A gate that met a POST that writes nothing
+
+`route-permissions.spec.ts` counts every admin-realm route that is not a GET as a write that must declare an audit
+action. The preview is a POST, because a GET cannot carry the proposed behaviour, and it writes nothing. Declaring
+an action for it would put a change that never happened into A-08's log.
+
+- **The exemption is named**: `ADMIN_REALM_POST_READS`, beside the route table, rather than inferred from a path.
+- **Declaring an action on it still fails**: the *declares an action nowhere else* case now covers it.
+- **A new case refuses stale entries**: an exemption naming no admin-realm POST fails. Proven by renaming the entry's
+  path: two cases failed, and the entry was restored.
+
+### Skills read against the diff
+
+- **`nestjs-best-practices`**:
+  - `di-use-interfaces-tokens`: the store and the wording behind `CATEGORY_CONSOLE_STORE` and `CATEGORY_WORDING`.
+  - `arch-avoid-circular-deps`: the move above.
+  - `security-validate-all-input`: the request DTOs bound channels with `ArrayMinSize`, `ArrayUnique` and `IsIn`.
+  - `error-throw-http-exceptions`: **declined by name**, as the package's file records. The use cases throw
+    `DomainError`s.
+- **`one-idea-per-file`**: one use case, domain rule and service per file, each rule with its spec. The errors file
+  and the DTO file stay whole as vocabularies.
+- **`vercel-react-best-practices`**:
+  - `rerender-memo`: the columns are memoised on a stable `onOpen`, and nothing else is, for A-18's reason.
+  - `rerender-derived-state`: the selected category is derived during render, never stored.
+- **`one-kind-per-folder`**: the feature holds `components/ · queries/ · tools/`, and the scaffold barrel went.
+  `components/` mirrors the shell's one region. The `shared/` leaves carry their admission tests. One shared file was
+  renamed for the component it exports. The folder-shape spec is green.
+
+### Verification
+
+A sub-step, so the gates its change reaches, which here is most of them. The change reaches `apps/api`, a
+controller and DTOs, `apps/admin`, `packages/contracts` and `packages/i18n`.
+
+- **api**: unit **1,398**, `pnpm e2e` **1,386** (55 suites) and `pnpm e2e:worker` **8**, both after the move.
+  `openapi:check` passes at 103 paths, with the regenerated contract staged.
+- **admin**: unit **275** and `routes:check`. `pnpm e2e:web --project admin` passed **23** with A-17's journey,
+  including axe on the disclosure.
+- **Shared packages**: i18n **130** and web **1,028**, for the contracts and i18n packages both apps read.
+- **Whole repo**: lint, typecheck in every workspace, `boundaries`, and `docs:check` **46**. Two claims had moved
+  with the change: the contract's path count and `@easyesg/ui/forms`'s import sites.
+- **Skipped**: the identity and expansion browser projects. The web app gained no markup; its only reach is new
+  catalogue keys and contract aliases, which web's unit suite and typecheck cover.
+
+**Mutations, each run and restored:**
+
+- A specimen without `organizationName` fails the wording spec.
+- The route-table exemption above.
+- The rest are first-run assertions against literals only the correct code produces:
+  - the api e2e's audit rows and `targetCategory`;
+  - the preview's two consequences;
+  - the preferences read locking the reminder the moment it is published.

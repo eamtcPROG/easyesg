@@ -67,6 +67,19 @@ export const OPERATOR_NOTIFICATION_CATEGORIES: ReadonlySet<NotificationCategoryK
   NOTIFICATION_CATEGORY.ADMIN_INVITATION,
 ]);
 
+/**
+ * The notices sent to an address with a token in their link — verification, reset and both invitations (task 50.1.4) —
+ * which go by email whatever their category says, since a centre could show the link and never act on it (§12.5.6's
+ * task-50.1 row (20)). **A-17 refuses to publish in-app for them** (task 67.10), so what the console shows and what the
+ * delivery does cannot disagree. Declared beside the mandatory set: whoever adds a category decides here too.
+ */
+export const ADDRESS_NOTICE_CATEGORIES: ReadonlySet<NotificationCategoryKey> = new Set([
+  NOTIFICATION_CATEGORY.EMAIL_VERIFICATION,
+  NOTIFICATION_CATEGORY.PASSWORD_RESET,
+  NOTIFICATION_CATEGORY.INVITATION,
+  NOTIFICATION_CATEGORY.ADMIN_INVITATION,
+]);
+
 export interface RaiseNotificationCommand {
   /** Category from the configuration-held catalogue (FR-173). */
   categoryKey: NotificationCategoryKey;

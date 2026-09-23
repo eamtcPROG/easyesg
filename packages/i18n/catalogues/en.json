@@ -143,6 +143,9 @@
     },
     "identity-provider-incomplete": {
       "title": "The provider is not fully configured"
+    },
+    "notification-category-changed": {
+      "title": "The settings changed in the meantime"
     }
   },
   "validation": {},
@@ -367,7 +370,17 @@
     "notification": {
       "not_found": "This notification is not among yours, so nothing changed. Reload the page to see your current notifications.",
       "preference_not_offered": "One of the choices sent is not one you can switch off here, so none of your preferences were changed. Reload the page to see the choices you can make.",
-      "unsubscribe_link_unusable": "This unsubscribe link cannot be used, so nothing was changed. Use the link in the most recent email you received from us."
+      "unsubscribe_link_unusable": "This unsubscribe link cannot be used, so nothing was changed. Use the link in the most recent email you received from us.",
+      "category_changed": "Another administrator published new settings for this category after you opened it, so your change was not applied. Check the settings in force and publish again if it is still needed.",
+      "category_unchanged": "The channels and classification sent are the same as those in force, so nothing was published. Change a channel or the classification before publishing.",
+      "category_nothing_to_revert": "This category has no earlier settings to return to, so nothing was changed. Publish new settings instead.",
+      "category_not_found": "There is no notification category by that name, so nothing was changed. Choose one of the categories the console lists.",
+      "category_refused": {
+        "mandatory_classification": "People must always receive this category, so it cannot become one they can switch off, and nothing was published. Keep it as a category nobody can switch off.",
+        "mandatory_without_email": "People must always receive this category, and only email reaches them without their signing in, so it cannot be published without email. Keep email among its channels.",
+        "address_notice_in_app": "This notice is sent to an address with a link only its recipient can use, and inside the application that link could not be opened, so it cannot be sent in the application. Send it by email alone.",
+        "wording_missing": "One of the channels chosen has no wording for this category in every language, so nothing was published. Remove that channel; its wording arrives with a new release of the application."
+      }
     }
   }
 }

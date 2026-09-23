@@ -87,7 +87,8 @@
         "organizations": "Organizații",
         "accounts": "Conturi de administrator",
         "supportAccess": "Acces de suport",
-        "identityProviders": "Furnizori de identitate"
+        "identityProviders": "Furnizori de identitate",
+        "notificationCategories": "Categorii de notificări"
       },
       "account": "Contul dumneavoastră",
       "signOut": "Ieșiți din consolă",
@@ -447,7 +448,9 @@
           "supportAccessEnded": "A încheiat un acces pentru asistență",
           "identityProviderConfigured": "A salvat configurarea unui furnizor de identitate",
           "identityProviderEnabled": "A activat un furnizor de identitate",
-          "identityProviderDisabled": "A dezactivat un furnizor de identitate"
+          "identityProviderDisabled": "A dezactivat un furnizor de identitate",
+          "notificationCategoryPublished": "A publicat setările unei categorii de notificări",
+          "notificationCategoryReverted": "A readus setările anterioare ale unei categorii de notificări"
         }
       }
     },
@@ -688,6 +691,138 @@
         "changedBody": "Alt administrator a salvat o configurare pentru {provider} după ce ați deschis-o, așa că modificarea dumneavoastră nu a fost aplicată. Fișa arată acum valorile în vigoare; verificați-le și reluați modificarea, dacă este încă nevoie.",
         "refusedTitle": "Modificarea nu a fost făcută",
         "refusedBody": "Cererea nu a primit un răspuns utilizabil, deci nu știm dacă modificarea s-a produs. Reîncărcați pagina și verificați starea furnizorului."
+      }
+    },
+    "notificationCategories": {
+      "title": "Categorii de notificări",
+      "lede": "Pe ce canale ajunge fiecare categorie de notificări și dacă destinatarii o pot dezactiva din profilul lor. O publicare are efect în câteva secunde, fără o versiune nouă a aplicației. Textul mesajelor vine odată cu aplicația, așa că aici se afișează doar pentru citire.",
+      "loading": "Se încarcă categoriile de notificări",
+      "unavailable": {
+        "title": "Categoriile nu au putut fi încărcate",
+        "body": "Cererea nu a primit un răspuns utilizabil, așa că nu se afișează nicio categorie. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "forbidden": {
+        "title": "Doar administratorii de platformă configurează notificările",
+        "body": "Categoriile de notificări țin de domeniul platformei, iar contul dumneavoastră aparține domeniului de facturare. Cereți unui administrator de platformă modificarea de care aveți nevoie."
+      },
+      "categories": {
+        "emailVerification": "Confirmarea adresei de e-mail",
+        "passwordReset": "Resetarea parolei",
+        "invitation": "Invitații în organizații",
+        "adminInvitation": "Invitații în consola de administrare",
+        "manualReminder": "Mementouri"
+      },
+      "channels": {
+        "in_app": "În aplicație",
+        "email": "E-mail"
+      },
+      "channelPhrase": {
+        "in_app": "în aplicație",
+        "email": "prin e-mail"
+      },
+      "classification": {
+        "transactional": "Nu poate fi dezactivată",
+        "optional": "Poate fi dezactivată"
+      },
+      "notPublished": "Nimic publicat",
+      "unreadable": "Setările în vigoare nu pot fi citite",
+      "table": {
+        "caption": "Categoriile de notificări, canalele lor și câte persoane le-au dezactivat",
+        "category": "Categorie",
+        "channels": "Canale",
+        "classification": "Pentru destinatari",
+        "switchOffs": "Au dezactivat-o",
+        "people": "{count, plural, =0 {Nimeni} one {# persoană} few {# persoane} other {# de persoane}}",
+        "changed": "Ultima publicare",
+        "neverChanged": "Nimic publicat"
+      },
+      "record": {
+        "region": "Fișa categoriei {category}",
+        "close": "Închideți fișa",
+        "channels": "Canale",
+        "classification": "Pentru destinatari",
+        "unknown": "Necunoscut",
+        "declared": "Stabilit de platformă",
+        "mandatory": "Destinatarii nu o pot dezactiva, iar e-mailul este mereu printre canalele ei.",
+        "addressNotice": "Se trimite la o adresă, cu un link pe care doar destinatarul îl poate folosi, deci doar prin e-mail.",
+        "switchOffs": "Au dezactivat-o",
+        "people": "{count, plural, =0 {Nimeni} one {# persoană} few {# persoane} other {# de persoane}}",
+        "byChannel": "În aplicație: {inApp, number}; prin e-mail: {email, number}",
+        "changed": "Ultima publicare",
+        "changedBy": "{email}, {time}",
+        "changedWithoutOperator": "Configurarea inițială, {time}",
+        "neverChanged": "Nimic publicat",
+        "unreadableNote": "Setările în vigoare pentru această categorie nu pot fi citite, așa că platforma nu le aplică. Publicați setări noi pentru ea.",
+        "fixed": "Canalele și clasificarea acestei categorii sunt stabilite de platformă, așa că nu se modifică aici."
+      },
+      "form": {
+        "title": "Setările",
+        "lede": "Alegeți canalele și dacă destinatarii o pot dezactiva. Înainte de publicare vedeți ce se schimbă pentru ei.",
+        "summaryTitle": "Setările nu pot fi publicate încă",
+        "channelsLegend": "Canale",
+        "inAppLabel": "În aplicație",
+        "inAppFixed": "Nu se poate alege: linkul din această notificare poate fi folosit doar din e-mail.",
+        "emailLabel": "E-mail",
+        "emailFixed": "Rămâne bifat: destinatarii trebuie să o primească și atunci când nu se conectează.",
+        "channelsMissing": "Nu este ales niciun canal, așa că setările nu pot fi publicate. Bifați cel puțin un canal.",
+        "classificationLabel": "Pentru destinatari",
+        "classificationMeans": {
+          "transactional": "O primesc întotdeauna, fără să o poată dezactiva din profil.",
+          "optional": "O pot dezactiva din profilul lor, pentru fiecare canal."
+        },
+        "classificationFixed": "Destinatarii nu o pot dezactiva: platforma o trimite întotdeauna.",
+        "preview": "Previzualizați și publicați",
+        "reset": "Renunțați la modificări"
+      },
+      "wording": {
+        "title": "Textul mesajelor",
+        "lede": "Afișat cu valori de exemplu, în fiecare limbă. Textul vine odată cu aplicația și nu se modifică aici.",
+        "locales": {
+          "ro": "Română",
+          "en": "Engleză",
+          "ru": "Rusă"
+        },
+        "email": "E-mail",
+        "inApp": "În aplicație",
+        "action": "Buton: {action}",
+        "none": "Fără text pentru acest canal"
+      },
+      "revert": {
+        "note": "Setările anterioare: {channels}; {classification}.",
+        "action": "Reveniți la setările anterioare"
+      },
+      "confirm": {
+        "cancel": "Renunțați",
+        "publish": {
+          "title": "Publicați setările categoriei {category}?",
+          "confirm": "Publicați"
+        },
+        "revert": {
+          "title": "Reveniți la setările anterioare ale categoriei {category}?",
+          "confirm": "Reveniți"
+        },
+        "consequences": {
+          "switch_offs_overridden": "{people, plural, =0 {Nimeni nu a dezactivat-o până acum, iar de acum nimeni nu o mai poate dezactiva.} one {# persoană a dezactivat-o și o va primi din nou, fără să o mai poată dezactiva.} few {# persoane au dezactivat-o și o vor primi din nou, fără să o mai poată dezactiva.} other {# de persoane au dezactivat-o și o vor primi din nou, fără să o mai poată dezactiva.}}",
+          "becomes_switchable": "Destinatarii o vor putea dezactiva din profilul lor.",
+          "channel_removed": "Nu se mai trimite {channel}.",
+          "channel_added": "Se trimite și {channel}{stayingOff, plural, =0 {.} one {, cu excepția unei persoane care a dezactivat acest canal.} few {, cu excepția a # persoane care au dezactivat acest canal.} other {, cu excepția a # de persoane care au dezactivat acest canal.}}"
+        },
+        "nothingChanges": "Pentru destinatari nu se schimbă nimic: aceleași persoane o primesc pe aceleași canale.",
+        "retained": "Textul mesajelor nu se schimbă, iar notificările deja trimise rămân la destinatari. Setările au efect în câteva secunde, iar după publicare puteți reveni la cele de acum într-un singur pas."
+      },
+      "notice": {
+        "dismiss": "Închideți mesajul",
+        "revert": "Reveniți la setările anterioare",
+        "doneTitle": "Setările sunt în vigoare",
+        "done": {
+          "publish": "Setările categoriei {category} au fost publicate și au efect în câteva secunde.",
+          "revert": "Categoria {category} are din nou setările anterioare, în vigoare în câteva secunde."
+        },
+        "changedTitle": "Setările s-au schimbat între timp",
+        "changedBody": "Alt administrator a publicat setări pentru {category} după ce ați deschis fișa, așa că modificarea dumneavoastră nu a fost aplicată. Fișa arată acum setările în vigoare; verificați-le și reluați modificarea, dacă este încă nevoie.",
+        "refusedTitle": "Setările nu au fost publicate",
+        "refusedBody": "Cererea nu a primit un răspuns utilizabil, așa că nu se știe dacă setările au fost publicate. Reîncărcați pagina pentru a vedea setările în vigoare."
       }
     }
   }

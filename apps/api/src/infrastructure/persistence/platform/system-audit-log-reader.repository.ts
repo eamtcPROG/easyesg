@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import type { QueryRunner } from 'typeorm';
 import { isSocialProvider } from '@api/contracts/identity-provider.port';
+import { isNotificationCategoryKey } from '@api/contracts/notification.port';
 import { IDENTITY_PROVIDER_CONFIG_KIND } from '@api/modules/identity/provider/constants/provider.constants';
+import { NOTIFICATION_CATEGORY_CONFIG_KIND } from '@api/modules/platform/notification/constants/notification-category.constants';
 import type {
   SystemAuditLogRead,
   SystemAuditLogReader,
@@ -36,7 +38,8 @@ import { AdminReadOnly } from '../admin-readonly';
  * either table is readable by this role. The pseudonymous `subject` is never selected: it groups
  * attempts and is not a thing to show. **Since task 67.11 a target may be a configuration version** — A-18's
  * writes name the version they put in force, a provider having no id of its own — and it is named by the
- * provider it configures, read from `config.entry_version`, which this role reads already.
+ * provider it configures, read from `config.entry_version`, which this role reads already — and since task 67.10 A-17's
+ * writes name theirs the same way, by the notification category the version configures.
  */
 @Injectable()
 export class SystemAuditLogReaderRepository implements SystemAuditLogReader {
@@ -62,17 +65,17 @@ export class SystemAuditLogReaderRepository implements SystemAuditLogReader {
           `SELECT l.id, l.occurred_at, l.action,
                   l.actor_id, actor.email AS actor_email,
                   l.target_id, coalesce(target_account.email, target_invitation.email) AS target_email,
-                  target_configuration.scope AS target_provider
+                  target_configuration.kind AS target_kind, target_configuration.scope AS target_scope
              FROM audit.system_audit_log l
              LEFT JOIN identity.admin_account    actor                ON actor.id = l.actor_id
              LEFT JOIN identity.admin_account    target_account       ON target_account.id = l.target_id
              LEFT JOIN identity.admin_invitation target_invitation    ON target_invitation.id = l.target_id
              LEFT JOIN config.entry_version      target_configuration ON target_configuration.id = l.target_id
-                                                                     AND target_configuration.kind = $8
+                                                                     AND target_configuration.kind = ANY($8::text[])
             WHERE ${PLATFORM} AND ${MATCHES}
             ORDER BY l.occurred_at DESC, l.id DESC
             LIMIT $6 OFFSET $7`,
-          [...filters, query.take, query.skip, IDENTITY_PROVIDER_CONFIG_KIND],
+          [...filters, query.take, query.skip, [IDENTITY_PROVIDER_CONFIG_KIND, NOTIFICATION_CATEGORY_CONFIG_KIND]],
         )) as SystemAuditLogRow[];
 
         return {
@@ -102,7 +105,8 @@ interface SystemAuditLogRow {
   actor_email: string | null;
   target_id: string | null;
   target_email: string | null;
-  target_provider: string | null;
+  target_kind: string | null;
+  target_scope: string | null;
 }
 
 const toEntry = (row: SystemAuditLogRow): SystemAuditLogEntry | null =>
@@ -118,7 +122,16 @@ const toEntry = (row: SystemAuditLogRow): SystemAuditLogEntry | null =>
             : {
                 id: row.target_id,
                 email: row.target_email,
-                provider: row.target_provider !== null && isSocialProvider(row.target_provider) ? row.target_provider : null,
+                provider: configuredBy(row, IDENTITY_PROVIDER_CONFIG_KIND, isSocialProvider),
+                category: configuredBy(row, NOTIFICATION_CATEGORY_CONFIG_KIND, isNotificationCategoryKey),
               },
       }
     : null;
+
+/** The scope of a configuration version the event acted on, where it is of `kind` and names a member this release knows. */
+const configuredBy = <T extends string>(
+  row: SystemAuditLogRow,
+  kind: string,
+  isMember: (value: string) => value is T,
+): T | null =>
+  row.target_kind === kind && row.target_scope !== null && isMember(row.target_scope) ? row.target_scope : null;

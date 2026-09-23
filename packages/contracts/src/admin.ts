@@ -90,6 +90,9 @@ export const SYSTEM_AUDIT_ACTION = {
   ADMIN_IDENTITY_PROVIDER_CONFIGURED: 'admin.identity_provider.configured',
   ADMIN_IDENTITY_PROVIDER_ENABLED: 'admin.identity_provider.enabled',
   ADMIN_IDENTITY_PROVIDER_DISABLED: 'admin.identity_provider.disabled',
+  /** Task 67.10 — A-17's publication of a notification category, and its one-step revert. */
+  ADMIN_NOTIFICATION_CATEGORY_PUBLISHED: 'admin.notification_category.published',
+  ADMIN_NOTIFICATION_CATEGORY_REVERTED: 'admin.notification_category.reverted',
 } as const;
 
 export type SystemAuditAction = (typeof SYSTEM_AUDIT_ACTION)[keyof typeof SYSTEM_AUDIT_ACTION];

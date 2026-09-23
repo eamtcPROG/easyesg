@@ -60,7 +60,7 @@ traps each one left — grouped by area rather than by the task that built it.
   nothing else, opaque refresh rows rotated by conditional consume with a 30 s race grace and
   reuse-revocation, 7 d idle / 30 d absolute computed at the point of use, OQ-35), password reset,
   §12.5.6's throttle and lockout; the admin realm (`POST /auth/admin/session/challenge` →
-  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4); A-19's own credentials (`GET /admin/credentials`, `POST /admin/credentials/{password,totp/enrolment,totp/confirmation,recovery-codes}`) and the recovery sign-in (`POST /auth/admin/session/recovery`) (144); support access (`GET/POST /admin/support-access`, `POST /admin/organizations/{id}/support-access/{requestId}/end` with its three report reads, `GET /support-access`, `POST /support-access/{requestId}/{grant,decline,end}`) and one register row by id (`GET /admin/organizations/{id}`) (67.9); A-18's identity providers (`GET /admin/identity-providers`, `POST /admin/identity-providers/{provider}/{configuration,enablement,disablement}`) (67.11);
+  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4); A-19's own credentials (`GET /admin/credentials`, `POST /admin/credentials/{password,totp/enrolment,totp/confirmation,recovery-codes}`) and the recovery sign-in (`POST /auth/admin/session/recovery`) (144); support access (`GET/POST /admin/support-access`, `POST /admin/organizations/{id}/support-access/{requestId}/end` with its three report reads, `GET /support-access`, `POST /support-access/{requestId}/{grant,decline,end}`) and one register row by id (`GET /admin/organizations/{id}`) (67.9); A-18's identity providers (`GET /admin/identity-providers`, `POST /admin/identity-providers/{provider}/{configuration,enablement,disablement}`) (67.11); A-17's notification categories (`GET /admin/notification-categories`, `POST /admin/notification-categories/{category}/{preview,publication,reversion}`) (67.10);
   social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`), and the
   setup a provider registration completes (`GET /account/setup`, `POST /account/setup/{password,profile}`,
   `POST /auth/account-setup/password`) (155);
@@ -79,7 +79,7 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  the outstanding-report and deadline notices (51.2), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
+  the outstanding-report and deadline notices (51.2), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -164,6 +164,16 @@ traps each one left — grouped by area rather than by the task that built it.
   154 re-points at OpenBao; the e2e suites get Google's secret from `apps/api/.env`, which `ConfigModule` loads, so the
   secret-missing refusal is a unit spec's. **`setCredentialPassword` is an upsert** (UC-09's alternate flow): a
   social-only account holds no `identity.credential` row, and a reset used to refuse it as a dead link.
+- **A-17's routes are the realm's and its behaviour is `platform/notification`'s** (task 67.10; §12.5.6's task-67.10
+  row). The controller sits in `AdminModule` beside A-18's and calls `CategoryConsoleService`, which the notification
+  module exports on the HTTP side. **It was built in the notification module first**, importing `AdminModule` for the
+  guard — and `AdminModule` imports the notification module for the invitation email on the worker, so that was a module
+  cycle: `no-circular` refused it, and `MODE=worker` failed to boot while every HTTP suite passed, which is what the
+  paired boot proof exists to catch. **The preview is a POST that writes nothing**, so it declares no audit action and is
+  named in `ADMIN_REALM_POST_READS` (`src/testing/route-permissions.ts`), which the audit gate reads and refuses to let
+  name a route that does not exist. The rules a publication and a revert both obey are `publicationRefusal`; a
+  category's example values are `contracts/notification-specimens.ts`, a `Record` over the vocabulary, and
+  `category-wording.service.spec.ts` renders every category in every locale with them.
 - **An account in setup reaches only what `@AdmitsAccountInSetup` marks** (task 155; §12.5.6's task-155 row).
   `AuthGuard` reads the account's status and setup deadline in the same identity join as the session, and refuses
   every other route with `account-setup-required` — so **a route added later is closed to a setup account by

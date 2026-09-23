@@ -143,6 +143,9 @@
     },
     "identity-provider-incomplete": {
       "title": "Furnizorul nu este complet configurat"
+    },
+    "notification-category-changed": {
+      "title": "Setările s-au schimbat între timp"
     }
   },
   "validation": {},
@@ -367,7 +370,17 @@
     "notification": {
       "not_found": "Această notificare nu se află printre notificările dumneavoastră, așa că nu a fost modificat nimic. Reîncărcați pagina pentru a vedea notificările actuale.",
       "preference_not_offered": "Una dintre opțiunile trimise nu poate fi dezactivată aici, așa că preferințele dumneavoastră nu au fost modificate. Reîncărcați pagina pentru a vedea ce puteți alege.",
-      "unsubscribe_link_unusable": "Acest link de dezabonare nu poate fi folosit, așa că nu a fost modificat nimic. Folosiți linkul din cel mai recent e-mail primit de la noi."
+      "unsubscribe_link_unusable": "Acest link de dezabonare nu poate fi folosit, așa că nu a fost modificat nimic. Folosiți linkul din cel mai recent e-mail primit de la noi.",
+      "category_changed": "Alt administrator a publicat setări noi pentru această categorie după ce ați deschis-o, așa că modificarea dumneavoastră nu a fost aplicată. Verificați setările în vigoare și publicați din nou, dacă este încă nevoie.",
+      "category_unchanged": "Canalele și clasificarea trimise sunt identice cu cele în vigoare, așa că nu s-a publicat nimic. Modificați un canal sau clasificarea înainte de a publica.",
+      "category_nothing_to_revert": "Această categorie nu are setări anterioare la care să se poată reveni, așa că nu s-a modificat nimic. Publicați în schimb setări noi.",
+      "category_not_found": "Nu există o categorie de notificări cu acest nume, așa că nu s-a modificat nimic. Alegeți una dintre categoriile afișate în consolă.",
+      "category_refused": {
+        "mandatory_classification": "Această categorie trebuie primită întotdeauna, așa că nu poate deveni una pe care destinatarii o pot dezactiva și nu s-a publicat nimic. Păstrați-o ca o categorie pe care nimeni nu o poate dezactiva.",
+        "mandatory_without_email": "Această categorie trebuie primită întotdeauna, iar doar e-mailul ajunge la destinatari fără ca aceștia să se conecteze, așa că nu poate fi publicată fără e-mail. Păstrați e-mailul printre canalele ei.",
+        "address_notice_in_app": "Această notificare este trimisă la o adresă, cu un link pe care doar destinatarul îl poate folosi, iar în aplicație linkul nu ar putea fi deschis, așa că nu poate fi trimisă în aplicație. Trimiteți-o doar prin e-mail.",
+        "wording_missing": "Unul dintre canalele alese nu are textul acestei categorii în toate limbile, așa că nu s-a publicat nimic. Eliminați acel canal; textul lui sosește odată cu o versiune nouă a aplicației."
+      }
     }
   }
 }

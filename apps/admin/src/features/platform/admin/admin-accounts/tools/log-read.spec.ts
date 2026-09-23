@@ -12,6 +12,7 @@ const entry: SystemAuditLogEntry = {
   targetId: 'account-2',
   targetEmail: 'ion@easyesg.md',
   targetProvider: null,
+  targetCategory: null,
 };
 
 describe('A-08’s reads (task 67.4)', () => {

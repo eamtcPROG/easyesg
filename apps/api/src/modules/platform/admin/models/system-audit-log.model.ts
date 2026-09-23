@@ -1,4 +1,5 @@
 import type { SocialProvider } from '@api/contracts/identity-provider.port';
+import type { NotificationCategoryKey } from '@api/contracts/notification.port';
 import type { AuditAction } from '@api/modules/platform/audit/models/audit-action.model';
 
 /**
@@ -32,10 +33,12 @@ export interface SystemAuditLogParty {
 
 /**
  * What an event acted on: an account or an invitation, named by address, or since task 67.11 a social provider's
- * configuration version, named by the provider it configures.
+ * configuration version, named by the provider it configures, and since task 67.10 a notification category's, named by
+ * the category.
  */
 export interface SystemAuditLogTarget extends SystemAuditLogParty {
   readonly provider: SocialProvider | null;
+  readonly category: NotificationCategoryKey | null;
 }
 
 export interface SystemAuditLogEntry {

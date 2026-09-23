@@ -94,6 +94,13 @@ export const AUDIT_ACTION = {
   ADMIN_IDENTITY_PROVIDER_ENABLED: 'admin.identity_provider.enabled',
   /** A provider was disabled: no new sign-in, registration or link through it (BR-ID-6). */
   ADMIN_IDENTITY_PROVIDER_DISABLED: 'admin.identity_provider.disabled',
+  /**
+   * A Platform Administrator published a notification category's channels and classification (task 67.10; UC-176). The
+   * target is the configuration version put in force, which names the category.
+   */
+  ADMIN_NOTIFICATION_CATEGORY_PUBLISHED: 'admin.notification_category.published',
+  /** A category's previous behaviour was put back — UX-123's one-step revert, itself a publication (task 67.10). */
+  ADMIN_NOTIFICATION_CATEGORY_REVERTED: 'admin.notification_category.reverted',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];

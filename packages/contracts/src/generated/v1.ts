@@ -2035,6 +2035,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/notification-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the notification categories and the behaviour of each
+         * @description UC-176. Every category this release raises: whether the platform declares it mandatory or a notice sent to an address, the behaviour in force and who published it, how many people switched it off, and its wording in every language rendered with example values — read-only, since wording ships with a release.
+         */
+        get: operations["AdminNotificationCategoriesController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notification-categories/{category}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Say what publishing a behaviour would change for recipients, without publishing it
+         * @description UX-123’s scope disclosure: the people whose choices stop counting, and the channels gained or lost.
+         */
+        post: operations["AdminNotificationCategoriesController_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notification-categories/{category}/publication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish a category’s channels and classification
+         * @description UC-176. In force within seconds with no redeploy. Recorded in the system audit log. The wording does not change here — it ships with a release.
+         */
+        post: operations["AdminNotificationCategoriesController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/notification-categories/{category}/reversion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put back the behaviour before the one in force
+         * @description UX-123’s one-step revert: the previous revision’s behaviour, published again, so a second revert undoes the first. Recorded in the system audit log.
+         */
+        post: operations["AdminNotificationCategoriesController_revert"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3847,7 +3927,7 @@ export interface components {
              * @description What happened.
              * @enum {string}
              */
-            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled";
+            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled" | "admin.notification_category.published" | "admin.notification_category.reverted";
             /**
              * Format: uuid
              * @description The operator who acted. Null for the provisioning command, and for a sign-in attempt against an address that matches no account.
@@ -3860,7 +3940,7 @@ export interface components {
             actorEmail: string | null;
             /**
              * Format: uuid
-             * @description The account, invitation or provider configuration version the event acted on. Null for an event that acted on none.
+             * @description The account, invitation, or provider or notification-category configuration version the event acted on. Null for an event that acted on none.
              */
             targetId: string | null;
             /**
@@ -3873,6 +3953,11 @@ export interface components {
              * @enum {string|null}
              */
             targetProvider: "google" | "microsoft" | null;
+            /**
+             * @description The notification category, where the target is a category’s configuration version (task 67.10).
+             * @enum {string|null}
+             */
+            targetCategory: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | null;
         };
         AdminCredentialsResponseDto: {
             /**
@@ -3998,6 +4083,116 @@ export interface components {
         IdentityProviderRevisionRequestDto: {
             /** @description The revision this change was made against. A newer one in force refuses the change (problem type identity-provider-changed), so a provider another operator just reconfigured is never enabled unseen. */
             revision: number;
+        };
+        CategoryBehaviourDto: {
+            channels: ("in_app" | "email")[];
+            /** @enum {string} */
+            classification: "transactional" | "optional";
+        };
+        CategoryInForceDto: {
+            /** @description Null where the artefact cannot be read. */
+            channels: ("in_app" | "email")[] | null;
+            /**
+             * @description Null where the artefact cannot be read.
+             * @enum {string|null}
+             */
+            classification: "transactional" | "optional" | null;
+            revision: number;
+            /** @description Unix epoch milliseconds, UTC. */
+            publishedAt: number | null;
+            /** @description The publishing operator; null for a seeded revision. */
+            publishedBy: string | null;
+            /** @description What a one-step revert would restore; null where none. */
+            previousRevision: number | null;
+            /** @description What a one-step revert would put in force — previewed as a publication is. Null where there is no previous revision, or it cannot be read. */
+            previous: components["schemas"]["CategoryBehaviourDto"] | null;
+        };
+        CategorySwitchOffsDto: {
+            inApp: number;
+            email: number;
+            /** @description Distinct people with a switch-off on any channel. */
+            people: number;
+        };
+        CategoryEmailWordingDto: {
+            subject: string;
+            body: string;
+        };
+        CategoryInAppWordingDto: {
+            title: string;
+            body: string;
+            action?: string;
+        };
+        CategoryWordingResponseDto: {
+            /** @enum {string} */
+            locale: "ro" | "en" | "ru";
+            /** @description The category’s name in this locale; absent where none is written. */
+            name?: string;
+            /** @description Absent where no email wording is written. */
+            email?: components["schemas"]["CategoryEmailWordingDto"];
+            /** @description Absent where no in-app wording is written. */
+            inApp?: components["schemas"]["CategoryInAppWordingDto"];
+        };
+        ConsoleCategoryResponseDto: {
+            /**
+             * @description A key for the console to act on, never text to show.
+             * @enum {string}
+             */
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            /** @description Code declares it mandatory: its classification is fixed and it travels by email. */
+            mandatory: boolean;
+            /** @description A notice sent to an address with a token in its link: it never travels in-app. */
+            addressNotice: boolean;
+            /** @description Null where nothing is in force. */
+            inForce: components["schemas"]["CategoryInForceDto"] | null;
+            switchOffs: components["schemas"]["CategorySwitchOffsDto"];
+            /** @description Its words in every locale, rendered with its example values; read-only — wording ships with a release. */
+            wording: components["schemas"]["CategoryWordingResponseDto"][];
+        };
+        CategoryConsequenceResponseDto: {
+            /** @enum {string} */
+            kind: "switch_offs_overridden" | "becomes_switchable" | "channel_removed" | "channel_added";
+            /** @description People whose switch-offs stop counting. */
+            people?: number;
+            /** @enum {string} */
+            channel?: "in_app" | "email";
+            /** @description People who switched it off on the channel added before, whose choice holds again. */
+            stayingOff?: number;
+        };
+        CategoryPreviewResponseDto: {
+            /** @description What the change would do for recipients; empty where it changes nothing for anyone. */
+            consequences: components["schemas"]["CategoryConsequenceResponseDto"][];
+        };
+        CategoryBehaviourRequestDto: {
+            /** @description Where it travels. */
+            channels: ("in_app" | "email")[];
+            /**
+             * @description Whether a recipient may switch it off (FR-163).
+             * @enum {string}
+             */
+            classification: "transactional" | "optional";
+        };
+        CategoryPublicationResponseDto: {
+            /**
+             * Format: uuid
+             * @description The configuration version now in force.
+             */
+            id: string;
+            revision: number;
+        };
+        CategoryPublicationRequestDto: {
+            /** @description Where it travels. */
+            channels: ("in_app" | "email")[];
+            /**
+             * @description Whether a recipient may switch it off (FR-163).
+             * @enum {string}
+             */
+            classification: "transactional" | "optional";
+            /** @description The revision in force when the change was made — 0 where none is. Any other refuses the write. */
+            expectedRevision: number;
+        };
+        CategoryReversionRequestDto: {
+            /** @description The revision in force when the revert was asked for. */
+            expectedRevision: number;
         };
     };
     responses: never;
@@ -8148,7 +8343,7 @@ export interface operations {
                 /** @description Unix epoch milliseconds; only events at or after it. */
                 from?: number;
                 /** @description Only this kind of event. */
-                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled";
+                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled" | "admin.notification_category.published" | "admin.notification_category.reverted";
                 /** @description Only what this operator account did (uuid). */
                 operator?: unknown;
             };
@@ -8680,6 +8875,259 @@ export interface operations {
                 };
             };
             /** @description A newer revision is in force (problem type identity-provider-changed), or the provider is already disabled (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminNotificationCategoriesController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every category, in a fixed order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["ConsoleCategoryResponseDto"][];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminNotificationCategoriesController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category. */
+                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryBehaviourRequestDto"];
+            };
+        };
+        responses: {
+            /** @description What would change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["CategoryPreviewResponseDto"];
+                    };
+                };
+            };
+            /** @description A rule the platform declares forbids the behaviour — a mandatory category must be transactional and travel by email, a notice sent to an address never travels in-app, and a channel needs its wording in every language (problem type validation-failed). Nothing was published. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The path names no category this release raises (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminNotificationCategoriesController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category. */
+                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryPublicationRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The revision now in force. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["CategoryPublicationResponseDto"];
+                    };
+                };
+            };
+            /** @description A rule the platform declares forbids the behaviour — a mandatory category must be transactional and travel by email, a notice sent to an address never travels in-app, and a channel needs its wording in every language (problem type validation-failed). Nothing was published. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The path names no category this release raises (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A newer revision is in force (problem type notification-category-changed), or the change is what is already in force, or there is nothing to revert to (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminNotificationCategoriesController_revert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category. */
+                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryReversionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The revision now in force. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["CategoryPublicationResponseDto"];
+                    };
+                };
+            };
+            /** @description A rule the platform declares forbids the behaviour — a mandatory category must be transactional and travel by email, a notice sent to an address never travels in-app, and a channel needs its wording in every language (problem type validation-failed). Nothing was published. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The path names no category this release raises (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A newer revision is in force (problem type notification-category-changed), or the change is what is already in force, or there is nothing to revert to (problem type conflict). */
             409: {
                 headers: {
                     [name: string]: unknown;

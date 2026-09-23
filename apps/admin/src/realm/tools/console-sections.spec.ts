@@ -55,6 +55,7 @@ describe('consoleSectionsFor (§5.2)', () => {
           { href: '/accounts', label: 'destinations.accounts' },
           { href: '/support-access', label: 'destinations.supportAccess' },
           { href: '/identity-providers', label: 'destinations.identityProviders' },
+          { href: '/notification-templates', label: 'destinations.notificationCategories' },
         ],
       },
     ]);

@@ -71,6 +71,8 @@ export const PROBLEM_TYPE = {
   /** Another operator saved a provider's configuration after this one was read (task 67.11). A-18 reloads the
    *  values in force and says so, rather than showing the refusal over a form that no longer matches them. */
   IdentityProviderChanged: 'https://easyesg.md/problems/identity-provider-changed',
+  /** Task 67.10: A-17 published against a revision no longer in force; the console redraws what is. */
+  NotificationCategoryChanged: 'https://easyesg.md/problems/notification-category-changed',
   /** An account still completing its setup reached a route other than its setup routes (task 155). The web tier's proxy
    *  sends an account its session cookie calls in setup to S-36 before any route is asked; a cookie sealed before that
    *  task reads as active and meets this refusal on screen until its next rotation (architecture.md's web cookie row). */

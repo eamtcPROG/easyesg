@@ -7,6 +7,7 @@ import { NOTIFICATION_RECIPIENTS, type NotificationRecipientsPort } from '@api/c
 import { SECRET_CIPHER } from '@api/contracts/secret-cipher.port';
 import { EmailModule } from '@api/infrastructure/adapters/email/email.module';
 import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
+import { CategoryConsoleStoreRepository } from '@api/infrastructure/persistence/platform/category-console-store.repository';
 import { HmacUnsubscribeTokens } from '@api/infrastructure/adapters/unsubscribe-token/hmac-unsubscribe-tokens';
 import { NotificationRecipientsRepository } from '@api/infrastructure/persistence/identity/notification-recipients.repository';
 import { NotificationCentreStoreRepository } from '@api/infrastructure/persistence/platform/notification-centre-store.repository';
@@ -19,6 +20,8 @@ import { NotificationRaisedHandler } from './consumers/notification-raised.handl
 import { NotificationCentreController } from './controllers/notification-centre.controller';
 import { NotificationPreferencesController } from './controllers/notification-preferences.controller';
 import { NotificationUnsubscribeController } from './controllers/notification-unsubscribe.controller';
+import { CATEGORY_CONSOLE_STORE, type CategoryConsoleStore } from './interfaces/category-console-store.interface';
+import { CATEGORY_WORDING, type CategoryWording } from './interfaces/category-wording.interface';
 import { EMAIL_CHANNEL, type EmailChannel } from './interfaces/email-channel.interface';
 import {
   NOTIFICATION_CANCELLATION_STORE,
@@ -36,6 +39,8 @@ import {
 import { NOTIFICATION_STORE, type NotificationStore } from './interfaces/notification-store.interface';
 import { SUPPRESSION_STORE } from './interfaces/suppression-store.interface';
 import { UNSUBSCRIBE_TOKENS, type UnsubscribeTokens } from './interfaces/unsubscribe-tokens.interface';
+import { CategoryConsoleService } from './services/category-console.service';
+import { CategoryWordingService } from './services/category-wording.service';
 import { CategoryChannels } from './services/category-channels.service';
 import { EmailChannelService } from './services/email-channel.service';
 import { NotificationCategoryCatalog } from './services/notification-category-catalog.service';
@@ -48,11 +53,15 @@ import { CountUnreadNotifications } from './use-cases/count-unread-notifications
 import { DeliverLinkNotice } from './use-cases/deliver-link-notice.use-case';
 import { DeliverNotification } from './use-cases/deliver-notification.use-case';
 import { DismissNotification } from './use-cases/dismiss-notification.use-case';
+import { ListConsoleCategories } from './use-cases/list-console-categories.use-case';
 import { ListNotifications } from './use-cases/list-notifications.use-case';
 import { MarkAllNotificationsRead } from './use-cases/mark-all-notifications-read.use-case';
 import { MarkNotificationRead } from './use-cases/mark-notification-read.use-case';
+import { PreviewCategoryPublication } from './use-cases/preview-category-publication.use-case';
+import { PublishCategory } from './use-cases/publish-category.use-case';
 import { PreviewUnsubscribe } from './use-cases/preview-unsubscribe.use-case';
 import { ReadNotificationPreferences } from './use-cases/read-notification-preferences.use-case';
+import { RevertCategory } from './use-cases/revert-category.use-case';
 import { SetNotificationPreferences } from './use-cases/set-notification-preferences.use-case';
 import { Unsubscribe } from './use-cases/unsubscribe.use-case';
 
@@ -222,6 +231,40 @@ const unsubscribeUseCases: Provider[] = [PreviewUnsubscribe, Unsubscribe].map((u
 }));
 
 /**
+ * A-17's console (task 67.10): the categories in force with their switch-offs, the wording each channel needs, and the
+ * publication — each use case framework-free over the store and the wording seam, the revert over the publication it
+ * repeats.
+ */
+const consoleProviders: Provider[] = [
+  { provide: CATEGORY_CONSOLE_STORE, useClass: CategoryConsoleStoreRepository },
+  { provide: CATEGORY_WORDING, useClass: CategoryWordingService },
+  {
+    provide: ListConsoleCategories,
+    inject: [CATEGORY_CONSOLE_STORE],
+    useFactory: (store: CategoryConsoleStore) => new ListConsoleCategories(store),
+  },
+  {
+    provide: PreviewCategoryPublication,
+    inject: [ListConsoleCategories, CATEGORY_WORDING],
+    useFactory: (categories: ListConsoleCategories, wording: CategoryWording) =>
+      new PreviewCategoryPublication(categories, wording),
+  },
+  {
+    provide: PublishCategory,
+    inject: [ListConsoleCategories, CATEGORY_WORDING, CATEGORY_CONSOLE_STORE],
+    useFactory: (categories: ListConsoleCategories, wording: CategoryWording, store: CategoryConsoleStore) =>
+      new PublishCategory(categories, wording, store),
+  },
+  {
+    provide: RevertCategory,
+    inject: [ListConsoleCategories, CATEGORY_CONSOLE_STORE, PublishCategory],
+    useFactory: (categories: ListConsoleCategories, store: CategoryConsoleStore, publish: PublishCategory) =>
+      new RevertCategory(categories, store, publish),
+  },
+  CategoryConsoleService,
+];
+
+/**
  * What raises — an outbox row on the producer's own request transaction — the recipient's centre (task 50.1.2), which
  * reads the store under the request's tenant binding and writes nothing but the recipient's own read state, and since
  * task 52.1 the person's preferences, which bind no tenant because they follow the person.
@@ -241,8 +284,14 @@ const httpProviders: Provider[] = [
   { provide: NOTIFICATION_RECIPIENTS, useClass: NotificationRecipientsRepository },
   ...unsubscribeUseCases,
   NotificationUnsubscribeService,
+  ...consoleProviders,
 ];
 
+/**
+ * **A-17's service is exported on the HTTP side** (task 67.10) for its controller, which is the realm's and lives in
+ * `AdminModule` beside A-18's — this module importing the realm back would be a cycle, since `AdminModule` imports this
+ * one for the invitation email on the worker.
+ */
 @Module({
   imports: mode === APP_MODE.WORKER ? [EmailModule] : [],
   controllers:
@@ -250,6 +299,6 @@ const httpProviders: Provider[] = [
       ? []
       : [NotificationCentreController, NotificationPreferencesController, NotificationUnsubscribeController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
-  exports: mode === APP_MODE.WORKER ? [NOTIFICATION_DELIVERY] : [NOTIFICATION_PORT],
+  exports: mode === APP_MODE.WORKER ? [NOTIFICATION_DELIVERY] : [NOTIFICATION_PORT, CategoryConsoleService],
 })
 export class NotificationModule {}

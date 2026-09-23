@@ -2,6 +2,7 @@ import type { SystemAuditLogEntry } from '@easyesg/contracts';
 import type { DataTableColumn } from '@easyesg/ui';
 import { useMemo } from 'react';
 import { useFormatter, useTranslations } from 'use-intl';
+import { NOTIFICATION_CATEGORY_LABEL } from '~/features/platform/shared/notification-category-label';
 import { LOG_ACTION_LABEL, LOG_OBJECT, LOG_OPERATOR, logObjectOf, logOperatorOf } from '../../../tools/log-labels';
 
 export const LOG_COLUMN = {
@@ -22,6 +23,7 @@ export type LogColumn = (typeof LOG_COLUMN)[keyof typeof LOG_COLUMN];
 export function useLogColumns(): readonly DataTableColumn<SystemAuditLogEntry, LogColumn>[] {
   const t = useTranslations('platform.accounts.log');
   const tProviders = useTranslations('platform.identityProviders.providers');
+  const tCategories = useTranslations('platform.notificationCategories.categories');
   const format = useFormatter();
 
   return useMemo(
@@ -63,12 +65,14 @@ export function useLogColumns(): readonly DataTableColumn<SystemAuditLogEntry, L
               return object.email;
             case LOG_OBJECT.PROVIDER:
               return tProviders(object.provider);
+            case LOG_OBJECT.CATEGORY:
+              return tCategories(NOTIFICATION_CATEGORY_LABEL[object.category]);
             case LOG_OBJECT.NONE:
               return t('noObject');
           }
         },
       },
     ],
-    [t, tProviders, format],
+    [t, tProviders, tCategories, format],
   );
 }

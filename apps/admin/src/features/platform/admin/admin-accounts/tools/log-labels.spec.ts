@@ -30,15 +30,18 @@ describe('A-08’s log labels (task 67.4)', () => {
     ).toEqual({ kind: 'unknown_address' });
   });
 
-  it('names an object by its address, or by its provider for a configuration version (task 67.11)', () => {
-    expect(logObjectOf({ targetEmail: 'ana@easyesg.md', targetProvider: null })).toEqual({
+  it('names an object by its address, or by what a configuration version configures (tasks 67.11, 67.10)', () => {
+    expect(logObjectOf({ targetEmail: 'ana@easyesg.md', targetProvider: null, targetCategory: null })).toEqual({
       kind: 'address',
       email: 'ana@easyesg.md',
     });
-    expect(logObjectOf({ targetEmail: null, targetProvider: 'microsoft' })).toEqual({
+    expect(logObjectOf({ targetEmail: null, targetProvider: 'microsoft', targetCategory: null })).toEqual({
       kind: 'provider',
       provider: 'microsoft',
     });
-    expect(logObjectOf({ targetEmail: null, targetProvider: null })).toEqual({ kind: 'none' });
+    expect(
+      logObjectOf({ targetEmail: null, targetProvider: null, targetCategory: 'reporting.manual_reminder' }),
+    ).toEqual({ kind: 'category', category: 'reporting.manual_reminder' });
+    expect(logObjectOf({ targetEmail: null, targetProvider: null, targetCategory: null })).toEqual({ kind: 'none' });
   });
 });

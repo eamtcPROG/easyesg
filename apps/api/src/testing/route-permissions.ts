@@ -231,6 +231,12 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /admin/identity-providers/:provider/configuration': PLATFORM_ADMINISTRATORS,
   'POST /admin/identity-providers/:provider/enablement': PLATFORM_ADMINISTRATORS,
   'POST /admin/identity-providers/:provider/disablement': PLATFORM_ADMINISTRATORS,
+  // ── A-17 (task 67.10): the notification categories — their reading, a preview that writes nothing, and two writes
+  // that each publish a configuration revision and declare an audit action naming it. actors.md §5: PA `Y`, BO `—`.
+  'GET /admin/notification-categories': PLATFORM_ADMINISTRATORS,
+  'POST /admin/notification-categories/:category/preview': PLATFORM_ADMINISTRATORS,
+  'POST /admin/notification-categories/:category/publication': PLATFORM_ADMINISTRATORS,
+  'POST /admin/notification-categories/:category/reversion': PLATFORM_ADMINISTRATORS,
   // ── A-19 (task 144): the operator's own credentials — both roles, because every operator holds a
   // password and a second factor, and each write declares an action naming the operator's own account.
   'GET /admin/credentials': OPERATORS,
@@ -485,6 +491,17 @@ function mapSurface<V>(read: (route: { controller: Constructor; handler: object 
 }
 
 /** `method path` for every handler on the surface, mapped to what it declares. */
+/**
+ * **Admin-realm routes that are POSTs and change nothing** (task 67.10), which the audit gate reads as reads: a preview
+ * takes a proposed behaviour in its body — a GET cannot carry one — and answers what it would do, writing no row and
+ * publishing nothing, so an action for it would record in A-08 a change that never happened. Named here rather than
+ * inferred from a path, so each is a decision; `route-permissions.spec.ts` fails one that names no route, and one that
+ * declares an action.
+ */
+export const ADMIN_REALM_POST_READS: ReadonlySet<string> = new Set([
+  'POST /admin/notification-categories/:category/preview',
+]);
+
 export function computeSurface(): Record<string, Permission | null> {
   return mapSurface(({ controller, handler }) => permissionOf(controller, handler));
 }

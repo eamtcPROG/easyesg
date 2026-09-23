@@ -134,6 +134,9 @@ export const ProblemType = {
    *  no client secret held, or saving an enabled one into that state. Its own slug because the way out is to
    *  complete the provider, and for the secret that is done outside the console. */
   IdentityProviderIncomplete: 'identity-provider-incomplete',
+  /** Task 67.10: A-17 published a category's behaviour against a revision no longer in force — another operator saved
+   *  first. Its own slug for `IdentityProviderChanged`'s reason: the console redraws what is in force. */
+  NotificationCategoryChanged: 'notification-category-changed',
   TenantContextMissing: 'tenant-context-missing',
   /** UC-56 refused: another reporting period for the same entity already covers part of these
    *  dates. Its own slug because S-14 must name the way out — adjust the dates, or edit the period

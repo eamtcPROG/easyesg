@@ -20,7 +20,7 @@ invisible because nothing in this directory said the rules applied.
 
 ## Current state
 
-**A-01, the chrome, A-02, A-07, A-08, A-18, A-19 and A-20.** Route files cover the eighteen scaffolded screens
+**A-01, the chrome, A-02, A-07, A-08, A-17, A-18, A-19 and A-20.** Route files cover the eighteen scaffolded screens
 (`A-01` … `A-18`), A-19 and A-20. **A-02's organization register is live since task 67.3** —
 `features/platform/admin/organization-register/`, reading `GET /admin/organizations` through
 `AdminRealmGuard` — and **A-08's accounts and system audit log since task 67.4**, in
@@ -36,7 +36,12 @@ and are not kept once their view unmounts — their key root is separate so inva
 `features/platform/admin/identity-providers/` — the two providers FR-2 names, and the chosen one's record: its state
 and who a disable reaches, whether the server holds its secret and where that is set (never the secret), its enable
 or disable, and its connection form. **The form is keyed by the revision it opened on**, so a save — or a colleague's,
-which the api refuses this one over — remounts it with the values in force. Every other screen behind the realm
+which the api refuses this one over — remounts it with the values in force. **A-17, notification categories, since
+task 67.10**, in `features/platform/notification/` — each category's channels and classification, published through
+UX-123's preview, disclosure and confirmation and reverted from the result in one step, with its words in every language
+read-only. **A revert is previewed exactly as a publication is**, against the behaviour the read says it restores, and a
+control code fixes is drawn fixed with its reason rather than offered. Its category names are
+`features/platform/shared/notification-category-label.ts`, which A-08's log reads too. Every other screen behind the realm
 still returns `null`. What is live, from task 23: `src/realm/` — the API client, the session
 query and the two-step sign-in screen — plus `_realm`'s closed-by-default guard, and a third
 Playwright project driving the journey **cross-origin against the built bundle**. **From task 67.1,
@@ -111,7 +116,8 @@ src/
 │               the email shape). A LEAF (see below)
 ├─ features/    15 folders, platform/ and billing/, mirroring apps/api's contexts — one index.ts each until
 │               built; platform/admin/ holds organization-register/ (A-02, task 67.3), admin-accounts/
-│               (A-08, task 67.4) and identity-providers/ (A-18, task 67.11)
+│               (A-08, task 67.4) and identity-providers/ (A-18, task 67.11); platform/notification/ is A-17
+│               (task 67.10), and platform/shared/ its category names, which A-08's log reads too
 ├─ shared/      what BOTH contexts need — index-view.tsx, the Index archetype's chrome bound once. A LEAF
 ├─ i18n/        use-intl wiring, the console locale, formats, the expansion harness, global.d.ts
 ├─ lib/         env (build-time only) and vite-env.d.ts beside it, pagination
@@ -191,7 +197,7 @@ src/
 
 - **The console nav is presentation, never the boundary** (task 67.1). It shows an operator their
   own realm's section, and only destinations whose screen renders — `realm/tools/console-sections.ts`
-  holds both rules and the destination table, which holds A-02, A-08, A-07 and A-18 for a Platform Administrator. A hidden link refuses nothing:
+  holds both rules and the destination table, which holds A-02, A-08, A-07, A-18 and A-17 for a Platform Administrator. A hidden link refuses nothing:
   `AdminRealmGuard` (task 67.3) is what stops a Billing Operator reaching A-02 by typing its
   address. **A screen that ships adds its destination in the same change**, with its label under
   `realm.chrome.destinations` — the table's type will not accept a key the catalogue lacks. **A-19 is

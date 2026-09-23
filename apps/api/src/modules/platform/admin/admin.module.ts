@@ -25,6 +25,7 @@ import { AdminAccountsController } from './controllers/admin-accounts.controller
 import { AdminCredentialsController } from './controllers/admin-credentials.controller';
 import { AdminIdentityProvidersController } from './controllers/admin-identity-providers.controller';
 import { AdminInvitationAcceptanceController } from './controllers/admin-invitation-acceptance.controller';
+import { AdminNotificationCategoriesController } from './controllers/admin-notification-categories.controller';
 import { AdminInvitationsController } from './controllers/admin-invitations.controller';
 import { AdminSessionController } from './controllers/admin-session.controller';
 import { OrganizationRegisterController } from './controllers/organization-register.controller';
@@ -352,8 +353,9 @@ const httpProviders: Provider[] = [
 const workerProviders: Provider[] = [AdminInvitationEmailHandler];
 
 @Module({
-  // `AuditModule` provides the log's writer to both sign-in and acceptance; the worker needs only mail.
-  imports: mode === APP_MODE.WORKER ? [NotificationModule] : [AuditModule],
+  // `AuditModule` provides the log's writer to both sign-in and acceptance; the worker needs only mail. Since task 67.10
+  // the HTTP side imports `NotificationModule` too, for A-17's service — the realm's routes, that module's behaviour.
+  imports: mode === APP_MODE.WORKER ? [NotificationModule] : [AuditModule, NotificationModule],
   controllers:
     mode === APP_MODE.WORKER
       ? []
@@ -366,6 +368,7 @@ const workerProviders: Provider[] = [AdminInvitationEmailHandler];
           SystemAuditLogController,
           AdminCredentialsController,
           AdminIdentityProvidersController,
+          AdminNotificationCategoriesController,
         ],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
   // Since task 67.9, for `SupportAccessModule`. **`AdminSessionService`, not the guards**: a guard named in

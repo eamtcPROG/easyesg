@@ -108,7 +108,7 @@ src/
   the graph of every consumer, including the PDF worker and the email renderer, which read this
   package for UX-127's values and have no DOM. It is a **peer** dependency: the apps own the §12.1
   catalog pin (7.85.0), and a second resolved copy would give a field a different `Control` type
-  than the form that created it. **40 import sites across the two apps today**, 36 until task 52.3's S-27 — its form and three sections — 35 until task 50.3's reminder form on S-16, 33 until task 92's re-authentication dialogue gave its password and code stages one each, 32 until task 155's second review gave the identity forms one shared password field, 30 until task 155 added S-36's password and name-and-language steps, 29 until task 67.11 added A-18's connection form — 16 until task 129,
+  than the form that created it. **41 import sites across the two apps today**, 40 until task 67.10's A-17 behaviour form, 36 until task 52.3's S-27 — its form and three sections — 35 until task 50.3's reminder form on S-16, 33 until task 92's re-authentication dialogue gave its password and code stages one each, 32 until task 155's second review gave the identity forms one shared password field, 30 until task 155 added S-36's password and name-and-language steps, 29 until task 67.11 added A-18's connection form — 16 until task 129,
   which split S-15's form into four section components over one `control` and so multiplied one site
   into five, 20 until task 134 did the same to S-13's form with three, 23 until task 67.4 added
   A-08's invitation form and A-20's two steps, and 26 until task 151 added A-01's recovery step, A-19's

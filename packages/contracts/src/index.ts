@@ -340,6 +340,32 @@ export type IdentityProviderRevisionRequest = components['schemas']['IdentityPro
 /** The configuration revision a write just put in force. */
 export type IdentityProviderPublication = components['schemas']['IdentityProviderPublicationResponseDto'];
 
+// platform — A-17's notification categories: each category's behaviour in force, its switch-offs and its wording, the
+// preview that discloses what a change does for recipients, and the two writes that each publish a revision (FR-173,
+// UC-176; task 67.10).
+export {
+  CATEGORY_CONSEQUENCE,
+  NOTIFICATION_CATEGORY,
+  NOTIFICATION_CHANNEL,
+  NOTIFICATION_CLASSIFICATION,
+  isNotificationCategoryKey,
+  type CategoryConsequenceKind,
+  type NotificationCategoryKey,
+  type NotificationChannel,
+  type NotificationClassification,
+} from './notification';
+/** One category as A-17 shows it — what code declares, the behaviour in force and who published it, and its words. */
+export type ConsoleCategory = components['schemas']['ConsoleCategoryResponseDto'];
+export type CategoryWording = components['schemas']['CategoryWordingResponseDto'];
+export type CategoryBehaviourRequest = components['schemas']['CategoryBehaviourRequestDto'];
+export type CategoryPublicationRequest = components['schemas']['CategoryPublicationRequestDto'];
+export type CategoryReversionRequest = components['schemas']['CategoryReversionRequestDto'];
+/** What a publication would change for recipients, one entry per consequence. */
+export type CategoryPreview = components['schemas']['CategoryPreviewResponseDto'];
+export type CategoryConsequence = components['schemas']['CategoryConsequenceResponseDto'];
+/** The configuration revision a publication or a revert just put in force. */
+export type CategoryPublication = components['schemas']['CategoryPublicationResponseDto'];
+
 // platform — S-26's notification centre (FR-161, FR-162; tasks 50.1.2, 50.2.1). The words arrive resolved in the
 // request's language, each absent where none is written; the category key is for the client to act on, never to show.
 /** One notice in the recipient's centre, with this recipient's read state. */

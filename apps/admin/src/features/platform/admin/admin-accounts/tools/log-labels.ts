@@ -1,5 +1,6 @@
 import {
   SYSTEM_AUDIT_ACTION,
+  type NotificationCategoryKey,
   type SocialProvider,
   type SystemAuditAction,
   type SystemAuditLogEntry,
@@ -36,6 +37,8 @@ export const LOG_ACTION_LABEL = {
   [SYSTEM_AUDIT_ACTION.ADMIN_IDENTITY_PROVIDER_CONFIGURED]: 'identityProviderConfigured',
   [SYSTEM_AUDIT_ACTION.ADMIN_IDENTITY_PROVIDER_ENABLED]: 'identityProviderEnabled',
   [SYSTEM_AUDIT_ACTION.ADMIN_IDENTITY_PROVIDER_DISABLED]: 'identityProviderDisabled',
+  [SYSTEM_AUDIT_ACTION.ADMIN_NOTIFICATION_CATEGORY_PUBLISHED]: 'notificationCategoryPublished',
+  [SYSTEM_AUDIT_ACTION.ADMIN_NOTIFICATION_CATEGORY_REVERTED]: 'notificationCategoryReverted',
 } as const satisfies Record<SystemAuditAction, string>;
 
 export const LOG_OBJECT = {
@@ -43,18 +46,24 @@ export const LOG_OBJECT = {
   ADDRESS: 'address',
   /** A social provider's configuration version (task 67.11), named by the provider. */
   PROVIDER: 'provider',
+  /** A notification category's configuration version (task 67.10), named by the category. */
+  CATEGORY: 'category',
   NONE: 'none',
 } as const;
 
 export type LogObject =
   | { readonly kind: typeof LOG_OBJECT.ADDRESS; readonly email: string }
   | { readonly kind: typeof LOG_OBJECT.PROVIDER; readonly provider: SocialProvider }
+  | { readonly kind: typeof LOG_OBJECT.CATEGORY; readonly category: NotificationCategoryKey }
   | { readonly kind: typeof LOG_OBJECT.NONE };
 
 /** What an entry acted on, as the log's object column names it. */
-export const logObjectOf = (entry: Pick<SystemAuditLogEntry, 'targetEmail' | 'targetProvider'>): LogObject => {
+export const logObjectOf = (
+  entry: Pick<SystemAuditLogEntry, 'targetEmail' | 'targetProvider' | 'targetCategory'>,
+): LogObject => {
   if (entry.targetEmail !== null) return { kind: LOG_OBJECT.ADDRESS, email: entry.targetEmail };
   if (entry.targetProvider !== null) return { kind: LOG_OBJECT.PROVIDER, provider: entry.targetProvider };
+  if (entry.targetCategory !== null) return { kind: LOG_OBJECT.CATEGORY, category: entry.targetCategory };
   return { kind: LOG_OBJECT.NONE };
 };
 

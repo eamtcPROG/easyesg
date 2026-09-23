@@ -1,4 +1,5 @@
 import {
+  ADMIN_REALM_POST_READS,
   PERMISSION,
   SURFACE,
   computeAuditActions,
@@ -78,7 +79,17 @@ describe('every admin-realm write declares what the system audit log records (ta
   const surface = computeSurface();
 
   const isAdminRealmWrite = (route: string): boolean =>
-    (surface[route] ?? '').startsWith(`${PERMISSION.ADMIN}:`) && !route.startsWith('GET ');
+    (surface[route] ?? '').startsWith(`${PERMISSION.ADMIN}:`) &&
+    !route.startsWith('GET ') &&
+    !ADMIN_REALM_POST_READS.has(route);
+
+  // An exemption naming no route would read as a decision while exempting nothing — and survive the route's rename.
+  it('exempts only admin-realm routes that exist, as reads by POST (task 67.10)', () => {
+    const stray = [...ADMIN_REALM_POST_READS].filter(
+      (route) => !route.startsWith('POST ') || !(surface[route] ?? '').startsWith(`${PERMISSION.ADMIN}:`),
+    );
+    expect(stray).toEqual([]);
+  });
 
   it('finds admin-realm writes at all — a gate over an empty set looks exactly like one that passes', () => {
     expect(Object.keys(actions).filter(isAdminRealmWrite).length).toBeGreaterThanOrEqual(7);
