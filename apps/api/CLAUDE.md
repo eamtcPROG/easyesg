@@ -458,19 +458,28 @@ Four things to know before touching it:
 
 **Push**
 
-- **AD-15's socket is the api's own, on its HTTP server** (task 147; §12.5.6's task-147 rows). `platform/push` owns
-  `POST /session/socket-ticket`, the Redis ticket store and `SocketServer`, a `ws` server in `noServer` mode on the
-  HTTP server's `upgrade` event. **The upgrade is judged before any socket exists** — path, origin, ticket, then the
-  ticket spent and its session re-read through `REQUEST_IDENTITY_STORE` — so every refusal is an HTTP status on the
-  upgrade response, which is why this is not a Nest gateway (§12.1's AD-15 row). Three things to know:
-  - **An application context has no HTTP server**, and Nest's `HttpAdapterHost` types the adapter as present anyway —
-    the boot specs and `billing-disabled.e2e-spec.ts` build one in HTTP mode and failed until `SocketServer` stood
-    aside for it.
+- **AD-15's socket is the api's own, a Nest gateway on its HTTP server** (task 147; §12.5.6's task-147 rows).
+  `platform/push` owns `POST /session/socket-ticket`, the Redis ticket store, `SocketAdmissionService` and
+  `SocketGateway` (`@WebSocketGateway`, in `gateways/`, this module's addition to the anatomy — a gateway is a transport
+  adapter, as a controller is). **The upgrade is judged before the handshake** by `TicketWsAdapter`, a `WsAdapter`
+  subclass that adds `ws`'s `verifyClient` to the gateway's server: origin, ticket, then the ticket spent and its
+  session re-read through `REQUEST_IDENTITY_STORE`, so every refusal is an HTTP status on the upgrade response. Three
+  things to know:
+  - **`configureHttpApp` sets the adapter, and an application built without it does not start**: Nest falls back to
+    Socket.IO's adapter, which is not installed, and the gateway fails to initialise. Every suite and the real bootstrap
+    go through `configureHttpApp`; a new one must too. An upgrade on a path no gateway serves is ended by Nest's adapter
+    with no answer at all.
   - **The ticket store is its own lazily connected Redis client**, never BullMQ's; a replica that never saw a ticket
     never opened a connection, and is dropped rather than asked to `QUIT`.
-  - **The caps are per replica** until task 71's edge — ten connections per account with the oldest closed
-    (`4001`), any client frame closes (`1008`), and payloads over 1 KiB are refused by `ws`. `test/push-socket.e2e-spec.ts`
-    listens on `127.0.0.1` itself, since an upgrade needs a real port.
+  - **The socket is the replica's; its count is Redis's.** `RedisSocketPresence` keeps each account's live connections
+    in a sorted set, updated by one atomic script that prunes a dead replica's entries, adds the new one and pops the
+    oldest past ten; each popped connection is published on its own replica's channel, which closes it (`4001`). It
+    touches Redis only from a replica's first socket, and **fails open** — a Redis failure leaves the connection
+    uncounted, logged. **A removal waits for its connection's registration** (the gateway keeps that promise per
+    connection), or a connection closed at once is removed before it is added and stays counted; and **a failed removal
+    is retried on every heartbeat** until it lands. Any client frame closes (`1008`) and `ws` refuses payloads over 1 KiB, per connection.
+    `test/push-socket.e2e-spec.ts` listens on `127.0.0.1` itself, since an upgrade needs a real port, and proves the
+    cap across replicas with a second application in the same process.
 
 **Notification**
 
@@ -771,7 +780,7 @@ range in a header comment.
 ## Module anatomy
 
 Required: `<name>.module.ts`, `controllers/`, `services/`, `use-cases/`, `models/`, `dto/`,
-`types/`. Optional, only when the domain needs them: `providers/ interfaces/ guards/ decorators/
+`types/`. Optional, only when the domain needs them: `providers/ gateways/ interfaces/ guards/ decorators/
 errors/ validators/ constants/ consumers/ sagas/ domain/`. Tests colocated as `*.spec.ts`.
 
 `use-cases/` is not optional where `use_cases.md` names a flow. Those classes stay **framework-free**

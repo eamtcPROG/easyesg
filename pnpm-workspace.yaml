@@ -41,10 +41,12 @@ catalog:
   '@nestjs/jwt': 11.0.2
   '@nestjs/passport': 11.0.5
   '@nestjs/platform-express': 11.1.29
+  '@nestjs/platform-ws': 11.2.3
   '@nestjs/schematics': 11.1.0
   '@nestjs/swagger': 11.4.7
   '@nestjs/testing': 11.2.1
   '@nestjs/typeorm': 11.0.3
+  '@nestjs/websockets': 11.2.3
   '@next/eslint-plugin-next': 16.3.1
   '@node-rs/argon2': 2.1.0
   '@playwright/test': 1.62.1

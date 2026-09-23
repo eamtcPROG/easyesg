@@ -10,10 +10,7 @@ describe('judgeUpgrade (task 147)', () => {
     ).toEqual({ refused: null, ticket: 'abc' });
   });
 
-  it('refuses another path, a foreign or absent origin, and a missing ticket — in that order', () => {
-    expect(judgeUpgrade({ url: '/api/v1/other?ticket=abc', origin: allowedOrigin, allowedOrigin })).toEqual({
-      refused: 404,
-    });
+  it('refuses a foreign or absent origin, then a missing ticket — in that order', () => {
     expect(judgeUpgrade({ url: '/api/v1/socket?ticket=abc', origin: 'https://evil.example', allowedOrigin })).toEqual({
       refused: 403,
     });

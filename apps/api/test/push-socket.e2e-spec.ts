@@ -50,8 +50,18 @@ describe('the hint socket and its ticket (AD-15; task 147)', () => {
         resolve({ status: 101, socket });
       });
       socket.on('unexpected-response', (_request, response) => resolve({ status: response.statusCode ?? 0 }));
-      socket.on('error', () => undefined);
+      // An upgrade ended with no HTTP answer at all — the socket destroyed — settles as status 0.
+      socket.on('error', () => resolve({ status: 0 }));
     });
+
+  /** Polls a condition the server settles asynchronously — here, a registration's write to Redis. */
+  const waitUntil = async (condition: () => Promise<boolean>): Promise<void> => {
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      if (await condition()) return;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    throw new Error('the condition never held');
+  };
 
   const closed = (socket: WebSocket): Promise<number> =>
     new Promise((resolve) => socket.on('close', (code) => resolve(code)));
@@ -108,12 +118,16 @@ describe('the hint socket and its ticket (AD-15; task 147)', () => {
     expect((await connect(`${base}?ticket=${ticket}`)).status).toBe(401);
   });
 
-  it('refuses before any socket exists: no ticket, a forged one, a foreign origin, another path', async () => {
+  it('refuses before any socket exists: no ticket, a forged one, a foreign origin', async () => {
     expect((await connect(base)).status).toBe(401);
     expect((await connect(`${base}?ticket=forged`)).status).toBe(401);
     expect((await connect(`${base}?ticket=${await mint(ana)}`, 'https://elsewhere.example')).status).toBe(403);
     expect((await connect(`${base}?ticket=${await mint(ana)}`, null)).status).toBe(403);
-    expect((await connect(base.replace(PATH, '/api/v1/elsewhere'))).status).toBe(404);
+  });
+
+  // Nest's adapter routes an upgrade by path and ends one no gateway serves without an answer.
+  it('answers nothing on a path no socket is served at', async () => {
+    expect((await connect(base.replace(PATH, '/api/v1/elsewhere'))).status).toBe(0);
   });
 
   it('re-reads the session at the upgrade: a ticket minted before sign-out opens nothing', async () => {
@@ -136,6 +150,68 @@ describe('the hint socket and its ticket (AD-15; task 147)', () => {
     expect((await connect(`${base}?ticket=${await mint(ana)}`)).status).toBe(101);
     expect(await oldestClosed).toBe(4001);
     expect(sockets.slice(1).every((socket) => socket.readyState === WebSocket.OPEN)).toBe(true);
+  });
+
+  // The owner's call (§12.5.6's task-147 edge row, amended): the cap is Redis's, so it holds across replicas. A second
+  // application in this process is a second replica — its own presence id, its own port, the same Redis.
+  it('holds the cap across replicas: an eleventh connection on another replica closes the oldest here', async () => {
+    const second = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false });
+    configureHttpApp(second);
+    await second.listen(0, '127.0.0.1');
+    try {
+      const { port } = second.getHttpServer().address() as AddressInfo;
+      const elsewhere = `ws://127.0.0.1:${port}${PATH}`;
+      const bob = await signInFreshAccount({ server: app.getHttpServer(), worker, email: `push-bob-${RUN}@example.md` });
+      const here: WebSocket[] = [];
+      for (let index = 0; index < 10; index += 1) {
+        const { socket } = await connect(`${base}?ticket=${await mint(bob)}`);
+        if (socket === undefined) throw new Error('a connection under the cap was refused');
+        here.push(socket);
+      }
+      const oldestClosed = closed(here[0]);
+
+      expect((await connect(`${elsewhere}?ticket=${await mint(bob)}`)).status).toBe(101);
+      expect(await oldestClosed).toBe(4001);
+      expect(here.slice(1).every((socket) => socket.readyState === WebSocket.OPEN)).toBe(true);
+    } finally {
+      for (const socket of opened.splice(0)) socket.terminate();
+      await second.close();
+    }
+  });
+
+  // The race the owner's review found: a connection closed before its registration reaches Redis. A fresh replica's
+  // first socket is the widest window — its Redis connections open during the registration — so this uses one.
+  it('counts nothing for a connection closed before its registration landed', async () => {
+    const fresh = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false });
+    configureHttpApp(fresh);
+    await fresh.listen(0, '127.0.0.1');
+    try {
+      const { port } = fresh.getHttpServer().address() as AddressInfo;
+      const dana = await signInFreshAccount({ server: app.getHttpServer(), worker, email: `push-dana-${RUN}@example.md` });
+      const key = `socket-connections:${dana.accountId}`;
+      const { socket } = await connect(`ws://127.0.0.1:${port}${PATH}?ticket=${await mint(dana)}`);
+      socket?.terminate();
+
+      // Settled, and still settled a moment later: an orphan appears only after the removal it overtook.
+      await waitUntil(async () => (await redis.zcard(key)) === 0);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(await redis.zcard(key)).toBe(0);
+    } finally {
+      await fresh.close();
+    }
+  });
+
+  // A replica that died stops refreshing its liveness key, and its connections stop counting at the next connect —
+  // rather than locking the account out until they expire. Seeded as the dead replica would have left them.
+  it('does not count connections held by a replica that is no longer alive', async () => {
+    const carol = await signInFreshAccount({ server: app.getHttpServer(), worker, email: `push-carol-${RUN}@example.md` });
+    const key = `socket-connections:${carol.accountId}`;
+    const dead = 'replica-that-crashed';
+    for (let index = 0; index < 10; index += 1) await redis.zadd(key, String(index + 1), `${dead}:connection-${index}`);
+
+    expect((await connect(`${base}?ticket=${await mint(carol)}`)).status).toBe(101);
+    await waitUntil(async () => (await redis.zcard(key)) === 1);
+    expect((await redis.zrange(key, '0', '-1')).some((member) => member.startsWith(dead))).toBe(false);
   });
 
   it('closes a connection whose client sends a frame — the socket is server to client only', async () => {

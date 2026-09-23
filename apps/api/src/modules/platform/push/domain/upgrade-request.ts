@@ -1,16 +1,15 @@
-import { SOCKET_PATH, SOCKET_TICKET_PARAMETER } from '../constants/socket.constants';
+import { SOCKET_TICKET_PARAMETER } from '../constants/socket.constants';
 
 /**
  * What an HTTP upgrade asks for, judged before any socket exists (task 147; §12.5.6's task-147 ticket row) — so a
  * refusal is an HTTP status on the upgrade response, not a close after an open socket.
  *
- * **Three refusals, in order**: an upgrade for another path is not this socket's (404); one from an origin other than
- * the tenant application's is refused (403) — the ticket alone would suffice, but a cross-site page has no business
- * opening a socket at all; and one with no ticket is unauthenticated (401). What remains is the ticket, for the
- * admission to consume.
+ * **Two refusals, in order**: an upgrade from an origin other than the tenant application's is refused (403) — the
+ * ticket alone would suffice, but a cross-site page has no business opening a socket at all — and one with no ticket is
+ * unauthenticated (401). What remains is the ticket, for the admission to consume. **The path is not judged here**:
+ * Nest's `WsAdapter` routes an upgrade by path and ends one no gateway serves before this runs.
  */
 export const UPGRADE_REFUSAL = {
-  NOT_THIS_PATH: 404,
   FOREIGN_ORIGIN: 403,
   NO_TICKET: 401,
 } as const;
@@ -29,7 +28,6 @@ export const judgeUpgrade = (input: {
   readonly allowedOrigin: string;
 }): UpgradeJudgement => {
   const target = new URL(input.url ?? '/', 'http://upgrade.invalid');
-  if (target.pathname !== SOCKET_PATH) return { refused: UPGRADE_REFUSAL.NOT_THIS_PATH };
   if (input.origin === undefined || input.origin !== new URL(input.allowedOrigin).origin) {
     return { refused: UPGRADE_REFUSAL.FOREIGN_ORIGIN };
   }

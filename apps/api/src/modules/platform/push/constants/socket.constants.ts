@@ -1,7 +1,7 @@
 /**
  * AD-15's socket, as values (task 147; §12.5.6's task-147 rows). **The limits are the owner's**, set 23 Sep 2026 and
- * recorded there as instructions task 71's edge honours; until the edge exists the api enforces the first three per
- * replica.
+ * recorded there as instructions task 71's edge honours; until the edge exists the api enforces the first three — the
+ * connection cap across replicas, in Redis, and the other two on each connection.
  */
 export const SOCKET_PATH = '/api/v1/socket';
 
@@ -9,7 +9,7 @@ export const SOCKET_PATH = '/api/v1/socket';
 export const SOCKET_TICKET_PARAMETER = 'ticket';
 
 export const SOCKET_LIMIT = {
-  /** Open connections per account per replica; the oldest is closed when another arrives. */
+  /** Open connections per account, across every replica (in Redis); the oldest is closed when another arrives. */
   CONNECTIONS_PER_ACCOUNT: 10,
   /** Frames are server→client only, so anything a client sends is at most this, and closes the connection anyway. */
   MAX_CLIENT_PAYLOAD_BYTES: 1024,

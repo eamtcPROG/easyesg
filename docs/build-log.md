@@ -24512,7 +24512,8 @@ nothing opens. The socket sends nothing yet: frames and their fan-out are task 1
 
   **The route needs no web code**: `apps/web`'s pass-through already forwards any `/api/v1/…` path with the
   session's bearer. So *"minted by the session proxy"*, as the row says, is true of the existing proxy.
-- **Every refusal happens before a socket exists, so the socket is plain `ws`, not a Nest gateway.** I installed
+- **Every refusal happens before a socket exists, so the socket is plain `ws`, not a Nest gateway.** *(Wrong, and
+  superseded the same day: see* Task 147, follow-up *below.)* I installed
   `@nestjs/websockets` and `@nestjs/platform-ws` at their §12.1 pins, then checked Context7. Nest's connection hook
   runs after the handshake is accepted, so a refused ticket there could only be a close after an open. A `ws` server
   in `noServer` mode on the HTTP server's `upgrade` event judges the request first. The refusals are:
@@ -24562,3 +24563,111 @@ where needed stands: no `pnpm gates` and no review agents. What does run:
 
 - `GETDEL` swapped for `GET` fails the replay case.
 - Dropping the revocation check fails the sign-out case.
+
+## Task 147, follow-up — the socket as a Nest gateway · 2026-09-23
+
+The owner asked why a Nest gateway was not used. The honest answer was that the task's reason for not using one was
+wrong. The entry above says a gateway's connection hook runs after the handshake, so it could only close an open
+socket. That is true of `handleConnection`, but it is not a limit of Nest.
+
+`WsAdapter.create` spreads the gateway's options into `ws`'s server, and `ws` calls `verifyClient` before the
+handshake. So a `WsAdapter` subclass that reads the container can refuse with an HTTP status exactly as the bare
+server did. I had not read the adapter's source before recording the claim. Reading it (`@nestjs/platform-ws`
+11.2.3) settled it. **The owner chose the gateway for convention.**
+
+### What changed
+
+- **The packages.** `@nestjs/websockets` and `@nestjs/platform-ws` are back at their §12.1 pins. §12.1's AD-15 row is
+  corrected to say the first cut's claim was wrong.
+- **The socket.** `SocketServer`, the bare `ws` server, is replaced by three pieces:
+  - `SocketGateway`, a `@WebSocketGateway` on `/api/v1/socket` with `maxPayload`, in `gateways/`. That folder is added
+    to `apps/api/CLAUDE.md`'s module anatomy, since a gateway is a transport adapter, as a controller is.
+  - `TicketWsAdapter`, the subclass that adds `verifyClient` and is set in `configureHttpApp`.
+  - `SocketAdmissionService`, which judges the upgrade. It remembers the admitted account per request object, so
+    `handleConnection`, which `ws` hands that same request, needs no second read.
+- **What did not change**: the ticket, its store, `AdmitSocket`, the registry, the caps and every refusal status.
+- **One behaviour changed.** An upgrade on a path no gateway serves is now ended by Nest's adapter with no answer,
+  where the bare server answered 404. `judgeUpgrade` lost its path check and the e2e case asserts the new behaviour.
+  I accepted this rather than overriding the adapter's routing, which would be a second copy of it.
+- **One trap was recorded.** An application built without `configureHttpApp` falls back to Socket.IO's adapter, which
+  is not installed, and cannot initialise the gateway. Every suite and the real bootstrap go through it. The earlier
+  crash of an HTTP-mode application context is moot: an application context binds no gateway at all.
+
+### Verification
+
+- **api**: unit **1,410**, `pnpm e2e` **1,399** in 56 suites, `pnpm e2e:worker` **8**.
+- **Whole repo**: `boundaries`, `openapi:check` (the contract did not change), `image:check`, lint, typecheck and
+  `docs:check`.
+- **The logs were read**: no adapter, socket or unhandled-rejection line.
+- **Mutation**: dropping `verifyClient` from the adapter fails four of the seven socket cases — the ticket, the
+  refusals, sign-out and the cap. Restored.
+
+### The connection cap moved to Redis (the owner, the same day)
+
+The owner then asked whether the socket holds its connections in memory or in Redis, *"because to be able to scale
+the system it should be in Redis"*.
+
+**The socket itself cannot move.** An open TCP connection lives in the process that accepted it. Everything *about* the
+connections already scaled:
+
+- the ticket is in Redis, so it can be minted on one replica and spent on another;
+- the admission reads PostgreSQL;
+- task 148's fan-out is Redis pub/sub, decided with AD-15.
+
+**The cap did not scale**: ten per account, per replica. The owner chose to move it now rather than wait for the edge,
+and the task-147 edge row is amended.
+
+**How it works now:**
+
+- **`SOCKET_PRESENCE`** is a port. Its Redis adapter keeps each account's live connections in a sorted set: members
+  `<replica>:<connection>`, scored by connect time.
+- **One atomic script** does the counting:
+  - it drops the entries of replicas whose liveness key has lapsed;
+  - it adds the new connection;
+  - it pops the oldest past ten.
+
+  Each popped connection is published on its own replica's channel, and that replica closes it (`4001`).
+- **A replica's liveness key rides the socket heartbeat**, with a TTL of three heartbeats. A crashed replica's
+  connections therefore stop counting at the next connect, rather than locking an account out.
+- **Two decisions beyond the question:**
+  - a replica touches Redis only from its first socket, so idle replicas and every api suite open no connection;
+  - a Redis failure fails open: the connection stays, uncounted, and the failure is logged. The socket is an
+    accelerator, and the edge still bounds it.
+- **Recorded as a limit, not assumed away**: the script reads keys it does not declare, which a Redis Cluster would
+  refuse. §5.4's Redis is one instance.
+- **The per-replica registry and its spec are deleted.** The gateway keeps only what a replica must: its own
+  connections by id, so an eviction can find one.
+
+**Verification:**
+
+- **api**: unit **1,407**, `pnpm e2e` **1,401** in 56 suites, `pnpm e2e:worker` **8**, and lint, typecheck and
+  `boundaries`.
+- **Two new e2e cases:**
+  - the cap across replicas: a second application in the same process, with an eleventh connection there closing the
+    oldest here;
+  - a dead replica's ten seeded entries pruned, not counted.
+- **Mutations, each run and restored:**
+  - dropping the prune fails the dead-replica case;
+  - dropping the eviction publish fails both cap cases.
+
+### Two defects in the Redis cap, found on the owner's review question
+
+The owner asked *"so the current implementation is correct?"*. Re-reading the new cap code to answer honestly found
+one defect and one gap. The owner asked for both to be fixed before commit.
+
+- **A race left an entry counted for the replica's lifetime.**
+  - **The defect**: `handleConnection` started the registration and `handleDisconnect` started the removal, neither
+    awaited. A connection closed before its registration reached Redis was removed first — removing nothing — and then
+    added.
+  - **Widest on a replica's first socket**: `unregister` skipped entirely while the Redis connections were still
+    opening.
+  - **The fix**: each held connection keeps its registration's promise, and the removal chains after it.
+  - **The e2e case**: a fresh replica's first socket, terminated at once, must leave zero entries after settling. With
+    the fix reverted it failed **three runs out of three**.
+- **A failed removal was never retried.** Fail-open applied to removal, as it should, but nothing ever cleaned up
+  after it, so one Redis blip took a place until restart. Failed removals are now kept, by member, and retried on each
+  liveness tick until they land. A unit spec over a fake client proves it: it fails once, retries on the next
+  heartbeat, then stops. Without the retry loop the spec fails.
+
+**Verification**: api unit **1,409**, `pnpm e2e` **1,402** in 56 suites, `pnpm e2e:worker` **8**, lint and `boundaries`.
+The run's output carries no presence or adapter lines.

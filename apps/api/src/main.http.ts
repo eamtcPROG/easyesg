@@ -9,6 +9,7 @@ import { correlationMiddleware } from './infrastructure/observability/correlatio
 import { initialiseCatalogue } from './app/messages/catalogue';
 import { buildOpenApiDocument } from './infrastructure/openapi/document.factory';
 import { rollbackTenantTransaction } from './infrastructure/persistence/tenant-transaction';
+import { TicketWsAdapter } from './modules/platform/push/providers/ticket-ws-adapter';
 
 /**
  * Everything that shapes the HTTP surface, in one place so it cannot drift from what is tested.
@@ -22,6 +23,11 @@ export function configureHttpApp(app: NestExpressApplication): void {
   // `health` stays outside the versioned surface; NFR-16's route-coverage gate treats that
   // as an allowlist entry rather than an exemption.
   app.setGlobalPrefix('api/v1', { exclude: ['health'] });
+
+  // AD-15's socket (task 147): Nest's `ws` adapter, with the ticket judged before the handshake. Set here, where every
+  // suite and the real bootstrap pass, because an application created without it falls back to Socket.IO's adapter,
+  // which is not installed, and fails to initialise its gateway.
+  app.useWebSocketAdapter(new TicketWsAdapter(app));
 
   // §12.5.6's admin-realm CORS row (task 23): exactly one allowed origin — the console — with
   // credentials, because `admin.<host>` → `api.<host>` is cross-origin by design (NFR-65's
