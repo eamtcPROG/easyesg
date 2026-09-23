@@ -281,6 +281,8 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // Choosing among them (task 83.1), `account` for the same reason and more sharply: the caller it
   // exists for holds several memberships and has chosen none, so no role resolves until it is called.
   'PUT /session/organization': PERMISSION.ACCOUNT,
+  // AD-15's handshake (task 147): the account's, in `platform/push`, reached through the web tier's pass-through.
+  'POST /session/socket-ticket': PERMISSION.ACCOUNT,
 
   // ── The invitation a person was sent. `preview` is public because the invitee may have no
   // account at all; `acceptance` needs one, and the organization comes from the token rather than

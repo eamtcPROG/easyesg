@@ -2115,6 +2115,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/session/socket-ticket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mint a ticket to open the hint socket
+         * @description A single-use ticket, valid for thirty seconds, for opening the socket over which the platform hints that a screen’s data changed. It carries no personal data; the socket re-reads this session when it is presented.
+         */
+        post: operations["SocketTicketController_issue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4193,6 +4213,12 @@ export interface components {
         CategoryReversionRequestDto: {
             /** @description The revision in force when the revert was asked for. */
             expectedRevision: number;
+        };
+        SocketTicketResponseDto: {
+            /** @description Single-use and opaque; carries no personal data. Present it as the `ticket` query parameter of the socket upgrade within thirty seconds. */
+            ticket: string;
+            /** @description When the ticket stops working, unused. Unix epoch milliseconds, UTC. */
+            expiresAt: number;
         };
     };
     responses: never;
@@ -9129,6 +9155,37 @@ export interface operations {
             };
             /** @description A newer revision is in force (problem type notification-category-changed), or the change is what is already in force, or there is nothing to revert to (problem type conflict). */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SocketTicketController_issue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The ticket and when it stops working. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["SocketTicketResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable session (problem type authentication-required or session-expired). */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

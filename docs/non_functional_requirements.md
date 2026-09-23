@@ -355,7 +355,7 @@ Ratified 18 Aug 2026 from `architecture.md` §17.3. FR-160 … FR-173 previously
 
 ### 4.17 Push acceleration (NFR-110)
 
-Added 12 Sep 2026 with `architecture.md` **AD-15**, which put a WebSocket gateway in front of surfaces that until
+Added 12 Sep 2026 with `architecture.md` **AD-15**, which put a WebSocket accelerator in front of surfaces that until
 then only polled. It is its own subsection rather than a fifth notification quality because it is not one: the
 accelerator carries no notification and no content, and the FR-161 unread count is one of its two consumers rather
 than its subject.

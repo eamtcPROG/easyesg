@@ -525,7 +525,8 @@ const CLAIMS = [
 
 /** Extract the claimed number, or say precisely why the claim could not be read. */
 const extract = (text, claim) => {
-  const found = [...text.matchAll(new RegExp(claim.pattern, 'g'))];
+  // `d` for the capture's own offsets, which the prove pass mutates at (task 147).
+  const found = [...text.matchAll(new RegExp(claim.pattern, 'gd'))];
   if (found.length === 0) {
     return { error: 'the pattern matches nothing — the prose changed; update this entry' };
   }
@@ -558,12 +559,14 @@ for (const claim of CLAIMS) {
     continue;
   }
 
-  // The prove pass: change the number in a copy and require the check to notice.
+  // The prove pass: change the number in a copy and require the check to notice. **At the capture group's own
+  // offsets**, not the figure's first occurrence in the match — which is what this did until task 147, when
+  // `core/(9) … platform/(9)` put the same figure twice in one match and the mutation edited the wrong one, so a
+  // correct entry read as INERT. The false alarm was the safe direction; a mutation landing on a figure the pattern
+  // does not read is not.
   const mutantRaw = toWordOrDigits(actual + 1, got.raw);
-  const mutated =
-    text.slice(0, got.match.index) +
-    got.match[0].replace(got.raw, mutantRaw) +
-    text.slice(got.match.index + got.match[0].length);
+  const [start, end] = got.match.indices[1];
+  const mutated = text.slice(0, start) + mutantRaw + text.slice(end);
   const remeasured = extract(mutated, claim);
   if (remeasured.error || remeasured.value === actual) {
     failures.push(

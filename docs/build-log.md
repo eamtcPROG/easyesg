@@ -24473,3 +24473,92 @@ decision to run heavy gates only where the change reaches (13 Sep 2026). What do
 - An **undeclared event**, a valid entry added to the catalogue without committing the artefact, exits 1 at the diff.
 - An **authority naming no path** exits 1 at the check, naming the event and the path.
 - The restored catalogue passes.
+
+## Task 147 — The socket and its handshake · 2026-09-23
+
+AD-15's transport. A browser holding a session gets a single-use ticket and can open a socket; without a ticket
+nothing opens. The socket sends nothing yet: frames and their fan-out are task 148.
+
+### Decisions (project owner, one batch, before the code)
+
+- **(1) The ticket lives in Redis.** Its key expires in 30 s by itself, and `GETDEL` consumes it, so a replay finds
+  nothing and nothing needs sweeping.
+- **(2) The caps**:
+  - 10 connections per account, with the oldest closed when another arrives;
+  - no client frames at all, and a 1 KiB payload cap;
+  - 60 frames a minute outbound, which the edge enforces.
+
+  The api enforces the first three per replica until task 71's edge exists.
+- **(3) The socket runs inside the api process — a reversal of AD-15's placement.** The question offered a CI boot
+  of a separate `MODE=gateway` role; the owner answered *"it should run inside the api, no need a separated
+  container"*. That contradicts an accepted decision, so I asked a second time with the consequences stated, and the
+  answer was confirmed. **The documents were amended before any code**:
+  - AD-15's summary, decision and consequences;
+  - the container view, the container table, the deployment view and §10.4's Compose sketch;
+  - §11.1's closing paragraph and §13.3's reconnect row;
+  - NFR §4.17's wording and UX-116/138's wording;
+  - the task-147 and task-148 rows;
+  - root `CLAUDE.md`'s *"a new entrypoint owes this spec a case"* paragraph;
+  - a new §12.5.6 row recording the reversal, what is given up, and what would reverse it.
+- **(4) The session is re-read as `esg_app`**, with the HTTP tier's role and the same identity read.
+
+### What the design settled that the batch did not ask
+
+- **A new module, `platform/push`**, added to §17.5 and extended by task 148. It owns:
+  - the ticket route, `POST /session/socket-ticket`;
+  - the Redis store;
+  - the admission;
+  - the socket.
+
+  **The route needs no web code**: `apps/web`'s pass-through already forwards any `/api/v1/…` path with the
+  session's bearer. So *"minted by the session proxy"*, as the row says, is true of the existing proxy.
+- **Every refusal happens before a socket exists, so the socket is plain `ws`, not a Nest gateway.** I installed
+  `@nestjs/websockets` and `@nestjs/platform-ws` at their §12.1 pins, then checked Context7. Nest's connection hook
+  runs after the handshake is accepted, so a refused ticket there could only be a close after an open. A `ws` server
+  in `noServer` mode on the HTTP server's `upgrade` event judges the request first. The refusals are:
+  - 404 for another path;
+  - 403 for a foreign or absent origin;
+  - 401 for no ticket, a spent one, or a session that no longer admits;
+  - 503 when the admission itself fails.
+
+  A refused client never holds a socket. The two Nest packages were removed in the same task, and §12.1's AD-15 row
+  says why. `@types/ws` 8.18.1 is the one new pin.
+- **The ticket is spent whatever happens next**, so a ticket that failed admission cannot be tried again. The session
+  is judged by `AuthGuard`'s own helpers — ended, expired, lapsed setup, in setup — in one predicate,
+  `sessionAdmitsSocket`. Re-reading at the upgrade matters because 30 seconds is long enough to sign out.
+- **Redis holds the ticket's SHA-256, never the ticket**, as every token table in `identity` holds a hash. The client
+  is its own, lazily connected connection, not BullMQ's.
+- **The Origin check is defence in depth** beyond the row: the ticket alone would suffice, but a cross-site page has
+  no business opening a socket. The allowed origin is `web.publicUrl`'s.
+
+### Found by the gates, fixed
+
+- **Two suites boot `createApplicationContext` in HTTP mode**, which has no HTTP server: `entrypoint-boot` and
+  `billing-disabled`. Nest types the adapter as always present, so `SocketServer` crashed their boot; it now stands
+  aside when there is no server. **Only the full e2e could see this.** The new suite and the unit specs were green, and
+  it is `apps/api/CLAUDE.md`'s *both entrypoints must boot* in a third shape: an HTTP-mode application context.
+- **`docs:check`'s prove pass mutated the wrong figure.** `core/(9) … platform/(9)` put the same number twice in one
+  match, the mutation edited the first occurrence rather than the capture group, and a correct entry read as INERT. It
+  now mutates at the capture's own offsets, using the regex `d` flag's indices. The false alarm was the safe
+  direction; a mutation landing on a figure the pattern does not read is not.
+- **A test bug of my own**: `undefined` passed to a parameter with a default takes the default, so a
+  *"no Origin header"* case sent the allowed origin and passed with a 101. It now uses `null`.
+
+### Verification
+
+This is a single-row group, so it closes as its own parent. The owner's standing decision to run heavy gates only
+where needed stands: no `pnpm gates` and no review agents. What does run:
+
+- **The change reaches** `apps/api` (a controller, a DTO, a module) and `packages/contracts` (an alias and the
+  regenerated contract).
+- **api**: unit **1,410**, `pnpm e2e` **1,398** in 56 suites, `pnpm e2e:worker` **8**, and `openapi:check` at 104
+  paths.
+- **Whole repo**: `events:check`, lint, typecheck in every workspace, `boundaries`, and `docs:check` **46**.
+- **The run's own output was read**, not only its counts: no socket, Redis or unhandled-rejection line.
+- **Skipped**: the browser suite. No screen changed and the web client is task 149, which also owes the web
+  application's CSP a `connect-src` for the api's socket origin.
+
+**Mutations, each run and restored:**
+
+- `GETDEL` swapped for `GET` fails the replay case.
+- Dropping the revocation check fails the sign-out case.

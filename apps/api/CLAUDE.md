@@ -64,6 +64,7 @@ traps each one left — grouped by area rather than by the task that built it.
   social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`), and the
   setup a provider registration completes (`GET /account/setup`, `POST /account/setup/{password,profile}`,
   `POST /auth/account-setup/password`) (155);
+  AD-15's socket ticket (`POST /session/socket-ticket`, 147);
   opt-in TOTP and password change (27); the profile (`GET/PUT /account/profile`, 52.3); memberships and roles (`GET/PATCH/DELETE /members`,
   `GET /memberships`), and choosing among them (`PUT /session/organization`, 83.1); invitations and acceptance (`GET/POST /invitations`,
   `POST /invitations/{id}/email`, `DELETE /invitations/{id}`,
@@ -455,6 +456,22 @@ Four things to know before touching it:
   (UC-18, FR-26). A create route the RC could not reach means the author cannot start their report.
 
 
+**Push**
+
+- **AD-15's socket is the api's own, on its HTTP server** (task 147; §12.5.6's task-147 rows). `platform/push` owns
+  `POST /session/socket-ticket`, the Redis ticket store and `SocketServer`, a `ws` server in `noServer` mode on the
+  HTTP server's `upgrade` event. **The upgrade is judged before any socket exists** — path, origin, ticket, then the
+  ticket spent and its session re-read through `REQUEST_IDENTITY_STORE` — so every refusal is an HTTP status on the
+  upgrade response, which is why this is not a Nest gateway (§12.1's AD-15 row). Three things to know:
+  - **An application context has no HTTP server**, and Nest's `HttpAdapterHost` types the adapter as present anyway —
+    the boot specs and `billing-disabled.e2e-spec.ts` build one in HTTP mode and failed until `SocketServer` stood
+    aside for it.
+  - **The ticket store is its own lazily connected Redis client**, never BullMQ's; a replica that never saw a ticket
+    never opened a connection, and is dropped rather than asked to `QUIT`.
+  - **The caps are per replica** until task 71's edge — ten connections per account with the oldest closed
+    (`4001`), any client frame closes (`1008`), and payloads over 1 KiB are refused by `ws`. `test/push-socket.e2e-spec.ts`
+    listens on `127.0.0.1` itself, since an upgrade needs a real port.
+
 **Notification**
 
 **The store is the worker's, and nothing else writes it** (task 50.1.1; §12.5.6's task-50.1 row). The
@@ -740,7 +757,7 @@ src/
 ├─ app/          cross-cutting only: dto/ filters/ interceptors/ guards/ decorators/ constants/ interfaces/ messages/
 ├─ config/       ConfigService schema. Never process.env in business logic
 ├─ contracts/    the ONLY cross-context surface: ports, events/, types/
-├─ modules/      core/(9) identity/(6) billing/(13) platform/(8) — 36, plus the four context modules: 40 `*.module.ts`
+├─ modules/      core/(9) identity/(6) billing/(13) platform/(9) — 37, plus the four context modules: 41 `*.module.ts`
 └─ infrastructure/  persistence/ outbox/ queue/ adapters/ openapi/ observability/ configuration/ provisioning/
 ```
 

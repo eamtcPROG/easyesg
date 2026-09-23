@@ -366,6 +366,10 @@ export type CategoryConsequence = components['schemas']['CategoryConsequenceResp
 /** The configuration revision a publication or a revert just put in force. */
 export type CategoryPublication = components['schemas']['CategoryPublicationResponseDto'];
 
+// platform — AD-15's socket handshake (task 147): a single-use, thirty-second ticket, minted through the pass-through
+// and presented as the socket upgrade's `ticket` query parameter.
+export type SocketTicket = components['schemas']['SocketTicketResponseDto'];
+
 // platform — AD-15's event catalogue (task 146): each event a pushed hint may name, its audience, and the readable path
 // that is its authority. Empty until the first accelerated surface; `pnpm events:check` holds it to the contract.
 export {

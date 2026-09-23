@@ -67,7 +67,8 @@
     "reflect-metadata": "catalog:",
     "rxjs": "catalog:",
     "typeorm": "catalog:",
-    "use-intl": "catalog:"
+    "use-intl": "catalog:",
+    "ws": "catalog:"
   },
   "devDependencies": {
     "@nestjs/cli": "catalog:",
@@ -80,6 +81,7 @@
     "@types/nodemailer": "catalog:",
     "@types/passport-jwt": "catalog:",
     "@types/supertest": "catalog:",
+    "@types/ws": "catalog:",
     "jest": "catalog:",
     "source-map-support": "catalog:",
     "supertest": "catalog:",

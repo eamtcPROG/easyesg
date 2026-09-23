@@ -6257,6 +6257,46 @@
           "platform"
         ]
       }
+    },
+    "/api/v1/session/socket-ticket": {
+      "post": {
+        "description": "A single-use ticket, valid for thirty seconds, for opening the socket over which the platform hints that a screen’s data changed. It carries no personal data; the socket re-reads this session when it is presented.",
+        "operationId": "SocketTicketController_issue",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "The ticket and when it stops working.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SocketTicketResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable session (problem type authentication-required or session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Mint a ticket to open the hint socket",
+        "tags": [
+          "identity"
+        ]
+      }
     }
   },
   "info": {
@@ -11246,6 +11286,23 @@
         },
         "required": [
           "expectedRevision"
+        ]
+      },
+      "SocketTicketResponseDto": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "description": "Single-use and opaque; carries no personal data. Present it as the `ticket` query parameter of the socket upgrade within thirty seconds."
+          },
+          "expiresAt": {
+            "type": "integer",
+            "description": "When the ticket stops working, unused. Unix epoch milliseconds, UTC."
+          }
+        },
+        "required": [
+          "ticket",
+          "expiresAt"
         ]
       }
     }

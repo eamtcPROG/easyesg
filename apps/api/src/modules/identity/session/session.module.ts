@@ -156,6 +156,8 @@ const httpProviders: Provider[] = [
   imports: mode === APP_MODE.WORKER ? [] : [AccountModule],
   controllers: mode === APP_MODE.WORKER ? [] : [SessionController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
-  exports: mode === APP_MODE.WORKER ? [] : [AuthGuard],
+  // `REQUEST_IDENTITY_STORE` since task 147, for `platform/push`: a socket is admitted by the same session read a
+  // request is, rather than by a second query that could drift from `AuthGuard`'s.
+  exports: mode === APP_MODE.WORKER ? [] : [AuthGuard, REQUEST_IDENTITY_STORE],
 })
 export class SessionModule {}
