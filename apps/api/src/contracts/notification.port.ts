@@ -58,6 +58,15 @@ export const MANDATORY_NOTIFICATION_CATEGORIES: ReadonlySet<NotificationCategory
   NOTIFICATION_CATEGORY.ADMIN_INVITATION,
 ]);
 
+/**
+ * The categories that reach console operators alone, never a tenant account — so no tenant account's preferences
+ * list them (task 52.1, §12.5.6's task-52.1 row (3)). Declared beside the mandatory set for its reason: whoever adds a
+ * category decides here whether a tenant account can receive it, and S-27 draws a row for every one that can.
+ */
+export const OPERATOR_NOTIFICATION_CATEGORIES: ReadonlySet<NotificationCategoryKey> = new Set([
+  NOTIFICATION_CATEGORY.ADMIN_INVITATION,
+]);
+
 export interface RaiseNotificationCommand {
   /** Category from the configuration-held catalogue (FR-173). */
   categoryKey: NotificationCategoryKey;

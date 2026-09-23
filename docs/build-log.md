@@ -23924,3 +23924,81 @@ spec fails on the auth case).
 
 **Task 51's parent stays `TODO`** — 51.2 waits on task 41.3, which is Stage 2's — so 51.4 closes in place
 and no row moves to the archive.
+
+## Task 52.1 — Per-user notification preferences · 2026-09-23
+
+UC-168's API half: what a person may turn off, per category and per channel, stored so it follows them
+across organizations (FR-9, FR-163), with a mandatory category impossible to disable (BR-NOT-2). Taken
+next in the Stage order because 51.2 waits on task 41.3, which is Stage 2's.
+
+### Decisions (project owner, one batch, before the code)
+
+Recorded as §12.5.6's new task-52.1 row, and §6.8's Identity row amended — it had left the prefix to
+this task.
+
+- **(1) Storage is `notification.preference`** (recommended), not identity's schema: FR-163 is the
+  notification module's, and 52.2's dispatch reads it without crossing a module. No `organization_id`
+  and no RLS — a preference follows the person, so there is no tenant to bind.
+- **(2) The route is `/account/notification-preferences`** (recommended), `GET` and `PUT` under
+  `@RequiresAccount()`: the answer is the same in every organization, so it needs no active membership.
+- **(3) The read lists every category a tenant account can receive** (recommended) — the catalogue less
+  `OPERATOR_NOTIFICATION_CATEGORIES`, a new set beside the mandatory one in `contracts/`, holding
+  `platform.admin_invitation`. Mandatory categories are listed on and locked.
+- **(4) The write is the set switched off** (recommended), replacing the last; only switch-offs are
+  stored, and a pair the read does not offer refuses the whole write.
+
+**One detail departs from the question as asked**: it said a refused pair answers **422**. It answers
+**400** — every refusal of this shape in the api is a 400 (`UnknownDisclosureElementError`'s *what the
+caller sent does not belong to it*), no `DomainError` answers 422, and the owner's choice was the shape
+of the write rather than the status. The row says so.
+
+### What the design settled that the batch did not ask
+
+- **The read is `dispatchChannels`' answer, not the artefact's.** So an optional category whose behaviour
+  is unreadable — sent on nothing — is not listed, and a mandatory one whose artefact is unreadable is
+  listed on the email floor it would actually go by. Read and send use one function and cannot disagree.
+- **The write replaces only the pairs the read offers.** The obvious form — replace the account's whole
+  set — would have erased a switch-off for a channel an operator had temporarily withdrawn — a person's
+  choice lost to an operator's edit. Now it stands and holds again when the channel returns; the e2e
+  case that proves it inserts such a row directly and was **mutated red** (the `DELETE`'s pair filter
+  replaced by `TRUE`: 1 of 9 fails) and restored.
+- **A stored row is narrowed, never cast**: a switch-off for a category no release raises any more is
+  dropped at the repository rather than asserted into the vocabulary.
+- **A category's name is resolved beside it**, from the centre's `notification.<category>.name`. The four
+  mandatory categories have none written — the artboard groups them as *Security and sign-in*, which is
+  S-27's wording to author (52.3), not this task's to guess.
+- **No audit action and no field-change trail**, as for the password and the second factor: the setting
+  is the person's own.
+- **`esg_worker` is granted nothing**: 52.2 is the caller, and a grant arrives with its caller.
+
+### Two stale claims, found while updating the live-state rows
+
+Both `CLAUDE.md` files still listed *"the email channel's bounces and suppression"* as not live, a
+sentence task 51.4 shipped past. Corrected in both, with preferences moved to what remains (52.2, 52.3).
+Neither is a `docs:check` claim — it counts, and this is prose — so nothing could have caught it.
+
+### Skills read against the diff
+
+`one-idea-per-file` (`file-one-behaviour-api`: one use case per file, each with its own spec, the fake
+shared through the module's new `testing/`; the DTO file is one wire vocabulary and stays whole) and
+`nestjs-best-practices` (`arch-module-sharing`: the catalogue is provided once per mode, not twice;
+`security-validate-all-input`: `IsIn` over both vocabularies and an `ArrayMaxSize`; `db-use-transactions`:
+the replace is one transaction). **Declined by name**: `error-throw-http-exceptions`, which
+`apps/api/CLAUDE.md` forbids from use-case code; `perf-use-caching`, since the catalogue reads the
+configuration store's own cache and a second one would be a second answer to *what is in force*.
+
+### Verification
+
+A sub-step, so the gates this change reaches (root `CLAUDE.md`, *Closing a task*): `pnpm lint`,
+`pnpm --filter @easyesg/api typecheck`, api unit **1,295**, `pnpm --filter @easyesg/i18n test` **130**
+(a catalogue key was added), `pnpm e2e` **1,325** across 53 suites — the route matrix driving both new
+routes from `route-permissions.ts`, and `entrypoint-boot` in HTTP mode, its log free of dependency
+warnings and unhandled rejections — `pnpm openapi:check` (96 paths; the regenerated contract staged),
+`pnpm migrations:check` (apply, revert, re-apply, **61** invariants, the new grants declared in both
+directions), `pnpm docs:check` **46** (the contract's path count moved 95 → 96 in the root file).
+**Skipped, and why**: `pnpm e2e:worker`, since no consumer and nothing in the worker's provider set changed;
+`pnpm e2e:web` and the web and admin unit runs, since the `packages/i18n` change is one api-resolved message
+key with no markup and neither front end reads it.
+
+**Task 52's parent stays `TODO`** — 52.2 and 52.3 are open — so 52.1 closes in place and no row moves to
+the archive.

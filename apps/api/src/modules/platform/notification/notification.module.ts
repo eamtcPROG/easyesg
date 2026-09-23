@@ -10,11 +10,13 @@ import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/a
 import { NotificationRecipientsRepository } from '@api/infrastructure/persistence/identity/notification-recipients.repository';
 import { NotificationCentreStoreRepository } from '@api/infrastructure/persistence/platform/notification-centre-store.repository';
 import { NotificationOutboxRepository } from '@api/infrastructure/persistence/platform/notification-outbox.repository';
+import { NotificationPreferenceStoreRepository } from '@api/infrastructure/persistence/platform/notification-preference-store.repository';
 import { NotificationStoreRepository } from '@api/infrastructure/persistence/platform/notification-store.repository';
 import { SuppressionStoreRepository } from '@api/infrastructure/persistence/platform/suppression-store.repository';
 import { NotificationCancelledHandler } from './consumers/notification-cancelled.handler';
 import { NotificationRaisedHandler } from './consumers/notification-raised.handler';
 import { NotificationCentreController } from './controllers/notification-centre.controller';
+import { NotificationPreferencesController } from './controllers/notification-preferences.controller';
 import { EMAIL_CHANNEL, type EmailChannel } from './interfaces/email-channel.interface';
 import {
   NOTIFICATION_CANCELLATION_STORE,
@@ -24,6 +26,10 @@ import {
   NOTIFICATION_CENTRE_STORE,
   type NotificationCentreStore,
 } from './interfaces/notification-centre-store.interface';
+import {
+  NOTIFICATION_PREFERENCE_STORE,
+  type NotificationPreferenceStore,
+} from './interfaces/notification-preference-store.interface';
 import { NOTIFICATION_STORE, type NotificationStore } from './interfaces/notification-store.interface';
 import { SUPPRESSION_STORE } from './interfaces/suppression-store.interface';
 import { CategoryChannels } from './services/category-channels.service';
@@ -31,6 +37,7 @@ import { EmailChannelService } from './services/email-channel.service';
 import { NotificationCategoryCatalog } from './services/notification-category-catalog.service';
 import { NotificationCentreService } from './services/notification-centre.service';
 import { NotificationDeliveryService } from './services/notification-delivery.service';
+import { NotificationPreferencesService } from './services/notification-preferences.service';
 import { CancelNotification } from './use-cases/cancel-notification.use-case';
 import { CountUnreadNotifications } from './use-cases/count-unread-notifications.use-case';
 import { DeliverLinkNotice } from './use-cases/deliver-link-notice.use-case';
@@ -39,6 +46,8 @@ import { DismissNotification } from './use-cases/dismiss-notification.use-case';
 import { ListNotifications } from './use-cases/list-notifications.use-case';
 import { MarkAllNotificationsRead } from './use-cases/mark-all-notifications-read.use-case';
 import { MarkNotificationRead } from './use-cases/mark-notification-read.use-case';
+import { ReadNotificationPreferences } from './use-cases/read-notification-preferences.use-case';
+import { SetNotificationPreferences } from './use-cases/set-notification-preferences.use-case';
 
 /**
  * `platform/notification` — FR-157, FR-160 … FR-173
@@ -67,8 +76,8 @@ const { mode } = configuration();
 /**
  * What sends: the category catalogue and the channel seam over it, the one email channel, the notice a handler
  * delivers from its producer's own event, who a notice reaches, the store a notice is recorded in, the raised notice's use
- * case and handler, and since task 50.1.3 the withdrawn notice's. **All of it on the worker** — the catalogue included, since nothing in the request tier asks a
- * category's behaviour.
+ * case and handler, and since task 50.1.3 the withdrawn notice's. **All of it on the worker** — the catalogue included
+ * until task 52.1, whose preferences ask it which categories a person is offered, and which provides its own below.
  */
 const workerProviders: Provider[] = [
   NotificationCategoryCatalog,
@@ -147,20 +156,34 @@ const centreUseCases: Provider[] = [
 }));
 
 /**
- * What raises — an outbox row on the producer's own request transaction — and the recipient's centre (task
- * 50.1.2), which reads the store under the request's tenant binding and writes nothing but the recipient's own
- * read state.
+ * A person's preferences (task 52.1), each use case over the store and the category catalogue — which reads what is in
+ * force from the configuration store, so a category published from A-17 is offered here with no redeploy.
+ */
+const preferenceUseCases: Provider[] = [ReadNotificationPreferences, SetNotificationPreferences].map((useCase) => ({
+  provide: useCase,
+  inject: [NOTIFICATION_PREFERENCE_STORE, NotificationCategoryCatalog],
+  useFactory: (store: NotificationPreferenceStore, catalog: NotificationCategoryCatalog) => new useCase(store, catalog),
+}));
+
+/**
+ * What raises — an outbox row on the producer's own request transaction — the recipient's centre (task 50.1.2), which
+ * reads the store under the request's tenant binding and writes nothing but the recipient's own read state, and since
+ * task 52.1 the person's preferences, which bind no tenant because they follow the person.
  */
 const httpProviders: Provider[] = [
   { provide: NOTIFICATION_PORT, useClass: NotificationOutboxRepository },
   { provide: NOTIFICATION_CENTRE_STORE, useClass: NotificationCentreStoreRepository },
   ...centreUseCases,
   NotificationCentreService,
+  NotificationCategoryCatalog,
+  { provide: NOTIFICATION_PREFERENCE_STORE, useClass: NotificationPreferenceStoreRepository },
+  ...preferenceUseCases,
+  NotificationPreferencesService,
 ];
 
 @Module({
   imports: mode === APP_MODE.WORKER ? [EmailModule] : [],
-  controllers: mode === APP_MODE.WORKER ? [] : [NotificationCentreController],
+  controllers: mode === APP_MODE.WORKER ? [] : [NotificationCentreController, NotificationPreferencesController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
   exports: mode === APP_MODE.WORKER ? [NOTIFICATION_DELIVERY] : [NOTIFICATION_PORT],
 })

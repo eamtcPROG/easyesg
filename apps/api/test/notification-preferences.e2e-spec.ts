@@ -1,0 +1,200 @@
+import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import request from 'supertest';
+import type { DataSource } from 'typeorm';
+import { AppModule } from '../src/app.module';
+import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
+import { initialiseCatalogue } from '../src/app/messages/catalogue';
+import { seedConfiguration } from '../src/infrastructure/configuration/seed-configuration';
+import { configureHttpApp } from '../src/main.http';
+import { connectAs } from './support/database';
+import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+
+/**
+ * UC-168 — a person's notification preferences, over real HTTP and the real table (task 52.1; FR-9, FR-163,
+ * BR-NOT-2; §12.5.6's task-52.1 row).
+ *
+ * **The suite seeds what it reads**, before the application boots: the offered channels are the category artefacts'
+ * answer, and a store left behind by another run is not a premise. Its two accounts hold **no membership** — a
+ * preference follows the person, so it must be readable and writable before any organization is bound.
+ *
+ * The case worth its cost is the one no unit spec can see: **the replace leaves a switch-off it does not offer
+ * standing**, which is SQL over `unnest` and nothing a fake can prove.
+ */
+const EMAILS = { ana: 'ana@preferences.test', ion: 'ion@preferences.test' } as const;
+const PATH = '/api/v1/account/notification-preferences';
+const REMINDER = 'reporting.manual_reminder';
+
+interface Listed {
+  categoryKey: string;
+  categoryName?: string;
+  mandatory: boolean;
+  channels: { channel: string; enabled: boolean }[];
+}
+
+describe('notification preferences (UC-168, FR-163)', () => {
+  let app: NestExpressApplication;
+  let owner: DataSource;
+  let worker: DataSource;
+  let application: DataSource;
+  let ana: SignedInAccount;
+  let ion: SignedInAccount;
+
+  const http = () => request(app.getHttpServer());
+  const categoriesOf = (res: { body: unknown }): Listed[] =>
+    (res.body as { object: { categories: Listed[] } }).object.categories;
+  const reminderOf = (res: { body: unknown }): Listed | undefined =>
+    categoriesOf(res).find((category) => category.categoryKey === REMINDER);
+  const storedFor = async (account: SignedInAccount) =>
+    owner.query<{ category_key: string; channel: string }[]>(
+      `SELECT category_key, channel FROM notification.preference WHERE account_id = $1 ORDER BY 1, 2`,
+      [account.accountId],
+    );
+
+  beforeAll(async () => {
+    await initialiseCatalogue();
+    owner = await connectAs('DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-preferences-owner');
+    worker = await connectAs('DB_WORKER_USER', 'DB_WORKER_PASSWORD', 'easyesg-preferences-worker');
+    application = await connectAs('DB_USER', 'DB_PASSWORD', 'easyesg-preferences-app');
+    await seedConfiguration(application);
+
+    app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false });
+    configureHttpApp(app);
+    await app.init();
+
+    await owner.query(`DELETE FROM identity.account WHERE email = ANY($1)`, [Object.values(EMAILS)]);
+    ana = await signInFreshAccount({ server: app.getHttpServer(), worker, email: EMAILS.ana });
+    ion = await signInFreshAccount({ server: app.getHttpServer(), worker, email: EMAILS.ion });
+  }, 120_000);
+
+  afterAll(async () => {
+    await owner?.query(`DELETE FROM notification.preference WHERE account_id = ANY($1)`, [
+      [ana?.accountId, ion?.accountId].filter((id) => id !== undefined),
+    ]);
+    await cleanupSignedInAccounts({ owner });
+    await owner?.query(`DELETE FROM identity.account WHERE email = ANY($1)`, [Object.values(EMAILS)]);
+    await owner?.destroy();
+    await worker?.destroy();
+    await application?.destroy();
+    await app?.close();
+  });
+
+  beforeEach(async () => {
+    await owner.query(`DELETE FROM notification.preference WHERE account_id = ANY($1)`, [
+      [ana.accountId, ion.accountId],
+    ]);
+  });
+
+  it('lists every category an account can receive, the mandatory ones locked on, with no organization bound', async () => {
+    const read = await http().get(PATH).set(ana.authorization).expect(200);
+
+    expect(categoriesOf(read)).toEqual([
+      { categoryKey: 'identity.email_verification', mandatory: true, channels: [{ channel: 'email', enabled: true }] },
+      { categoryKey: 'identity.password_reset', mandatory: true, channels: [{ channel: 'email', enabled: true }] },
+      { categoryKey: 'identity.invitation', mandatory: true, channels: [{ channel: 'email', enabled: true }] },
+      {
+        categoryKey: REMINDER,
+        categoryName: 'Mementouri',
+        mandatory: false,
+        channels: [{ channel: 'in_app', enabled: true }],
+      },
+    ]);
+  });
+
+  it('names a category in the negotiated language', async () => {
+    const read = await http().get(PATH).set(ana.authorization).set('Accept-Language', 'en').expect(200);
+    expect(reminderOf(read)?.categoryName).toBe('Reminders');
+  });
+
+  it('switches a channel off, keeps it off across reads, and switches it back on', async () => {
+    const saved = await http()
+      .put(PATH)
+      .set(ana.authorization)
+      .send({ switchedOff: [{ categoryKey: REMINDER, channel: 'in_app' }] })
+      .expect(200);
+
+    expect(reminderOf(saved)?.channels).toEqual([{ channel: 'in_app', enabled: false }]);
+    expect(reminderOf(await http().get(PATH).set(ana.authorization).expect(200))?.channels).toEqual([
+      { channel: 'in_app', enabled: false },
+    ]);
+    expect(await storedFor(ana)).toEqual([{ category_key: REMINDER, channel: 'in_app' }]);
+
+    await http().put(PATH).set(ana.authorization).send({ switchedOff: [] }).expect(200);
+    expect(await storedFor(ana)).toEqual([]);
+  });
+
+  it('keeps the time a pair was first switched off when it is saved off again', async () => {
+    const body = { switchedOff: [{ categoryKey: REMINDER, channel: 'in_app' }] };
+    await http().put(PATH).set(ana.authorization).send(body).expect(200);
+    const [first] = await owner.query<{ at: Date }[]>(
+      `SELECT switched_off_at AS at FROM notification.preference WHERE account_id = $1`,
+      [ana.accountId],
+    );
+
+    await http().put(PATH).set(ana.authorization).send(body).expect(200);
+    const [second] = await owner.query<{ at: Date }[]>(
+      `SELECT switched_off_at AS at FROM notification.preference WHERE account_id = $1`,
+      [ana.accountId],
+    );
+    expect(second.at).toEqual(first.at);
+  });
+
+  it('refuses to switch off a mandatory category, and writes nothing of the rest', async () => {
+    const refused = await http()
+      .put(PATH)
+      .set(ana.authorization)
+      .send({
+        switchedOff: [
+          { categoryKey: REMINDER, channel: 'in_app' },
+          { categoryKey: 'identity.password_reset', channel: 'email' },
+        ],
+      })
+      .expect(400);
+
+    expect((refused.body as { type: string }).type).toBe(`${PROBLEM_BASE_URI}/validation-failed`);
+    expect(await storedFor(ana)).toEqual([]);
+  });
+
+  it('refuses a channel the category does not travel on', async () => {
+    await http()
+      .put(PATH)
+      .set(ana.authorization)
+      .send({ switchedOff: [{ categoryKey: REMINDER, channel: 'email' }] })
+      .expect(400);
+    expect(await storedFor(ana)).toEqual([]);
+  });
+
+  it('refuses a category or a channel outside the vocabulary before anything is read', async () => {
+    await http()
+      .put(PATH)
+      .set(ana.authorization)
+      .send({ switchedOff: [{ categoryKey: 'billing.newsletter', channel: 'in_app' }] })
+      .expect(400);
+    await http()
+      .put(PATH)
+      .set(ana.authorization)
+      .send({ switchedOff: [{ categoryKey: REMINDER, channel: 'sms' }] })
+      .expect(400);
+  });
+
+  it('leaves standing a switch-off the read does not offer, and writes only its own account', async () => {
+    // A choice made while the reminder travelled by email — which the seed does not publish until task 52.2.
+    await owner.query(
+      `INSERT INTO notification.preference (account_id, category_key, channel) VALUES ($1, $2, 'email'), ($3, $2, 'in_app')`,
+      [ana.accountId, REMINDER, ion.accountId],
+    );
+
+    await http().put(PATH).set(ana.authorization).send({ switchedOff: [] }).expect(200);
+
+    expect(await storedFor(ana)).toEqual([{ category_key: REMINDER, channel: 'email' }]);
+    expect(await storedFor(ion)).toEqual([{ category_key: REMINDER, channel: 'in_app' }]);
+    expect(reminderOf(await http().get(PATH).set(ion.authorization).expect(200))?.channels).toEqual([
+      { channel: 'in_app', enabled: false },
+    ]);
+  });
+
+  it('asks for a session', async () => {
+    await http().get(PATH).expect(401);
+    await http().put(PATH).send({ switchedOff: [] }).expect(401);
+  });
+});

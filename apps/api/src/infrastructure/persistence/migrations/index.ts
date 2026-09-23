@@ -46,6 +46,7 @@ import { NotificationCentre1790553600000 } from './1790553600000-notification-ce
 import { NotificationCancellation1790640000000 } from './1790640000000-notification-cancellation';
 import { NoticeApplication1790812800000 } from './1790812800000-notice-application';
 import { DeliveryOutcomeSuppression1790899200000 } from './1790899200000-delivery-outcome-suppression';
+import { NotificationPreference1790985600000 } from './1790985600000-notification-preference';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -112,4 +113,5 @@ export const migrations = [
   AddressNotices1790726400000,
   NoticeApplication1790812800000,
   DeliveryOutcomeSuppression1790899200000,
+  NotificationPreference1790985600000,
 ];

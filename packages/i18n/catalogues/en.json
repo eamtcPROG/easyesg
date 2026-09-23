@@ -355,7 +355,8 @@
       "required": "Support access to this organization is not active for you, so its data was not read. Send a new request and wait for the organization to grant it."
     },
     "notification": {
-      "not_found": "This notification is not among yours, so nothing changed. Reload the page to see your current notifications."
+      "not_found": "This notification is not among yours, so nothing changed. Reload the page to see your current notifications.",
+      "preference_not_offered": "One of the choices sent is not one you can switch off here, so none of your preferences were changed. Reload the page to see the choices you can make."
     }
   }
 }

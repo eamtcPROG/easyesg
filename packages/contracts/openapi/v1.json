@@ -3357,6 +3357,88 @@
         ]
       }
     },
+    "/api/v1/account/notification-preferences": {
+      "get": {
+        "description": "Every notification category the account can receive, each on the channels it travels on, switched on unless the person switched it off. Categories that may not be switched off are listed as mandatory and switched on.",
+        "operationId": "NotificationPreferencesController_read",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The preferences.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/NotificationPreferencesResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Read what reaches the signed-in person, and where",
+        "tags": [
+          "platform"
+        ]
+      },
+      "put": {
+        "description": "Switches off exactly the pairs named, among those the read offers, and switches every other offered pair on. Answers the preferences as they now stand.",
+        "operationId": "NotificationPreferencesController_replace",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetNotificationPreferencesRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The preferences, as saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/NotificationPreferencesResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body is malformed, or names a pair the read does not offer — a mandatory category, or a channel the category does not travel on (problem type validation-failed). Nothing was changed.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Replace what the signed-in person has switched off",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/api/v1/reports/{id}/prior-period": {
       "get": {
         "description": "Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.",
@@ -8740,6 +8822,121 @@
         },
         "required": [
           "unread"
+        ]
+      },
+      "ChannelPreferenceResponseDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "in_app",
+              "email"
+            ]
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the category reaches the person on this channel. Always true on a mandatory category."
+          }
+        },
+        "required": [
+          "channel",
+          "enabled"
+        ]
+      },
+      "CategoryPreferencesResponseDto": {
+        "type": "object",
+        "properties": {
+          "categoryKey": {
+            "type": "string",
+            "enum": [
+              "identity.email_verification",
+              "identity.password_reset",
+              "identity.invitation",
+              "platform.admin_invitation",
+              "reporting.manual_reminder"
+            ],
+            "description": "The category — a key for the client to act on, never text to show."
+          },
+          "categoryName": {
+            "type": "string",
+            "description": "The category’s name in the negotiated language. Absent when none is written."
+          },
+          "mandatory": {
+            "type": "boolean",
+            "description": "Whether the category may not be switched off — security, account, invoice delivery, payment failure and service restriction notices. A mandatory category is listed on every channel it travels on, switched on."
+          },
+          "channels": {
+            "description": "The channels the category reaches the person on, in-app and email, never empty.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChannelPreferenceResponseDto"
+            }
+          }
+        },
+        "required": [
+          "categoryKey",
+          "mandatory",
+          "channels"
+        ]
+      },
+      "NotificationPreferencesResponseDto": {
+        "type": "object",
+        "properties": {
+          "categories": {
+            "description": "Every category the account can receive, in a fixed order, the same in every organization it belongs to.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryPreferencesResponseDto"
+            }
+          }
+        },
+        "required": [
+          "categories"
+        ]
+      },
+      "NotificationPreferencePairDto": {
+        "type": "object",
+        "properties": {
+          "categoryKey": {
+            "type": "string",
+            "enum": [
+              "identity.email_verification",
+              "identity.password_reset",
+              "identity.invitation",
+              "platform.admin_invitation",
+              "reporting.manual_reminder"
+            ],
+            "description": "The category — a key for the client to act on, never text to show."
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "in_app",
+              "email"
+            ],
+            "description": "The channel it is switched off on."
+          }
+        },
+        "required": [
+          "categoryKey",
+          "channel"
+        ]
+      },
+      "SetNotificationPreferencesRequestDto": {
+        "type": "object",
+        "properties": {
+          "switchedOff": {
+            "maxItems": 10,
+            "description": "Every pair the person has switched off, among those the read offers; every offered pair not named is switched on. A pair the read does not offer — a mandatory category, or a channel the category does not travel on — refuses the whole write. Empty switches everything on.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationPreferencePairDto"
+            }
+          }
+        },
+        "required": [
+          "switchedOff"
         ]
       },
       "PriorReportPinDto": {

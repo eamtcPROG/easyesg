@@ -78,7 +78,8 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  the email channel's bounces and suppression, and preferences (50 … 52), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
+  the outstanding-report and deadline notices (51.2), preferences honoured at dispatch and their screen (52.2,
+  52.3), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -520,6 +521,21 @@ caller would be a second place to forget them. Four things to know:
   hangs off no notice and has no organization. The first run of `notification-store.e2e-spec.ts`'s bounce case
   left the row behind and the *second* run watched four unrelated cases send nothing — the cleanup rule's mirror
   image, *what does this suite create that it does not remove?*
+
+**A person's preferences follow the person, so they bind no tenant** (task 52.1; §12.5.6's task-52.1 row; FR-163,
+UC-168). `GET`/`PUT /account/notification-preferences` are `platform/notification`'s routes on the account's prefix,
+under `@RequiresAccount()`, and work with no organization bound. Three things to know:
+
+- **`notification.preference` holds switch-offs only, with no `organization_id` and no RLS** — `identity.account`'s
+  shape, not the rest of this schema's. What confines a statement to one person is the account id every statement
+  names, which `NotificationPreferencesService` takes from the session; nothing on the wire names an account.
+- **The read is `dispatchChannels`' answer, not the artefact's**, so read and send cannot disagree, and **the write
+  replaces only the pairs the read offers**: a stored switch-off for a channel a category stopped travelling on stands
+  and holds again when the channel returns. A pair the read does not offer — a mandatory category above all —
+  refuses the whole write, which is what makes *a mandatory category cannot be disabled* true of every client.
+- **The worker holds no grant on it yet, and the catalogue now runs on both sides.** Task 52.2 honours a preference at
+  dispatch, and brings `esg_worker`'s `SELECT` with it; `NotificationCategoryCatalog` is provided in HTTP mode too,
+  since the read asks it which categories a person is offered.
 
 **A cancellation outlives its notice, and every job carries its outbox row's time** (task 50.1.3; §12.5.6's
 task-50.1 rows (12), (13)). `NotificationPort.cancel()` names the raise's key and writes an outbox event on the

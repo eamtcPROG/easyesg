@@ -1215,6 +1215,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read what reaches the signed-in person, and where
+         * @description Every notification category the account can receive, each on the channels it travels on, switched on unless the person switched it off. Categories that may not be switched off are listed as mandatory and switched on.
+         */
+        get: operations["NotificationPreferencesController_read"];
+        /**
+         * Replace what the signed-in person has switched off
+         * @description Switches off exactly the pairs named, among those the read offers, and switches every other offered pair on. Answers the preferences as they now stand.
+         */
+        put: operations["NotificationPreferencesController_replace"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/{id}/prior-period": {
         parameters: {
             query?: never;
@@ -3250,6 +3274,45 @@ export interface components {
              * @example 3
              */
             unread: number;
+        };
+        ChannelPreferenceResponseDto: {
+            /** @enum {string} */
+            channel: "in_app" | "email";
+            /** @description Whether the category reaches the person on this channel. Always true on a mandatory category. */
+            enabled: boolean;
+        };
+        CategoryPreferencesResponseDto: {
+            /**
+             * @description The category — a key for the client to act on, never text to show.
+             * @enum {string}
+             */
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            /** @description The category’s name in the negotiated language. Absent when none is written. */
+            categoryName?: string;
+            /** @description Whether the category may not be switched off — security, account, invoice delivery, payment failure and service restriction notices. A mandatory category is listed on every channel it travels on, switched on. */
+            mandatory: boolean;
+            /** @description The channels the category reaches the person on, in-app and email, never empty. */
+            channels: components["schemas"]["ChannelPreferenceResponseDto"][];
+        };
+        NotificationPreferencesResponseDto: {
+            /** @description Every category the account can receive, in a fixed order, the same in every organization it belongs to. */
+            categories: components["schemas"]["CategoryPreferencesResponseDto"][];
+        };
+        NotificationPreferencePairDto: {
+            /**
+             * @description The category — a key for the client to act on, never text to show.
+             * @enum {string}
+             */
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            /**
+             * @description The channel it is switched off on.
+             * @enum {string}
+             */
+            channel: "in_app" | "email";
+        };
+        SetNotificationPreferencesRequestDto: {
+            /** @description Every pair the person has switched off, among those the read offers; every offered pair not named is switched on. A pair the read does not offer — a mandatory category, or a channel the category does not travel on — refuses the whole write. Empty switches everything on. */
+            switchedOff: components["schemas"]["NotificationPreferencePairDto"][];
         };
         PriorReportPinDto: {
             /** Format: uuid */
@@ -6355,6 +6418,63 @@ export interface operations {
             };
             /** @description The caller holds no notice with this id in the active organization — including one addressed to a colleague, which is not distinguished from one that does not exist (problem type not-found). */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    NotificationPreferencesController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The preferences. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["NotificationPreferencesResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    NotificationPreferencesController_replace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetNotificationPreferencesRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The preferences, as saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["NotificationPreferencesResponseDto"];
+                    };
+                };
+            };
+            /** @description The body is malformed, or names a pair the read does not offer — a mandatory category, or a channel the category does not travel on (problem type validation-failed). Nothing was changed. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -19,3 +19,21 @@ export class NotificationNotFoundError extends DomainError {
     super('platform.notification.not_found');
   }
 }
+
+/**
+ * A preference write named a `(category, channel)` pair the read does not offer — a mandatory category, a channel the
+ * category does not travel on, or a category no tenant account receives (task 52.1; FR-163, BR-NOT-2; §12.5.6's
+ * task-52.1 row (4)).
+ *
+ * **Refused whole, and nothing is written**: S-27 never draws such a switch, so the write came from a stale screen or
+ * another client, and saving the rest would report a Record saved that was not saved as sent. **400**, the api's
+ * answer to *what the caller sent does not belong to it* (`UnknownDisclosureElementError`).
+ */
+export class NotificationPreferenceNotOfferedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('platform.notification.preference_not_offered');
+  }
+}

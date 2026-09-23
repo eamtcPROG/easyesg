@@ -528,6 +528,9 @@ const NOTIFICATION_PRIVILEGES = [
   'esg_admin_ro notification.cancellation SELECT table',
   'esg_admin_ro notification.delivery SELECT table',
   'esg_admin_ro notification.notification SELECT table',
+  // A person's preferences (task 52.1). The request tier reads and replaces them — a switch-off is inserted and a
+  // switch back on deleted, so nothing updates — and the worker is granted nothing until task 52.2 reads them.
+  'esg_admin_ro notification.preference SELECT table',
   // FR-171's list (task 51.4). The worker learns and writes; the request tier only reads, because S-16 shows a
   // suppressed member; `esg_admin_ro` reads it like everything else. Nobody may DELETE — an address coming back
   // to life is a support action, not an application one.
@@ -535,6 +538,9 @@ const NOTIFICATION_PRIVILEGES = [
   'esg_app notification.delivery SELECT table',
   'esg_app notification.delivery UPDATE columns',
   'esg_app notification.notification SELECT columns',
+  'esg_app notification.preference DELETE table',
+  'esg_app notification.preference INSERT table',
+  'esg_app notification.preference SELECT table',
   'esg_app notification.suppressed_address SELECT table',
   'esg_worker notification.cancellation INSERT table',
   'esg_worker notification.cancellation SELECT table',

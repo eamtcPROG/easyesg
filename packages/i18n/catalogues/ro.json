@@ -355,7 +355,8 @@
       "required": "Accesul de suport pentru această organizație nu este activ pentru dumneavoastră, așa că datele ei nu au fost citite. Trimiteți o cerere nouă și așteptați ca organizația să o accepte."
     },
     "notification": {
-      "not_found": "Această notificare nu se află printre notificările dumneavoastră, așa că nu a fost modificat nimic. Reîncărcați pagina pentru a vedea notificările actuale."
+      "not_found": "Această notificare nu se află printre notificările dumneavoastră, așa că nu a fost modificat nimic. Reîncărcați pagina pentru a vedea notificările actuale.",
+      "preference_not_offered": "Una dintre opțiunile trimise nu poate fi dezactivată aici, așa că preferințele dumneavoastră nu au fost modificate. Reîncărcați pagina pentru a vedea ce puteți alege."
     }
   }
 }
