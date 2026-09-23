@@ -21,7 +21,7 @@ import { EmailChannelService } from '../src/modules/platform/notification/servic
 import { NotificationCategoryCatalog } from '../src/modules/platform/notification/services/notification-category-catalog.service';
 import { DeliverNotification } from '../src/modules/platform/notification/use-cases/deliver-notification.use-case';
 import { asOrganization, connectAs } from './support/database';
-import { asJob, deleteNotificationsOf, notificationStore, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
+import { asJob, deleteNotificationsOf, notificationStore, optOuts, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
@@ -118,6 +118,8 @@ describe('the manual reminder (UC-175, task 50.3)', () => {
         new CategoryChannels(new NotificationCategoryCatalog(store)),
         notificationStore(worker),
         'https://app.easyesg.md',
+        new NotificationCategoryCatalog(store),
+        optOuts(worker),
       ),
     );
     await handler.handle(asJob(row), { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1 });
@@ -153,6 +155,12 @@ describe('the manual reminder (UC-175, task 50.3)', () => {
     await owner.query(`DELETE FROM audit.outbox_event WHERE organization_id = $1`, [ORG]);
     await deleteNotificationsOf(owner, ORG);
     await asOrganization(owner, ORG, (run) => run(`DELETE FROM core.organization WHERE id = $1`, [ORG]));
+    // A preference hangs off no organization and nothing cascades to it (task 52.2.1): what this suite creates, it removes.
+    await owner.query(
+      `DELETE FROM notification.preference
+        WHERE account_id IN (SELECT id FROM identity.account WHERE email = ANY($1))`,
+      [Object.values(EMAILS)],
+    );
     await owner.query(`DELETE FROM identity.account WHERE email = ANY($1)`, [Object.values(EMAILS)]);
   };
 
@@ -266,6 +274,42 @@ describe('the manual reminder (UC-175, task 50.3)', () => {
   it('reaches an editor too — any active member but the sender', async () => {
     await remind({ reportId: openReport, membershipId: membershipOf[editor.accountId] }).expect(202);
     expect(await raised()).toHaveLength(3);
+  });
+
+  it('keeps a reminder from the centre of a member who switched reminders off there, and records why (task 52.2.1)', async () => {
+    await http()
+      .put('/api/v1/account/notification-preferences')
+      .set(editor.authorization)
+      .send({ switchedOff: [{ categoryKey: 'reporting.manual_reminder', channel: 'in_app' }] })
+      .expect(200);
+
+    const row = (await raised())[2];
+    expect(row.payload.recipientUserIds).toEqual([editor.accountId]);
+    await deliver(row);
+
+    expect(await centre(editor)).toEqual([]);
+    const deliveries = (await asOrganization(owner, ORG, (run) =>
+      run(
+        `SELECT notification_id, channel, outcome FROM notification.delivery WHERE recipient_account_id = $1`,
+        [editor.accountId],
+      ),
+    )) as { notification_id: string; channel: string; outcome: string }[];
+    expect(deliveries.map(({ channel, outcome }) => ({ channel, outcome }))).toEqual([
+      { channel: 'in_app', outcome: 'opted_out' },
+    ]);
+
+    // A notice the member chose not to receive is not one they can read: the centre answers it as not theirs, and the
+    // database refuses the marker to any writer (`delivery_read_state_delivered_only`).
+    const [{ notification_id: notificationId }] = deliveries;
+    await http().post(`/api/v1/notifications/${notificationId}/read`).set(editor.authorization).expect(404);
+    await expect(
+      asOrganization(owner, ORG, (run) =>
+        run(`UPDATE notification.delivery SET read_at = now() WHERE notification_id = $1 AND recipient_account_id = $2`, [
+          notificationId,
+          editor.accountId,
+        ]),
+      ),
+    ).rejects.toThrow('delivery_read_state_delivered_only');
   });
 
   it.each([

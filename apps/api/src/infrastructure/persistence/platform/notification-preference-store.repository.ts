@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { DataSource } from 'typeorm';
-import { isNotificationCategoryKey } from '@api/contracts/notification.port';
+import { isNotificationCategoryKey, type NotificationCategoryKey } from '@api/contracts/notification.port';
+import type {
+  NotificationOptOuts,
+  OptedOutRecipient,
+} from '@api/modules/platform/notification/interfaces/notification-opt-outs.interface';
 import type {
   NotificationPreferenceStore,
   ReplaceNotificationPreferencesCommand,
@@ -21,9 +25,13 @@ import { CORE_DATA_SOURCE } from '../data-source';
  * **The replace is two statements in one transaction, and neither touches a pair outside `offered`.** The delete
  * removes the offered pairs the write leaves on; the insert adds the ones it switches off, `DO NOTHING` on a pair
  * already off so its row keeps the time it was first switched off.
+ *
+ * **`NOTIFICATION_OPT_OUTS` is this class too** (task 52.2.1): dispatch's question, asked on the worker as `esg_worker`,
+ * which holds `SELECT` on the table for it and nothing else. One class, two narrow ports: the request tier never asks
+ * who opted out of a notice, and the worker never writes a preference.
  */
 @Injectable()
-export class NotificationPreferenceStoreRepository implements NotificationPreferenceStore {
+export class NotificationPreferenceStoreRepository implements NotificationPreferenceStore, NotificationOptOuts {
   constructor(@InjectDataSource(CORE_DATA_SOURCE) private readonly dataSource: DataSource) {}
 
   async switchedOff(query: { readonly accountId: string }): Promise<readonly NotificationPreferencePair[]> {
@@ -38,6 +46,20 @@ export class NotificationPreferenceStoreRepository implements NotificationPrefer
     // here is what keeps it from reaching a read that would have to explain it.
     return rows.flatMap(({ category_key: categoryKey, channel }) =>
       isNotificationCategoryKey(categoryKey) && isNotificationChannel(channel) ? [{ categoryKey, channel }] : [],
+    );
+  }
+
+  async optedOut(query: {
+    readonly categoryKey: NotificationCategoryKey;
+    readonly accountIds: readonly string[];
+  }): Promise<readonly OptedOutRecipient[]> {
+    const rows = await this.dataSource.query<{ account_id: string; channel: string }[]>(
+      `SELECT account_id, channel FROM notification.preference
+        WHERE category_key = $1 AND account_id = ANY($2::uuid[])`,
+      [query.categoryKey, query.accountIds],
+    );
+    return rows.flatMap(({ account_id: accountId, channel }) =>
+      isNotificationChannel(channel) ? [{ accountId, channel }] : [],
     );
   }
 

@@ -2,10 +2,13 @@ import { NOTICE_APPLICATION } from '@api/contracts/notification-delivery.port';
 import type { NotificationRecipientsPort } from '@api/contracts/notification-recipients.port';
 import type { EpochMicros } from '@api/contracts/types/time';
 import type { NotificationRaised } from '../constants/notification.constants';
+import { mayBeSwitchedOff } from '../domain/may-be-switched-off';
 import { noticeLink } from '../domain/notice-link';
 import { stillOwed } from '../domain/still-owed';
 import type { EmailChannel } from '../interfaces/email-channel.interface';
+import type { NotificationCategoryBehaviours } from '../interfaces/notification-category-behaviours.interface';
 import type { NotificationChannelDecision } from '../interfaces/notification-channel-decision.interface';
+import type { NotificationOptOuts } from '../interfaces/notification-opt-outs.interface';
 import type { NotificationStore } from '../interfaces/notification-store.interface';
 import { NOTIFICATION_CHANNEL, type NotificationChannel } from '../models/notification-category.model';
 import { NOTIFICATION_STATE } from '../models/notification-record.model';
@@ -42,11 +45,16 @@ export interface DeliverNotificationResult {
  *    and nor does a raise its key's cancellation came after (task 50.1.3), whichever the workers took first.
  *    **What is delivered is the notice as recorded**: a folded raise adds recipients, and they receive what the
  *    others received.
- * 4. **In-app first, then email**, each only to whom the notice still owes on that channel — so the centre fills
+ * 4. **Whom the recipient's own choice excludes** (task 52.2.1; §12.5.6's task-52.2 row (1)): where the category may
+ *    be switched off — `mayBeSwitchedOff`, the predicate the preferences' read offers switches by — each recipient who
+ *    switched it off on a channel is recorded `opted_out` there and sent nothing on it. Read at the send, as the
+ *    recipient's address is, so a choice made after the raise still holds; a category nobody may switch off never
+ *    asks. Recorded before anything is sent, so a job run again after a failure does not decide twice.
+ * 5. **In-app first, then email**, each only to whom the notice still owes on that channel — so the centre fills
  *    with no provider in the path (FR-168), and a provider failure fails the job with in-app already done. An email
  *    is recorded once the provider accepts it (row (7)); its key is the notice and the recipient, so a job run again
  *    after a crash between the two asks the provider for the same message rather than a second.
- * 5. **The notice marked delivered**, once its dispatch has finished.
+ * 6. **The notice marked delivered**, once its dispatch has finished.
  */
 export class DeliverNotification {
   constructor(
@@ -56,11 +64,19 @@ export class DeliverNotification {
     private readonly store: NotificationStore,
     /** `PUBLIC_WEB_URL`: the origin a deep link is made absolute against, never a request's `Host`. */
     private readonly webOrigin: string,
+    /** Whether the category may be switched off, from its behaviour in force (task 52.2.1). */
+    private readonly categories: NotificationCategoryBehaviours,
+    /** Who among the recipients switched it off, and on which channel (task 52.2.1). */
+    private readonly optOuts: NotificationOptOuts,
   ) {}
 
   async execute(command: DeliverNotificationCommand): Promise<DeliverNotificationResult> {
     const { notice, organizationId } = command;
     const channels = this.channels.channelsFor({ categoryKey: notice.categoryKey });
+    const switchable = mayBeSwitchedOff({
+      categoryKey: notice.categoryKey,
+      behaviour: this.categories.behaviourOf({ categoryKey: notice.categoryKey }),
+    });
 
     const found = await this.recipients.resolve({ userIds: notice.recipientUserIds });
     const unresolved = notice.recipientUserIds.filter((id) => !found.some((recipient) => recipient.userId === id));
@@ -81,8 +97,22 @@ export class DeliverNotification {
     if (record.state === NOTIFICATION_STATE.CANCELLED) return { unresolved };
 
     const ref = { notificationId: record.notificationId, organizationId };
-    const owed = (channel: NotificationChannel) =>
+    const optedOut = await this.optedOut({
+      switchable,
+      categoryKey: notice.categoryKey,
+      recipientIds: found.map((recipient) => recipient.userId),
+    });
+    const stillOwedOn = (channel: NotificationChannel) =>
       channels.includes(channel) ? stillOwed({ recipients: found, channel, delivered: record.delivered }) : [];
+
+    for (const channel of channels) {
+      const declined = stillOwedOn(channel).filter((recipient) => optedOut(recipient.userId, channel));
+      if (declined.length > 0) {
+        await this.store.recordOptedOut({ ...ref, channel, recipientIds: declined.map((recipient) => recipient.userId) });
+      }
+    }
+    const owed = (channel: NotificationChannel) =>
+      stillOwedOn(channel).filter((recipient) => !optedOut(recipient.userId, channel));
 
     const inApp = owed(NOTIFICATION_CHANNEL.IN_APP);
     if (inApp.length > 0) {
@@ -106,5 +136,22 @@ export class DeliverNotification {
 
     await this.store.markDelivered(ref);
     return { unresolved };
+  }
+
+  /**
+   * Whether a recipient switched the category off on a channel — never, without asking, where the category may not
+   * be switched off.
+   */
+  private async optedOut(query: {
+    readonly switchable: boolean;
+    readonly categoryKey: NotificationRaised['categoryKey'];
+    readonly recipientIds: readonly string[];
+  }): Promise<(recipientId: string, channel: NotificationChannel) => boolean> {
+    if (!query.switchable || query.recipientIds.length === 0) {
+      return () => false;
+    }
+    const rows = await this.optOuts.optedOut({ categoryKey: query.categoryKey, accountIds: query.recipientIds });
+    const off = new Set(rows.map((row) => `${row.accountId} ${row.channel}`));
+    return (recipientId, channel) => off.has(`${recipientId} ${channel}`);
   }
 }

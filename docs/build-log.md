@@ -24002,3 +24002,51 @@ key with no markup and neither front end reads it.
 
 **Task 52's parent stays `TODO`** — 52.2 and 52.3 are open — so 52.1 closes in place and no row moves to
 the archive.
+
+## Task 52.2.1 — The preference honoured at dispatch · 2026-09-23
+
+The half of 52.2 that makes 52.1's preferences mean something: a recipient who switched a category off on a
+channel receives nothing on it. 52.2 was split in two at its batch, since the unsubscribe spans the worker,
+the api, a new screen and a new secret, and this half closes on its own.
+
+### Decisions (project owner, one batch for all of 52.2, before the code)
+
+Recorded as §12.5.6's new task-52.2 row; the other three are 52.2.2's.
+
+- **(1) An opted-out recipient gets a delivery row with the outcome `opted_out`** (recommended), per channel —
+  FR-170's evidence that the platform chose not to send, distinct from 51.4's `suppressed`, which is a dead
+  address. The centre reads only delivered in-app rows.
+
+### What the design settled, and one thing 52.1 had wrong
+
+- **52.1 read FR-163 too narrowly.** It locked the categories code declares mandatory and offered every other
+  one — but FR-163 permits suppression *only for categories classified optional*, so a category an operator
+  published `transactional` without code declaring it would have been offered as a switch, and honoured. No
+  seeded category is in that state, so nothing was exposed; the gap was found while deciding what dispatch
+  should consult. **`mayBeSwitchedOff`** — not mandatory in code *and* classified `optional` in force — is now
+  the one predicate the read, the write and dispatch ask, and 52.2.2's footer will ask it too. Recorded in the
+  task-52.2 row rather than as a correction to 52.1's, since the decision is FR-163's and 52.1's row only
+  described what it built.
+- **The preference is read at the send**, per recipient, as the address and language already are (49.3's row
+  (4)), and **recorded before anything is sent**: a job that fails on the provider after the opt-out rows are
+  written redelivers without re-reading, so a person who switches back on after a send does not receive it on the
+  retry. The unit spec pins that, and pins that a category nobody may switch off never asks.
+- **`delivery_read_state_delivered_only`** is the database's copy of *the centre reads delivered rows*: marking an
+  opted-out notice read would put a notice the person declined into FR-170's evidence of reading. It overlapped
+  an existing check — task 50.1.1's case inserting an `accepted` email row with a read time now broke both rules,
+  so the test could no longer say which fired. Its row became `delivered`, which only its own rule refuses; a
+  check that two constraints satisfy proves neither.
+- **`NOTIFICATION_OPT_OUTS` is the preference repository's second face**, the notice store's precedent: the
+  worker asks who opted out and writes nothing; the request tier writes and never asks.
+
+### Verification
+
+Mutation first: `DeliverNotification`'s opt-out read short-circuited to *nobody* — the new
+`report-reminder.e2e-spec.ts` case (a member who switched reminders off in-app gets an `opted_out` row, an empty
+centre, a 404 marking it read, and a database refusal of the marker) fails, 1 of 10; restored.
+
+The gates this change reaches: `pnpm lint`, api typecheck, api unit **1,304**, `pnpm e2e` **1,326**,
+`pnpm e2e:worker` **8** — the worker's provider set gained `NOTIFICATION_OPT_OUTS` and `DeliverNotification` two
+dependencies, so its boot is the proof that matters — and `pnpm migrations:check` (**61** invariants, the worker's
+new `SELECT` declared). Both run logs read for dependency warnings and unhandled rejections: none. **Skipped**:
+`openapi:check`, since no controller or DTO changed, and `e2e:web`, which no part of this reaches.

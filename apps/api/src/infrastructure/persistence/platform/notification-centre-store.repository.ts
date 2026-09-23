@@ -8,7 +8,10 @@ import {
   type NotificationCentrePage,
   type NotificationCentreQuery,
 } from '@api/modules/platform/notification/models/notification-centre.model';
-import { NOTIFICATION_STATE } from '@api/modules/platform/notification/models/notification-record.model';
+import {
+  DELIVERY_OUTCOME,
+  NOTIFICATION_STATE,
+} from '@api/modules/platform/notification/models/notification-record.model';
 import { returnedRows } from '../returned-rows';
 import { TenantRepository } from '../tenant-repository';
 
@@ -40,7 +43,8 @@ interface CentreRow {
  * have imitated.
  *
  * **What the centre holds is one clause**, `centre` below, shared by the page, both counts and the unread count so
- * the four cannot describe different sets: the recipient's in-app deliveries, not dismissed, of notices not
+ * the four cannot describe different sets: the recipient's in-app deliveries that were delivered — never one they
+ * opted out of (task 52.2.1) — not dismissed, of notices not
  * cancelled. Dismissed rows are what the centre's partial index leaves out.
  *
  * **Both markers are written once**, with `COALESCE(…, now())`: a second read keeps the first time and a second
@@ -58,6 +62,7 @@ export class NotificationCentreStoreRepository extends TenantRepository<never> i
       FROM notification.delivery d
       JOIN notification.notification n ON n.id = d.notification_id AND n.organization_id = d.organization_id
      WHERE d.channel = '${NOTIFICATION_CHANNEL.IN_APP}'
+       AND d.outcome = '${DELIVERY_OUTCOME.DELIVERED}'
        AND d.dismissed_at IS NULL
        AND n.state <> '${NOTIFICATION_STATE.CANCELLED}'
   `;
@@ -129,9 +134,9 @@ export class NotificationCentreStoreRepository extends TenantRepository<never> i
   private async mark(input: { readonly notificationId: string; readonly column: Marker }): Promise<boolean> {
     const result: unknown = await this.runner.query(
       `UPDATE notification.delivery SET ${input.column} = COALESCE(${input.column}, now())
-        WHERE notification_id = $1 AND channel = $2
+        WHERE notification_id = $1 AND channel = $2 AND outcome = $3
         RETURNING id`,
-      [input.notificationId, NOTIFICATION_CHANNEL.IN_APP],
+      [input.notificationId, NOTIFICATION_CHANNEL.IN_APP, DELIVERY_OUTCOME.DELIVERED],
     );
     return returnedRows(result).length > 0;
   }

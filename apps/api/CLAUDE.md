@@ -78,8 +78,8 @@ traps each one left — grouped by area rather than by the task that built it.
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
-  the outstanding-report and deadline notices (51.2), preferences honoured at dispatch and their screen (52.2,
-  52.3), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
+  the outstanding-report and deadline notices (51.2), the one-click unsubscribe and the preferences' screen
+  (52.2.2, 52.3), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -533,9 +533,14 @@ under `@RequiresAccount()`, and work with no organization bound. Three things to
   replaces only the pairs the read offers**: a stored switch-off for a channel a category stopped travelling on stands
   and holds again when the channel returns. A pair the read does not offer — a mandatory category above all —
   refuses the whole write, which is what makes *a mandatory category cannot be disabled* true of every client.
-- **The worker holds no grant on it yet, and the catalogue now runs on both sides.** Task 52.2 honours a preference at
-  dispatch, and brings `esg_worker`'s `SELECT` with it; `NotificationCategoryCatalog` is provided in HTTP mode too,
-  since the read asks it which categories a person is offered.
+- **What may be switched off is one predicate, `mayBeSwitchedOff`** (task 52.2.1): not mandatory in code *and*
+  classified `optional` in force. The preferences' read and write and dispatch all ask it, so a category an operator
+  publishes `transactional` is locked everywhere at once. `NotificationCategoryCatalog` runs on both sides for it.
+- **Dispatch reads the preference at the send** (task 52.2.1), as `esg_worker` through `NOTIFICATION_OPT_OUTS` — the
+  preference repository's second face — and records a switched-off channel as a delivery with the outcome
+  `opted_out` *before* sending anything, so a redelivered job never decides twice. **The centre reads only
+  `delivered` in-app rows**, and `delivery_read_state_delivered_only` refuses a read or dismissed marker on any other
+  row, so a notice a person chose not to receive can never be marked read. A new outcome must keep both true.
 
 **A cancellation outlives its notice, and every job carries its outbox row's time** (task 50.1.3; §12.5.6's
 task-50.1 rows (12), (13)). `NotificationPort.cancel()` names the raise's key and writes an outbox event on the

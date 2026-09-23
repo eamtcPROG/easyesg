@@ -25,6 +25,11 @@ export interface NotificationStore {
   open(command: OpenNotificationCommand): Promise<NotificationRecord>;
   /** Writes each recipient's in-app delivery — which is the delivery, since the centre is the store (FR-168). */
   deliverInApp(command: DeliverInAppCommand): Promise<void>;
+  /**
+   * Records that each recipient switched the category off on this channel, so nothing was sent (task 52.2.1) — the
+   * delivery row FR-170 asks for, with the outcome `opted_out`, which the centre never reads.
+   */
+  recordOptedOut(command: RecordOptedOutCommand): Promise<void>;
   /** Records the email the provider accepted for one recipient (FR-170, row (7)). */
   recordEmailAccepted(command: RecordEmailAcceptedCommand): Promise<void>;
   /** The dispatch finished: a `raised` notice becomes `delivered`, and any other state is left as it stands. */
@@ -62,6 +67,11 @@ export interface OpenNotificationCommand extends NoticeRef {
 
 export interface DeliverInAppCommand extends NoticeRef {
   readonly recipientIds: readonly string[];
+}
+
+export interface RecordOptedOutCommand extends NoticeRef {
+  readonly recipientIds: readonly string[];
+  readonly channel: NotificationChannel;
 }
 
 export interface RecordEmailAcceptedCommand extends NoticeRef {

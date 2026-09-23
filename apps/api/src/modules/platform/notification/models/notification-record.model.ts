@@ -33,6 +33,11 @@ export const DELIVERY_OUTCOME = {
   ACCEPTED: 'accepted',
   BOUNCED: 'bounced',
   SUPPRESSED: 'suppressed',
+  /**
+   * The recipient switched the category off on this channel, so nothing was sent (task 52.2.1; FR-163, FR-170). Not
+   * `suppressed`, which is a dead address: this is a person's choice, and it is theirs to reverse.
+   */
+  OPTED_OUT: 'opted_out',
 } as const;
 
 export type DeliveryOutcome = (typeof DELIVERY_OUTCOME)[keyof typeof DELIVERY_OUTCOME];

@@ -13,6 +13,7 @@ import type {
   NotificationStore,
   OpenNotificationCommand,
   RecordEmailAcceptedCommand,
+  RecordOptedOutCommand,
 } from '@api/modules/platform/notification/interfaces/notification-store.interface';
 import {
   NOTIFICATION_CHANNEL,
@@ -109,6 +110,24 @@ export class NotificationStoreRepository implements NotificationStore, Notificat
           command.organizationId,
           NOTIFICATION_CHANNEL.IN_APP,
           DELIVERY_OUTCOME.DELIVERED,
+          command.recipientIds,
+        ],
+      );
+    });
+  }
+
+  /** `deliverInApp`'s statement with the channel given and the outcome `opted_out` (task 52.2.1). */
+  recordOptedOut(command: RecordOptedOutCommand): Promise<void> {
+    return this.inOrganization(command.organizationId, async (runner) => {
+      await runner.query(
+        `INSERT INTO notification.delivery (notification_id, organization_id, recipient_account_id, channel, outcome)
+         SELECT $1, $2, recipient, $3, $4 FROM unnest($5::uuid[]) AS recipient
+         ON CONFLICT (notification_id, recipient_account_id, channel) DO NOTHING`,
+        [
+          command.notificationId,
+          command.organizationId,
+          command.channel,
+          DELIVERY_OUTCOME.OPTED_OUT,
           command.recipientIds,
         ],
       );

@@ -26,6 +26,7 @@ import {
   NOTIFICATION_CENTRE_STORE,
   type NotificationCentreStore,
 } from './interfaces/notification-centre-store.interface';
+import { NOTIFICATION_OPT_OUTS, type NotificationOptOuts } from './interfaces/notification-opt-outs.interface';
 import {
   NOTIFICATION_PREFERENCE_STORE,
   type NotificationPreferenceStore,
@@ -102,17 +103,38 @@ const workerProviders: Provider[] = [
   // FR-171's list (task 51.4). Its own repository rather than the notice store's third face: it binds no
   // tenant, because the table it writes carries none.
   { provide: SUPPRESSION_STORE, useClass: SuppressionStoreRepository },
+  // Who switched a category off (task 52.2.1): the preference store's second face, read-only on the worker.
+  { provide: NOTIFICATION_OPT_OUTS, useClass: NotificationPreferenceStoreRepository },
   {
     // Framework-free, so `useFactory` over its ports (`apps/api/CLAUDE.md`, "No `@Injectable` means no `useClass`").
     provide: DeliverNotification,
-    inject: [NOTIFICATION_RECIPIENTS, EMAIL_CHANNEL, CategoryChannels, NOTIFICATION_STORE, ConfigService],
+    inject: [
+      NOTIFICATION_RECIPIENTS,
+      EMAIL_CHANNEL,
+      CategoryChannels,
+      NOTIFICATION_STORE,
+      ConfigService,
+      NotificationCategoryCatalog,
+      NOTIFICATION_OPT_OUTS,
+    ],
     useFactory: (
       recipients: NotificationRecipientsPort,
       email: EmailChannel,
       channels: CategoryChannels,
       store: NotificationStore,
       config: ConfigService<AppConfig, true>,
-    ) => new DeliverNotification(recipients, email, channels, store, config.get('web.publicUrl', { infer: true })),
+      catalog: NotificationCategoryCatalog,
+      optOuts: NotificationOptOuts,
+    ) =>
+      new DeliverNotification(
+        recipients,
+        email,
+        channels,
+        store,
+        config.get('web.publicUrl', { infer: true }),
+        catalog,
+        optOuts,
+      ),
   },
   NotificationRaisedHandler,
   {

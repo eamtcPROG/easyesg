@@ -11,9 +11,12 @@ import type {
   NotificationStore,
   OpenNotificationCommand,
   RecordEmailAcceptedCommand,
+  RecordOptedOutCommand,
   RecordedDelivery,
 } from '../interfaces/notification-store.interface';
-import type { NotificationChannel } from '../models/notification-category.model';
+import type { NotificationCategoryBehaviours } from '../interfaces/notification-category-behaviours.interface';
+import type { NotificationOptOuts, OptedOutRecipient } from '../interfaces/notification-opt-outs.interface';
+import { NOTIFICATION_CLASSIFICATION, type NotificationChannel } from '../models/notification-category.model';
 import { DELIVERY_OUTCOME, type NotificationState } from '../models/notification-record.model';
 import type { NotificationChannelDecision } from '../interfaces/notification-channel-decision.interface';
 import { DeliverNotification } from './deliver-notification.use-case';
@@ -48,6 +51,8 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
   /** The record's rules, as the migration's constraints state them. Literals on purpose: they are stored values. */
   class FakeNotificationStore implements NotificationStore {
     readonly notices: Notice[] = [];
+    /** Every `opted_out` row, in the order written (task 52.2.1). */
+    readonly optedOut: { recipientId: string; channel: NotificationChannel }[] = [];
     /** Each key's latest cancellation, as `notification.cancellation` holds it. */
     readonly cancellations = new Map<string, number>();
 
@@ -90,6 +95,15 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
     deliverInApp(command: DeliverInAppCommand): Promise<void> {
       for (const recipientId of command.recipientIds) this.record(command, recipientId, 'in_app');
       events.push(`in_app:${command.recipientIds.join(',')}`);
+      return Promise.resolve();
+    }
+
+    recordOptedOut(command: RecordOptedOutCommand): Promise<void> {
+      for (const recipientId of command.recipientIds) {
+        this.record(command, recipientId, command.channel);
+        this.optedOut.push({ recipientId, channel: command.channel });
+      }
+      events.push(`opted_out:${command.channel}:${command.recipientIds.join(',')}`);
       return Promise.resolve();
     }
 
@@ -145,16 +159,46 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
     ...overrides,
   });
 
-  const build = (decision: NotificationChannelDecision = answering(['email'])) => {
+  /** Who switched what off — the preference table as the worker reads it — and how often it was asked. */
+  class FakeOptOuts implements NotificationOptOuts {
+    asked = 0;
+    constructor(public rows: OptedOutRecipient[] = []) {}
+
+    optedOut(query: { readonly accountIds: readonly string[] }): Promise<readonly OptedOutRecipient[]> {
+      this.asked += 1;
+      return Promise.resolve(this.rows.filter((row) => query.accountIds.includes(row.accountId)));
+    }
+  }
+
+  /** A category's classification in force; the channels are `answering`'s, which is the decision this reads. */
+  const classified = (
+    classification: (typeof NOTIFICATION_CLASSIFICATION)[keyof typeof NOTIFICATION_CLASSIFICATION],
+  ): NotificationCategoryBehaviours => ({
+    behaviourOf: () => ({ channels: ['in_app', 'email'], classification }),
+  });
+
+  const build = (
+    decision: NotificationChannelDecision = answering(['email']),
+    options: { categories?: NotificationCategoryBehaviours; optOuts?: FakeOptOuts } = {},
+  ) => {
     const email = new RecordingEmailChannel();
     const store = new FakeNotificationStore();
+    const optOuts = options.optOuts ?? new FakeOptOuts();
     const recipients: NotificationRecipientsPort = {
       resolve: ({ userIds }) => Promise.resolve(people.filter((person) => userIds.includes(person.userId))),
     };
-    const deliver = new DeliverNotification(recipients, email, decision, store, 'https://app.easyesg.md');
+    const deliver = new DeliverNotification(
+      recipients,
+      email,
+      decision,
+      store,
+      'https://app.easyesg.md',
+      options.categories ?? classified(NOTIFICATION_CLASSIFICATION.TRANSACTIONAL),
+      optOuts,
+    );
     const run = (raised: NotificationRaised, deliveryId: string, raisedAtMicros = 1_790_726_400_000_000) =>
       deliver.execute({ notice: raised, organizationId: ORGANIZATION, deliveryId, raisedAtMicros });
-    return { run, email, store };
+    return { run, email, store, optOuts };
   };
 
   it("sends each recipient the category's email, in their own language, with their own link and key", async () => {
@@ -313,5 +357,63 @@ describe('DeliverNotification (tasks 49.3, 50.1.1, 50.1.3)', () => {
 
     await run(notice({ recipientUserIds: [ANA] }), 'outbox-key-2', 1_790_726_400_000_001);
     expect(email.sent.map((sent) => sent.idempotencyKey)).toEqual([`outbox-key-2:${ANA}`]);
+  });
+  describe('a preference honoured at dispatch (task 52.2.1)', () => {
+    const REMINDER = 'reporting.manual_reminder';
+
+    it('sends nothing on the channel a recipient switched off, records it opted out, and reaches everyone else', async () => {
+      const optOuts = new FakeOptOuts([{ accountId: IVAN, channel: 'email' }]);
+      const { run, email, store } = build(answering(['in_app', 'email']), {
+        categories: classified(NOTIFICATION_CLASSIFICATION.OPTIONAL),
+        optOuts,
+      });
+      await run(notice({ categoryKey: REMINDER }), 'outbox-key-1');
+
+      expect(email.sent.map((sent) => sent.to)).toEqual(['ana@example.md']);
+      expect(store.optedOut).toEqual([{ recipientId: IVAN, channel: 'email' }]);
+      expect(events).toEqual([`opted_out:email:${IVAN}`, `in_app:${ANA},${IVAN}`, 'email:ana@example.md']);
+    });
+
+    it('keeps an in-app notice out of the centre of a recipient who switched it off there', async () => {
+      const { run, store } = build(answering(['in_app']), {
+        categories: classified(NOTIFICATION_CLASSIFICATION.OPTIONAL),
+        optOuts: new FakeOptOuts([{ accountId: ANA, channel: 'in_app' }]),
+      });
+      await run(notice({ categoryKey: REMINDER }), 'outbox-key-1');
+
+      expect(events).toEqual([`opted_out:in_app:${ANA}`, `in_app:${IVAN}`]);
+      expect(store.notices[0].state).toBe('delivered');
+    });
+
+    it('never asks for a category that may not be switched off, and sends to everyone', async () => {
+      const optOuts = new FakeOptOuts([{ accountId: IVAN, channel: 'email' }]);
+      const { run, email, store } = build(answering(['email']), {
+        categories: classified(NOTIFICATION_CLASSIFICATION.TRANSACTIONAL),
+        optOuts,
+      });
+      await run(notice({ categoryKey: REMINDER }), 'outbox-key-1');
+
+      expect(optOuts.asked).toBe(0);
+      expect(email.sent.map((sent) => sent.to)).toEqual(['ana@example.md', 'ivan@example.md']);
+      expect(store.optedOut).toEqual([]);
+    });
+
+    it('does not decide twice: a job run again sends nothing to whom it recorded opted out', async () => {
+      const optOuts = new FakeOptOuts([{ accountId: IVAN, channel: 'email' }]);
+      const { run, email, store } = build(answering(['email']), {
+        categories: classified(NOTIFICATION_CLASSIFICATION.OPTIONAL),
+        optOuts,
+      });
+      await run(notice({ categoryKey: REMINDER }), 'outbox-key-1');
+      // The person switches it back on after the send; the notice as recorded is what a redelivery honours.
+      optOuts.rows = [];
+      events = [];
+
+      await run(notice({ categoryKey: REMINDER }), 'outbox-key-1');
+
+      expect(events).toEqual([]);
+      expect(email.sent.map((sent) => sent.to)).toEqual(['ana@example.md']);
+      expect(store.optedOut).toEqual([{ recipientId: IVAN, channel: 'email' }]);
+    });
   });
 });

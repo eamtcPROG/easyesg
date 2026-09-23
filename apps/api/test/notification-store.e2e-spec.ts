@@ -25,7 +25,7 @@ import { CancelNotification } from '../src/modules/platform/notification/use-cas
 import { NOTIFICATION_CHANNEL } from '../src/modules/platform/notification/models/notification-category.model';
 import { DeliverNotification } from '../src/modules/platform/notification/use-cases/deliver-notification.use-case';
 import { asOrganization, connectAs } from './support/database';
-import { asJob, clearSuppressedAddresses, deleteNotificationsOf, notificationStore, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
+import { asJob, clearSuppressedAddresses, deleteNotificationsOf, notificationStore, optOuts, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
 
 /**
  * **The notification store** — task 50.1.1's expected result over the real schema, grants and policies: a raised
@@ -107,6 +107,10 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
         { channelsFor: () => [NOTIFICATION_CHANNEL.IN_APP, NOTIFICATION_CHANNEL.EMAIL] },
         notificationStore(worker),
         'https://app.easyesg.md',
+        // No behaviour in force, so no category here may be switched off and no preference is read: this suite's
+        // subject is the record, and the preference at dispatch is `report-reminder.e2e-spec.ts`'s.
+        { behaviourOf: () => null },
+        optOuts(worker),
       ),
     );
 
@@ -708,12 +712,14 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
     const outboxKey = await raise({ recipientUserIds: [ana], subjectRef: `${SUITE}:read-state` });
     await dispatch(outboxKey);
 
+    // `delivered`, not `accepted`, so the row breaks this rule alone: since task 52.2.1 a marker on any row not
+    // delivered is `delivery_read_state_delivered_only`'s refusal, and an `accepted` row would break both.
     await expect(
       asOrganization(worker, ORG, (run) =>
         run(
           `INSERT INTO notification.delivery
                   (notification_id, organization_id, recipient_account_id, channel, outcome, read_at)
-           VALUES ($1, $2, $3, 'email', 'accepted', now())`,
+           VALUES ($1, $2, $3, 'email', 'delivered', now())`,
           [outboxKey, ORG, ivan],
         ),
       ),

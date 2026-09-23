@@ -2,6 +2,7 @@ import type { DataSource } from 'typeorm';
 import type { EmailPort } from '@api/contracts/email.port';
 import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
 import { NotificationRecipientsRepository } from '@api/infrastructure/persistence/identity/notification-recipients.repository';
+import { NotificationPreferenceStoreRepository } from '@api/infrastructure/persistence/platform/notification-preference-store.repository';
 import { NotificationStoreRepository } from '@api/infrastructure/persistence/platform/notification-store.repository';
 import { SuppressionStoreRepository } from '@api/infrastructure/persistence/platform/suppression-store.repository';
 import { NOTIFICATION_CHANNEL } from '@api/modules/platform/notification/models/notification-category.model';
@@ -20,6 +21,13 @@ export const notificationStore = (worker: DataSource): NotificationStoreReposito
 /** `SUPPRESSION_STORE` over the same connection (task 51.4). It binds no tenant: the table carries none. */
 export const suppressionStore = (worker: DataSource): SuppressionStoreRepository =>
   new SuppressionStoreRepository(worker);
+
+/**
+ * `NOTIFICATION_OPT_OUTS` over the same connection (task 52.2.1): who switched a category off, read as `esg_worker`,
+ * which holds `SELECT` on `notification.preference` and nothing more.
+ */
+export const optOuts = (worker: DataSource): NotificationPreferenceStoreRepository =>
+  new NotificationPreferenceStoreRepository(worker);
 
 /**
  * `NOTIFICATION_DELIVERY` as the worker builds it, over a connection as `esg_worker` and a provider the suite records

@@ -529,7 +529,7 @@ const NOTIFICATION_PRIVILEGES = [
   'esg_admin_ro notification.delivery SELECT table',
   'esg_admin_ro notification.notification SELECT table',
   // A person's preferences (task 52.1). The request tier reads and replaces them — a switch-off is inserted and a
-  // switch back on deleted, so nothing updates — and the worker is granted nothing until task 52.2 reads them.
+  // switch back on deleted, so nothing updates — and the worker reads them at dispatch since task 52.2.1.
   'esg_admin_ro notification.preference SELECT table',
   // FR-171's list (task 51.4). The worker learns and writes; the request tier only reads, because S-16 shows a
   // suppressed member; `esg_admin_ro` reads it like everything else. Nobody may DELETE — an address coming back
@@ -550,6 +550,7 @@ const NOTIFICATION_PRIVILEGES = [
   'esg_worker notification.notification INSERT table',
   'esg_worker notification.notification SELECT table',
   'esg_worker notification.notification UPDATE table',
+  'esg_worker notification.preference SELECT table',
   'esg_worker notification.suppressed_address INSERT table',
   'esg_worker notification.suppressed_address SELECT table',
 ];

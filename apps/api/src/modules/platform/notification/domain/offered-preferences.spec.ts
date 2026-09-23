@@ -75,6 +75,22 @@ describe('offeredPreferences (task 52.1)', () => {
     );
   });
 
+  it('locks a category published as transactional that code does not declare mandatory (task 52.2)', () => {
+    const offered = offeredPreferences({
+      behaviourOf: (categoryKey) =>
+        categoryKey === NOTIFICATION_CATEGORY.MANUAL_REMINDER
+          ? { channels: [NOTIFICATION_CHANNEL.IN_APP], classification: NOTIFICATION_CLASSIFICATION.TRANSACTIONAL }
+          : EMAIL_ONLY,
+      switchedOff: [{ categoryKey: NOTIFICATION_CATEGORY.MANUAL_REMINDER, channel: NOTIFICATION_CHANNEL.IN_APP }],
+    });
+
+    expect(offered.find((category) => category.categoryKey === NOTIFICATION_CATEGORY.MANUAL_REMINDER)).toEqual({
+      categoryKey: 'reporting.manual_reminder',
+      mandatory: true,
+      channels: [{ channel: 'in_app', enabled: true }],
+    });
+  });
+
   it('leaves out an optional category whose behaviour cannot be read, since it is sent on nothing', () => {
     const offered = offeredPreferences({
       behaviourOf: (categoryKey) => (categoryKey === NOTIFICATION_CATEGORY.MANUAL_REMINDER ? null : EMAIL_ONLY),
