@@ -1,11 +1,5 @@
-import { getMessages } from 'next-intl/server';
-import type { CountryLegalForms, Organization } from '@easyesg/contracts';
-import { EntityRecordForm } from '@/features/entities/components/form/entity-record-form';
-import styles from '@/features/entities/components/styles/entities.module.css';
-import { API_OUTCOME } from '@/lib/api-outcome';
-import { api } from '@/server/api/api-client';
-import { isPermissionRefusal } from '@/server/data/tenant-read';
-import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
+import { NewEntitySection } from '@/features/entities/components/record/new-entity-section';
+import { ENTITY_RECORD_MESSAGES } from '@/features/entities/components/shared/entity-messages';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
@@ -15,35 +9,12 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * address the reader can return to and link (UX-4), and so the `[entityId]` route never has to
  * decide whether `new` is an id.
  *
- * **It reads the organization to know which legal forms to offer**, because that vocabulary is
- * scoped by the organization's country (§7.2) — the same country the API admits activity codes
- * against. A failure leaves the select empty rather than failing the screen: an entity is worth
- * creating with a name alone, and every other field on this record is optional by FR-17.
+ * **A shell since task 137** (`shell-composes-only`): the section reads the organization's country and the legal forms
+ * it scopes (`features/entities/components/record/new-entity-section.tsx`), and `loading.tsx` beside it waits for it.
  */
-export const generateMetadata = localizedPageTitle('organization.entities.record');
+export const generateMetadata = localizedPageTitle(ENTITY_RECORD_MESSAGES);
 
 export default async function NewEntityPage({ params }: { params: LocaleParams }) {
   await activateRequestLocale(params);
-  const [organization, vocabulary, messages] = await Promise.all([
-    api.get<Organization>('/organization'),
-    api.getList<CountryLegalForms>('/organizations/legal-forms'),
-    getMessages(),
-  ]);
-
-  // A choice not made is S-37's to answer, and this read is where a navigation meets it (the gate says why).
-  if (isPermissionRefusal(organization)) await redirectToChoiceIfOwed();
-  const country = organization.status === API_OUTCOME.Ok ? organization.value.countryCode : null;
-  const formLabels: Readonly<Record<string, string>> = messages.organization.legalForms;
-  const legalForms =
-    vocabulary.status === API_OUTCOME.Ok && country !== null
-      ? (vocabulary.value.items.find((entry) => entry.countryCode === country)?.legalForms ?? []).map(
-          (form) => ({ value: form, label: formLabels[form] ?? form }),
-        )
-      : [];
-
-  return (
-    <div className={styles.screen}>
-      <EntityRecordForm entity={null} activity={[]} legalForms={legalForms} />
-    </div>
-  );
+  return <NewEntitySection />;
 }

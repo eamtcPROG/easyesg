@@ -25221,3 +25221,95 @@ decision.
   task's suite pass together (**14**).
 - **Not run**: the browser suite, since nothing a browser reaches changed.
 - **Not run**: the worker e2e, since no worker code changed.
+
+## Task 137 — The last seven routes, made shells · 2026-09-24
+
+Every route file in the tenant application now pins the locale and renders a section. The seven that still held their
+own read — task 134's recorded deferral — each moved their read, their arms and their wording into a section in their
+feature's `components/`, with no behaviour changed. `apps/web/CLAUDE.md`'s deferral bullet is replaced by the rule as
+it now stands.
+
+### Where each landed
+
+| Route | Section | `loading.tsx` |
+| --- | --- | --- |
+| `(wizard)/reports/[reportId]` | `wizard/components/entry/report-entry.tsx` | **none** — see below |
+| `account/credentials` | `credentials/components/credentials-section.tsx` | added |
+| `entities/[entityId]` | `entities/components/record/entity-record-section.tsx` | added |
+| `entities/new` | `entities/components/record/new-entity-section.tsx` | added |
+| `entities/[entityId]/periods/[periodId]` | `periods/components/period-record-section.tsx` | added |
+| `create-organization` | `organization/creation/components/create-organization-section.tsx` | added |
+| `organization-unavailable` | `identity/unavailable/components/organization-unavailable-section.tsx` | added |
+
+### What the move settled
+
+- **The redirector has no `loading.tsx`, deliberately.** It renders nothing. A boundary at `reports/[reportId]` would
+  also wrap every step page beneath it, so the wizard would fall back to a spinner on each module switch, and that
+  costs more than the fallback gives.
+- **The three record routes needed a loading state of their own because one already applied to them, and it was the
+  wrong one.** Loading boundaries nest, so `entities/loading.tsx` and `entities/[entityId]/periods/loading.tsx` were
+  drawing the list's heading over a record. Each record's own `loading.tsx` now names the record.
+- **S-28's docblock claimed a `loading.tsx` that did not exist.** It said *"Loading is `loading.tsx`"* with no file
+  beside it. The file exists now, and the sentence says it arrived with this task.
+- **The two `(app)` routes outside `(workspace)` keep their "locale before the read" ordering.** The shell awaits
+  `activateRequestLocale` before rendering the section, so the section's API call carries the right
+  `Accept-Language`. S-35's section still reads the catalogue only after its redirect check.
+- **Namespaces are declared once.** S-13's sections use the feature's existing `ENTITIES_MESSAGES` and
+  `ENTITY_RECORD_MESSAGES`. S-04's namespace moved to a `create-organization-messages.ts` of its own. S-35's is
+  exported beside its section, which is its one other reader.
+- **The five loading lines** — entity record, period record, S-28, S-04 and S-35 — are authored in all three
+  catalogues.
+- **Found, not fixed: S-13's legal-form lookup compares a country code with the entity's legal form**
+  (`countryCode === read.entity.legalForm`), which is never true. It works only because Moldova is the one
+  configured country and the fallback is `countries[0]`. A refactor that changed behaviour would be two tasks in
+  one, so the statement moved unchanged and a follow-up was raised for it separately.
+
+### Found by the browser suite: a loading boundary can hide a credential form from a browser without scripting
+
+The first run failed task 153's S-28 case, and the cause was this task's own new `loading.tsx`. **What a browser
+without scripting gets from a route behind a boundary depends on time.**
+- A section that answers before the page is flushed is sent inline, form and all, with its own notice.
+- One that does not is sent as the fallback, and the page is streamed into hidden markup that only a script swaps in.
+  That reader sees the fallback for good, and a screenshot confirmed it: the real heading, the loading line, no form.
+
+Both outcomes appeared in consecutive runs, which is why each fix below had to be corrected once.
+
+**S-36 has had the same exposure since task 155.** Its `loading.tsx` predates task 153, so that row's claim that S-36
+always shows the notice without scripting was only sometimes true.
+
+**The rule, applied to both: a credential route's `loading.tsx` carries the notice too.** S-28's and S-36's fallbacks
+draw `ScriptingRequired`, and scripted readers keep their loading state. Task 153's §12.5.6 row is amended with S-36's
+history.
+
+**How it is held, after two assertions that proved less than they looked:**
+- **Reading every `<noscript>` passed without the fallback's notice**, because the hidden form's own is in the page
+  too. Counting only those outside hidden markup fixed that.
+- **Asserting that no form was shown then failed on a run that sent the page inline.** It had passed the run before,
+  so its "proof" by mutation proved only the timing. `form-method.spec.ts`'s S-28 case now accepts either outcome and
+  asserts what both must give: a notice outside hidden markup, and a disabled submit. Repeated five times it passes
+  every time (**20 passed** across the file).
+- **The fallback's notice is held statically**, by `src/test/credential-loading-notice.spec.ts`, because no browser
+  run can choose which outcome it gets. It checks every credential route that has a `loading.tsx`. Removing S-36's
+  notice fails it; that was run and restored.
+- Playwright's `getByLabel` once judged the streamed field visible while the role engine and the screenshot said
+  hidden. This is recorded, not explained, beside task 153's own unexplained `<noscript>` finding, and nothing now
+  depends on it.
+
+### Skills read against the diff
+
+- `one-idea-per-file`: `shell-composes-only` and `section-reads-parts-render` are what the task applies.
+- `one-kind-per-folder`: every new folder (`entry/`, `record/`, `identity/unavailable/components/`) holds files only,
+  and `folder-shape.spec.ts` passes over them.
+- `vercel-react-best-practices`: each section keeps its reads in one `Promise.all` where they are independent, and
+  keeps the sequential await where a read depends on the locale (`async-parallel` considered and declined, for the
+  reason the docblocks give).
+
+### Verification
+
+A single-row group closing as its own parent, so it ran the gates its change reaches, per the owner's standing
+decision.
+
+- **web**: unit **1,099**, typecheck, lint, and `docs:check`.
+- **Browser, first run**: `e2e:web --project identity --project expansion` **250 passed and 1 failed**, the finding above.
+- **Browser, after the fix and a rebuild**: **250 passed**, with the one case above since corrected; then `form-method.spec.ts` repeated five times, **20 passed**.
+- **Not run**: the console's project, since nothing it serves changed.

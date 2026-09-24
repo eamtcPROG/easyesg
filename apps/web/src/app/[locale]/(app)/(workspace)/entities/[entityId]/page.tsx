@@ -1,13 +1,6 @@
-import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
-import { getMessages, getTranslations } from 'next-intl/server';
-import { EntityRecordForm } from '@/features/entities/components/form/entity-record-form';
-import styles from '@/features/entities/components/styles/entities.module.css';
-import { readEntityRecord } from '@/server/data/entities';
-import { TENANT_READ } from '@/server/data/tenant-read';
-import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
-import { Link } from '@/i18n/navigation';
+import { EntityRecordSection } from '@/features/entities/components/record/entity-record-section';
+import { ENTITY_RECORD_MESSAGES } from '@/features/entities/components/shared/entity-messages';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
-import { ROUTES } from '@/lib/routes';
 
 /**
  * S-13 — Entity record · OA · UC-52 … UC-55 · Record
@@ -22,12 +15,14 @@ import { ROUTES } from '@/lib/routes';
  * task 41's rule interpreter over a period that does not exist until task 31. Recording a headcount
  * here would make master data of something the standard asks per report.
  *
+ * **A shell since task 137** (`shell-composes-only`): it pins the locale and renders the section, which reads, decides
+ * the arm and draws (`features/entities/components/record/entity-record-section.tsx`). `loading.tsx` beside it is the
+ * record's own **loading — initial**, where the entities index's used to stand in for it.
+ *
  * The per-field **change history** the artboard draws is S-12, appended as task 84 while task 30.3
  * was looking for its owner.
  */
-const MESSAGES = 'organization.entities';
-
-export const generateMetadata = localizedPageTitle('organization.entities.record');
+export const generateMetadata = localizedPageTitle(ENTITY_RECORD_MESSAGES);
 
 export default async function EntityRecordPage({
   params,
@@ -36,68 +31,5 @@ export default async function EntityRecordPage({
 }) {
   const { entityId } = await params;
   await activateRequestLocale(params as unknown as LocaleParams);
-  const [read, t, messages] = await Promise.all([
-    readEntityRecord(entityId),
-    getTranslations(MESSAGES),
-    getMessages(),
-  ]);
-
-  if (read.status === TENANT_READ.FORBIDDEN) {
-    // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
-    await redirectToChoiceIfOwed();
-    return (
-      <div className={styles.screen}>
-        <Callout
-          intent={CALLOUT_INTENT.WARNING}
-          title={t('error.permission.title')}
-          action={
-            <TextLink asChild>
-              <Link href={ROUTES.HOME}>{t('error.permission.action')}</Link>
-            </TextLink>
-          }
-        >
-          {t('error.permission.body')}
-        </Callout>
-      </div>
-    );
-  }
-
-  if (read.status === TENANT_READ.UNREACHABLE) {
-    // **Not found and unreachable are one arm here, and the copy names the likelier cause.** RLS
-    // makes "another organization's entity" and "no such entity" indistinguishable by design, so
-    // a 404 and a refusal arrive the same way; telling the reader the address leads to no entity
-    // of *this* organization is true in every case that reaches this branch.
-    return (
-      <div className={styles.screen}>
-        <Callout
-          intent={CALLOUT_INTENT.ERROR}
-          title={t('error.notFound.title')}
-          action={
-            <TextLink asChild>
-              <Link href={ROUTES.ENTITIES}>{t('error.notFound.action')}</Link>
-            </TextLink>
-          }
-        >
-          {t('error.notFound.body')}
-        </Callout>
-      </div>
-    );
-  }
-
-  const formLabels: Readonly<Record<string, string>> = messages.organization.legalForms;
-  const legalForms = (
-    read.countries.find((entry) => entry.countryCode === read.entity.legalForm)?.legalForms ??
-    read.countries[0]?.legalForms ??
-    []
-  ).map((form) => ({ value: form, label: formLabels[form] ?? form }));
-
-  return (
-    <div className={styles.screen}>
-      <EntityRecordForm
-        entity={read.entity}
-        activity={read.activity}
-        legalForms={legalForms}
-      />
-    </div>
-  );
+  return <EntityRecordSection entityId={entityId} />;
 }

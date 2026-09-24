@@ -1,9 +1,8 @@
-import { getTranslations } from 'next-intl/server';
-import { Callout, CALLOUT_INTENT, FocusColumn, TextLink } from '@easyesg/ui';
-import { redirect } from '@/i18n/navigation';
+import {
+  ORGANIZATION_UNAVAILABLE_MESSAGES,
+  OrganizationUnavailableSection,
+} from '@/features/identity/unavailable/components/organization-unavailable-section';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
-import { POST_SIGN_IN, targetLocale } from '@/features/identity/shared/tools/post-sign-in';
-import { destinationForHeldSession } from '@/server/session/post-sign-in';
 
 /**
  * S-35 — Organization unavailable · CA · UC-16 (failure path) · Focus
@@ -30,43 +29,17 @@ import { destinationForHeldSession } from '@/server/session/post-sign-in';
  *
  * No membership count appears anywhere in the copy — not knowing one is the entire reason the
  * screen exists.
+ *
+ * **A shell since task 137** (`shell-composes-only`): it pins the locale and renders the section, which re-runs the
+ * branch and redirects or draws (`features/identity/unavailable/components/organization-unavailable-section.tsx`);
+ * `loading.tsx` beside it waits for that read.
  */
-export const generateMetadata = localizedPageTitle('identity.organizationUnavailable');
+export const generateMetadata = localizedPageTitle(ORGANIZATION_UNAVAILABLE_MESSAGES);
 
 export default async function OrganizationUnavailablePage({ params }: { params: LocaleParams }) {
-  // **These two awaits are sequential on purpose and must not be parallelised.**
-  // `activateRequestLocale` calls `setRequestLocale`, and `api-client` resolves `getLocale()` to
-  // put `Accept-Language` on every call — so hoisting the read into a `Promise.all` with this
-  // would send the request before the locale exists and bring back problem text in the wrong
-  // language. It looks like the waterfall `async-parallel` names; it is a data dependency.
+  // **The locale first, and the section's read after it, on purpose**: `api-client` resolves `getLocale()` to put
+  // `Accept-Language` on every call, so the read must not be hoisted beside this. It looks like the waterfall
+  // `async-parallel` names; it is a data dependency.
   const locale = await activateRequestLocale(params);
-  // The **held-session** read, so this page and the global tier above it share one call to
-  // `/memberships` rather than making the same one twice in a single render pass (11 Sep 2026).
-  const target = await destinationForHeldSession();
-  if (target.href !== POST_SIGN_IN.ORGANIZATION_UNAVAILABLE) {
-    redirect({ href: target.href, locale: targetLocale(target, locale) });
-  }
-
-  // Awaited after the redirect check, not before it: on the arm that redirects, the catalogue is
-  // work nobody reads (`async-defer-await`).
-  const t = await getTranslations('identity.organizationUnavailable');
-
-  // `FocusColumn` since task 30.2, replacing the bare `<main>` task 30.1 added here. §4.4 lists
-  // S-35 as a Focus screen and §4.6 makes the centred column the archetype's fixed element; the
-  // landmark comes with it, which is what this screen actually needed once the global tier put a
-  // `banner` above it. `FocusShell` would have been wrong for the same reason it is wrong on S-04:
-  // its header is `(identity)`'s chrome and this screen already has the tier's.
-  return (
-    <FocusColumn>
-      <Callout
-        intent={CALLOUT_INTENT.ERROR}
-        title={t('title')}
-        action={
-          <TextLink href={POST_SIGN_IN.ORGANIZATION_UNAVAILABLE}>{t('retry')}</TextLink>
-        }
-      >
-        {t('body')}
-      </Callout>
-    </FocusColumn>
-  );
+  return <OrganizationUnavailableSection locale={locale} />;
 }

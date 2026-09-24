@@ -1,6 +1,4 @@
-import { CredentialsBoard } from '@/features/credentials/components/credentials-board';
-import { readCredentials } from '@/server/data/credentials';
-import { readPendingLink } from '@/server/sealed/pending-link';
+import { CredentialsSection } from '@/features/credentials/components/credentials-section';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
@@ -18,15 +16,12 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * someone may have set a password or spent a recovery code, so the server's answer is the only
  * authoritative one.
  *
- * **Two reads, fetched in parallel and failing independently** (§8.1's partial state): a provider
- * list that could not be fetched must not hide a working password form.
- *
- * **It can be entered mid-flow.** Returning from a provider lands here with a link awaiting its
- * password (§12.5.6's task-27.7 row) — a state the reader did not click into on this page load,
- * which is why it is read on the server and handed to the board rather than discovered in an effect.
+ * **A shell since task 137** (`shell-composes-only`): it pins the locale and renders the section, which makes the two
+ * reads and hands them to the board (`features/credentials/components/credentials-section.tsx`).
  *
  * States (§8.1): ready · pending confirmation · partial · error — recoverable · success. Loading is
- * `loading.tsx`; the transient states of an action are the board's.
+ * `loading.tsx` beside it since task 137 — this sentence claimed one before it existed; the transient states of an
+ * action are the board's.
  */
 const MESSAGES = 'identity.credentials';
 
@@ -34,15 +29,5 @@ export const generateMetadata = localizedPageTitle(MESSAGES);
 
 export default async function CredentialsPage({ params }: { params: LocaleParams }) {
   await activateRequestLocale(params);
-
-  // In parallel: the two section reads and the pending-link cookie are independent, and a
-  // settings screen should not pay a second round trip for an ordering that does not exist.
-  const [read, pending] = await Promise.all([readCredentials(), readPendingLink()]);
-
-  return (
-    /* Its own provider since task 99. This screen had none and relied on the workspace
-       layout shipping every namespace — the breadth that narrowing removes, paid here
-       explicitly rather than met later as a `MISSING_MESSAGE` nothing can see (UX-97). */
-    <CredentialsBoard read={read} pendingLinkProvider={pending?.provider ?? null} />
-  );
+  return <CredentialsSection />;
 }

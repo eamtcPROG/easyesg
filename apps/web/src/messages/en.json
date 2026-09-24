@@ -354,7 +354,8 @@
     "organizationUnavailable": {
       "title": "We could not load your organisations",
       "body": "You are signed in, but the list of organisations you belong to could not be retrieved, so the workspace cannot be opened yet. Try again in a moment; if it keeps happening, sign out and come back later.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "loading": "Checking your organisations…"
     },
     "invitation": {
       "title": "You have been invited",
@@ -467,7 +468,8 @@
       },
       "failedTitle": "That could not be completed",
       "unreachableBody": "No answer came back, so nothing was changed. Try again.",
-      "doneAction": "Nothing more to do."
+      "doneAction": "Nothing more to do.",
+      "loading": "Loading your sign-in details…"
     },
     "unsubscribe": {
       "title": "Unsubscribe from emails",
@@ -520,7 +522,8 @@
       "submit": "Create organisation",
       "waitingForInvitation": "Waiting for an invitation instead? Ask your administrator to invite this address.",
       "problemTitle": "The organisation could not be created",
-      "problemBody": "The organisation was not created because the request could not be processed."
+      "problemBody": "The organisation was not created because the request could not be processed.",
+      "loading": "Loading the countries you can choose…"
     },
     "countries": {
       "MD": "Republic of Moldova"
@@ -820,7 +823,8 @@
           "retained": "Reports already filed and their exports remain available exactly as they were distributed. Nothing is deleted.",
           "confirm": "Archive the entity",
           "cancel": "Cancel"
-        }
+        },
+        "loading": "Loading the entity…"
       },
       "loading": "Loading the reporting entities…"
     },
@@ -882,7 +886,8 @@
         "prior": {
           "linked": "Last year is linked, so comparatives resolve automatically.",
           "none": "This is the entity’s first period, so there is no earlier year to draw comparatives from."
-        }
+        },
+        "loading": "Loading the reporting period…"
       },
       "pins": {
         "taxonomy": "VSME taxonomy",

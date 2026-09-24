@@ -354,7 +354,8 @@
     "organizationUnavailable": {
       "title": "Nu am putut încărca organizațiile",
       "body": "Autentificarea a reușit, dar lista organizațiilor din care faceți parte nu a putut fi obținută, așa că nu putem deschide spațiul de lucru. Încercați din nou peste câteva momente; dacă problema persistă, ieșiți din cont și reveniți mai târziu.",
-      "retry": "Încercați din nou"
+      "retry": "Încercați din nou",
+      "loading": "Se verifică organizațiile dumneavoastră…"
     },
     "invitation": {
       "title": "Ați fost invitat",
@@ -467,7 +468,8 @@
       },
       "failedTitle": "Acțiunea nu a putut fi finalizată",
       "unreachableBody": "Nu am primit un răspuns, așa că nimic nu a fost modificat. Încercați din nou.",
-      "doneAction": "Nu mai aveți nimic de făcut."
+      "doneAction": "Nu mai aveți nimic de făcut.",
+      "loading": "Se încarcă datele de autentificare…"
     },
     "unsubscribe": {
       "title": "Dezabonare de la e-mailuri",
@@ -520,7 +522,8 @@
       "submit": "Creați organizația",
       "waitingForInvitation": "Așteptați o invitație? Rugați-vă administratorul să invite această adresă.",
       "problemTitle": "Organizația nu a putut fi creată",
-      "problemBody": "Organizația nu a fost creată din cauza unei erori la procesarea cererii."
+      "problemBody": "Organizația nu a fost creată din cauza unei erori la procesarea cererii.",
+      "loading": "Se încarcă țările disponibile…"
     },
     "countries": {
       "MD": "Republica Moldova"
@@ -820,7 +823,8 @@
           "retained": "Rapoartele deja depuse și exporturile lor rămân disponibile exact așa cum au fost distribuite. Nimic nu se șterge.",
           "confirm": "Arhivați entitatea",
           "cancel": "Renunțați"
-        }
+        },
+        "loading": "Se încarcă entitatea…"
       },
       "loading": "Se încarcă lista entităților…"
     },
@@ -882,7 +886,8 @@
         "prior": {
           "linked": "Anul precedent este legat, deci comparativele se preiau automat.",
           "none": "Este prima perioadă a acestei entități, deci nu există an precedent din care să se preia comparative."
-        }
+        },
+        "loading": "Se încarcă perioada de raportare…"
       },
       "pins": {
         "taxonomy": "Taxonomie VSME",

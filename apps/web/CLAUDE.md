@@ -691,19 +691,14 @@ conditional render, which is how it ends up half-suppressed on one screen.
   whole catalogue in the same payload, so the sentence is in the HTML either way, and the first
   draft of that check passed against a build with the boundary removed.
 
-- **Seven route files still hold their read, and that is a recorded deferral, not a rule** (task
-  134's parent-close review; task 137). `shell-composes-only` makes a route a shell and its read a
-  section's; task 134 gave that shape to the eight routes that also held a second component
-  (S-05 and S-03 first, then S-06, S-13's index, S-14's index, S-15, S-16, S-07 and report creation),
-  each with a `loading.tsx` where the whole body waits on the read. Still reading in one component:
-  `(wizard)/reports/[reportId]` (the redirector), `account/credentials`, `entities/[entityId]`,
-  `entities/[entityId]/periods/[periodId]`, `entities/new`, `create-organization` and
-  `organization-unavailable`. The owner's scope for 134 was files declaring two components, which
-  these do not; they are the next sweep, and until it lands a new route should follow the shells,
-  not these. **Every `(identity)` route is a shell since task 157**, which gave the shape to the five
-  still translating or branching in `page.tsx` — S-01's registration, sign-in and factor step, and
-  S-02's reset request and verification — so this group has no deferral of its own.
-
+- **Every route is a shell since task 137** (`shell-composes-only`): it pins the locale and renders a section in its
+  feature's `components/`, which reads, decides the arm and draws — task 134 gave the shape to the routes declaring a
+  second component, task 157 to `(identity)`, and task 137 to the last seven that held their read, each with a
+  `loading.tsx` where the whole body waits on it. **One deliberate exception to the loading half**: S-07's entry
+  redirector (`features/wizard/components/entry/report-entry.tsx`) has none, because a boundary at
+  `reports/[reportId]` would also wrap every step beneath it and fall back over the wizard on each module switch. A
+  new route follows the shells; a record route under an index takes a `loading.tsx` of its own, since the index's
+  would otherwise draw the list's heading over it.
 - **Never import `next/link` or `next/navigation`'s locale-aware members.** Use
   `@/i18n/navigation`. A raw `next/link` renders a working-looking anchor that drops the locale
   prefix: nothing throws, nothing logs, and it survives review. Lint-enforced.

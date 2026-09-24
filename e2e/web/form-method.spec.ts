@@ -19,7 +19,8 @@ import { cleanupAccounts, verificationTokenFor } from './support/db';
  * **Which forms, and which this file drives.** Seven forms exist as markup before hydration: S-01's sign-in and its
  * factor step, S-01's registration, S-02's reset request and new password, S-36's first password and S-28's password
  * section. This file drives four — the three a signed-out visitor reaches, and S-28's, by carrying a session signed in
- * with scripting on into a browser with it off. The other three sit behind a sign-in challenge, a reset link or a setup
+ * with scripting on into a browser with it off; S-28 and S-36 sit behind a route-level `loading.tsx`, so theirs is the
+ * fallback's notice (the S-28 case says why). The other three sit behind a sign-in challenge, a reset link or a setup
  * state, and share one component with the four (`shared/credential-submit.tsx`, whose spec pins the disabled HTML);
  * the `form-method` selector keeps any of them from losing `method="post"`. The re-authentication dialogue and S-28's
  * second-factor form appear only after scripting runs and are not on the list. **The console** is a static SPA that
@@ -120,19 +121,23 @@ test.describe('a credential form fails explicitly without scripting (task 153, N
     });
   }
 
-  test('S-28’s password section says it needs JavaScript and sends nothing', async ({ page, browser }) => {
+  /**
+   * **S-28 sits behind a route-level `loading.tsx`** (task 137), and with scripting off what arrives depends on time:
+   * a section that answers before the page is flushed is sent inline, form and all; one that does not is sent as the
+   * fallback, with the page streamed into hidden markup only a script swaps in. **Both are explicit failures**, which
+   * is what this asserts: a notice outside hidden markup — the form's or the fallback's — and a submit that is
+   * disabled either way. That the fallback carries the notice is `src/test/credential-loading-notice.spec.ts`'s to hold, since no
+   * run here can choose which of the two it gets.
+   */
+  test('S-28 says it needs JavaScript, and its form cannot be sent', async ({ page, browser }) => {
     await page.context().addCookies(await signedInCookies(browser));
     await page.goto('/account/credentials');
-    await expectExplicitFailure({
-      page,
-      screen: {
-        what: 'S-28 password',
-        path: '/account/credentials',
-        submit: /Schimbați parola/i,
-        fields: [{ label: 'Parola nouă', value: 'Parola456!' }],
-      },
-      within: page.getByRole('region', { name: 'Parolă' }),
-    });
+
+    const shown = await page
+      .locator('noscript')
+      .evaluateAll((elements) => elements.filter((element) => element.closest('[hidden]') === null).map((e) => e.innerHTML));
+    expect(shown.some((notice) => notice.includes(NOTICE)), 'S-28: the notice where a reader without scripting is').toBe(true);
+    await expect(page.getByRole('button', { name: /Schimbați parola/i, includeHidden: true })).toBeDisabled();
   });
 });
 
