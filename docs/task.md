@@ -1,7 +1,7 @@
 # Tasks
 
 **What is left, in the order it will be delivered.** The closed rows are in
-[archived_tasks.md](archived_tasks.md) — 113 numbers and 215 of them — and moving them out is what
+[archived_tasks.md](archived_tasks.md) — 114 numbers and 216 of them — and moving them out is what
 lets this file answer *what is left* without a reader filtering a third of it away first.
 
 The order is the **Stage** sequence below, authored 12 Sep 2026 and **independent of the task
@@ -101,7 +101,7 @@ change their own password; a multi-membership account cannot switch organization
 organization can invite past any plan. None of that was identity debt in this file, because it was
 filed under notifications, under operations, and under work found outside the plan.
 
-**Thirty-six numbers: sixteen existing groups and twenty new ones (139–151, 155 appended 14 Sep 2026, 159 and 160 appended 16 Sep 2026 by tasks 93 and 114, 161 appended 21 Sep 2026 by the project owner, 164 and 165 appended 22 Sep 2026 by task 50.1's parent close, and 167 appended 23 Sep 2026 by task 52's close).** Three batches, and
+**Thirty-seven numbers: sixteen existing groups and twenty-one new ones (139–151, 155 appended 14 Sep 2026, 159 and 160 appended 16 Sep 2026 by tasks 93 and 114, 161 appended 21 Sep 2026 by the project owner, 164 and 165 appended 22 Sep 2026 by task 50.1's parent close, 167 appended 23 Sep 2026 by task 52's close, and 168 appended 24 Sep 2026 by task 137).** Three batches, and
 the batch is a sequence rather than a heading — a heading is something a commit message could cite,
 and only task numbers may be cited.
 

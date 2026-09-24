@@ -5,6 +5,7 @@ import { ROUTES } from '@/lib/routes';
 import { readEntityRecord } from '@/server/data/entities';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
+import { legalFormOptions } from '../../tools/legal-forms';
 import { EntityRecordForm } from '../form/entity-record-form';
 import { ENTITIES_MESSAGES } from '../shared/entity-messages';
 import styles from '../styles/entities.module.css';
@@ -62,12 +63,12 @@ export async function EntityRecordSection({ entityId }: { readonly entityId: str
     );
   }
 
-  const formLabels: Readonly<Record<string, string>> = messages.organization.legalForms;
-  const legalForms = (
-    read.countries.find((entry) => entry.countryCode === read.entity.legalForm)?.legalForms ??
-    read.countries[0]?.legalForms ??
-    []
-  ).map((form) => ({ value: form, label: formLabels[form] ?? form }));
+  // The organization's country's forms, and no other's (task 168).
+  const legalForms = legalFormOptions({
+    vocabulary: read.countries,
+    countryCode: read.countryCode,
+    labels: messages.organization.legalForms,
+  });
 
   return (
     <div className={styles.screen}>

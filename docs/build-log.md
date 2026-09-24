@@ -25313,3 +25313,48 @@ decision.
 - **Browser, first run**: `e2e:web --project identity --project expansion` **250 passed and 1 failed**, the finding above.
 - **Browser, after the fix and a rebuild**: **250 passed**, with the one case above since corrected; then `form-method.spec.ts` repeated five times, **20 passed**.
 - **Not run**: the console's project, since nothing it serves changed.
+
+## Task 168 — S-13's record offers the organization's legal forms · 2026-09-24
+
+Task 137 found this and did not fix it, because a refactor that changes behaviour is two tasks in one. S-13's record
+chose the legal-form options with
+`countries.find((entry) => entry.countryCode === read.entity.legalForm)`. That compares a country code with a legal
+form, which are never equal, so the record always fell back to `countries[0]`. It was right only while one country is
+configured. The row was appended as found work and closed in the same session.
+
+### The fix
+
+- **`readEntityRecord` reads the organization's country**, `GET /organization`, in the same `Promise.all` as the entity
+  and the vocabulary, since the three are independent. It answers `countryCode: string | null`: `null` when the
+  organization could not be read.
+- **One pure selection, `legalFormOptions`** (`features/entities/tools/legal-forms.ts`), returns the organization's
+  country's forms with their labels. **A country the vocabulary does not carry, or none known, offers none.** It
+  does not fall back to the first country: a wrong country's forms would let a reader pick one the API then refuses,
+  while an empty select says the list could not be had.
+- **Both of S-13's modes read it.** The create mode already filtered by the organization's country correctly, and its
+  own copy of that lookup became this function. Two copies of one rule is the drift the record's copy had already
+  shown.
+
+No decision was needed. The row prescribed the behaviour, and §7.2 already says the vocabulary is scoped by the
+organization's country.
+
+### What bites it
+
+`legal-forms.spec.ts` has three cases:
+- the organization's country selected when two are configured, with a form lacking wording showing its key;
+- an unknown country offering nothing;
+- an unknown organization offering nothing.
+
+Putting the `countries[0]` fallback back fails the unknown-country case; that was run and restored.
+
+### Verification
+
+This is a single-row task, so it ran the gates its change reaches.
+
+- **web**: unit **1,102**, typecheck, and lint.
+- **Browser**: `e2e:web --project identity` **207 passed and 1 failed**. All five entities journeys passed. The one
+  failure was `global-tier.spec.ts`'s setup, which timed out waiting for the email-verification confirmation, a
+  screen this change does not reach, in a 9.5-minute run. Re-run alone, that spec passed (**2 of 2**), so it is
+  recorded as seen once.
+- **Not run**: the api suites, which this change does not reach; the route it now calls is one the create mode was
+  already calling.

@@ -4,6 +4,7 @@ import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '@/server/api/api-client';
 import { isPermissionRefusal } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
+import { legalFormOptions } from '../../tools/legal-forms';
 import { EntityRecordForm } from '../form/entity-record-form';
 import styles from '../styles/entities.module.css';
 
@@ -25,13 +26,11 @@ export async function NewEntitySection() {
   // A choice not made is S-37's to answer, and this read is where a navigation meets it (the gate says why).
   if (isPermissionRefusal(organization)) await redirectToChoiceIfOwed();
   const country = organization.status === API_OUTCOME.Ok ? organization.value.countryCode : null;
-  const formLabels: Readonly<Record<string, string>> = messages.organization.legalForms;
-  const legalForms =
-    vocabulary.status === API_OUTCOME.Ok && country !== null
-      ? (vocabulary.value.items.find((entry) => entry.countryCode === country)?.legalForms ?? []).map(
-          (form) => ({ value: form, label: formLabels[form] ?? form }),
-        )
-      : [];
+  const legalForms = legalFormOptions({
+    vocabulary: vocabulary.status === API_OUTCOME.Ok ? vocabulary.value.items : [],
+    countryCode: country,
+    labels: messages.organization.legalForms,
+  });
 
   return (
     <div className={styles.screen}>

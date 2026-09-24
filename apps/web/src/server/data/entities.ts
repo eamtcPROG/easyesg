@@ -1,5 +1,5 @@
 import 'server-only';
-import type { CountryLegalForms, NaceCodeMatch, ReportingEntity } from '@easyesg/contracts';
+import type { CountryLegalForms, NaceCodeMatch, Organization, ReportingEntity } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { toEntityRows, type EntityRow } from '@/features/entities/tools/entities';
 import { api } from '../api/api-client';
@@ -57,15 +57,21 @@ export type EntityRecordRead =
       readonly entity: ReportingEntity;
       /** The words for the codes this entity already holds, so the picker opens showing them. */
       readonly activity: readonly NaceCodeMatch[];
-      /** The organization's country vocabulary, for the legal-form select. */
+      /** Every country's legal forms, for the select — narrowed to `countryCode`'s by `legalFormOptions`. */
       readonly countries: readonly CountryLegalForms[];
+      /**
+       * The organization's country (task 168), which scopes the legal forms (§7.2) — `null` when the organization could
+       * not be read, which offers none rather than guessing a country.
+       */
+      readonly countryCode: string | null;
     }
   | TenantReadRefusal;
 
 export async function readEntityRecord(entityId: string): Promise<EntityRecordRead> {
-  const [entity, vocabulary] = await Promise.all([
+  const [entity, vocabulary, organization] = await Promise.all([
     api.get<ReportingEntity>(`/entities/${entityId}`),
     api.getList<CountryLegalForms>('/organizations/legal-forms'),
+    api.get<Organization>('/organization'),
   ]);
 
   if (isPermissionRefusal(entity)) return { status: TENANT_READ.FORBIDDEN };
@@ -83,5 +89,6 @@ export async function readEntityRecord(entityId: string): Promise<EntityRecordRe
       return label === undefined ? [] : [{ code, label }];
     }),
     countries: vocabulary.status === API_OUTCOME.Ok ? vocabulary.value.items : [],
+    countryCode: organization.status === API_OUTCOME.Ok ? organization.value.countryCode : null,
   };
 }
