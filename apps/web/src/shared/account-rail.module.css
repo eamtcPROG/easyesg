@@ -1,0 +1,61 @@
+/* S-27's and S-28's rail at 1440, from `EasyESG Identity.dc.html`: a 248px column on the default surface with an
+   end rule, 14px rows, the current row on the accent tint in the accent's darker step and a heavier weight, and a
+   rule between the workspace sections and the account's. Every value is a token; the artboard's hex values are
+   the ones those tokens hold in light (#EDF5F0 `--accent-tint`, #245540 `--accent-hover`, #3A434C `--text-body`). */
+
+.rail {
+  inline-size: 248px;
+  flex-shrink: 0;
+  padding: var(--space-6) var(--space-5);
+  border-inline-end: 1px solid var(--border-default);
+  background: var(--surface-default);
+}
+
+/* **Not drawn below the compact boundary, and `display: none` rather than hidden** — the chrome drawer carries both
+   halves there, as it carries the band's sections, so a present-but-invisible rail would offer every destination to
+   a screen reader twice. The same 40rem the band and `ChromeDrawer`'s trigger switch at. */
+@media (max-width: 39.9375rem) {
+  .rail {
+    display: none;
+  }
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The rule the artboard draws between the halves belongs to the second landmark, so there is no element standing
+   for a divider between two navigations. */
+.account {
+  margin-block-start: var(--space-4);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--border-default);
+}
+
+.link {
+  display: block;
+  /* 40px with the line height — the target everything a first-time user must hit carries (WCAG 2.2, NFR-75). */
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-1);
+  color: var(--text-body);
+  font: 400 14px/24px var(--font-text);
+  text-decoration: none;
+}
+
+.link:hover {
+  color: var(--text-default);
+  background: var(--surface-sunken);
+}
+
+/* Marked by a surface AND a weight as well as the colour: colour is never the sole carrier (UX-102), and
+   `aria-current` carries it to assistive technology besides. */
+.link[aria-current] {
+  color: var(--accent-hover);
+  background: var(--accent-tint);
+  font-weight: 600;
+}

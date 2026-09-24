@@ -238,6 +238,8 @@ artboards keep) and that is not a duplicate: the tier states where you are, the 
 
 **Amended 15 Sep 2026 (project owner, task 83) — at compact width the switcher is the drawer's.** Below the medium frame the global tier's organization switcher sits in the workspace drawer, beside the name it switches, and the bar carries neither. UX-2 records what that costs.
 
+**Amended 24 Sep 2026 (project owner) — on the two account screens the workspace tier is a rail, not the band.** S-27 and S-28 carry the chrome `EasyESG Identity.dc.html` draws for them: a left rail holding the workspace sections, a rule, then *Profile* and *Credentials*, the current one marked. That rail **replaces** the band on those screens rather than sitting beneath it, since both would draw the workspace sections and this table allows one workspace tier. It is still one tier, so the count stays at three. The rail follows the band's own rules: it carries what renders, so *Plan & billing* waits for its screens as it does in the band; below the compact boundary it is not drawn, and the chrome drawer (the artboard's *"top sheet"*) carries *Profile* and *Credentials* beside the workspace sections. The account menu names the two destinations *Profile* and *Credentials*, as the rail does. The screens' headings are unchanged. **Deferred, with the assumption stated:** the artboard's 64 px **icon rail** at the medium frame is not built — its glyphs come from the icon set only `packages/ui` holds (`architecture.md` §12.1), which would make it an inventory addition with its §8.1 states designed first (UX-89). Meanwhile the text rail holds at medium, where two short groups fit. If the icon rail is wanted, the rail moves to `packages/ui` with a compact variant, and this paragraph is what changes.
+
 **UX-5** The wizard shall suppress the workspace tier and replace it with the module list, so that the user's only navigational choice inside a report is *which module*. Exit from the wizard shall be a single, always-visible, explicitly labelled control that states that work is saved.
 
 ### 4.3 Primary navigation flow
@@ -875,6 +877,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **States:** loading — initial; error — recoverable; success; read-only for the mandatory categories.
 - **Validation behaviour:** both name parts required, as at registration; a phone number in international form; language selection persists to the profile and applies on every subsequent login and device (FR-10). Preferences follow the user across organizations. *(This read "email format" until 23 Sep 2026, for a contact address the screen no longer edits.)*
 - **Exits:** S-26; S-28.
+- **Chrome (24 Sep 2026):** the account rail in place of the workspace band — §4.2's amendment of that date.
 - **As built (task 52.3).** The notification preferences are a group per category — a `Fieldset` whose legend names it,
   a checkbox per channel — rather than the artboard's table, so each checkbox's accessible name carries both the category
   and the channel. The three language controls are named for what each sets (*interface language*, *default export
@@ -896,6 +899,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **States:** loading — initial; **pending confirmation** (returned from a provider with a link awaiting the password); error — recoverable; error — permission; success.
 - **Validation behaviour:** changing a password requires the current one (FR-7). A link is established only after authentication by an existing credential — a provider assertion alone is never sufficient (UC-11, FR-8). The system refuses to remove the last remaining credential and prompts the user to set a password first, with the consequence stated: an account with no usable credential is unrecoverable and takes its organization memberships down with it (UC-12, UX-70). **Enrolling or turning off a second factor requires the current password**, for the reason the link rule already gives — a second factor is the control that survives a compromised session, so a compromised session must not be able to install or strip one (UC-193). **Enrolment is not complete until a current code is returned**, and the recovery codes are shown exactly once, which the screen must say before it shows them rather than after.
 - **Exits:** S-27.
+- **Chrome (24 Sep 2026):** the account rail in place of the workspace band — §4.2's amendment of that date.
 - **Use cases:** UC-10, UC-11, UC-12, **UC-193**.
 - **FRs:** FR-7, FR-8. **Requirements:** NFR-95.
 

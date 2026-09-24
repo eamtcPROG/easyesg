@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
  */
 const APP = join(import.meta.dirname, '../app/[locale]');
 const CREDENTIAL_ROUTE_LOADING = [
-  '(app)/(workspace)/account/credentials/loading.tsx',
+  '(app)/(account)/account/credentials/loading.tsx',
   '(identity)/complete-account/loading.tsx',
 ];
 

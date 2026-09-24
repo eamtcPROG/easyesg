@@ -4,8 +4,8 @@ import { AccountMenu } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Link, usePathname } from '@/i18n/navigation';
-import { ROUTES } from '@/lib/routes';
 import { useSignOut } from '@/features/identity/shared/components/sign-out-provider';
+import { ACCOUNT_SECTIONS } from './account-sections';
 import { useLocaleNames } from './use-locale-names';
 
 /**
@@ -70,12 +70,12 @@ export function AccountCorner({ email, displayName, monogram }: AccountCornerPro
         displayName={displayName}
         monogram={monogram}
         items={[
-          // S-27, the global tier's way to it (task 52.3; `design_spec.md` S-27's entry points).
-          { key: 'profile', node: <Link href={ROUTES.ACCOUNT}>{t('accountMenu.profile')}</Link> },
-          {
-            key: 'credentials',
-            node: <Link href={ROUTES.ACCOUNT_CREDENTIALS}>{t('accountMenu.credentials')}</Link>,
-          },
+          // S-27 and S-28, the global tier's way to them (`design_spec.md` S-27's and S-28's entry points) — the pair
+          // the account rail and the compact drawer read too.
+          ...ACCOUNT_SECTIONS.map((section) => ({
+            key: section.key,
+            node: <Link href={section.href}>{t(`accountMenu.${section.key}`)}</Link>,
+          })),
           {
             key: 'sign-out',
             node: (

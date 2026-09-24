@@ -1,13 +1,13 @@
 'use client';
 
-import { BrandMark, ChromeDrawer } from '@easyesg/ui';
+import { ARIA_CURRENT, BrandMark, ChromeDrawer } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
-import { ROUTES } from '@/lib/routes';
 import { useSignOut } from '@/features/identity/shared/components/sign-out-provider';
 import { NotificationsEntry } from '@/features/notifications/count/components/notifications-entry';
+import { ACCOUNT_SECTIONS } from './account-sections';
 import { useLocaleNames } from './use-locale-names';
 import { WORKSPACE_SECTIONS } from './workspace-sections';
 import styles from './workspace-drawer.module.css';
@@ -76,9 +76,18 @@ export function WorkspaceDrawer({ organization }: WorkspaceDrawerProps) {
             {/* The centre is the active organization's (UC-165), so its row is offered exactly when the
                 organization's control is — a second flag for the same fact would be free to disagree. */}
             {organization ? <NotificationsEntry organizationId={organization.id} className={styles.action} /> : null}
-            <Link className={styles.action} href={ROUTES.ACCOUNT_CREDENTIALS}>
-              {t('accountMenu.credentials')}
-            </Link>
+            {/* S-27 and S-28 — the account rail's lower half, which this panel carries at compact (the artboards'
+                *"top sheet"*). It carried *Credentials* alone until the pair was declared once. */}
+            {ACCOUNT_SECTIONS.map((section) => (
+              <Link
+                key={section.key}
+                className={styles.action}
+                href={section.href}
+                aria-current={section.href === pathname ? ARIA_CURRENT.PAGE : undefined}
+              >
+                {t(`accountMenu.${section.key}`)}
+              </Link>
+            ))}
             <p className={styles.group}>{t('language')}</p>
             {locales.map((entry) => (
               <Link

@@ -52,9 +52,9 @@
     },
     "accountMenu": {
       "label": "Contul dumneavoastră",
-      "credentials": "Date de autentificare",
+      "credentials": "Credențiale",
       "signOut": "Ieșiți din cont",
-      "profile": "Profil și preferințe"
+      "profile": "Profil"
     },
     "workspaceNav": {
       "label": "Secțiunile organizației",

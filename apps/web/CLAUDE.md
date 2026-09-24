@@ -12,8 +12,8 @@ every screen. Cite them; do not re-derive them.
 
 Identity, organization, periods, reports, entities, the wizard, the notification centre and the profile are live; the
 calculator, validation, preview and export, checkout and billing and the public tier are the
-fourteen addresses `AddressNotice` answers for (fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across six route groups,
-7 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (ten built),
+fourteen addresses `AddressNotice` answers for (fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across seven route groups,
+8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (ten built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
 browser (`pnpm e2e:web`). The root `CLAUDE.md`'s table names the live screens; `docs/archived_tasks.md`
@@ -413,7 +413,7 @@ src/
 └─ lib/            env, pagination, session-cookie, routes, route-access, notice, api-outcome, legal-date, locale-path, revalidate-paths, requested-path
 ```
 
-Route groups carry no URL segment, which is the whole reason there are six. **The table is the
+Route groups carry no URL segment, which is the whole reason there are seven. **The table is the
 enumeration, and `docs:check` compares its count to the directories on disk** — a group missing a row
 here is a group a new screen is not added to, which for `(session-issuing)` means a screen that
 issues a session and is never gated:
@@ -424,7 +424,8 @@ issues a session and is never gated:
 | `(identity)` | Focus archetype — one task, no navigation | S-01, S-02, S-03, S-36, S-38 |
 | `(identity)/(session-issuing)` | None of its own. **UX-136's gate, once for the group** (task 112) — membership of the directory *is* what makes a screen refuse a caller who already holds a session | S-01 sign in and its factor step, S-01 register |
 | `(app)` | Global tier | S-04, S-35 and S-37 — the three authenticated screens in no inner group |
-| `(app)/(workspace)` | Global tier + workspace tier | S-05, S-06, S-13…S-28 |
+| `(app)/(workspace)` | Global tier + workspace tier | S-05, S-06, S-13…S-26 |
+| `(app)/(account)` | Global tier + the account rail — the workspace sections, a rule, *Profile* and *Credentials* — which replaces the band (§4.2, amended 24 Sep 2026) | S-27, S-28 |
 | `(app)/(wizard)` | Global tier only; module rail replaces the workspace tier | S-07…S-12 |
 
 `(workspace)` and `(wizard)` are siblings, not parent and child, because **UX-5** says the wizard
@@ -952,7 +953,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **134 files here are Client Components** (23 Sep 2026: three since task 153, `useHydrated` and the two credential-form parts in `shared/`; four since task 149, AD-15's provider, `useFrame`, `useRefreshPoll` and S-16's poll; four since task 52.3, S-27's form and its three sections; one since task 52.2.2, S-38's confirm-unsubscribe part, the screen's one press; one since task 51.4, S-16's standing cell, which draws FR-171's undeliverable chip beside the standing; 22 Sep 2026: five since task 50.3, S-16's reminder panel under
+  **135 files here are Client Components** (24 Sep 2026: one since the account layout's rail, `shared/account-rail.tsx`; 23 Sep 2026: three since task 153, `useHydrated` and the two credential-form parts in `shared/`; four since task 149, AD-15's provider, `useFrame`, `useRefreshPoll` and S-16's poll; four since task 52.3, S-27's form and its three sections; one since task 52.2.2, S-38's confirm-unsubscribe part, the screen's one press; one since task 51.4, S-16's standing cell, which draws FR-171's undeliverable chip beside the standing; 22 Sep 2026: five since task 50.3, S-16's reminder panel under
   `organization/access/components/remind/`; twelve since task 50.2.2, the notification panel's under
   `notifications/panel/components/`, with the band's old bell corner gone into it; seven since task 50.2.1 — the
   unread count's hook under `client/notifications/`, the drawer's row under `notifications/count/components/`, the

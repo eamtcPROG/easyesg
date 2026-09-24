@@ -123,9 +123,9 @@ test('the user menu carries S-28 and the language choice, and signs out (§4.2, 
 
   // S-28 moved here from the workspace tier in this task — §4.2 puts credentials under the
   // account corner, and task 27.7 put it in the nav only because no corner existed.
-  await expect(page.getByRole('menuitem', { name: 'Date de autentificare' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Credențiale', exact: true })).toBeVisible();
   await expect(
-    page.getByRole('navigation').getByRole('link', { name: 'Date de autentificare' }),
+    page.getByRole('navigation').getByRole('link', { name: 'Credențiale', exact: true }),
   ).toHaveCount(0);
 
   // Language is a submenu of this menu, not a separate control (§4.2). Switching is navigation to

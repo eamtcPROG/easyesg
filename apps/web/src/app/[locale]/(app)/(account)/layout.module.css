@@ -1,0 +1,13 @@
+/* The rail beside the content column. A flex row with the default stretch, so the rail runs the column's full height,
+   as the artboard draws it. The content column keeps `(workspace)`'s insets — the distance from the chrome is the
+   workspace's, not the archetype's — and `min-inline-size: 0` lets a Record's own measure hold inside it. */
+
+.frame {
+  display: flex;
+}
+
+.main {
+  flex: 1;
+  min-inline-size: 0;
+  padding: var(--page-block) var(--page-gutter);
+}

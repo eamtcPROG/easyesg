@@ -50,10 +50,16 @@ test('the account menu leads to S-27, which shows the record and passes axe', as
   const email = await signedIn(page, 'menu');
 
   await accountTrigger(page, { email }).click();
-  await page.getByRole('menuitem', { name: 'Profil și preferințe' }).click();
+  await page.getByRole('menuitem', { name: 'Profil', exact: true }).click();
   await page.waitForURL('**/account');
 
   await expect(page.getByRole('heading', { level: 1, name: 'Profil și preferințe' })).toBeVisible();
+  // The account layout's rail in place of the band (§4.2, amended 24 Sep 2026): exactly one workspace navigation —
+  // two would be the band drawn above the rail — and the account's half marking where the reader is.
+  await expect(page.getByRole('navigation', { name: 'Secțiunile organizației' })).toHaveCount(1);
+  await expect(
+    page.getByRole('navigation', { name: 'Contul dumneavoastră' }).getByRole('link', { name: 'Profil', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
   await expect(page.getByLabel('Prenume')).toHaveValue('Ana');
   // Exactly one control named for the address: the email language's select is named for what it is (found by this
   // journey — both were *E-mail*, which a screen reader could not tell apart either).

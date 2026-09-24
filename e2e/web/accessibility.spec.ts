@@ -154,7 +154,7 @@ test('axe finds no violations on the users and access screen', async ({ page }) 
   // expanded trigger and the roles that hold them together, none of which exist in the DOM until
   // somebody clicks. A component spec pins the roles; only axe judges them in a real page.
   await accountTrigger(page, { email }).click();
-  await expect(page.getByRole('menuitem', { name: 'Date de autentificare' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Credențiale', exact: true })).toBeVisible();
   await scan(page);
 });
 
