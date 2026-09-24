@@ -56,16 +56,36 @@ async function signedIn(page: Page, label: string): Promise<string> {
   return email;
 }
 
-test('the screen carries all three ways in, each as its own section', async ({ page }) => {
+test('the screen rests as a row per way in, dated from the api, closing on the last way in', async ({ page }) => {
   await signedIn(page, 'sections');
   await page.goto('/account/credentials');
 
-  await expect(page.getByRole('heading', { name: 'Date de autentificare', level: 1 })).toBeVisible();
-  // Regions labelled by their own headings — the archetype's contract, seen from the outside.
-  await expect(page.getByRole('region', { name: 'Parolă' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Credențiale și identități asociate', level: 1 })).toBeVisible();
+  // Regions labelled by their own headings, each at rest (task 169; the artboard): no field asks for anything yet.
+  const password = page.getByRole('region', { name: 'Parolă' });
+  await expect(password).toBeVisible();
+  // The date is `GET /account/password`'s — registered moments ago, so today's year is the one drawn.
+  await expect(password.getByText(/^Schimbată ultima dată pe \d{1,2} \p{L}+ \d{4}\.$/u)).toBeVisible();
   await expect(page.getByRole('region', { name: 'Verificare în doi pași' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Conturi legate' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Legați Google/ })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Identități asociate' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Asociați Google' })).toBeVisible();
+  await expect(page.getByLabel('Parola actuală')).toHaveCount(0);
+  // A password and nothing linked: the note names the password as the one way in, before anyone tries to remove it.
+  await expect(page.getByText('Parola este singura dumneavoastră cale de acces', { exact: false })).toBeVisible();
+
+  // The rail runs the page's full height and the footer spans it below (24 Sep 2026, owner's review). Measured in a
+  // window tall enough that S-28 at rest is shorter than it — the case where the rail used to stop at the record's end,
+  // above a footer at the foot of the page. At the suite's own window the record is taller than the viewport, and the
+  // rail meets the footer with or without the stretch (found by this check's first run).
+  await page.setViewportSize({ width: 1440, height: 1600 });
+  const footer = page.getByRole('contentinfo');
+  await expect(footer).toBeVisible();
+  const rail = await page.getByRole('navigation', { name: 'Contul dumneavoastră' }).locator('..').boundingBox();
+  const foot = await footer.boundingBox();
+  const viewport = page.viewportSize();
+  expect(rail && foot && Math.abs(rail.y + rail.height - foot.y)).toBeLessThanOrEqual(1);
+  // And the footer at the foot of the viewport, which is what makes the case above a short page's.
+  expect(foot && viewport && Math.abs(foot.y + foot.height - viewport.height)).toBeLessThanOrEqual(1);
 });
 
 test('changing the password works, and the old one stops working (FR-7)', async ({ page }) => {
@@ -73,12 +93,13 @@ test('changing the password works, and the old one stops working (FR-7)', async 
   await page.goto('/account/credentials');
 
   const section = page.getByRole('region', { name: 'Parolă' });
-  // The current password is the RECORD's field, not this section's — one gate authorises all six
-  // actions (§12.5.6). Unscoped on purpose: were a second field with this label to reappear
-  // inside a section, this fills nothing and the test says so.
+  // The row opens in place, and the current password is ITS field since task 169 — one row open, one field on the
+  // screen. Unscoped on purpose: were a second field with this label to appear anywhere, this fills nothing and the
+  // test says so.
+  await section.getByRole('button', { name: 'Schimbați parola' }).click();
   await page.getByLabel('Parola actuală').fill(PASSWORD);
   await section.getByLabel('Parola nouă').fill(NEXT_PASSWORD);
-  await section.getByRole('button', { name: 'Schimbați parola' }).click();
+  await section.getByRole('button', { name: 'Salvați parola nouă' }).click();
 
   await expect(page.getByText('Parola a fost schimbată')).toBeVisible();
 
@@ -116,13 +137,16 @@ test('a wrong current password is refused in the API’s own words', async ({ pa
   await page.goto('/account/credentials');
 
   const section = page.getByRole('region', { name: 'Parolă' });
+  await section.getByRole('button', { name: 'Schimbați parola' }).click();
   await page.getByLabel('Parola actuală').fill('Gresita123!');
   await section.getByLabel('Parola nouă').fill(NEXT_PASSWORD);
-  await section.getByRole('button', { name: 'Schimbați parola' }).click();
+  await section.getByRole('button', { name: 'Salvați parola nouă' }).click();
 
   // The refusal is the API's three-part text, not a sentence this screen wrote — the catalogue
-  // key `identity.totp.reauthentication_failed`, which task 27.6's gate now guarantees exists.
-  await expect(page.getByText(/Parola actuală nu este corectă/)).toBeVisible();
+  // key `identity.totp.reauthentication_failed`, which task 27.6's gate now guarantees exists —
+  // and it is read inside the row it refused, which stays open (task 169).
+  await expect(section.getByText(/Parola actuală nu este corectă/)).toBeVisible();
+  await expect(section.getByLabel('Parola nouă')).toBeVisible();
 });
 
 test('turning on the second factor makes sign-in ask for a code (UC-193 → UC-194)', async ({
@@ -138,8 +162,14 @@ test('turning on the second factor makes sign-in ask for a code (UC-193 → UC-1
   await page.waitForURL('**/sign-in/factor');
   await expect(page.getByRole('heading', { name: 'Confirmați că sunteți dumneavoastră', level: 1 })).toBeVisible();
 
+  // The six cells hold their height while empty (24 Sep 2026, found by the project owner): an empty cell had no line
+  // box and collapsed to its borders, so the field drew as six underlines until a character was typed. The real input
+  // is laid over the cells, so its height IS theirs — measured before anything is typed, where the defect lived.
+  const codeInput = page.getByLabel('Codul din aplicația de autentificare');
+  expect((await codeInput.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(40);
+
   // From the factor the phone scanned off S-28 (task 143), which is the only factor a real user has.
-  await page.getByLabel('Codul din aplicația de autentificare').fill(codeFor(uri));
+  await codeInput.fill(codeFor(uri));
   await page.getByRole('button', { name: 'Confirmați și intrați în cont' }).click();
   await page.waitForURL('**/home');
 });
@@ -207,9 +237,9 @@ test('the screen is live in all three locales', async ({ page }) => {
   await signedIn(page, 'locales');
 
   for (const [path, title] of [
-    ['/account/credentials', 'Date de autentificare'],
-    ['/en/account/credentials', 'Sign-in details'],
-    ['/ru/account/credentials', 'Данные для входа'],
+    ['/account/credentials', 'Credențiale și identități asociate'],
+    ['/en/account/credentials', 'Credentials and linked identities'],
+    ['/ru/account/credentials', 'Учётные данные и связанные аккаунты'],
   ]) {
     await page.goto(path);
     await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();

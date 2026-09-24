@@ -29,6 +29,7 @@ import { ResendVerificationEmail } from './use-cases/resend-verification-email.u
 import { ResetPassword } from './use-cases/reset-password.use-case';
 import { AccountSecondFactor } from './use-cases/account-second-factor';
 import { ChangePassword } from './use-cases/change-password.use-case';
+import { ReadPasswordState } from './use-cases/read-password-state.use-case';
 import { ConsumeRecoveryCode } from './use-cases/consume-recovery-code.use-case';
 import { ManageTotp } from './use-cases/manage-totp.use-case';
 import { SECOND_FACTOR } from './interfaces/second-factor.interface';
@@ -119,6 +120,11 @@ const httpProviders: Provider[] = [
     inject: [ACCOUNT_STORE, PASSWORD_HASHER, CLOCK],
     useFactory: (store: AccountStore, hasher: PasswordHasher, now: Clock) =>
       new ChangePassword(store, hasher, now),
+  },
+  {
+    provide: ReadPasswordState,
+    inject: [ACCOUNT_STORE],
+    useFactory: (store: AccountStore) => new ReadPasswordState(store),
   },
   {
     provide: ManageTotp,

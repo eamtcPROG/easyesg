@@ -258,6 +258,8 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // and what — an optional email's reader is usually signed out, and one click is the requirement's word.
   'POST /account/notification-preferences/unsubscribe': PERMISSION.PUBLIC,
   'POST /account/notification-preferences/unsubscribe/preview': PERMISSION.PUBLIC,
+  // Task 169: S-28's password row reads whether a password is held and when it changed — the account's own.
+  'GET /account/password': PERMISSION.ACCOUNT,
   'POST /account/password': PERMISSION.ACCOUNT,
   'GET /account/profile': PERMISSION.ACCOUNT,
   'PUT /account/profile': PERMISSION.ACCOUNT,

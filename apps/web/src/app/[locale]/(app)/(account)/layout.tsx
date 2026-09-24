@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { AccountRail } from '@/shared/account-rail';
 import { OrganizationChoiceGate } from '@/shared/organization-choice-gate';
+import { WorkspaceFooter } from '@/shared/workspace-footer';
 import styles from './layout.module.css';
 
 /**
@@ -17,14 +18,21 @@ import styles from './layout.module.css';
  *
  * **`<main>` is here, beside the rail**, for the `(workspace)` layout's reason: every screen needs the landmark
  * 2.4.1's bypass-blocks technique relies on, and the navigation stays outside it.
+ *
+ * **The rail runs the page's full height, and the footer spans it below** (24 Sep 2026, project owner): the page grows
+ * into the `(app)` layout's viewport-tall column, and the rail's row takes all of it but the footer's band — so its
+ * end rule meets the footer rather than stopping where a short record does.
  */
 export default function AccountLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <OrganizationChoiceGate />
-      <div className={styles.frame}>
-        <AccountRail />
-        <main className={styles.main}>{children}</main>
+      <div className={styles.page}>
+        <div className={styles.frame}>
+          <AccountRail />
+          <main className={styles.main}>{children}</main>
+        </div>
+        <WorkspaceFooter />
       </div>
     </>
   );

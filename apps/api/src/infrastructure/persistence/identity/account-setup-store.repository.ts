@@ -123,8 +123,8 @@ class AccountSetupTransactionAdapter implements AccountSetupTransaction {
     // primary key is what decides a race between two submissions.
     const rows = returnedRows<{ account_id: string }>(
       await this.queryRunner.query(
-        `INSERT INTO identity.credential (account_id, password_hash, updated_at)
-         VALUES ($1, $2, $3)
+        `INSERT INTO identity.credential (account_id, password_hash, updated_at, password_changed_at)
+         VALUES ($1, $2, $3, $3)
          ON CONFLICT (account_id) DO NOTHING
          RETURNING account_id`,
         [credential.accountId, credential.passwordHash, at],

@@ -1,9 +1,17 @@
-/* The rail beside the content column. A flex row with the default stretch, so the rail runs the column's full height,
-   as the artboard draws it. The content column keeps `(workspace)`'s insets — the distance from the chrome is the
-   workspace's, not the archetype's — and `min-inline-size: 0` lets a Record's own measure hold inside it. */
+/* The account page: a column growing into the `(app)` layout's viewport-tall one, holding the rail's row and the
+   footer. The row takes every pixel the footer does not (`flex: 1`), and the rail stretches across that row by the
+   flex default — so the rail's end rule runs from the band to the footer, as the artboard draws it at any length of
+   record. The content column keeps `(workspace)`'s insets, and `min-inline-size: 0` lets a Record's own measure hold. */
+
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
 
 .frame {
   display: flex;
+  flex: 1;
 }
 
 .main {

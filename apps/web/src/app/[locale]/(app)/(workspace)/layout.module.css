@@ -21,3 +21,11 @@
 .main {
   padding: var(--page-block) var(--page-gutter);
 }
+
+/* The page, growing into the `(app)` layout's full-height column (24 Sep 2026) — what puts the footer at the foot of a
+   screen shorter than the viewport. */
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}

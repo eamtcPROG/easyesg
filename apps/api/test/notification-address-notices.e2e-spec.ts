@@ -68,6 +68,10 @@ describe('the four address notices, recorded (task 50.1.4)', () => {
   beforeAll(async () => {
     owner = await connectAs('DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', `easyesg-${SUITE}-owner`);
     worker = await connectAs('DB_WORKER_USER', 'DB_WORKER_PASSWORD', `easyesg-${SUITE}-worker`);
+    // What an interrupted run left behind, cleared before seeding (root CLAUDE.md: *a gate must not depend on state a
+    // previous command left behind*) — `afterAll` never runs when a run is killed, and the fixed address then refused
+    // every run after it as a duplicate key (found 24 Sep 2026, task 169).
+    await owner.query(`DELETE FROM identity.account WHERE email LIKE $1`, [`${SUITE}-%@example.md`]);
     const [row] = await owner.query<{ id: string }[]>(
       `INSERT INTO identity.account (email, locale) VALUES ($1, 'ru') RETURNING id`,
       [`${SUITE}-ana@example.md`],

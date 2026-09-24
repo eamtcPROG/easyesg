@@ -73,13 +73,12 @@ export async function offerEnrolment(
   await page.goto('/account/credentials');
 
   const section = page.getByRole('region', { name: 'Verificare în doi pași' });
-  // The record's own re-authentication field, outside all three sections and shared by them.
-  // **This used to need `.last()`**, because the password section rendered a second field under
-  // the same label — the duplicate S-28 shipped with, and which this helper had been quietly
-  // working around since 27 Aug 2026 rather than reporting. Now unambiguous, and deliberately
-  // written so that a second field with this label breaks the suite instead of being tolerated.
+  // The row opens in place, and asks for the current password in its own form (task 169). **This used to need
+  // `.last()`**, because S-28 once rendered a second field under the same label — which this helper quietly worked
+  // around from 27 Aug 2026. Unscoped and strict, so a second field with this label anywhere breaks the suite.
+  await section.getByRole('button', { name: 'Activați', exact: true }).click();
   await page.getByLabel('Parola actuală').fill(password);
-  await section.getByRole('button', { name: 'Activați verificarea în doi pași' }).click();
+  await section.getByRole('button', { name: 'Continuați' }).click();
 
   await expect(section.getByText('Scanați sau introduceți acest cod')).toBeVisible();
   // Strict, not `.first()`: at this stage the key is the region's only `t-code`, and a second one is

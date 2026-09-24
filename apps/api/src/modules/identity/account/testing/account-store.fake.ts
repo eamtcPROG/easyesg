@@ -15,6 +15,7 @@ import {
   type NewVerificationToken,
   PASSWORD_RESET_TOKEN_PURPOSE,
   type PasswordResetTokenPurpose,
+  type PasswordState,
 } from '../models/account.model';
 import { EmailAlreadyRegisteredError } from '../errors/account.errors';
 import { emailIdentityKey } from '../domain/email-address';
@@ -67,6 +68,7 @@ export interface FakeSession {
 interface Snapshot {
   accounts: Account[];
   credentials: [string, Credential][];
+  passwordChangedAt: [string, Date][];
   totp: [string, TotpEnrolment][];
   recoveryCodes: StoredRecoveryCode[];
   tokens: StoredToken[];
@@ -79,6 +81,8 @@ interface Snapshot {
 export class FakeAccountStore implements AccountStore {
   accounts: Account[] = [];
   credentials = new Map<string, Credential>();
+  /** `identity.credential.password_changed_at`, per account — moved only where the adapter's statements move it. */
+  passwordChangedAt = new Map<string, Date>();
   totp = new Map<string, TotpEnrolment>();
   recoveryCodes: StoredRecoveryCode[] = [];
   tokens: StoredToken[] = [];
@@ -129,6 +133,7 @@ export class FakeAccountStore implements AccountStore {
       credentials: [...this.credentials.entries()].map(
         ([id, credential]): [string, Credential] => [id, { ...credential }],
       ),
+      passwordChangedAt: [...this.passwordChangedAt.entries()],
       tokens: this.tokens.map((token) => ({ ...token })),
       resetTokens: this.resetTokens.map((token) => ({ ...token })),
       sessions: this.sessions.map((session) => ({ ...session })),
@@ -140,6 +145,7 @@ export class FakeAccountStore implements AccountStore {
   private restore(snapshot: Snapshot): void {
     this.accounts = snapshot.accounts;
     this.credentials = new Map(snapshot.credentials);
+    this.passwordChangedAt = new Map(snapshot.passwordChangedAt);
     this.totp = new Map(snapshot.totp);
     this.recoveryCodes = snapshot.recoveryCodes;
     this.tokens = snapshot.tokens;
@@ -156,6 +162,15 @@ export class FakeAccountStore implements AccountStore {
     return {
       findCredential(accountId: string): Promise<Credential | null> {
         return Promise.resolve(store.credentials.get(accountId) ?? null);
+      },
+
+      findPasswordState(accountId: string): Promise<PasswordState> {
+        const changedAt = store.passwordChangedAt.get(accountId);
+        return Promise.resolve(
+          store.credentials.has(accountId) && changedAt !== undefined
+            ? { set: true, changedAt }
+            : { set: false, changedAt: null },
+        );
       },
 
       findTotpEnrolment(accountId: string): Promise<TotpEnrolment | null> {
@@ -243,6 +258,8 @@ export class FakeAccountStore implements AccountStore {
           failedAttempts: 0,
           lockedAt: null,
         });
+        // The column's default, which registration's insert relies on.
+        store.passwordChangedAt.set(created.id, now);
         return Promise.resolve(created);
       },
 
@@ -393,7 +410,6 @@ export class FakeAccountStore implements AccountStore {
         credential: { readonly accountId: string; readonly passwordHash: string },
         at: Date,
       ): Promise<void> {
-        void at;
         const existing = store.credentials.get(credential.accountId);
         store.credentials.set(credential.accountId, {
           ...(existing ?? { accountId: credential.accountId }),
@@ -401,6 +417,7 @@ export class FakeAccountStore implements AccountStore {
           failedAttempts: 0,
           lockedAt: null,
         });
+        store.passwordChangedAt.set(credential.accountId, at);
         return Promise.resolve();
       },
 
@@ -408,7 +425,6 @@ export class FakeAccountStore implements AccountStore {
         credential: { readonly accountId: string; readonly passwordHash: string },
         at: Date,
       ): Promise<boolean> {
-        void at;
         const existing = store.credentials.get(credential.accountId);
         if (!existing) return Promise.resolve(false);
         store.credentials.set(credential.accountId, {
@@ -417,6 +433,7 @@ export class FakeAccountStore implements AccountStore {
           failedAttempts: 0,
           lockedAt: null,
         });
+        store.passwordChangedAt.set(credential.accountId, at);
         return Promise.resolve(true);
       },
 

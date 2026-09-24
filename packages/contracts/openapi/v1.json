@@ -450,6 +450,38 @@
       }
     },
     "/api/v1/account/password": {
+      "get": {
+        "description": "What S-28’s password row reads (task 169). It carries neither the hash nor where the password was changed from. A failed sign-in does not move the date.",
+        "operationId": "PasswordController_state",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The account’s password state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/PasswordStateResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Whether the signed-in account holds a password, and when it last changed",
+        "tags": [
+          "identity"
+        ]
+      },
       "post": {
         "description": "Requires the current password (FR-7). Optionally ends the account’s **other** active sessions — the one making the request is spared, so the device the change was made from keeps working. A provider-only account has no password to change and is refused; setting a first password for one is FR-8’s path.",
         "operationId": "PasswordController_change",
@@ -6774,6 +6806,24 @@
         },
         "required": [
           "code"
+        ]
+      },
+      "PasswordStateResponseDto": {
+        "type": "object",
+        "properties": {
+          "set": {
+            "type": "boolean",
+            "description": "Whether the account holds a password. False for an account that signs in through a provider only, which can be given a first password by the reset flow."
+          },
+          "changedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds, UTC — when the password was last set: at registration, a change, a reset or a first password. A failed sign-in does not move it. Null exactly when set is false."
+          }
+        },
+        "required": [
+          "set",
+          "changedAt"
         ]
       },
       "PasswordChangedResponseDto": {

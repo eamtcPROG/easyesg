@@ -30,9 +30,9 @@ export type SectionReadStatus = (typeof SECTION_READ)[keyof typeof SECTION_READ]
  * Re-exported rather than imported at each site so the screen keeps one module to ask what a
  * credential *is*, which is what this file is for.
  */
-import type { LinkedProvider, TotpState } from '@easyesg/contracts';
+import type { LinkedProvider, PasswordState, TotpState } from '@easyesg/contracts';
 
-export type { LinkedProvider, TotpState };
+export type { LinkedProvider, PasswordState, TotpState };
 
 /**
  * One section's read, resolved or not.
@@ -47,6 +47,8 @@ export type SectionRead<T> =
   | { readonly status: typeof SECTION_READ.UNREACHABLE };
 
 export interface CredentialsRead {
+  /** Whether a password is held and when it last changed (task 169) — the password row and the closing note. */
+  readonly password: SectionRead<PasswordState>;
   readonly factor: SectionRead<TotpState>;
   readonly providers: SectionRead<readonly LinkedProvider[]>;
 }

@@ -4,6 +4,7 @@ import { deleteGrantHalfRows } from '../src/infrastructure/persistence/migration
 import { backfillLastRaisedAt } from '../src/infrastructure/persistence/migrations/1790640000000-notification-cancellation';
 import { deleteAddressDeliveries } from '../src/infrastructure/persistence/migrations/1790726400000-address-notices';
 import { backfillNoticeApplication } from '../src/infrastructure/persistence/migrations/1790812800000-notice-application';
+import { backfillPasswordChangedAt } from '../src/infrastructure/persistence/migrations/1791244800000-password-changed-at';
 import { connectAs } from './support/database';
 
 /**
@@ -107,6 +108,46 @@ describe('the migrations’ data steps, against rows (task 164)', () => {
       expect(Object.fromEntries(rows.map((row) => [row.id, row.application]))).toEqual({
         [console]: 'console',
         [web]: 'web',
+      });
+    });
+  });
+
+  it('task 169’s backfill dates each password by its row’s last write, and keeps a date already set', async () => {
+    await inRolledBack(async (runner) => {
+      // `identity.credential` carries no row-level security, so nothing is lifted around the seed or the read.
+      const seedAccount = async (email: string, updatedAt: string): Promise<string> => {
+        const [{ id }] = (await runner.query(
+          `INSERT INTO identity.account (email, locale) VALUES ($1, 'ro') RETURNING id`,
+          [email],
+        )) as { id: string }[];
+        await runner.query(
+          `INSERT INTO identity.credential (account_id, password_hash, updated_at) VALUES ($1, 'hash', $2)`,
+          [id, updatedAt],
+        );
+        return id;
+      };
+      const undated = await seedAccount(`data-steps-${randomUUID()}@example.test`, '2026-02-12T09:30:00Z');
+      const dated = await seedAccount(`data-steps-${randomUUID()}@example.test`, '2026-03-01T00:00:00Z');
+
+      // The state `up` leaves between adding the column and constraining it: every existing row undated.
+      await runner.query(`ALTER TABLE identity.credential ALTER COLUMN password_changed_at DROP NOT NULL`);
+      await runner.query(`UPDATE identity.credential SET password_changed_at = NULL WHERE account_id = $1`, [undated]);
+      await runner.query(
+        `UPDATE identity.credential SET password_changed_at = '2026-01-05T00:00:00Z' WHERE account_id = $1`,
+        [dated],
+      );
+
+      await backfillPasswordChangedAt(runner);
+
+      const rows = (await runner.query(
+        `SELECT account_id, password_changed_at FROM identity.credential WHERE account_id = ANY($1::uuid[])`,
+        [[undated, dated]],
+      )) as { account_id: string; password_changed_at: Date }[];
+      expect(
+        Object.fromEntries(rows.map((row) => [row.account_id, row.password_changed_at.toISOString()])),
+      ).toEqual({
+        [undated]: '2026-02-12T09:30:00.000Z',
+        [dated]: '2026-01-05T00:00:00.000Z',
       });
     });
   });

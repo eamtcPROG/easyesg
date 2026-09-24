@@ -1,0 +1,10 @@
+/* The signed-in page as one column at least as tall as the viewport (24 Sep 2026). Two things need it: a footer that
+   sits at the foot of a short page, and the account rail, whose end rule runs the page's full height. The global
+   tier's height varies — the band per frame, the support-access banner when it shows — so the column grows into what
+   is left rather than subtracting a height from the viewport. A flex column's children stretch to its width exactly
+   as blocks do, and none of the screens here relies on a margin collapsing across its top level. */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100dvh;
+}

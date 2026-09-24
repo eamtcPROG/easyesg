@@ -1,13 +1,14 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { RequiresAccount } from '@api/modules/identity/membership/decorators/requires-account.decorator';
 import { ChangePasswordRequestDto } from '../dto/change-password.request.dto';
 import { PasswordChangedResponseDto } from '../dto/change-password.response.dto';
+import { PasswordStateResponseDto } from '../dto/password-state.response.dto';
 import { PasswordService } from '../services/password.service';
 
 /**
- * `POST /api/v1/account/password` — FR-7, behind S-28.
+ * `/api/v1/account/password` — FR-7's change, behind S-28, and since task 169 the password row's read.
  *
  * **Its own controller rather than a route on `AuthController`**, and the reason is the guard.
  * `AuthController` is `@Public()` at class level because every route on it mints or consumes the
@@ -29,6 +30,21 @@ import { PasswordService } from '../services/password.service';
 @RequiresAccount()
 export class PasswordController {
   constructor(private readonly passwordService: PasswordService) {}
+
+  @Get()
+  @ApiOperation({
+    summary: 'Whether the signed-in account holds a password, and when it last changed',
+    description:
+      'What S-28’s password row reads (task 169). It carries neither the hash nor where the password was changed ' +
+      'from. A failed sign-in does not move the date.',
+  })
+  @ApiObjectResponse(PasswordStateResponseDto, {
+    status: 200,
+    description: 'The account’s password state.',
+  })
+  async state(): Promise<PasswordStateResponseDto> {
+    return new PasswordStateResponseDto(await this.passwordService.state());
+  }
 
   @Post()
   @HttpCode(200)

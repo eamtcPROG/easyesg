@@ -211,7 +211,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Whether the signed-in account holds a password, and when it last changed
+         * @description What S-28’s password row reads (task 169). It carries neither the hash nor where the password was changed from. A failed sign-in does not move the date.
+         */
+        get: operations["PasswordController_state"];
         put?: never;
         /**
          * Change the signed-in account’s password
@@ -2335,6 +2339,12 @@ export interface components {
              * @example 123456
              */
             code: string;
+        };
+        PasswordStateResponseDto: {
+            /** @description Whether the account holds a password. False for an account that signs in through a provider only, which can be given a first password by the reset flow. */
+            set: boolean;
+            /** @description Unix epoch milliseconds, UTC — when the password was last set: at registration, a change, a reset or a first password. A failed sign-in does not move it. Null exactly when set is false. */
+            changedAt: number | null;
         };
         PasswordChangedResponseDto: {
             /** @description How many other sessions were ended. Always 0 when the election was not made, and 0 is a normal answer when it was — the account simply had no other device signed in. */
@@ -4665,6 +4675,28 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    PasswordController_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The account’s password state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["PasswordStateResponseDto"];
+                    };
                 };
             };
         };

@@ -10,6 +10,7 @@ import type {
   NewAccount,
   NewPasswordResetToken,
   NewVerificationToken,
+  PasswordState,
 } from '../models/account.model';
 import type { InvitationStatus } from '@api/modules/identity/invitation/models/invitation.model';
 
@@ -197,6 +198,12 @@ export interface AccountTransaction {
    * S-28 sign the user out of every device.
    */
   findCredential(accountId: string): Promise<Credential | null>;
+
+  /**
+   * S-28's password row (task 169): whether a password is held and when it last changed, never the hash. A read of
+   * `password_changed_at`, which moves only when a password is set — `updated_at` also moves on a failed sign-in.
+   */
+  findPasswordState(accountId: string): Promise<PasswordState>;
 
   /** The enrolment, confirmed or not. Null when the account has never begun one. */
   findTotpEnrolment(accountId: string): Promise<TotpEnrolment | null>;

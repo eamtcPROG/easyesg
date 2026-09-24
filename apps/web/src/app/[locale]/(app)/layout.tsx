@@ -8,6 +8,7 @@ import { OrganizationSwitchProvider } from '@/features/organization/switcher/com
 import { SignOutProvider } from '@/features/identity/shared/components/sign-out-provider';
 import { SupportAccessBanners } from '@/features/support-access/components/section/support-access-banners';
 import { GlobalTier } from '@/shared/global-tier';
+import styles from './layout.module.css';
 
 /**
  * The authenticated shell. `proxy.ts` guarantees a session above this point.
@@ -75,12 +76,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <UnsentWorkProvider>
           <SignOutProvider>
             <OrganizationSwitchProvider>
-              <GlobalTier />
-              <OrganizationSwitchNotice />
-              <Suspense fallback={null}>
-                <SupportAccessBanners />
-              </Suspense>
-              {children}
+              {/* One column the height of the viewport, so a group's page can grow into it (layout.module.css). */}
+              <div className={styles.app}>
+                <GlobalTier />
+                <OrganizationSwitchNotice />
+                <Suspense fallback={null}>
+                  <SupportAccessBanners />
+                </Suspense>
+                {children}
+              </div>
             </OrganizationSwitchProvider>
           </SignOutProvider>
         </UnsentWorkProvider>

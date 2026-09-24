@@ -140,7 +140,7 @@ test('the workspace and the wizard send a reader who has not chosen to choose; t
 
   // S-28 reads nothing of an organization's, so it renders in this state (UX-3's amendment).
   await page.goto('/account/credentials');
-  await expect(page.getByRole('heading', { name: 'Date de autentificare', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Credențiale și identități asociate', level: 1 })).toBeVisible();
   await expect(page).toHaveURL(/\/account\/credentials$/);
 });
 

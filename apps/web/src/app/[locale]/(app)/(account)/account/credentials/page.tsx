@@ -1,4 +1,4 @@
-import { CredentialsSection } from '@/features/credentials/components/credentials-section';
+import { CredentialsSection } from '@/features/credentials/components/section/credentials-section';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
@@ -17,7 +17,7 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * authoritative one.
  *
  * **A shell since task 137** (`shell-composes-only`): it pins the locale and renders the section, which makes the two
- * reads and hands them to the board (`features/credentials/components/credentials-section.tsx`).
+ * reads and hands them to the board (`features/credentials/components/section/credentials-section.tsx`).
  *
  * States (§8.1): ready · pending confirmation · partial · error — recoverable · success. Loading is
  * `loading.tsx` beside it since task 137 — this sentence claimed one before it existed; the transient states of an

@@ -67,6 +67,17 @@
 }
 
 /*
+ * An empty cell holds the height a filled one has (24 Sep 2026, found by the project owner on S-01's factor step and
+ * S-28's enrolment). The cell's height is its text's line box, and an empty cell has no text — so it collapsed to its
+ * two border pixels and the six cells drew as six underlines until a character was typed. A zero-width space gives it
+ * the line box its 44px line-height sizes, which keeps the height line-height-driven as the note above requires,
+ * rather than restating 44px beside it. `:empty` because React renders no text node for the empty string.
+ */
+.cell:empty::before {
+  content: '\200b';
+}
+
+/*
  * Focus is drawn on the CELLS, because the input that has focus is transparent. `:focus-visible`
  * on the input rather than `:focus`, so a pointer user who clicks does not get a ring they did
  * not ask for — the same rule the rest of the cascade follows.

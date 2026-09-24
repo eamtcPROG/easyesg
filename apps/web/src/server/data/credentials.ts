@@ -4,6 +4,7 @@ import {
   SECTION_READ,
   type CredentialsRead,
   type LinkedProvider,
+  type PasswordState,
   type SectionRead,
   type TotpState,
 } from '@/features/credentials/tools/credentials';
@@ -14,8 +15,9 @@ import { api } from '../api/api-client';
  * (task 27.7). The vocabulary and the shapes live in `features/credentials/credentials.ts`,
  * because a Client Component needs them and this file may never reach the browser.
  *
- * `GET /account/totp` and `GET /account/providers` are separate resources with separate owners in
- * the api (`identity/account` and `identity/provider`), and the screen needs both. They are fetched
+ * `GET /account/password`, `GET /account/totp` and `GET /account/providers` are separate resources — the first two
+ * `identity/account`'s, the third `identity/provider`'s — and the screen needs all three (the password's since task
+ * 169, for its row's date and the closing note). They are fetched
  * **in parallel** because they are independent — sequential awaits would put a second round trip on
  * a settings screen's critical path for an ordering that does not exist (`async-parallel`).
  *
@@ -28,12 +30,14 @@ const section = <T>(outcome: ApiOutcome<T>): SectionRead<T> =>
     : { status: SECTION_READ.UNREACHABLE };
 
 export async function readCredentials(): Promise<CredentialsRead> {
-  const [factor, providers] = await Promise.all([
+  const [password, factor, providers] = await Promise.all([
+    api.get<PasswordState>('/account/password'),
     api.get<TotpState>('/account/totp'),
     api.getList<LinkedProvider>('/account/providers'),
   ]);
 
   return {
+    password: section(password),
     factor: section(factor),
     // Projected, then classified by the same helper the other half uses. The list's `.items` was
     // the whole reason this branch was hand-inlined, and `mapOutcome` is what that projection is

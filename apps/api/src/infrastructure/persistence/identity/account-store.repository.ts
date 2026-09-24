@@ -21,6 +21,7 @@ import {
   type NewPasswordResetToken,
   PASSWORD_RESET_TOKEN_PURPOSE,
   type NewVerificationToken,
+  type PasswordState,
 } from '@api/modules/identity/account/models/account.model';
 import {
   RECOVERY_CODE_OUTCOME,
@@ -365,13 +366,14 @@ class AccountTransactionAdapter implements AccountTransaction {
     // UC-09's alternate flow gives it one — its first password, the way back when its provider is
     // disabled. The UPDATE this replaced matched nothing for such an account and the reset refused.
     await this.queryRunner.query(
-      `INSERT INTO identity.credential (account_id, password_hash, updated_at)
-       VALUES ($1, $2, $3)
+      `INSERT INTO identity.credential (account_id, password_hash, updated_at, password_changed_at)
+       VALUES ($1, $2, $3, $3)
        ON CONFLICT (account_id) DO UPDATE
           SET password_hash = EXCLUDED.password_hash,
               failed_attempts = 0,
               locked_at = NULL,
-              updated_at = EXCLUDED.updated_at`,
+              updated_at = EXCLUDED.updated_at,
+              password_changed_at = EXCLUDED.password_changed_at`,
       [credential.accountId, credential.passwordHash, at],
     );
   }
@@ -385,7 +387,8 @@ class AccountTransactionAdapter implements AccountTransaction {
     const rows = returnedRows<{ account_id: string }>(
       await this.queryRunner.query(
         `UPDATE identity.credential
-            SET password_hash = $2, failed_attempts = 0, locked_at = NULL, updated_at = $3
+            SET password_hash = $2, failed_attempts = 0, locked_at = NULL, updated_at = $3,
+                password_changed_at = $3
           WHERE account_id = $1
           RETURNING account_id`,
         [credential.accountId, credential.passwordHash, at],
@@ -452,6 +455,19 @@ class AccountTransactionAdapter implements AccountTransaction {
           failedAttempts: rows[0].failed_attempts,
           lockedAt: rows[0].locked_at,
         };
+  }
+
+  async findPasswordState(accountId: string): Promise<PasswordState> {
+    const rows = returnedRows<{ password_changed_at: Date }>(
+      await this.queryRunner.query(
+        `SELECT password_changed_at FROM identity.credential WHERE account_id = $1`,
+        [accountId],
+      ),
+    );
+    // No row is the provider-only account (FR-2): nothing is held, so nothing has changed.
+    return rows.length === 0
+      ? { set: false, changedAt: null }
+      : { set: true, changedAt: rows[0].password_changed_at };
   }
 
   async findTotpEnrolment(accountId: string): Promise<TotpEnrolment | null> {

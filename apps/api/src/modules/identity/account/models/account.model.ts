@@ -81,6 +81,17 @@ export interface Credential {
   readonly lockedAt: Date | null;
 }
 
+/**
+ * Whether an account holds a password, and when it last changed — S-28's password row (task 169; OQ-19 closed).
+ *
+ * **Its own shape rather than a field on `Credential`**, which carries the hash and the lockout counters and is held by
+ * sign-in and reset only. `changedAt` is null exactly when `set` is false: a provider-only account (FR-2) has no
+ * credential row, so there is no change to date.
+ */
+export type PasswordState =
+  | { readonly set: true; readonly changedAt: Date }
+  | { readonly set: false; readonly changedAt: null };
+
 /** What registration hands the store. The password is already hashed — see `RegisterAccount`. */
 export interface NewAccount {
   readonly email: string;

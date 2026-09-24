@@ -72,7 +72,7 @@ for (const frame of FRAMES) {
     // The clause the old location could never satisfy — held to S-28's own heading, padded, rather
     // than to whatever padded string the page happens to show first.
     await expect(
-      page.getByRole('heading', { level: 1, name: exactlyPadded('Date de autentificare') }),
+      page.getByRole('heading', { level: 1, name: exactlyPadded('Credențiale și identități asociate') }),
     ).toBeVisible();
 
     const overflow = await page.evaluate(

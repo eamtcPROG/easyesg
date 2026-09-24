@@ -511,7 +511,7 @@ test('axe finds no violations on the credentials screen', async ({ page }) => {
   await page.goto('/account/credentials');
   // Three labelled regions and one h1 — the Record archetype's structure is most of what axe
   // has to judge here, and it is the part a screen gets wrong invisibly.
-  await expect(page.getByRole('heading', { name: 'Date de autentificare', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Credențiale și identități asociate', level: 1 })).toBeVisible();
   await scan(page);
 
   // The enrolment offer (task 143): the Enrolment code's symbol is an `img` that must carry a name,

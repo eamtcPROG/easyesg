@@ -18,6 +18,8 @@ import { PASSWORD, cleanupSignedInAccounts, signInFreshAccount, type SignedInAcc
  * *every*, and the one a passing "the password changed" test would say nothing about.
  */
 const EMAIL = 'change@password.test';
+/** Task 169's account holding no password, deleted beside `EMAIL`. */
+const PROVIDER_ONLY_EMAIL = 'provider-only@password.test';
 const NEXT_PASSWORD = 'ParolaCompletNoua9!';
 
 describe('change own password (UC-10, FR-7)', () => {
@@ -49,7 +51,7 @@ describe('change own password (UC-10, FR-7)', () => {
 
     owner = await connectAs('DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-password-e2e-owner');
     worker = await connectAs('DB_WORKER_USER', 'DB_WORKER_PASSWORD', 'easyesg-password-e2e-worker');
-    await owner.query(`DELETE FROM identity.account WHERE email = $1`, [EMAIL]);
+    await owner.query(`DELETE FROM identity.account WHERE email = ANY($1)`, [[EMAIL, PROVIDER_ONLY_EMAIL]]);
     await drain();
 
     here = await signInFreshAccount({ server: app.getHttpServer(), worker, email: EMAIL });
@@ -70,7 +72,7 @@ describe('change own password (UC-10, FR-7)', () => {
 
   afterAll(async () => {
     await cleanupSignedInAccounts({ owner });
-    await owner?.query(`DELETE FROM identity.account WHERE email = $1`, [EMAIL]);
+    await owner?.query(`DELETE FROM identity.account WHERE email = ANY($1)`, [[EMAIL, PROVIDER_ONLY_EMAIL]]);
     await drain();
     await owner?.destroy();
     await worker?.destroy();
@@ -168,6 +170,55 @@ describe('change own password (UC-10, FR-7)', () => {
     await http().post('/api/v1/auth/session').send({ email: EMAIL, password: PASSWORD }).expect(201);
   }, 60_000);
 
+  /** S-28's password row (task 169): `GET /account/password`'s answer. */
+  const passwordState = async (who: SignedInAccount) =>
+    objectOf<{ set: boolean; changedAt: number | null }>(
+      await http().get('/api/v1/account/password').set(who.authorization).expect(200),
+    );
+
+  it('dates the password by its last change, and a failed sign-in does not move the date (task 169)', async () => {
+    const before = await passwordState(here);
+    expect(before.set).toBe(true);
+    expect(typeof before.changedAt).toBe('number');
+
+    // The row a failed sign-in touches is the credential's own — `updated_at` moves with the counted attempt, which is
+    // exactly why the read cannot be `updated_at`. Asserted, so this case fails if the read ever serves that column.
+    const [{ updated_at: touchedBefore }] = await owner.query<{ updated_at: Date }[]>(
+      `SELECT updated_at FROM identity.credential WHERE account_id = $1`,
+      [here.accountId],
+    );
+    await http().post('/api/v1/auth/session').send({ email: EMAIL, password: 'Gresita123!' }).expect(401);
+    const [{ updated_at: touchedAfter }] = await owner.query<{ updated_at: Date }[]>(
+      `SELECT updated_at FROM identity.credential WHERE account_id = $1`,
+      [here.accountId],
+    );
+    expect(touchedAfter.getTime()).toBeGreaterThan(touchedBefore.getTime());
+    expect((await passwordState(here)).changedAt).toBe(before.changedAt);
+
+    await http()
+      .post('/api/v1/account/password')
+      .set(here.authorization)
+      .send({ currentPassword: PASSWORD, password: NEXT_PASSWORD })
+      .expect(200);
+    const after = await passwordState(here);
+    expect(after.set).toBe(true);
+    expect(after.changedAt).toBeGreaterThan(before.changedAt ?? Number.POSITIVE_INFINITY);
+
+    await restore(NEXT_PASSWORD);
+  }, 60_000);
+
+  it('answers no password for an account that holds none (task 169)', async () => {
+    // A provider-only account (FR-2) holds no credential row; one is made by removing the row a fresh account has.
+    const providerOnly = await signInFreshAccount({
+      server: app.getHttpServer(),
+      worker,
+      email: PROVIDER_ONLY_EMAIL,
+    });
+    await owner.query(`DELETE FROM identity.credential WHERE account_id = $1`, [providerOnly.accountId]);
+
+    expect(await passwordState(providerOnly)).toEqual({ set: false, changedAt: null });
+  }, 60_000);
+
   it('refuses a new password below the policy, before spending an attempt', async () => {
     const refused = await http()
       .post('/api/v1/account/password')
@@ -200,5 +251,6 @@ describe('change own password (UC-10, FR-7)', () => {
       .post('/api/v1/account/password')
       .send({ currentPassword: PASSWORD, password: NEXT_PASSWORD })
       .expect(401);
+    await http().get('/api/v1/account/password').expect(401);
   }, 60_000);
 });

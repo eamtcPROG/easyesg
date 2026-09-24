@@ -78,6 +78,8 @@ export type CompleteFactorRequest = components['schemas']['CompleteFactorRequest
 // let an unrecognised provider slug reach a rendered sentence.
 export type TotpState = components['schemas']['TotpStateResponseDto'];
 export type LinkedProvider = components['schemas']['LinkedProviderResponseDto'];
+/** S-28's password row (task 169): whether a password is held, and when it last changed, in epoch milliseconds. */
+export type PasswordState = components['schemas']['PasswordStateResponseDto'];
 
 // identity — memberships and members (FR-12, FR-56 … FR-60; tasks 25.2, 25.3). Two shapes and not
 // one: `Member` is a person in THIS organization, read with a tenant bound; `AccountMembership` is

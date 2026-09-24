@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
 import { AuthenticationRequiredError } from '@api/modules/identity/membership/errors/membership.errors';
+import type { PasswordState } from '../models/account.model';
+import { ReadPasswordState } from '../use-cases/read-password-state.use-case';
 import {
   ChangePassword,
   type ChangePasswordCommand,
@@ -20,7 +22,17 @@ import {
  */
 @Injectable()
 export class PasswordService {
-  constructor(private readonly changePassword: ChangePassword) {}
+  constructor(
+    private readonly changePassword: ChangePassword,
+    private readonly readPasswordState: ReadPasswordState,
+  ) {}
+
+  /** S-28's password row (task 169). Only the account is ambient here; no session is spared or named. */
+  state(): Promise<PasswordState> {
+    const actorId = requestContext()?.actorId;
+    if (actorId === undefined) throw new AuthenticationRequiredError();
+    return this.readPasswordState.execute({ accountId: actorId });
+  }
 
   change(
     input: Omit<ChangePasswordCommand, 'accountId' | 'sessionId' | 'clientIp' | 'terminateOtherSessions'> & {

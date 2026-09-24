@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { CALLOUT_INTENT } from '@easyesg/ui';
 import {
+  CODES_ORIGIN,
   CREDENTIALS_EVENT,
+  CREDENTIALS_SECTION,
   CREDENTIALS_STAGE,
   credentialsReducer,
   initialCredentialsState,
+  stageSection,
   type CredentialsState,
 } from './credentials-state';
 
@@ -65,12 +68,14 @@ describe('credentialsReducer', () => {
     const next = credentialsReducer(enrolling, {
       type: CREDENTIALS_EVENT.CODES_ISSUED,
       codes: ['AAAA-BBBB-CCCC-DDDD'],
+      origin: CODES_ORIGIN.ENROLMENT,
       notice: notice('enrolled'),
     });
 
     expect(next.stage).toEqual({
       kind: CREDENTIALS_STAGE.SHOWING_CODES,
       codes: ['AAAA-BBBB-CCCC-DDDD'],
+      origin: CODES_ORIGIN.ENROLMENT,
     });
     // The secret is gone the moment the codes arrive — it has done its job and showing both would
     // put two once-only values on screen at once.
@@ -81,6 +86,7 @@ describe('credentialsReducer', () => {
     const shown = credentialsReducer(enrolling, {
       type: CREDENTIALS_EVENT.CODES_ISSUED,
       codes: ['AAAA'],
+      origin: CODES_ORIGIN.ENROLMENT,
       notice: notice('enrolled'),
     });
 
@@ -98,7 +104,7 @@ describe('credentialsReducer', () => {
     // of the four and never a record with both an enrolment and a code list set.
     const sequence = [
       { type: CREDENTIALS_EVENT.ENROLMENT_OFFERED, secret: 'S', enrolmentUri: 'u' },
-      { type: CREDENTIALS_EVENT.CODES_ISSUED, codes: ['C'], notice: notice('x') },
+      { type: CREDENTIALS_EVENT.CODES_ISSUED, codes: ['C'], origin: CODES_ORIGIN.ENROLMENT, notice: notice('x') },
       { type: CREDENTIALS_EVENT.ACTION_STARTED, section: 'providers' },
     ] as const;
 
@@ -108,5 +114,68 @@ describe('credentialsReducer', () => {
     );
     expect(Object.values(CREDENTIALS_STAGE)).toContain(final.stage.kind);
     expect(final.stage.kind).toBe(CREDENTIALS_STAGE.SHOWING_CODES);
+  });
+
+  // ── One row open at a time (task 169; OQ-19 closed) ──────────────────────────────────────────────────────────────
+
+  const idleWith = (overrides: Partial<CredentialsState> = {}): CredentialsState => ({
+    stage: { kind: CREDENTIALS_STAGE.IDLE },
+    pendingSection: null,
+    notice: null,
+    ...overrides,
+  });
+
+  it('opens a row, replacing the open one and the notice that described it', () => {
+    const next = credentialsReducer(
+      { ...idleWith({ notice: notice('stale') }), stage: { kind: CREDENTIALS_STAGE.CHANGING_PASSWORD } },
+      { type: CREDENTIALS_EVENT.OPENED, stage: { kind: CREDENTIALS_STAGE.UNLINKING, provider: 'google' } },
+    );
+
+    expect(next).toEqual({
+      stage: { kind: CREDENTIALS_STAGE.UNLINKING, provider: 'google' },
+      pendingSection: null,
+      notice: null,
+    });
+  });
+
+  it('opens nothing while an action is running, whose answer would land in a row no longer open', () => {
+    const running = idleWith({
+      stage: { kind: CREDENTIALS_STAGE.CHANGING_PASSWORD },
+      pendingSection: CREDENTIALS_SECTION.PASSWORD,
+    });
+
+    expect(
+      credentialsReducer(running, { type: CREDENTIALS_EVENT.OPENED, stage: { kind: CREDENTIALS_STAGE.REISSUING_CODES } }),
+    ).toBe(running);
+    expect(credentialsReducer(running, { type: CREDENTIALS_EVENT.DISMISSED })).toBe(running);
+  });
+
+  it('opens nothing over codes on screen, which are shown once', () => {
+    const showing = idleWith({ stage: { kind: CREDENTIALS_STAGE.SHOWING_CODES, codes: ['a', 'b'], origin: CODES_ORIGIN.REISSUE } });
+
+    expect(
+      credentialsReducer(showing, { type: CREDENTIALS_EVENT.OPENED, stage: { kind: CREDENTIALS_STAGE.CHANGING_PASSWORD } }),
+    ).toBe(showing);
+    // Putting them away is still the way out.
+    expect(credentialsReducer(showing, { type: CREDENTIALS_EVENT.DISMISSED }).stage.kind).toBe(CREDENTIALS_STAGE.IDLE);
+  });
+
+  it('keeps the row open on a refusal, so it is read beside the form it refused', () => {
+    const next = credentialsReducer(
+      idleWith({ stage: { kind: CREDENTIALS_STAGE.DISABLING_FACTOR }, pendingSection: CREDENTIALS_SECTION.FACTOR }),
+      { type: CREDENTIALS_EVENT.ACTION_FAILED, notice: notice('refused') },
+    );
+
+    expect(next.stage.kind).toBe(CREDENTIALS_STAGE.DISABLING_FACTOR);
+    expect(stageSection(next.stage)).toBe(CREDENTIALS_SECTION.FACTOR);
+  });
+
+  it('names the row each stage opens', () => {
+    expect(stageSection({ kind: CREDENTIALS_STAGE.IDLE })).toBeNull();
+    expect(stageSection({ kind: CREDENTIALS_STAGE.CHANGING_PASSWORD })).toBe(CREDENTIALS_SECTION.PASSWORD);
+    expect(stageSection({ kind: CREDENTIALS_STAGE.SHOWING_CODES, codes: [], origin: CODES_ORIGIN.ENROLMENT })).toBe(CREDENTIALS_SECTION.FACTOR);
+    expect(stageSection({ kind: CREDENTIALS_STAGE.CONFIRMING_LINK, provider: 'microsoft' })).toBe(
+      CREDENTIALS_SECTION.PROVIDERS,
+    );
   });
 });

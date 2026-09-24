@@ -129,7 +129,7 @@ test.describe('a credential form fails explicitly without scripting (task 153, N
    * disabled either way. That the fallback carries the notice is `src/test/credential-loading-notice.spec.ts`'s to hold, since no
    * run here can choose which of the two it gets.
    */
-  test('S-28 says it needs JavaScript, and its form cannot be sent', async ({ page, browser }) => {
+  test('S-28 says it needs JavaScript, and rests with no credential field to send', async ({ page, browser }) => {
     await page.context().addCookies(await signedInCookies(browser));
     await page.goto('/account/credentials');
 
@@ -137,7 +137,10 @@ test.describe('a credential form fails explicitly without scripting (task 153, N
       .locator('noscript')
       .evaluateAll((elements) => elements.filter((element) => element.closest('[hidden]') === null).map((e) => e.innerHTML));
     expect(shown.some((notice) => notice.includes(NOTICE)), 'S-28: the notice where a reader without scripting is').toBe(true);
-    await expect(page.getByRole('button', { name: /Schimbați parola/i, includeHidden: true })).toBeDisabled();
+    // Since task 169 the screen rests as rows and a form opens only on a press, which scripting is needed for — so no
+    // password field exists to be sent, hidden streamed markup included. The link confirmation, the one form drawn on
+    // the server, goes through `CredentialSubmit` for the case this cannot reach (task 153's rule).
+    await expect(page.locator('input[type="password"]')).toHaveCount(0);
   });
 });
 

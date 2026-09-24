@@ -662,9 +662,11 @@ const ENCRYPTED_SECRET_COLUMNS = [
 
 /**
  * Columns whose name says "secret" but which are deliberately stored as they are, each with its
- * reason. Both entries are **one-way hashes**, and that distinction is the whole of this rule:
+ * reason. The two hashes are **one-way**, and that distinction is the whole of this rule:
  * encrypting an Argon2id digest would protect nothing an attacker holding the row could not
- * already do, while it would add a key whose loss destroys every password in the system.
+ * already do, while it would add a key whose loss destroys every password in the system. The third
+ * is not a secret at all — a date the name matches — listed because the sweep cannot tell, which is
+ * what an entry here is for.
  *
  * `token_hash` columns are not listed because the sweep below does not look for them — see its
  * own note on why the candidate patterns are `secret` and `password` and not `token` or `key`.
@@ -672,6 +674,8 @@ const ENCRYPTED_SECRET_COLUMNS = [
 const PLAINTEXT_BY_DESIGN_SECRET_COLUMNS = [
   'identity.credential.password_hash',
   'identity.admin_account.password_hash',
+  // Task 169: when the password last changed, which S-28's password row shows its owner — a timestamp, not a secret.
+  'identity.credential.password_changed_at',
 ];
 
 /** A column claimed as encrypted whose type is not the domain — the claim without the guarantee. */

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@easyesg/ui';
+import { Button, type ButtonVariant } from '@easyesg/ui';
 import type { ReactNode } from 'react';
 import { useHydrated } from '@/client/hydration/use-hydrated';
 
@@ -12,12 +12,21 @@ import { useHydrated } from '@/client/hydration/use-hydrated';
  * 405; this closes the rest. A form whose default button is disabled is not submitted by Enter, so a press before
  * hydration sends nothing at all. With scripting off it stays disabled, and `ScriptingRequired` beside it says why.
  *
- * **In `src/shared/` because two features read it** — identity's pre-session forms and S-28's password section.
+ * **In `src/shared/` because two features read it** — identity's pre-session forms and S-28's row forms.
  */
-export function CredentialSubmit({ busy, children }: { readonly busy: boolean; readonly children: ReactNode }) {
+export function CredentialSubmit({
+  busy,
+  variant,
+  children,
+}: {
+  readonly busy: boolean;
+  /** The button's look, for a confirmation that removes something (S-28's *Turn off*, *Unlink*); primary otherwise. */
+  readonly variant?: ButtonVariant;
+  readonly children: ReactNode;
+}) {
   const hydrated = useHydrated();
   return (
-    <Button type="submit" busy={busy} disabled={!hydrated}>
+    <Button type="submit" variant={variant} busy={busy} disabled={!hydrated}>
       {children}
     </Button>
   );

@@ -25358,3 +25358,161 @@ This is a single-row task, so it ran the gates its change reaches.
   recorded as seen once.
 - **Not run**: the api suites, which this change does not reach; the route it now calls is one the create mode was
   already calling.
+
+## Task 169 — S-28 rebuilt to its artboard · 2026-09-24
+
+The owner asked for S-28 to be refactored *by the design*, which closed `design_spec.md` OQ-19 in the artboard's favour
+after four weeks open. The owner took three decisions in one batch before any code was written, and the OQ-19 row
+records them:
+- **a trigger opens its row in place**, one row at a time, rather than a dialogue;
+- **the current password is asked inside the opened row**, so the record-level field goes;
+- **the password row's date comes from a new read over a new column, with no place.**
+
+The step before this one, the same day and committed separately, put S-27 and S-28 under the account layout's rail.
+
+### Decisions the diff shows only in part
+
+- **`updated_at` could not be the date.** `session-store.repository.ts` counts a failed sign-in on the credential row
+  and moves `updated_at` with it. A person who mistyped yesterday would have read that they changed their password
+  yesterday. `password_changed_at` is set by the three password writes (the reset and first-password upsert, FR-7's
+  change, S-36's first password) and by its default on registration's insert.
+- **The backfill is `updated_at`, an upper bound, and says so.** No production row exists before deploy (tasks
+  71 … 73). The alternative was a `NULL` arm the screen would carry forever. The migration's docblock states this.
+- **The column is classified as named like a secret but not one.** NFR-61's sweep flags every `%password%` column.
+  `migrations:check` stopped on it, which is the sweep working. The exemption list's docblock said every entry was a
+  hash, so that sentence was widened rather than contradicted.
+- **A narrow port method, `findPasswordState`, rather than a date on `Credential`.** `Credential` carries the hash
+  and the lockout counters, and every sign-in path builds one.
+- **One stage value is the open row.** `stageSection` names the row. Opening is refused while an action runs and
+  while codes are on screen, because codes are shown once. Dismissing is refused while an action runs. A refusal
+  keeps its row open and is read there (`RowNotice`). The head of the record speaks only at rest.
+- **The last way in is computed once, in `tools/last-way-in.ts`, for two readers.** The closing note says it before
+  the reader tries, and the provider row withholds *Unlink* on it. This is not a mirror of BR-ID-4: the API still
+  refuses, and a password set elsewhere shows on the next read. Nothing is said when either read failed.
+- **A provider-only account is not asked for a password at all.** A form whose read did not resolve asks but does not
+  require one, so a state the screen could not see blocks nobody. *Set a password* links to `/reset`, UC-09's
+  alternate flow (task 67.11), which is open to a signed-in reader for that reason.
+- **Every provider has a row**, linked or not. The artboard draws it that way, and the screen used to list the
+  linked ones and offer the rest as buttons beneath.
+- **The closing note is not a `Callout`.** It has no title, no action and no live region, as drawn: it is the
+  reasoned tint with a start rule, built in the app.
+- **`CredentialRow` is `apps/web`'s** (UX-89 as amended). A-19 shares S-28's shape, and the row moves to
+  `packages/ui` the day the console takes it.
+- **`CredentialSubmit` gained an optional `variant`**, so a destructive confirmation still goes through task 153's
+  hydration guard. The link confirmation is the one row form drawn on the server.
+
+### Found while building it
+
+- **Two buttons shared one name in each opened row.** Password: *Schimbați parola* as both trigger and submit.
+  Unlink: *Dezasociați Google* twice. Link: *Asociați Microsoft* as both link and confirm. The board spec found the
+  first as `Found multiple elements`, and the same search found the other two. Each confirmation now has its own
+  words (*Salvați parola nouă*, *Confirmați dezasocierea contului …*, *Confirmați asocierea contului …*), rather
+  than the locator being narrowed.
+- **The recorded rule that re-issue appears once while the codes are exhausted** (29 Aug 2026) held in the spec and
+  would have broken. The row's trigger steps aside while the warning carries the fix.
+- **One spec assertion was vacuous as first written.** A `queryByText` over a fragment of the note can never match.
+  It now matches every variant, and was proven by making the note draw from half the facts.
+- **Romanian moved from *legat / deconectat* to *asociat / dezasociat*.** This matches the artboard's *identities*
+  and S-01's provider notice, which already said *asociat*.
+
+### Searched for the rule's shape
+
+- Every S-28 locator in the browser suite, which drives Romanian labels.
+- `support/second-factor.ts`'s enrolment, which the TOTP journeys in `credentials.spec.ts` and `accessibility.spec.ts`
+  share.
+- `form-method.spec.ts`'s no-scripting case. It now holds that no password field exists at rest, because a form
+  opens only on a press.
+- A-19's journeys in `e2e/admin/`. Unchanged: A-19 keeps its own shape until it adopts the row.
+
+### Verification
+
+**Every suite was run alone, one after another** (owner, the same session). This host has 8 GB of RAM, and with the
+API e2e suite and the web unit suite running together it stood at 5.1 GB of swap and a load average of 211. Two API
+suites and one web spec timed out there, none of them touched by this change. Each passed alone.
+
+- **API.** Unit suite 1,421 of 1,421. `migrations:check` passed, all 61 invariant cases included. `openapi:check`
+  passed. The full e2e suite passed 59 of 59 suites, 1,432 tests. That includes the two new `change-password` cases:
+  a failed sign-in moves `updated_at` and not the date, a change moves the date, and an account with no credential
+  answers `{set: false, changedAt: null}`. It also includes the backfill's case in `migration-data-steps`.
+  `e2e:worker` passed 9 of 9. The new route is in task 28.2's committed permission table; its spec found the omission.
+- **Web.** Unit suite 1,127 of 1,127, with the folder-shape walk. That is 24 in `features/credentials/`: 11 reducer
+  cases, 5 last-way-in cases, and 8 on the board. The last-way-in note's assertion was proven by breaking the
+  selector. Browser `identity` passed 207 of 208 at first. The one failure is the finding below, and after the fix
+  that spec and every S-28 journey passed 12 of 12. Browser `expansion` passed 43 of 43. The logs' only `⨯` lines are
+  `apps/web/CLAUDE.md`'s abandoned-prefetch message, digest `2667547900`.
+- **`lint`, `typecheck` and `docs:check` pass.**
+
+**Two findings came from the suites, and both are fixed.**
+- **S-28 stopped saying it needs JavaScript.** The password form, open at rest, had carried the notice, and the
+  route's fallback carries one only while the section is still pending as the shell flushes. With rows at rest, a
+  fast render showed triggers that do nothing and no reason. `form-method.spec.ts` failed on exactly that. The board
+  now states it once for the record, and the two row forms dropped their copies, so the server-drawn link
+  confirmation does not say it twice.
+- **`notification-address-notices` could not survive an interrupted run.** Its `beforeAll` seeded a fixed address
+  that only `afterAll` removed, so the run killed above left a row behind and every later run failed on a duplicate
+  key. That is the root rule *a gate must not depend on state a previous command left behind*. The setup now clears
+  its own address first, and passed 6 of 6 against the very row that had failed it. This task did not cause it; the
+  interruption exposed it.
+
+**No review agents ran.** Task 169 is a row with no sub-steps, and the owner's standing decision (13 Sep 2026) is
+that a task closes on the gates its change reaches, with no agents by reflex.
+
+### The owner's review, the same day
+
+The owner looked at the built screen, called it better, and named four defects. Each is fixed:
+
+- **The rail's rule stopped where a short record ended.** The `(app)` layout's output is now one column at least as
+  tall as the viewport. `(account)`'s page grows into it, its row takes all but the footer's band, and the rail
+  stretches across that row. `credentials.spec.ts` measures the rail's bottom against the footer's top. **Its first
+  version could not fail:** at the suite's window S-28 is taller than the viewport, so the rail met the footer either
+  way. A second assertion (the footer at the viewport's foot) exposed it. The check now runs in a 1600 px-tall
+  window, where the record is short.
+- **No signed-in screen had a footer**, though the Workspace, Organization Admin and Commerce artboards draw one
+  under every screen. The new `shared/workspace-footer.tsx` frames `SiteFooter` for `(workspace)` and `(account)`.
+  `(wizard)` gets none, because no reporting artboard draws one. `(public)/layout.tsx` still holds its footer back,
+  for the reason that the legal links *"return `null`"*. That stopped being true with task 103: they answer *not yet
+  available*, as they already do from every identity screen. That layout is not changed here.
+- **The second factor became a flow**, with no artboard to follow. `tools/factor-steps.ts` names the sequences:
+  three steps to turn it on and two for new codes. Adding the key and answering its code are one step, because the
+  code is the proof the key was captured (UC-193). The codes screen closes both flows, so the stage now carries the
+  codes' `origin`. The step indicator is a labelled list with `aria-current="step"`, not a `nav`, since nothing in it
+  is a destination.
+  - *Copy key* and *Copy codes* announce through a live region, and say what to do instead where the clipboard is
+    refused (outside a secure context `navigator.clipboard` is absent and would have thrown).
+  - *Download codes* builds a CRLF text file in the browser from what is on screen. Nothing is fetched.
+  - All three are `apps/web`'s (UX-89), as `CredentialRow` is.
+- ***Not linked* wrapped.** The provider glyphs are bare `viewBox` SVGs that `ProviderButton` sizes on S-01. On this
+  row nothing did, so each mark took its width from the text beside it. They are now a 20 px mark in a 28 px box, as
+  drawn.
+
+**The first browser run after these did not start.** The api's `dist/` was missing `app/decorators/` while its
+`.tsbuildinfo`, which lives inside `dist/`, said the build was current. That is stale state from a build interrupted
+earlier in the session. `tools/clean-build-outputs.sh` cleared it, and the rebuild was clean. This is the case the root
+`CLAUDE.md` names for `gates:clean`, met here without it being asked for.
+
+**Verification of the round**, each run alone:
+- `typecheck`, `lint` and `docs:check` pass. `lint` stopped a `:` literal outside the catalogue, so the punctuation
+  moved into the three messages.
+- `features/credentials/` and the parity and folder-shape specs: 295 of 295.
+- Browser `identity` from a clean build: 207 of 208. The failure was the vacuous rail check above; after the fix, the
+  account journeys passed 23 of 23.
+- Browser `expansion`: 43 of 43.
+
+The board spec walks the whole enrolment: step 1 → 2 → 3, the key copied, the codes copied, and the downloaded file
+read back byte for byte.
+
+**The code field drew six underlines until a character was typed** (the owner, on S-01's factor step). This is
+`packages/ui`'s `CodeField`, read by six screens across both apps. A cell's height was its text's line box, and an
+empty cell has none, so it collapsed to its two border pixels. `.cell:empty::before` gives it a zero-width space,
+which keeps the height line-height-driven as the module's own note requires, rather than restating 44 px beside it.
+
+**The check:** `credentials.spec.ts` measures the real input before anything is typed; it is laid over the cells, so
+its height is theirs. The check was first run against the bundle built *before* the fix, where it measured 2 px and
+failed, so it fails on the defect.
+
+**Runs, each alone:**
+- `ui` 330 of 330, `admin` 277 of 277.
+- Browser `identity` 208 of 208, `expansion` 43 of 43, `admin` 25 of 25. `routes:check` clean.
+- `pnpm lint` passes. Its first cold run, after `clean-build-outputs.sh` had deleted ESLint's cache, ran out of heap
+  on this 8 GB host. Linting one workspace at a time with the same flags warmed the cache, and the whole-repo run
+  then passed.
