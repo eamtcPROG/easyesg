@@ -25159,3 +25159,65 @@ This is a single-row group closing as its own parent, so it ran the gates its ch
   `<body class="t-body">`, and so does the console's `dist/index.html`. A first read showed the old markup. It came
   from a server I had started for task 153's check, still holding the port; the stale process was stopped and the
   read repeated.
+
+## Task 164 — The migrations' data steps, exercised · 2026-09-24
+
+A migration statement that acts only on rows now runs against rows somewhere. `migrations:check` applies, reverts one
+and re-applies over empty tables. So a statement that lifts `FORCE ROW LEVEL SECURITY` for one data step could lose
+that pair and pass every gate, because under `FORCE` the owner's statement matches nothing and says nothing. And a
+revert older than the latest never runs again at all.
+
+### Decision (project owner, one batch, before the code)
+
+Recorded in a new §12.5.6 row, *A migration's data step is a function its case can run*.
+
+- **Each data step is an exported function in its own migration file**, called by `up` or `down`. The SQL moved and
+  did not change.
+- **A new spec runs each** against rows it seeds, as the owner, in a transaction it rolls back.
+- **Declined**:
+  - walking a scratch database back through the migrations — the most faithful, but a second database, many reverts
+    and minutes per run;
+  - restating the SQL in the spec, which a later edit to the migration would not reach.
+- **The row's stated cost**: a step runs under today's schema rather than the one it was written against. None of the
+  four touches a column a later migration removed.
+
+### What the design settled that the batch did not ask
+
+- **Four steps, not the row's three.** The row's own search (`NO FORCE ROW LEVEL SECURITY`) also found task 67.9's
+  lossy `down` on the support-access log. That one lifts the append-only trigger as well, and it is covered like the
+  others. `organization-rls`'s `down` matches the search but is a schema revert, not a data step.
+- **Seeding and reading lift `FORCE` themselves, and the step never runs inside that.** A case that seeded and ran
+  under one lift would pass with the pair removed.
+- **No `finally` in the lift.** The first run reported *"current transaction is aborted"* four times over. A failed
+  seed insert, from a state value the table's `CHECK` does not know, was being hidden by a restore attempted after it.
+  The case rolls back anyway, so the restore runs only on success and the real error surfaces.
+- **task 165's backfill needs its column's `NOT NULL` dropped inside the case**, since the step exists for rows the
+  column once allowed to be empty. That is DDL in the rolled-back transaction, so nothing outlives it.
+
+### What bites it
+
+Each step's `NO FORCE`/`FORCE` pair was removed, one at a time, and the spec was run:
+
+| Step removed | Result |
+| --- | --- |
+| task 50.1.3's `last_raised_at` backfill | its case fails, 3 pass |
+| task 165's `application` backfill | its case fails, 3 pass |
+| task 50.1.4's address-delivery revert | its case fails, 3 pass |
+| task 67.9's support-access revert | its case fails, 3 pass |
+
+Restored, all four pass.
+
+### Verification
+
+A single-row group closing as its own parent, so it ran the gates its change reaches, per the owner's standing
+decision.
+
+- **`migrations:check`**: apply, revert, apply, and the invariants **61**.
+- **api**: unit **1,419**, typecheck, lint, and `pnpm e2e` **1,422 of 1,423**.
+- **The one failure was task 147's ticket case, and it was the case's own dependency on shared state.** It read the TTL
+  of every `socket-ticket:*` key in Redis, including tickets other suites had minted. One expired between the listing
+  and the read, answered −2, and failed the run. It now reads its own ticket's key, by the ticket's SHA-256. That is
+  no weaker: a key with no expiry answers −1 and one never stored −2, and both still fail. The socket suite and this
+  task's suite pass together (**14**).
+- **Not run**: the browser suite, since nothing a browser reaches changed.
+- **Not run**: the worker e2e, since no worker code changed.

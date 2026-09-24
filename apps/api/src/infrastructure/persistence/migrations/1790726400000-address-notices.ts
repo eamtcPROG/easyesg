@@ -85,13 +85,22 @@ export class AddressNotices1790726400000 implements MigrationInterface {
     `);
     // **Lossy**: a delivery to an address has no account to fall back to, so the owner removes those rows before
     // the column that names them goes — with `FORCE` lifted for the one statement, under which it would see none.
-    await queryRunner.query(`ALTER TABLE notification.delivery NO FORCE ROW LEVEL SECURITY`);
-    await queryRunner.query(`DELETE FROM notification.delivery WHERE recipient_account_id IS NULL`);
-    await queryRunner.query(`ALTER TABLE notification.delivery FORCE ROW LEVEL SECURITY`);
+    await deleteAddressDeliveries(queryRunner);
     await queryRunner.query(`ALTER TABLE notification.delivery DROP COLUMN recipient_address`);
     await queryRunner.query(`ALTER TABLE notification.delivery ALTER COLUMN recipient_account_id SET NOT NULL`);
     await queryRunner.query(`REVOKE SELECT (${READABLE_NOTICE_COLUMNS}) ON notification.notification FROM esg_app`);
     await queryRunner.query(`GRANT SELECT ON notification.notification TO esg_app`);
     await queryRunner.query(`ALTER TABLE notification.notification DROP COLUMN sealed_link`);
   }
+}
+
+/**
+ * This migration's `down` data step (task 164; §12.5.6's task-164 row): the deliveries to an address, which the column
+ * the revert drops is the only record of. **`FORCE` is lifted for the one statement**, under which the owner would see
+ * none. Exported so `test/migration-data-steps.e2e-spec.ts` can run it against rows; the SQL is the migration's own.
+ */
+export async function deleteAddressDeliveries(queryRunner: QueryRunner): Promise<void> {
+  await queryRunner.query(`ALTER TABLE notification.delivery NO FORCE ROW LEVEL SECURITY`);
+  await queryRunner.query(`DELETE FROM notification.delivery WHERE recipient_account_id IS NULL`);
+  await queryRunner.query(`ALTER TABLE notification.delivery FORCE ROW LEVEL SECURITY`);
 }

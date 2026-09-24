@@ -129,11 +129,7 @@ export class SupportAccessGrants1790294400000 implements MigrationInterface {
     // there is no DELETE policy: without this the statement deletes nothing, reports nothing, and the NOT NULL
     // below fails on the rows it left — which is what `migrations:check` found. The parent's policies are what a
     // statement through the parent meets, so the parent is the one to lift; both return inside this transaction.
-    await queryRunner.query(`ALTER TABLE audit.support_access_log NO FORCE ROW LEVEL SECURITY`);
-    await queryRunner.query(`ALTER TABLE audit.support_access_log DISABLE TRIGGER no_mutate`);
-    await queryRunner.query(`DELETE FROM audit.support_access_log WHERE entry_kind <> 'acquisition'`);
-    await queryRunner.query(`ALTER TABLE audit.support_access_log ENABLE TRIGGER no_mutate`);
-    await queryRunner.query(`ALTER TABLE audit.support_access_log FORCE ROW LEVEL SECURITY`);
+    await deleteGrantHalfRows(queryRunner);
 
     await queryRunner.query(`
       ALTER TABLE audit.support_access_log
@@ -156,4 +152,18 @@ export class SupportAccessGrants1790294400000 implements MigrationInterface {
         ADD CONSTRAINT support_access_log_entry_kind_known CHECK (entry_kind IN ('acquisition'))
     `);
   }
+}
+
+/**
+ * This migration's `down` data step (task 164; §12.5.6's task-164 row): every row but an acquisition, which the table
+ * it reverts to cannot hold. **The append-only trigger and `FORCE` are both lifted for the one statement**, for the
+ * reasons the `down` states. Exported so `test/migration-data-steps.e2e-spec.ts` can run it against rows; the SQL is
+ * the migration's own.
+ */
+export async function deleteGrantHalfRows(queryRunner: QueryRunner): Promise<void> {
+  await queryRunner.query(`ALTER TABLE audit.support_access_log NO FORCE ROW LEVEL SECURITY`);
+  await queryRunner.query(`ALTER TABLE audit.support_access_log DISABLE TRIGGER no_mutate`);
+  await queryRunner.query(`DELETE FROM audit.support_access_log WHERE entry_kind <> 'acquisition'`);
+  await queryRunner.query(`ALTER TABLE audit.support_access_log ENABLE TRIGGER no_mutate`);
+  await queryRunner.query(`ALTER TABLE audit.support_access_log FORCE ROW LEVEL SECURITY`);
 }

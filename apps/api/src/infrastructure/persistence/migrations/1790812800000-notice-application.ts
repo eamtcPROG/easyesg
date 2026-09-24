@@ -47,13 +47,7 @@ export class NoticeApplication1790812800000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE notification.notification ADD COLUMN application text`);
 
-    await queryRunner.query(`ALTER TABLE notification.notification NO FORCE ROW LEVEL SECURITY`);
-    await queryRunner.query(`
-      UPDATE notification.notification
-         SET application = CASE WHEN category_key = 'platform.admin_invitation' THEN 'console' ELSE 'web' END
-       WHERE application IS NULL
-    `);
-    await queryRunner.query(`ALTER TABLE notification.notification FORCE ROW LEVEL SECURITY`);
+    await backfillNoticeApplication(queryRunner);
 
     await queryRunner.query(`
       ALTER TABLE notification.notification
@@ -75,4 +69,19 @@ export class NoticeApplication1790812800000 implements MigrationInterface {
         DROP COLUMN application
     `);
   }
+}
+
+/**
+ * This migration's data step (task 164; §12.5.6's task-164 row): each existing notice's application, from its category.
+ * **`FORCE` is lifted for the one statement**, for the reason the class's docblock gives. Exported so
+ * `test/migration-data-steps.e2e-spec.ts` can run it against rows; the SQL is the migration's own.
+ */
+export async function backfillNoticeApplication(queryRunner: QueryRunner): Promise<void> {
+  await queryRunner.query(`ALTER TABLE notification.notification NO FORCE ROW LEVEL SECURITY`);
+  await queryRunner.query(`
+      UPDATE notification.notification
+         SET application = CASE WHEN category_key = 'platform.admin_invitation' THEN 'console' ELSE 'web' END
+       WHERE application IS NULL
+    `);
+  await queryRunner.query(`ALTER TABLE notification.notification FORCE ROW LEVEL SECURITY`);
 }

@@ -973,6 +973,13 @@ anywhere and can change a membership only where it holds the context.
 organization — `FORCE` applies to the owner too. A data migration that appears to update nothing is
 this, not an empty table.
 
+**A data step is an exported function, and it has a case** (task 164; §12.5.6's task-164 row).
+`migrations:check` runs over empty tables and reverts only the latest migration, so a statement that acts
+only on rows — a backfill, a lossy `down`'s delete — is otherwise never run against one. Put the step,
+`NO FORCE`/`FORCE` pair included, in a function exported from its own migration file, call it from `up`
+or `down`, and add a case to `test/migration-data-steps.e2e-spec.ts` that seeds the rows it must move,
+runs it as the owner in a rolled-back transaction and asserts them. Removing the pair must fail the case.
+
 **`SECURITY DEFINER` does NOT escape RLS here, and it looks like it should** (task 25.3). The
 function runs as its owner, `esg_migrator` owns every table, and `FORCE` subjects an owner to its
 own policies — so a definer function reading a tenant table returns **nothing**. `SET row_security =

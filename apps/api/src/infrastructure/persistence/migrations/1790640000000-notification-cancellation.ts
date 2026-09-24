@@ -62,9 +62,7 @@ export class NotificationCancellation1790640000000 implements MigrationInterface
 
     // ── The latest raise a notice absorbed ───────────────────────────────────────────────────────────────
     await queryRunner.query(`ALTER TABLE notification.notification ADD COLUMN last_raised_at timestamptz`);
-    await queryRunner.query(`ALTER TABLE notification.notification NO FORCE ROW LEVEL SECURITY`);
-    await queryRunner.query(`UPDATE notification.notification SET last_raised_at = raised_at`);
-    await queryRunner.query(`ALTER TABLE notification.notification FORCE ROW LEVEL SECURITY`);
+    await backfillLastRaisedAt(queryRunner);
     await queryRunner.query(`ALTER TABLE notification.notification ALTER COLUMN last_raised_at SET NOT NULL`);
     await queryRunner.query(`
       ALTER TABLE notification.notification
@@ -79,4 +77,16 @@ export class NotificationCancellation1790640000000 implements MigrationInterface
     await queryRunner.query(`ALTER TABLE notification.notification DROP COLUMN last_raised_at`);
     await queryRunner.query(`DROP TABLE notification.cancellation`);
   }
+}
+
+/**
+ * This migration's data step (task 164; §12.5.6's task-164 row): every notice's latest raise starts at its first.
+ * **`FORCE` is lifted for the one statement**, since the owner is subject to the notice's policies and a migration
+ * binds no organization — without it the `UPDATE` matches nothing, and the `NOT NULL` after it fails on a populated
+ * table. Exported so `test/migration-data-steps.e2e-spec.ts` can run it against rows; the SQL is the migration's own.
+ */
+export async function backfillLastRaisedAt(queryRunner: QueryRunner): Promise<void> {
+  await queryRunner.query(`ALTER TABLE notification.notification NO FORCE ROW LEVEL SECURITY`);
+  await queryRunner.query(`UPDATE notification.notification SET last_raised_at = raised_at`);
+  await queryRunner.query(`ALTER TABLE notification.notification FORCE ROW LEVEL SECURITY`);
 }

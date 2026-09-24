@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { AddressInfo } from 'node:net';
@@ -102,11 +103,14 @@ describe('the hint socket and its ticket (AD-15; task 147)', () => {
     expect(ticket).toMatch(/^[A-Za-z0-9_-]{43}$/u);
     expect(expiresAt - before).toBeGreaterThan(29_000);
     expect(expiresAt - before).toBeLessThanOrEqual(31_000);
-    // Redis holds it under its hash with the thirty seconds on the key — never the ticket itself.
+    // Redis holds it under its hash with the thirty seconds on the key — never the ticket itself. **This ticket's key,
+    // by its hash**, not every ticket key there is: other suites mint tickets too, and one expiring between listing and
+    // reading answered a TTL of -2 and failed a run (task 164's full e2e). A regex over the ticket is no weaker for it.
     const keys = await redis.keys('socket-ticket:*');
     expect(keys.some((key) => key.includes(ticket))).toBe(false);
-    const ttls = await Promise.all(keys.map((key) => redis.ttl(key)));
-    expect(ttls.every((ttl) => ttl > 0 && ttl <= 30)).toBe(true);
+    const ttl = await redis.ttl(`socket-ticket:${createHash('sha256').update(ticket).digest('hex')}`);
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(30);
 
     await http().post('/api/v1/session/socket-ticket').expect(401);
   });
