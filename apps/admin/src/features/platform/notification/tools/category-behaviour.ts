@@ -34,7 +34,10 @@ export const editableControlsOf = (category: Pick<ConsoleCategory, 'mandatory' |
   classification: !category.mandatory,
 });
 
-/** Whether anything about the category is the operator's to change — false draws the facts with no form. */
+/**
+ * Whether anything about the category is the operator's to change — false draws the facts with no form, and since
+ * task 170 makes the row's opener *view* rather than *edit*, so the row and the record answer from one rule.
+ */
 export const anyEditable = (controls: EditableControls): boolean =>
   controls.inApp || controls.email || controls.classification;
 

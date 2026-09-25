@@ -1,8 +1,10 @@
 import { ADMIN_ROSTER_KIND, type AdminRosterRow } from '@easyesg/contracts';
-import { BUTTON_VARIANT, Button, type DataTableColumn } from '@easyesg/ui';
+import { COLUMN_ALIGN, type DataTableColumn } from '@easyesg/ui';
 import { useMemo } from 'react';
 import { useFormatter, useTranslations } from 'use-intl';
+import type { AccountAction } from '../../../tools/account-action-state';
 import { StandingChip } from '../shared/standing-chip';
+import { RosterRowActions } from './roster-row-actions';
 
 const ROSTER_COLUMN = {
   ACCOUNT: 'account',
@@ -11,6 +13,7 @@ const ROSTER_COLUMN = {
   LAST_SIGN_IN: 'lastSignIn',
   SUPPORT_ACCESS: 'supportAccess',
   STATE: 'state',
+  ACTIONS: 'actions',
 } as const;
 
 type RosterColumn = (typeof ROSTER_COLUMN)[keyof typeof ROSTER_COLUMN];
@@ -23,15 +26,28 @@ type RosterColumn = (typeof ROSTER_COLUMN)[keyof typeof ROSTER_COLUMN];
  * requests each account raised in the last 30 days, whatever became of them — who leans on the privilege is
  * what reviewing it needs — and *not applicable* for an invitation, which is not yet anybody who could ask.
  *
- * Memoised on the translators and `onOpen`, which the board keeps stable — `reactCompiler` is off.
+ * **The last column opens the record and holds the row's lifecycle** (task 170; §5.2's preamble):
+ * `roster-row-actions.tsx`. The address has been plain text since — until then it was the opener, a
+ * link-coloured button, and nothing on the row said what else could be done with it.
+ *
+ * Memoised on the translators and the callbacks, which the board keeps stable, and on the two primitives
+ * the menu reads — `reactCompiler` is off (AD-9).
  */
 export function useRosterColumns({
+  operatorId,
+  busy,
   onOpen,
+  onControl,
 }: {
+  readonly operatorId: string;
+  /** A control is in flight — the menus' items are disabled until it settles. */
+  readonly busy: boolean;
   readonly onOpen: (id: string) => void;
+  readonly onControl: (action: AccountAction) => void;
 }): readonly DataTableColumn<AdminRosterRow, RosterColumn>[] {
   const t = useTranslations('platform.accounts.table');
   const tRealm = useTranslations('realm.chrome.realm');
+  const tChrome = useTranslations('chrome.rowActions');
   const format = useFormatter();
 
   return useMemo(
@@ -39,11 +55,7 @@ export function useRosterColumns({
       {
         key: ROSTER_COLUMN.ACCOUNT,
         header: t('account'),
-        cell: (row: AdminRosterRow) => (
-          <Button type="button" variant={BUTTON_VARIANT.SUBTLE} onClick={() => onOpen(row.id)}>
-            {row.email}
-          </Button>
-        ),
+        cell: (row: AdminRosterRow) => <span className="t-body-strong">{row.email}</span>,
       },
       {
         key: ROSTER_COLUMN.REALM,
@@ -75,7 +87,21 @@ export function useRosterColumns({
         header: t('state'),
         cell: (row: AdminRosterRow) => <StandingChip standing={row.standing} />,
       },
+      {
+        key: ROSTER_COLUMN.ACTIONS,
+        header: tChrome('header'),
+        align: COLUMN_ALIGN.END,
+        cell: (row: AdminRosterRow) => (
+          <RosterRowActions
+            row={row}
+            operatorId={operatorId}
+            busy={busy}
+            onOpen={onOpen}
+            onControl={onControl}
+          />
+        ),
+      },
     ],
-    [t, tRealm, format, onOpen],
+    [t, tRealm, tChrome, format, operatorId, busy, onOpen, onControl],
   );
 }

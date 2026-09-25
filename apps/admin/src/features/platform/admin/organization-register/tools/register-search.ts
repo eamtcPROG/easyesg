@@ -1,4 +1,5 @@
 import { SORT_DIRECTION, type SortDirection } from '@easyesg/ui';
+import { DEFAULT_PAGE_SIZE, readPageSize, type PageSize } from '~/lib/pagination';
 
 /**
  * A-02's addressable state (task 67.3; UX-4) — what the register's URL holds, what it means when a
@@ -23,20 +24,22 @@ export const REGISTER_SORT = {
 
 export type RegisterSort = (typeof REGISTER_SORT)[keyof typeof REGISTER_SORT];
 
-/** Every column the table draws: the orderings, and IDNO, which is searched but not ordered by. */
-export const REGISTER_COLUMN = { ...REGISTER_SORT, IDNO: 'idno' } as const;
+/**
+ * Every column the table draws: the orderings, IDNO, which is searched but not ordered by, and the row's
+ * actions (task 170).
+ */
+export const REGISTER_COLUMN = { ...REGISTER_SORT, IDNO: 'idno', ACTIONS: 'actions' } as const;
 
 export type RegisterColumn = (typeof REGISTER_COLUMN)[keyof typeof REGISTER_COLUMN];
-
-/** Rows per page — the compact console's denser page (§12.1), inside the api's admin ceiling of 200. */
-export const REGISTER_PAGE_SIZE = 50;
 
 export interface RegisterSearch {
   readonly q?: string;
   readonly sort?: RegisterSort;
   readonly direction?: SortDirection;
   readonly page?: number;
-  /** The organization whose record panel is open — addressable like every other part of the view. */
+  /** Rows per page, one of `lib/pagination.ts`'s sizes; absent is the default (task 170). */
+  readonly onpage?: PageSize;
+  /** The organization whose record is open — addressable like every other part of the view. */
   readonly selected?: string;
 }
 
@@ -46,6 +49,7 @@ export interface RegisterView {
   readonly sort: RegisterSort;
   readonly direction: SortDirection;
   readonly page: number;
+  readonly pageSize: PageSize;
   readonly selected: string | null;
 }
 
@@ -71,6 +75,7 @@ export const readRegisterSearch = (raw: Record<string, unknown>): RegisterSearch
     ...(isSortDirection(raw.direction) ? { direction: raw.direction } : {}),
     // Page 1 is the default, so it is not written: one view, one address.
     ...(Number.isInteger(page) && page > 1 ? { page } : {}),
+    ...readPageSize(raw.onpage),
     ...(typeof raw.selected === 'string' && raw.selected.length > 0 ? { selected: raw.selected } : {}),
   };
 };
@@ -80,6 +85,7 @@ export const registerViewOf = (search: RegisterSearch): RegisterView => ({
   sort: search.sort ?? REGISTER_SORT.NAME,
   direction: search.direction ?? SORT_DIRECTION.ASCENDING,
   page: search.page ?? 1,
+  pageSize: search.onpage ?? DEFAULT_PAGE_SIZE,
   selected: search.selected ?? null,
 });
 
@@ -91,7 +97,7 @@ export const registerApiPath = (view: Omit<RegisterView, 'selected'>): string =>
   const params = new URLSearchParams({
     order: `${view.sort},${view.direction}`,
     page: String(view.page),
-    onpage: String(REGISTER_PAGE_SIZE),
+    onpage: String(view.pageSize),
   });
   if (view.search.length > 0) params.set('search', view.search);
   return `/admin/organizations?${params.toString()}`;
@@ -110,6 +116,10 @@ export const withSort = (
 
 export const withPage = (search: RegisterSearch, page: number): RegisterSearch =>
   readRegisterSearch({ ...search, page, selected: undefined });
+
+/** A new page size starts from the first page, whose rows the open record may not be among. */
+export const withPageSize = (search: RegisterSearch, onpage: number): RegisterSearch =>
+  readRegisterSearch({ ...search, onpage, page: undefined, selected: undefined });
 
 export const withSelected = (search: RegisterSearch, selected: string | null): RegisterSearch =>
   readRegisterSearch({ ...search, selected: selected ?? undefined });

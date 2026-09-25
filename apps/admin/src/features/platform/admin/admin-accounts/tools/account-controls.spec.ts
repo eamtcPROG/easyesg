@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { accountControlsFor, controlDisclosesConsequence } from './account-controls';
+import { accountControlsFor, controlDisclosesConsequence, controlIsDestructive } from './account-controls';
 
 const OPERATOR = 'operator-id';
 const account = (standing: 'active' | 'locked' | 'suspended' | 'removed', id = 'other-id') =>
@@ -47,5 +47,13 @@ describe('A-08’s record controls (task 67.4)', () => {
         controlDisclosesConsequence(control as never),
       ),
     ).toEqual(['suspend', 'remove']);
+  });
+
+  it('sets apart a suspension, a removal and a revoke in the row’s menu, and only those', () => {
+    expect(
+      ['release_lockout', 'reactivate', 'suspend', 'remove', 'resend', 'revoke'].filter((control) =>
+        controlIsDestructive(control as never),
+      ),
+    ).toEqual(['suspend', 'remove', 'revoke']);
   });
 });

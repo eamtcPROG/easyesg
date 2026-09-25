@@ -6,7 +6,8 @@ import {
 
 /**
  * Which controls A-08's record offers for a row (task 67.4; §5.2 A-08) — derived from its kind and
- * state, and from whether it is the reader's own account.
+ * state, and from whether it is the reader's own account. **The row's ⋯ menu offers the same list**
+ * since task 170, so a menu item always has its button in the record.
  *
  * **This is presentation, and the api is the rule** (`ChangeAdminAccountStatus`, `ReleaseAdminLockout`).
  * A control not offered here is one the api would refuse; a control offered here can still be refused —
@@ -31,6 +32,20 @@ const CONSEQUENTIAL: ReadonlySet<AccountControl> = new Set([
 ]);
 
 export const controlDisclosesConsequence = (control: AccountControl): boolean => CONSEQUENTIAL.has(control);
+
+/**
+ * The three that take something away — an account's access, for a while or for good, or an invitation's
+ * link — which a row's ⋯ menu sets apart below a rule (task 170; §5.2's preamble). **Not the same set as
+ * the one above**: a revoked invitation discloses nothing, since no account holds anything yet, and
+ * whether a control confirms stays UX-70's question, not the menu's.
+ */
+const DESTRUCTIVE: ReadonlySet<AccountControl> = new Set([
+  ACCOUNT_CONTROL.SUSPEND,
+  ACCOUNT_CONTROL.REMOVE,
+  ACCOUNT_CONTROL.REVOKE,
+]);
+
+export const controlIsDestructive = (control: AccountControl): boolean => DESTRUCTIVE.has(control);
 
 export const accountControlsFor = (input: {
   readonly row: Pick<AdminRosterRow, 'id' | 'kind' | 'standing'>;

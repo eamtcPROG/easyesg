@@ -8,7 +8,8 @@ import { currentTotpCode } from './support/totp';
  * A-17 against the built console and the real api (task 67.10; UC-176, FR-173, UX-123).
  *
  * What only this suite can prove is that the screen walks UX-123's pattern end to end with the api's own answers: an
- * operator opens the reminder, reads its words rendered with example values, stops it travelling in-app, meets a
+ * operator opens the reminder — in a dialogue over the list since task 170 — reads its words rendered with example
+ * values, stops it travelling in-app, meets a
  * disclosure that names the channel removed, publishes, reverts from the result in one step past a second
  * disclosure, and finds both in A-08's log named by the category. **The rules are the api suite's**
  * (`apps/api/test/admin-notification-categories.e2e-spec.ts`); this proves the two halves agree about what happened.
@@ -62,15 +63,18 @@ test('an operator stops the reminder travelling in-app past a disclosure, and re
   await page.waitForURL('**/notification-templates');
   await expect(page.getByRole('heading', { level: 1, name: 'Categorii de notificări' })).toBeVisible();
 
-  // A category code fixes says so, and offers no editor.
-  await page.getByRole('button', { name: 'Resetarea parolei', exact: true }).click();
-  const reset = page.getByRole('complementary', { name: 'Fișa categoriei Resetarea parolei' });
+  // A category code fixes says so, and offers no editor — so its row offers to view it, not to edit it (task 170).
+  await page.getByRole('button', { name: 'Vedeți Resetarea parolei', exact: true }).click();
+  const reset = page.getByRole('dialog', { name: 'Resetarea parolei', exact: true });
   await expect(reset.getByText(/sunt stabilite de platformă/u)).toBeVisible();
   await expect(reset.getByRole('button', { name: 'Previzualizați și publicați' })).toHaveCount(0);
+  // The record is a modal dialogue over the list, so the next row is reached once it is closed.
+  await reset.getByRole('button', { name: 'Închideți fișa', exact: true }).click();
+  await expect(reset).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Mementouri', exact: true }).click();
+  await page.getByRole('button', { name: 'Editați Mementouri', exact: true }).click();
   await page.waitForURL(/[?&]category=reporting\.manual_reminder/u);
-  const record = page.getByRole('complementary', { name: 'Fișa categoriei Mementouri' });
+  const record = page.getByRole('dialog', { name: 'Mementouri', exact: true });
 
   // The words a recipient reads, rendered with example values rather than placeholders.
   // Twice, exactly: the email's subject and the in-app title are the same sentence.
@@ -103,6 +107,10 @@ test('an operator stops the reminder travelling in-app past a disclosure, and re
   await revert.getByRole('button', { name: 'Reveniți', exact: true }).click();
   await expect(page.getByText('Categoria Mementouri are din nou setările anterioare, în vigoare în câteva secunde.')).toBeVisible();
   await expect(record.getByRole('checkbox', { name: 'În aplicație' })).toBeChecked();
+
+  // The console's navigation behind the modal record is reached once it is closed.
+  await record.getByRole('button', { name: 'Închideți fișa', exact: true }).click();
+  await expect(record).toHaveCount(0);
 
   // A-08 names both writes by the category, filtered to this run's operator: the log is append-only.
   await page

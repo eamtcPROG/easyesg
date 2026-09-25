@@ -13,17 +13,20 @@ const noSortChange = () => undefined;
 const entryKey = (entry: SupportAccessLogEntry): string => entry.id;
 
 /**
- * A-07's log table on the Index archetype (task 67.9). **One empty state, not two**: the log has no filter, so
- * *nothing matched* cannot happen and *nothing yet* is the only way it is empty.
+ * A-07's log table on the Index archetype (task 67.9), with the console's page sizes since task 170 (§5.2's
+ * preamble). **One empty state, not two**: the log has no filter, so *nothing matched* cannot happen and *nothing
+ * yet* is the only way it is empty.
  */
 export function LogList({
   page,
   onOpen,
   onPageChange,
+  onPageSizeChange,
 }: {
   readonly page: IndexPage<SupportAccessLogEntry>;
   readonly onOpen: (entryId: string) => void;
   readonly onPageChange: (page: number) => void;
+  readonly onPageSizeChange: (pageSize: number) => void;
 }) {
   const t = useTranslations('platform.supportAccess.log');
   const columns = useLogColumns({ onOpen });
@@ -42,6 +45,7 @@ export function LogList({
       sort={NEWEST_FIRST}
       onSortChange={noSortChange}
       onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
       empty={{ firstUse: empty, filtered: empty }}
     />
   );

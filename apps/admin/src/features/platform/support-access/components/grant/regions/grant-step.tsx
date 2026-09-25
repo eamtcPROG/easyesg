@@ -63,7 +63,7 @@ export function GrantStep({
         </Button>
       </div>
       <h3 className="t-body-strong">{t('fields', { module })}</h3>
-      <dl className="t-body grid grid-cols-[minmax(12rem,1fr)_2fr] gap-x-[var(--space-4)] gap-y-[var(--space-2)]">
+      <dl className="t-body grid grid-cols-1 gap-x-[var(--space-4)] gap-y-[var(--space-2)] sm:grid-cols-[minmax(12rem,1fr)_2fr]">
         {query.data.value.fields
           .filter((field) => field.applicable)
           .map((field) => (

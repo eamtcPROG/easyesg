@@ -74,7 +74,8 @@
         "region": "Paginare",
         "previous": "Pagina anterioară",
         "next": "Pagina următoare",
-        "position": "{from}–{to} din {total}"
+        "position": "{from}–{to} din {total}",
+        "page": "Pagina {page}"
       }
     },
     "notFound": {

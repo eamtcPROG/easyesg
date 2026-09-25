@@ -47,8 +47,9 @@
 }
 
 /* The console's band (task 67.1): `--consolebar-*`, and the artboard's 46px. Selected by the
-   attribute, and more specific than the frame rules below, which is deliberate — the console is
-   `wide` and `extra` only (UX-77), so the 390 frame's height is never its to take. */
+   attribute, and more specific than the frame rules below, which is deliberate — the console keeps
+   its 46px band at every width, and since task 170 (UX-77 as amended) what changes below `wide` is
+   what the band holds: the drawer's control leads it and the realm's name moves into the drawer. */
 .bar[data-tone='console'] {
   gap: var(--space-5);
   min-block-size: 46px;

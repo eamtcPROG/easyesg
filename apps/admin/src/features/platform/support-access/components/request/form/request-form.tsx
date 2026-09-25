@@ -62,7 +62,7 @@ export function RequestForm({
 
   return (
     <section aria-label={t('region')}>
-      <Panel className="flex flex-col gap-[var(--space-4)] p-[var(--space-5)]">
+      <Panel className="flex flex-col gap-[var(--space-4)]">
         <h2 className="t-heading-3">{t('title')}</h2>
         <p className="t-body text-[var(--text-muted)]">{t('lede')}</p>
 
@@ -70,7 +70,7 @@ export function RequestForm({
           <RefusalCallout failure={failure} title={t('problemTitle')} fallback={t('problemTitle')} />
         )}
 
-        <dl className="t-body grid grid-cols-[auto_1fr] gap-x-[var(--space-4)] gap-y-[var(--space-2)]">
+        <dl className="t-body grid grid-cols-1 gap-x-[var(--space-4)] gap-y-[var(--space-2)] sm:grid-cols-[auto_1fr]">
           <dt className="text-[var(--text-muted)]">{t('organization')}</dt>
           <dd>{organization.name}</dd>
           <dt className="text-[var(--text-muted)]">{t('duration')}</dt>

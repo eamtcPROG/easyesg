@@ -12,6 +12,9 @@ import { currentTotpCode } from './support/totp';
  * and an open record survive a reload; that the record states the tenant-data boundary rather than
  * leaving a blank (§5.2's validation behaviour); that a Billing Operator who follows a link is told
  * who can read the register rather than shown an empty table; and that the whole surface passes axe.
+ *
+ * **A row opens from its last column, and its record is a dialogue** (task 170; `design_spec.md` §5.2's
+ * preamble): *Vedeți*, named for the organization, and a dialogue named by it.
  */
 const RUN_PREFIX = `e2e-register-${process.pid}-${Date.now()}`;
 const emailFor = (label: string) => `${RUN_PREFIX}-${label}@easyesg.md`;
@@ -40,7 +43,12 @@ async function signIn(page: Page, email: string) {
   await page.getByRole('button', { name: 'Continuați în consolă' }).click();
 }
 
-const recordPanel = (page: Page) => page.getByRole('complementary', { name: 'Fișa organizației' });
+/** The row's *Vedeți*, named for its organization — the name column is plain text since task 170. */
+const openRecord = (page: Page, name: string) =>
+  page.getByRole('button', { name: `Vedeți ${name}`, exact: true }).click();
+
+/** The record, a dialogue named by the organization it opens. */
+const recordDialog = (page: Page, name: string) => page.getByRole('dialog', { name, exact: true });
 
 test('a Platform Administrator finds an organization and opens its record, which states the boundary', async ({
   page,
@@ -63,14 +71,18 @@ test('a Platform Administrator finds an organization and opens its record, which
   await page.getByRole('button', { name: 'Căutați', exact: true }).click();
   await page.waitForURL(/[?&]q=/u);
 
-  await page.getByRole('button', { name: ORGANIZATION }).click();
+  await openRecord(page, ORGANIZATION);
   await page.waitForURL(/[?&]selected=/u);
-  await expect(recordPanel(page)).toContainText(ORGANIZATION);
-  await expect(recordPanel(page)).toContainText('Conținutul rapoartelor nu este afișat');
+  await expect(recordDialog(page, ORGANIZATION)).toContainText(ORGANIZATION);
+  await expect(recordDialog(page, ORGANIZATION)).toContainText('Conținutul rapoartelor nu este afișat');
 
   // UX-4: the search and the open record are the address, so a reload reopens both.
   await page.reload();
-  await expect(recordPanel(page)).toContainText(ORGANIZATION);
+  await expect(recordDialog(page, ORGANIZATION)).toContainText('Conținutul rapoartelor nu este afișat');
+  // Closing is a navigation too: the record leaves the address and the search stays in it.
+  await recordDialog(page, ORGANIZATION).getByRole('button', { name: 'Închideți fișa', exact: true }).click();
+  await expect(recordDialog(page, ORGANIZATION)).toHaveCount(0);
+  await expect(page).not.toHaveURL(/[?&]selected=/u);
   await expect(page.getByLabel('Căutați după nume sau IDNO')).toHaveValue(TOKEN);
 });
 
@@ -106,9 +118,9 @@ test('the record lists the organization’s people, and shows a phone one person
   await page.waitForURL('**/organizations');
   await page.getByLabel('Căutați după nume sau IDNO').fill(name);
   await page.getByRole('button', { name: 'Căutați', exact: true }).click();
-  await page.getByRole('button', { name }).click();
+  await openRecord(page, name);
 
-  const people = recordPanel(page).getByRole('region', { name: 'Persoanele organizației' });
+  const people = recordDialog(page, name).getByRole('region', { name: 'Persoanele organizației' });
   const maria = people.getByRole('listitem').filter({ hasText: 'Maria Popescu' });
   const ion = people.getByRole('listitem').filter({ hasText: 'Ion Rusu' });
   await expect(people.getByRole('listitem')).toHaveCount(2);
@@ -118,7 +130,7 @@ test('the record lists the organization’s people, and shows a phone one person
   await expect(ion).toContainText('Nu a lăsat un număr de telefon.');
   await expect(ion.getByRole('button', { name: 'Arătați telefonul' })).toHaveCount(0);
   // The number is not on the page until someone asks for it.
-  await expect(recordPanel(page)).not.toContainText('+37369123456');
+  await expect(recordDialog(page, name)).not.toContainText('+37369123456');
 
   await maria.getByRole('button', { name: 'Arătați telefonul' }).click();
   await expect(maria.getByRole('link', { name: '+37369123456' })).toHaveAttribute('href', 'tel:+37369123456');
@@ -156,8 +168,8 @@ test('axe finds no violations on the register with a record open', async ({ page
   await page.waitForURL('**/organizations');
   await page.getByLabel('Căutați după nume sau IDNO').fill(TOKEN);
   await page.getByRole('button', { name: 'Căutați', exact: true }).click();
-  await page.getByRole('button', { name }).click();
-  await expect(recordPanel(page)).toBeVisible();
+  await openRecord(page, name);
+  await expect(recordDialog(page, name)).toBeVisible();
   await page.waitForLoadState('networkidle');
 
   const results = await new AxeBuilder({ page })

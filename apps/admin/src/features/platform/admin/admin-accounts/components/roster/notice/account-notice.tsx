@@ -4,9 +4,11 @@ import { RefusalCallout } from '~/realm/components/shared/refusal-callout';
 import { ACCOUNT_NOTICE, type AccountNotice as Notice } from '../../../tools/account-action-state';
 
 /**
- * A-08's *success* state and its refusals, announced in place above the table (task 67.4) — what was
- * done and to whom, or the api's sentence for why it was not. A done notice can be dismissed; a refusal
- * stays until the next action, which is when it stops being true.
+ * A-08's *success* state and its refusals, announced in place (task 67.4) — what was done and to whom,
+ * or the api's sentence for why it was not. A done notice can be dismissed; a refusal stays until the
+ * next action, which is when it stops being true. **Where "in place" is moved with task 170**: above the
+ * table, or inside the record's or the invitation form's dialogue while one covers the page — the board
+ * decides which.
  */
 export function AccountNotice({
   notice,

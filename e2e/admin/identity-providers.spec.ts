@@ -11,7 +11,8 @@ import { currentTotpCode } from './support/totp';
  *
  * What only this suite can prove is §5.2 A-18's exit, *the effect is visible on S-01*: an operator registers Google
  * by saving its client id, enables it, and the tenant sign-in screen offers it — with no redeploy and no restart —
- * then disables it past the confirmation that names who it reaches, and the button is gone. On the way it holds the
+ * then disables it past the confirmation that names who it reaches — opened over the record's dialogue, where the
+ * record has been since task 170 — and the button is gone. On the way it holds the
  * screen to the task row's one obligation about the secret: **it says the server holds one, and where it is set**.
  * That the secret's value never leaves the api is `apps/api/test/admin-identity-providers.e2e-spec.ts`'s claim,
  * made against the value the api actually loaded — this process cannot see that value, and a check against a
@@ -71,9 +72,16 @@ test('an operator registers Google, enables it onto the sign-in screen, and disa
   await page.waitForURL('**/identity-providers');
   await expect(page.getByRole('heading', { level: 1, name: 'Furnizori de identitate' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Google', exact: true }).click();
+  // The row's menu offers the record's enable, and holds it back for the reason the record states (task 170).
+  await page.getByRole('button', { name: 'Mai multe acțiuni pentru Google', exact: true }).click();
+  await expect(page.getByRole('menuitem', { name: 'Activați furnizorul', exact: true })).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toHaveCount(0);
+
+  // The record opens in a dialogue over the list (task 170), titled with the provider's name.
+  await page.getByRole('button', { name: 'Editați Google', exact: true }).click();
   await page.waitForURL(/[?&]provider=google/u);
-  const record = page.getByRole('complementary', { name: 'Fișa furnizorului Google' });
+  const record = page.getByRole('dialog', { name: 'Google', exact: true });
 
   // The half the screen cannot edit: whether the server holds the secret, and where it is set.
   await expect(record.getByText('Serverul deține secretul')).toBeVisible();
@@ -118,6 +126,10 @@ test('an operator registers Google, enables it onto the sign-in screen, and disa
   await expect(signInScreen.getByLabel('Adresa de e-mail')).toBeVisible();
   await expect(signInScreen.getByRole('link', { name: 'Continuați cu Google' })).toHaveCount(0);
   await visitor.close();
+
+  // The dialogue is modal, so the console's navigation behind it is reached once it is closed.
+  await record.getByRole('button', { name: 'Închideți fișa', exact: true }).click();
+  await expect(record).toHaveCount(0);
 
   // The log names what was acted on by its provider — a configuration version has no address. Filtered to this
   // run's operator: the log is append-only, so every earlier run's disable is also a row naming Google.

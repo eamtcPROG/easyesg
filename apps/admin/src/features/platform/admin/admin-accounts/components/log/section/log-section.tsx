@@ -33,7 +33,7 @@ export function LogSection({
     return query.isError ? <LogUnavailable onRetry={() => void query.refetch()} /> : <LogLoading />;
   }
 
-  const read = readLogOutcome({ outcome: query.data, page: view.page });
+  const read = readLogOutcome({ outcome: query.data, page: view.page, pageSize: view.pageSize });
   switch (read.kind) {
     case REALM_READ.SIGNED_OUT:
     case REALM_READ.FORBIDDEN:

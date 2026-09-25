@@ -118,9 +118,12 @@ src/
 │               built; platform/admin/ holds organization-register/ (A-02, task 67.3), admin-accounts/
 │               (A-08, task 67.4) and identity-providers/ (A-18, task 67.11); platform/notification/ is A-17
 │               (task 67.10), and platform/shared/ its category names, which A-08's log reads too
-├─ shared/      what BOTH contexts need — index-view.tsx, the Index archetype's chrome bound once. A LEAF
+├─ shared/      what BOTH contexts need — index-view.tsx, the Index archetype's chrome and page-size offer
+│               bound once; row-actions.tsx, a row's labelled button and ⋯ menu; filter-bar.tsx, the
+│               symmetric filter row (task 170). A LEAF
 ├─ i18n/        use-intl wiring, the console locale, formats, the expansion harness, global.d.ts
-├─ lib/         env (build-time only) and vite-env.d.ts beside it, pagination
+├─ lib/         env (build-time only) and vite-env.d.ts beside it, pagination — the three page sizes a
+│               paged list offers and how an address's `onpage` is read (task 170)
 ├─ messages/    ro.json — one catalogue, by decision
 └─ test/        the setup file, and folder-shape.spec.ts — the folder invariant's failing state
 ```
@@ -190,6 +193,16 @@ src/
   guards precisely so a reader of that navigation meets it. **It has two consumers in that file
   since task 113** — the completed sign-in and the gate above — and stays inline rather than moving
   to `tools/` with a spec, because that last sentence is the reason it is where it is.
+
+- **A record opens in a dialogue, a row carries its actions, and a paged list offers a size** (task
+  170; `design_spec.md` §5.2's preamble, the owner's four decisions of 24 Sep 2026). The list keeps the
+  full width and the record — or a form creating one — is `@easyesg/ui`'s `Dialog`, mounted while the
+  address names it; the row's last column is `shared/row-actions.tsx`; a filter is
+  `shared/filter-bar.tsx`; and `IndexView` requires `onPageSizeChange`, so a paged list cannot ship
+  without the size choice. **Below `wide` the console adapts** (UX-77 as amended): the navigation is
+  `ConsoleDrawer` in the bar, and a screen reflows with Tailwind's `sm:`/`lg:` prefixes rather than
+  hiding anything. **Padding on `Panel` does nothing** — its module CSS is unlayered and beats every
+  Tailwind utility — so a panel takes its own padding or none; the dead classes were removed.
 
 - **This chrome has no organization selector, and must not grow one.** D-5 gives a Platform
   Administrator no standing access to organization data. A selector here would be that standing

@@ -1,6 +1,7 @@
 /* The console's side navigation (task 67.1) — `EasyESG Admin Console Screens.dc.html`'s dark column.
-   Tier-3 `--consolenav-*` only; the pairings are measured in `tokens.spec.ts`. The console is `wide`
-   and `extra` only (UX-77), so there is no compact form to design. */
+   Tier-3 `--consolenav-*` only; the pairings are measured in `tokens.spec.ts`. Below `wide` the column
+   is not drawn and `console-drawer.module.css` holds the same sections (UX-77 as amended, task 170);
+   the section, heading and item rules below are shared by both. */
 
 .nav {
   display: flex;
@@ -12,6 +13,14 @@
   inline-size: 214px;
   padding: var(--space-4) 0;
   background: var(--consolenav-surface);
+}
+
+/* `display: none` rather than clipping, so a screen reader is not offered the destinations twice:
+   below `wide` the drawer carries them. 64rem is §3.3's one stated threshold, `wide`'s 1024px. */
+@media (max-width: 63.9375rem) {
+  .nav {
+    display: none;
+  }
 }
 
 .section {

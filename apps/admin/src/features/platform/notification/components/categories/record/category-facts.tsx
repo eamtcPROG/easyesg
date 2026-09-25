@@ -7,6 +7,9 @@ import { ClassificationChip } from '../shared/classification-chip';
  * A-17's facts about one category (task 67.10) — where it travels, whether recipients may switch it off, what code
  * declares about it, who switched it off, and its last publication. **What code declares is said, not implied**: a
  * mandatory category's fixed controls would otherwise read as a screen that forgot to offer them.
+ *
+ * **Label beside value from `sm` up, label above value below it** (UX-77 as amended 24 Sep 2026, task 170): the
+ * record's dialogue fills the frame at `compact`, where a column of labels would leave the values a strip.
  */
 export function CategoryFacts({ category }: { readonly category: ConsoleCategory }) {
   const t = useTranslations('platform.notificationCategories.record');
@@ -14,7 +17,7 @@ export function CategoryFacts({ category }: { readonly category: ConsoleCategory
   const { inForce, switchOffs } = category;
 
   return (
-    <dl className="t-body grid grid-cols-[auto_1fr] items-center gap-x-[var(--space-4)] gap-y-[var(--space-2)]">
+    <dl className="t-body grid grid-cols-1 gap-y-[var(--space-1)] max-sm:[&>dt:not(:first-of-type)]:mt-[var(--space-3)] sm:grid-cols-[auto_1fr] sm:items-center sm:gap-x-[var(--space-4)] sm:gap-y-[var(--space-2)]">
       <dt className="text-[var(--text-muted)]">{t('channels')}</dt>
       <dd>
         <CategoryChannelsText inForce={inForce} />

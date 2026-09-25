@@ -10,7 +10,7 @@
  * the screen the signed-in operator, since only the operator who asked may read under a grant.
  *
  * **Every part of the view is in the URL** (UX-4): the organization a request is being written for (A-02's exit),
- * the grant being read with its report and module, the log's open entry and its page.
+ * the grant being read with its report and module, the log's open entry, its page and its page size.
  *
  * **The realm guard admits any operator; the api decides who reads.** A Billing Operator who follows a link here
  * sees §5.2's permission state, drawn from the api's 403.

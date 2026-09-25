@@ -16,21 +16,25 @@ export function RegisterList({
   page,
   view,
   onOpen,
+  onRequestAccess,
   onSortChange,
   onPageChange,
+  onPageSizeChange,
   onClearSearch,
   onReload,
 }: {
   readonly page: IndexPage<OrganizationRegisterRow>;
   readonly view: RegisterView;
   readonly onOpen: (id: string) => void;
+  readonly onRequestAccess: (id: string) => void;
   readonly onSortChange: (sort: { readonly column: RegisterSort; readonly direction: SortDirection }) => void;
   readonly onPageChange: (page: number) => void;
+  readonly onPageSizeChange: (pageSize: number) => void;
   readonly onClearSearch: () => void;
   readonly onReload: () => void;
 }) {
   const t = useTranslations('platform.organizations');
-  const columns = useRegisterColumns({ onOpen });
+  const columns = useRegisterColumns({ onOpen, onRequestAccess });
 
   return (
     <IndexView
@@ -44,6 +48,7 @@ export function RegisterList({
         if (isRegisterSort(sort.column)) onSortChange({ column: sort.column, direction: sort.direction });
       }}
       onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
       empty={{
         firstUse: (
           <EmptyState

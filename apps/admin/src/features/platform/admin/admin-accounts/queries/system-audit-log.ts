@@ -13,7 +13,15 @@ export const SYSTEM_AUDIT_LOG_QUERY_KEY = ['admin', 'system-audit-log'] as const
 
 export const systemAuditLogQuery = (view: LogView) =>
   queryOptions({
-    queryKey: [...SYSTEM_AUDIT_LOG_QUERY_KEY, view.operator, view.action, view.from, view.to, view.page] as const,
+    queryKey: [
+      ...SYSTEM_AUDIT_LOG_QUERY_KEY,
+      view.operator,
+      view.action,
+      view.from,
+      view.to,
+      view.page,
+      view.pageSize,
+    ] as const,
     queryFn: () => api.list<SystemAuditLogEntry>(logApiPath(view)),
     placeholderData: keepPreviousData,
   });

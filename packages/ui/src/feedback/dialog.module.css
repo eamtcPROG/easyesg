@@ -1,0 +1,138 @@
+/* The Components sheet's `ui/dialog.tsx` (task 170). Tier 2/3 tokens only. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+}
+
+/* A column of three: the head and the closing row stay put, the body between them scrolls — so a
+   long record never scrolls its own save button out of reach. */
+.dialog {
+  position: fixed;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  inline-size: min(40rem, calc(100vw - var(--space-8)));
+  max-block-size: calc(100dvh - var(--space-8));
+  border: 1px solid var(--border-default);
+  /* §11's largest radius: "dialogues — nothing is rounder". */
+  border-radius: var(--radius-3);
+  background: var(--surface-raised);
+  box-shadow: var(--elevation-2);
+  color: var(--text-default);
+}
+
+.dialog[data-size='wide'] {
+  inline-size: min(56rem, calc(100vw - var(--space-8)));
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-6) var(--space-4);
+}
+
+.title {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+/* 32px, the dense console's target (§12.1), above WCAG 2.2's 24px minimum. */
+.close {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-3)) 0 0;
+  border: 0;
+  border-radius: var(--radius-1);
+  background: none;
+  color: var(--text-body);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--surface-sunken);
+  color: var(--text-default);
+}
+
+.close svg {
+  inline-size: 18px;
+  block-size: 18px;
+}
+
+.description {
+  margin: 0;
+  padding: 0 var(--space-6) var(--space-4);
+  color: var(--text-muted);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-block-size: 0;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-6) var(--space-6);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
+  border-block-start: 1px solid var(--border-default);
+}
+
+/* `compact` (UX-77 as amended): the whole frame, square, and the closing row's buttons full width —
+   the same 40rem boundary the chrome drawer and the page gutter change on. */
+@media (max-width: 39.9375rem) {
+  .dialog,
+  .dialog[data-size='wide'] {
+    inset: 0;
+    transform: none;
+    inline-size: 100%;
+    max-block-size: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .footer {
+    flex-direction: column-reverse;
+  }
+
+  .footer > * {
+    inline-size: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dialog[data-state='open'] {
+    animation: dialog-in var(--motion-panel) var(--motion-ease);
+  }
+
+  .overlay[data-state='open'] {
+    animation: overlay-in var(--motion-panel) var(--motion-ease);
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}

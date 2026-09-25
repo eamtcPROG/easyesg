@@ -29,6 +29,7 @@ describe('readRegisterOutcome', () => {
           messages: [],
         },
         page: 2,
+        pageSize: 50,
       }),
     ).toEqual({
       kind: REGISTER_READ.READY,
@@ -37,14 +38,14 @@ describe('readRegisterOutcome', () => {
   });
 
   it('reads a 403 as the permission state and a 401 as a session that ended', () => {
-    expect(readRegisterOutcome({ outcome: problem(403), page: 1 }).kind).toBe(REGISTER_READ.FORBIDDEN);
-    expect(readRegisterOutcome({ outcome: problem(401), page: 1 }).kind).toBe(REGISTER_READ.SIGNED_OUT);
+    expect(readRegisterOutcome({ outcome: problem(403), page: 1, pageSize: 25 }).kind).toBe(REGISTER_READ.FORBIDDEN);
+    expect(readRegisterOutcome({ outcome: problem(401), page: 1, pageSize: 25 }).kind).toBe(REGISTER_READ.SIGNED_OUT);
   });
 
   it('reads any other problem, and an unreachable api, as recoverable', () => {
-    expect(readRegisterOutcome({ outcome: problem(500), page: 1 }).kind).toBe(REGISTER_READ.UNAVAILABLE);
+    expect(readRegisterOutcome({ outcome: problem(500), page: 1, pageSize: 25 }).kind).toBe(REGISTER_READ.UNAVAILABLE);
     expect(
-      readRegisterOutcome({ outcome: { status: API_OUTCOME.Unreachable }, page: 1 }).kind,
+      readRegisterOutcome({ outcome: { status: API_OUTCOME.Unreachable }, page: 1, pageSize: 25 }).kind,
     ).toBe(REGISTER_READ.UNAVAILABLE);
   });
 });

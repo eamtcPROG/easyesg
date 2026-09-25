@@ -30,6 +30,7 @@ const LABELS = {
     next: 'Next',
     position: (of: { from: number; to: number; total: number }) =>
       `${of.from}–${of.to} of ${of.total}`,
+    page: (page: number) => `Page ${page}`,
   },
 };
 

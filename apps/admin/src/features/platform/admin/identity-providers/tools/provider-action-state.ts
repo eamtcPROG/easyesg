@@ -3,6 +3,7 @@ import {
   PROBLEM_TYPE,
   type ApiFailure,
   type ConfigureIdentityProviderRequest,
+  type IdentityProvider,
   type SocialProvider,
 } from '@easyesg/contracts';
 
@@ -19,17 +20,38 @@ export const PROVIDER_CONTROL = {
 
 export type ProviderControl = (typeof PROVIDER_CONTROL)[keyof typeof PROVIDER_CONTROL];
 
+/** An enable or a disable — the write a provider's state control, and its row's menu, offer. */
+export interface ProviderStateAction {
+  readonly control: typeof PROVIDER_CONTROL.ENABLE | typeof PROVIDER_CONTROL.DISABLE;
+  readonly provider: SocialProvider;
+  readonly revision: number;
+}
+
 export type ProviderAction =
   | {
       readonly control: typeof PROVIDER_CONTROL.SAVE;
       readonly provider: SocialProvider;
       readonly request: ConfigureIdentityProviderRequest;
     }
-  | {
-      readonly control: typeof PROVIDER_CONTROL.ENABLE | typeof PROVIDER_CONTROL.DISABLE;
-      readonly provider: SocialProvider;
-      readonly revision: number;
-    };
+  | ProviderStateAction;
+
+/**
+ * A provider's state control as last read — enable while it is disabled, disable while it is enabled — and whether
+ * the api's reason it could not sign anyone in (`enablementBlocker`) blocks it. **Only an enable is ever blocked**: a
+ * missing client id or secret is a reason not to offer a provider on S-01, never a reason to keep offering it. **One
+ * function for the record's control and the row's menu** (task 170; `design_spec.md` §5.2's preamble), so the two
+ * cannot offer one provider different writes.
+ */
+export const stateControlOf = (
+  provider: Pick<IdentityProvider, 'provider' | 'enabled' | 'enablementBlocker' | 'revision'>,
+): { readonly action: ProviderStateAction; readonly blocked: boolean } => ({
+  action: {
+    control: provider.enabled ? PROVIDER_CONTROL.DISABLE : PROVIDER_CONTROL.ENABLE,
+    provider: provider.provider,
+    revision: provider.revision,
+  },
+  blocked: !provider.enabled && provider.enablementBlocker !== null,
+});
 
 /**
  * UX-70, over this screen's three writes. **A disable always asks**, because it names what it strands. **A save

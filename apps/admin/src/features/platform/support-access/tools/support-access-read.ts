@@ -9,7 +9,7 @@ import {
 } from '@easyesg/contracts';
 import type { IndexPage } from '@easyesg/ui';
 import { REALM_READ, realmReadFailureOf, type RealmReadFailure } from '~/realm/tools/realm-read';
-import { SUPPORT_ACCESS_PAGE_SIZE } from './support-access-search';
+import type { LogView } from './support-access-search';
 
 /**
  * What A-07's reads answered, as the arms its regions draw (task 67.9) — the realm's three failures, and for a read
@@ -20,12 +20,12 @@ export type LogRead =
   | { readonly kind: typeof REALM_READ.READY; readonly page: IndexPage<SupportAccessLogEntry> }
   | RealmReadFailure;
 
-/** One page of the log. It has no filter, so what it matched is everything there is. */
+/** One page of the log, at the size it was asked for. It has no filter, so what it matched is everything there is. */
 export const readLogOutcome = (input: {
   readonly outcome: ApiOutcome<ListResult<SupportAccessLogEntry>>;
-  readonly page: number;
+  readonly view: LogView;
 }): LogRead => {
-  const { outcome } = input;
+  const { outcome, view } = input;
   if (outcome.status !== API_OUTCOME.Ok) return realmReadFailureOf(outcome);
   return {
     kind: REALM_READ.READY,
@@ -33,8 +33,8 @@ export const readLogOutcome = (input: {
       rows: outcome.value.items,
       matched: outcome.value.total,
       total: outcome.value.total,
-      page: input.page,
-      pageSize: SUPPORT_ACCESS_PAGE_SIZE,
+      page: view.page,
+      pageSize: view.pageSize,
     },
   };
 };

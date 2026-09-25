@@ -2,13 +2,16 @@ import type { IdentityProvider } from '@easyesg/contracts';
 import { BUTTON_VARIANT, Button } from '@easyesg/ui';
 import { useId } from 'react';
 import { useTranslations } from 'use-intl';
-import { PROVIDER_CONTROL, isPendingControl, type ProviderAction } from '../../../tools/provider-action-state';
+import { isPendingControl, stateControlOf, type ProviderAction } from '../../../tools/provider-action-state';
 
 /**
  * A-18's enable or disable (task 67.11). **The api's reason a provider could not sign anyone in is shown before the
  * click** (`enablementBlocker`, derived by the same rule that refuses an enablement): on a disabled provider it is
  * why *Enable* is unavailable, and on an enabled one it says the provider is enabled on paper and missing from
  * S-01. A write in flight disables the control, so a second click cannot race the first.
+ *
+ * **Which write it offers, and whether it is blocked, is `stateControlOf`'s** — the row's menu asks the same function
+ * since task 170, so the record and the row cannot disagree about a provider.
  */
 export function ProviderStateControl({
   provider,
@@ -22,7 +25,7 @@ export function ProviderStateControl({
   const t = useTranslations('platform.identityProviders');
   const reasonId = useId();
   const blocker = provider.enablementBlocker;
-  const control = provider.enabled ? PROVIDER_CONTROL.DISABLE : PROVIDER_CONTROL.ENABLE;
+  const { action, blocked } = stateControlOf(provider);
 
   return (
     <div className="flex flex-col gap-[var(--space-2)]">
@@ -35,12 +38,12 @@ export function ProviderStateControl({
         <Button
           type="button"
           variant={BUTTON_VARIANT.SECONDARY}
-          busy={isPendingControl({ pending, provider: provider.provider, control })}
-          disabled={pending !== null || (!provider.enabled && blocker !== null)}
+          busy={isPendingControl({ pending, provider: provider.provider, control: action.control })}
+          disabled={pending !== null || blocked}
           aria-describedby={blocker === null ? undefined : reasonId}
-          onClick={() => onAction({ control, provider: provider.provider, revision: provider.revision })}
+          onClick={() => onAction(action)}
         >
-          {t(`controls.${control}`)}
+          {t(`controls.${action.control}`)}
         </Button>
       </div>
     </div>

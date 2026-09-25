@@ -74,7 +74,8 @@
         "region": "Постраничная навигация",
         "previous": "Предыдущая страница",
         "next": "Следующая страница",
-        "position": "{from}–{to} из {total}"
+        "position": "{from}–{to} из {total}",
+        "page": "Страница {page}"
       }
     },
     "notFound": {

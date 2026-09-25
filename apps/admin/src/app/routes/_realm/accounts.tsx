@@ -9,7 +9,7 @@
  * state and hands the screen the signed-in operator, whose own account the record offers no ending to.
  *
  * **Every part of the view is in the URL** (UX-4): the open record or the invitation form, and the
- * log's filters and page — which is what *filters held in the URL, no named saved views* means.
+ * log's filters, page and page size — which is what *filters held in the URL, no named saved views* means.
  *
  * **The realm guard admits any operator; the api decides who reads.** A Billing Operator who follows a
  * link here sees §5.2's permission state, drawn from the api's 403.

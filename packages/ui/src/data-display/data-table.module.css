@@ -46,8 +46,16 @@
   border-block-end: none;
 }
 
-.end {
+/* Scoped under `.table` on purpose: `.table th` and `.table td` above are 0,1,1 and set `start`, so a
+   bare `.end` (0,1,0) lost to them and no end-aligned column ever aligned — numbers and the console's
+   action column sat at the start under a header that said otherwise (found by task 170). */
+.table .end {
   text-align: end;
+}
+
+/* A sortable end-aligned header: the control fills the cell, so its content is what moves. */
+.end .sortButton {
+  justify-content: flex-end;
 }
 
 .sortButton {

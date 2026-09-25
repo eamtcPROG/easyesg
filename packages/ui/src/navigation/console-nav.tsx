@@ -1,6 +1,7 @@
-import { useId, type ReactNode } from 'react';
-import { Anchor, type NavLinkComponent } from './nav-link';
-import { ARIA_CURRENT, type AriaCurrent } from './nav-link-vocabulary';
+import type { ReactNode } from 'react';
+import { ConsoleNavSections } from './console-nav-sections';
+import type { NavLinkComponent } from './nav-link';
+import type { AriaCurrent } from './nav-link-vocabulary';
 import styles from './console-nav.module.css';
 
 /**
@@ -17,6 +18,10 @@ import styles from './console-nav.module.css';
  *
  * **Each list is named by its heading**, through `aria-labelledby`, so a screen reader moving by list
  * hears *Platform* or *Billing* rather than an anonymous run of links.
+ *
+ * **Drawn at `wide` and above only, since task 170** (UX-77 as amended): below 64rem the column is not
+ * drawn and `ConsoleDrawer` — a menu control in the bar — opens the same sections, through the same
+ * `ConsoleNavSections`, so the two frames cannot disagree about which destination is current.
  *
  * States (§8.1, the applicable subset): rest · hover · focus · **current** · **empty**. A section with
  * no destinations is not drawn, and a navigation with none renders nothing — the console's state until
@@ -64,48 +69,16 @@ export function ConsoleNav<TItem extends ConsoleNavItem = ConsoleNavItem>({
   renderItem,
   linkComponent,
 }: ConsoleNavProps<TItem>) {
-  const id = useId();
-  const Link = linkComponent ?? Anchor;
-  const populated = sections.filter((section) => section.items.length > 0);
-
-  if (populated.length === 0) return null;
+  if (sections.every((section) => section.items.length === 0)) return null;
 
   return (
     <nav className={styles.nav} aria-label={label}>
-      {populated.map((section) => {
-        const headingId = `${id}-${section.key}`;
-
-        return (
-          <div key={section.key} className={styles.section}>
-            <p id={headingId} className={styles.heading}>
-              {section.heading}
-            </p>
-            <ul className={styles.list} aria-labelledby={headingId}>
-              {section.items.map((item) => {
-                const active = isActive(item);
-                // Built once and handed to both paths, so the default rendering and a `renderItem`
-                // one cannot disagree about what "current" means on the wire.
-                const state: ConsoleNavItemState = {
-                  isActive: active,
-                  linkProps: active ? { 'aria-current': ARIA_CURRENT.PAGE } : {},
-                };
-
-                return (
-                  <li key={item.key} className={active ? styles.current : styles.item}>
-                    {renderItem ? (
-                      renderItem(item, state)
-                    ) : (
-                      <Link href={item.href} {...state.linkProps}>
-                        {item.label}
-                      </Link>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        );
-      })}
+      <ConsoleNavSections
+        sections={sections}
+        isActive={isActive}
+        renderItem={renderItem}
+        linkComponent={linkComponent}
+      />
     </nav>
   );
 }

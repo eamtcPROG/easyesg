@@ -11,7 +11,7 @@ import type {
 } from '@easyesg/contracts';
 import { api } from '~/realm/api/api-client';
 import { logIsMoving } from '../tools/support-access-read';
-import { grantApiPath, logApiPath, type GrantScope } from '../tools/support-access-search';
+import { grantApiPath, logApiPath, type GrantScope, type LogView } from '../tools/support-access-search';
 
 /**
  * A-07's log, its request form's organization, and its two writes (task 67.9), through the realm's one client.
@@ -21,15 +21,18 @@ import { grantApiPath, logApiPath, type GrantScope } from '../tools/support-acce
  * **The log polls only while it is moving** (`logIsMoving`): every read of it is itself logged, so a console left
  * open on a finished log writes nothing, and one watching a request waits at most half a minute to see it answered.
  * The countdown does not need the poll — it counts down from the expiry the last read carried.
+ *
+ * **Keyed by the page and its size together** (task 170), since both change what the api answers — and never by the
+ * open entry, so opening one refetches nothing.
  */
 export const SUPPORT_ACCESS_QUERY_KEY = ['admin', 'support-access'] as const;
 
 const MOVING_LOG_POLL_MS = 30 * 1000;
 
-export const supportAccessLogQuery = (page: number) =>
+export const supportAccessLogQuery = (view: LogView) =>
   queryOptions({
-    queryKey: [...SUPPORT_ACCESS_QUERY_KEY, 'log', page] as const,
-    queryFn: () => api.list<SupportAccessLogEntry>(logApiPath(page)),
+    queryKey: [...SUPPORT_ACCESS_QUERY_KEY, 'log', view.page, view.pageSize] as const,
+    queryFn: () => api.list<SupportAccessLogEntry>(logApiPath(view)),
     placeholderData: keepPreviousData,
     refetchInterval: (query) => (logIsMoving(query.state.data) ? MOVING_LOG_POLL_MS : false),
   });

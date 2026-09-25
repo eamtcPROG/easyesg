@@ -25516,3 +25516,102 @@ failed, so it fails on the defect.
 - `pnpm lint` passes. Its first cold run, after `clean-build-outputs.sh` had deleted ESLint's cache, ran out of heap
   on this 8 GB host. Linting one workspace at a time with the same flags warmed the cache, and the whole-repo run
   then passed.
+
+## Task 170 — The console's lists: records in dialogues, row actions, numbered pages, symmetric filters, and a console that adapts below `wide` · 2026-09-24
+
+The owner's review of the console, verbatim in substance: *the styling is awful, conventions are not respected, pagination
+is missing, it is not clear how to edit, action buttons on tables are missing, identity-providers details and edit should
+open in a dialog, filter fields are not symmetric, and the layout is not adjusted for mobile.* Screenshots at 1440 and 390
+of all five live screens confirmed each, and showed two more nobody had named: A-07's log was squeezed into ~60% of the
+page by an empty `lg:` grid track reserved for a record that was not open, and **no end-aligned column had ever aligned**.
+
+### Four decisions, taken before any code
+
+Four of the complaints ran against the specification as written — UX-77 said the console *"shall state this rather than
+degrading"*, three A-rows put the record *beside* the list, the spec named no page size and no row-action shape — so they
+were the owner's to take, in one batch, each with a recommendation, and all four recommendations were chosen. They are
+`design_spec.md` §5.2's new preamble paragraph (**how a console screen lists, opens and pages its records**), UX-77 as
+amended, §3.2 and §12.1's viewport rows, and the A-02, A-07, A-08, A-17 and A-18 rows each saying what they said before:
+
+- **Every console record opens in a dialogue**, a form creating one included — not only A-18, which the owner named. The
+  list keeps the full width; the record stays addressable.
+- **A row carries a labelled *Editați*/*Vedeți* and a ⋯ menu** of its own actions, each also in the record.
+- **A paged list numbers its pages and offers 25/50/100, default 25, all in the URL.** The roster, the providers and the
+  categories are answered whole by the api by design, and say how many rows they hold instead.
+- **Below `wide` the navigation is a drawer and tables scroll in their own box** — not stacked cards, which would have
+  changed `DataTable` for the tenant screens too.
+
+### What `packages/ui` gained, and why each is there rather than in the console
+
+`Dialog` (the Components sheet's `ui/dialog.tsx`) and `OverflowMenu` (the sheet's own specimen) are inventory entries both
+apps can use — `apps/web`'s re-authentication dialogue is a hand-rolled Radix dialog that is now a candidate to adopt it.
+`ConsoleDrawer` sits beside `ConsoleNav`, which already lived here; both render one `ConsoleNavSections`, so the column
+and the drawer cannot disagree about what is current. `Pagination` numbers its pages (`pagination-window.ts`, with its
+spec) and takes an optional `sizes`; **with a size offered the footer stays at one page**, since the reader who chose 100
+must be able to choose 25 again — without one, the single-page rule stands and the tenant screens are unchanged but for
+the numbers. §11.5 records all four.
+
+**The filter rows were ragged for a reason no screen could fix**: `TextField` drew a 46px box by construction and `Select`
+a 40px one, while `Select`'s docblock claimed parity. One tier-3 token, `--field-block-size`, now sizes both — **outside the
+compact block on purpose**, since `tokens.spec.ts` pins that a density moves space steps and nothing else. The tenant
+app's selects grow 40 → 46 px as a result, which is the parity they claimed. `shared/filter-bar.tsx` gives each field one
+width and stands the buttons after the last field at the field's height (`height`, not `min-height`, because the button's
+module CSS owns `min-height` — see the next paragraph).
+
+**Two cascade defects, both the same shape**: a module rule of equal or higher specificity silently beating the class
+meant to override it. `DataTable`'s `.end` (0,1,0) lost to `.table th`/`.table td` (0,1,1), so `COLUMN_ALIGN.END` never
+aligned anything in either app; it is `.table .end` now. And **padding classes on `Panel` do nothing** — its module CSS is
+unlayered and beats Tailwind's `@layer utilities` — measured in the browser (a `p-[var(--space-5)]` panel computes 24px);
+A-07's dead classes are removed and `apps/admin/CLAUDE.md` says so. *Searched for the shape:* every `Panel` with a padding
+class in `apps/admin` (A-02, A-07, A-08, A-17, A-18 records and A-07's three panels); the records no longer use `Panel` at
+all, and A-07's were the rest. `apps/web` was not swept.
+
+### The screens
+
+A-02 was built first and by hand, as the worked example; A-18 with A-17, A-08, and A-07 were then converted in parallel by
+three agents against it, each confined to its feature folder, its e2e spec and its catalogue namespace. What they decided
+where the brief left a choice, and the lead's review of each:
+
+- **A notice shows inside the open dialogue**, above the record, and on the board otherwise — so an operator who suspends
+  an account or disables a provider from the record sees the answer where they acted.
+- **A-18's enable and disable read one rule** (`stateControlOf`), so the record's button and the row's menu item cannot
+  disagree about a blocked enable.
+- **A-17's revert is in the ⋯ menu**, through the board's existing `propose` — preview and confirmation included — and is
+  not marked destructive, since a revert is a publication a second revert undoes.
+- **A-08's revoke is set apart as destructive but does not confirm**: the A-08 row lists only suspend and remove as UX-70
+  actions, and adding a third confirmation would be a spec change nobody asked for.
+- **A-07's in-progress and grant regions read the log's first page at the size the log shows.** Reading a fixed 50 there
+  would make two logged acquisitions and two polls on every arrival; the cost is that *in progress* sees the newest 25
+  requests by default rather than 50. Stated here because it changes what an operator sees.
+- **A bug the parallel work caught in the example**: A-02's query key omitted the page size, so changing it reused the
+  cached page. Fixed before the browser run.
+
+### Verification
+
+- **Design system:** `ui` 349 of 349, including five new spec files. The dialogue's *no outside dismissal* case passed with its
+  guard deleted on its first two drafts — jsdom's pointer-down alone dispatches nothing Radix acts on — and was rewritten
+  until it failed with the guard removed and passed with it.
+- **Admin:** `admin` 293 of 293, with `folder-shape.spec.ts`. `routes:check` clean.
+- **Tenant app and shared checks:** `web` 1132 of 1132; `typecheck` clean for `ui`, `admin` and `web`; `pnpm lint` clean;
+  `docs:check` 46 of 46.
+- **Browser:** `pnpm e2e:web`, all three projects, 276 of 276 — the five admin specs rewritten to the dialogue DOM,
+  every earlier assertion kept, and A-07's gaining a reload that reopens the entry and a size change that re-reads. The
+  standalone server logged *"The destination stream closed early"* three times, the abandoned-stream case this log
+  recorded on 13 Sep 2026.
+- **Screenshots after the run:** a throwaway operator at 1440 and 390 on all five screens, each with a record open, and
+  the drawer. The scrim looked absent in a scaled preview and was measured instead: white under the dialogue decodes to
+  140/140/140, so it paints.
+
+**Gates run and why this set:** a childless row closing, so the rows the change reaches (`apps/admin`, `packages/ui` and
+its dependent `apps/web`), not the full set and no review agents, per the standing decision of 13 Sep 2026. The diff moves
+a type (`PaginationProps['labels']` gained a required member) and touches `packages/*`, which is `gates:clean`'s case at a
+parent close; none was run here, and CI's full set on push is what covers the warm-lint caveat.
+
+### The owner's review, the next day
+
+**The page-size choice stood 6px taller than the pager's buttons** — the field token doing its job in the wrong place:
+`Select` draws `--field-block-size` (46px, to line up with a text field) and the pager's steps are 40px. The pager now
+declares one `--pager-control-size` for its steps, its numbers and the choice, re-scoping `--field-block-size` on that
+one field rather than giving `Select` a size prop only the pager would pass; the steps take `box-sizing: border-box`
+so the tenant app, which has no reset, draws the same 40px. Measured in a real browser on A-08's log: all six controls
+40px on one top edge. CSS only — `ui` re-run; the browser suite was not re-run, since nothing it asserts reads a height.

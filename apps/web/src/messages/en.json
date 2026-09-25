@@ -74,7 +74,8 @@
         "region": "Pagination",
         "previous": "Previous page",
         "next": "Next page",
-        "position": "{from}–{to} of {total}"
+        "position": "{from}–{to} of {total}",
+        "page": "Page {page}"
       }
     },
     "notFound": {

@@ -5,7 +5,8 @@ import { NOTIFICATION_CATEGORY_LABEL } from '~/features/platform/shared/notifica
 import { CATEGORY_NOTICE, type CategoryNotice as Notice } from '../../../tools/category-action-state';
 
 /**
- * A-17's *success with revert*, its *conflict* state and its refusals, announced above the categories (task 67.10).
+ * A-17's *success with revert*, its *conflict* state and its refusals (task 67.10) — above the record inside its
+ * dialogue while one is open, above the categories otherwise (task 170; the board decides which).
  * **The result offers the revert** (UX-123's last step), previewed and confirmed like the publication it undoes; the
  * conflict and a refusal stay until the next proposal, which is when they stop being true. **The conflict is worded
  * here, not by the api**, because what it must say is what the screen now shows: what is in force, reloaded.

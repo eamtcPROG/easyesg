@@ -6,6 +6,7 @@ import { REALM_READ } from '~/realm/tools/realm-read';
 import { supportAccessLogQuery } from '../../../queries/support-access';
 import { readLogOutcome } from '../../../tools/support-access-read';
 import {
+  firstLogPageOf,
   withGrant,
   withModule,
   withReport,
@@ -22,9 +23,9 @@ import { GrantStep } from '../regions/grant-step';
  * The organization's reports under a running grant (task 67.9; UC-85; FR-77 … FR-79) — A-07's exit, *the
  * organization's reports, read-only, for the granted window*, with **its own countdown above them** (UX-124).
  *
- * **The grant is found on the log's first page, which the in-progress region already read**, so opening it costs no
- * logged read of its own; the reports, a report's modules and a module's values are then each one read, logged by
- * the api before it answers. **What this region checks is what it can show honestly**: a grant that is not running
+ * **The grant is found on the log's first page, which the in-progress region already read** — at the same size
+ * (`firstLogPageOf`) — so opening it costs no logged read of its own; the reports, a report's modules and a module's
+ * values are then each one read, logged by the api before it answers. **What this region checks is what it can show honestly**: a grant that is not running
  * says it ended, and one that is not on the page or not this operator's says it is not in progress — the api refuses
  * the reads in both cases whatever this region draws.
  *
@@ -41,10 +42,11 @@ export function GrantSection({
   readonly onSearchChange: (next: SupportAccessSearch) => void;
 }) {
   const t = useTranslations('platform.supportAccess.grant');
-  const query = useQuery(supportAccessLogQuery(1));
+  const view = firstLogPageOf(search);
+  const query = useQuery(supportAccessLogQuery(view));
 
   if (search.request === undefined || query.data === undefined) return null;
-  const read = readLogOutcome({ outcome: query.data, page: 1 });
+  const read = readLogOutcome({ outcome: query.data, view });
   if (read.kind !== REALM_READ.READY) return null;
 
   const close = () => onSearchChange(withGrant(search, null));
@@ -56,7 +58,7 @@ export function GrantSection({
 
   return (
     <section aria-label={t('region')}>
-      <Panel className="flex flex-col gap-[var(--space-4)] p-[var(--space-5)]">
+      <Panel className="flex flex-col gap-[var(--space-4)]">
         <GrantHeading entry={entry} expiresAt={entry.expiresAt} onClose={close} />
         {search.report === undefined ? (
           <GrantReports grant={grant} onClose={close} onOpen={(reportId) => onSearchChange(withReport(search, reportId))} />

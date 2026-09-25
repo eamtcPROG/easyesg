@@ -6,13 +6,16 @@ import { ProviderStateChip } from '../shared/provider-state-chip';
  * A-18's facts about one provider (task 67.11) — its state, who a withdrawal reaches, what it asks the provider
  * for, and its last change. **The scopes are stated, not offered** (UC-70 amended): FR-2's three are fixed, and a
  * control for them would be a choice that does not exist.
+ *
+ * **Label beside value from `sm` up, label above value below it** (UX-77 as amended 24 Sep 2026, task 170): the
+ * record's dialogue fills the frame at `compact`, where a column of labels would leave the values a strip.
  */
 export function ProviderFacts({ provider }: { readonly provider: IdentityProvider }) {
   const t = useTranslations('platform.identityProviders.record');
   const format = useFormatter();
 
   return (
-    <dl className="t-body grid grid-cols-[auto_1fr] items-center gap-x-[var(--space-4)] gap-y-[var(--space-2)]">
+    <dl className="t-body grid grid-cols-1 gap-y-[var(--space-1)] max-sm:[&>dt:not(:first-of-type)]:mt-[var(--space-3)] sm:grid-cols-[auto_1fr] sm:items-center sm:gap-x-[var(--space-4)] sm:gap-y-[var(--space-2)]">
       <dt className="text-[var(--text-muted)]">{t('state')}</dt>
       <dd>
         <ProviderStateChip enabled={provider.enabled} />

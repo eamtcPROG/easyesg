@@ -30,6 +30,7 @@ export function CentrePager({
       previous: t('previous'),
       next: t('next'),
       position: (of: { from: number; to: number; total: number }) => t('position', of),
+      page: (page: number) => t('page', { page }),
     }),
     [t],
   );

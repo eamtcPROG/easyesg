@@ -1,5 +1,5 @@
 import type { AdminAccount } from '@easyesg/contracts';
-import { BrandMark, ConsoleNav, GLOBAL_BAR_TONE, GlobalBar } from '@easyesg/ui';
+import { BrandMark, ConsoleDrawer, ConsoleNav, GLOBAL_BAR_TONE, GlobalBar } from '@easyesg/ui';
 import { Link, useLocation } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslations } from 'use-intl';
@@ -27,6 +27,12 @@ import { ConsoleLink } from './console-link';
  * renders nothing and the screen takes the full width.
  *
  * **No organization selector, and there must never be one** (D-5, `apps/admin/CLAUDE.md`).
+ *
+ * **Below `wide` the navigation is a drawer** (task 170; UX-77 as amended): `ConsoleNav` is not drawn
+ * there and `ConsoleDrawer`'s menu control leads the bar, opening the same sections. At `compact` the bar
+ * keeps the wordmark and the account corner, and the realm's name moves into the drawer's head — so it
+ * is one tap away rather than squeezed out of a 390px band, which is UX-76's rule for anything a narrow
+ * frame cannot hold.
  */
 export function ConsoleChrome({
   account,
@@ -45,6 +51,11 @@ export function ConsoleChrome({
       items: section.items.map((item) => ({ key: item.href, href: item.href, label: t(item.label) })),
     }),
   );
+  // A sub-screen marks its parent — the artboard's *Validation rules* lights *Factor sets & rules* — so
+  // a destination is current at its own address and at any address beneath it.
+  const isActive = (item: { readonly href: string }) =>
+    pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const realm = t(`realm.${account.role}`);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -52,28 +63,35 @@ export function ConsoleChrome({
         tone={GLOBAL_BAR_TONE.CONSOLE}
         label={t('bar')}
         brand={
-          <span className="flex items-center gap-[var(--space-4)]">
+          <span className="flex min-w-0 items-center gap-[var(--space-4)]">
+            <ConsoleDrawer
+              label={t('nav')}
+              openLabel={t('menuOpen')}
+              closeLabel={t('menuClose')}
+              brand={
+                <span className="flex min-w-0 items-center gap-[var(--space-4)]">
+                  <BrandMark />
+                  <span className="t-caption truncate text-[var(--consolebar-text-muted)]">{realm}</span>
+                </span>
+              }
+              sections={sections}
+              isActive={isActive}
+              linkComponent={ConsoleLink}
+            />
             <Link to="/" aria-label={t('home')}>
               <BrandMark />
             </Link>
-            <RealmChip className="border-[var(--consolebar-divider)] text-[var(--consolebar-text-muted)]" />
-            <span aria-hidden="true" className="h-[var(--space-5)] w-px bg-[var(--consolebar-divider)]" />
-            <span className="t-caption text-[var(--consolebar-text-muted)]">
-              {t(`realm.${account.role}`)}
+            <span className="hidden items-center gap-[var(--space-4)] sm:flex">
+              <RealmChip className="border-[var(--consolebar-divider)] text-[var(--consolebar-text-muted)]" />
+              <span aria-hidden="true" className="h-[var(--space-5)] w-px bg-[var(--consolebar-divider)]" />
+              <span className="t-caption text-[var(--consolebar-text-muted)]">{realm}</span>
             </span>
           </span>
         }
         actions={<ConsoleAccount account={account} />}
       />
       <div className="flex flex-1">
-        <ConsoleNav
-          label={t('nav')}
-          sections={sections}
-          // A sub-screen marks its parent — the artboard's *Validation rules* lights *Factor sets &
-          // rules* — so a destination is current at its own address and at any address beneath it.
-          isActive={(item) => pathname === item.href || pathname.startsWith(`${item.href}/`)}
-          linkComponent={ConsoleLink}
-        />
+        <ConsoleNav label={t('nav')} sections={sections} isActive={isActive} linkComponent={ConsoleLink} />
         <main className="min-w-0 flex-1">{children}</main>
       </div>
     </div>

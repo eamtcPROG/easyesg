@@ -3,9 +3,10 @@ import {
   type SupportAccessDecision,
   type SupportAccessLogEntry,
 } from '@easyesg/contracts';
-import { BUTTON_VARIANT, Button, type DataTableColumn } from '@easyesg/ui';
+import { COLUMN_ALIGN, type DataTableColumn } from '@easyesg/ui';
 import { useMemo } from 'react';
 import { useFormatter, useTranslations } from 'use-intl';
+import { ROW_OPENS, RowActions } from '~/shared/row-actions';
 
 export const LOG_COLUMN = {
   REQUESTED_AT: 'requestedAt',
@@ -15,6 +16,7 @@ export const LOG_COLUMN = {
   STATE: 'state',
   DECISION: 'decision',
   ACCESSES: 'accesses',
+  ACTIONS: 'actions',
 } as const;
 
 export type LogColumn = (typeof LOG_COLUMN)[keyof typeof LOG_COLUMN];
@@ -22,10 +24,15 @@ export type LogColumn = (typeof LOG_COLUMN)[keyof typeof LOG_COLUMN];
 /**
  * A-07's log columns (task 67.9; FR-79): when, over which organization, who asked, against which ticket, how it
  * stands, what the organization decided and who decided it, and how many reads it carried. **The reason, how it
- * ended and what each read opened are the record's**, beside the table — too long for a column, and still one click
- * from every row. **Nobody is ever blank**: a removed account and a deleted organization each say so.
+ * ended and what each read opened are the record's** — too long for a column, and still one click from every row.
+ * **Nobody is ever blank**: a removed account and a deleted organization each say so.
  *
- * Memoised on the translators, the formatter and `onOpen` — `reactCompiler` is off.
+ * **The last column opens the record** (task 170; `design_spec.md` §5.2's preamble): *Vedeți*, since an entry is
+ * read-only (FR-79), and no ⋯ menu, since an entry has no actions of its own. The time is plain text again — until
+ * then it was the opener, a link-coloured button, and nothing on the row said what it opened. **The button is named
+ * for the request** — its organization and when it was asked — because one organization can appear on many rows.
+ *
+ * Memoised on the translators, the formatter and `onOpen` — `reactCompiler` is off (AD-9).
  */
 export function useLogColumns({
   onOpen,
@@ -33,6 +40,7 @@ export function useLogColumns({
   readonly onOpen: (entryId: string) => void;
 }): readonly DataTableColumn<SupportAccessLogEntry, LogColumn>[] {
   const t = useTranslations('platform.supportAccess');
+  const tChrome = useTranslations('chrome.rowActions');
   const format = useFormatter();
 
   return useMemo(() => {
@@ -43,21 +51,19 @@ export function useLogColumns({
         ? t('log.granted', { email })
         : t('log.declined', { email });
     };
+    const organizationOf = (entry: SupportAccessLogEntry): string =>
+      entry.organizationName ?? t('log.deletedOrganization');
 
     return [
       {
         key: LOG_COLUMN.REQUESTED_AT,
         header: t('log.requestedAt'),
-        cell: (entry: SupportAccessLogEntry) => (
-          <Button type="button" variant={BUTTON_VARIANT.SUBTLE} onClick={() => onOpen(entry.id)}>
-            {format.dateTime(entry.requestedAt, 'stamp')}
-          </Button>
-        ),
+        cell: (entry: SupportAccessLogEntry) => format.dateTime(entry.requestedAt, 'stamp'),
       },
       {
         key: LOG_COLUMN.ORGANIZATION,
         header: t('log.organization'),
-        cell: (entry: SupportAccessLogEntry) => entry.organizationName ?? t('log.deletedOrganization'),
+        cell: organizationOf,
       },
       {
         key: LOG_COLUMN.REQUESTER,
@@ -84,6 +90,21 @@ export function useLogColumns({
         header: t('log.accesses'),
         cell: (entry: SupportAccessLogEntry) => format.number(entry.accesses.length, 'integer'),
       },
+      {
+        key: LOG_COLUMN.ACTIONS,
+        header: tChrome('header'),
+        align: COLUMN_ALIGN.END,
+        cell: (entry: SupportAccessLogEntry) => (
+          <RowActions
+            name={t('log.rowName', {
+              organization: organizationOf(entry),
+              time: format.dateTime(entry.requestedAt, 'stamp'),
+            })}
+            opens={ROW_OPENS.VIEW}
+            onOpen={() => onOpen(entry.id)}
+          />
+        ),
+      },
     ];
-  }, [t, format, onOpen]);
+  }, [t, tChrome, format, onOpen]);
 }

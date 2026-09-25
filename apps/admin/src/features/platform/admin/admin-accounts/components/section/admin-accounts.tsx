@@ -5,8 +5,8 @@ import { RosterSection } from '../roster/section/roster-section';
 /**
  * A-08 — Admin accounts and system audit log (task 67.4; UC-87, UC-88; `design_spec.md` §5.2 A-08).
  * **The shell composes the two regions the artboard draws** (`shell-composes-only`): the account table
- * with its record or invitation form, then the log — each reading its own data and drawing its own
- * states, so a slow log never holds the accounts back.
+ * — its record or invitation form in a dialogue over it since task 170 (§5.2's preamble) — then the log,
+ * each reading its own data and drawing its own states, so a slow log never holds the accounts back.
  */
 export function AdminAccounts({
   search,

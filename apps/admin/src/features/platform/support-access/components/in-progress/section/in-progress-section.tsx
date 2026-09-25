@@ -4,7 +4,7 @@ import { SessionEnded } from '~/realm/components/shared/session-ended';
 import { REALM_READ } from '~/realm/tools/realm-read';
 import { supportAccessLogQuery } from '../../../queries/support-access';
 import { inProgressOf, readLogOutcome } from '../../../tools/support-access-read';
-import { withGrant, type SupportAccessSearch } from '../../../tools/support-access-search';
+import { firstLogPageOf, withGrant, type SupportAccessSearch } from '../../../tools/support-access-search';
 import { SupportAccessForbidden } from '../../shared/support-access-forbidden';
 import { SupportAccessLoading } from '../../shared/support-access-loading';
 import { SupportAccessUnavailable } from '../../shared/support-access-unavailable';
@@ -16,7 +16,9 @@ import { InProgressItem } from '../list/in-progress-item';
  * screen's refusals**: the log below reads the same realm, and one explanation of a boundary is enough.
  *
  * **Read from the log's first page**, newest first: a request is in progress for at most 24 hours and a grant for 60
- * minutes, so they are the newest entries — and reading it here shares the log region's cache and its poll.
+ * minutes, so they are the newest entries — and reading it here shares the log region's cache and its poll. **At the
+ * size the log is showing** (`firstLogPageOf`, task 170), which is what keeps that sharing true once the size can be
+ * chosen; the window this region sees is that size.
  *
  * **Every Platform Administrator may end any running grant** (project owner, 14 Sep 2026), so each one offers the
  * end; **only the operator who asked may read under it**, so only their own offer the reports.
@@ -31,7 +33,8 @@ export function InProgressSection({
   readonly onSearchChange: (next: SupportAccessSearch) => void;
 }) {
   const t = useTranslations('platform.supportAccess.inProgress');
-  const query = useQuery(supportAccessLogQuery(1));
+  const view = firstLogPageOf(search);
+  const query = useQuery(supportAccessLogQuery(view));
 
   if (query.data === undefined) {
     return query.isError ? (
@@ -41,7 +44,7 @@ export function InProgressSection({
     );
   }
 
-  const read = readLogOutcome({ outcome: query.data, page: 1 });
+  const read = readLogOutcome({ outcome: query.data, view });
   switch (read.kind) {
     case REALM_READ.SIGNED_OUT:
       return <SessionEnded />;

@@ -24,9 +24,9 @@ export function InProgressItem({
   const expiresAt = entry.state === SUPPORT_ACCESS_STATE.ACTIVE ? entry.expiresAt : null;
 
   return (
-    <Panel className="flex flex-col gap-[var(--space-3)] p-[var(--space-4)]">
+    <Panel className="flex flex-col gap-[var(--space-3)]">
       <h3 className="t-body-strong">{entry.organizationName ?? t('log.deletedOrganization')}</h3>
-      <p className="t-body text-[var(--text-muted)]">
+      <p className="t-body text-[var(--text-muted)] wrap-anywhere">
         {entry.requesterEmail === null
           ? t('inProgress.formerOperator')
           : t('inProgress.requestedBy', { email: entry.requesterEmail })}

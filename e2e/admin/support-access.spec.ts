@@ -23,6 +23,9 @@ import { currentTotpCode } from './support/totp';
  *
  * **It lives in the `admin` project and drives the tenant app by absolute address**, in its own browser context so
  * the two sessions cannot share a cookie jar.
+ *
+ * **A register row and a log entry each open from their row's last column, into a dialogue** (task 170;
+ * `design_spec.md` §5.2's preamble), and the log's page size is the address like its open entry.
  */
 const RUN_PREFIX = `e2e-support-${process.pid}-${Date.now()}`;
 const WEB_ORIGIN = STACK_ORIGIN.WEB;
@@ -105,8 +108,11 @@ test('a request raised from the register is granted by the organization, read un
   await signInOperator(page);
   await page.getByLabel('Căutați după nume sau IDNO').fill(TOKEN);
   await page.getByRole('button', { name: 'Căutați', exact: true }).click();
-  await page.getByRole('button', { name: ORGANIZATION }).click();
-  await page.getByRole('link', { name: 'Cereți acces de suport' }).click();
+  await page.getByRole('button', { name: `Vedeți ${ORGANIZATION}`, exact: true }).click();
+  await page
+    .getByRole('dialog', { name: ORGANIZATION, exact: true })
+    .getByRole('link', { name: 'Cereți acces de suport' })
+    .click();
   await page.waitForURL(/\/support-access\?organization=/u);
   await expect(
     page.getByRole('navigation', { name: 'Secțiunile consolei' }).getByRole('link', { name: 'Acces de suport' }),
@@ -173,14 +179,29 @@ test('a request raised from the register is granted by the organization, read un
   const row = log.getByRole('row').filter({ hasText: ORGANIZATION });
   await expect(row).toContainText('Încheiat');
   await expect(row).toContainText(`Acceptată de ${OWNER}`);
-  await row.getByRole('button').click();
+  // Named for the request — its organization and when it was asked — since one organization can have many rows.
+  await row.getByRole('button', { name: new RegExp(`^Vedeți cererea pentru ${ORGANIZATION} din `, 'u') }).click();
+  await page.waitForURL(/[?&]entry=/u);
 
-  const record = page.getByRole('complementary', { name: 'Fișa cererii' });
+  const record = page.getByRole('dialog', { name: ORGANIZATION, exact: true });
   await expect(record).toContainText(REASON);
   await expect(record).toContainText(`${OWNER}, din partea organizației`);
   await expect(record).toContainText('Lista rapoartelor');
   await expect(record).toContainText('Modulele unui raport');
   await expect(record).toContainText('Valorile unui modul · modulul B1');
+
+  // UX-4: the open entry is the address, so a reload reopens it; closing it takes it out again.
+  await page.reload();
+  await expect(record).toContainText(REASON);
+  await record.getByRole('button', { name: 'Închideți fișa', exact: true }).click();
+  await expect(record).toHaveCount(0);
+  await expect(page).not.toHaveURL(/[?&]entry=/u);
+
+  // The page size is the address too, and the log is read again at it (task 170).
+  await log.getByRole('combobox', { name: 'Rânduri pe pagină' }).click();
+  await page.getByRole('option', { name: '50', exact: true }).click();
+  await page.waitForURL(/[?&]onpage=50/u);
+  await expect(row).toContainText(`Acceptată de ${OWNER}`);
 
   await tenantContext.close();
 });

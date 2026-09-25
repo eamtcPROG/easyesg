@@ -20,8 +20,21 @@
         "region": "Paginare",
         "previous": "Pagina anterioară",
         "next": "Pagina următoare",
-        "position": "{from}–{to} din {total}"
+        "position": "{from}–{to} din {total}",
+        "page": "Pagina {page}",
+        "pageSize": "Rânduri pe pagină"
       }
+    },
+    "dialog": {
+      "close": "Închideți"
+    },
+    "rowActions": {
+      "header": "Acțiuni",
+      "view": "Vedeți",
+      "viewNamed": "Vedeți {name}",
+      "edit": "Editați",
+      "editNamed": "Editați {name}",
+      "more": "Mai multe acțiuni pentru {name}"
     }
   },
   "realm": {
@@ -74,6 +87,8 @@
     "chrome": {
       "bar": "Consola de administrare",
       "home": "Ecranul principal al consolei",
+      "menuOpen": "Deschideți meniul consolei",
+      "menuClose": "Închideți meniul consolei",
       "realm": {
         "platform_administrator": "Administrator de platformă",
         "billing_operator": "Operator de facturare"
@@ -222,7 +237,9 @@
       "summary": "{total, plural, one {# organizație înregistrată} few {# organizații înregistrate} other {# de organizații înregistrate}}",
       "search": {
         "label": "Căutați după nume sau IDNO",
-        "submit": "Căutați"
+        "submit": "Căutați",
+        "clear": "Ștergeți căutarea",
+        "region": "Căutare în registrul organizațiilor"
       },
       "table": {
         "caption": "Organizațiile înregistrate pe platformă",
@@ -248,7 +265,6 @@
         }
       },
       "record": {
-        "region": "Fișa organizației",
         "close": "Închideți fișa",
         "idno": "IDNO",
         "registered": "Înregistrată",
@@ -258,6 +274,7 @@
         "boundaryTitle": "Conținutul rapoartelor nu este afișat",
         "boundaryBody": "Fișa cuprinde doar date la nivel de cont. Pentru a citi conținutul unei organizații este nevoie de un acces de suport, acordat cu un motiv și referința tichetului, care expiră singur și este înregistrat în jurnal.",
         "requestAccess": "Cereți acces de suport",
+        "requestAccessMenu": "Cereți acces de suport…",
         "members": {
           "heading": "Persoanele organizației",
           "loading": "Se încarcă persoanele organizației…",
@@ -312,7 +329,8 @@
         "factorEnrolled": "Configurat",
         "factorPending": "Neconfigurat",
         "neverSignedIn": "Nicio autentificare",
-        "supportAccessNotApplicable": "Nu se aplică"
+        "supportAccessNotApplicable": "Nu se aplică",
+        "count": "{accounts, plural, one {# cont} few {# conturi} other {# de conturi}} și {invitations, plural, =0 {nicio invitație în curs} one {# invitație în curs} few {# invitații în curs} other {# de invitații în curs}}"
       },
       "standing": {
         "active": "Activ",
@@ -323,7 +341,6 @@
         "lapsed": "Invitație expirată"
       },
       "record": {
-        "region": "Fișa contului",
         "close": "Închideți fișa",
         "realm": "Domeniu",
         "state": "Stare",
@@ -350,6 +367,14 @@
         "reactivate": "Reactivați contul",
         "suspend": "Suspendați contul",
         "remove": "Eliminați accesul",
+        "resend": "Retrimiteți invitația",
+        "revoke": "Retrageți invitația"
+      },
+      "menu": {
+        "release_lockout": "Deblocați contul",
+        "reactivate": "Reactivați contul",
+        "suspend": "Suspendați contul…",
+        "remove": "Eliminați accesul…",
         "resend": "Retrimiteți invitația",
         "revoke": "Retrageți invitația"
       },
@@ -385,7 +410,6 @@
         "refusedBody": "Cererea nu a primit un răspuns utilizabil, deci nu știm dacă modificarea s-a produs. Reîncărcați lista și verificați starea contului."
       },
       "inviteForm": {
-        "region": "Invitați un administrator",
         "title": "Invitați un administrator",
         "lede": "Persoana invitată își alege singură parola și al doilea factor. Linkul este valabil 24 de ore.",
         "emailLabel": "Adresa de e-mail",
@@ -577,12 +601,12 @@
         "granted": "Acceptată de {email}",
         "declined": "Refuzată de {email}",
         "formerMember": "un membru care nu mai are cont",
+        "rowName": "cererea pentru {organization} din {time}",
         "empty": {
           "title": "Nicio cerere încă",
           "body": "Prima cerere de acces de suport apare aici din momentul în care este trimisă."
         },
         "record": {
-          "region": "Fișa cererii",
           "close": "Închideți fișa",
           "reason": "Motiv",
           "lapses": "Expiră fără răspuns la",
@@ -630,10 +654,10 @@
         "state": "Stare",
         "accounts": "Conturi conectate",
         "changed": "Ultima modificare",
-        "neverChanged": "Nicio configurare publicată"
+        "neverChanged": "Nicio configurare publicată",
+        "count": "{count, plural, one {# furnizor} few {# furnizori} other {# de furnizori}}"
       },
       "record": {
-        "region": "Fișa furnizorului {provider}",
         "close": "Închideți fișa",
         "state": "Stare",
         "accounts": "Conturi conectate",
@@ -674,6 +698,10 @@
       "controls": {
         "enable": "Activați furnizorul",
         "disable": "Dezactivați furnizorul"
+      },
+      "menu": {
+        "enable": "Activați furnizorul",
+        "disable": "Dezactivați furnizorul…"
       },
       "blocker": {
         "client_id_missing": "Nu poate fi activat încă: lipsește identificatorul clientului.",
@@ -752,10 +780,10 @@
         "switchOffs": "Au dezactivat-o",
         "people": "{count, plural, =0 {Nimeni} one {# persoană} few {# persoane} other {# de persoane}}",
         "changed": "Ultima publicare",
-        "neverChanged": "Nimic publicat"
+        "neverChanged": "Nimic publicat",
+        "count": "{count, plural, one {# categorie} few {# categorii} other {# de categorii}}"
       },
       "record": {
-        "region": "Fișa categoriei {category}",
         "close": "Închideți fișa",
         "channels": "Canale",
         "classification": "Pentru destinatari",
@@ -808,6 +836,9 @@
       "revert": {
         "note": "Setările anterioare: {channels}; {classification}.",
         "action": "Reveniți la setările anterioare"
+      },
+      "menu": {
+        "revert": "Reveniți la setările anterioare…"
       },
       "confirm": {
         "cancel": "Renunțați",

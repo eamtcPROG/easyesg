@@ -13,7 +13,7 @@ import { registerApiPath, type RegisterView } from '../tools/register-search';
  *
  * **Keyed by what the api is asked, and not by the open record**, so opening a row never refetches
  * the page it came from. **`keepPreviousData`** is §8.1's *loading — refresh*: the previous page
- * stays readable while the next search, order or page loads, rather than blanking to a skeleton.
+ * stays readable while the next search, order, page or page size loads, rather than blanking to a skeleton.
  *
  * **No `refetchInterval`**: the register changes when an organization registers, and UX-116 forbids a
  * poll more frequent than the state it reflects. The client's defaults refetch on window focus, which
@@ -21,7 +21,15 @@ import { registerApiPath, type RegisterView } from '../tools/register-search';
  */
 export const organizationRegisterQuery = (view: Omit<RegisterView, 'selected'>) =>
   queryOptions({
-    queryKey: ['admin', 'organization-register', view.search, view.sort, view.direction, view.page] as const,
+    queryKey: [
+      'admin',
+      'organization-register',
+      view.search,
+      view.sort,
+      view.direction,
+      view.page,
+      view.pageSize,
+    ] as const,
     queryFn: () => api.list<OrganizationRegisterRow>(registerApiPath(view)),
     placeholderData: keepPreviousData,
   });

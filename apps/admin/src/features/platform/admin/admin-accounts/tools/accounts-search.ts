@@ -1,19 +1,21 @@
 import { SYSTEM_AUDIT_ACTION, type SystemAuditAction } from '@easyesg/contracts';
+import { DEFAULT_PAGE_SIZE, readPageSize, type PageSize } from '~/lib/pagination';
 
 /**
  * A-08's addressable state (task 67.4; UX-4): the open record or the invitation form, and the log's
- * filters and page — every one of them in the URL, so a view is kept by keeping its address, which is
- * what §5.2's *filters held in the URL, no named saved views* means.
+ * filters, page and page size — every one of them in the URL, so a view is kept by keeping its address,
+ * which is what §5.2's *filters held in the URL, no named saved views* means. **The page size is the
+ * log's alone** (task 170; §5.2's preamble): the roster is answered whole and has no page to size.
  *
  * **The log's dates are calendar days in the address** and instants only on the way to the api: which
  * instant *13 September* starts at is the reader's question, answered in the reader's own zone, and a
  * link shared across zones then means the same days to each reader rather than the sender's instants.
  */
 
-/** Log entries per page — the register's size, for one density across the console's Index screens. */
-export const LOG_PAGE_SIZE = 50;
-
-/** The side panel's second use: the invitation form, where no row is selected. */
+/**
+ * The dialogue's second use: the invitation form, where no row is selected. A dialogue over the roster
+ * since task 170 (§5.2's preamble), and still in the address, so a reload reopens it.
+ */
 export const ACCOUNTS_PANEL = {
   INVITE: 'invite',
 } as const;
@@ -31,6 +33,8 @@ export interface AccountsSearch {
   /** `YYYY-MM-DD`, inclusive. */
   readonly to?: string;
   readonly page?: number;
+  /** The log's rows per page, one of `lib/pagination.ts`'s sizes; absent is the default (task 170). */
+  readonly onpage?: PageSize;
 }
 
 export interface LogView {
@@ -39,6 +43,7 @@ export interface LogView {
   readonly from: string | null;
   readonly to: string | null;
   readonly page: number;
+  readonly pageSize: PageSize;
 }
 
 export interface LogFilters {
@@ -83,6 +88,7 @@ export const readAccountsSearch = (raw: Record<string, unknown>): AccountsSearch
     ...(from === null ? {} : { from }),
     ...(to === null ? {} : { to }),
     ...(Number.isInteger(page) && page > 1 ? { page } : {}),
+    ...readPageSize(raw.onpage),
   };
 };
 
@@ -92,6 +98,7 @@ export const logViewOf = (search: AccountsSearch): LogView => ({
   from: search.from ?? null,
   to: search.to ?? null,
   page: search.page ?? 1,
+  pageSize: search.onpage ?? DEFAULT_PAGE_SIZE,
 });
 
 /** Whether any filter narrows the log — what tells its empty state *nothing matched* from *nothing yet*. */
@@ -109,7 +116,7 @@ const startOfLocalDay = (day: string, offset = 0): number => {
  * bound is exclusive and the reader's *to 13 September* includes the whole of that day.
  */
 export const logApiPath = (view: LogView): string => {
-  const params = new URLSearchParams({ page: String(view.page), onpage: String(LOG_PAGE_SIZE) });
+  const params = new URLSearchParams({ page: String(view.page), onpage: String(view.pageSize) });
   if (view.operator !== null) params.set('operator', view.operator);
   if (view.action !== null) params.set('action', view.action);
   if (view.from !== null) params.set('from', String(startOfLocalDay(view.from)));
@@ -152,7 +159,14 @@ export const withLogFilters = (search: AccountsSearch, filters: LogFilters): Acc
 export const withLogPage = (search: AccountsSearch, page: number): AccountsSearch =>
   readAccountsSearch({ ...search, page });
 
-/** Opening a record closes the invitation form: the panel holds one thing. */
+/**
+ * A new page size starts the log at its first page, and leaves the filters and the roster's dialogue as
+ * they were — the roster is not paged, so the open record is still among its rows (task 170).
+ */
+export const withLogPageSize = (search: AccountsSearch, onpage: number): AccountsSearch =>
+  readAccountsSearch({ ...search, onpage, page: undefined });
+
+/** Opening a record closes the invitation form: one dialogue at a time over the roster. */
 export const withSelected = (search: AccountsSearch, selected: string | null): AccountsSearch =>
   readAccountsSearch({ ...search, selected: selected ?? undefined, panel: undefined });
 

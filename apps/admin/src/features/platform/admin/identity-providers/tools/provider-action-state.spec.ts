@@ -6,6 +6,7 @@ import {
   actionAsksConfirmation,
   isPendingControl,
   providerActionReducer,
+  stateControlOf,
   type ProviderAction,
 } from './provider-action-state';
 
@@ -28,6 +29,27 @@ describe('A-18’s action state (task 67.11)', () => {
     expect(actionAsksConfirmation({ action: SAVE, enabled: true })).toBe(true);
     expect(actionAsksConfirmation({ action: SAVE, enabled: false })).toBe(false);
     expect(actionAsksConfirmation({ action: ENABLE, enabled: false })).toBe(false);
+  });
+
+  it('offers a disabled provider its enable and an enabled one its disable, against the revision read', () => {
+    expect(stateControlOf({ provider: 'google', enabled: false, enablementBlocker: null, revision: 4 })).toEqual({
+      action: ENABLE,
+      blocked: false,
+    });
+    expect(stateControlOf({ provider: 'google', enabled: true, enablementBlocker: null, revision: 4 })).toEqual({
+      action: DISABLE,
+      blocked: false,
+    });
+  });
+
+  it('blocks an enable the api says could sign nobody in, and never a disable', () => {
+    expect(
+      stateControlOf({ provider: 'google', enabled: false, enablementBlocker: 'client_id_missing', revision: 4 }),
+    ).toEqual({ action: ENABLE, blocked: true });
+    // Enabled on paper and missing from S-01: taking it off is still the operator's to do.
+    expect(
+      stateControlOf({ provider: 'google', enabled: true, enablementBlocker: 'secret_missing', revision: 4 }),
+    ).toEqual({ action: DISABLE, blocked: false });
   });
 
   it('marks a control pending only for its own provider and its own control', () => {

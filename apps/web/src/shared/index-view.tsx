@@ -41,6 +41,7 @@ export function IndexView<TRow, TColumnKey extends string>(
         next: t('pagination.next'),
         position: (of: { from: number; to: number; total: number }) =>
           t('pagination.position', of),
+        page: (page: number) => t('pagination.page', { page }),
       },
     }),
     [t],

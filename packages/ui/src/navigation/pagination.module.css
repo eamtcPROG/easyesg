@@ -1,36 +1,109 @@
+/* The position and the size choice at one end, the pages at the other; the two halves wrap onto two
+   rows when the frame is too narrow to hold both, rather than either one being hidden (UX-76). */
 .pagination {
+  /* One height for every control in the pager — the steps, the numbers and the size choice — so the
+     footer draws one line. 40px, because the Index is a screen a first-time user reaches (WCAG 2.2
+     Target Size, NFR-75). */
+  --pager-control-size: 40px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-4) var(--space-6);
   padding-block-start: var(--space-4);
   border-block-start: 1px solid var(--border-default);
 }
 
-.step {
-  display: inline-flex;
+.summary,
+.steps,
+.size {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.summary {
+  gap: var(--space-6);
+}
+
+.size {
+  color: var(--text-muted);
+}
+
+/* Wide enough for "100" and the chevron, and no wider: a number, not a sentence. **At the pager's
+   height, not a field's** (task 170): `Select` draws `--field-block-size`, the 46px box that lines it up
+   with a text field in a form; here it stands beside 40px buttons, so the token is re-scoped to this one
+   field rather than giving `Select` a size prop only the pager would pass. */
+.sizeSelect {
+  --field-block-size: var(--pager-control-size);
+  inline-size: 5.5rem;
+}
+
+.pages {
+  display: flex;
   align-items: center;
   gap: var(--space-2);
-  /* 40px, because the Index is a screen a first-time user reaches (WCAG 2.2 Target Size, NFR-75). */
-  min-block-size: 40px;
-  padding-inline: var(--space-4);
-  background: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step,
+.number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  /* The whole box, borders included, as the select's is — the tenant app has no global reset to say so. */
+  box-sizing: border-box;
+  min-block-size: var(--pager-control-size);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-1);
+  background: none;
   color: var(--text-body);
   font: 500 14px/20px var(--font-text);
   cursor: pointer;
 }
 
-.step:hover:not(:disabled) {
+.step {
+  padding-inline: var(--space-4);
+}
+
+/* Square, as the specimen draws each page. */
+.number {
+  min-inline-size: var(--pager-control-size);
+  padding-inline: var(--space-3);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.step:hover:not(:disabled),
+.number:hover:not([aria-current]) {
   background: var(--surface-sunken);
   color: var(--text-default);
+}
+
+/* The current page is filled and weighted — colour is never the only carrier (UX-102), and
+   `aria-current` carries it to assistive technology besides. */
+.number[aria-current] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-weight: 600;
+  cursor: default;
 }
 
 .step:disabled {
   border-color: var(--border-default);
   color: var(--text-muted);
   cursor: default;
+}
+
+.gap {
+  display: inline-flex;
+  justify-content: center;
+  min-inline-size: var(--space-6);
+  color: var(--text-muted);
 }
 
 .icon {

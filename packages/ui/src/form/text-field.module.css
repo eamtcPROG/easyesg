@@ -49,7 +49,9 @@
   min-width: 0;
   border: none;
   background: transparent;
-  padding: 10px 0;
+  /* The height is the token's, less the control's two 1px borders; the line box centres in it. */
+  padding: 0;
+  min-block-size: calc(var(--field-block-size) - 2px);
   font: 400 15px/24px var(--font-text);
   color: var(--text-default);
 }

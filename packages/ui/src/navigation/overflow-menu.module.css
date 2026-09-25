@@ -1,0 +1,75 @@
+/* The Components sheet's overflow menu (task 170). Tier 2/3 tokens only; the menu surface is the one
+   every Radix menu here already draws (`select.module.css`, `account-menu.module.css`). */
+
+/* The sheet's 28px trigger, raised to 32px — the dense console's target (§12.1), and the height a
+   row's labelled button sits beside without the row growing. */
+.trigger {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  color: var(--text-body);
+  cursor: pointer;
+}
+
+.trigger:hover,
+.trigger[data-state='open'] {
+  background: var(--surface-sunken);
+  color: var(--text-default);
+}
+
+.trigger svg {
+  inline-size: 16px;
+  block-size: 16px;
+}
+
+.menu {
+  min-inline-size: 200px;
+  max-inline-size: 320px;
+  padding: var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-raised);
+  box-shadow: var(--elevation-1);
+  z-index: 10;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  min-block-size: 36px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-1);
+  font: 400 14px/20px var(--font-text);
+  color: var(--text-default);
+  cursor: pointer;
+  outline: none;
+}
+
+.item[data-highlighted] {
+  background: var(--accent-tint);
+}
+
+.item[data-disabled] {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.destructive {
+  color: var(--state-error);
+}
+
+.destructive[data-highlighted] {
+  background: var(--state-error-tint);
+}
+
+.separator {
+  block-size: 1px;
+  margin: var(--space-2) 0;
+  background: var(--border-default);
+}

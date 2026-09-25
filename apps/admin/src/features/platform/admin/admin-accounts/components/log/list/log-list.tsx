@@ -15,17 +15,20 @@ const entryKey = (entry: SystemAuditLogEntry): string => entry.id;
 /**
  * A-08's log table on the Index archetype (task 67.4), with its two empty states — **first use**, when
  * nothing has been recorded, and **filtered**, when the filters admitted nothing — told apart by the
- * page's `total` against `matched`.
+ * page's `total` against `matched`. **Numbered pages and a page size since task 170**, `IndexView`'s
+ * footer: the log is append-only and unbounded, so it is the one list here that must page.
  */
 export function LogList({
   page,
   filtered,
   onPageChange,
+  onPageSizeChange,
   onClearFilters,
 }: {
   readonly page: IndexPage<SystemAuditLogEntry>;
   readonly filtered: boolean;
   readonly onPageChange: (page: number) => void;
+  readonly onPageSizeChange: (pageSize: number) => void;
   readonly onClearFilters: () => void;
 }) {
   const t = useTranslations('platform.accounts.log');
@@ -40,6 +43,7 @@ export function LogList({
       sort={NEWEST_FIRST}
       onSortChange={noSortChange}
       onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
       empty={{
         // Nothing to do about a log nothing has written to yet — the first sign-in writes to it.
         firstUse: (

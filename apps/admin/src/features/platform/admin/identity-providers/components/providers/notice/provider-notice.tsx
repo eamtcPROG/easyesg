@@ -4,7 +4,8 @@ import { RefusalCallout } from '~/realm/components/shared/refusal-callout';
 import { PROVIDER_NOTICE, type ProviderNotice as Notice } from '../../../tools/provider-action-state';
 
 /**
- * A-18's *success* state, its *conflict* state and its refusals, announced above the providers (task 67.11). A done
+ * A-18's *success* state, its *conflict* state and its refusals (task 67.11) — above the record inside its dialogue
+ * while one is open, above the providers otherwise (task 170; the board decides which). A done
  * notice can be dismissed; the conflict and a refusal stay until the next write, which is when they stop being true.
  * **The conflict is worded here, not by the api**, because what it must say is what the screen now shows: the
  * values in force, reloaded under the notice.

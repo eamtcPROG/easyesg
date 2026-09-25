@@ -36,7 +36,7 @@ export function OrganizationRegister({
     );
   }
 
-  const read = readRegisterOutcome({ outcome: query.data, page: view.page });
+  const read = readRegisterOutcome({ outcome: query.data, page: view.page, pageSize: view.pageSize });
   switch (read.kind) {
     case REGISTER_READ.SIGNED_OUT:
       return <SessionEnded />;

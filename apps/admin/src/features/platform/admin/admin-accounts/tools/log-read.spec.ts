@@ -25,10 +25,11 @@ describe('A-08’s reads (task 67.4)', () => {
           messages: [],
         },
         page: 1,
+        pageSize: 100,
       }),
     ).toEqual({
       kind: 'ready',
-      page: { rows: [entry], matched: 1, total: 40, page: 1, pageSize: 50 },
+      page: { rows: [entry], matched: 1, total: 40, page: 1, pageSize: 100 },
     });
   });
 
@@ -38,7 +39,7 @@ describe('A-08’s reads (task 67.4)', () => {
       problem: { type: 'https://easyesg.md/problems/insufficient-role', status: 403 },
     } as const;
 
-    expect(readLogOutcome({ outcome: forbidden, page: 1 })).toEqual({ kind: 'forbidden' });
+    expect(readLogOutcome({ outcome: forbidden, page: 1, pageSize: 25 })).toEqual({ kind: 'forbidden' });
     expect(readRosterOutcome(forbidden)).toEqual({ kind: 'forbidden' });
     expect(readRosterOutcome({ status: API_OUTCOME.Unreachable })).toEqual({ kind: 'unavailable' });
   });

@@ -90,6 +90,9 @@ export {
   type ConsequenceDialogueProps,
 } from './feedback/consequence-dialogue';
 export { EmptyState, type EmptyStateProps } from './feedback/empty-state';
+// Task 170: a record or a form over a list, and its measure's vocabulary — directly, per the rule above.
+export { Dialog, type DialogProps } from './feedback/dialog';
+export { DIALOG_SIZE, type DialogSize } from './feedback/dialog-vocabulary';
 
 // navigation
 export {
@@ -128,6 +131,13 @@ export {
   type ConsoleNavProps,
   type ConsoleNavSection,
 } from './navigation/console-nav';
+// Task 170: the console navigation below `wide`, and a row's own actions behind ⋯.
+export { ConsoleDrawer, type ConsoleDrawerProps } from './navigation/console-drawer';
+export {
+  OverflowMenu,
+  type OverflowMenuItem,
+  type OverflowMenuProps,
+} from './navigation/overflow-menu';
 export { GLOBAL_BAR_TONE, type GlobalBarTone } from './navigation/global-bar-vocabulary';
 export { type NavLinkComponent } from './navigation/nav-link';
 export { ARIA_CURRENT, type AriaCurrent } from './navigation/nav-link-vocabulary';

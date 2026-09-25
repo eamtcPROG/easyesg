@@ -8,7 +8,8 @@ import { useTranslations } from 'use-intl';
  * change of channel or classification affects without reading a placeholder. **Every language, not only the
  * console's**: a channel published is published in all three, and the one missing is the one to see.
  *
- * The body keeps its line breaks, since an email is plain text (UX-66) and its paragraphs are its structure.
+ * The body keeps its line breaks, since an email is plain text (UX-66) and its paragraphs are its structure. Each
+ * language's channels stack below `sm`, as the record's facts do (UX-77 as amended, task 170).
  */
 export function CategoryWording({ wording }: { readonly wording: readonly Wording[] }) {
   const t = useTranslations('platform.notificationCategories.wording');
@@ -28,7 +29,7 @@ export function CategoryWording({ wording }: { readonly wording: readonly Wordin
           className="flex flex-col gap-[var(--space-2)] border-t border-[var(--border-subtle)] pt-[var(--space-3)]"
         >
           <h4 className="t-label">{t(`locales.${entry.locale}`)}</h4>
-          <dl className="t-body grid grid-cols-[auto_1fr] gap-x-[var(--space-4)] gap-y-[var(--space-2)]">
+          <dl className="t-body grid grid-cols-1 gap-y-[var(--space-1)] max-sm:[&>dt:not(:first-of-type)]:mt-[var(--space-3)] sm:grid-cols-[auto_1fr] sm:gap-x-[var(--space-4)] sm:gap-y-[var(--space-2)]">
             <dt className="text-[var(--text-muted)]">{t('email')}</dt>
             <dd>
               {entry.email === undefined ? (

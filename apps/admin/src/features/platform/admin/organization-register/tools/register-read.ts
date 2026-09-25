@@ -6,7 +6,6 @@ import {
 } from '@easyesg/contracts';
 import type { IndexPage } from '@easyesg/ui';
 import { REALM_READ, realmReadFailureOf, type RealmReadFailure } from '~/realm/tools/realm-read';
-import { REGISTER_PAGE_SIZE } from './register-search';
 
 /**
  * What the register's read answered, as the arm the section draws (task 67.3).
@@ -26,6 +25,7 @@ export type RegisterRead =
 export const readRegisterOutcome = (input: {
   readonly outcome: ApiOutcome<ListResult<OrganizationRegisterRow>>;
   readonly page: number;
+  readonly pageSize: number;
 }): RegisterRead => {
   const { outcome } = input;
 
@@ -40,7 +40,7 @@ export const readRegisterOutcome = (input: {
         // older api omitted it, which reads as "the search matched everything" — never as first use.
         total: list.unfiltered ?? list.total,
         page: input.page,
-        pageSize: REGISTER_PAGE_SIZE,
+        pageSize: input.pageSize,
       },
     };
   }

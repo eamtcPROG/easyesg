@@ -1,14 +1,14 @@
+import { DEFAULT_PAGE_SIZE, readPageSize, type PageSize } from '~/lib/pagination';
+
 /**
  * A-07's addressable state (task 67.9; UX-4): the organization a request is being written for, the grant being
- * read with the report and module open under it, the log's open entry, and the log's page — each in the URL, so
- * a link pasted into a support ticket reopens what the operator was looking at.
+ * read with the report and module open under it, the log's open entry, and the log's page and page size — each in
+ * the URL, so a link pasted into a support ticket reopens what the operator was looking at.
  *
- * **Opening one thing closes what it replaces**: a request form and a grant's reports are one panel, and a module
- * belongs to the report it was opened from. The `with…` functions below are where that is decided, once.
+ * **Opening one thing closes what it replaces**: a request form and a grant's reports are one panel, a module
+ * belongs to the report it was opened from, and the log's open entry belongs to the page it was opened from. The
+ * `with…` functions below are where that is decided, once.
  */
-
-/** Log entries per page — the register's size, for one density across the console's Index screens. */
-export const SUPPORT_ACCESS_PAGE_SIZE = 50;
 
 export interface SupportAccessSearch {
   /** The organization the request form is for — A-02's exit. */
@@ -19,9 +19,17 @@ export interface SupportAccessSearch {
   readonly report?: string;
   /** The module open in that report. */
   readonly module?: string;
-  /** The log entry whose record is open. */
+  /** The log entry whose record is open — found on the log's current page, so it closes when the page moves. */
   readonly entry?: string;
   readonly page?: number;
+  /** Log entries per page, one of `lib/pagination.ts`'s sizes; absent is the default (task 170). */
+  readonly onpage?: PageSize;
+}
+
+/** One page of the log, as the api is asked for it. */
+export interface LogView {
+  readonly page: number;
+  readonly pageSize: PageSize;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
@@ -56,8 +64,22 @@ export const readSupportAccessSearch = (raw: Record<string, unknown>): SupportAc
     ...(module === null ? {} : { module }),
     ...(entry === null ? {} : { entry }),
     ...(page === null ? {} : { page }),
+    ...readPageSize(raw.onpage),
   };
 };
+
+export const logViewOf = (search: SupportAccessSearch): LogView => ({
+  page: search.page ?? 1,
+  pageSize: search.onpage ?? DEFAULT_PAGE_SIZE,
+});
+
+/**
+ * The log's first page at the size the log is showing — what the in-progress and grant regions read (task 170).
+ * **The size follows the log's** so that, whenever the log is on its first page, all three regions ask the same
+ * question under the same key: arriving on A-07 costs one logged read and one poll, at every page size, as it did
+ * before the size could be chosen.
+ */
+export const firstLogPageOf = (search: SupportAccessSearch): LogView => ({ ...logViewOf(search), page: 1 });
 
 /** The request form closed — after it was sent, or abandoned. */
 export const withoutRequestForm = (search: SupportAccessSearch): SupportAccessSearch =>
@@ -82,12 +104,17 @@ export const withModule = (search: SupportAccessSearch, module: string | null): 
 export const withEntry = (search: SupportAccessSearch, entryId: string | null): SupportAccessSearch =>
   readSupportAccessSearch({ ...search, entry: entryId ?? undefined });
 
+/** A new page closes the open entry, which is looked up on the page being shown and is not on the next one. */
 export const withLogPage = (search: SupportAccessSearch, page: number): SupportAccessSearch =>
-  readSupportAccessSearch({ ...search, page });
+  readSupportAccessSearch({ ...search, page, entry: undefined });
+
+/** A new page size starts the log from its first page, and closes the entry for the same reason a new page does. */
+export const withLogPageSize = (search: SupportAccessSearch, onpage: number): SupportAccessSearch =>
+  readSupportAccessSearch({ ...search, onpage, page: undefined, entry: undefined });
 
 /** The api's address for one page of the log. */
-export const logApiPath = (page: number): string =>
-  `/admin/support-access?${new URLSearchParams({ page: String(page), onpage: String(SUPPORT_ACCESS_PAGE_SIZE) }).toString()}`;
+export const logApiPath = (view: LogView): string =>
+  `/admin/support-access?${new URLSearchParams({ page: String(view.page), onpage: String(view.pageSize) }).toString()}`;
 
 /** A grant, as the api names it in every path under it. */
 export interface GrantScope {

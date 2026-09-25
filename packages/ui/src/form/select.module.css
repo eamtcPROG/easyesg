@@ -1,7 +1,8 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  /* `TextField`'s label gap, so a select beside a text field starts its control on the same line. */
+  gap: 6px;
 }
 
 .label {
@@ -30,8 +31,10 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  /* 40px, the target size everything a first-time user must hit carries (NFR-75). */
-  min-block-size: 40px;
+  /* The field box `TextField` draws (task 170) — above the 40px target size NFR-75 asks for. */
+  min-block-size: var(--field-block-size);
+  /* The token is the whole box, borders included — the tenant app has no global reset to say so. */
+  box-sizing: border-box;
   inline-size: 100%;
   padding-inline: var(--space-4);
   /* `--field-border-rest` resolves to `border-strong`: a field must look enterable (§11.5's second

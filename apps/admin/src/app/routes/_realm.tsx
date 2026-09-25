@@ -12,9 +12,10 @@ import { adminSessionQuery } from '~/realm/queries/session';
  * in the router's query client, so the chrome and any later screen read the same answer.
  *
  * Two properties are stated once here rather than repeated on all eighteen screens, per
- * `design_spec.md` §5.2's own preamble: compact density, and `wide`/`extra` viewports only
- * (UX-77's narrow-viewport notice belongs in this layout and is still blocked on OQ-13's
- * breakpoint values).
+ * `design_spec.md` §5.2's own preamble: compact density, and a console designed for `wide` and
+ * `extra` that **adapts below them** — UX-77 as amended 24 Sep 2026 (task 170), which replaced the
+ * narrow-viewport notice this layout was to carry: the chrome's navigation becomes a drawer below
+ * 64rem, and each screen's filters, tables and dialogues reflow.
  *
  * The absence of any tenant-scoped context here is deliberate and load-bearing. This console
  * has no active organization: D-5 gives a Platform Administrator no standing access to any

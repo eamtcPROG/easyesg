@@ -7,8 +7,8 @@
  * destination in the console nav. The screen is
  * `features/platform/admin/organization-register/`; this route owns only its addressable state.
  *
- * **Every part of the view is in the URL** (UX-4): the search, the order, the page and the open
- * record, read by `validateSearch` and written by navigating — so a link pasted into a support ticket
+ * **Every part of the view is in the URL** (UX-4): the search, the order, the page, its size and
+ * the open record, read by `validateSearch` and written by navigating — so a link pasted into a support ticket
  * reopens exactly what the operator was looking at.
  *
  * **The realm guard admits any operator; the api decides who reads.** A Billing Operator who follows a

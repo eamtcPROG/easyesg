@@ -57,6 +57,11 @@ export interface IndexShellProps<TRow, TColumnKey extends string> {
   readonly onSortChange: (sort: DataTableSort<TColumnKey>) => void;
   readonly onPageChange: (page: number) => void;
   /**
+   * A rows-per-page choice, handed to `Pagination` as it is — and with it the pager stays when one page
+   * holds everything (task 170; that component's note says why). The console's paged lists pass it.
+   */
+  readonly sizes?: PaginationProps['sizes'];
+  /**
    * Both, always. §4.6: an Index *"always has an empty state that teaches"* — and there are two of
    * them, so one required slot each is how the archetype's own rule reaches the type.
    *
@@ -86,6 +91,7 @@ export function IndexShell<TRow, TColumnKey extends string>({
   sort,
   onSortChange,
   onPageChange,
+  sizes,
   empty,
   labels,
 }: IndexShellProps<TRow, TColumnKey>) {
@@ -104,13 +110,14 @@ export function IndexShell<TRow, TColumnKey extends string>({
         onSortChange={onSortChange}
         sortLabels={labels.sort}
       />
-      {/* Renders nothing for a single page — the pager is here so that finding one among many stays
-          possible, not so that every instance carries the control. */}
+      {/* Renders nothing for a single page unless it offers a size — the pager is here so that finding
+          one among many stays possible, not so that every instance carries the control. */}
       <Pagination
         page={page.page}
         pageSize={page.pageSize}
         total={page.matched}
         onPageChange={onPageChange}
+        sizes={sizes}
         labels={labels.pagination}
       />
     </div>

@@ -32,15 +32,15 @@ const ok = (items: SupportAccessLogEntry[]): ApiOutcome<ListResult<SupportAccess
 });
 
 describe('A-07’s reads (task 67.9)', () => {
-  it('reads a page of the log whole, its total standing for both counts', () => {
+  it('reads a page of the log whole, at the size it was asked for, its total standing for both counts', () => {
     const rows = [entry('a', 'ended')];
-    expect(readLogOutcome({ outcome: ok(rows), page: 2 })).toEqual({
+    expect(readLogOutcome({ outcome: ok(rows), view: { page: 2, pageSize: 100 } })).toEqual({
       kind: 'ready',
-      page: { rows, matched: 1, total: 1, page: 2, pageSize: 50 },
+      page: { rows, matched: 1, total: 1, page: 2, pageSize: 100 },
     });
-    expect(readLogOutcome({ outcome: { status: API_OUTCOME.Unreachable }, page: 1 })).toEqual({
-      kind: 'unavailable',
-    });
+    expect(
+      readLogOutcome({ outcome: { status: API_OUTCOME.Unreachable }, view: { page: 1, pageSize: 25 } }),
+    ).toEqual({ kind: 'unavailable' });
   });
 
   it('separates what waits from what runs, and leaves what is over out of both', () => {

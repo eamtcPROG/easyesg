@@ -35,8 +35,8 @@ export interface CategoryAction {
 
 /**
  * UX-123's one-step revert for a category as last read: the behaviour before the one in force, against the revision in
- * force — or null where there is nothing to go back to. **One function for the record's control and the result's**, so
- * the two cannot build the revert two ways.
+ * force — or null where there is nothing to go back to. **One function for the record's control, the result's and,
+ * since task 170, the row's menu**, so the three cannot build the revert two ways.
  */
 export const revertActionOf = (category: ConsoleCategory): CategoryAction | null => {
   const { inForce } = category;

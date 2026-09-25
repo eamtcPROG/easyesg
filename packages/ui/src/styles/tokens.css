@@ -206,6 +206,11 @@
   --field-border-invalid: var(--state-error);
   --field-surface-reasoned: var(--state-reasoned-tint);
   --field-unit-surface: var(--surface-sunken);
+  /* The box every one-line field draws — `TextField`'s control and `Select`'s trigger alike (task 170).
+     It was two numbers until then, 46px by construction on the text field and 40px on the select, so a
+     filter row of both was ragged; one token is what makes their parity a fact rather than a comment.
+     Not a density step, and not in the compact block: a density moves the space scale and nothing else. */
+  --field-block-size: 46px;
   --wizard-step-complete: var(--state-ok);
   --module-state-reasoned: var(--state-reasoned);
   --savestate-queued: var(--state-pending);

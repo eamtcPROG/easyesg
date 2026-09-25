@@ -9,6 +9,10 @@ import { currentTotpCode } from './support/totp';
  * an operator; the operator, in a browser holding no session, sets a password, enrols the second factor
  * from what the screen prints and signs in; the administrator suspends the account and reads the change
  * in the log. Axe runs on both screens in their busiest states.
+ *
+ * **The invitation form and the account record are dialogues over the roster since task 170**
+ * (`design_spec.md` §5.2's preamble), so each is found by its role and title, a row is opened by its
+ * *Vedeți* button, and the page behind a dialogue — the roster, the log — is read once it is closed.
  */
 const RUN_PREFIX = `e2e-accounts-${process.pid}-${Date.now()}`;
 const emailFor = (label: string) => `${RUN_PREFIX}-${label}@easyesg.md`;
@@ -63,11 +67,13 @@ test('an invited operator sets their own credentials and signs in, and suspendin
   const invitee = emailFor('invitee');
   await page.getByRole('button', { name: 'Invitați un administrator' }).click();
   await page.waitForURL(/[?&]panel=invite/u);
-  const form = page.getByRole('complementary', { name: 'Invitați un administrator' });
+  const form = page.getByRole('dialog', { name: 'Invitați un administrator' });
   await form.getByLabel('Adresa de e-mail').fill(invitee);
   await form.getByRole('combobox', { name: 'Domeniul contului' }).click();
   await page.getByRole('option', { name: 'Operator de facturare' }).click();
   await form.getByRole('button', { name: 'Trimiteți invitația' }).click();
+  // A sent invitation closes its dialogue, and the notice stands above the roster it joined.
+  await expect(form).toHaveCount(0);
   await expect(page.getByText('Invitația a fost trimisă')).toBeVisible();
 
   const roster = page.getByRole('table', { name: 'Conturile operatorilor și invitațiile în curs' });
@@ -106,19 +112,27 @@ test('an invited operator sets their own credentials and signs in, and suspendin
 
   await page.reload();
   await expect(inviteeRow).toContainText('Activ');
-  await inviteeRow.getByRole('button', { name: invitee }).click();
+  await inviteeRow.getByRole('button', { name: `Vedeți ${invitee}`, exact: true }).click();
   await page.waitForURL(/[?&]selected=/u);
 
-  const record = page.getByRole('complementary', { name: 'Fișa contului' });
+  const record = page.getByRole('dialog', { name: invitee, exact: true });
   await expect(record).toContainText('Operator de facturare');
   await expectNoAxeViolations(page);
 
-  await record.getByRole('button', { name: 'Suspendați contul' }).click();
+  // The question opens over the record, and the answer is announced inside it — the page is covered.
+  await record.getByRole('button', { name: 'Suspendați contul', exact: true }).click();
   const dialogue = page.getByRole('alertdialog');
   await expect(dialogue).toContainText(invitee);
   await dialogue.getByRole('button', { name: 'Suspendați contul' }).click();
 
-  await expect(page.getByText(`Contul ${invitee} a fost suspendat`, { exact: false })).toBeVisible();
+  const suspended = `Contul ${invitee} a fost suspendat`;
+  await expect(record.getByText(suspended, { exact: false })).toBeVisible();
+  await expect(record).toContainText('Suspendat');
+
+  await record.getByRole('button', { name: 'Închideți fișa', exact: true }).click();
+  await expect(record).toHaveCount(0);
+  // Closed, the record hands its notice back to the page, above the roster.
+  await expect(page.getByText(suspended, { exact: false })).toBeVisible();
   await expect(inviteeRow).toContainText('Suspendat');
 
   const log = page.getByRole('table', { name: 'Intrările jurnalului de sistem, cele mai noi primele' });
