@@ -33,7 +33,7 @@ function SupportAccessRoute() {
     <SupportAccess
       search={search}
       operatorId={account.id}
-      onSearchChange={(next) => void navigate({ search: next })}
+      onSearchChange={(next) => void navigate({ search: next, resetScroll: false })}
     />
   );
 }

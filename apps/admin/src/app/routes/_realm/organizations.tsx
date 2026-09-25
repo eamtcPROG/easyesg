@@ -30,6 +30,6 @@ function OrganizationRegisterRoute() {
   const navigate = Route.useNavigate();
 
   return (
-    <OrganizationRegister search={search} onSearchChange={(next) => void navigate({ search: next })} />
+    <OrganizationRegister search={search} onSearchChange={(next) => void navigate({ search: next, resetScroll: false })} />
   );
 }

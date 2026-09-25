@@ -48,6 +48,10 @@ const router = createRouter({
   routeTree,
   context: { queryClient },
   defaultPreload: 'intent',
+  // The console's window does not scroll — its chrome is a frame and `<main>` is where a screen scrolls
+  // (task 170's review) — so a change of screen resets that region to the top, as the window used to be.
+  // A change of view within a screen passes `resetScroll: false` and keeps the operator where they were.
+  scrollToTopSelectors: ['main'],
   // A library default is user-facing text nobody here wrote. Unset, TanStack Router renders
   // its own hardcoded English "Not Found" — which the ESLint JSXText ban structurally cannot
   // catch, because the literal lives in node_modules. Both fallbacks resolve through the

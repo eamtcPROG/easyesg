@@ -25,5 +25,5 @@ function NotificationTemplatesRoute() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
 
-  return <NotificationCategories search={search} onSearchChange={(next) => void navigate({ search: next })} />;
+  return <NotificationCategories search={search} onSearchChange={(next) => void navigate({ search: next, resetScroll: false })} />;
 }

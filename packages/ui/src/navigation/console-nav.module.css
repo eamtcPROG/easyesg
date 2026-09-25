@@ -13,6 +13,10 @@
   inline-size: 214px;
   padding: var(--space-4) 0;
   background: var(--consolenav-surface);
+  /* Its own scroll (task 170's review): inside a frame of viewport height the column is as tall as the
+     frame, and scrolls itself when its destinations are taller — never taking the page with it. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* `display: none` rather than clipping, so a screen reader is not offered the destinations twice:

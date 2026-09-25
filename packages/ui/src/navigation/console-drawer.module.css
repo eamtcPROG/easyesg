@@ -50,7 +50,9 @@
   display: flex;
   flex-direction: column;
   inline-size: min(18rem, 100%);
-  overflow-y: auto;
+  /* The panel never scrolls as a whole: its head stays where the bar was, and only the sections below
+     it scroll, on their own (the owner's review of task 170). */
+  overflow: hidden;
   background: var(--consolenav-surface);
 }
 
@@ -92,10 +94,17 @@
   background: var(--consolebar-hover);
 }
 
+/* The panel's one scrolling region. `min-block-size: 0` lets it shrink below its content inside the
+   column, and `overscroll-behavior: contain` keeps a scroll that reaches its end from passing to the page
+   the drawer covers. */
 .sections {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--space-5);
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--space-4) 0;
 }
 

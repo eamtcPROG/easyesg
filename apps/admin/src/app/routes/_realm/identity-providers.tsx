@@ -28,5 +28,5 @@ function IdentityProvidersRoute() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
 
-  return <IdentityProviders search={search} onSearchChange={(next) => void navigate({ search: next })} />;
+  return <IdentityProviders search={search} onSearchChange={(next) => void navigate({ search: next, resetScroll: false })} />;
 }

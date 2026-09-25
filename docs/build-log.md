@@ -25615,3 +25615,29 @@ declares one `--pager-control-size` for its steps, its numbers and the choice, r
 one field rather than giving `Select` a size prop only the pager would pass; the steps take `box-sizing: border-box`
 so the tenant app, which has no reset, draws the same 40px. Measured in a real browser on A-08's log: all six controls
 40px on one top edge. CSS only — `ui` re-run; the browser suite was not re-run, since nothing it asserts reads a height.
+
+**The drawer scrolled as a whole, head included** (the owner: *the drawer should have its own scroll; the header is not
+scrollable, the interaction area is*). Both drawers set `overflow-y: auto` on the panel itself, so the head that continues
+the bar scrolled away with the destinations. Each panel is now `overflow: hidden`, and the region below the head is its
+one scrolling area, with `min-block-size: 0` so it can shrink inside the column and `overscroll-behavior: contain` so a
+scroll at its end does not pass to the page beneath. *Searched for the shape:* `ChromeDrawer` had the same rule and takes
+the same fix — its organization, sections and actions now sit in one `.body`; `Dialog` already pinned its head and
+footer. Measured in a real browser at 390×200 on the console: the sections scrolled 40px, the head stayed at 0, and
+neither the panel nor the page moved.
+
+**What the owner meant was the console's own frame, at `wide`** — the paragraph above answered the phone drawer, which
+was a real defect but not the one reported, and the owner's screenshot said so: the window scrolled, taking the bar and
+the navigation's destinations off screen with a long log. The chrome is now a frame of viewport height (`h-dvh`): the bar
+keeps its place, `ConsoleNav`'s column scrolls on its own when its destinations outgrow it, and `<main>` is the one
+region a screen scrolls in. **Two consequences, each handled rather than left to surface:**
+
+- **The router only reset the window**, which no longer scrolls, so a change of screen would have opened the next one
+  where the last was left. `scrollToTopSelectors: ['main']` makes `<main>` what it resets.
+- **Every search change was a reset too** — opening a record, a page, a filter — which with the window scrolling had
+  been pulling the page to the top behind each dialogue since task 170 made records dialogues. The five screens'
+  `onSearchChange` now pass `resetScroll: false`: a change of view keeps the operator where they were, a change of screen
+  starts at the top.
+
+Measured in a real browser at 1440×900 on A-07's log: `<main>` scrolled 1,270px with the bar and the first destination
+unmoved and the window at 0; opening the nineteenth row's record and closing it left `<main>` at 1,270; following the
+navigation to A-08 reset it to 0.

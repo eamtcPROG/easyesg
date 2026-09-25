@@ -45,8 +45,21 @@
   inline-size: 100%;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  /* The panel never scrolls as a whole: the head stays, as the band it continues does, and `.body` below
+     it scrolls on its own (task 170's review, the console drawer's rule applied where it holds). */
+  overflow: hidden;
   background: var(--surface-default);
+}
+
+/* Everything below the head, and the panel's one scrolling region — `min-block-size: 0` so it can
+   shrink inside the column, `overscroll-behavior: contain` so a scroll at its end stays in the drawer. */
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* **The head IS the global bar continuing, not a panel header** — 56px of the same pine, the

@@ -33,6 +33,13 @@ import { ConsoleLink } from './console-link';
  * keeps the wordmark and the account corner, and the realm's name moves into the drawer's head — so it
  * is one tap away rather than squeezed out of a 390px band, which is UX-76's rule for anything a narrow
  * frame cannot hold.
+ *
+ * **The frame does not scroll; the screen does** (the owner's review of task 170: *the header is not
+ * scrollable, the interaction area is*). The chrome is the viewport's height, the bar keeps its place, the
+ * navigation scrolls on its own when it is taller than the frame, and `<main>` is the one region a page's
+ * content scrolls in — so a long log never takes the bar or the destinations off screen. `<main>` is also
+ * what the router scrolls back to the top on a change of screen (`providers.tsx`'s
+ * `scrollToTopSelectors`), since the window no longer scrolls at all.
  */
 export function ConsoleChrome({
   account,
@@ -58,7 +65,7 @@ export function ConsoleChrome({
   const realm = t(`realm.${account.role}`);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-dvh flex-col">
       <GlobalBar
         tone={GLOBAL_BAR_TONE.CONSOLE}
         label={t('bar')}
@@ -90,9 +97,9 @@ export function ConsoleChrome({
         }
         actions={<ConsoleAccount account={account} />}
       />
-      <div className="flex flex-1">
+      <div className="flex min-h-0 flex-1">
         <ConsoleNav label={t('nav')} sections={sections} isActive={isActive} linkComponent={ConsoleLink} />
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 flex-1 overflow-y-auto overscroll-contain">{children}</main>
       </div>
     </div>
   );

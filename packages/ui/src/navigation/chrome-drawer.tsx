@@ -135,31 +135,34 @@ export function ChromeDrawer<TItem extends WorkspaceNavItem = WorkspaceNavItem>(
             </Dialog.Close>
           </div>
 
-          {organization ? <div className={styles.organization}>{organization}</div> : null}
+          {/* Below the head, the one region that scrolls — the head stays where the band was. */}
+          <div className={styles.body}>
+            {organization ? <div className={styles.organization}>{organization}</div> : null}
 
-          {items.length > 0 ? (
-            <nav aria-label={sectionsLabel}>
-              <ul className={styles.list}>
-                {items.map((item) => {
-                  const active = isActive(item);
-                  return (
-                    <li key={item.key} className={active ? styles.current : undefined}>
-                      <Link
-                        href={item.href}
-                        {...(active ? ({ 'aria-current': ARIA_CURRENT.PAGE } as const) : {})}
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
-          ) : null}
+            {items.length > 0 ? (
+              <nav aria-label={sectionsLabel}>
+                <ul className={styles.list}>
+                  {items.map((item) => {
+                    const active = isActive(item);
+                    return (
+                      <li key={item.key} className={active ? styles.current : undefined}>
+                        <Link
+                          href={item.href}
+                          {...(active ? ({ 'aria-current': ARIA_CURRENT.PAGE } as const) : {})}
+                        >
+                          {item.label}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+            ) : null}
 
-          {actions ? (
-            <div className={items.length > 0 ? styles.actions : styles.actionsOnly}>{actions}</div>
-          ) : null}
+            {actions ? (
+              <div className={items.length > 0 ? styles.actions : styles.actionsOnly}>{actions}</div>
+            ) : null}
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
