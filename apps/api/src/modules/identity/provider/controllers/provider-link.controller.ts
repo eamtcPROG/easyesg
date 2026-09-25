@@ -49,7 +49,9 @@ export class ProviderLinkController {
   }
 
   @Post(':provider')
-  @HttpCode(201)
+  // 204, as unlink: the answer carries nothing, and §6.8 admits an empty body only on 202 or 204. It was 201 with no
+  // body until task 171, which `apps/web`'s client refused as unusable — so a link that succeeded read as a failure.
+  @HttpCode(204)
   @ApiParam({ name: 'provider', enum: Object.values(SOCIAL_PROVIDER) })
   @ApiOperation({
     summary: 'Link a provider identity to the signed-in account',
@@ -60,7 +62,7 @@ export class ProviderLinkController {
       'not match the account’s** — a personal provider account is routinely not a work address, ' +
       'and BR-ID-3 is satisfied by the re-authentication, never by comparing emails.',
   })
-  @ApiResponse({ status: 201, description: 'The provider is linked.' })
+  @ApiResponse({ status: 204, description: 'The provider is linked.' })
   @ApiResponse({
     status: 403,
     description: 'The current password did not match (problem type credential-invalid).',

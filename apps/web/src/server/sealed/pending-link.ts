@@ -1,6 +1,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { isSocialProvider, type SocialProvider } from '@easyesg/contracts';
+import { PROBLEM_TYPE } from '@easyesg/contracts';
 import { API_OUTCOME, mapOutcome, type ApiOutcome } from '@/lib/api-outcome';
 import { env } from '@/lib/env';
 import { api } from '../api/api-client';
@@ -46,6 +47,8 @@ export interface PendingLink {
   readonly nonce: string;
   readonly codeVerifier: string;
   readonly redirectUri: string;
+  /** The callback's `iss`, where the provider sent one (RFC 9207, task 171) — the api checks it. */
+  readonly issuer?: string;
   /**
    * **Which account began this link** (added 27 Aug 2026).
    *
@@ -81,7 +84,7 @@ export async function holdPendingLink(pending: PendingLink): Promise<void> {
 /** Validated, never cast — a stale or foreign shape must read as "nothing pending". */
 function readPending(parsed: unknown): PendingLink | null {
   if (typeof parsed !== 'object' || parsed === null) return null;
-  const { provider, code, state, nonce, codeVerifier, redirectUri, accountId, issuedAt } =
+  const { provider, code, state, nonce, codeVerifier, redirectUri, issuer, accountId, issuedAt } =
     parsed as Record<string, unknown>;
   if (
     typeof provider !== 'string' ||
@@ -91,13 +94,23 @@ function readPending(parsed: unknown): PendingLink | null {
     typeof nonce !== 'string' ||
     typeof codeVerifier !== 'string' ||
     typeof redirectUri !== 'string' ||
+    (issuer !== undefined && typeof issuer !== 'string') ||
     typeof accountId !== 'string' ||
     typeof issuedAt !== 'number' ||
     issuedAt + PENDING_LINK_TTL_SECONDS * 1000 <= Date.now()
   ) {
     return null;
   }
-  return { provider, code, state, nonce, codeVerifier, redirectUri, accountId };
+  return {
+    provider,
+    code,
+    state,
+    nonce,
+    codeVerifier,
+    redirectUri,
+    ...(typeof issuer === 'string' ? { issuer } : {}),
+    accountId,
+  };
 }
 
 /**
@@ -122,10 +135,11 @@ export async function readPendingLink(): Promise<{ provider: SocialProvider } | 
  * The Server Action's half: spend the held transaction against the api, with the password the user
  * has just supplied.
  *
- * The cookie is cleared **whatever the outcome**, and that is deliberate: an authorization code is
- * single-use at the provider, so a refused attempt cannot be retried with the same one. Leaving it
- * would offer the user a second confirmation that could never succeed. A wrong password therefore
- * costs the round trip — which is the honest cost, and what the screen must say.
+ * The cookie is cleared **on every answer but a refused password** (task 171; `architecture.md`'s task-27.7 row as
+ * amended). An authorization code is single-use at the provider, so an attempt that reached the exchange cannot be
+ * retried with the same one — but the api checks the password *before* the exchange, so a `credential-invalid` answer
+ * leaves the code unspent and the row open for a retype. This read *"whatever the outcome"* until then, on the premise
+ * that every refusal had spent the code, and a mistyped password cost a second trip through the provider.
  */
 export async function completePendingLink(input: {
   provider: SocialProvider;
@@ -134,8 +148,6 @@ export async function completePendingLink(input: {
   const jar = await cookies();
   const sealed = jar.get(PENDING_LINK_COOKIE)?.value;
   const pending = sealed ? readPending(unsealJson({ sealed, secret: env.sessionSecret })) : null;
-
-  jar.delete(PENDING_LINK_COOKIE);
 
   const session = await readSession();
   if (
@@ -152,6 +164,7 @@ export async function completePendingLink(input: {
     // Treated as unreachable rather than invented into a problem document — the screen's
     // recoverable state tells the reader to start the link again, which is the only thing that
     // works, and is the honest answer for every one of these.
+    jar.delete(PENDING_LINK_COOKIE);
     return { status: API_OUTCOME.Unreachable };
   }
 
@@ -163,9 +176,18 @@ export async function completePendingLink(input: {
       nonce: pending.nonce,
       codeVerifier: pending.codeVerifier,
       redirectUri: pending.redirectUri,
+      issuer: pending.issuer,
       password: input.password,
     },
   );
+
+  // **Kept when only the password was refused** (task 171). The api checks the password before it
+  // spends the code, so after that refusal the code is still good and the row stays open for a retype;
+  // deleting the cookie first, as this did, turned one mistyped password into a second trip through
+  // the provider. Every other answer — a link made, a code spent or refused — ends the transaction.
+  const passwordRefused =
+    outcome.status === API_OUTCOME.Problem && outcome.problem.type === PROBLEM_TYPE.CredentialInvalid;
+  if (!passwordRefused) jar.delete(PENDING_LINK_COOKIE);
 
   return mapOutcome(outcome, () => null);
 }

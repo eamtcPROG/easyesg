@@ -72,10 +72,14 @@ export class OpenIdClientIdentityProvider implements IdentityProviderPort {
       const configuration = await this.configurationFor(exchange.settings);
 
       // openid-client reads the authorization response off a URL; reconstruct the callback as
-      // the browser presented it to the web tier.
+      // the browser presented it to the web tier — `iss` included wherever the provider sent one
+      // (RFC 9207, task 171). The library requires it from a provider whose metadata says it is
+      // supported, and compares it with the discovered issuer; rebuilt from `code` and `state`
+      // alone, Google's every callback read as "invalid response encountered".
       const callbackUrl = new URL(exchange.redirectUri);
       callbackUrl.searchParams.set('code', exchange.code);
       callbackUrl.searchParams.set('state', exchange.state);
+      if (exchange.issuer !== undefined) callbackUrl.searchParams.set('iss', exchange.issuer);
 
       const tokens = await client.authorizationCodeGrant(configuration, callbackUrl, {
         pkceCodeVerifier: exchange.codeVerifier,

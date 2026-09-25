@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { STACK_API_BASE, STACK_ORIGIN } from '../stack';
-import { restoreIdentityProviderSeed } from '../web/support/provider-config';
+import { restoreSlot, snapshotIdentityProvider, type SlotSnapshot } from '../web/support/provider-config';
 import { OPERATOR_ROLE, cleanupOperators, provisionOperator } from './support/provision';
 import { currentTotpCode } from './support/totp';
 
@@ -31,8 +31,15 @@ const TOTP_SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
 const CLIENT_ID = `${RUN_PREFIX}-client`;
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
+/** The developer's own Google configuration, put back after the suite (task 172). */
+let googleSlot: SlotSnapshot | undefined;
+
+test.beforeAll(async () => {
+  googleSlot = await snapshotIdentityProvider('google');
+});
+
 test.afterAll(async () => {
-  await restoreIdentityProviderSeed('google');
+  if (googleSlot !== undefined) await restoreSlot(googleSlot);
   await cleanupOperators(RUN_PREFIX);
 });
 

@@ -1,6 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { restoreNotificationCategorySeed } from '../web/support/provider-config';
+import {
+  restoreNotificationCategorySeed,
+  restoreSlot,
+  snapshotNotificationCategory,
+  type SlotSnapshot,
+} from '../web/support/provider-config';
 import { OPERATOR_ROLE, cleanupOperators, provisionOperator } from './support/provision';
 import { currentTotpCode } from './support/totp';
 
@@ -24,8 +29,15 @@ const TOTP_SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
 const REMINDER = 'reporting.manual_reminder';
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
+/** The developer's own reminder settings, put back after the suite (task 172); each case still starts from the seed. */
+let reminderSlot: SlotSnapshot | undefined;
+
+test.beforeAll(async () => {
+  reminderSlot = await snapshotNotificationCategory(REMINDER);
+});
+
 test.afterAll(async () => {
-  await restoreNotificationCategorySeed(REMINDER);
+  if (reminderSlot !== undefined) await restoreSlot(reminderSlot);
   await cleanupOperators(RUN_PREFIX);
 });
 

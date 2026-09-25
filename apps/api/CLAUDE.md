@@ -1174,6 +1174,12 @@ No table and no code. Add a `config/seed/<kind>.<scope>.json` file and read it w
 (One named input since 28 Aug 2026 — `kind` and `scope` are both free-form strings, and the
 positional form let a swap compile and answer "nothing registered".)
 
+- **A seed never overwrites an operator's publication, and a suite never leaves the store other than it found it**
+  (task 172). The loader keeps a slot whose version in force carries a `created_by`; a suite that publishes into a
+  slot — a stub provider, a test category — snapshots it first with `test/support/configuration-slot.ts` and puts back
+  the same payload **under the same publisher**, never the committed seed. These suites run against the developer's
+  own store, and restoring the seed is how a configured Google provider was disabled by every run. The browser suites
+  do the same through `e2e/web/support/provider-config.ts`.
 - **Two tables, and the split matters.** `config.entry_version` keeps every version, immutable once
   published; `config.entry_schedule` keeps only what is in force and carries
   `PRIMARY KEY (kind, scope, validity WITHOUT OVERLAPS)`. §7.9 states that key for "every

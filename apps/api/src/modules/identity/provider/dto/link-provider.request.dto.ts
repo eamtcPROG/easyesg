@@ -44,6 +44,17 @@ export class LinkProviderRequestDto {
   redirectUri!: string;
 
   @ApiPropertyOptional({
+    description:
+      'The `iss` parameter the provider returned on its callback, where it returned one (RFC 9207). ' +
+      'Required by a provider that declares it supported — it is checked against the issuer.',
+    example: 'https://accounts.google.com',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(URI_MAX_LENGTH)
+  issuer?: string;
+
+  @ApiPropertyOptional({
     format: 'password',
     description:
       'The account’s current password. Required for every account that has one — a link adds a ' +

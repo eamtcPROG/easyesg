@@ -48,6 +48,8 @@ export interface CompleteSocialSignInCommand {
   readonly nonce: string;
   readonly codeVerifier: string;
   readonly redirectUri: string;
+  /** The callback's `iss`, where the provider sent one (RFC 9207, task 171). */
+  readonly issuer?: string;
   readonly intent: SocialSignInIntent;
   /** Negotiated from `Accept-Language`; seeds FR-10's preference when registration happens. */
   readonly locale: Locale;
@@ -144,6 +146,7 @@ export class CompleteSocialSignIn {
       state: command.state,
       nonce: command.nonce,
       codeVerifier: command.codeVerifier,
+      issuer: command.issuer,
     });
 
     const resolution = await this.store.run((tx) => this.resolve(tx, command, assertion, now));

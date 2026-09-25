@@ -25641,3 +25641,90 @@ region a screen scrolls in. **Two consequences, each handled rather than left to
 Measured in a real browser at 1440×900 on A-07's log: `<main>` scrolled 1,270px with the bar and the first destination
 unmoved and the window at 0; opening the nineteenth row's record and closing it left `<main>` at 1,270; following the
 navigation to A-08 reset it to 0.
+
+## Task 171 — Google sign-in and linking failed on the issuer the provider returns · 2026-09-25
+
+The owner could not link Google on S-28. The api logged `Code exchange with 'google' failed: invalid response
+encountered` for both attempts, and the database held no provider identity. Three defects stood between a Google
+account and a link, found in the order the owner met them.
+
+**1. The callback's `iss` was dropped.** Google's discovery document declares
+`authorization_response_iss_parameter_supported: true`, so its callback carries `iss` (RFC 9207), and `oauth4webapi`
+refuses an authorization response that omits it or names another issuer — the mix-up defence the parameter exists for.
+The adapter rebuilt the callback URL from `code` and `state` alone, so **every** Google sign-in, registration and link
+failed before its token request. Found by reading `openid-client`'s `errorHandler` (the message is its wrapper for
+`OAUTH_INVALID_RESPONSE`) and `oauth4webapi`'s `validateAuthResponse`; the client id and secret were ruled out first by
+presenting them to Google's token endpoint with a dummy code — `invalid_grant`, where a wrong secret answers
+`invalid_client`. The callback now forwards `iss` as the completion's optional `issuer` — on sign-in and on the pending
+link — and the adapter puts it back on the reconstructed callback. `architecture.md`'s task-24 flow row is amended.
+
+**Why every suite was green:** the stub provider declared nothing and sent no `iss`. It now declares RFC 9207 and returns
+`iss` as Google does, the three api suites forward it, and a new case refuses a completion that drops the issuer or
+names another — asserting neither code reached the token endpoint. *Proven to bite:* with the adapter's one line removed,
+10 of 18 cases across `social-auth` and `provider-link` fail.
+
+**2. A mistyped password spent the link.** `completePendingLink` cleared its sealed cookie before calling the api, on the
+premise — written in its docblock — that any refusal had spent the single-use code. But `ManageProviderLinks.link`
+re-authenticates *before* the exchange, so after `credential-invalid` the code is unspent, and the owner's two attempts a
+minute apart were two full trips through Google. The cookie now survives that one answer and every other answer ends
+it; `PROBLEM_TYPE` gains `CredentialInvalid` for the web tier to read it by. `architecture.md`'s task-27.7 row is amended.
+
+**3. A successful link read as a failure.** With (1) fixed the owner's next attempt linked — the identity row exists —
+and the web tier logged `api-client: unusable response body … status: 201, Unexpected end of JSON input`. The link route
+declared `@HttpCode(201)` and returned nothing, where §6.8 admits an empty body only on 202 or 204 — which is what
+unlink, its sibling, answers. It answers 204 now. *Searched for the shape:* every api handler returning `Promise<void>`
+without a 202 or 204 — this was the only one.
+
+**A browser journey for linking now exists** (`social.spec.ts`), which `credentials.spec.ts` had declined on the argument
+that sign-in exercised the same Route Handlers; the link completes by its own path and failed for everyone while that
+argument held. It links Google through S-28, is refused once for a wrong password, and completes on the retype with
+exactly one more token request at the stub.
+
+**Declined by the owner:** turning off Next's Server Function logging (`logging.serverFunctions: false`). The owner's log
+showed the link action's arguments — the current password in plain text — and the setting was proposed on NFR-30's
+grounds; the owner kept the logging on for the development phase (25 Sep 2026). Stated here because it is the reason a
+development terminal can hold a password.
+
+**Verification:** `api` unit 1,421 of 1,421; `web` 1,132; `admin` 293; the three social api suites 26 of 26 after each of
+the three fixes; `typecheck` for `api`, `web` and `admin`; `lint`; `docs:check`. The owner's own attempt against Google
+linked the account. **Not yet run:** the whole api e2e suite and the browser suite — the first attempt was stopped with
+four suites failing on 30-second hook timeouts while the host held ~17 GB compressed and 5 GB of swap on 8 GB of RAM, a
+starved machine rather than a defect in this change; to be re-run once the host is unloaded.
+
+## Task 172 — Seeding and suite teardowns overwrote an operator's configuration · 2026-09-25
+
+The owner unlinked Google on S-28, could not link it again (*unavailable social provider*), and found the provider
+inactive on A-18 — twice, having touched nothing. The Google slot's history named the writers: after the owner's own two
+publications (14:49, attributed to their operator account) every revision was a test run's — 14:07 the whole api suite's
+A-18 cases, 14:56 the three social suites re-run for task 171.
+
+**Two causes, and the first is the one that would have reached production.**
+
+- **The seeder broke its own promise.** `config/seed/README.md` and the loader's docblock both say a later seed run must
+  not undo an operator's edit, "which is why the loader compares payloads". But an operator's edit always differs from
+  the file, so comparison republished the seed over it — and `pretest:e2e` runs `config:seed` before every api suite
+  (revision 2978, 14:56:22, before any suite had published). Every deploy that seeds would have done the same to a
+  production provider. **The fact that distinguishes the two was already stored**: the console publishes with the
+  operator's account in `config.entry_version.created_by`, the loader with none. The loader now keeps a slot whose
+  version in force carries a `created_by`, reports it (`kept revision N, an operator's edit`), and still republishes over
+  a seed-owned slot that differs — which is a seed that changed. Scheduled windows take the same rule.
+- **Six suites restored "the seed" on teardown** — `social-auth`, `provider-link`, `account-setup`,
+  `admin-identity-providers` and `admin-notification-categories` in the api, and three browser specs through
+  `restoreIdentityProviderSeed`. On the developer's own store that is a reset, not a cleanup. Each now snapshots the slot
+  before its first publication (`test/support/configuration-slot.ts`; `e2e/web/support/provider-config.ts`) and restores
+  that payload **under its original publisher**, so an operator's slot stays operator-owned and the next seed keeps it.
+  Where a case needs the seed as its starting state it still publishes it; what a suite *leaves* is what it found.
+
+**Searched for the shape:** every file reading `config/seed/` in `apps/api/test` and `e2e`. `organizations.e2e-spec.ts`
+publishes the legal-form seed only where the slot differs and never restores — left as it is, since no console edits
+legal forms yet and it now goes through the same keep-an-operator's-edit loader; `wizard` and `users-access` only read
+the files.
+
+**Proven:** the seeder's new case in `configuration-store.e2e-spec.ts` publishes an operator's edit on a seeded slot and
+asserts it is kept, then the same payload published by nobody and asserts it is replaced — with the check neutralised,
+exactly that case fails (1 of 20). The six affected api suites pass, 59 of 59, and the three slots they touch — Google,
+Microsoft and the manual reminder — hold byte-identical payloads under the same publisher before and after the run.
+
+**Not restored here:** the owner's own Google configuration, which the earlier runs overwrote. Republishing their last
+version directly into the dev store was refused by the session's permissions, so it is re-entered on A-18 — and now
+survives both seeding and the suites.

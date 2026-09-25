@@ -155,6 +155,10 @@ export async function completeSocialFlow(
   if (!code || !state || state !== transaction.state) {
     return noticeRedirect(locale, SCREEN.SIGN_IN, SOCIAL_NOTICE.RESTART);
   }
+  // The provider's own name for itself, where it sent one (RFC 9207, task 171) — carried to the api,
+  // which checks it against the issuer. Google sends it and says so in its metadata, and the library
+  // refuses a callback without it: dropping it here failed every Google sign-in and link.
+  const issuer = query.get('iss') ?? undefined;
 
   // **A link does not complete here** (task 27.7). FR-8 needs the current password, and it is asked
   // for after the provider returns rather than carried across the redirect — so the callback holds
@@ -179,6 +183,7 @@ export async function completeSocialFlow(
       nonce: transaction.nonce,
       codeVerifier: transaction.codeVerifier,
       redirectUri: transaction.redirectUri,
+      issuer,
       accountId: session.account.id,
     });
     return NextResponse.redirect(
@@ -195,6 +200,7 @@ export async function completeSocialFlow(
       nonce: transaction.nonce,
       codeVerifier: transaction.codeVerifier,
       redirectUri: transaction.redirectUri,
+      issuer,
       intent: transaction.intent,
     },
   );

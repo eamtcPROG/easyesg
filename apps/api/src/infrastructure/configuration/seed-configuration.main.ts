@@ -24,7 +24,11 @@ async function main(): Promise<void> {
   await dataSource.initialize();
   try {
     for (const outcome of await seedConfiguration(dataSource)) {
-      const verb = outcome.published ? `published revision ${outcome.revision}` : 'unchanged';
+      const verb = outcome.published
+        ? `published revision ${outcome.revision}`
+        : outcome.keptOperatorEdit
+          ? `kept revision ${outcome.revision}, an operator's edit`
+          : 'unchanged';
       process.stdout.write(`${outcome.kind}/${outcome.scope}: ${verb}\n`);
     }
   } finally {

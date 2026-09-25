@@ -27,6 +27,7 @@ import {
 } from '../src/modules/identity/provider/interfaces/account-setup-store.interface';
 import { connectAs } from './support/database';
 import { OidcProviderStub } from './support/oidc-provider-stub';
+import { restoreSlot, snapshotSlot, type SlotSnapshot } from './support/configuration-slot';
 
 /**
  * Task 155's deliverable at the API: an account registered through a provider completes its setup
@@ -87,6 +88,9 @@ describe('an account completes its setup (task 155; FR-2, FR-3, UC-02, UC-03)', 
   const RUN = `${process.pid}-${Date.now()}`;
   const addressFor = (label: string) => `task155-${label}-${RUN}@example.md`;
 
+  /** What the developer's store held for Google before this suite touched it — put back afterwards (task 172). */
+  let providerSlot: SlotSnapshot | undefined;
+
   beforeAll(async () => {
     stub = new OidcProviderStub();
     await stub.start();
@@ -95,9 +99,10 @@ describe('an account completes its setup (task 155; FR-2, FR-3, UC-02, UC-03)', 
     app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false });
     configureHttpApp(app);
     await app.init();
+    providerSlot = await snapshotSlot(app, { kind: IDENTITY_PROVIDER_CONFIG_KIND, scope: 'google' });
 
     // The provider this suite registers through, enabled by a publish pointing at the stub —
-    // `social-auth.e2e-spec.ts`'s arrangement, and restored to the committed seed afterwards.
+    // `social-auth.e2e-spec.ts`'s arrangement, and put back as it was afterwards (task 172).
     await app.get(ConfigurationPublisher).publish({
       kind: IDENTITY_PROVIDER_CONFIG_KIND,
       scope: 'google',
@@ -119,9 +124,7 @@ describe('an account completes its setup (task 155; FR-2, FR-3, UC-02, UC-03)', 
     const seed = JSON.parse(
       readFileSync(resolve(__dirname, '../../../config/seed/identity-provider.google.json'), 'utf8'),
     ) as Record<string, unknown>;
-    await app
-      ?.get(ConfigurationPublisher)
-      .publish({ kind: IDENTITY_PROVIDER_CONFIG_KIND, scope: 'google', payload: seed });
+    if (app !== undefined && providerSlot !== undefined) await restoreSlot(app, providerSlot, seed);
 
     await app?.close();
     await stub?.stop();
@@ -148,15 +151,16 @@ describe('an account completes its setup (task 155; FR-2, FR-3, UC-02, UC-03)', 
         .expect(200),
     );
     const authorized = await fetch(challenge.authorizationUrl, { redirect: 'manual' });
-    const code = new URL(authorized.headers.get('location') ?? '').searchParams.get('code');
+    const callback = new URL(authorized.headers.get('location') ?? '').searchParams;
     return http()
       .post('/api/v1/auth/social/google/session')
       .send({
-        code,
+        code: callback.get('code'),
         state: challenge.state,
         nonce: challenge.nonce,
         codeVerifier: challenge.codeVerifier,
         redirectUri: REDIRECT_URI,
+        issuer: callback.get('iss') ?? undefined,
         intent: 'register',
       })
       .expect(expectStatus);

@@ -340,6 +340,40 @@ describe('configuration store (DR-3, AD-4)', () => {
       expect(second.every((o) => o.published === false)).toBe(true);
     });
 
+    /**
+     * `config/seed/README.md`'s promise, which comparison alone could not keep (task 172): an operator's edit always
+     * differs from the file, so every run published the seed over it — a configured Google provider was disabled and
+     * its client id emptied by the `config:seed` that `pretest:e2e` runs. The slot is kept when an operator published
+     * what is in force, and a seed-owned slot that differs still takes the file, since that is a seed that changed.
+     * On a seeded slot of the developer's own store, so it is put back as found, publisher included.
+     */
+    it("keeps an operator's edit, and still republishes over a seed-owned slot that differs", async () => {
+      const slot = { kind: 'identity_provider', scope: 'microsoft' } as const;
+      const [found] = await app.query<{ payload: Record<string, unknown>; created_by: string | null }[]>(
+        `SELECT v.payload, v.created_by FROM config.entry_schedule s JOIN config.entry_version v ON v.id = s.version_id
+          WHERE s.kind = $1 AND s.scope = $2 AND s.validity @> current_date`,
+        [slot.kind, slot.scope],
+      );
+      const operator = '0190f2a0-0000-7000-8000-00000000c0de';
+      const edited = { ...found.payload, clientId: 'an-operator-configured-this', enabled: false };
+      try {
+        await publisher.publish({ ...slot, payload: edited, actorId: operator });
+        const kept = (await seedConfiguration(app)).find((o) => o.kind === slot.kind && o.scope === slot.scope);
+        expect(kept).toMatchObject({ published: false, keptOperatorEdit: true });
+        const replica = new ConfigurationStore(app);
+        await replica.refreshIfStale();
+        expect(replica.get(slot)?.payload).toEqual(edited);
+
+        // The same payload published by nobody — a seed, or a system path — is the file's to replace.
+        await publisher.publish({ ...slot, payload: edited, actorId: null });
+        const replaced = (await seedConfiguration(app)).find((o) => o.kind === slot.kind && o.scope === slot.scope);
+        expect(replaced).toMatchObject({ published: true });
+        expect(replaced?.keptOperatorEdit).toBeUndefined();
+      } finally {
+        await publisher.publish({ ...slot, payload: found.payload, actorId: found.created_by });
+      }
+    });
+
     it('registers the three locales AD-4 puts in the store rather than in the release', async () => {
       await seedConfiguration(app);
       const replica = new ConfigurationStore(app);

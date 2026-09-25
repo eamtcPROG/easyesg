@@ -16,11 +16,11 @@ import { signOut } from './support/session';
  * and the old one does not), and **the second factor actually challenges** — S-01 asks for a code
  * afterwards, which is the whole point of the screen and involves three tasks' code agreeing.
  *
- * The linking flow is deliberately **not** driven here. It needs the OIDC stub the api's own suite
- * runs, and what it would prove that `provider-link.e2e-spec.ts` does not is the redirect wiring —
- * which `social.spec.ts` already exercises for sign-in over the same two Route Handlers. What this
- * suite does assert is that the section renders and offers the link, since a screen that could not
- * be reached is the failure mode a green API suite cannot see.
+ * The linking flow is driven in `social.spec.ts`, which runs the OIDC stub — **since task 171**. Until then it was
+ * deliberately not driven anywhere in the browser, on the argument that sign-in exercised the same two Route Handlers;
+ * but the link completes by its own path — the re-sealed cookie, the Server Action, the authenticated route — and it
+ * failed for every Google user while every suite was green. What this suite asserts is that the section renders and
+ * offers the link.
  */
 const RUN_PREFIX = `task27-${process.pid}-${Date.now()}`;
 const NEXT_PASSWORD = 'Alt-Str0ng-Passphrase!';

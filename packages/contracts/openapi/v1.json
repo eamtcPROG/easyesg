@@ -1087,7 +1087,7 @@
           }
         },
         "responses": {
-          "201": {
+          "204": {
             "description": "The provider is linked."
           },
           "403": {
@@ -7262,6 +7262,11 @@
             "description": "The redirect URI the flow began with — must match the challenge exactly.",
             "example": "http://localhost:3100/auth/social/google/callback"
           },
+          "issuer": {
+            "type": "string",
+            "description": "The `iss` parameter the provider returned on its callback, where it returned one (RFC 9207). Required by a provider that declares it supported — it is checked against the issuer.",
+            "example": "https://accounts.google.com"
+          },
           "intent": {
             "type": "string",
             "enum": [
@@ -7365,6 +7370,11 @@
             "type": "string",
             "description": "The redirect URI the code was issued against — checked against the allowlist.",
             "example": "http://localhost:3100/auth/social/google/callback"
+          },
+          "issuer": {
+            "type": "string",
+            "description": "The `iss` parameter the provider returned on its callback, where it returned one (RFC 9207). Required by a provider that declares it supported — it is checked against the issuer.",
+            "example": "https://accounts.google.com"
           },
           "password": {
             "type": "string",

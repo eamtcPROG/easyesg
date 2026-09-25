@@ -51,6 +51,10 @@ export const PROBLEM_TYPE = {
   /** FR-82: the provider is disabled or unregistered — the callback shows "use email and
    *  password" rather than a retry (task 24). */
   SocialProviderUnavailable: 'https://easyesg.md/problems/social-provider-unavailable',
+  /** A re-authentication refused the current password. S-28's pending link keeps the provider's code when this is the
+   *  answer, since the password is checked before the code is spent, so the reader retypes rather than starts over
+   *  (task 171). */
+  CredentialInvalid: 'https://easyesg.md/problems/credential-invalid',
   /** The exchange or ID-token validation failed — the callback offers starting over. */
   SocialExchangeFailed: 'https://easyesg.md/problems/social-exchange-failed',
   /** UC-05's alternate flow — the callback offers registration instead of a session. */

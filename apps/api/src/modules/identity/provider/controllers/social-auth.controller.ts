@@ -147,6 +147,7 @@ export class SocialAuthController {
         nonce: body.nonce,
         codeVerifier: body.codeVerifier,
         redirectUri: body.redirectUri,
+        issuer: body.issuer,
         intent: body.intent,
       }),
     );

@@ -14,6 +14,7 @@ import { IDENTITY_PROVIDER_CONFIG_KIND } from '../src/modules/identity/provider/
 import { OidcProviderStub } from './support/oidc-provider-stub';
 import { connectAs } from './support/database';
 import { PASSWORD, cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { restoreSlot, snapshotSlot, type SlotSnapshot } from './support/configuration-slot';
 
 /**
  * UC-11 and UC-12 over real HTTP, against a real code flow (FR-8; task 27.6).
@@ -47,6 +48,9 @@ describe('link and unlink provider identities (UC-11, UC-12, FR-8)', () => {
     );
   };
 
+  /** What the developer's store held for Google before this suite touched it — put back afterwards (task 172). */
+  let providerSlot: SlotSnapshot | undefined;
+
   beforeAll(async () => {
     stub = new OidcProviderStub();
     await stub.start();
@@ -55,6 +59,7 @@ describe('link and unlink provider identities (UC-11, UC-12, FR-8)', () => {
     app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false });
     configureHttpApp(app);
     await app.init();
+    providerSlot = await snapshotSlot(app, { kind: IDENTITY_PROVIDER_CONFIG_KIND, scope: 'google' });
 
     await app.get(ConfigurationPublisher).publish({
       kind: IDENTITY_PROVIDER_CONFIG_KIND,
@@ -80,13 +85,13 @@ describe('link and unlink provider identities (UC-11, UC-12, FR-8)', () => {
 
   afterAll(async () => {
     await cleanupSignedInAccounts({ owner });
-    // Restore the committed seed, so the next `config:seed` compares equal — social-auth's rule.
+    // Put back what the store held before this suite — the developer's own configuration, under its own
+    // publisher (task 172) — and the committed seed only where nothing was in force. Restoring the seed
+    // unconditionally is what disabled a configured Google provider on every run.
     const seed = JSON.parse(
       readFileSync(resolve(__dirname, '../../../config/seed/identity-provider.google.json'), 'utf8'),
     ) as Record<string, unknown>;
-    await app
-      ?.get(ConfigurationPublisher)
-      .publish({ kind: IDENTITY_PROVIDER_CONFIG_KIND, scope: 'google', payload: seed });
+    if (app !== undefined && providerSlot !== undefined) await restoreSlot(app, providerSlot, seed);
 
     await owner?.query(`DELETE FROM identity.account WHERE email = $1`, [EMAIL]);
     await drain();
@@ -103,20 +108,22 @@ describe('link and unlink provider identities (UC-11, UC-12, FR-8)', () => {
     ]);
   });
 
-  /** The browser's leg, played by fetch: authorize at the stub, harvest the code. */
-  const authorizeAtProvider = async (authorizationUrl: string): Promise<string> => {
+  /** The browser's leg, played by fetch: authorize at the stub, harvest the code and the `iss` (task 171). */
+  const authorizeAtProvider = async (
+    authorizationUrl: string,
+  ): Promise<{ code: string; issuer: string | undefined }> => {
     const response = await fetch(authorizationUrl, { redirect: 'manual' });
     const location = new URL(response.headers.get('location') ?? '');
     const code = location.searchParams.get('code');
     if (!code) throw new Error('the stub returned no code');
-    return code;
+    return { code, issuer: location.searchParams.get('iss') ?? undefined };
   };
 
   /**
    * A whole link: the SAME public challenge a sign-in uses, then the authenticated redemption.
    * That the first half is shared is the design, and driving it here is what proves it.
    */
-  const linkGoogle = async (options: { password?: string; expect: number } = { expect: 201 }) => {
+  const linkGoogle = async (options: { password?: string; expect: number } = { expect: 204 }) => {
     const challenge = objectOf<{
       authorizationUrl: string;
       state: string;
@@ -128,7 +135,7 @@ describe('link and unlink provider identities (UC-11, UC-12, FR-8)', () => {
         .send({ redirectUri: REDIRECT_URI })
         .expect(200),
     );
-    const code = await authorizeAtProvider(challenge.authorizationUrl);
+    const { code, issuer } = await authorizeAtProvider(challenge.authorizationUrl);
 
     return http()
       .post('/api/v1/account/providers/google')
@@ -139,6 +146,7 @@ describe('link and unlink provider identities (UC-11, UC-12, FR-8)', () => {
         nonce: challenge.nonce,
         codeVerifier: challenge.codeVerifier,
         redirectUri: REDIRECT_URI,
+        issuer,
         password: options.password ?? PASSWORD,
       })
       .expect(options.expect);

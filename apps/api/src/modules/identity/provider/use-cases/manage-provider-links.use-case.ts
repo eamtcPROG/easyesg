@@ -40,6 +40,8 @@ export interface LinkProviderCommand extends ActorCommand {
   readonly nonce: string;
   readonly codeVerifier: string;
   readonly redirectUri: string;
+  /** The callback's `iss`, where the provider sent one (RFC 9207, task 171). */
+  readonly issuer?: string;
 }
 
 export interface UnlinkProviderCommand extends ActorCommand {
@@ -134,6 +136,7 @@ export class ManageProviderLinks {
       nonce: command.nonce,
       codeVerifier: command.codeVerifier,
       redirectUri: command.redirectUri,
+      issuer: command.issuer,
     });
 
     const attached = await this.store.run((tx) =>

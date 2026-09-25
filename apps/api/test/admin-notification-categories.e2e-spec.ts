@@ -22,6 +22,7 @@ import {
   signInOperator,
   type SignedInOperator,
 } from './support/signed-in-operator';
+import { restoreSlot, snapshotSlot, type SlotSnapshot } from './support/configuration-slot';
 
 /**
  * A-17 over real HTTP (task 67.10; UC-176, FR-173, UX-123; §12.5.6's task-67.10 row) — every category's reading with
@@ -90,6 +91,9 @@ describe('notification categories from the console (A-17; task 67.10)', () => {
     await app.get(ConfigurationStore).poll();
   };
 
+  /** What the developer's store held for the reminder before this suite — put back afterwards (task 172). */
+  let reminderSlot: SlotSnapshot | undefined;
+
   beforeAll(async () => {
     await initialiseCatalogue();
     owner = await connectAs('DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-categories-owner');
@@ -101,6 +105,7 @@ describe('notification categories from the console (A-17; task 67.10)', () => {
     app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false });
     configureHttpApp(app);
     await app.init();
+    reminderSlot = await snapshotSlot(app, { kind: NOTIFICATION_CATEGORY_CONFIG_KIND, scope: REMINDER });
 
     platform = await signInOperator({
       server: app.getHttpServer(),
@@ -114,7 +119,9 @@ describe('notification categories from the console (A-17; task 67.10)', () => {
   beforeEach(restoreSeed);
 
   afterAll(async () => {
-    if (app !== undefined) await restoreSeed();
+    // The state each case starts from is the seed; what the suite leaves is what it found (task 172) — an operator's
+    // own publication of the reminder survives this run, as it survives `config:seed`.
+    if (app !== undefined && reminderSlot !== undefined) await restoreSlot(app, reminderSlot, SEEDED);
     await owner?.query(`DELETE FROM notification.preference WHERE account_id = $1`, [ana?.accountId]);
     if (owner !== undefined) {
       await cleanupSignedInAccounts({ owner });

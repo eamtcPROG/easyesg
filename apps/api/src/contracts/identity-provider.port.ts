@@ -83,6 +83,13 @@ export interface ProviderCodeExchange {
   readonly state: string;
   readonly nonce: string;
   readonly codeVerifier: string;
+  /**
+   * The `iss` parameter the provider returned on its callback, where it returned one (RFC 9207, task
+   * 171). A provider whose metadata declares `authorization_response_iss_parameter_supported` —
+   * Google's does — must have it checked against its issuer, which is the mix-up defence the parameter
+   * exists for; dropping it failed every such exchange before the token request was made.
+   */
+  readonly issuer?: string;
 }
 
 /**

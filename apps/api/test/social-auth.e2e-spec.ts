@@ -11,6 +11,7 @@ import { ConfigurationStore } from '../src/infrastructure/configuration/configur
 import { configureHttpApp } from '../src/main.http';
 import { IDENTITY_PROVIDER_CONFIG_KIND } from '../src/modules/identity/provider/constants/provider.constants';
 import { OidcProviderStub } from './support/oidc-provider-stub';
+import { restoreSlot, snapshotSlot, type SlotSnapshot } from './support/configuration-slot';
 
 /**
  * Task 24's stated deliverable at the API: the provider flow end to end — challenge, a REAL
@@ -66,6 +67,9 @@ describe('social sign-in (UC-02, UC-05; FR-2, FR-4, FR-82)', () => {
   const addressFor = (label: string) => `task24-${label}-${process.pid}-${Date.now()}@example.md`;
   const subjectFor = (label: string) => `task24-subject-${label}-${process.pid}-${Date.now()}`;
 
+  /** What the developer's store held for Google before this suite touched it — put back afterwards (task 172). */
+  let providerSlot: SlotSnapshot | undefined;
+
   beforeAll(async () => {
     stub = new OidcProviderStub();
     await stub.start();
@@ -74,6 +78,7 @@ describe('social sign-in (UC-02, UC-05; FR-2, FR-4, FR-82)', () => {
     app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false });
     configureHttpApp(app);
     await app.init();
+    providerSlot = await snapshotSlot(app, { kind: IDENTITY_PROVIDER_CONFIG_KIND, scope: 'google' });
 
     // FR-82's no-redeploy half, exercised rather than assumed: the provider this suite uses is
     // enabled by a store publish pointing at the stub, against a running application.
@@ -105,17 +110,16 @@ describe('social sign-in (UC-02, UC-05; FR-2, FR-4, FR-82)', () => {
   }, 60_000);
 
   afterAll(async () => {
-    // Leave the slot holding the COMMITTED seed payload, so the next `config:seed` run compares
-    // equal and publishes nothing — this suite's stub issuer must not outlive it.
+    // Put back what the store held before this suite — the developer's own configuration, under its own
+    // publisher (task 172) — and the committed seed only where nothing was in force. Restoring the seed
+    // unconditionally is what disabled a configured Google provider on every run.
     const seed = JSON.parse(
       readFileSync(
         resolve(__dirname, '../../../config/seed/identity-provider.google.json'),
         'utf8',
       ),
     ) as Record<string, unknown>;
-    await app
-      ?.get(ConfigurationPublisher)
-      .publish({ kind: IDENTITY_PROVIDER_CONFIG_KIND, scope: 'google', payload: seed });
+    if (app !== undefined && providerSlot !== undefined) await restoreSlot(app, providerSlot, seed);
 
     await app?.close();
     await stub?.stop();
@@ -138,14 +142,19 @@ describe('social sign-in (UC-02, UC-05; FR-2, FR-4, FR-82)', () => {
 
   const http = () => request(app.getHttpServer());
 
-  /** The browser's leg of the flow, played by fetch: authorize at the stub, harvest the code. */
-  const authorizeAtProvider = async (authorizationUrl: string): Promise<string> => {
+  /**
+   * The browser's leg of the flow, played by fetch: authorize at the stub, harvest the callback's
+   * code and — since task 171 — the `iss` it carries, which the web tier forwards as `issuer`.
+   */
+  const authorizeAtProvider = async (
+    authorizationUrl: string,
+  ): Promise<{ code: string; issuer: string | undefined }> => {
     const response = await fetch(authorizationUrl, { redirect: 'manual' });
     expect(response.status).toBe(302);
     const location = new URL(response.headers.get('location') ?? '');
     const code = location.searchParams.get('code');
     if (!code) throw new Error('the stub returned no code');
-    return code;
+    return { code, issuer: location.searchParams.get('iss') ?? undefined };
   };
 
   const completeFlow = async (
@@ -158,7 +167,7 @@ describe('social sign-in (UC-02, UC-05; FR-2, FR-4, FR-82)', () => {
         .send({ redirectUri: REDIRECT_URI })
         .expect(200),
     );
-    const code = await authorizeAtProvider(challenge.authorizationUrl);
+    const { code, issuer } = await authorizeAtProvider(challenge.authorizationUrl);
     return http()
       .post('/api/v1/auth/social/google/session')
       .send({
@@ -167,6 +176,7 @@ describe('social sign-in (UC-02, UC-05; FR-2, FR-4, FR-82)', () => {
         nonce: challenge.nonce,
         codeVerifier: challenge.codeVerifier,
         redirectUri: REDIRECT_URI,
+        issuer,
         intent,
       })
       .expect(expectStatus);
@@ -308,7 +318,7 @@ describe('social sign-in (UC-02, UC-05; FR-2, FR-4, FR-82)', () => {
         .send({ redirectUri: REDIRECT_URI })
         .expect(200),
     );
-    const code = await authorizeAtProvider(challenge.authorizationUrl);
+    const { code, issuer } = await authorizeAtProvider(challenge.authorizationUrl);
 
     const response = await http()
       .post('/api/v1/auth/social/google/session')
@@ -318,9 +328,51 @@ describe('social sign-in (UC-02, UC-05; FR-2, FR-4, FR-82)', () => {
         nonce: 'not-the-nonce-the-token-carries',
         codeVerifier: challenge.codeVerifier,
         redirectUri: REDIRECT_URI,
+        issuer,
         intent: 'register',
       })
       .expect(401);
     expect(problemType(response)).toBe('https://easyesg.md/problems/social-exchange-failed');
+  });
+
+  /**
+   * RFC 9207's mix-up defence, and task 171's defect read backwards: a provider that declares the
+   * callback's `iss` must have it presented and checked. Without it the exchange is refused before
+   * the token request — which is exactly how every Google sign-in failed while this suite was green.
+   */
+  it('refuses a completion that drops the issuer the provider returned, and one that names another', async () => {
+    stub.nextClaims = {
+      sub: subjectFor('issuer'),
+      email: addressFor('issuer'),
+      email_verified: true,
+      name: 'I',
+    };
+    const refusedCodes: string[] = [];
+    for (const issuer of [undefined, 'https://accounts.example.test']) {
+      const challenge = object<ChallengeBody>(
+        await http()
+          .post('/api/v1/auth/social/google/challenge')
+          .send({ redirectUri: REDIRECT_URI })
+          .expect(200),
+      );
+      const { code } = await authorizeAtProvider(challenge.authorizationUrl);
+      refusedCodes.push(code);
+
+      const response = await http()
+        .post('/api/v1/auth/social/google/session')
+        .send({
+          code,
+          state: challenge.state,
+          nonce: challenge.nonce,
+          codeVerifier: challenge.codeVerifier,
+          redirectUri: REDIRECT_URI,
+          issuer,
+          intent: 'register',
+        })
+        .expect(401);
+      expect(problemType(response)).toBe('https://easyesg.md/problems/social-exchange-failed');
+    }
+    // Refused before the token endpoint, so neither code was ever presented there.
+    expect(stub.tokenRequests.filter((body) => refusedCodes.includes(body.get('code') ?? ''))).toEqual([]);
   });
 });

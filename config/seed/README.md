@@ -18,8 +18,13 @@ calculation can be reproduced against the factor set it actually used.
 ## What belongs here, and what does not
 
 Seeds are the values the platform ships with. Everything an operator edits afterwards lives only in
-the store, and a later seed run must not undo it — which is why the loader compares payloads rather
-than asserting them.
+the store, and a later seed run must not undo it. **Comparing payloads is not what keeps that promise —
+who published is** (task 172). An operator's edit always differs from the file, so a loader that only
+compared republished the seed over it on every run: a configured Google provider was disabled and its
+client id emptied by the `config:seed` that `pretest:e2e` runs. A version the console publishes carries
+the operator's account in `created_by`, and one the loader or a system path publishes carries none; the
+loader publishes a file only over a slot that is empty or seed-owned, and reports a kept operator's
+edit as such.
 
 **Wording does not belong here.** OQ-43 (closed 19 Aug 2026) narrowed AD-4 to behaviour rather than
 text: labels, help text, validation messages and notification templates ship as committed message

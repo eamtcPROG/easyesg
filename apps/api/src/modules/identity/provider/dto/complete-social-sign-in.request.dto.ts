@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import {
   SOCIAL_SIGN_IN_INTENT,
   type SocialSignInIntent,
@@ -46,6 +46,17 @@ export class CompleteSocialSignInRequestDto {
   @IsNotEmpty()
   @MaxLength(2000)
   redirectUri!: string;
+
+  @ApiPropertyOptional({
+    description:
+      'The `iss` parameter the provider returned on its callback, where it returned one (RFC 9207). ' +
+      'Required by a provider that declares it supported — it is checked against the issuer.',
+    example: 'https://accounts.google.com',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  issuer?: string;
 
   @ApiProperty({
     enum: Object.values(SOCIAL_SIGN_IN_INTENT),

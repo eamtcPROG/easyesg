@@ -13,8 +13,13 @@ import { ConfigurationStore } from './configuration-store.service';
  * the real publication history under identical revisions, which NFR-19 needs preserved so a stored
  * calculation can be reproduced against the factor set it actually used.
  *
- * It also means an operator's later edit survives a redeploy. Seeds are what the platform ships
- * with, not what it insists on.
+ * **An operator's later edit survives a redeploy, and that is decided by who published, not by comparing
+ * payloads** (task 172). Comparison alone cannot keep that promise: an operator's edit always differs from
+ * the file, so it was republished over on every run — every seeding disabled a provider an operator had
+ * enabled and emptied its client id, and `pretest:e2e` seeds before every api suite. A version an operator
+ * published carries their account in `created_by`; one this loader or a system path published carries
+ * none. So a file is published only over a slot that is empty or seed-owned, and a slot an operator owns
+ * is kept whatever the file says. Seeds are what the platform ships with, not what it insists on.
  *
  * Run with `pnpm --filter @easyesg/api config:seed`. It is deliberately a script rather than a
  * migration: seeds are data whose desired state changes independently of the schema, and a
@@ -47,6 +52,8 @@ export interface SeedOutcome {
   scope: string;
   published: boolean;
   revision: number | null;
+  /** The slot differs from the file and was kept, because an operator published what is in force. */
+  keptOperatorEdit?: boolean;
   /** The window this outcome is about, where the file scheduled one. Absent for the bare form. */
   window?: string;
 }
@@ -132,7 +139,7 @@ export async function seedConfiguration(dataSource: DataSource): Promise<SeedOut
     if (windows !== null) {
       await refuseReshape(dataSource, parsed, windows);
       for (const window of windows) {
-        outcomes.push(await applyWindow(publisher, store, parsed, window));
+        outcomes.push(await applyWindow({ dataSource, publisher, store, parsed, window }));
       }
       continue;
     }
@@ -144,6 +151,11 @@ export async function seedConfiguration(dataSource: DataSource): Promise<SeedOut
 
     if (unchanged) {
       outcomes.push({ ...parsed, published: false, revision: current.revision });
+      continue;
+    }
+
+    if (current !== undefined && (await publishedByOperator(dataSource, { ...parsed, on: today() }))) {
+      outcomes.push({ ...parsed, published: false, revision: current.revision, keptOperatorEdit: true });
       continue;
     }
 
@@ -203,18 +215,30 @@ async function refuseReshape(
  * Same comparison the bare form makes, asked at a date the window actually covers rather than at
  * today.
  */
-async function applyWindow(
-  publisher: ConfigurationPublisher,
-  store: ConfigurationStore,
-  parsed: { kind: string; scope: string },
-  window: ScheduledSeed,
-): Promise<SeedOutcome> {
+async function applyWindow({
+  dataSource,
+  publisher,
+  store,
+  parsed,
+  window,
+}: {
+  readonly dataSource: DataSource;
+  readonly publisher: ConfigurationPublisher;
+  readonly store: ConfigurationStore;
+  readonly parsed: { kind: string; scope: string };
+  readonly window: ScheduledSeed;
+}): Promise<SeedOutcome> {
   const on = probeDate(window);
   const current = store.get({ kind: parsed.kind, scope: parsed.scope, ...(on === undefined ? {} : { on }) });
   const label = `${window.validFrom ?? '-'}..${window.validTo ?? '-'}`;
 
   if (current !== undefined && stableStringify(current.payload) === stableStringify(window.payload)) {
     return { ...parsed, published: false, revision: current.revision, window: label };
+  }
+
+  // The bare form's rule, inside the window: an operator's publication there is kept (task 172).
+  if (current !== undefined && (await publishedByOperator(dataSource, { ...parsed, on: on ?? today() }))) {
+    return { ...parsed, published: false, revision: current.revision, window: label, keptOperatorEdit: true };
   }
 
   const { revision } = await publisher.publish({
@@ -224,6 +248,31 @@ async function applyWindow(
     validTo: window.validTo ?? null,
   });
   return { ...parsed, published: true, revision, window: label };
+}
+
+/**
+ * Whether the version in force for a slot on a date was published by an operator — `created_by` holds the
+ * operator's account where the console published it, and nothing where this loader or a system path did
+ * (task 172). Asked of the database rather than the store's cache, which carries no attribution; `esg_app`
+ * already reads both tables.
+ */
+async function publishedByOperator(
+  dataSource: DataSource,
+  slot: { readonly kind: string; readonly scope: string; readonly on: string },
+): Promise<boolean> {
+  const rows = await dataSource.query<{ created_by: string | null }[]>(
+    `SELECT v.created_by
+       FROM config.entry_schedule s
+       JOIN config.entry_version  v ON v.id = s.version_id
+      WHERE s.kind = $1 AND s.scope = $2 AND s.validity @> $3::date`,
+    [slot.kind, slot.scope, slot.on],
+  );
+  return rows.some((row) => row.created_by !== null);
+}
+
+/** Today as a calendar date in UTC — the store's own reading of "in force now". */
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 /** Key order is not meaning. Without this, reformatting a seed file would publish a revision. */

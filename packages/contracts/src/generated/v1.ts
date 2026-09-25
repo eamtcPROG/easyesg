@@ -2539,6 +2539,11 @@ export interface components {
              */
             redirectUri: string;
             /**
+             * @description The `iss` parameter the provider returned on its callback, where it returned one (RFC 9207). Required by a provider that declares it supported — it is checked against the issuer.
+             * @example https://accounts.google.com
+             */
+            issuer?: string;
+            /**
              * @description What the user was doing when the flow began. A sign-in that matches no account is offered registration rather than silently given one; a registration that matches an existing address is refused rather than linked.
              * @enum {string}
              */
@@ -2579,6 +2584,11 @@ export interface components {
              * @example http://localhost:3100/auth/social/google/callback
              */
             redirectUri: string;
+            /**
+             * @description The `iss` parameter the provider returned on its callback, where it returned one (RFC 9207). Required by a provider that declares it supported — it is checked against the issuer.
+             * @example https://accounts.google.com
+             */
+            issuer?: string;
             /**
              * Format: password
              * @description The account’s current password. Required for every account that has one — a link adds a way in, so a stolen session must not be able to attach a provider (§12.5.6). Omitted only by an account that signs in through a provider and holds no password.
@@ -5144,7 +5154,7 @@ export interface operations {
         };
         responses: {
             /** @description The provider is linked. */
-            201: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

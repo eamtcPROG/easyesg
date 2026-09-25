@@ -13,6 +13,12 @@ import type { AddressInfo } from 'node:net';
  * goes red. It listens on plain http/127.0.0.1, which is why the api's e2e environment sets
  * `AUTH_SOCIAL_ALLOW_INSECURE=true`.
  *
+ * **It declares RFC 9207 and returns `iss` on its callback, as Google does** (task 171). The stub
+ * without it is how every social test passed while Google's every exchange failed: the adapter
+ * rebuilt the callback from `code` and `state` alone, and the library refuses a callback missing the
+ * `iss` a provider says it sends. A stub that answers like the provider the product ships against is
+ * the only kind whose green means something.
+ *
  * Per-test knobs: `nextClaims` is what the next issued ID token asserts (subject, email,
  * verified flag, name). `authorizedRequests` records what the authorize endpoint was asked, so a
  * test can assert FR-2's minimum-scopes request actually left the platform.
@@ -85,6 +91,7 @@ export class OidcProviderStub {
       id_token_signing_alg_values_supported: ['RS256'],
       code_challenge_methods_supported: ['S256'],
       token_endpoint_auth_methods_supported: ['client_secret_post'],
+      authorization_response_iss_parameter_supported: true,
     });
   }
 
@@ -103,6 +110,7 @@ export class OidcProviderStub {
     const location = new URL(redirectUri);
     location.searchParams.set('code', code);
     if (state) location.searchParams.set('state', state);
+    location.searchParams.set('iss', this.issuer);
     response.writeHead(302, { location: location.href }).end();
   }
 

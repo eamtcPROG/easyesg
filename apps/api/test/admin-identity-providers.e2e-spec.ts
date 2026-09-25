@@ -8,7 +8,6 @@ import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { ProblemType, problemTypeUri } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
-import { ConfigurationPublisher } from '../src/infrastructure/configuration/configuration-publisher.service';
 import { IDENTITY_PROVIDER_CONFIG_KIND } from '../src/modules/identity/provider/constants/provider.constants';
 import { ADMIN_ROLE } from '../src/modules/platform/admin/models/admin-session.model';
 import { AUDIT_ACTION } from '../src/modules/platform/audit/models/audit-action.model';
@@ -19,6 +18,7 @@ import {
   signInOperator,
   type SignedInOperator,
 } from './support/signed-in-operator';
+import { restoreSlot, snapshotSlot, type SlotSnapshot } from './support/configuration-slot';
 
 /**
  * A-18 over real HTTP (task 67.11; UC-70, FR-82, BR-ID-6; §12.5.6's task-67.11 row) — the providers' reading, a
@@ -105,11 +105,15 @@ describe('identity providers from the console (A-18; task 67.11)', () => {
     return google();
   };
 
+  /** What the developer's store held for Google before this suite touched it — put back afterwards (task 172). */
+  let providerSlot: SlotSnapshot | undefined;
+
   beforeAll(async () => {
     await initialiseCatalogue();
     app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false });
     configureHttpApp(app);
     await app.init();
+    providerSlot = await snapshotSlot(app, { kind: IDENTITY_PROVIDER_CONFIG_KIND, scope: 'google' });
 
     owner = await connectAs('DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-identity-providers-owner');
     application = await connectAs('DB_USER', 'DB_PASSWORD', 'easyesg-identity-providers-app');
@@ -124,11 +128,13 @@ describe('identity providers from the console (A-18; task 67.11)', () => {
   }, 60_000);
 
   afterAll(async () => {
-    // Leave the slot holding the committed seed, so the next `config:seed` compares equal and publishes nothing.
+    // Put back what the store held before this suite — the developer's own configuration, under its own
+    // publisher (task 172) — and the committed seed only where nothing was in force. Restoring the seed
+    // unconditionally is what disabled a configured Google provider on every run.
     const seed = JSON.parse(
       readFileSync(resolve(__dirname, '../../../config/seed/identity-provider.google.json'), 'utf8'),
     ) as Record<string, unknown>;
-    await app?.get(ConfigurationPublisher).publish({ kind: IDENTITY_PROVIDER_CONFIG_KIND, scope: 'google', payload: seed });
+    if (app !== undefined && providerSlot !== undefined) await restoreSlot(app, providerSlot, seed);
 
     await owner?.query(`DELETE FROM identity.account WHERE email LIKE 'identity-providers-%@example.md'`);
     if (owner !== undefined) await cleanupSignedInOperators({ owner });

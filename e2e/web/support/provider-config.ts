@@ -38,10 +38,13 @@ async function publishEntry({
   kind,
   scope,
   payload,
+  createdBy = null,
 }: {
   readonly kind: Kind;
   readonly scope: string;
   readonly payload: Record<string, unknown>;
+  /** Who the publication is attributed to — an operator's account, or nobody for a seed (task 172). */
+  readonly createdBy?: string | null;
 }): Promise<void> {
   const client = new Client(asOwner());
   await client.connect();
@@ -54,9 +57,9 @@ async function publishEntry({
     );
     const inserted = await client.query<{ id: string }>(
       `INSERT INTO config.entry_version (kind, scope, revision, state, payload, created_by, published_at)
-       VALUES ($1, $2, $3, 'published', $4::jsonb, NULL, now())
+       VALUES ($1, $2, $3, 'published', $4::jsonb, $5, now())
        RETURNING id`,
-      [kind, scope, revision.rows[0].next, JSON.stringify(payload)],
+      [kind, scope, revision.rows[0].next, JSON.stringify(payload), createdBy],
     );
     const slot = await client.query<{ version_id: string }>(
       `SELECT version_id FROM config.entry_schedule
@@ -98,12 +101,60 @@ const seedPayload = (file: string): Record<string, unknown> =>
     readFileSync(fileURLToPath(new URL(`../../../config/seed/${file}`, import.meta.url)), 'utf8'),
   ) as Record<string, unknown>;
 
-/** Re-publishes the committed seed payload, so the store leaves the run as `config:seed` expects. */
-export async function restoreIdentityProviderSeed(scope: string): Promise<void> {
-  await publishIdentityProvider(scope, seedPayload(`identity-provider.${scope}.json`));
+/**
+ * What a slot held before a suite touched it (task 172). **These suites run against the developer's own store**, so a
+ * teardown that republished the committed seed wiped whatever an operator had configured — a real Google client id
+ * and its enablement, twice in one afternoon. A suite snapshots before its first publication and restores exactly that,
+ * payload and publisher, so an operator's configuration outlives the run and the next `config:seed` keeps it.
+ */
+export interface SlotSnapshot {
+  readonly kind: Kind;
+  readonly scope: string;
+  readonly payload: Record<string, unknown> | null;
+  readonly createdBy: string | null;
 }
 
-/** The same for a notification category A-17 published to (task 67.10). */
+async function snapshotEntry(kind: Kind, scope: string): Promise<SlotSnapshot> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    const rows = await client.query<{ payload: Record<string, unknown>; created_by: string | null }>(
+      `SELECT v.payload, v.created_by
+         FROM config.entry_schedule s
+         JOIN config.entry_version  v ON v.id = s.version_id
+        WHERE s.kind = $1 AND s.scope = $2 AND s.validity @> current_date`,
+      [kind, scope],
+    );
+    return { kind, scope, payload: rows.rows[0]?.payload ?? null, createdBy: rows.rows[0]?.created_by ?? null };
+  } finally {
+    await client.end();
+  }
+}
+
+export const snapshotIdentityProvider = (scope: string): Promise<SlotSnapshot> =>
+  snapshotEntry(KIND.IDENTITY_PROVIDER, scope);
+
+export const snapshotNotificationCategory = (scope: string): Promise<SlotSnapshot> =>
+  snapshotEntry(KIND.NOTIFICATION_CATEGORY, scope);
+
+/** Puts a snapshot back under its original publisher; the committed seed only where nothing was in force. */
+export async function restoreSlot(snapshot: SlotSnapshot): Promise<void> {
+  const seedFile =
+    snapshot.kind === KIND.IDENTITY_PROVIDER
+      ? `identity-provider.${snapshot.scope}.json`
+      : `notification-category.${snapshot.scope}.json`;
+  await publishEntry({
+    kind: snapshot.kind,
+    scope: snapshot.scope,
+    payload: snapshot.payload ?? seedPayload(seedFile),
+    createdBy: snapshot.payload === null ? null : snapshot.createdBy,
+  });
+}
+
+/**
+ * The committed seed for a notification category A-17 published to (task 67.10) — **the state a case starts from**, not
+ * what a suite leaves behind: that is `restoreSlot`'s (task 172).
+ */
 export async function restoreNotificationCategorySeed(scope: string): Promise<void> {
   await publishEntry({
     kind: KIND.NOTIFICATION_CATEGORY,

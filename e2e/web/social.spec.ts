@@ -2,10 +2,17 @@ import { expect, test } from '@playwright/test';
 import { Client } from 'pg';
 import { OidcProviderStub } from '../../apps/api/test/support/oidc-provider-stub';
 import { STACK_ORIGIN } from '../stack';
-import { cleanupAccounts, verificationTokenFor } from './support/db';
+import {
+  cleanupAccounts,
+  cleanupOrganizations,
+  grantMembership,
+  verificationTokenFor,
+} from './support/db';
 import {
   publishIdentityProvider,
-  restoreIdentityProviderSeed,
+  restoreSlot,
+  snapshotIdentityProvider,
+  type SlotSnapshot,
 } from './support/provider-config';
 import { accountTrigger } from './support/session';
 
@@ -32,6 +39,7 @@ const PREFIX = 'task24web-';
 const NEW_PASSWORD = 'Parola-Noua1!';
 
 const stub = new OidcProviderStub();
+const organizations: string[] = [];
 const run = Date.now();
 const addressFor = (label: string) => `${PREFIX}${label}-${run}@example.md`;
 
@@ -54,9 +62,13 @@ async function drainSocialThrottle(): Promise<void> {
 }
 
 test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
+  /** The developer's own Google configuration, put back after the suite (task 172). */
+  let googleSlot: SlotSnapshot | undefined;
+
   test.beforeAll(async ({ request }) => {
     await stub.start();
     await drainSocialThrottle();
+    googleSlot = await snapshotIdentityProvider('google');
     await publishIdentityProvider('google', {
       enabled: true,
       clientId: 'easyesg-web-e2e',
@@ -78,7 +90,8 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
   });
 
   test.afterAll(async () => {
-    await restoreIdentityProviderSeed('google');
+    if (googleSlot !== undefined) await restoreSlot(googleSlot);
+    await cleanupOrganizations(organizations);
     await cleanupAccounts(PREFIX);
     await drainSocialThrottle();
     await stub.stop();
@@ -220,5 +233,62 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
 
     await expect(page).toHaveURL(/\/create-organization$/);
     await expect(accountTrigger(page, { email, displayName: 'Ion Rusu' })).toBeVisible();
+  });
+
+  /**
+   * UC-11 end to end, through S-28 — the journey task 171 found missing. `credentials.spec.ts` left linking undriven on
+   * the argument that sign-in already exercises the two Route Handlers; but the link's completion is its own path — the
+   * re-sealed cookie, the Server Action, the authenticated route — and it failed for every Google user while every
+   * suite was green. Two defects, both asserted here: the callback's `iss` must reach the exchange (the stub sends it,
+   * as Google does, so a dropped one fails this link), and a mistyped password must leave the link confirmable on a
+   * retype rather than spend it (the password is checked before the code is).
+   */
+  test('links Google from S-28: a mistyped password is refused, and the same link completes on a retype (UC-11, task 171)', async ({
+    page,
+  }) => {
+    const email = addressFor('link');
+    await page.goto('/register');
+    await page.getByLabel('Prenume').fill('Ana');
+    await page.getByLabel('Nume de familie').fill('Popescu');
+    await page.getByLabel('E-mail de serviciu').fill(email);
+    await page.getByLabel('Parolă', { exact: true }).fill(NEW_PASSWORD);
+    await page.getByRole('button', { name: 'Creați contul' }).click();
+    await page.waitForURL('**/verify');
+    await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+    await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+    organizations.push(await grantMembership({ email, organizationName: `${PREFIX}link-${run}` }));
+
+    await page.goto('/sign-in');
+    await page.getByLabel('Adresa de e-mail').fill(email);
+    await page.getByLabel('Parolă', { exact: true }).fill(NEW_PASSWORD);
+    await page.getByRole('button', { name: 'Intrați în cont' }).click();
+    await page.waitForURL('**/home');
+
+    // A personal address, not the account's — linking never requires the two to match.
+    stub.nextClaims = {
+      sub: `${PREFIX}link-subject-${run}`,
+      email: `${PREFIX}personal-${run}@gmail.example`,
+      email_verified: true,
+      name: 'Ana P',
+    };
+    await page.goto('/account/credentials');
+    await page.getByRole('link', { name: 'Asociați Google' }).click();
+
+    // Back from the provider, on S-28 with the confirmation open.
+    await page.waitForURL('**/account/credentials');
+    const confirm = page.getByRole('button', { name: 'Confirmați asocierea contului Google' });
+    await expect(confirm).toBeVisible();
+
+    await page.getByLabel('Parola actuală').fill('Gresita123!');
+    await confirm.click();
+    await expect(page.getByText(/Parola actuală nu este corectă/)).toBeVisible();
+
+    // The same link, retyped — no second trip through the provider.
+    const tokenRequestsBefore = stub.tokenRequests.length;
+    await page.getByLabel('Parola actuală').fill(NEW_PASSWORD);
+    await confirm.click();
+    await expect(page.getByText('Contul a fost asociat')).toBeVisible();
+    expect(stub.tokenRequests.length).toBe(tokenRequestsBefore + 1);
+    await expect(page.getByRole('button', { name: 'Dezasociați Google' })).toBeVisible();
   });
 });
