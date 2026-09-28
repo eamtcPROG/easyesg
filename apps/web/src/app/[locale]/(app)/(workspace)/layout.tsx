@@ -36,30 +36,33 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
           added the global tier above it; the nav stays OUTSIDE the `<main>` below, which is why
           that element is here rather than in the `(app)` layout — a layout cannot place a wrapper
           around only part of a nested layout's output. */}
-      {/* The page grows into the `(app)` column, so the footer sits at the foot of a short screen (24 Sep 2026). */}
+      {/* The page fills the `(app)` scroll region: the tier stays in place and the screen and its footer scroll beneath
+          it (28 Sep 2026, project owner), the footer still at the foot of a short screen (24 Sep 2026). */}
       <div className={styles.page}>
         <WorkspaceNavigation />
-        {/*
-          `<main>` since task 30.1, and it does two things rather than one.
+        <div className={styles.scroll}>
+          {/*
+            `<main>` since task 30.1, and it does two things rather than one.
 
-          It gives every workspace screen the landmark 2.4.1's bypass-blocks technique relies on —
-          the global tier is a `banner` now, and a page with chrome and no main is where a
-          screen-reader user has nothing to skip TO. And it repaired a duplicate this task would
-          otherwise have created: `<header>` maps to `banner` unless it descends from `article`,
-          `aside`, `main`, `nav` or `section`, and `RecordShell` rendered one — so S-28 would have had
-          two banners the moment a real one appeared above it. Nesting was the fix the HTML spec
-          itself names, and the alternative was recorded here as treating the symptom.
+            It gives every workspace screen the landmark 2.4.1's bypass-blocks technique relies on —
+            the global tier is a `banner` now, and a page with chrome and no main is where a
+            screen-reader user has nothing to skip TO. And it repaired a duplicate this task would
+            otherwise have created: `<header>` maps to `banner` unless it descends from `article`,
+            `aside`, `main`, `nav` or `section`, and `RecordShell` rendered one — so S-28 would have had
+            two banners the moment a real one appeared above it. Nesting was the fix the HTML spec
+            itself names, and the alternative was recorded here as treating the symptom.
 
-          **That second reason is history since 11 Sep 2026 and the paragraph keeps it on purpose.**
-          `RecordShell`'s identity block is an `hgroup` now — a heading and its tagline, which is what
-          it always was — so there is no `banner` role left for this element to suppress. The screens
-          that still render a `<header>` inside here are the ones whose title sits beside a control
-          (S-06, S-13, S-14), and they are correct: that is what `header` means. What remains
-          load-bearing above is the **first** reason, which never depended on any of this.
-        */}
-        <main className={styles.main}>{children}</main>
-        {/* The artboards' footer, under every workspace screen and outside `<main>` — its own `contentinfo`. */}
-        <WorkspaceFooter />
+            **That second reason is history since 11 Sep 2026 and the paragraph keeps it on purpose.**
+            `RecordShell`'s identity block is an `hgroup` now — a heading and its tagline, which is what
+            it always was — so there is no `banner` role left for this element to suppress. The screens
+            that still render a `<header>` inside here are the ones whose title sits beside a control
+            (S-06, S-13, S-14), and they are correct: that is what `header` means. What remains
+            load-bearing above is the **first** reason, which never depended on any of this.
+          */}
+          <main className={styles.main}>{children}</main>
+          {/* The artboards' footer, under every workspace screen and outside `<main>` — its own `contentinfo`. */}
+          <WorkspaceFooter />
+        </div>
       </div>
     </>
   );

@@ -9,6 +9,10 @@
   padding: var(--space-6) var(--space-5);
   border-inline-end: 1px solid var(--border-default);
   background: var(--surface-default);
+  /* The rail stays in place while the record scrolls (28 Sep 2026), so on a window shorter than its links — a phone on
+     its side is wider than the compact boundary below and draws it — it scrolls within itself rather than clipping
+     *Credentials* off the foot of the window. */
+  overflow-y: auto;
 }
 
 /* **Not drawn below the compact boundary, and `display: none` rather than hidden** — the chrome drawer carries both

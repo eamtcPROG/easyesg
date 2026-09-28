@@ -63,8 +63,26 @@ const LANDMARK_RULES = ['landmark-one-main', 'landmark-unique'];
  */
 const NO_MAIN_YET = new Set<string>();
 
+/**
+ * **Every finite animation settles before axe measures anything** (28 Sep 2026). Axe reads colour as painted, so a
+ * surface still animating in is judged through its own transparency: S-16's invitation dialogue, scanned 50 ms into
+ * its fade at opacity 0.35, read its placeholder at 3.94:1 against the 5.1:1 it rests at — and passed or failed with
+ * how long the scan took to reach it. An infinite animation, a skeleton's shimmer, would never settle and is left
+ * running; one cancelled meanwhile resolves rather than failing the scan.
+ */
+const settleAnimations = (page: Page) =>
+  page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ),
+  );
+
 const scan = async (page: Page, options: { readonly landmarks?: boolean } = {}) => {
   await page.waitForLoadState('networkidle');
+  await settleAnimations(page);
   const results = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   expect(results.violations).toEqual([]);
   if (options.landmarks === false) return;

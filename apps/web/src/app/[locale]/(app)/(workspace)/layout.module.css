@@ -22,10 +22,27 @@
   padding: var(--page-block) var(--page-gutter);
 }
 
-/* The page, growing into the `(app)` layout's full-height column (24 Sep 2026) — what puts the footer at the foot of a
-   screen shorter than the viewport. */
+/* The page, filling the `(app)` layout's scroll region exactly (`min-block-size: 0`), so that region never scrolls
+   here: the workspace tier stays in place under the band and only `.scroll` below it moves (28 Sep 2026, project
+   owner; `design_spec.md` §4.2). */
 .page {
   display: flex;
   flex: 1;
   flex-direction: column;
+  min-block-size: 0;
+}
+
+/* The screen and its footer — the one thing that scrolls on a workspace screen. A flex column, so the footer's
+   `margin-block-start: auto` still puts it at the foot of a screen shorter than the region (24 Sep 2026).
+
+   `scroll-padding` is `<main>`'s own block inset, and it is there for the router. After a navigation Next scrolls the
+   new page into view when its top is out of sight (`scrollIntoView()`), and this box persists across the tabs, so a
+   long screen scrolled down would otherwise hand its offset to the next one and land it with `<main>`'s top inset cut
+   off. With the padding, that scroll lands at the region's top exactly. */
+.scroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow-y: auto;
+  scroll-padding-block-start: var(--page-block);
 }

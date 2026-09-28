@@ -111,6 +111,32 @@ test('the tier names the active organization and carries the account corner (UX-
   await expect(page.getByRole('main')).toHaveCount(1);
 });
 
+test('the band and the workspace tier stay in place while the screen scrolls beneath them (§4.2)', async ({ page }) => {
+  const email = addressFor('scroll');
+  await registerAndVerify(page, email);
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX} Livada` }));
+  await signIn(page, email);
+
+  // A window short enough that S-05 overflows the region beneath the two tiers, so there is something to scroll.
+  await page.setViewportSize({ width: 1440, height: 420 });
+  const band = page.getByRole('banner');
+  const tier = page.getByRole('navigation', { name: 'Secțiunile organizației' });
+  const footer = page.getByRole('contentinfo');
+  await expect(footer).not.toBeInViewport();
+  const tierBefore = await tier.boundingBox();
+
+  // The wheel over the screen, as a reader scrolls it (28 Sep 2026, project owner). The footer arriving proves the
+  // region scrolled; the band and the tier where they were prove nothing else did — with the document scrolling, as
+  // it did before, both leave the top of the window.
+  const main = await page.getByRole('main').boundingBox();
+  await page.mouse.move((main?.x ?? 0) + 200, (main?.y ?? 0) + 100);
+  await page.mouse.wheel(0, 4000);
+  await expect(footer).toBeInViewport();
+  expect((await band.boundingBox())?.y).toBe(0);
+  expect((await tier.boundingBox())?.y).toBe(tierBefore?.y);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});
+
 test('the user menu carries S-28 and the language choice, and signs out (§4.2, UC-06)', async ({
   page,
 }) => {

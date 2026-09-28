@@ -76,14 +76,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <UnsentWorkProvider>
           <SignOutProvider>
             <OrganizationSwitchProvider>
-              {/* One column the height of the viewport, so a group's page can grow into it (layout.module.css). */}
+              {/* One column the height of the viewport: the tier stays in place and the region below it scrolls
+                  (28 Sep 2026, project owner — layout.module.css). */}
               <div className={styles.app}>
                 <GlobalTier />
                 <OrganizationSwitchNotice />
                 <Suspense fallback={null}>
                   <SupportAccessBanners />
                 </Suspense>
-                {children}
+                <div className={styles.body}>{children}</div>
               </div>
             </OrganizationSwitchProvider>
           </SignOutProvider>

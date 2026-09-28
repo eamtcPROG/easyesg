@@ -73,19 +73,31 @@ test('the screen rests as a row per way in, dated from the api, closing on the l
   // A password and nothing linked: the note names the password as the one way in, before anyone tries to remove it.
   await expect(page.getByText('Parola este singura dumneavoastră cale de acces', { exact: false })).toBeVisible();
 
-  // The rail runs the page's full height and the footer spans it below (24 Sep 2026, owner's review). Measured in a
-  // window tall enough that S-28 at rest is shorter than it — the case where the rail used to stop at the record's end,
-  // above a footer at the foot of the page. At the suite's own window the record is taller than the viewport, and the
-  // rail meets the footer with or without the stretch (found by this check's first run).
+  // The rail runs from the band to the foot of the window and the footer sits beside it, under the record (28 Sep 2026,
+  // owner — replacing 24 Sep's footer spanning below the rail). Measured in a window tall enough that S-28 at rest is
+  // shorter than it, the case where the rail used to stop at the record's end.
   await page.setViewportSize({ width: 1440, height: 1600 });
   const footer = page.getByRole('contentinfo');
   await expect(footer).toBeVisible();
-  const rail = await page.getByRole('navigation', { name: 'Contul dumneavoastră' }).locator('..').boundingBox();
+  const railBox = page.getByRole('navigation', { name: 'Contul dumneavoastră' }).locator('..');
+  const rail = await railBox.boundingBox();
   const foot = await footer.boundingBox();
   const viewport = page.viewportSize();
-  expect(rail && foot && Math.abs(rail.y + rail.height - foot.y)).toBeLessThanOrEqual(1);
-  // And the footer at the foot of the viewport, which is what makes the case above a short page's.
+  expect(rail && viewport && Math.abs(rail.y + rail.height - viewport.height)).toBeLessThanOrEqual(1);
+  expect(rail && foot && Math.abs(rail.x + rail.width - foot.x)).toBeLessThanOrEqual(1);
+  // And the footer at the foot of the window, which is what makes the case above a short record's.
   expect(foot && viewport && Math.abs(foot.y + foot.height - viewport.height)).toBeLessThanOrEqual(1);
+
+  // In a window the record overflows, the record scrolls and the rail does not: the wheel over the record brings the
+  // footer into view while the rail's top stays where it was.
+  await page.setViewportSize({ width: 1440, height: 480 });
+  await expect(footer).not.toBeInViewport();
+  const railBefore = await railBox.boundingBox();
+  const main = await page.getByRole('main').boundingBox();
+  await page.mouse.move((main?.x ?? 0) + 200, (main?.y ?? 0) + 100);
+  await page.mouse.wheel(0, 4000);
+  await expect(footer).toBeInViewport();
+  expect((await railBox.boundingBox())?.y).toBe(railBefore?.y);
 });
 
 test('changing the password works, and the old one stops working (FR-7)', async ({ page }) => {

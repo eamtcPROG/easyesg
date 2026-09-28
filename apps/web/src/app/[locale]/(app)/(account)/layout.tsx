@@ -19,20 +19,21 @@ import styles from './layout.module.css';
  * **`<main>` is here, beside the rail**, for the `(workspace)` layout's reason: every screen needs the landmark
  * 2.4.1's bypass-blocks technique relies on, and the navigation stays outside it.
  *
- * **The rail runs the page's full height, and the footer spans it below** (24 Sep 2026, project owner): the page grows
- * into the `(app)` layout's viewport-tall column, and the rail's row takes all of it but the footer's band — so its
- * end rule meets the footer rather than stopping where a short record does.
+ * **The rail stays in place, and the record scrolls beside it with the footer beneath** (28 Sep 2026, project owner;
+ * `design_spec.md` §4.2): the page fills the `(app)` layout's scroll region, the rail runs from the band to the foot of
+ * the window, and only the column holding `<main>` and the footer moves — the same rule the workspace tier keeps. It
+ * replaces 24 Sep 2026's footer spanning below the rail, which put the footer under navigation that no longer scrolls.
  */
 export default function AccountLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <OrganizationChoiceGate />
       <div className={styles.page}>
-        <div className={styles.frame}>
-          <AccountRail />
+        <AccountRail />
+        <div className={styles.scroll}>
           <main className={styles.main}>{children}</main>
+          <WorkspaceFooter />
         </div>
-        <WorkspaceFooter />
       </div>
     </>
   );

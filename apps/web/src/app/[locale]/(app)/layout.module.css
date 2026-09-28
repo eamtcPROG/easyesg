@@ -1,10 +1,23 @@
-/* The signed-in page as one column at least as tall as the viewport (24 Sep 2026). Two things need it: a footer that
-   sits at the foot of a short page, and the account rail, whose end rule runs the page's full height. The global
-   tier's height varies — the band per frame, the support-access banner when it shows — so the column grows into what
-   is left rather than subtracting a height from the viewport. A flex column's children stretch to its width exactly
-   as blocks do, and none of the screens here relies on a margin collapsing across its top level. */
+/* The signed-in page as one column exactly the height of the viewport (28 Sep 2026, project owner): the global tier
+   stays in place and only the region below it scrolls (`design_spec.md` §4.2). The tier's height varies — the band
+   per frame, the switch notice and the support-access banner when they show — so the region takes what is left
+   rather than subtracting a height from the viewport. The tier's rows keep their content height (a flex item's
+   automatic minimum), so on a window too short to hold them the column overflows and the document scrolls, which
+   is the fallback rather than a clipped band. No `overflow: hidden` here for that reason. */
 .app {
   display: flex;
   flex-direction: column;
-  min-block-size: 100dvh;
+  block-size: 100dvh;
+}
+
+/* The scroll region every screen renders into. The wizard and the three organization-free screens scroll here
+   whole — the wizard's module list keeps its `position: sticky`, which now sticks inside this box. `(workspace)` and
+   `(account)` fill it exactly (`min-block-size: 0` on their page) and scroll a region of their own beneath their
+   navigation, so this one never overflows on those screens. A flex column, so a page can grow into it. */
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 0;
+  overflow-y: auto;
 }

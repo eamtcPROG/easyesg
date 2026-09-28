@@ -133,6 +133,18 @@ async function choose(page: Page, label: string, option: string): Promise<void> 
  */
 const invitationDialogue = (page: Page) => page.getByRole('dialog', { name: 'Invitați un coleg' });
 
+/**
+ * Every alert this app draws: every `role="alert"` on the page but Next's route announcer.
+ *
+ * The App Router mounts that one on every page — `__next-route-announcer__`, an empty assertive live
+ * region in a shadow root on `body` — and `getByRole` finds it whenever no modal hides it. Radix hides
+ * everything outside an open dialogue, so a count taken inside one never sees it and a count taken
+ * after it closes always does, which made *no alert remains* unassertable (28 Sep 2026). It is left
+ * out by the framework's own id, so every alert the app renders stays in the count.
+ */
+const appAlerts = (page: Page) =>
+  page.getByRole('alert').and(page.locator(':not(#__next-route-announcer__)'));
+
 /** The filter row's button, by its exact name: the reminder's *no one to remind* offers another. */
 async function openInvitation(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Invitați un coleg', exact: true }).click();
@@ -228,11 +240,9 @@ test('the last seat is warned of, and taking it puts the gate where the invitati
       exact: true,
     }),
   ).toBeVisible();
-  await expect(
-    page.getByText(`Toate cele ${SEAT_CEILING} locuri ale organizației sunt ocupate`, { exact: true }),
-  ).toBeVisible();
   // The button is still offered, and what it opens says why no invitation follows: the gate in the
-  // form's place. Not offered, rather than offered and refused — the field is gone, not disabled.
+  // form's place. Not offered, rather than offered and refused — the field is gone, not disabled. The
+  // gate is the dialogue's alone since 28 Sep 2026 (S-16's entry); on the screen the counter says it.
   await openInvitation(page);
   await expect(invitationDialogue(page)).toContainText(
     `Toate cele ${SEAT_CEILING} locuri ale organizației sunt ocupate`,
@@ -258,14 +268,15 @@ test('a second invitation to the same address is refused, in words the reader ca
   // **Unscoped, and `.first()` is gone** (28 Aug 2026). The screen holds one notice, so a second
   // alert means two settled outcomes are on screen at once — which is what this locator had been
   // tolerating while the invite panel kept an outcome outside the reducer. `FormSummary` is the
-  // only other `role="alert"` here and renders only on a validation error, of which this journey
-  // has none.
-  await expect(page.getByRole('alert')).toBeVisible();
+  // only other `role="alert"` the app draws here and renders only on a validation error, of which
+  // this journey has none; Next's announcer is the framework's, and `appAlerts` says why it is out.
+  await expect(appAlerts(page)).toHaveCount(1);
   await expect(invitationDialogue(page).getByRole('alert')).toBeVisible();
 
   // Closed, the refusal goes with it, and the list behind shows the one invitation it held.
   await page.getByRole('button', { name: 'Renunțați', exact: true }).click();
-  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(invitationDialogue(page)).toHaveCount(0);
+  await expect(appAlerts(page)).toHaveCount(0);
   await expect(personCell(page, invited)).toHaveCount(1);
 });
 

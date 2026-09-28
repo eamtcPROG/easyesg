@@ -1,21 +1,28 @@
-/* The account page: a column growing into the `(app)` layout's viewport-tall one, holding the rail's row and the
-   footer. The row takes every pixel the footer does not (`flex: 1`), and the rail stretches across that row by the
-   flex default — so the rail's end rule runs from the band to the footer, as the artboard draws it at any length of
-   record. The content column keeps `(workspace)`'s insets, and `min-inline-size: 0` lets a Record's own measure hold. */
+/* The account page: the rail and the scroll region side by side, filling the `(app)` layout's scroll region exactly
+   (`min-block-size: 0`), so that region never scrolls here. The rail stretches across the row by the flex default,
+   so its end rule runs from the band to the foot of the window and stays there; only `.scroll` moves (28 Sep 2026,
+   project owner; `design_spec.md` §4.2 — this replaces 24 Sep 2026's footer spanning below the rail). */
 
 .page {
   display: flex;
   flex: 1;
-  flex-direction: column;
+  min-block-size: 0;
 }
 
-.frame {
+/* The record and its footer — the one thing that scrolls on an account screen. A flex column, so the footer's
+   `margin-block-start: auto` puts it at the foot of a record shorter than the window. `min-inline-size: 0` lets a
+   Record's own measure hold, and `scroll-padding` is `<main>`'s block inset, for the router's scroll after a
+   navigation — the `(workspace)` layout's stylesheet says why. */
+.scroll {
   display: flex;
   flex: 1;
+  flex-direction: column;
+  min-inline-size: 0;
+  overflow-y: auto;
+  scroll-padding-block-start: var(--page-block);
 }
 
+/* `(workspace)`'s insets. */
 .main {
-  flex: 1;
-  min-inline-size: 0;
   padding: var(--page-block) var(--page-gutter);
 }

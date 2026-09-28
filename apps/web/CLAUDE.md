@@ -273,6 +273,17 @@ Three things to know before touching it:
   `SubContent` portals as a sibling of the layer that gets `auto` back — so the language submenu is
   unclickable. It is also the right semantics for chrome hanging off a header.
 
+**On a signed-in screen the document does not scroll; a region does** (28 Sep 2026, project owner; `design_spec.md`
+§4.2's amendment of that date). The `(app)` layout is one viewport-tall column: the global tier, then `.body`, the
+scroll region the wizard and the three organization-free screens scroll in. `(workspace)` and `(account)` fill `.body`
+exactly and scroll a region of their own — `.scroll`, holding `<main>` and the footer — beneath the band or beside the
+rail. So `window.scrollY` is always 0 there, `window.scrollTo` moves nothing, and a `position: sticky` sticks to the
+nearest region rather than the window, which is how the wizard's module list still works. Three things follow. A
+test scrolls with the wheel over the screen, as `global-tier.spec.ts` and `credentials.spec.ts` do. An inner region
+carries `scroll-padding-block-start` equal to `<main>`'s top inset, because the router's `scrollIntoView()` after a
+navigation would otherwise land a page with that inset cut off. And a new flex item between a layout's column and its
+region needs `min-block-size: 0`, or it grows to its content and the region never gets a height to scroll within.
+
 **UX-124's support-access banner** (task 67.9) sits beside the global tier in the `(app)` layout, behind a
 `<Suspense>` with **no fallback** — its ordinary state is absent, so a skeleton would reserve and then collapse a band
 on nearly every render. `features/support-access/` holds it: `server/data/support-access.ts` reads
