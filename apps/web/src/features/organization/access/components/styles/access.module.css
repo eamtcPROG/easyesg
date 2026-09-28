@@ -45,9 +45,13 @@
   max-inline-size: 34rem;
 }
 
+/* Against the cell's end edge, under the column's end-aligned header. The column's `align` sets
+   `text-align: end`, which moves inline content only — this box is block-level flex and fills the
+   cell, so without `justify-content` its buttons stayed at the start. Wrapped buttons end-align too. */
 .rowActions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--space-3);
 }
 

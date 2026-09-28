@@ -3,6 +3,7 @@
 import {
   Button,
   BUTTON_VARIANT,
+  COLUMN_ALIGN,
   EmptyState,
   Select,
   StatusChip,
@@ -124,7 +125,7 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         key: ENTITY_SORT.SITES,
         header: t('columns.sites'),
         sortable: true,
-        align: 'end',
+        align: COLUMN_ALIGN.END,
         cell: (row) => <span className="t-numeric">{row.siteCount}</span>,
       },
       {

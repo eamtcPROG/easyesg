@@ -1,6 +1,6 @@
 'use client';
 
-import type { DataTableColumn } from '@easyesg/ui';
+import { COLUMN_ALIGN, type DataTableColumn } from '@easyesg/ui';
 import { ACCESS_MESSAGES } from '../../shared/access-messages';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
@@ -78,6 +78,9 @@ export function useAccessColumns(): readonly DataTableColumn<AccessRow, AccessCo
       {
         key: ACCESS_COLUMN.ACTIONS,
         header: t('columns.actions'),
+        // End-aligned, as the console's action columns are: the header and the cells move together,
+        // and `.rowActions` carries the other half — a flex box ignores its cell's `text-align`.
+        align: COLUMN_ALIGN.END,
         cell: (row: AccessRow) => <RowActions row={row} />,
       },
     ],
