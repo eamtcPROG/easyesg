@@ -25,7 +25,7 @@ import { ACCESS_FILTER_ANY, accessRowKey, type AccessRow, type AccessSort } from
  */
 export function AccessList() {
   const t = useTranslations(ACCESS_MESSAGES);
-  const { page, view, inviteAnchorId, setView } = useAccess();
+  const { page, view, setView, openInvite } = useAccess();
   const columns = useAccessColumns();
 
   const clearFilters = useCallback(
@@ -48,11 +48,9 @@ export function AccessList() {
         firstUse: (
           <EmptyState
             title={t('empty.firstUse.title')}
-            action={
-              <Button asChild>
-                <a href={`#${inviteAnchorId}`}>{t('empty.firstUse.action')}</a>
-              </Button>
-            }
+            // The filter row's button opens the same dialogue; this is the one a reader with no
+            // colleagues is looking at when they learn they need it.
+            action={<Button onClick={openInvite}>{t('invite.open')}</Button>}
           >
             {t('empty.firstUse.body')}
           </EmptyState>

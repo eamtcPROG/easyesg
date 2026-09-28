@@ -5,7 +5,7 @@ import { USAGE_STANDING, type UsageStanding } from '@easyesg/ui';
  * S-16's seat region, read off the two numbers the API answers (task 142; UX-50, UX-52).
  *
  * **Pure, and computed once, in the section** (`section-compute-once`): the counter in the heading
- * and the invite panel below must agree about whether the organization is full, and two derivations
+ * and the invitation dialogue must agree about whether the organization is full, and two derivations
  * of that are two places for them not to. `AccessSection` calls this and passes the result to both.
  *
  * **The API is still the authority.** Hiding the form at the ceiling is this screen not *offering*

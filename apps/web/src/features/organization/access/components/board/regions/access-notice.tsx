@@ -14,9 +14,9 @@ import { useAccess } from '../../shared/access-context';
  */
 export function AccessNotice() {
   const { notice } = useAccess();
-  // One notice for the screen, rendered by the region that ran the action. The invite panel shows
-  // its own beside the form, because its refusal points at "the list above" and only reads
-  // correctly below it — see `NOTICE_REGION`.
+  // One notice for the screen, rendered by the region it belongs to. A refusal of an invitation is
+  // shown in the dialogue that covers this list, beside the form it refused; a sent one is shown
+  // here, above the row it added — see `NOTICE_REGION`.
   if (notice?.region !== NOTICE_REGION.LIST) return null;
 
   return (

@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '@easyesg/ui';
+import { Button, BUTTON_VARIANT } from '@easyesg/ui';
 import { FormSelect, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
-import { useTransition } from 'react';
+import { useId, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import type { InvitedRole } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
@@ -13,6 +13,7 @@ import { INVITABLE_ROLES } from '../../../tools/access';
 import { NOTICE_REGION } from '../../../tools/access-state';
 import { useAccess } from '../../shared/access-context';
 import { ACCESS_MESSAGES } from '../../shared/access-messages';
+import { InviteDialog } from '../shared/invite-dialog';
 import styles from '../../styles/access.module.css';
 
 /**
@@ -30,10 +31,15 @@ interface InviteFields {
 /**
  * UC-60 — invite by email at an edit or view-only role.
  *
- * **Its own file since task 142**, which made the invite panel choose its arm — this form,
- * `SeatsFull` or `InvitationsPaused` — and a panel holding both the choice and one arm's form is two
- * ideas (`file-one-idea`). The panel keeps the heading and the screen's notice; this keeps the form
- * and what it says about the invitation it sends.
+ * **Its own file since task 142**, which made the invitation choose its arm — this form, `SeatsFull`
+ * or `InvitationsPaused` — and a file holding both the choice and one arm's form is two ideas
+ * (`file-one-idea`). **In a dialogue since 28 Sep 2026**, and it frames itself: its submit stands in
+ * the dialogue's closing row, as the artboard draws *Cancel* and *Send invitation*, and belongs to the
+ * form by its `form` attribute — so it is still the button implicit submission from the address presses.
+ *
+ * **A sent invitation closes the dialogue and is reported at the list's head**, where its row now is;
+ * a refusal stays in the dialogue, above the form it refused. The section keys this form on the
+ * dialogue being open, so every opening starts from empty fields rather than the last attempt's.
  *
  * Organization Administrator is not offered, and that is FR-57 rather than an omission: a
  * promotion is UC-64, taken about someone the organization already knows, on the row that already
@@ -55,11 +61,12 @@ export function InviteForm() {
   // FORM and no screen owns it. See `factor-form.tsx` for the one that is not shared.
   const tForms = useTranslations('forms');
   const [pending, startTransition] = useTransition();
-  // The screen's one notice, written here and rendered by the panel — see `invite-member.tsx` and
-  // `NOTICE_REGION` for why it is neither this form's own state nor drawn at the list's head.
-  const { starting, report } = useAccess();
+  const formId = useId();
+  // The screen's one notice, written here and rendered by the region it belongs to — see
+  // `NOTICE_REGION` for why it is not this form's own state.
+  const { starting, report, closeInvite } = useAccess();
 
-  const { control, handleSubmit, reset } = useForm<InviteFields>({
+  const { control, handleSubmit } = useForm<InviteFields>({
     defaultValues: { email: '' },
   });
 
@@ -71,14 +78,16 @@ export function InviteForm() {
       const result = await inviteMemberAction(fields);
 
       if (result.status === API_OUTCOME.Ok) {
+        // Reported first, then closed: the dialogue's closing clears only a notice of its own region,
+        // so the success survives it and stands above the row it added.
         report({
-          region: NOTICE_REGION.INVITE,
+          region: NOTICE_REGION.LIST,
           ...successNotice({
             copy: { title: t('sent', { email: fields.email }), body: t('sentBody') },
             action: t('sentAction'),
           }),
         });
-        reset();
+        closeInvite();
         return;
       }
       report({
@@ -88,9 +97,9 @@ export function InviteForm() {
           // The API's own three-part text, as received — this screen keeps no second copy of
           // "they already have access" or "an invitation is outstanding".
           unreachable: { title: tCommon('unreachable.title'), body: tCommon('unreachable.body') },
-          // Non-null on purpose, and one of the few places that is right: "find the person in the
-          // list above" is a step this screen owns and the API's `detail` cannot state, because it
-          // points at something rendered beside this panel.
+          // Non-null on purpose, and one of the few places that is right: "close this and find the
+          // person in the list" is a step this screen owns and the API's `detail` cannot state,
+          // because it points at the list this dialogue covers.
           action: t('failedAction'),
         }),
       });
@@ -98,9 +107,26 @@ export function InviteForm() {
   });
 
   return (
-    <>
+    <InviteDialog
+      footer={
+        <>
+          <Button type="button" variant={BUTTON_VARIANT.SECONDARY} onClick={closeInvite}>
+            {t('cancel')}
+          </Button>
+          <Button type="submit" form={formId} busy={pending}>
+            {t('submit')}
+          </Button>
+        </>
+      }
+    >
       <p className={`t-body ${styles.lede}`}>{t('intro')}</p>
-      <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.inviteForm}>
+      <form
+        id={formId}
+        method="post"
+        onSubmit={(event) => void submit(event)}
+        noValidate
+        className={styles.inviteForm}
+      >
         <FormSummary control={control} title={tForms('summaryTitle')} />
         <FormTextField
           control={control}
@@ -122,10 +148,7 @@ export function InviteForm() {
           }))}
           rules={{ required: t('roleRequired') }}
         />
-        <Button type="submit" busy={pending}>
-          {t('submit')}
-        </Button>
       </form>
-    </>
+    </InviteDialog>
   );
 }

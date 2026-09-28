@@ -18,9 +18,6 @@ import { SeatCounter } from '../heading/seat-counter';
 import { AccessPoll } from '../poll/access-poll';
 import styles from '../styles/access.module.css';
 
-/** The invite panel's heading, so the first-use empty state can send a reader straight to it. */
-const INVITE_ANCHOR = 'invite-a-colleague';
-
 /**
  * S-16's one region: the view parsed off the address, the read it decides, and which of §8.1's
  * arms applies (UC-59 … UC-64; cut out of the route by task 134's parent-close review).
@@ -29,10 +26,10 @@ const INVITE_ANCHOR = 'invite-a-colleague';
  * API's, so the request cannot be made until the view is parsed — `async-parallel` is about
  * *independent* work. **No clock here**: the standing is derived by the database in the same
  * statement that filters and orders on it. **One provider over BOTH regions** (28 Aug 2026): it
- * used to sit inside `AccessBoard`, which left the invite panel holding an outcome of its own that
- * nothing else could clear. The screen holds one notice; each region renders it only when it is
+ * used to sit inside `AccessBoard`, which left the invitation — a panel then, a dialogue since 28 Sep
+ * 2026 — holding an outcome of its own that nothing else could clear. The screen holds one notice; each region renders it only when it is
  * theirs. **The seat region is computed here, once** (task 142): the counter beside the heading and
- * the invite panel's arm read the same value, so they cannot disagree about whether the organization
+ * the invitation's arm read the same value, so they cannot disagree about whether the organization
  * is full — and the counter renders only on the ready arm, since a refused or failed read has no
  * count to state. **The reminder panel is a region of its own** (task 50.3, `remind-section.tsx`): it
  * reads under its own boundary inside the provider, so the list does not wait on its reads and a
@@ -85,9 +82,11 @@ export async function AccessSection({
     const seats = seatRegion(read.seats);
     counter = <SeatCounter region={seats} />;
     body = (
-      <AccessProvider page={read.page} view={view} seats={seats} inviteAnchorId={INVITE_ANCHOR}>
+      <AccessProvider page={read.page} view={view} seats={seats}>
         <AccessBoard />
-        <InviteMember id={INVITE_ANCHOR} />
+        {/* A dialogue over the list, open while the address says so; where it sits here is only
+            where it mounts. */}
+        <InviteMember />
         {/* A region of its own, under its own boundary: the list above does not wait on its reads. */}
         <Suspense fallback={<RemindLoading />}>
           <RemindSection />

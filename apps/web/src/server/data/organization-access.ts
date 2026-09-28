@@ -119,7 +119,7 @@ export const readOrganizationAccess = async (view: AccessView): Promise<AccessRe
       onpage: 1,
     }),
     // Task 142's region. The same all-or-nothing rule as the count above, and for its reason: the
-    // seats decide which control the invite panel offers, so a screen missing them would have to
+    // seats decide which control the invitation dialogue offers, so a screen missing them would have to
     // guess — and an unreadable *ceiling* is not a failed read: the API answers `allowance: null`,
     // which is the region's own partial state rather than this function's unreachable one.
     api.get<SeatConsumption>('/access/seats'),

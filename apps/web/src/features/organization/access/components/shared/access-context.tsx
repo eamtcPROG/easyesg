@@ -11,6 +11,7 @@ import {
   useTransition,
 } from 'react';
 import type { ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { noticeFromOutcome } from '@/lib/notice';
 import { ROUTES, withQuery } from '@/lib/routes';
 import { useRouter } from '@/i18n/navigation';
@@ -30,6 +31,7 @@ import {
   type Confirmation,
   type PlacedNotice,
 } from '../../tools/access-state';
+import { ACCESS_PANEL, accessPanelHref, readAccessPanel, type AccessPanel } from '../../tools/access-panel';
 import type { SeatRegion } from '../../tools/seats';
 import type { AccessActionResult } from '../../actions/action-results';
 
@@ -51,7 +53,7 @@ import type { AccessActionResult } from '../../actions/action-results';
  *
  * **In `components/shared/` on one test: is it read by more than one sibling?** The section provides
  * it, and `board/`, `invite/` and — since task 50.3 — `remind/` read it: the board's notice, filters,
- * list, cells and confirmation, the invite panel and its form, the reminder panel and its form. So it
+ * list, cells and confirmation, the invite dialogue and its form, the reminder panel and its form. So it
  * sits where all of them can see it, one level above the regions.
  *
  * **What this is not.** It holds no server state — the rows arrive already read, filtered, sorted
@@ -82,12 +84,10 @@ interface AccessContextValue extends AccessState {
   readonly view: AccessView;
   /**
    * The seat region (task 142), computed once by the section so the counter beside the heading and
-   * the invite panel's arm read one value. Server state like `page`, and held here for `page`'s
-   * reason — the panel is reached through the provider, not handed props by the section.
+   * the invite dialogue's arm read one value. Server state like `page`, and held here for `page`'s
+   * reason — the dialogue is reached through the provider, not handed props by the section.
    */
   readonly seats: SeatRegion;
-  /** Where the first-use empty state sends a reader. */
-  readonly inviteAnchorId: string;
   /** True while a navigation this screen started is in flight. */
   readonly navigating: boolean;
   readonly setView: (next: Partial<AccessView>) => void;
@@ -109,6 +109,14 @@ interface AccessContextValue extends AccessState {
   readonly starting: () => void;
   /** Report a settled outcome, in the region that ran it. */
   readonly report: (notice: PlacedNotice) => void;
+  /**
+   * Open and close the invite dialogue by its address (28 Sep 2026; `access-panel.ts`). The filter row's
+   * button, the list's first-use state and the reminder panel's *invite a colleague* all open it; its
+   * close control and a sent invitation close it. Each pushes an entry, as the console's dialogues do,
+   * so Back undoes the last of them.
+   */
+  readonly openInvite: () => void;
+  readonly closeInvite: () => void;
 }
 
 const AccessContext = createContext<AccessContextValue | null>(null);
@@ -132,13 +140,11 @@ export function AccessProvider({
   page,
   view,
   seats,
-  inviteAnchorId,
   children,
 }: {
   readonly page: AccessPage;
   readonly view: AccessView;
   readonly seats: SeatRegion;
-  readonly inviteAnchorId: string;
   readonly children: ReactNode;
 }) {
   const t = useTranslations(ACCESS_MESSAGES);
@@ -146,7 +152,20 @@ export function AccessProvider({
   const router = useRouter();
   const [navigating, startNavigation] = useTransition();
   const [, startAction] = useTransition();
-  const [state, dispatch] = useReducer(accessReducer, INITIAL_ACCESS_STATE);
+  const inviting = readAccessPanel(useSearchParams()) === ACCESS_PANEL.INVITE;
+  const [state, dispatch] = useReducer(accessReducer, inviting, (open) => ({
+    ...INITIAL_ACCESS_STATE,
+    inviting: open,
+  }));
+
+  // **The address moved, so the state follows it — during render, not in an effect.** This is React's
+  // "adjusting state when a prop changes": the dispatch re-runs this render before anything commits, so
+  // no frame shows the dialogue open over a refusal an earlier attempt left. Comparing against the
+  // state's own copy is what makes Back and Forward events too — a dispatch from the button alone
+  // would miss them (`AccessState.inviting`).
+  if (state.inviting !== inviting) {
+    dispatch({ type: inviting ? ACCESS_EVENT.INVITE_OPENED : ACCESS_EVENT.INVITE_CLOSED });
+  }
 
   const setView = useCallback(
     (next: Partial<AccessView>) => {
@@ -209,6 +228,10 @@ export function AccessProvider({
     (notice: PlacedNotice) => dispatch({ type: ACCESS_EVENT.ACTION_SETTLED, notice }),
     [],
   );
+  // The address as it is at the press, read off `window` rather than off `useSearchParams()`: it is
+  // the same value, and reading it here keeps both callbacks stable across every change of view.
+  const openInvite = useCallback(() => showPanel(ACCESS_PANEL.INVITE), []);
+  const closeInvite = useCallback(() => showPanel(null), []);
 
   const value = useMemo<AccessContextValue>(
     () => ({
@@ -216,7 +239,6 @@ export function AccessProvider({
       page,
       view,
       seats,
-      inviteAnchorId,
       navigating,
       setView,
       perform,
@@ -224,13 +246,14 @@ export function AccessProvider({
       dismiss,
       starting,
       report,
+      openInvite,
+      closeInvite,
     }),
     [
       state,
       page,
       view,
       seats,
-      inviteAnchorId,
       navigating,
       setView,
       perform,
@@ -238,10 +261,26 @@ export function AccessProvider({
       dismiss,
       starting,
       report,
+      openInvite,
+      closeInvite,
     ],
   );
 
   return <AccessContext.Provider value={value}>{children}</AccessContext.Provider>;
+}
+
+/**
+ * A shallow move to the address with the dialogue opened or closed: Next's router follows
+ * `history.pushState` and `useSearchParams` with it, and the server is not asked — nothing it reads
+ * changed (`access-panel.ts`).
+ */
+function showPanel(panel: AccessPanel | null): void {
+  const { pathname, search } = window.location;
+  const next = accessPanelHref({ pathname, search, panel });
+  // A sent invitation closes the dialogue, and the reader may have closed it while the send was in
+  // flight — a second entry for the same address would make Back do nothing once.
+  if (next === `${pathname}${search}`) return;
+  window.history.pushState(null, '', next);
 }
 
 /** Whether this row's own controls should be inert — see `AccessState.pendingRowKey`. */

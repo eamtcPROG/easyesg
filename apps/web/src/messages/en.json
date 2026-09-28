@@ -94,6 +94,9 @@
       "label": "Menu",
       "close": "Close the menu"
     },
+    "dialog": {
+      "close": "Close"
+    },
     "notifications": {
       "label": "Notifications",
       "unreadLabel": "{count, plural, =0 {Notifications, none unread} other {Notifications, # unread}}"
@@ -1121,8 +1124,7 @@
       "empty": {
         "firstUse": {
           "title": "You are the only one with access so far",
-          "body": "Invite a colleague to fill the report in with you, or just to read it.",
-          "action": "Go to the invitation form"
+          "body": "Invite a colleague to fill the report in with you, or just to read it."
         },
         "filtered": {
           "title": "Nobody matches these filters",
@@ -1143,6 +1145,7 @@
       },
       "invite": {
         "heading": "Invite a colleague",
+        "open": "Invite a colleague",
         "intro": "We send a link that works for seven days. They choose their own password.",
         "email": "Email address",
         "emailRequired": "Enter the email address of the person you are inviting, or the invitation cannot be sent.",
@@ -1150,10 +1153,11 @@
         "rolePlaceholder": "Choose a role",
         "roleRequired": "Choose the role this person receives, so they know what they may do once they accept.",
         "submit": "Send the invitation",
+        "cancel": "Cancel",
         "sent": "The invitation has been sent to {email}.",
         "sentBody": "They receive an email with a link that works for seven days. Until they accept, they appear on the list as invited.",
-        "sentAction": "You can send it again or withdraw it from the list above.",
-        "failedAction": "Find the person on the list above and choose what to do next."
+        "sentAction": "You can send it again or withdraw it from its row in the list below.",
+        "failedAction": "Close this window, find the person on the list and choose what to do next."
       },
       "remind": {
         "heading": "Send a reminder",
@@ -1213,7 +1217,7 @@
       "roleChanged": "{email} now has the role “{role}”.",
       "loading": "Loading the list of people with access…",
       "notice": {
-        "body": "The list above already shows the new situation.",
+        "body": "The list below already shows the new situation.",
         "action": "There is nothing further to do.",
         "failedAction": "Try again, or reload the page."
       },
@@ -1226,11 +1230,11 @@
           "title": "{limit, plural, =1 {The organisation’s only seat is taken} other {All # of the organisation’s seats are taken}}",
           "consumptionLabel": "Seats in use",
           "consumption": "{used} of {limit}",
-          "body": "Every person with access and every pending invitation holds a seat — invitations whose link has expired included, until you withdraw them. To invite someone, withdraw an invitation or remove someone’s access from the list above."
+          "body": "Every person with access and every pending invitation holds a seat — invitations whose link has expired included, until you withdraw them. To invite someone, close this window and withdraw an invitation or remove someone’s access from the list."
         },
         "paused": {
           "title": "Invitations are paused for now",
-          "body": "We cannot check how many of the organisation’s seats are in use just now, so no invitation can be sent. The list above is accurate, and you can still manage everyone’s access.",
+          "body": "We cannot check how many of the organisation’s seats are in use just now, so no invitation can be sent. The list is accurate, and you can still manage everyone’s access.",
           "action": "Reload the page in a few minutes."
         }
       }

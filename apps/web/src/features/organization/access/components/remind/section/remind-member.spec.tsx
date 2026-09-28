@@ -34,6 +34,9 @@ vi.mock('@/i18n/navigation', () => ({
   Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
 }));
 
+/** The invitation closed: the reminder panel is what these cases are about. */
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams() }));
+
 /** jsdom implements neither, and Radix Select reaches for both. */
 beforeAll(() => {
   Element.prototype.hasPointerCapture = vi.fn(() => false);
@@ -63,7 +66,6 @@ const panelWith = (reminder: ReminderRegion) =>
         page={emptyPage}
         view={DEFAULT_ACCESS_VIEW}
         seats={seatRegion({ allowance: 10, used: 2 })}
-        inviteAnchorId="invite"
       >
         <RemindMember region={reminder} />
       </AccessProvider>
@@ -99,11 +101,16 @@ describe('RemindMember — its arms', () => {
     expect(screen.queryByRole('combobox')).toBeNull();
   });
 
-  it('says there is no one to remind, and leads to the invite panel above', () => {
+  it('says there is no one to remind, and opens the invitation', async () => {
+    const push = vi.spyOn(window.history, 'pushState');
+    window.history.replaceState(null, '', '/organization/users');
     panelWith({ arm: REMINDER_ARM.NO_ONE });
 
     expect(screen.getByText(words.noOne.body, { exact: false })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: words.noOne.action })).toHaveAttribute('href', '#invite');
+    await userEvent.click(screen.getByRole('button', { name: words.noOne.action }));
+
+    expect(push).toHaveBeenCalledWith(null, '', '/organization/users?panel=invite');
+    push.mockRestore();
   });
 
   it('says what it could not read, offers no form over a guess, and asks again when told to', async () => {

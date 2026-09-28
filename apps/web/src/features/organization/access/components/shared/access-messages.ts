@@ -9,7 +9,7 @@
  *
  * **Not narrowed per region, which `shared-namespace-declared-once` would otherwise ask for in the same
  * change as the split.** The catalogue's subtrees do not partition by region: `roles` is read by the
- * board's role cell and the invite form, and `seats` by the heading's counter and the invite panel's
+ * board's role cell and the invite form, and `seats` by the heading's counter and the invitation's
  * arms. A namespace per region would reach across into a sibling's keys anyway, so narrowing needs the
  * catalogue restructured first — a change of its own, not a side effect of moving files.
  */

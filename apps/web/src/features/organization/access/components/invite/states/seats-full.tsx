@@ -15,7 +15,7 @@ import { ACCESS_MESSAGES } from '../../shared/access-messages';
  * deferred for this ceiling rather than met. The way out it names instead is one the reader can take
  * on this screen: withdraw an invitation, lapsed ones included, or remove someone's access.
  *
- * A client part because the invite panel it replaces is one; it holds no state of its own.
+ * A client part because the dialogue it sits in is one; it holds no state of its own.
  */
 export function SeatsFull({ region }: { readonly region: KnownSeatRegion }) {
   const t = useTranslations(`${ACCESS_MESSAGES}.seats.gate`);

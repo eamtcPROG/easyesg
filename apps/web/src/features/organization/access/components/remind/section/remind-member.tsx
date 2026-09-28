@@ -14,12 +14,12 @@ import { RemindersUnavailable } from '../states/reminders-unavailable';
 import styles from '../../styles/access.module.css';
 
 /**
- * S-16's reminder panel (task 50.3; UC-175; `architecture.md` §12.5.6's task-50.3 row (5)) — the invite panel's
- * anatomy, one panel further down: its heading, the screen's notice where it belongs here, and which arm the
- * reminder region puts it in.
+ * S-16's reminder panel (task 50.3; UC-175; `architecture.md` §12.5.6's task-50.3 row (5)) — the anatomy the invite
+ * panel had until the invitation became a dialogue (28 Sep 2026): its heading, the screen's notice where it belongs
+ * here, and which arm the reminder region puts it in.
  *
  * **The region is the section's** (`remind-section.tsx`), which reads it on the server and hands it here — the part
- * renders what was read. **The notice renders here** for the invite panel's reason: *"sent to Ivan"* belongs beside the form that
+ * renders what was read. **The notice renders here** for the reason the invitation's refusal does: *"sent to Ivan"* belongs beside the form that
  * sent it, and it is still the screen's one notice, so a reminder sent clears a row action's outcome and the reverse.
  */
 export function RemindMember({ region }: { readonly region: ReminderRegion }) {
@@ -33,7 +33,7 @@ export function RemindMember({ region }: { readonly region: ReminderRegion }) {
   else arm = <RemindersUnavailable />;
 
   return (
-    <Panel className={styles.invitePanel}>
+    <Panel className={styles.remindPanel}>
       <h2 className="t-heading-3">{t('heading')}</h2>
 
       {notice?.region === NOTICE_REGION.REMIND ? (

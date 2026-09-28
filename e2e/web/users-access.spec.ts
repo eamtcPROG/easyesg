@@ -126,6 +126,28 @@ async function choose(page: Page, label: string, option: string): Promise<void> 
   await page.getByRole('option', { name: option }).click();
 }
 
+/**
+ * The invitation dialogue (28 Sep 2026), found by its title. Its form is reachable only through it — the
+ * list behind a modal is hidden from the accessibility tree — so a locator that still found the form
+ * without opening this would be finding a second copy.
+ */
+const invitationDialogue = (page: Page) => page.getByRole('dialog', { name: 'Invitați un coleg' });
+
+/** The filter row's button, by its exact name: the reminder panel's *no one to remind* offers another. */
+async function openInvitation(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Invitați un coleg', exact: true }).click();
+  await expect(invitationDialogue(page)).toBeVisible();
+}
+
+/** Open, fill and send — the dialogue is left however the answer leaves it. */
+async function sendInvitation(page: Page, email: string, role: string): Promise<void> {
+  await openInvitation(page);
+  const dialogue = invitationDialogue(page);
+  await dialogue.getByLabel('Adresa de e-mail').fill(email);
+  await choose(page, 'Rolul acordat', role);
+  await dialogue.getByRole('button', { name: 'Trimiteți invitația', exact: true }).click();
+}
+
 test('the administrator sees themself, and invites a colleague who appears as invited', async ({
   page,
 }) => {
@@ -151,11 +173,22 @@ test('the administrator sees themself, and invites a colleague who appears as in
   // Task 142's counter at rest: the administrator alone holds one of the ceiling's seats.
   await expect(page.getByText(`Locuri ocupate: 1 din ${SEAT_CEILING}`, { exact: true })).toBeVisible();
 
-  const invited = addressFor('invite-guest');
-  await page.getByLabel('Adresa de e-mail').fill(invited);
-  await choose(page, 'Rolul acordat', 'Doar vizualizare');
-  await page.getByRole('button', { name: 'Trimiteți invitația', exact: true }).click();
+  // The form is a dialogue with an address of its own (UX-4, as §5.2 applies it to A-08's): open, it
+  // is in the URL, and a reload reopens it rather than dropping the reader back on the list.
+  await openInvitation(page);
+  await expect(page).toHaveURL(/[?&]panel=invite\b/);
+  await page.reload();
+  await expect(invitationDialogue(page)).toBeVisible();
+  await page.getByRole('button', { name: 'Renunțați', exact: true }).click();
+  await expect(invitationDialogue(page)).toHaveCount(0);
+  await expect(page).not.toHaveURL(/panel=/);
 
+  const invited = addressFor('invite-guest');
+  await sendInvitation(page, invited, 'Doar vizualizare');
+
+  // A sent invitation closes the dialogue and is said above the list, where its row now is.
+  await expect(invitationDialogue(page)).toHaveCount(0);
+  await expect(page.getByText(`Invitația a fost trimisă la ${invited}.`, { exact: true })).toBeVisible();
   // The other half, through the same list — which is the whole point of the read model.
   await expect(personCell(page, invited)).toBeVisible();
   await expect(page.getByText('Invitat', { exact: true })).toBeVisible();
@@ -187,9 +220,8 @@ test('the last seat is warned of, and taking it puts the gate where the invitati
     }),
   ).toBeVisible();
 
-  await page.getByLabel('Adresa de e-mail').fill(addressFor('full-last-seat'));
-  await choose(page, 'Rolul acordat', 'Editare');
-  await page.getByRole('button', { name: 'Trimiteți invitația', exact: true }).click();
+  await sendInvitation(page, addressFor('full-last-seat'), 'Editare');
+  await expect(invitationDialogue(page)).toHaveCount(0);
 
   await expect(
     page.getByText(`Locuri ocupate: ${SEAT_CEILING} din ${SEAT_CEILING} · niciun loc liber`, {
@@ -199,7 +231,12 @@ test('the last seat is warned of, and taking it puts the gate where the invitati
   await expect(
     page.getByText(`Toate cele ${SEAT_CEILING} locuri ale organizației sunt ocupate`, { exact: true }),
   ).toBeVisible();
-  // Not offered, rather than offered and refused: the field is gone, not disabled.
+  // The button is still offered, and what it opens says why no invitation follows: the gate in the
+  // form's place. Not offered, rather than offered and refused — the field is gone, not disabled.
+  await openInvitation(page);
+  await expect(invitationDialogue(page)).toContainText(
+    `Toate cele ${SEAT_CEILING} locuri ale organizației sunt ocupate`,
+  );
   await expect(page.getByLabel('Adresa de e-mail')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Trimiteți invitația', exact: true })).toHaveCount(0);
 });
@@ -211,17 +248,12 @@ test('a second invitation to the same address is refused, in words the reader ca
   await openAccessScreen(page);
 
   const invited = addressFor('collide-guest');
-  const invite = async () => {
-    await page.getByLabel('Adresa de e-mail').fill(invited);
-    await choose(page, 'Rolul acordat', 'Editare');
-    await page.getByRole('button', { name: 'Trimiteți invitația', exact: true }).click();
-    await expect(personCell(page, invited)).toBeVisible();
-  };
+  await sendInvitation(page, invited, 'Editare');
+  await expect(personCell(page, invited)).toBeVisible();
+  await sendInvitation(page, invited, 'Editare');
 
-  await invite();
-  await invite();
-
-  // The API's own sentence, rendered as received — the screen keeps no second copy of it.
+  // The API's own sentence, rendered as received — the screen keeps no second copy of it — and in
+  // the dialogue, above the form it refused, which stays open for the reader to correct.
   //
   // **Unscoped, and `.first()` is gone** (28 Aug 2026). The screen holds one notice, so a second
   // alert means two settled outcomes are on screen at once — which is what this locator had been
@@ -229,6 +261,11 @@ test('a second invitation to the same address is refused, in words the reader ca
   // only other `role="alert"` here and renders only on a validation error, of which this journey
   // has none.
   await expect(page.getByRole('alert')).toBeVisible();
+  await expect(invitationDialogue(page).getByRole('alert')).toBeVisible();
+
+  // Closed, the refusal goes with it, and the list behind shows the one invitation it held.
+  await page.getByRole('button', { name: 'Renunțați', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(personCell(page, invited)).toHaveCount(1);
 });
 
@@ -237,9 +274,7 @@ test('an invitation can be withdrawn, and the confirmation names the person', as
   await openAccessScreen(page);
 
   const invited = addressFor('revoke-guest');
-  await page.getByLabel('Adresa de e-mail').fill(invited);
-  await choose(page, 'Rolul acordat', 'Editare');
-  await page.getByRole('button', { name: 'Trimiteți invitația', exact: true }).click();
+  await sendInvitation(page, invited, 'Editare');
   await expect(personCell(page, invited)).toBeVisible();
 
   await page.getByRole('button', { name: 'Anulați invitația' }).click();

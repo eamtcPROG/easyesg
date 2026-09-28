@@ -32,7 +32,7 @@ const ROW: AccessRow = {
 
 const NOTICE: PlacedNotice = {
   // The screen holds ONE notice and it carries where it renders: the list reports row actions at
-  // its head, the invite panel reports its own beside the form. Two settled outcomes on screen at
+  // its head, the invite dialogue reports a refusal beside its form. Two settled outcomes on screen at
   // once is unrepresentable, which is what this field bought (28 Aug 2026).
   region: NOTICE_REGION.LIST,
   intent: CALLOUT_INTENT.SUCCESS,
@@ -45,7 +45,7 @@ const settled = (state: AccessState) =>
   accessReducer(state, { type: ACCESS_EVENT.ACTION_SETTLED, notice: NOTICE });
 
 describe('accessReducer', () => {
-  it('clears the invite panel\'s notice when a row action starts', () => {
+  it('clears the invite dialogue\'s notice when a row action starts', () => {
     // The defect this field was added for (28 Aug 2026). The panel used to hold its outcome in a
     // `useState` of its own, outside this reducer, so "the invitation has been sent" survived a
     // removal starting — which is the exact case ACTION_STARTED was written to prevent, described
@@ -77,6 +77,7 @@ describe('accessReducer', () => {
       notice: null,
       confirming: null,
       pendingRowKey: null,
+      inviting: false,
     });
   });
 
@@ -126,6 +127,7 @@ describe('accessReducer', () => {
       notice: NOTICE,
       confirming: null,
       pendingRowKey: null,
+      inviting: false,
     });
   });
 
@@ -171,5 +173,62 @@ describe('accessReducer', () => {
     });
 
     expect(settled(running).confirming).toBeNull();
+  });
+
+  /** An outcome settling is not the address changing: the dialogue stays as the address has it. */
+  it('leaves the dialogue as it was when an action settles', () => {
+    const open = accessReducer(INITIAL_ACCESS_STATE, { type: ACCESS_EVENT.INVITE_OPENED });
+
+    expect(settled(open).inviting).toBe(true);
+  });
+});
+
+/**
+ * The invite dialogue's two edges (28 Sep 2026). Whatever opened or closed it — the button, the close
+ * control, Back — the provider turns the address changing into one of these, so the rules live here.
+ */
+describe('accessReducer · the invite dialogue', () => {
+  const REFUSAL: PlacedNotice = {
+    region: NOTICE_REGION.INVITE,
+    intent: CALLOUT_INTENT.ERROR,
+    title: 'Există deja o invitație în așteptare pentru această adresă.',
+    body: 'Invitația trimisă anterior este încă valabilă.',
+    action: 'Închideți fereastra, găsiți persoana în listă și alegeți ce faceți mai departe.',
+  };
+
+  it('opens clear of whatever the last action said', () => {
+    const opened = accessReducer(settled(INITIAL_ACCESS_STATE), {
+      type: ACCESS_EVENT.INVITE_OPENED,
+    });
+
+    expect(opened).toEqual({ ...INITIAL_ACCESS_STATE, inviting: true });
+  });
+
+  /**
+   * The case the edge exists for: a refusal, the dialogue closed, then reopened by Forward. An event
+   * sent only by the button would have shown the old refusal above a form that is now empty.
+   */
+  it('takes a refusal with it when it closes, so reopening shows none', () => {
+    const refused = accessReducer(
+      accessReducer(INITIAL_ACCESS_STATE, { type: ACCESS_EVENT.INVITE_OPENED }),
+      { type: ACCESS_EVENT.ACTION_SETTLED, notice: REFUSAL },
+    );
+    const closed = accessReducer(refused, { type: ACCESS_EVENT.INVITE_CLOSED });
+
+    expect(closed.notice).toBeNull();
+    expect(accessReducer(closed, { type: ACCESS_EVENT.INVITE_OPENED }).notice).toBeNull();
+  });
+
+  /** A sent invitation reports at the list's head and then closes the dialogue: the success stays. */
+  it('keeps the list\'s notice when it closes', () => {
+    const sent = accessReducer(
+      accessReducer(INITIAL_ACCESS_STATE, { type: ACCESS_EVENT.INVITE_OPENED }),
+      { type: ACCESS_EVENT.ACTION_SETTLED, notice: NOTICE },
+    );
+
+    expect(accessReducer(sent, { type: ACCESS_EVENT.INVITE_CLOSED })).toEqual({
+      ...INITIAL_ACCESS_STATE,
+      notice: NOTICE,
+    });
   });
 });

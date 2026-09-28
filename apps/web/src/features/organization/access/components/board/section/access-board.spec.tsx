@@ -43,6 +43,9 @@ vi.mock('@/i18n/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
+/** No dialogue in the address: the board's own journeys run with the invitation closed. */
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams() }));
+
 /** jsdom implements neither, and Radix Select calls both while opening. */
 beforeAll(() => {
   Element.prototype.hasPointerCapture = vi.fn(() => false);
@@ -150,7 +153,6 @@ const board = (given: readonly AccessRow[] = rows()) => (
       page={pageOf(given)}
       view={DEFAULT_ACCESS_VIEW}
       seats={seatRegion({ allowance: 10, used: given.length })}
-      inviteAnchorId="invite"
     >
       <AccessBoard />
     </AccessProvider>
@@ -318,9 +320,19 @@ describe('AccessBoard · the person column (UX-137, task 140)', () => {
 
 describe('AccessBoard · the two empty states', () => {
   /** No rows at all: nobody has been invited, and the one action is to invite someone. */
-  it('offers the invitation form on first use', () => {
+  it('offers the invitation form on first use', async () => {
+    const push = vi.spyOn(window.history, 'pushState');
+    window.history.replaceState(null, '', '/organization/users');
     render(board([]));
     expect(screen.getByText('Deocamdată sunteți singurul cu acces')).toBeInTheDocument();
+
+    // The empty state's own action — the filter row carries the same one, named alike.
+    const actions = screen.getAllByRole('button', { name: ro.organization.access.invite.open });
+    expect(actions).toHaveLength(2);
+    await userEvent.click(actions[1]);
+
+    expect(push).toHaveBeenCalledWith(null, '', '/organization/users?panel=invite');
+    push.mockRestore();
   });
 
   /**
@@ -341,8 +353,7 @@ describe('AccessBoard · the two empty states', () => {
           page={{ ...pageOf(given), rows: [], matched: 0 }}
           view={DEFAULT_ACCESS_VIEW}
           seats={seatRegion({ allowance: 10, used: given.length })}
-          inviteAnchorId="invite"
-        >
+            >
           <AccessBoard />
         </AccessProvider>
       </NextIntlClientProvider>,

@@ -12,7 +12,7 @@ export async function RemindLoading() {
   const t = await getTranslations(REMIND_MESSAGES);
 
   return (
-    <Panel className={styles.invitePanel}>
+    <Panel className={styles.remindPanel}>
       <h2 className="t-heading-3">{t('heading')}</h2>
       <p className="t-body" role="status">
         <Spinner /> {t('loading')}

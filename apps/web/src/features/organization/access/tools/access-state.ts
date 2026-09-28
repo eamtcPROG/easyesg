@@ -60,11 +60,11 @@ export type { Notice };
 /**
  * Which region of S-16 shows the notice (28 Aug 2026).
  *
- * **The screen has two places an outcome can be reported, and only ever one outcome.** The list
- * reports row actions at its head; the invite panel reports its own submission beside the form,
- * and it must — `invite.failedAction` reads *"find the person in the list above"*, a sentence that
- * is only true rendered below the list. So the position is not interchangeable and one shared
- * surface at the top of the screen would make that copy wrong.
+ * **The screen has several places an outcome can be reported, and only ever one outcome.** The list
+ * reports row actions at its head; the invite dialogue reports a refusal beside the form that was
+ * refused, and it must — the dialogue covers the list, so a refusal said at the list's head would be
+ * said behind the thing the reader is looking at. A sent invitation is the list's since the form
+ * became a dialogue (28 Sep 2026): the dialogue closes, and the notice stands above the row it added.
  *
  * Holding the region **in the notice** is what lets both be true at once: one value, so two
  * settled outcomes can never be on screen together, and `ACTION_STARTED` clears whichever is
@@ -73,9 +73,9 @@ export type { Notice };
 export const NOTICE_REGION = {
   /** The members and invitations list, at its head. */
   LIST: 'list',
-  /** The invite panel, beside the form that was submitted. */
+  /** The invite dialogue, above the form whose submission was refused. */
   INVITE: 'invite',
-  /** The reminder panel (task 50.3), beside its form — the invite panel's reason, one panel further down. */
+  /** The reminder panel (task 50.3), beside its form — the invite dialogue's reason, in a panel below the list. */
   REMIND: 'remind',
 } as const;
 
@@ -98,12 +98,22 @@ export interface AccessState {
    * `useTransition`'s per-component pending flag did before this state existed.
    */
   readonly pendingRowKey: string | null;
+  /**
+   * Whether the invite dialogue was open **when this state last saw the address** (28 Sep 2026).
+   *
+   * The address decides whether it is open (`access-panel.ts`); this is the edge the provider compares
+   * it against, so that opening and closing are events here however they happened — the button, the
+   * close control, Back, Forward. An event dispatched only by the button would leave Forward reopening
+   * the dialogue over the refusal a previous attempt left.
+   */
+  readonly inviting: boolean;
 }
 
 export const INITIAL_ACCESS_STATE: AccessState = {
   notice: null,
   confirming: null,
   pendingRowKey: null,
+  inviting: false,
 };
 
 /**
@@ -116,10 +126,14 @@ export const ACCESS_EVENT = {
   CONFIRMATION_REQUESTED: 'confirmation_requested',
   /** The reader backed out of it. */
   CONFIRMATION_DISMISSED: 'confirmation_dismissed',
-  /** An action left for the server — a row's, or the invite panel's. */
+  /** An action left for the server — a row's, or the invite dialogue's. */
   ACTION_STARTED: 'action_started',
   /** It came back — with what it said, whether that is a success or a refusal. */
   ACTION_SETTLED: 'action_settled',
+  /** The address came to name the invite dialogue. */
+  INVITE_OPENED: 'invite_opened',
+  /** It stopped naming it — the close control, Escape, Back, or a sent invitation. */
+  INVITE_CLOSED: 'invite_closed',
 } as const;
 
 export type AccessEventType = (typeof ACCESS_EVENT)[keyof typeof ACCESS_EVENT];
@@ -129,7 +143,9 @@ export type AccessEvent =
   | { readonly type: typeof ACCESS_EVENT.CONFIRMATION_DISMISSED }
   /** `rowKey` is null for an action no row owns — the invite form's submission. */
   | { readonly type: typeof ACCESS_EVENT.ACTION_STARTED; readonly rowKey: string | null }
-  | { readonly type: typeof ACCESS_EVENT.ACTION_SETTLED; readonly notice: PlacedNotice };
+  | { readonly type: typeof ACCESS_EVENT.ACTION_SETTLED; readonly notice: PlacedNotice }
+  | { readonly type: typeof ACCESS_EVENT.INVITE_OPENED }
+  | { readonly type: typeof ACCESS_EVENT.INVITE_CLOSED };
 
 export function accessReducer(state: AccessState, event: AccessEvent): AccessState {
   switch (event.type) {
@@ -140,6 +156,20 @@ export function accessReducer(state: AccessState, event: AccessEvent): AccessSta
 
     case ACCESS_EVENT.CONFIRMATION_DISMISSED:
       return { ...state, confirming: null };
+
+    case ACCESS_EVENT.INVITE_OPENED:
+      // The confirmation's reason, for the invitation's dialogue: whatever the last action said is
+      // about something else, and a refusal left by an earlier attempt is about a form now empty.
+      return { ...state, inviting: true, notice: null };
+
+    case ACCESS_EVENT.INVITE_CLOSED:
+      // A refusal goes with the dialogue it was said in. The list's notice stays — a sent invitation
+      // reports there and closes the dialogue, so clearing it here would erase the success it caused.
+      return {
+        ...state,
+        inviting: false,
+        notice: state.notice?.region === NOTICE_REGION.INVITE ? null : state.notice,
+      };
 
     case ACCESS_EVENT.ACTION_STARTED:
       // Same reason, and the more visible one: the previous action's outcome must not sit above a
@@ -152,7 +182,8 @@ export function accessReducer(state: AccessState, event: AccessEvent): AccessSta
     default:
       // Everything at once, which is the case the three setters were spelling out by hand. The
       // dialogue closes whether or not the action came from one — an action started from a row
-      // button has no dialogue to close, and `null` is already `null`.
-      return { notice: event.notice, confirming: null, pendingRowKey: null };
+      // button has no dialogue to close, and `null` is already `null`. `inviting` is the address's
+      // to move, not an outcome's, so it passes through.
+      return { ...state, notice: event.notice, confirming: null, pendingRowKey: null };
   }
 }

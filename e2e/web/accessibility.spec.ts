@@ -106,7 +106,7 @@ for (const screen of NO_MAIN_YET) {
  * S-16, which is a different kind of screen and therefore a different kind of scan (task 26.4).
  *
  * Every screen above is a Focus form: labels, a summary, one primary action. S-16 is the first
- * **Index** — a sortable table, status chips, two filter selects and a form, which between them
+ * **Index** — a sortable table, status chips, two filter selects and a dialogue's form, which between them
  * exercise the rules the identity screens never reach: table header semantics, `aria-sort`, a
  * control whose only label is visually hidden, and colour that must not be the sole carrier of a
  * state. It is also the first screen behind a session, so it costs a sign-in to reach.
@@ -147,6 +147,14 @@ test('axe finds no violations on the users and access screen', async ({ page }) 
   await page.goto('/organization/users');
   await expect(page.getByRole('heading', { name: 'Utilizatori și acces', level: 1 })).toBeVisible();
   await scan(page);
+
+  // The form is a dialogue since 28 Sep 2026, so the pass above no longer reaches it: a modal's name,
+  // its focus containment and the list it hides from the tree exist only once it is open.
+  await page.getByRole('button', { name: 'Invitați un coleg', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Invitați un coleg' })).toBeVisible();
+  await scan(page);
+  await page.getByRole('button', { name: 'Renunțați', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 
   // Twice, on one sign-in, because the second scan is a different surface (task 30.1). The pass
   // above judges §4.2's global tier at rest — the band is on every authenticated screen, so every
