@@ -25796,3 +25796,63 @@ of its own rather than fixed here. A childless row closes on what its change rea
 the review agents nor `gates:clean` ran; CI runs the full set on push, against a freshly seeded store.
 
 **Owed:** the entry's specimen in `EasyESG Components.dc.html`, which §11.5 records.
+
+## Task 174 — The suites run against a test stack of their own · 2026-09-28
+
+The owner, on the task 173 run's five provider failures: *the best fix in this case is to use a separate database for
+test.* Every stack gate connected to the dev stack's `esg` and Redis — `DB_NAME ?? 'esg'` in the api's test support,
+the migration CLI and the browser suite's configuration — so the suites and the developer shared one store. That one
+fact was three defects: task 172's suites overwrote the owner's provider configuration; task 173's run failed four
+social journeys and A-18's Google journey because the owner had Google enabled (the social suite waits for `google` to
+appear in the providers read, which an enabled operator slot satisfies before the api's poll picks up the stub); and
+`migrations:check` reverted the newest migration over the developer's rows.
+
+**Decided in one batch, then one correction.**
+
+- **A full test stack, not a second database or a Redis index** — the owner's answer to the Redis question, and the
+  better one: a database beside `esg` leaves Redis shared, and a Redis logical database leaves pub/sub shared, since
+  channels span databases. `infra/compose/docker-compose.test.yml` is `easyesg-test`: both services **extend** the dev
+  file's, so the pins, healthchecks, `init: true`, `noeviction` and `init.sh` are declared once; `!override` on every
+  list field, because under `extends` Compose appends a list — confirmed in Compose's docs, and `docker compose config`
+  renders one port per service. PostgreSQL on 5433 with database `esg_test`, Redis on 6380, data on tmpfs.
+- **`migrations:check` on both, never destructively on the developer's.** The owner asked for both *"if it will not
+  delete data"*; it would have — the newest migration's `down` drops `identity.credential.password_changed_at` and its
+  `up` backfills it from `updated_at`, rewriting every credential's real date. So the full cycle runs on the test stack
+  and the dev half is `db:check:dev`: pending migrations and the invariants, no revert.
+- **Task 172's snapshot-and-restore stays**, as suite hygiene: each suite still leaves the store as it found it.
+- **Created by `init.sh`** on the test cluster's fresh data directory, every time the stack starts — the owner's
+  *init.sh + dev:up* answer, which under the stack it chose is `init.sh + test:up`.
+- **Corrected by the owner: the file is `.env.test`.** It was `infra/compose/test-stack.env`, named to escape
+  `.gitignore`'s `.env.*` — a `.env.test` would silently never be committed, the `credentials/` trap root `CLAUDE.md`
+  records. It is `apps/api/.env.test` now, beside the `.env` it overrides, committed through a `.gitignore` exception
+  anchored to that one path (`/apps/api/.env.test`) so no other `.env.test` is taken in by accident; `git status` shows
+  it as new and `apps/web/.env.test` stays ignored.
+
+**How a process reaches it — measured, not assumed.** On Node 26.7.0, an exported variable beats `--env-file`, and a
+second `--env-file` overrides the first while the first still supplies everything else (`process.loadEnvFile` does
+the opposite, first wins). So `test:e2e` and `test:worker` load `--env-file-if-exists=.env --env-file=.env.test`, and
+`tools/with-test-stack.sh` exports the same file for what one `--env-file` cannot reach — the migrate/revert and
+migrate/seed chains, Playwright, and Compose. `pnpm test:stack` (up, migrate, seed) runs from each stack gate's
+pre-hook: about 2 minutes cold, 19 seconds warm with nothing pending and nothing to seed. **The browser suite refuses
+to start without the three coordinates** — a direct `pnpm exec playwright test`, which this session ran during task
+173, used to fall back to `esg`; now it stops with the remedy. The api suite has no such guard, because its invariants
+spec legitimately runs against the dev database in `db:check:dev`; its scripts are all wrapped or layered. Seven
+browser support modules still carry `?? 'esg'` fallbacks, unreachable behind the configuration's check.
+
+**Proven.** Your dev database was fingerprinted first — the configuration store, the Google slot (revision 3044,
+enabled), credentials, accounts and organizations. Then, against the test stack: `migrations:check` (the revert on the
+test stack, 61 invariants on each), `pnpm e2e` 1,438 of 1,438, `pnpm e2e:worker` 9 of 9, and `pnpm e2e:web` **278 of
+280 — the five provider journeys that failed against the dev stack all pass**. The two failures,
+`credentials.spec.ts:189` and `wizard.spec.ts:499`, were the api timing out on three simultaneous requests under the host's
+memory pressure (`architecture.md`'s task-85 row); both pass on a rerun. After the renaming, the layered api script,
+the worker boot and `migrations:check` passed again, and an unwrapped Playwright run was refused. **The dev database's
+fingerprint afterwards is byte-for-byte the one before.**
+
+**What it costs**: a second pair of containers while tests run, and memory on an 8 GB host that already stalls the api
+under load — the two flakes are the same kind as before, and whether they are now more frequent is what the next few
+runs will show. **Searched for the shape**: every reader of `DB_NAME`, `DB_PORT` and `REDIS_PORT` in `apps/api/test`,
+`e2e` and the api's scripts, every caller of the wrapped scripts (`gates-scoped.sh`, CI), and every doc line telling a
+reader the suites need `pnpm dev:up` — root and api `CLAUDE.md`, the Playwright configuration, and the api test README,
+whose timing command ran jest bare against `esg`. CI's steps are unchanged; its failure logs print both stacks. Runs:
+lint, `docs:check`, the three stack suites and `migrations:check` as above. The review agents did not run (owner,
+13 Sep 2026).

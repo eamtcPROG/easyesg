@@ -82,7 +82,7 @@ to the idle one. It is still a bounded failure: a genuinely hung request fails i
 reports its own crossing. The table above is the instrument — regenerate it with
 
 ```
-pnpm --filter @easyesg/api exec node --experimental-vm-modules ./node_modules/jest/bin/jest.js \
+./tools/with-test-stack.sh pnpm --filter @easyesg/api exec node --experimental-vm-modules ./node_modules/jest/bin/jest.js \
   --config ./test/jest-e2e.json --runInBand --json --outputFile=/tmp/e2e.json
 ```
 

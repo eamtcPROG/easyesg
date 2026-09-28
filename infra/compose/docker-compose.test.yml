@@ -1,0 +1,55 @@
+# The test stack — PostgreSQL and Redis for the suites, and nothing a developer works in (task 174; project owner,
+# 28 Sep 2026; architecture.md §12.5.10).
+#
+# **Why it exists.** Every stack-bound gate used to connect to the dev stack's `esg` and Redis, so the suites and the
+# developer shared one store: task 172's suites overwrote an operator's own provider configuration, task 173's run
+# failed five provider tests because the developer had enabled Google, and `migrations:check` reverted migrations over
+# the developer's rows. A second Compose project on ports of its own ends all three at once, pub/sub included — which a
+# Redis logical database would not have, since Redis shares channels across its databases.
+#
+# **Each service extends the dev file's**, so the image pins, the healthchecks, `init: true`, Redis's `noeviction` and
+# `init/init.sh` stay in one place. What differs is only what must: ports, the database's name, and storage. List fields
+# carry `!override`, because under `extends` Compose APPENDS a list to the base service's — without it this stack would
+# publish 5432 and 5433 both.
+#
+# **Its data lives in memory** (tmpfs), so the stack is disposable by construction: `pnpm test:down` discards
+# everything, and the next `pnpm test:up` initialises a fresh cluster through `init.sh` exactly as CI's does. While it
+# is up, data persists between runs, and the suites leave the store as they found it (task 172).
+#
+# Not run by hand as a rule — every stack-bound gate's pre-hook runs `pnpm test:stack`, which brings it up, migrates
+# it and seeds it. The ports and the database's name come from `apps/api/.env.test`, the file the test processes read too:
+#
+#     docker compose -f infra/compose/docker-compose.test.yml \
+#       --env-file infra/compose/.env --env-file apps/api/.env.test up -d --wait
+name: easyesg-test
+
+services:
+  postgres:
+    extends:
+      file: docker-compose.yml
+      service: postgres
+    container_name: easyesg-test-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:?set DB_NAME in apps/api/.env.test}
+    ports: !override
+      - ${DB_PORT:?set DB_PORT in apps/api/.env.test}:5432
+    # The init mount only — the data directory is the tmpfs below, not the dev stack's named volume.
+    volumes: !override
+      - ../postgres/init:/docker-entrypoint-initdb.d:ro
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  redis:
+    extends:
+      file: docker-compose.yml
+      service: redis
+    container_name: easyesg-test-redis
+    ports: !override
+      - ${REDIS_PORT:?set REDIS_PORT in apps/api/.env.test}:6379
+    # No volume: the RDB snapshot the dev flags ask for lands in the container's own layer and goes with it.
+    volumes: !reset []
+
+# Project-scoped, so this is `easyesg-test_easyesg-net` and never the dev stack's network.
+networks:
+  easyesg-net:
+    driver: bridge

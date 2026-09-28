@@ -198,9 +198,13 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+      # Both stacks since task 174: the suites run against the test stack, which each stack gate's pre-hook
+      # brings up beside the dev one (`pnpm test:stack`).
       - name: Stack logs
         if: failure()
-        run: docker compose -f infra/compose/docker-compose.yml logs --no-color --tail 100
+        run: |
+          docker compose -f infra/compose/docker-compose.yml logs --no-color --tail 100
+          docker compose -f infra/compose/docker-compose.test.yml --env-file infra/compose/.env --env-file apps/api/.env.test logs --no-color --tail 100
 
   # NFR-1 and DR-1's backstop: the compliance core must not acquire a hard dependency on billing.
   # It runs the same suites with the context switched off — and, crucially, `billing-disabled.e2e`
@@ -225,9 +229,13 @@ jobs:
       - run: pnpm --filter @easyesg/api db:migrate
       - run: pnpm test
       - run: pnpm e2e
+      # Both stacks since task 174: the suites run against the test stack, which each stack gate's pre-hook
+      # brings up beside the dev one (`pnpm test:stack`).
       - name: Stack logs
         if: failure()
-        run: docker compose -f infra/compose/docker-compose.yml logs --no-color --tail 100
+        run: |
+          docker compose -f infra/compose/docker-compose.yml logs --no-color --tail 100
+          docker compose -f infra/compose/docker-compose.test.yml --env-file infra/compose/.env --env-file apps/api/.env.test logs --no-color --tail 100
 
   # Images are the one place a real dependency on the gates exists: an artefact must not be built
   # from a commit whose gates are red — and billing-off is a gate, so it is in the list. The three

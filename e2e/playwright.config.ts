@@ -3,11 +3,11 @@ import { STACK_API_BASE, STACK_EXPANSION_API_BASE, STACK_ORIGIN, STACK_PORT } fr
 
 /**
  * Browser e2e for `apps/web` (task 20 — the first one). Runs against the SAME stack the api
- * e2e uses: the Compose database and Redis (`pnpm dev:up`, migrated), the api served from its
- * build output, and the web app served from its standalone bundle — the artefact the image
- * ships, not `next dev`'s approximation of it. `pree2e:web` builds all of it, so `pnpm
- * e2e:web` is runnable on its own (CLAUDE.md: a script must not depend on state a previous
- * command left behind).
+ * e2e uses: **the test stack's** database and Redis (task 174, `infra/compose/docker-compose.test.yml`
+ * — never the developer's), the api served from its build output, and the web app served from its
+ * standalone bundle — the artefact the image ships, not `next dev`'s approximation of it.
+ * `pree2e:web` builds all of it and prepares the test stack, so `pnpm e2e:web` is runnable on its
+ * own (CLAUDE.md: a script must not depend on state a previous command left behind).
  *
  * **Every server below is one this run started, on every machine** (task 102). The suite shares
  * the dev stack's ports (`stack.ts` says why), so `pree2e:web` first stops this repository's dev
@@ -37,12 +37,29 @@ import { STACK_API_BASE, STACK_EXPANSION_API_BASE, STACK_ORIGIN, STACK_PORT } fr
  * turn it into an email. The spec reads the row as `esg_worker`, exactly like the api e2e.
  */
 
-/** The Compose stack's synthetic dev credentials (infra/compose/.env.example) as fallbacks,
- *  so the suite runs identically on a laptop and in CI's database job. */
+/**
+ * The test stack's coordinates, **with no fallback** (task 174). `pnpm e2e:web` runs this under
+ * `tools/with-test-stack.sh`, which exports them from `apps/api/.env.test`; a run that
+ * bypasses it — `pnpm exec playwright test`, which is how a single spec is usually rerun — used to
+ * fall back to the dev stack's `esg` and write the suite's accounts, organizations and provider
+ * publications into the developer's store. Now it stops here and says how to run it instead.
+ */
+const fromTestStack = (name: string): string => {
+  const value = process.env[name];
+  if (value === undefined || value === '') {
+    throw new Error(
+      `${name} is unset: the browser suite runs against the test stack only. Run it as \`pnpm e2e:web\`, ` +
+        `or prefix a direct run with \`./tools/with-test-stack.sh\`.`,
+    );
+  }
+  return value;
+};
+
+/** The credentials stay the Compose stack's synthetic ones (infra/compose/.env.example), which both stacks share. */
 const dbEnv = {
   DB_HOST: process.env.DB_HOST ?? 'localhost',
-  DB_PORT: process.env.DB_PORT ?? '5432',
-  DB_NAME: process.env.DB_NAME ?? 'esg',
+  DB_PORT: fromTestStack('DB_PORT'),
+  DB_NAME: fromTestStack('DB_NAME'),
 };
 
 /**
@@ -68,7 +85,7 @@ const apiEnv = {
   DB_ADMIN_RO_USER: process.env.DB_ADMIN_RO_USER ?? 'esg_admin_ro',
   DB_ADMIN_RO_PASSWORD: process.env.DB_ADMIN_RO_PASSWORD ?? 'devonly-admin-ro',
   REDIS_HOST: process.env.REDIS_HOST ?? 'localhost',
-  REDIS_PORT: process.env.REDIS_PORT ?? '6379',
+  REDIS_PORT: fromTestStack('REDIS_PORT'),
   AUTH_PASSWORD_PEPPER: process.env.AUTH_PASSWORD_PEPPER ?? 'devonly-pepper',
   // Task 23: the admin realm's secret and the console origin the api's CORS and Origin
   // proof are configured for — the admin project's preview server below.

@@ -24,6 +24,9 @@ playwright/.cache/
 .env.*
 !.env.example
 !.env.*.example
+# …and the test stack's coordinates, which hold no secret and must be the same on every machine (task 174):
+# anchored to its one path, so no other `.env.test` is ever committed by accident.
+!/apps/api/.env.test
 apps/*/env/*
 !apps/*/env/.env.example
 

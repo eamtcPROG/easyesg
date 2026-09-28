@@ -33,7 +33,9 @@ below are each workspace's shipped state by task; `docs/task.md` is what is left
 | `packages/validation` | The password policy (OQ-51) and the entity-identifier rules, shared by `api` and `web` — architecture.md §9.8 records the placement. The rule interpreter (task 40) is still to come |
 | `packages/vsme` | The taxonomy model and the generated typed facade (AD-3, task 34.2): the typing the element-keyed disclosure store gave up, generated per registered taxonomy version from `config/seed`'s artefact and kept in step by `pnpm facade:check` — the taxonomy itself stays configuration (AD-4) and its wording stays committed catalogues (OQ-43) |
 
-`infra/{compose,postgres}` holds the dev stack — Postgres and Redis, started with `pnpm dev:up`.
+`infra/{compose,postgres}` holds the dev stack — Postgres and Redis, started with `pnpm dev:up` — and, since task 174,
+the **test stack** beside it (`docker-compose.test.yml`, ports 5433 and 6380), which the suites run against and prepare
+themselves.
 `config/seed/` holds the configuration store's starting state, applied idempotently by
 `pnpm --filter @easyesg/api config:seed` — 23 artefacts since task 50.3, six of them the
 taxonomy registry's (three per registered version — the taxonomy and its two classifications) and
@@ -70,10 +72,11 @@ claim checkable by reading rather than by trusting.
 `pnpm e2e:worker`, then `pnpm e2e:web` — the
 Playwright browser run, three projects since task 23: the tenant journeys with their axe scan,
 the +40% expansion check, and the admin console driven cross-origin against its built bundle;
-it needs the migrated Compose stack plus `pnpm exec playwright install chromium` once per
+it needs Docker plus `pnpm exec playwright install chromium` once per
 machine), in CI's order — a local runner that omitted either suite would not be the same check. `pnpm gates:clean` runs the same set over a cleaned
-tree, and when that is the run to reach for is the subject of the next section. **`migrations:check` is the one that needs Docker** (`pnpm dev:up`): it
-applies, reverts, re-applies and then asserts §7's schema invariants against the Compose stack,
+tree, and when that is the run to reach for is the subject of the next section. **`migrations:check` is the one that needs Docker** — both stacks: it
+applies, reverts, re-applies and then asserts §7's schema invariants against the test stack, then applies what is
+pending and asserts the invariants against the dev stack, never reverting there (task 174),
 because neither "the baseline applies from an empty database" nor "no foreign key crosses the
 core/billing boundary" is a property any hermetic test can assert. **Four need the stack** —
 `migrations:check` and the three e2e suites — and **the other thirteen run anywhere**, which is not
@@ -367,8 +370,8 @@ what is wrong.
 
 | File | Owns | Use it |
 | --- | --- | --- |
-| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1 is Identity and closes when accounts, authentication, authorisation, admin user management and security are *fully functional*; **173 tasks across the two plan files**, of which 54 groups are here and 119 have closed — Stage 1 holding sixteen existing groups plus the twenty-five appended as 139–151, 155, 159, 160, 161, 164, 165, 166, 167, 168, 170, 171 and 172 | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
-| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 119 numbers, 221 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
+| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1 is Identity and closes when accounts, authentication, authorisation, admin user management and security are *fully functional*; **174 tasks across the two plan files**, of which 54 groups are here and 120 have closed — Stage 1 holding sixteen existing groups plus the twenty-five appended as 139–151, 155, 159, 160, 161, 164, 165, 166, 167, 168, 170, 171 and 172 | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
+| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 120 numbers, 222 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
 | [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
 
 **Closing a task is a three-part edit: set the Status, move the row into `archived_tasks.md`, write the
@@ -733,6 +736,23 @@ against the compose file's own directory, so the same command from the repo root
 Installing a service or its client on the host reintroduces exactly what this avoids — a client
 on a different upgrade cycle from its server, a second PostgreSQL able to shadow the container on
 5432, and a local veraPDF that is not the validator CI gates on.
+
+**The suites never touch this stack** (task 174, architecture.md §12.5.10). `pnpm e2e`, `pnpm e2e:worker`,
+`pnpm e2e:web` and `migrations:check`'s revert run against the **test stack** — `easyesg-test`, PostgreSQL on 5433
+with database `esg_test`, Redis on 6380, its data in memory — which each of them brings up, migrates and seeds from its
+pre-hook (`pnpm test:stack`). **Where it is comes from `apps/api/.env.test`**, committed and layered over `.env` —
+a single `node` command loads it as a second `--env-file`, and `tools/with-test-stack.sh` exports it for a chain of
+commands, Playwright and Compose. To run one file, pass it to the script, which is already pointed there; anything else
+run by hand goes through the wrapper:
+
+```bash
+pnpm --filter @easyesg/api test:e2e test/members.e2e-spec.ts
+./tools/with-test-stack.sh pnpm exec playwright test --config e2e/playwright.config.ts global-tier --project=identity
+```
+
+`pnpm test:down` discards the test stack, and the next run starts it fresh. **A suite run without the wrapper reaches
+the dev database** — the browser suite refuses to start that way; the api suite's scripts are wrapped, a bare `jest` is
+not.
 
 ## Design principles (SOLID)
 
