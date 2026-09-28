@@ -1,6 +1,15 @@
 'use client';
 
-import { Button, BUTTON_VARIANT, Callout, CALLOUT_INTENT, Panel, TextField, TextLink } from '@easyesg/ui';
+import {
+  Button,
+  BUTTON_VARIANT,
+  CALLOUT_INTENT,
+  ExpiringCallout,
+  Panel,
+  TextField,
+  TextLink,
+  useDismissible,
+} from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useState, useSyncExternalStore, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
@@ -41,6 +50,10 @@ import { ROUTES } from '@/lib/routes';
  * "sent AND unreachable" representable and left the clearing of one to be remembered when the
  * other was set (root `CLAUDE.md`, "Values that change together"). Three states, one of which is
  * "nothing has been tried yet" — which is what `null` says and a false boolean does not.
+ *
+ * **Held as an object per send, not as the bare word** (28 Sep 2026): the message leaves after a while, or when closed
+ * (`design_spec.md` §8.1), and `useDismissible` knows the one that left by its identity. Two sends answered alike are
+ * the same string, so the second's message would have stayed hidden; they are two objects.
  */
 const RESEND_OUTCOME = { SENT: 'sent', UNREACHABLE: 'unreachable' } as const;
 
@@ -49,6 +62,7 @@ type ResendOutcome = (typeof RESEND_OUTCOME)[keyof typeof RESEND_OUTCOME];
 export function VerificationPending() {
   const t = useTranslations('identity.verify');
   const tCommon = useTranslations('identity');
+  const tForms = useTranslations('forms');
   const [pending, startTransition] = useTransition();
 
   const email = useSyncExternalStore(
@@ -62,7 +76,8 @@ export function VerificationPending() {
     getServerResendCooldownRemaining,
   );
 
-  const [outcome, setOutcome] = useState<ResendOutcome | null>(null);
+  const [outcome, setOutcome] = useState<{ readonly kind: ResendOutcome } | null>(null);
+  const [shown, dismiss] = useDismissible(outcome);
 
   const {
     register,
@@ -75,14 +90,14 @@ export function VerificationPending() {
     startTransition(async () => {
       const result = await resendVerificationAction({ email: address });
       if (result.status === API_OUTCOME.Unreachable) {
-        setOutcome(RESEND_OUTCOME.UNREACHABLE);
+        setOutcome({ kind: RESEND_OUTCOME.UNREACHABLE });
         return;
       }
       // Problems and the 202 read the same to the user: the screen may not reveal more than
       // the uniform response does (OQ-55). A malformed address is the one 400 this route
       // emits, and the form's own validation already covers it.
       rememberPendingVerification(address);
-      setOutcome(RESEND_OUTCOME.SENT);
+      setOutcome({ kind: RESEND_OUTCOME.SENT });
     });
   };
 
@@ -90,20 +105,28 @@ export function VerificationPending() {
 
   return (
     <div className={styles.stack}>
-      {outcome === RESEND_OUTCOME.UNREACHABLE ? (
-        <Callout
+      {shown?.kind === RESEND_OUTCOME.UNREACHABLE ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismiss}
         >
           {tCommon('unreachable.body')}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
-      {outcome === RESEND_OUTCOME.SENT ? (
-        <Callout intent={CALLOUT_INTENT.INFO} title={t('sentTitle')} action={t('sentAction')}>
+      {shown?.kind === RESEND_OUTCOME.SENT ? (
+        <ExpiringCallout
+          intent={CALLOUT_INTENT.INFO}
+          title={t('sentTitle')}
+          action={t('sentAction')}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismiss}
+        >
           {t('sentBody')}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
       <Panel className={styles.formPanel}>

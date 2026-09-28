@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { API_OUTCOME, type AdminInvitationPreview } from '@easyesg/contracts';
-import { Panel } from '@easyesg/ui';
+import { Panel, useDismissible } from '@easyesg/ui';
 import { useReducer } from 'react';
 import { useTranslations } from 'use-intl';
 import { acceptAdminInvitation, stageAdminEnrolment } from '../../queries/invitation';
@@ -10,7 +10,7 @@ import {
   INVITATION_STEP,
   invitationReducer,
 } from '../../tools/invitation-state';
-import { RefusalCallout } from '../shared/refusal-callout';
+import { ExpiringRefusal } from '../shared/expiring-refusal';
 import { InvitationEnrolmentStep } from './invitation-enrolment-step';
 import { InvitationPasswordStep } from './invitation-password-step';
 import { InvitationRefused } from './invitation-refused';
@@ -37,6 +37,9 @@ export function InvitationSteps({
   const t = useTranslations('realm.invitation');
   const tRealm = useTranslations('realm.chrome.realm');
   const [{ step, failure }, dispatch] = useReducer(invitationReducer, INITIAL_INVITATION_STATE);
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again.
+  const [shownFailure, dismissFailure] = useDismissible(failure);
 
   const { mutate: stage, isPending: staging } = useMutation({ mutationFn: stageAdminEnrolment });
   const { mutate: accept, isPending: accepting } = useMutation({ mutationFn: acceptAdminInvitation });
@@ -68,8 +71,13 @@ export function InvitationSteps({
       </div>
 
       <div className="flex flex-col gap-[var(--space-4)] px-[var(--space-7)] py-[var(--space-5)]">
-        {failure === null ? null : (
-          <RefusalCallout failure={failure} title={t('problemTitle')} fallback={t('refused.body')} />
+        {shownFailure === null ? null : (
+          <ExpiringRefusal
+            failure={shownFailure}
+            title={t('problemTitle')}
+            fallback={t('refused.body')}
+            onDismiss={dismissFailure}
+          />
         )}
 
         {onEnrolment ? (

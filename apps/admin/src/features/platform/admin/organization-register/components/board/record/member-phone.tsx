@@ -1,9 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
 import { API_OUTCOME, type ApiFailure } from '@easyesg/contracts';
-import { BUTTON_VARIANT, Button } from '@easyesg/ui';
+import { BUTTON_VARIANT, Button, useDismissible } from '@easyesg/ui';
 import { useState } from 'react';
 import { useTranslations } from 'use-intl';
-import { RefusalCallout } from '~/realm/components/shared/refusal-callout';
+import { ExpiringRefusal } from '~/realm/components/shared/expiring-refusal';
 import { discloseMemberPhone } from '../../../queries/organization-members';
 
 /**
@@ -23,6 +23,9 @@ export function MemberPhone({
   const t = useTranslations('platform.organizations.record.members');
   const [phone, setPhone] = useState<string | null>(null);
   const [failure, setFailure] = useState<ApiFailure | null>(null);
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again.
+  const [shownFailure, dismissFailure] = useDismissible(failure);
 
   const { mutate: disclose, isPending } = useMutation({
     mutationFn: discloseMemberPhone,
@@ -55,8 +58,13 @@ export function MemberPhone({
           {t('show')}
         </Button>
       </div>
-      {failure === null ? null : (
-        <RefusalCallout failure={failure} title={t('problemTitle')} fallback={t('problemBody')} />
+      {shownFailure === null ? null : (
+        <ExpiringRefusal
+          failure={shownFailure}
+          title={t('problemTitle')}
+          fallback={t('problemBody')}
+          onDismiss={dismissFailure}
+        />
       )}
     </div>
   );

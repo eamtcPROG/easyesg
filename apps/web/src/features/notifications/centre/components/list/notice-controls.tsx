@@ -3,8 +3,8 @@
 import type { NotificationItem as Notice } from '@easyesg/contracts';
 import { BUTTON_VARIANT, Button } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
+import { RecordNotice } from '@/shared/record-notice';
 import { dismissNotificationAction, markNotificationReadAction } from '../../../shared/actions/actions';
-import { NoticeActionRefusal } from '../../../shared/components/notice-action-refusal';
 import { useNoticeAction } from '../../../shared/components/use-notice-action';
 import { noticeTitleId } from '../../../shared/tools/notice-title-id';
 import { CENTRE_MESSAGES } from '../shared/centre-messages';
@@ -46,7 +46,7 @@ export function NoticeControls({ notice }: { readonly notice: Pick<Notice, 'id' 
       >
         {t('dismiss')}
       </Button>
-      {refusal === null ? null : <NoticeActionRefusal notice={refusal} />}
+      <RecordNotice notice={refusal} />
     </>
   );
 }

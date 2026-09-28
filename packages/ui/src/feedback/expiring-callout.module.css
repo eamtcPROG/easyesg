@@ -1,0 +1,69 @@
+/* `ExpiringCallout` (§8.1's Success row, 28 Sep 2026). Tier 2/3 tokens only. */
+
+/* One row that can shrink to nothing: `grid-template-rows` interpolates from 1fr to 0fr, which a height cannot do
+   without knowing the height. */
+.frame {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+/* The Callout and its close control share one cell, the control in the corner. */
+.overlay {
+  display: grid;
+  min-block-size: 0;
+}
+
+.overlay > * {
+  grid-area: 1 / 1;
+}
+
+/* Room for the control, so a long title wraps before it rather than running under it. Set on the Callout's own box,
+   which is the overlay's first child. */
+.overlay > :first-child {
+  padding-inline-end: calc(var(--space-5) + 32px + var(--space-3));
+}
+
+/* 32px, as the dialogue's close control, above WCAG 2.2's 24px minimum. */
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: start;
+  justify-self: end;
+  inline-size: 32px;
+  block-size: 32px;
+  margin: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-1);
+  background: none;
+  color: var(--text-body);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--surface-sunken);
+  color: var(--text-default);
+}
+
+.close svg {
+  inline-size: 18px;
+  block-size: 18px;
+}
+
+/* Clipped only while it collapses, so the focus ring on the control and on the action's links is never cut at rest.
+   Not scoped to `no-preference`: `tokens.css` shortens it to 1ms under reduced motion, and an animation that never
+   ran would never end, which is what tells the caller to take the notice away. */
+.leaving {
+  animation: leave var(--motion-panel) var(--motion-ease) forwards;
+}
+
+.leaving .overlay {
+  overflow: hidden;
+}
+
+@keyframes leave {
+  to {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}

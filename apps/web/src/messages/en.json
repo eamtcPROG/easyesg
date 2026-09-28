@@ -106,6 +106,7 @@
   "forms": {
     "show": "Show",
     "hide": "Hide",
+    "closeMessage": "Close this message",
     "summaryTitle": "A few fields need attention before you can continue",
     "scriptingRequired": {
       "title": "This page needs JavaScript",

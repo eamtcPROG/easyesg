@@ -5,12 +5,12 @@ import {
   type OrganizationRegisterRow,
   type RaiseSupportAccessRequest,
 } from '@easyesg/contracts';
-import { BUTTON_VARIANT, Button, Panel } from '@easyesg/ui';
+import { BUTTON_VARIANT, Button, Panel, useDismissible } from '@easyesg/ui';
 import { FormSummary, FormTextArea, FormTextField } from '@easyesg/ui/forms';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'use-intl';
-import { RefusalCallout } from '~/realm/components/shared/refusal-callout';
+import { ExpiringRefusal } from '~/realm/components/shared/expiring-refusal';
 import { SUPPORT_ACCESS_QUERY_KEY, raiseSupportAccess } from '../../../queries/support-access';
 
 /** The api's cost bounds (`RaiseSupportAccessRequestDto`), restated so a person meets them before submitting. */
@@ -42,6 +42,9 @@ export function RequestForm({
   const queryClient = useQueryClient();
   const { control, handleSubmit } = useForm<RequestFields>({ mode: 'onTouched' });
   const [failure, setFailure] = useState<ApiFailure | null>(null);
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again.
+  const [shownFailure, dismissFailure] = useDismissible(failure);
 
   const { mutate: raise, isPending } = useMutation({
     mutationFn: raiseSupportAccess,
@@ -66,8 +69,13 @@ export function RequestForm({
         <h2 className="t-heading-3">{t('title')}</h2>
         <p className="t-body text-[var(--text-muted)]">{t('lede')}</p>
 
-        {failure === null ? null : (
-          <RefusalCallout failure={failure} title={t('problemTitle')} fallback={t('problemTitle')} />
+        {shownFailure === null ? null : (
+          <ExpiringRefusal
+            failure={shownFailure}
+            title={t('problemTitle')}
+            fallback={t('problemTitle')}
+            onDismiss={dismissFailure}
+          />
         )}
 
         <dl className="t-body grid grid-cols-1 gap-x-[var(--space-4)] gap-y-[var(--space-2)] sm:grid-cols-[auto_1fr]">

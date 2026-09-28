@@ -2,8 +2,8 @@
 
 import { Button, type ButtonVariant } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
+import { RecordNotice } from '@/shared/record-notice';
 import { markAllNotificationsReadAction } from '../actions/actions';
-import { NoticeActionRefusal } from './notice-action-refusal';
 import { NOTICE_LIST_MESSAGES } from './notice-messages';
 import { useNoticeAction } from './use-notice-action';
 import styles from './notice-mark-all.module.css';
@@ -29,7 +29,7 @@ export function NoticeMarkAll({ variant }: { readonly variant: ButtonVariant }) 
       <Button type="button" variant={variant} busy={pending} onClick={() => run(() => markAllNotificationsReadAction())}>
         {t('markAll')}
       </Button>
-      {refusal === null ? null : <NoticeActionRefusal notice={refusal} />}
+      <RecordNotice notice={refusal} />
     </div>
   );
 }

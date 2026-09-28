@@ -2,8 +2,8 @@
 
 import { Button, BUTTON_VARIANT } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
+import { RecordNotice } from '@/shared/record-notice';
 import { declineSupportAccessAction, grantSupportAccessAction } from '../../../actions/actions';
-import { RefusalCallout } from '../../shared/refusal-callout';
 import { SUPPORT_ACCESS_MESSAGES } from '../../shared/support-access-messages';
 import { useSupportAccessAction } from '../../shared/use-support-access-action';
 import styles from '../../styles/support-access.module.css';
@@ -38,7 +38,7 @@ export function AnswerControls({ requestId }: { readonly requestId: string }) {
           {t('decline')}
         </Button>
       </div>
-      {refusal === null ? null : <RefusalCallout notice={refusal} />}
+      <RecordNotice notice={refusal} />
     </div>
   );
 }

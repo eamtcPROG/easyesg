@@ -1,7 +1,7 @@
 'use client';
 
 import { PROBLEM_TYPE } from '@easyesg/contracts';
-import { Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
+import { CALLOUT_INTENT, ExpiringCallout, Panel, TextLink, useDismissible } from '@easyesg/ui';
 import { FormCheckbox, FormPasswordField, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -105,7 +105,10 @@ export function SignInForm({
     });
   });
 
-  const problem = failure?.status === API_OUTCOME.Problem ? failure.problem : null;
+  // The refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again.
+  const [shownFailure, dismissFailure] = useDismissible(failure ?? null);
+  const problem = shownFailure?.status === API_OUTCOME.Problem ? shownFailure.problem : null;
   const isUnverified = problem?.type === PROBLEM_TYPE.EmailUnverified;
   const isLocked = problem?.type === PROBLEM_TYPE.AccountLocked;
 
@@ -115,8 +118,10 @@ export function SignInForm({
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
       {problem ? (
-        <Callout
+        <ExpiringCallout
           intent={isUnverified ? 'warning' : 'error'}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissFailure}
           title={problem.title ?? t('problemTitle')}
           /* NFR-79's "what now" belongs to the API's `detail`, which always states its own remedy.
               The slot carries something only where this screen owns one the detail cannot express —
@@ -138,17 +143,19 @@ export function SignInForm({
           }
         >
           {problem.detail ?? t('problemBody')}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
-      {failure?.status === API_OUTCOME.Unreachable ? (
-        <Callout
+      {shownFailure?.status === API_OUTCOME.Unreachable ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissFailure}
         >
           {tCommon('unreachable.body')}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
       <Panel className={styles.formPanel}>

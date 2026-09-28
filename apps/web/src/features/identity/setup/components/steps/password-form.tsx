@@ -1,7 +1,7 @@
 'use client';
 
 import { PROBLEM_TYPE } from '@easyesg/contracts';
-import { Callout, CALLOUT_INTENT, Panel } from '@easyesg/ui';
+import { CALLOUT_INTENT, ExpiringCallout, Panel, useDismissible } from '@easyesg/ui';
 import { FormSummary } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition, type ReactNode } from 'react';
@@ -58,6 +58,9 @@ export function PasswordForm({ intro, submit, staleAction, lapsed, children }: P
   // One value with a lifecycle — cleared on submit, set by the answer — which the reducer rule leaves
   // to `useState`.
   const [failure, setFailure] = useState<Exclude<PasswordStepFailure, undefined> | null>(null);
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again.
+  const [shownFailure, dismissFailure] = useDismissible(failure);
 
   const { control, handleSubmit } = useForm<PasswordInput>({ mode: 'onTouched' });
 
@@ -83,24 +86,28 @@ export function PasswordForm({ intro, submit, staleAction, lapsed, children }: P
 
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
-      {failure?.status === API_OUTCOME.Problem ? (
-        <Callout
+      {shownFailure?.status === API_OUTCOME.Problem ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
-          title={failure.problem.title ?? t('problemTitle')}
-          action={failure.problem.type === PROBLEM_TYPE.AccountSetupProofStale ? staleAction : null}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissFailure}
+          title={shownFailure.problem.title ?? t('problemTitle')}
+          action={shownFailure.problem.type === PROBLEM_TYPE.AccountSetupProofStale ? staleAction : null}
         >
-          {failure.problem.detail ?? t('problemBody')}
-        </Callout>
+          {shownFailure.problem.detail ?? t('problemBody')}
+        </ExpiringCallout>
       ) : null}
 
-      {failure?.status === API_OUTCOME.Unreachable ? (
-        <Callout
+      {shownFailure?.status === API_OUTCOME.Unreachable ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissFailure}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >
           {tCommon('unreachable.body')}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
       <Panel className={styles.formPanel}>

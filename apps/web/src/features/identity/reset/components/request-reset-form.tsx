@@ -1,6 +1,6 @@
 'use client';
 
-import { Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, ExpiringCallout, Panel, TextLink, useDismissible } from '@easyesg/ui';
 import { FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, useTransition } from 'react';
@@ -44,6 +44,9 @@ export function RequestResetForm() {
   const tForms = useTranslations('forms');
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<RequestResetResult | null>(null);
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again. The success above replaces the form and stays.
+  const [shownResult, dismissResult] = useDismissible(result);
 
   const { control, handleSubmit, setValue } = useForm<RequestResetInput>({ mode: 'onTouched' });
 
@@ -55,6 +58,9 @@ export function RequestResetForm() {
   }, [setValue]);
 
   const submit = handleSubmit((input) => {
+    // The last refusal goes when the next attempt starts, so each answer's message is a fresh one with its own
+    // dwell (design_spec.md §8.1, 28 Sep 2026) rather than inheriting the time the last one had left.
+    setResult(null);
     startTransition(async () => {
       setResult(await requestPasswordResetAction(input));
     });
@@ -81,10 +87,12 @@ export function RequestResetForm() {
       <ScriptingRequired />
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
-      {result?.status === API_OUTCOME.Problem ? (
-        <Callout
+      {shownResult?.status === API_OUTCOME.Problem ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
-          title={result.problem.title ?? t('problemTitle')}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissResult}
+          title={shownResult.problem.title ?? t('problemTitle')}
           /* NFR-79's "what now" belongs to the API's `detail`, which always states its own remedy.
               The slot carries something only where this screen owns one the detail cannot express —
               a remedy that NAVIGATES. Until 27 Aug 2026 it fell back to a fixed sentence for every
@@ -92,18 +100,20 @@ export function RequestResetForm() {
               directly above this screen's "try again now". (factor-form.tsx made the same fix.) */
           action={null}
         >
-          {result.problem.detail ?? t('problemBody')}
-        </Callout>
+          {shownResult.problem.detail ?? t('problemBody')}
+        </ExpiringCallout>
       ) : null}
 
-      {result?.status === API_OUTCOME.Unreachable ? (
-        <Callout
+      {shownResult?.status === API_OUTCOME.Unreachable ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissResult}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >
           {tCommon('unreachable.body')}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
       <Panel className={styles.formPanel}>

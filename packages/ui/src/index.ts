@@ -90,6 +90,8 @@ export {
   type ConsequenceDialogueProps,
 } from './feedback/consequence-dialogue';
 export { EmptyState, type EmptyStateProps } from './feedback/empty-state';
+export { ExpiringCallout, type ExpiringCalloutProps } from './feedback/expiring-callout';
+export { useDismissible } from './feedback/use-dismissible';
 // Task 170: a record or a form over a list, and its measure's vocabulary — directly, per the rule above.
 export { Dialog, type DialogProps } from './feedback/dialog';
 export { DIALOG_SIZE, type DialogSize } from './feedback/dialog-vocabulary';

@@ -1,12 +1,13 @@
-import { API_OUTCOME, type ApiFailure } from '@easyesg/contracts';
+import type { ApiFailure } from '@easyesg/contracts';
 import { CALLOUT_INTENT, Callout } from '@easyesg/ui';
 import { useTranslations } from 'use-intl';
+import { refusalCopy } from '../../tools/refusal-copy';
 
 /**
- * A write the api did not carry out, drawn as the api said it (tasks 67.4) — A-20's steps and A-08's
- * invitation form and notice read this. **The api's `detail` is the whole of NFR-79's *what now***, so
- * the action slot stays empty for a refusal, the rule A-01 records; an api that could not be reached
- * has no sentence of its own, and gets the realm's.
+ * A read the api refused, drawn as the api said it (tasks 67.4) — the members of an organization, the organization a
+ * request is for, an invitation that can no longer be used. **It stands**: a refused read is the state of the screen,
+ * not a message about the reader's last press. A refused submit is `ExpiringRefusal`, the same words, which leaves
+ * after a while (`design_spec.md` §8.1, 28 Sep 2026). The words themselves are `refusalCopy`'s.
  */
 export function RefusalCallout({
   failure,
@@ -20,18 +21,16 @@ export function RefusalCallout({
   readonly fallback: string;
 }) {
   const t = useTranslations('realm.unreachable');
-
-  if (failure.status === API_OUTCOME.Problem) {
-    return (
-      <Callout intent={CALLOUT_INTENT.ERROR} title={failure.problem.title ?? title} action={null}>
-        {failure.problem.detail ?? fallback}
-      </Callout>
-    );
-  }
+  const copy = refusalCopy({
+    failure,
+    title,
+    fallback,
+    unreachable: { title: t('title'), body: t('body'), action: t('action') },
+  });
 
   return (
-    <Callout intent={CALLOUT_INTENT.ERROR} title={t('title')} action={t('action')}>
-      {t('body')}
+    <Callout intent={CALLOUT_INTENT.ERROR} title={copy.title} action={copy.action}>
+      {copy.body}
     </Callout>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { ACCOUNT_STATUS } from '@easyesg/contracts';
-import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
+import { Button, Callout, CALLOUT_INTENT, ExpiringCallout, Panel, TextLink, useDismissible } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { API_OUTCOME } from '@/lib/api-outcome';
@@ -43,11 +43,18 @@ import { ROUTES, signInRoute } from '@/lib/routes';
 export function ConfirmEmail({ token, returnTo }: { token: string; returnTo?: string }) {
   const t = useTranslations('identity.verify');
   const tCommon = useTranslations('identity');
+  const tForms = useTranslations('forms');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<VerifyResult | null>(null);
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again. The success above replaces the form and stays.
+  const [shownResult, dismissResult] = useDismissible(result);
 
   const confirm = () => {
+    // The last refusal goes when the next attempt starts, so each answer's message is a fresh one with its own
+    // dwell (design_spec.md §8.1, 28 Sep 2026) rather than inheriting the time the last one had left.
+    setResult(null);
     startTransition(async () => {
       const outcome = await verifyEmailAction({ token, returnTo });
       if (outcome.status === API_OUTCOME.Ok) {
@@ -92,28 +99,32 @@ export function ConfirmEmail({ token, returnTo }: { token: string; returnTo?: st
 
   return (
     <div className={styles.stack}>
-      {result?.status === API_OUTCOME.Problem ? (
-        <Callout
+      {shownResult?.status === API_OUTCOME.Problem ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
-          title={result.problem.title ?? t('problemTitle')}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissResult}
+          title={shownResult.problem.title ?? t('problemTitle')}
           action={
             <TextLink asChild>
               <Link href={ROUTES.VERIFY}>{t('problemAction')}</Link>
             </TextLink>
           }
         >
-          {result.problem.detail ?? t('problemBody')}
-        </Callout>
+          {shownResult.problem.detail ?? t('problemBody')}
+        </ExpiringCallout>
       ) : null}
 
-      {result?.status === API_OUTCOME.Unreachable ? (
-        <Callout
+      {shownResult?.status === API_OUTCOME.Unreachable ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissResult}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >
           {tCommon('unreachable.body')}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
       <Panel className={styles.formPanel}>

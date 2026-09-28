@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_OUTCOME, type ApiFailure } from '@easyesg/contracts';
-import { BUTTON_VARIANT, Button } from '@easyesg/ui';
+import { BUTTON_VARIANT, Button, useDismissible } from '@easyesg/ui';
 import { useState } from 'react';
 import { useTranslations } from 'use-intl';
-import { RefusalCallout } from '~/realm/components/shared/refusal-callout';
+import { ExpiringRefusal } from '~/realm/components/shared/expiring-refusal';
 import { SUPPORT_ACCESS_QUERY_KEY, endSupportAccess } from '../../../queries/support-access';
 import type { GrantScope } from '../../../tools/support-access-search';
 
@@ -16,6 +16,9 @@ export function EndAccess({ grant }: { readonly grant: GrantScope }) {
   const t = useTranslations('platform.supportAccess.inProgress');
   const queryClient = useQueryClient();
   const [failure, setFailure] = useState<ApiFailure | null>(null);
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again.
+  const [shownFailure, dismissFailure] = useDismissible(failure);
 
   const { mutate: end, isPending } = useMutation({
     mutationFn: endSupportAccess,
@@ -38,8 +41,13 @@ export function EndAccess({ grant }: { readonly grant: GrantScope }) {
       >
         {t('end')}
       </Button>
-      {failure === null ? null : (
-        <RefusalCallout failure={failure} title={t('endProblemTitle')} fallback={t('endProblemTitle')} />
+      {shownFailure === null ? null : (
+        <ExpiringRefusal
+          failure={shownFailure}
+          title={t('endProblemTitle')}
+          fallback={t('endProblemTitle')}
+          onDismiss={dismissFailure}
+        />
       )}
     </div>
   );

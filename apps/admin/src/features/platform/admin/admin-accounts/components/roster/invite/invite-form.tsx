@@ -5,12 +5,12 @@ import {
   type ApiFailure,
   type InviteAdministratorRequest,
 } from '@easyesg/contracts';
-import { BUTTON_VARIANT, Button, Dialog } from '@easyesg/ui';
+import { BUTTON_VARIANT, Button, Dialog, useDismissible } from '@easyesg/ui';
 import { FormSelect, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useId, useMemo, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'use-intl';
-import { RefusalCallout } from '~/realm/components/shared/refusal-callout';
+import { ExpiringRefusal } from '~/realm/components/shared/expiring-refusal';
 import { EMAIL_SHAPE } from '~/realm/tools/email-shape';
 import { inviteAdministrator } from '../../../queries/account-actions';
 
@@ -44,6 +44,9 @@ export function InviteForm({
   const formId = useId();
   const { control, handleSubmit } = useForm<InviteAdministratorRequest>({ mode: 'onTouched' });
   const [failure, setFailure] = useState<ApiFailure | null>(null);
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again.
+  const [shownFailure, dismissFailure] = useDismissible(failure);
 
   const { mutate: invite, isPending } = useMutation({
     mutationFn: inviteAdministrator,
@@ -83,8 +86,13 @@ export function InviteForm({
     >
       {notice}
 
-      {failure === null ? null : (
-        <RefusalCallout failure={failure} title={t('problemTitle')} fallback={t('problemTitle')} />
+      {shownFailure === null ? null : (
+        <ExpiringRefusal
+          failure={shownFailure}
+          title={t('problemTitle')}
+          fallback={t('problemTitle')}
+          onDismiss={dismissFailure}
+        />
       )}
 
       <form

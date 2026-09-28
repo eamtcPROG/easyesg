@@ -1,14 +1,18 @@
-import { BUTTON_VARIANT, Button, CALLOUT_INTENT, Callout } from '@easyesg/ui';
+import { CALLOUT_INTENT, ExpiringCallout } from '@easyesg/ui';
 import { useTranslations } from 'use-intl';
-import { RefusalCallout } from '~/realm/components/shared/refusal-callout';
+import { ExpiringRefusal } from '~/realm/components/shared/expiring-refusal';
 import { ACCOUNT_NOTICE, type AccountNotice as Notice } from '../../../tools/account-action-state';
 
 /**
  * A-08's *success* state and its refusals, announced in place (task 67.4) — what was done and to whom,
- * or the api's sentence for why it was not. A done notice can be dismissed; a refusal stays until the
- * next action, which is when it stops being true. **Where "in place" is moved with task 170**: above the
+ * or the api's sentence for why it was not. **Where "in place" is moved with task 170**: above the
  * table, or inside the record's or the invitation form's dialogue while one covers the page — the board
  * decides which.
+ *
+ * **Every arm leaves after a while, or when closed** (`design_spec.md` §8.1, amended 28 Sep 2026 by the project
+ * owner), a refusal as well as a success, through the reducer's `NOTICE_DISMISSED`. Not `useDismissible`: the board
+ * moves this one element between three parents, each move a remount, and a hook's memory of a closed notice would not
+ * survive it.
  */
 export function AccountNotice({
   notice,
@@ -18,30 +22,42 @@ export function AccountNotice({
   readonly onDismiss: () => void;
 }) {
   const t = useTranslations('platform.accounts.notice');
+  const tChrome = useTranslations('chrome');
   if (notice === null) return null;
-
-  const dismiss = (
-    <Button type="button" variant={BUTTON_VARIANT.SUBTLE} onClick={onDismiss}>
-      {t('dismiss')}
-    </Button>
-  );
 
   switch (notice.kind) {
     case ACCOUNT_NOTICE.DONE:
       return (
-        <Callout intent={CALLOUT_INTENT.SUCCESS} title={t('doneTitle')} action={dismiss}>
+        <ExpiringCallout
+          intent={CALLOUT_INTENT.SUCCESS}
+          title={t('doneTitle')}
+          action={null}
+          dismissLabel={tChrome('closeMessage')}
+          onDismiss={onDismiss}
+        >
           {t(`done.${notice.action.control}`, { email: notice.action.email })}
-        </Callout>
+        </ExpiringCallout>
       );
     case ACCOUNT_NOTICE.INVITED:
       return (
-        <Callout intent={CALLOUT_INTENT.SUCCESS} title={t('invitedTitle')} action={dismiss}>
+        <ExpiringCallout
+          intent={CALLOUT_INTENT.SUCCESS}
+          title={t('invitedTitle')}
+          action={null}
+          dismissLabel={tChrome('closeMessage')}
+          onDismiss={onDismiss}
+        >
           {t('invitedBody', { email: notice.email })}
-        </Callout>
+        </ExpiringCallout>
       );
     case ACCOUNT_NOTICE.REFUSED:
       return (
-        <RefusalCallout failure={notice.failure} title={t('refusedTitle')} fallback={t('refusedBody')} />
+        <ExpiringRefusal
+          failure={notice.failure}
+          title={t('refusedTitle')}
+          fallback={t('refusedBody')}
+          onDismiss={onDismiss}
+        />
       );
   }
 }

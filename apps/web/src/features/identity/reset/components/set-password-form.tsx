@@ -1,6 +1,6 @@
 'use client';
 
-import { Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, ExpiringCallout, Panel, TextLink, useDismissible } from '@easyesg/ui';
 import { FormSummary } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
@@ -54,10 +54,16 @@ export function SetPasswordForm({ token, kind }: { token: string; kind: SetPassw
   const tCommon = useTranslations('identity');
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<ResetPasswordResult | null>(null);
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again. The success above replaces the form and stays.
+  const [shownResult, dismissResult] = useDismissible(result);
 
   const { control, handleSubmit } = useForm<SetPasswordInput>({ mode: 'onTouched' });
 
   const submit = handleSubmit((input) => {
+    // The last refusal goes when the next attempt starts, so each answer's message is a fresh one with its own
+    // dwell (design_spec.md §8.1, 28 Sep 2026) rather than inheriting the time the last one had left.
+    setResult(null);
     startTransition(async () => {
       setResult(await resetPasswordAction({ token, password: input.password }));
     });
@@ -95,28 +101,32 @@ export function SetPasswordForm({ token, kind }: { token: string; kind: SetPassw
       <ScriptingRequired />
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
-      {result?.status === API_OUTCOME.Problem ? (
-        <Callout
+      {shownResult?.status === API_OUTCOME.Problem ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
-          title={result.problem.title ?? t('problemTitle')}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissResult}
+          title={shownResult.problem.title ?? t('problemTitle')}
           action={
             <TextLink asChild>
               <Link href={ROUTES.RESET}>{t('requestNew')}</Link>
             </TextLink>
           }
         >
-          {result.problem.detail ?? t('problemBody')}
-        </Callout>
+          {shownResult.problem.detail ?? t('problemBody')}
+        </ExpiringCallout>
       ) : null}
 
-      {result?.status === API_OUTCOME.Unreachable ? (
-        <Callout
+      {shownResult?.status === API_OUTCOME.Unreachable ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissResult}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >
           {tCommon('unreachable.body')}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
       <Callout

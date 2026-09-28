@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
+import { Button, CALLOUT_INTENT, ExpiringCallout, Panel, TextLink, useDismissible } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { API_OUTCOME } from '@/lib/api-outcome';
@@ -41,10 +41,17 @@ export function AcceptInvitation({
 }) {
   const t = useTranslations('identity.invitation');
   const tCommon = useTranslations('identity');
+  const tForms = useTranslations('forms');
   const [pending, startTransition] = useTransition();
   const [failure, setFailure] = useState<AcceptInvitationFailure>(undefined);
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again.
+  const [shownFailure, dismissFailure] = useDismissible(failure ?? null);
 
   const accept = () => {
+    // The last refusal goes when the next attempt starts, so each answer's message is a fresh one with its own
+    // dwell (design_spec.md §8.1, 28 Sep 2026) rather than inheriting the time the last one had left.
+    setFailure(undefined);
     startTransition(async () => {
       setFailure(await acceptInvitationAction({ token }));
     });
@@ -52,33 +59,37 @@ export function AcceptInvitation({
 
   return (
     <div className={styles.stack}>
-      {failure?.status === API_OUTCOME.Problem ? (
+      {shownFailure?.status === API_OUTCOME.Problem ? (
         // The API's own wording, in the reader's language, with the standing already folded into
         // it — a 410 here means the link was spent or withdrawn between the render and the press,
         // which is rare and is exactly what the detail explains.
-        <Callout
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
-          title={failure.problem.title ?? t('problemTitle')}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissFailure}
+          title={shownFailure.problem.title ?? t('problemTitle')}
           action={
             <TextLink asChild>
-              <Link href={failure.remedy.href}>
-                {failure.remedy.kind === INVITATION_REMEDY.HOME ? t('homeAction') : t('problemAction')}
+              <Link href={shownFailure.remedy.href}>
+                {shownFailure.remedy.kind === INVITATION_REMEDY.HOME ? t('homeAction') : t('problemAction')}
               </Link>
             </TextLink>
           }
         >
-          {failure.problem.detail ?? t('problemBody')}
-        </Callout>
+          {shownFailure.problem.detail ?? t('problemBody')}
+        </ExpiringCallout>
       ) : null}
 
-      {failure?.status === API_OUTCOME.Unreachable ? (
-        <Callout
+      {shownFailure?.status === API_OUTCOME.Unreachable ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissFailure}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >
           {tCommon('unreachable.body')}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
       <Panel className={styles.formPanel}>

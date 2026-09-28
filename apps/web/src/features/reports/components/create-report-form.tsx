@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Callout, BUTTON_VARIANT } from '@easyesg/ui';
+import { Button, BUTTON_VARIANT, ExpiringCallout, useDismissible } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
@@ -29,15 +29,19 @@ export interface CreateReportFormProps {
 
 export function CreateReportForm({ periodId }: CreateReportFormProps) {
   const t = useTranslations('organization.reports.create');
+  const tForms = useTranslations('forms');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [failure, setFailure] = useState<ApiOutcome<unknown> | null>(null);
+  // Dismissed by the failure rather than the notice built from it below, which is a new object every render; the
+  // refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026).
+  const [shownFailure, dismissFailure] = useDismissible(failure);
 
   const notice =
-    failure === null
+    shownFailure === null
       ? null
       : failureNotice({
-          outcome: failure,
+          outcome: shownFailure,
           unreachable: { title: t('unreachable.title'), body: t('unreachable.body') },
         });
 
@@ -67,9 +71,15 @@ export function CreateReportForm({ periodId }: CreateReportFormProps) {
 
            `action` stays absent, which the helper defaults to `null`: the "what now" is the API's
            `detail`, and this screen owns no remedy that navigates. */
-        <Callout intent={notice.intent} title={notice.title} action={notice.action}>
+        <ExpiringCallout
+          intent={notice.intent}
+          title={notice.title}
+          action={notice.action}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissFailure}
+        >
           {notice.body}
-        </Callout>
+        </ExpiringCallout>
       )}
 
       <Button type="button" busy={pending} onClick={submit}>

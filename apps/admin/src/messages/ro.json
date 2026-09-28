@@ -28,6 +28,7 @@
     "dialog": {
       "close": "Închideți"
     },
+    "closeMessage": "Închideți mesajul",
     "rowActions": {
       "header": "Acțiuni",
       "view": "Vedeți",
@@ -394,7 +395,6 @@
         }
       },
       "notice": {
-        "dismiss": "Închideți mesajul",
         "doneTitle": "Modificarea a fost făcută",
         "done": {
           "release_lockout": "Contul {email} a fost deblocat.",
@@ -725,7 +725,6 @@
         }
       },
       "notice": {
-        "dismiss": "Închideți mesajul",
         "doneTitle": "Modificarea a fost făcută",
         "done": {
           "save": "Configurarea furnizorului {provider} a fost salvată și este în vigoare.",
@@ -860,7 +859,6 @@
         "retained": "Textul mesajelor nu se schimbă, iar notificările deja trimise rămân la destinatari. Setările au efect în câteva secunde, iar după publicare puteți reveni la cele de acum într-un singur pas."
       },
       "notice": {
-        "dismiss": "Închideți mesajul",
         "revert": "Reveniți la setările anterioare",
         "doneTitle": "Setările sunt în vigoare",
         "done": {

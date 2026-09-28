@@ -110,10 +110,11 @@ src/
 │  └─ routes/   _focus (A-01, A-20) · _realm (everything behind the guard) — both pathless
 ├─ realm/       api/ (the one API client) · components/ (sign-in/ A-01's screen · invitation/ A-20's ·
 │               credentials/ A-19's · chrome/ the realm layout's chrome · shared/ the realm chip, the
-│               refusal callout, the password requirements and the ended-session exit) · queries/ (the session, the invitation,
+│               refusal callouts — a read's, which stands, and a submit's, which expires — the password
+│               requirements and the ended-session exit) · queries/ (the session, the invitation,
 │               A-19's credentials) · tools/ (the three reducers, each role's home, the navigation's
 │               sections, the two arrival notices, the realm reads' arms, A-19's read and code standing,
-│               the email shape). A LEAF (see below)
+│               the email shape, the words both refusal callouts draw). A LEAF (see below)
 ├─ features/    15 folders, platform/ and billing/, mirroring apps/api's contexts — one index.ts each until
 │               built; platform/admin/ holds organization-register/ (A-02, task 67.3), admin-accounts/
 │               (A-08, task 67.4) and identity-providers/ (A-18, task 67.11); platform/notification/ is A-17

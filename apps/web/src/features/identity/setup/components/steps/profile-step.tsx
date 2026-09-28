@@ -2,7 +2,7 @@
 
 import type { AccountSetup } from '@easyesg/contracts';
 import { LOCALES, type Locale } from '@easyesg/i18n';
-import { Button, Callout, CALLOUT_INTENT, Panel } from '@easyesg/ui';
+import { Button, CALLOUT_INTENT, ExpiringCallout, Panel, useDismissible } from '@easyesg/ui';
 import { FormSelect, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
@@ -54,6 +54,9 @@ export function ProfileStep({
   const tAccount = useTranslations('chrome.accountMenu');
   const [pending, startTransition] = useTransition();
   const [failure, setFailure] = useState<ApiFailure | null>(null);
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again.
+  const [shownFailure, dismissFailure] = useDismissible(failure);
 
   const { control, handleSubmit } = useForm<ProfileInput>({
     mode: 'onTouched',
@@ -91,24 +94,28 @@ export function ProfileStep({
 
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
-      {failure?.status === API_OUTCOME.Problem ? (
-        <Callout
+      {shownFailure?.status === API_OUTCOME.Problem ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
-          title={failure.problem.title ?? t('problemTitle')}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissFailure}
+          title={shownFailure.problem.title ?? t('problemTitle')}
           action={null}
         >
-          {failure.problem.detail ?? t('problemBody')}
-        </Callout>
+          {shownFailure.problem.detail ?? t('problemBody')}
+        </ExpiringCallout>
       ) : null}
 
-      {failure?.status === API_OUTCOME.Unreachable ? (
-        <Callout
+      {shownFailure?.status === API_OUTCOME.Unreachable ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissFailure}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >
           {tCommon('unreachable.body')}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
       <Panel className={styles.formPanel}>

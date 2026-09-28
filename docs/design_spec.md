@@ -1699,7 +1699,7 @@ Eight design states, **six colour roles** — `error` and `invalid_url` share on
 
 **UX-66** Email shall render in the recipient's own language, degrade to plain text, carry a working unsubscribe on optional categories only, and shall not depend on images or external CSS to be comprehensible.
 
-**UX-67** Transient toasts are permitted **only** for confirmation of a user's own immediate action, shall never carry information available nowhere else, and shall never be the sole carrier of an error.
+**UX-67** Transient toasts are permitted **only** for confirmation of a user's own immediate action, shall never carry information available nowhere else, and shall never be the sole carrier of an error. **Scope stated 28 Sep 2026 (project owner):** a submit's message in an Expiring callout (§8.1's Success row) is not held to this requirement — asked whether one that states a rule or a refusal found nowhere else on its screen may leave after its dwell, the owner answered that a message the server repeats on every submit disappearing after some time is the system's normal behaviour. The next submit brings it back.
 
 ### 6.13 Traceability and change history
 
@@ -1791,7 +1791,7 @@ The form controls a component library must supply, each with every applicable st
 | **Read-only** | Names which of the three causes applies and what restores editing (UX-13). |
 | **Offline / queued** | Explicit, persistent, non-alarming; states what is queued and what happens next. |
 | **Pending — async** | Names the job, where the result appears, and roughly when. |
-| **Success** | Confirms *what* happened and offers the next step; never a bare toast for a consequential action. **It shows only while nothing on screen differs from what was stored, and a refusal stands until the next attempt, edits included** — the reader is editing *because* it was refused (project owner, 11 Sep 2026; decided on S-15 in task 129, written here and applied to S-13 and S-14 by task 134). |
+| **Success** | Confirms *what* happened and offers the next step; never a bare toast for a consequential action. **It shows only while nothing on screen differs from what was stored** (project owner, 11 Sep 2026; decided on S-15 in task 129, written here and applied to S-13 and S-14 by task 134). **A message the server returns for the reader's own submit — a success, a warning or a refusal — leaves on its own once it has been readable for eight seconds, and carries a close control** (project owner, 28 Sep 2026: *"Success/warning/error message from server that repeats on every submit should disappear after some time"*, which the owner called the system's normal behaviour). This replaces the 11 Sep clause *"a refusal stands until the next attempt, edits included"*. The eight seconds count only while the message is at least half on screen, neither hovered nor focused, in a visible tab — a record's save is at its foot and its message at its head, so on a long form the message lands out of view — and it leaves by collapsing (UX-88), so the form beneath does not jump. The next submit's message shows again whatever its words. **Not a submit's message, and unchanged:** a result that replaces its form (an email confirmed, an account set up), a load failure, a standing condition (Banner) and an inline field message. Built as the Expiring callout (§11.5). |
 | **Error — not found** | The address resolves to nothing and never will. Names the address as what is wrong rather than the reader, and offers a route back into the product. |
 | **Error — not yet available** | The address is a real route whose screen has not shipped. Says so plainly — never an error, never a bare `404` — and names where the reader can go instead. |
 
@@ -1816,7 +1816,7 @@ exist, and it earns a different sentence and a different next step.
 |---|---|
 | Inline field message | The state of one field, at the point of entry (UX-20) |
 | Form-level error summary | At the top of the form, with links to each field (UX-111) |
-| Callout (info · attention · warning · error · success) | Context-scoped feedback within a region |
+| Callout (info · attention · warning · error · success) | Context-scoped feedback within a region. The message of a reader's own submit is the Expiring callout, which leaves after its dwell (§8.1's Success row, 28 Sep 2026) |
 | Banner (persistent, page-level) | A standing condition: read-only cause (UX-13), unsynced queue (UX-37), superseded version pin |
 | Consequence dialogue | Before a destructive, overwriting or irreversible action, naming object and consequence (UX-70) |
 | Toast | **Only** confirmation of a user's own immediate action. Never information available nowhere else, and never the sole carrier of an error (UX-67) |
@@ -2155,7 +2155,9 @@ as a delayed animation because a server-rendered fallback has no "before" for a 
 from; and *skeletons match the final layout*, which the consumer owns, since a bar fills its
 container and every screen's measurements stay in that screen's stylesheet.
 
-**Feedback** — Inline field message · Callout (info · attention · warning · error · success) · Banner (persistent, page-level) · Toast (UX-67) · Empty state · Error state · Confirmation dialogue · Consequence dialogue (§6.14) · **Dialogue** (task 170).
+**Feedback** — Inline field message · Callout (info · attention · warning · error · success) · **Expiring callout** (28 Sep 2026) · Banner (persistent, page-level) · Toast (UX-67) · Empty state · Error state · Confirmation dialogue · Consequence dialogue (§6.14) · **Dialogue** (task 170).
+
+**Expiring callout added 28 Sep 2026 (project owner)** — the message of a reader's own submit, §8.1's Success row as amended that day: a Callout of any intent, announced as a Callout is, with a close control laid over its corner **outside** the status region, so announcing the message does not read the button's name as a fourth part. It leaves once it has been readable for eight seconds — counted only while at least half of it is on screen, neither hovered nor focused, in a visible tab — or when the reader closes it, collapsing over `--motion-panel`, a millisecond under reduced motion. **A row of its own rather than a Callout variant flag**: a Callout that stands (a result that replaces its form, a load failure) is unchanged, and the difference is anatomy — the close control — and a lifetime. **It never removes itself**: it tells its caller it is done, and the caller stops rendering that outcome, recognised by identity, so the next submit's message shows again even when its words are the same. **Not the Toast**: the Components sheet's toast is a one-line surface floating over the page; this stays in the flow where the Callout was and keeps its three parts. Applicable §8.1 states: rest · held (drawn as rest) · leaving · hover and focus on the close control.
 
 **Navigation** — Global bar · Organization switcher · Workspace nav · **Chrome drawer** · **Console nav** · **Notification bell** · **Locked nav entry** (task 173) · Wizard step list · Tabs · Breadcrumb · Pagination · **Overflow menu** (task 170) · Back-to-context
 

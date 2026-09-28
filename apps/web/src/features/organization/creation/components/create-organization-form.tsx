@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Callout, CALLOUT_INTENT, Panel } from '@easyesg/ui';
+import { Button, CALLOUT_INTENT, ExpiringCallout, Panel, useDismissible } from '@easyesg/ui';
 import { FormSelect, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
@@ -70,6 +70,9 @@ export function CreateOrganizationForm({ countries }: CreateOrganizationFormProp
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [failure, setFailure] = useState<ApiFailure | null>(null);
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again.
+  const [shownFailure, dismissFailure] = useDismissible(failure);
 
   const { control, handleSubmit } = useForm<CreateOrganizationFields>({
     mode: 'onTouched',
@@ -116,27 +119,31 @@ export function CreateOrganizationForm({ countries }: CreateOrganizationFormProp
     <form method="post" onSubmit={(event) => void submit(event)} noValidate className={styles.stack}>
       <FormSummary control={control} title={tForms('summaryTitle')} />
 
-      {failure?.status === API_OUTCOME.Problem ? (
+      {shownFailure?.status === API_OUTCOME.Problem ? (
         // The API's own three-part text, as received. `action` is null on purpose: the one refusal
         // this route has — country-not-supported — states its own remedy, and no step here
         // navigates anywhere the detail cannot describe.
-        <Callout
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
-          title={failure.problem.title ?? t('problemTitle')}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissFailure}
+          title={shownFailure.problem.title ?? t('problemTitle')}
           action={null}
         >
-          {failure.problem.detail ?? t('problemBody')}
-        </Callout>
+          {shownFailure.problem.detail ?? t('problemBody')}
+        </ExpiringCallout>
       ) : null}
 
-      {failure?.status === API_OUTCOME.Unreachable ? (
-        <Callout
+      {shownFailure?.status === API_OUTCOME.Unreachable ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
+          dismissLabel={tForms('closeMessage')}
+          onDismiss={dismissFailure}
           title={tCommon('unreachable.title')}
           action={tCommon('unreachable.action')}
         >
           {tCommon('unreachable.body')}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
       <Panel className={styles.panel}>

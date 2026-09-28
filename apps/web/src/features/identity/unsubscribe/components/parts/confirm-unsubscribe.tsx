@@ -3,7 +3,7 @@
 import type { UnsubscribeAnswer } from '@easyesg/contracts';
 import { Button, Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { Link } from '@/i18n/navigation';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
 import { failureNotice } from '@/lib/notice';
@@ -36,6 +36,22 @@ export function ConfirmUnsubscribe({
   const tCommon = useTranslations('identity');
   const [pending, startTransition] = useTransition();
   const [outcome, setOutcome] = useState<ApiOutcome<UnsubscribeAnswer> | undefined>(undefined);
+  // One notice object per outcome, not per render: the refusal leaves after a while or when closed (design_spec.md
+  // §8.1, 28 Sep 2026), and `RecordNotice` knows the one that left by its identity — rebuilt on a render, it would come
+  // back. Before the success arm's early return, because a hook may not sit behind one.
+  const refusal = useMemo(
+    () =>
+      outcome === undefined || outcome.status === API_OUTCOME.Ok
+        ? null
+        : outcome.status === API_OUTCOME.Unreachable
+          ? failureNotice({
+              outcome,
+              unreachable: { title: tCommon('unreachable.title'), body: tCommon('unreachable.body') },
+              action: tCommon('unreachable.action'),
+            })
+          : failureNotice({ outcome, unreachable: { title: t('problemTitle'), body: t('problemBody') } }),
+    [outcome, t, tCommon],
+  );
 
   if (outcome?.status === API_OUTCOME.Ok) {
     return (
@@ -57,6 +73,9 @@ export function ConfirmUnsubscribe({
   }
 
   const unsubscribe = () => {
+    // The last refusal goes when the next attempt starts, so each answer's message is a fresh one with its own
+    // dwell (design_spec.md §8.1, 28 Sep 2026) rather than inheriting the time the last one had left.
+    setOutcome(undefined);
     startTransition(async () => {
       setOutcome(await unsubscribeAction({ token }));
     });
@@ -66,19 +85,7 @@ export function ConfirmUnsubscribe({
     <div className={styles.stack}>
       {/* One notice for either failure, through `@/lib/notice`'s rule: the api's own words member by member where it
           answered, and the bundled unreachable copy where it did not (task 52's close review). */}
-      <RecordNotice
-        notice={
-          outcome === undefined
-            ? null
-            : outcome.status === API_OUTCOME.Unreachable
-              ? failureNotice({
-                  outcome,
-                  unreachable: { title: tCommon('unreachable.title'), body: tCommon('unreachable.body') },
-                  action: tCommon('unreachable.action'),
-                })
-              : failureNotice({ outcome, unreachable: { title: t('problemTitle'), body: t('problemBody') } })
-        }
-      />
+      <RecordNotice notice={refusal} />
 
       <Panel className={styles.formPanel}>
         <p className={styles.bodyText}>

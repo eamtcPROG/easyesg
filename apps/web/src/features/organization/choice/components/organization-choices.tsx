@@ -1,11 +1,12 @@
 'use client';
 
 import type { AccountMembership } from '@easyesg/contracts';
-import { Button, BUTTON_VARIANT, Callout } from '@easyesg/ui';
+import { Button, BUTTON_VARIANT } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { failureNotice, type Notice } from '@/lib/notice';
+import { RecordNotice } from '@/shared/record-notice';
 import { chooseOrganizationAction } from '../actions/actions';
 import { CHOICE_MESSAGES } from './choice-messages';
 import styles from './choice.module.css';
@@ -61,11 +62,7 @@ export function OrganizationChoices({
 
   return (
     <>
-      {refusal === null ? null : (
-        <Callout intent={refusal.intent} title={refusal.title} action={refusal.action}>
-          {refusal.body}
-        </Callout>
-      )}
+      <RecordNotice notice={refusal} />
       <ul className={styles.choices} aria-label={t('listLabel')}>
         {memberships.map((membership) => (
           <li key={membership.id}>

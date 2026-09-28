@@ -106,6 +106,7 @@
   "forms": {
     "show": "Arătați",
     "hide": "Ascundeți",
+    "closeMessage": "Închideți mesajul",
     "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea continua",
     "scriptingRequired": {
       "title": "Această pagină are nevoie de JavaScript",

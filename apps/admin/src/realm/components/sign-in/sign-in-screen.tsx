@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, ExpiringCallout, Panel, TextLink, useDismissible } from '@easyesg/ui';
 import { useReducer, type ReactNode } from 'react';
 import { useTranslations } from 'use-intl';
 import {
@@ -77,7 +77,12 @@ export function SignInScreen({
 }) {
   const t = useTranslations('realm.signIn');
   const tCommon = useTranslations('realm');
+  const tChrome = useTranslations('chrome');
   const [{ step, failure }, dispatch] = useReducer(signInReducer, INITIAL_SIGN_IN_STATE);
+  // The refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
+  // object and shows again. What the refusal decides — the lockout's address, whether the arrival notice may show —
+  // still reads the reducer's `failure`, which a closed message does not clear.
+  const [shownFailure, dismissFailure] = useDismissible(failure);
 
   const begin = useMutation({
     mutationFn: beginSignIn,
@@ -216,10 +221,12 @@ export function SignInScreen({
           </Callout>
         ) : null}
 
-        {failure?.status === API_OUTCOME.Problem ? (
-          <Callout
+        {shownFailure?.status === API_OUTCOME.Problem ? (
+          <ExpiringCallout
             intent={CALLOUT_INTENT.ERROR}
-            title={failure.problem.title ?? t('problemTitle')}
+            dismissLabel={tChrome('closeMessage')}
+            onDismiss={dismissFailure}
+            title={shownFailure.problem.title ?? t('problemTitle')}
             /* NFR-79's "what now" belongs to the API's `detail`, which states its own remedy. The
                 slot carries something only where this screen owns one the detail cannot express —
                 a remedy that NAVIGATES. `problemAction` said "Verifică datele introduse și încearcă
@@ -245,18 +252,20 @@ export function SignInScreen({
               )
             }
           >
-            {failure.problem.detail ?? t('problemBody')}
-          </Callout>
+            {shownFailure.problem.detail ?? t('problemBody')}
+          </ExpiringCallout>
         ) : null}
 
-        {failure?.status === API_OUTCOME.Unreachable ? (
-          <Callout
+        {shownFailure?.status === API_OUTCOME.Unreachable ? (
+          <ExpiringCallout
             intent={CALLOUT_INTENT.ERROR}
             title={tCommon('unreachable.title')}
             action={tCommon('unreachable.action')}
+            dismissLabel={tChrome('closeMessage')}
+            onDismiss={dismissFailure}
           >
             {tCommon('unreachable.body')}
-          </Callout>
+          </ExpiringCallout>
         ) : null}
 
         {body()}

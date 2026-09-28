@@ -1,6 +1,6 @@
 "use client";
 
-import { Callout, CALLOUT_INTENT, Panel, TextLink } from "@easyesg/ui";
+import { Callout, CALLOUT_INTENT, ExpiringCallout, Panel, TextLink, useDismissible } from "@easyesg/ui";
 import { FormCodeField, FormSummary, FormTextField } from "@easyesg/ui/forms";
 import { useTranslations } from "next-intl";
 import {
@@ -61,6 +61,7 @@ const MS_PER_MINUTE = 60_000;
 export function FactorForm({ expiresAt }: { expiresAt: number }) {
   const t = useTranslations("identity.factor");
   const tCommon = useTranslations("identity");
+  const tForms = useTranslations("forms");
   const [pending, startTransition] = useTransition();
   const [state, dispatch] = useReducer(factorReducer, INITIAL_FACTOR_STATE);
 
@@ -125,6 +126,11 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
 
   const { answer, standing } = state;
   const isRecovery = answer === FACTOR_ANSWER.RECOVERY;
+  // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026). Called before the lapsed arm's
+  // early return, because a hook may not sit behind one; the next attempt's refusal is a new object and shows again.
+  const [refusal, dismissRefusal] = useDismissible(
+    standing.kind === FACTOR_STANDING.REFUSED ? standing.failure : null,
+  );
 
   if (standing.kind === FACTOR_STANDING.LAPSED) {
     return (
@@ -142,11 +148,7 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
     );
   }
 
-  const problem =
-    standing.kind === FACTOR_STANDING.REFUSED &&
-    standing.failure.status === API_OUTCOME.Problem
-      ? standing.failure.problem
-      : null;
+  const problem = refusal?.status === API_OUTCOME.Problem ? refusal.problem : null;
   const locked = isLockout(standing);
 
   return (
@@ -164,8 +166,10 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
       <FormSummary control={control} title={t("summaryTitle")} />
 
       {problem ? (
-        <Callout
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
+          dismissLabel={tForms("closeMessage")}
+          onDismiss={dismissRefusal}
           title={problem.title ?? t("problemTitle")}
           /*
             **The action slot carries a remedy only where this screen owns one** (corrected
@@ -189,18 +193,19 @@ export function FactorForm({ expiresAt }: { expiresAt: number }) {
           }
         >
           {problem.detail ?? t("problemBody")}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
-      {standing.kind === FACTOR_STANDING.REFUSED &&
-      standing.failure.status === API_OUTCOME.Unreachable ? (
-        <Callout
+      {refusal?.status === API_OUTCOME.Unreachable ? (
+        <ExpiringCallout
           intent={CALLOUT_INTENT.ERROR}
           title={tCommon("unreachable.title")}
           action={tCommon("unreachable.action")}
+          dismissLabel={tForms("closeMessage")}
+          onDismiss={dismissRefusal}
         >
           {tCommon("unreachable.body")}
-        </Callout>
+        </ExpiringCallout>
       ) : null}
 
       <Panel className={styles.formPanel}>
