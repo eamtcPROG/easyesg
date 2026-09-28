@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleAnimations } from '../web/support/animations';
 import { cleanupOrganizations, seedMember, seedOrganization } from './support/organizations';
 import { OPERATOR_ROLE, cleanupOperators, provisionOperator, type OperatorRole } from './support/provision';
 import { currentTotpCode } from './support/totp';
@@ -171,6 +172,8 @@ test('axe finds no violations on the register with a record open', async ({ page
   await openRecord(page, name);
   await expect(recordDialog(page, name)).toBeVisible();
   await page.waitForLoadState('networkidle');
+  // The record's dialogue fades in, and axe measures colour as painted — so it is scanned at rest.
+  await settleAnimations(page);
 
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
