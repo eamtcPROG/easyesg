@@ -1161,6 +1161,7 @@
       },
       "remind": {
         "heading": "Send a reminder",
+        "open": "Send a reminder",
         "intro": "Remind a colleague about a report that is still open. The reminder reaches their notifications, with your note if you add one.",
         "loading": "Loading the people and the reports.",
         "person": "Person",
@@ -1175,6 +1176,7 @@
         "noteCount": "{used} of {limit} characters",
         "noteTooLong": "The note is longer than {limit} characters, so the reminder cannot be sent. Shorten it and send again.",
         "submit": "Send the reminder",
+        "cancel": "Cancel",
         "sent": "The reminder has been sent to {name}.",
         "sentBody": "They find it in their notifications, with a link straight to the report.",
         "noReport": {
@@ -1187,12 +1189,13 @@
         },
         "unavailable": {
           "title": "Reminders cannot be sent right now",
-          "body": "We could not read the organization’s members or reports, so we do not know what to offer here. The list above is correct.",
+          "body": "We could not read the organization’s members or reports, so we do not know what to offer here. The list of people with access is correct.",
           "retry": "Try again"
         }
       },
       "actions": {
         "changeRole": "Role for {email}",
+        "remind": "Remind",
         "remove": "Withdraw access",
         "resend": "Send the invitation again",
         "revoke": "Withdraw the invitation",

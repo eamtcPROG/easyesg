@@ -1,7 +1,8 @@
 import { MEMBERSHIP_STATUS, REPORT_STATUS, type Member, type Report } from '@easyesg/contracts';
+import { ACCESS_ROW_KIND, ACCESS_STANDING, type AccessRow } from './access';
 
 /**
- * What S-16's reminder panel can offer, and so which of its arms it is in (task 50.3; UC-175; `architecture.md`
+ * What S-16's reminder dialogue can offer, and so which of its arms it is in (task 50.3; UC-175; `architecture.md`
  * §12.5.6's task-50.3 rows (1), (4), (5)).
  *
  * **The people are every active member but the sender**, of any role; **the reports are the organization's open
@@ -80,3 +81,30 @@ export const reminderRegion = (input: {
 
   return { arm: REMINDER_ARM.READY, people, reports };
 };
+
+/**
+ * Whether a row of the list carries *remind* (28 Sep 2026) — row (4)'s rule, **every active member but the
+ * sender**, read off the list's own row rather than off the region's people: the list does not wait on the reminder's
+ * reads, so the action is there whether or not a report is open, and the dialogue says what is missing. An invitation
+ * has no account to deliver to. `null` for the sender — no session read — offers it on no row rather than on every one,
+ * `reminderRegion`'s own reading.
+ */
+export const isRemindable = (input: {
+  readonly row: AccessRow;
+  readonly selfAccountId: string | null;
+}): boolean =>
+  input.selfAccountId !== null &&
+  input.row.kind === ACCESS_ROW_KIND.MEMBER &&
+  input.row.standing === ACCESS_STANDING.ACTIVE &&
+  input.row.accountId !== input.selfAccountId;
+
+/**
+ * Whom the form opens with: the person a row's action named, **if the form offers them**, and otherwise nobody. The
+ * row and the form are read apart, so a membership the list drew may not be among the people — ended since, or a
+ * hand-edited address — and choosing it would send a reminder the api refuses rather than ask the reader to choose.
+ */
+export const offeredPerson = (input: {
+  readonly people: readonly ReminderPerson[];
+  readonly person: string | null;
+}): string | null =>
+  input.people.some((candidate) => candidate.membershipId === input.person) ? input.person : null;

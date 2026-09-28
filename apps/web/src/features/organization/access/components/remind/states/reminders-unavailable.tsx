@@ -7,9 +7,9 @@ import { useRouter } from '@/i18n/navigation';
 import { REMIND_MESSAGES } from '../shared/remind-messages';
 
 /**
- * The reminder panel whose two reads — the members, the reports — did not both answer (task 50.3).
+ * The reminder whose two reads — the members, the reports — did not both answer (task 50.3).
  *
- * **Partial, not the screen's error**: the list above resolved and is true, and only what this panel would offer is
+ * **Partial, not the screen's error**: the list resolved and is true, and only what this dialogue would offer is
  * unknown — so it says so here, the invitation's *invitations paused* reasoning. **Attention rather than error**,
  * for the same reason that one gives: nothing the reader did caused it, and an alert on every load would be noise.
  *

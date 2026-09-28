@@ -155,6 +155,12 @@ test('axe finds no violations on the users and access screen', async ({ page }) 
   await scan(page);
   await page.getByRole('button', { name: 'Renunțați', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  // The reminder's dialogue too — with no report open here, its *nothing to remind about* state.
+  await page.getByRole('button', { name: 'Trimiteți un memento', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Trimiteți un memento' })).toBeVisible();
+  await scan(page);
+  await page.getByRole('button', { name: 'Închideți', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 
   // Twice, on one sign-in, because the second scan is a different surface (task 30.1). The pass
   // above judges §4.2's global tier at rest — the band is on every authenticated screen, so every

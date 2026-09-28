@@ -2,6 +2,7 @@ import { CALLOUT_INTENT } from '@easyesg/ui';
 import { MEMBERSHIP_ROLE } from '@easyesg/contracts';
 import { describe, expect, it } from 'vitest';
 import { ACCESS_ROW_KIND, ACCESS_STANDING, type AccessRow } from './access';
+import { ACCESS_PANEL } from './access-panel';
 import {
   ACCESS_EVENT,
   CONFIRMATION,
@@ -77,7 +78,7 @@ describe('accessReducer', () => {
       notice: null,
       confirming: null,
       pendingRowKey: null,
-      inviting: false,
+      panel: null,
     });
   });
 
@@ -127,7 +128,7 @@ describe('accessReducer', () => {
       notice: NOTICE,
       confirming: null,
       pendingRowKey: null,
-      inviting: false,
+      panel: null,
     });
   });
 
@@ -177,17 +178,17 @@ describe('accessReducer', () => {
 
   /** An outcome settling is not the address changing: the dialogue stays as the address has it. */
   it('leaves the dialogue as it was when an action settles', () => {
-    const open = accessReducer(INITIAL_ACCESS_STATE, { type: ACCESS_EVENT.INVITE_OPENED });
+    const open = accessReducer(INITIAL_ACCESS_STATE, { type: ACCESS_EVENT.PANEL_OPENED, panel: ACCESS_PANEL.INVITE });
 
-    expect(settled(open).inviting).toBe(true);
+    expect(settled(open).panel).toBe(ACCESS_PANEL.INVITE);
   });
 });
 
 /**
- * The invite dialogue's two edges (28 Sep 2026). Whatever opened or closed it — the button, the close
- * control, Back — the provider turns the address changing into one of these, so the rules live here.
+ * The dialogues' two edges (28 Sep 2026). Whatever opened or closed one — a button, a row's action, the
+ * close control, Back — the provider turns the address changing into one of these, so the rules live here.
  */
-describe('accessReducer · the invite dialogue', () => {
+describe('accessReducer · the dialogues', () => {
   const REFUSAL: PlacedNotice = {
     region: NOTICE_REGION.INVITE,
     intent: CALLOUT_INTENT.ERROR,
@@ -198,10 +199,11 @@ describe('accessReducer · the invite dialogue', () => {
 
   it('opens clear of whatever the last action said', () => {
     const opened = accessReducer(settled(INITIAL_ACCESS_STATE), {
-      type: ACCESS_EVENT.INVITE_OPENED,
+      type: ACCESS_EVENT.PANEL_OPENED,
+      panel: ACCESS_PANEL.INVITE,
     });
 
-    expect(opened).toEqual({ ...INITIAL_ACCESS_STATE, inviting: true });
+    expect(opened).toEqual({ ...INITIAL_ACCESS_STATE, panel: ACCESS_PANEL.INVITE });
   });
 
   /**
@@ -210,25 +212,47 @@ describe('accessReducer · the invite dialogue', () => {
    */
   it('takes a refusal with it when it closes, so reopening shows none', () => {
     const refused = accessReducer(
-      accessReducer(INITIAL_ACCESS_STATE, { type: ACCESS_EVENT.INVITE_OPENED }),
+      accessReducer(INITIAL_ACCESS_STATE, { type: ACCESS_EVENT.PANEL_OPENED, panel: ACCESS_PANEL.INVITE }),
       { type: ACCESS_EVENT.ACTION_SETTLED, notice: REFUSAL },
     );
-    const closed = accessReducer(refused, { type: ACCESS_EVENT.INVITE_CLOSED });
+    const closed = accessReducer(refused, { type: ACCESS_EVENT.PANEL_CLOSED });
 
     expect(closed.notice).toBeNull();
-    expect(accessReducer(closed, { type: ACCESS_EVENT.INVITE_OPENED }).notice).toBeNull();
+    expect(accessReducer(closed, { type: ACCESS_EVENT.PANEL_OPENED, panel: ACCESS_PANEL.INVITE }).notice).toBeNull();
   });
 
   /** A sent invitation reports at the list's head and then closes the dialogue: the success stays. */
   it('keeps the list\'s notice when it closes', () => {
     const sent = accessReducer(
-      accessReducer(INITIAL_ACCESS_STATE, { type: ACCESS_EVENT.INVITE_OPENED }),
+      accessReducer(INITIAL_ACCESS_STATE, { type: ACCESS_EVENT.PANEL_OPENED, panel: ACCESS_PANEL.INVITE }),
       { type: ACCESS_EVENT.ACTION_SETTLED, notice: NOTICE },
     );
 
-    expect(accessReducer(sent, { type: ACCESS_EVENT.INVITE_CLOSED })).toEqual({
+    expect(accessReducer(sent, { type: ACCESS_EVENT.PANEL_CLOSED })).toEqual({
       ...INITIAL_ACCESS_STATE,
       notice: NOTICE,
     });
+  });
+
+  /** From one dialogue straight to the other — the reminder's *invite a colleague* — is an opening too. */
+  it('clears the first dialogue’s refusal when the address names the other', () => {
+    const refused = accessReducer(
+      accessReducer(INITIAL_ACCESS_STATE, { type: ACCESS_EVENT.PANEL_OPENED, panel: ACCESS_PANEL.REMIND }),
+      { type: ACCESS_EVENT.ACTION_SETTLED, notice: { ...REFUSAL, region: NOTICE_REGION.REMIND } },
+    );
+
+    expect(
+      accessReducer(refused, { type: ACCESS_EVENT.PANEL_OPENED, panel: ACCESS_PANEL.INVITE }),
+    ).toEqual({ ...INITIAL_ACCESS_STATE, panel: ACCESS_PANEL.INVITE });
+  });
+
+  /** The reminder's refusal leaves with the reminder, as the invitation's does. */
+  it('takes the reminder’s refusal with it when it closes', () => {
+    const refused = accessReducer(
+      accessReducer(INITIAL_ACCESS_STATE, { type: ACCESS_EVENT.PANEL_OPENED, panel: ACCESS_PANEL.REMIND }),
+      { type: ACCESS_EVENT.ACTION_SETTLED, notice: { ...REFUSAL, region: NOTICE_REGION.REMIND } },
+    );
+
+    expect(accessReducer(refused, { type: ACCESS_EVENT.PANEL_CLOSED })).toEqual(INITIAL_ACCESS_STATE);
   });
 });

@@ -10,14 +10,16 @@ import { sendReminderAction } from '../../../actions/actions';
 import { ACCESS_PAGE_SIZE, DEFAULT_ACCESS_VIEW, type AccessPage } from '../../../tools/access';
 import { REMINDER_ARM, type ReminderRegion } from '../../../tools/reminder';
 import { seatRegion } from '../../../tools/seats';
+import { AccessNotice } from '../../board/regions/access-notice';
 import { AccessProvider } from '../../shared/access-context';
 import { RemindMember } from './remind-member';
 
 /**
- * S-16's reminder panel (task 50.3): one arm per region, and the form's send — what it hands the action, what it
- * says after, and the note's bound met before anything is sent. The browser suite drives it against the api; what
- * only this reaches is the unavailable arm, which no journey can provoke without breaking a read under a running
- * stack.
+ * S-16's reminder (task 50.3), a dialogue since 28 Sep 2026: one arm per region, and the form's send — what it hands
+ * the action, where it says so after, and the note's bound met before anything is sent — and the person a row's
+ * action opens it with. The browser suite drives it against the api; what only this reaches is the unavailable arm,
+ * which no journey can provoke without breaking a read under a running stack, and a row naming someone the form does
+ * not offer.
  */
 vi.mock('../../../actions/actions', () => ({
   sendReminderAction: vi.fn(),
@@ -34,8 +36,9 @@ vi.mock('@/i18n/navigation', () => ({
   Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
 }));
 
-/** The invitation closed: the reminder panel is what these cases are about. */
-vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams() }));
+/** The address the screen reads — the reminder open, unless a case moves it. `pushState` does not reach this mock. */
+let address = new URLSearchParams();
+vi.mock('next/navigation', () => ({ useSearchParams: () => address }));
 
 /** jsdom implements neither, and Radix Select reaches for both. */
 beforeAll(() => {
@@ -44,7 +47,13 @@ beforeAll(() => {
   Element.prototype.scrollIntoView = vi.fn();
 });
 
-beforeEach(() => vi.mocked(sendReminderAction).mockReset());
+beforeEach(() => {
+  vi.mocked(sendReminderAction).mockReset();
+  address = new URLSearchParams(OPEN);
+  window.history.replaceState(null, '', `/organization/users?${OPEN}`);
+});
+
+const OPEN = 'panel=remind';
 
 const emptyPage: AccessPage = { rows: [], matched: 0, total: 0, page: 1, pageSize: ACCESS_PAGE_SIZE, administrators: 1 };
 
@@ -54,23 +63,27 @@ const READY: ReminderRegion = {
   reports: [{ id: 'report-2026', entityName: 'Brutăria Lina', fiscalYear: 2026 }],
 };
 
-const panelWith = (reminder: ReminderRegion) =>
-  render(
-    <NextIntlClientProvider
-      locale="ro"
-      formats={formats}
-      timeZone="Europe/Chisinau"
-      messages={{ organization: ro.organization, identity: ro.identity, forms: ro.forms }}
+const screenWith = (reminder: ReminderRegion) => (
+  <NextIntlClientProvider
+    locale="ro"
+    formats={formats}
+    timeZone="Europe/Chisinau"
+    messages={{ organization: ro.organization, identity: ro.identity, forms: ro.forms, chrome: ro.chrome }}
+  >
+    <AccessProvider
+      page={emptyPage}
+      view={DEFAULT_ACCESS_VIEW}
+      seats={seatRegion({ allowance: 10, used: 2 })}
+      selfAccountId="account-ana"
     >
-      <AccessProvider
-        page={emptyPage}
-        view={DEFAULT_ACCESS_VIEW}
-        seats={seatRegion({ allowance: 10, used: 2 })}
-      >
-        <RemindMember region={reminder} />
-      </AccessProvider>
-    </NextIntlClientProvider>,
-  );
+      <AccessNotice />
+      <RemindMember region={reminder} />
+    </AccessProvider>
+  </NextIntlClientProvider>
+);
+
+const panelWith = (reminder: ReminderRegion) => render(screenWith(reminder));
+const dialogue = () => screen.queryByRole('dialog', { name: words.heading });
 
 const words = ro.organization.access.remind;
 // The note is sent as written; the api trims it and reads an empty one as none.
@@ -87,7 +100,7 @@ describe('RemindMember — its arms', () => {
   it('offers the form where there is someone to remind and a report to remind about', () => {
     panelWith(READY);
 
-    expect(screen.getByRole('heading', { level: 2, name: words.heading })).toBeInTheDocument();
+    expect(dialogue()).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: words.person })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: words.report })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: words.note })).toBeInTheDocument();
@@ -123,10 +136,44 @@ describe('RemindMember — its arms', () => {
   });
 });
 
-describe('RemindMember — sending', () => {
-  it('sends the person, the report and the note, and says to whom it went', async () => {
-    vi.mocked(sendReminderAction).mockResolvedValue({ status: API_OUTCOME.Ok, value: null, messages: [] });
+describe('RemindMember — the dialogue (28 Sep 2026)', () => {
+  it('is closed while the address names another dialogue or none', () => {
+    address = new URLSearchParams('panel=invite');
     panelWith(READY);
+
+    expect(dialogue()).toBeNull();
+  });
+
+  /** Opened from Ivan's row: the address carries his membership, and the form starts with him chosen. */
+  it('opens with the person a row’s action named', () => {
+    address = new URLSearchParams(`${OPEN}&person=membership-ivan`);
+    panelWith(READY);
+
+    expect(screen.getByRole('combobox', { name: words.person })).toHaveTextContent('Ivan Rusu');
+  });
+
+  /** A row drawn before they stopped being a member, or a hand-edited address: the reader chooses. */
+  it('chooses nobody the form does not offer', () => {
+    address = new URLSearchParams(`${OPEN}&person=membership-gone`);
+    panelWith(READY);
+
+    expect(screen.getByRole('combobox', { name: words.person })).toHaveTextContent(words.personPlaceholder);
+  });
+
+  it('says when no report is open, from a row’s action too', () => {
+    address = new URLSearchParams(`${OPEN}&person=membership-ivan`);
+    panelWith({ arm: REMINDER_ARM.NO_REPORT });
+
+    expect(dialogue()).toHaveTextContent(words.noReport.body);
+  });
+});
+
+describe('RemindMember — sending', () => {
+  /** A sent reminder is the list's news: the dialogue closes and the notice stands above the list. */
+  it('sends the person, the report and the note, closes, and says to whom it went', async () => {
+    vi.mocked(sendReminderAction).mockResolvedValue({ status: API_OUTCOME.Ok, value: null, messages: [] });
+    const push = vi.spyOn(window.history, 'pushState');
+    const { rerender } = panelWith(READY);
 
     await choose();
     await userEvent.type(screen.getByRole('textbox', { name: words.note }), 'Lipsesc datele despre energie.');
@@ -137,7 +184,14 @@ describe('RemindMember — sending', () => {
       membershipId: 'membership-ivan',
       note: 'Lipsesc datele despre energie.',
     });
-    expect(await screen.findByText('Mementoul a fost trimis către Ivan Rusu.')).toBeInTheDocument();
+    expect(push).toHaveBeenCalledWith(null, '', '/organization/users');
+    push.mockRestore();
+    // The router would move the address; the mock is moved by hand, as the push asked.
+    address = new URLSearchParams();
+    rerender(screenWith(READY));
+
+    expect(dialogue()).toBeNull();
+    expect(screen.getByText('Mementoul a fost trimis către Ivan Rusu.')).toBeInTheDocument();
   });
 
   it('sends the note as written, empty where none was', async () => {
@@ -165,6 +219,7 @@ describe('RemindMember — sending', () => {
     await userEvent.click(screen.getByRole('button', { name: words.submit }));
 
     expect(await screen.findByText('Raportul nu mai este deschis.')).toBeInTheDocument();
+    expect(dialogue()).toContainElement(screen.getByText('Raportul nu mai este deschis.'));
   });
 
   it('refuses a note past its bound before anything is sent', async () => {

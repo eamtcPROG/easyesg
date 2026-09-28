@@ -1,48 +1,49 @@
 'use client';
 
-import { Callout, Panel } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { NOTICE_REGION } from '../../../tools/access-state';
+import { ACCESS_PANEL } from '../../../tools/access-panel';
 import { REMINDER_ARM, type ReminderRegion } from '../../../tools/reminder';
+import { AccessDialog } from '../../shared/access-dialog';
 import { useAccess } from '../../shared/access-context';
 import { REMIND_MESSAGES } from '../shared/remind-messages';
 import { RemindForm } from '../form/remind-form';
 import { NoOneToRemind } from '../states/no-one-to-remind';
 import { NoOpenReport } from '../states/no-open-report';
 import { RemindersUnavailable } from '../states/reminders-unavailable';
-import styles from '../../styles/access.module.css';
 
 /**
- * S-16's reminder panel (task 50.3; UC-175; `architecture.md` §12.5.6's task-50.3 row (5)) — the anatomy the invite
- * panel had until the invitation became a dialogue (28 Sep 2026): its heading, the screen's notice where it belongs
- * here, and which arm the reminder region puts it in.
+ * S-16's reminder, UC-175 (task 50.3; `architecture.md` §12.5.6's task-50.3 row (5) as amended 28 Sep 2026) — a
+ * dialogue over the list, where it had been a panel below it, opened from the filter row's button or from a member's
+ * row with them chosen. This picks which arm the reminder region puts it in.
  *
  * **The region is the section's** (`remind-section.tsx`), which reads it on the server and hands it here — the part
- * renders what was read. **The notice renders here** for the reason the invitation's refusal does: *"sent to Ivan"* belongs beside the form that
- * sent it, and it is still the screen's one notice, so a reminder sent clears a row action's outcome and the reverse.
+ * renders what was read. **Every arm is offered from every opening**: a row's *remind* is on every member it may go
+ * to whether or not a report is open, and the dialogue says what is missing rather than the list waiting on these
+ * reads to decide whether to show it (the project owner's choice, 28 Sep 2026).
+ *
+ * The form frames itself, because its closing row carries the submit and the submit's pending state is the form's;
+ * the three states have nothing to press, and are framed here.
  */
 export function RemindMember({ region }: { readonly region: ReminderRegion }) {
   const t = useTranslations(REMIND_MESSAGES);
-  const { notice } = useAccess();
+  const { panel, remindPerson } = useAccess();
 
-  let arm: ReactNode;
-  if (region.arm === REMINDER_ARM.READY) arm = <RemindForm people={region.people} reports={region.reports} />;
-  else if (region.arm === REMINDER_ARM.NO_REPORT) arm = <NoOpenReport />;
-  else if (region.arm === REMINDER_ARM.NO_ONE) arm = <NoOneToRemind />;
-  else arm = <RemindersUnavailable />;
+  if (region.arm === REMINDER_ARM.READY) {
+    // Keyed on the opening and on whom it opened for, so each opening is a new form chosen for them: the form
+    // lives outside the dialogue's content, which unmounts on close, and its default is read once, at mount.
+    const opening = panel === ACCESS_PANEL.REMIND ? `open:${remindPerson ?? ''}` : 'closed';
+    return <RemindForm key={opening} people={region.people} reports={region.reports} person={remindPerson} />;
+  }
+
+  let state: ReactNode;
+  if (region.arm === REMINDER_ARM.NO_REPORT) state = <NoOpenReport />;
+  else if (region.arm === REMINDER_ARM.NO_ONE) state = <NoOneToRemind />;
+  else state = <RemindersUnavailable />;
 
   return (
-    <Panel className={styles.remindPanel}>
-      <h2 className="t-heading-3">{t('heading')}</h2>
-
-      {notice?.region === NOTICE_REGION.REMIND ? (
-        <Callout intent={notice.intent} title={notice.title} action={notice.action}>
-          {notice.body}
-        </Callout>
-      ) : null}
-
-      {arm}
-    </Panel>
+    <AccessDialog panel={ACCESS_PANEL.REMIND} title={t('heading')}>
+      {state}
+    </AccessDialog>
   );
 }

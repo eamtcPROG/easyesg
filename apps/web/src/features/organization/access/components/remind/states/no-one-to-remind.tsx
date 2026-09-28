@@ -6,9 +6,9 @@ import { useAccess } from '../../shared/access-context';
 import { REMIND_MESSAGES } from '../shared/remind-messages';
 
 /**
- * The reminder panel where the sender is the organization's only active member (task 50.3): no one to remind, and
- * the way on is an invitation — the dialogue the filter row's button opens, opened from here as the list's first-use
- * state opens it (28 Sep 2026; it had been an anchor to the invite panel's heading).
+ * The reminder where the sender is the organization's only active member (task 50.3): no one to remind, and the way
+ * on is an invitation — the other dialogue, which this opens in the reminder's place, as the list's first-use state
+ * opens it (28 Sep 2026; it had been an anchor to the invite panel's heading).
  *
  * A link's look on a button: it sits inside a sentence, and it acts on this page rather than leaving it.
  */

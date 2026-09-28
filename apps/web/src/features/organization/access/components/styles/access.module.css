@@ -37,9 +37,9 @@
 }
 
 /* The filter row (28 Sep 2026), in two states and nothing between them — the console's filter row
-   (§5.2, UX-77 as amended): **below `wide` one column**, the two facets and then the invitation's
-   button, each the row's full width (project owner, 28 Sep 2026); **from `wide` one row**, the facets
-   at the start and the button at the end on their baseline. `wide` because it is the one boundary with
+   (§5.2, UX-77 as amended): **below `wide` one column**, the two facets and then the reminder's and the
+   invitation's buttons, each the row's full width (project owner, 28 Sep 2026); **from `wide` one row**,
+   the facets at the start and the buttons at the end on their baseline. `wide` because it is the one boundary with
    a stated value (§3.3's 1024px; OQ-13 leaves the others open), and because a middle state — facets
    side by side, the button wrapping beneath them, or beside a stack — is what read as broken. */
 .toolbar {
@@ -56,9 +56,16 @@
   gap: var(--space-5);
 }
 
-/* One box with the selects beside it: `--field-block-size` is the height a field draws, so the button's
+/* The two buttons, one to a row with everything else below `wide` and side by side above it. */
+.toolbarActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* One box with the selects beside it: `--field-block-size` is the height a field draws, so a button's
    edges meet theirs rather than sitting a few pixels short on the shared baseline. */
-.toolbar .inviteButton {
+.toolbar .toolbarButton {
   min-block-size: var(--field-block-size);
 }
 
@@ -75,8 +82,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .toolbar .inviteButton {
+  .toolbarActions {
+    flex-direction: row;
     flex-shrink: 0;
+    gap: var(--space-3);
   }
 }
 
@@ -90,15 +99,8 @@
   gap: var(--space-3);
 }
 
-/* The reminder panel and its skeleton (task 50.3). The invitation's panel shared this anatomy until it
-   became a dialogue (28 Sep 2026); the reminder keeps it. */
-.remindPanel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.inviteForm {
+/* The body of either dialogue's form — the invitation's and the reminder's. */
+.dialogForm {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);

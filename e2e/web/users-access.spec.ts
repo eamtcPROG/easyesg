@@ -133,7 +133,7 @@ async function choose(page: Page, label: string, option: string): Promise<void> 
  */
 const invitationDialogue = (page: Page) => page.getByRole('dialog', { name: 'Invitați un coleg' });
 
-/** The filter row's button, by its exact name: the reminder panel's *no one to remind* offers another. */
+/** The filter row's button, by its exact name: the reminder's *no one to remind* offers another. */
 async function openInvitation(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Invitați un coleg', exact: true }).click();
   await expect(invitationDialogue(page)).toBeVisible();
@@ -328,23 +328,38 @@ test('the administrator reminds a colleague about an open report, and the remind
   await seedSeatHolders({ organizationId, prefix: `${RUN_PREFIX}-remind-mate`, count: 1 });
   const colleague = `${RUN_PREFIX}-remind-mate-seat-1@example.md`;
 
-  // With no report open there is nothing to remind about, and the panel says so rather than offering a form.
+  // The reminder is a dialogue since 28 Sep 2026, opened from the filter row or from a member's row. With no report
+  // open there is nothing to remind about, and it says so rather than offering a form.
+  const reminder = page.getByRole('dialog', { name: 'Trimiteți un memento' });
   await openAccessScreen(page);
-  await expect(page.getByText('Niciun raport nu este deschis acum', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Trimiteți un memento', exact: true }).click();
+  await expect(reminder).toContainText('Niciun raport nu este deschis acum');
   await expect(page.getByRole('combobox', { name: 'Raportul', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Închideți', exact: true }).click();
+  await expect(reminder).toHaveCount(0);
 
   const reportId = await seedReport({ organizationId, name: 'Brutăria Lina', fiscalYear: 2026 });
   await openAccessScreen(page);
 
+  // Every active member but the sender carries *remind*: the colleague's row does, the administrator's own does not.
+  await expect(memberRow(page, administrator).getByRole('button', { name: 'Amintiți-i' })).toHaveCount(0);
+  await memberRow(page, colleague).getByRole('button', { name: 'Amintiți-i' }).click();
+
+  // The row's action opens the reminder with them chosen, and the address says so, as a link would reopen it.
+  await expect(page).toHaveURL(/[?&]panel=remind&person=/);
+  const person = page.getByRole('combobox', { name: 'Persoana', exact: true });
+  await expect(person).toHaveText(colleague);
   // Everyone but the sender: the organization holds two members, and only the colleague is offered.
-  await page.getByRole('combobox', { name: 'Persoana', exact: true }).click();
+  await person.click();
   await expect(page.getByRole('option')).toHaveCount(1);
   await expect(page.getByRole('option', { name: administrator })).toHaveCount(0);
   await page.getByRole('option', { name: colleague }).click();
   await choose(page, 'Raportul', 'Brutăria Lina · 2026');
   await page.getByRole('textbox', { name: 'Notă (opțional)' }).fill('Lipsesc datele despre energie.');
-  await page.getByRole('button', { name: 'Trimiteți mementoul' }).click();
+  await reminder.getByRole('button', { name: 'Trimiteți mementoul' }).click();
 
+  // A sent reminder closes the dialogue and is said above the list.
+  await expect(reminder).toHaveCount(0);
   await expect(page.getByText(`Mementoul a fost trimis către ${colleague}.`)).toBeVisible();
   // What the send committed: one reminder to the colleague, about that report, carrying the note. Its delivery is
   // the worker's — `accelerated-surfaces.spec.ts` follows one into a centre, and the api's `report-reminder.e2e-spec.ts`

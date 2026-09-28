@@ -66,6 +66,8 @@ const RETRY_ON_STALL = { count: 1, condition: /timed out/u } as const;
 
 /** What `i18n/request.ts` sets, and what NFR-34 makes load-bearing rather than incidental. */
 const TIME_ZONE = 'Europe/Chisinau';
+/** Ana, the fixture's administrator, is the one reading: her row is the sender's, so it carries no *remind*. */
+const READER = 'a-1';
 const NOW = 1_780_000_000_000;
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -153,6 +155,7 @@ const board = (given: readonly AccessRow[] = rows()) => (
       page={pageOf(given)}
       view={DEFAULT_ACCESS_VIEW}
       seats={seatRegion({ allowance: 10, used: given.length })}
+      selfAccountId={READER}
     >
       <AccessBoard />
     </AccessProvider>
@@ -353,7 +356,8 @@ describe('AccessBoard · the two empty states', () => {
           page={{ ...pageOf(given), rows: [], matched: 0 }}
           view={DEFAULT_ACCESS_VIEW}
           seats={seatRegion({ allowance: 10, used: given.length })}
-            >
+          selfAccountId={READER}
+        >
           <AccessBoard />
         </AccessProvider>
       </NextIntlClientProvider>,
@@ -361,5 +365,46 @@ describe('AccessBoard · the two empty states', () => {
 
     expect(screen.getByText('Nicio persoană nu corespunde filtrelor')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ștergeți filtrele' })).toBeInTheDocument();
+  });
+});
+
+/**
+ * A member's row opens the reminder with them chosen (28 Sep 2026, project owner) — on every active member but the
+ * reader, whether or not a report is open: the dialogue says when none is. The dialogue's own behaviour is
+ * `remind-member.spec.tsx`'s; this is which rows carry the way in, and where it goes.
+ */
+describe('AccessBoard · reminding a member from their row', () => {
+  const ivan: AccessRow = {
+    kind: ACCESS_ROW_KIND.MEMBER,
+    id: 'm-2',
+    accountId: 'a-2',
+    email: 'ivan@example.md',
+    displayName: 'Ivan Rusu',
+    role: MEMBERSHIP_ROLE.EDITOR,
+    standing: ACCESS_STANDING.ACTIVE,
+    emailSuppressed: false,
+    lastActiveAt: null,
+    joinedAt: NOW - DAY,
+  };
+  const remindLabel = ro.organization.access.actions.remind;
+
+  it('offers it on a colleague’s row, and nowhere else', () => {
+    render(board([...rows(), ivan]));
+
+    // One: Ivan's. Ana is the reader, and the two invitations hold no account to deliver to.
+    const offered = screen.getAllByRole('button', { name: remindLabel });
+    expect(offered).toHaveLength(1);
+    expect(offered[0]?.closest('tr')).toHaveTextContent('ivan@example.md');
+  });
+
+  it('opens the reminder with them chosen', async () => {
+    const push = vi.spyOn(window.history, 'pushState');
+    window.history.replaceState(null, '', '/organization/users?role=editor');
+    render(board([...rows(), ivan]));
+
+    await userEvent.click(screen.getByRole('button', { name: remindLabel }));
+
+    expect(push).toHaveBeenCalledWith(null, '', '/organization/users?role=editor&panel=remind&person=m-2');
+    push.mockRestore();
   });
 });

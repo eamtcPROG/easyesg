@@ -2,9 +2,16 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MEMBERSHIP_ROLE, MEMBERSHIP_STATUS, REPORT_STATUS, type Member, type Report } from '@easyesg/contracts';
 import { describe, expect, it } from 'vitest';
-import { REMINDER_ARM, REMINDER_NOTE_MAX_LENGTH, reminderRegion } from './reminder';
+import { ACCESS_ROW_KIND, ACCESS_STANDING, type AccessRow, type MemberRow } from './access';
+import {
+  REMINDER_ARM,
+  REMINDER_NOTE_MAX_LENGTH,
+  isRemindable,
+  offeredPerson,
+  reminderRegion,
+} from './reminder';
 
-/** What S-16's reminder panel can offer, and which arm it is in (task 50.3). */
+/** What S-16's reminder dialogue can offer, and which arm it is in (task 50.3); which rows reach it, and whom it opens with. */
 
 const ANA = 'account-ana';
 
@@ -124,5 +131,64 @@ describe('the note’s bound', () => {
     expect(contract.components.schemas.SendReportReminderRequestDto.properties.note.maxLength).toBe(
       REMINDER_NOTE_MAX_LENGTH,
     );
+  });
+});
+
+describe('isRemindable — which rows carry *remind* (28 Sep 2026)', () => {
+  const ivan: MemberRow = {
+    kind: ACCESS_ROW_KIND.MEMBER,
+    standing: ACCESS_STANDING.ACTIVE,
+    emailSuppressed: false,
+    id: 'membership-ivan',
+    accountId: 'account-ivan',
+    email: 'ivan@example.md',
+    displayName: 'Ivan Rusu',
+    role: MEMBERSHIP_ROLE.VIEWER,
+    lastActiveAt: null,
+    joinedAt: 1_000,
+  };
+  const invitation: AccessRow = {
+    kind: ACCESS_ROW_KIND.INVITATION,
+    standing: ACCESS_STANDING.INVITED,
+    emailSuppressed: false,
+    id: 'invitation-maria',
+    email: 'maria@example.md',
+    role: MEMBERSHIP_ROLE.EDITOR,
+    issuedAt: 1_000,
+    expiresAt: 2_000,
+  };
+
+  it('offers it on an active member who is not the sender', () => {
+    expect(isRemindable({ row: ivan, selfAccountId: ANA })).toBe(true);
+  });
+
+  it('does not offer it on the sender’s own row', () => {
+    expect(isRemindable({ row: { ...ivan, accountId: ANA }, selfAccountId: ANA })).toBe(false);
+  });
+
+  /** A pending invitation holds no account to deliver to — row (4). */
+  it('does not offer it on an invitation', () => {
+    expect(isRemindable({ row: invitation, selfAccountId: ANA })).toBe(false);
+  });
+
+  it('offers it on no row where no session names the sender', () => {
+    expect(isRemindable({ row: ivan, selfAccountId: null })).toBe(false);
+  });
+});
+
+describe('offeredPerson — whom the form opens with', () => {
+  const people = [{ membershipId: 'membership-ivan', displayName: 'Ivan Rusu', email: 'ivan@example.md' }];
+
+  it('chooses the person a row named, when the form offers them', () => {
+    expect(offeredPerson({ people, person: 'membership-ivan' })).toBe('membership-ivan');
+  });
+
+  /** Ended since the list was drawn, or typed into the address: the reader chooses, rather than the api refusing. */
+  it('chooses nobody the form does not offer', () => {
+    expect(offeredPerson({ people, person: 'membership-gone' })).toBeNull();
+  });
+
+  it('chooses nobody when the reminder was opened without one', () => {
+    expect(offeredPerson({ people, person: null })).toBeNull();
   });
 });

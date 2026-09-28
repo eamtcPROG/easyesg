@@ -267,8 +267,9 @@ async function aReaderAwaitingAReminder(input: {
 
   await signIn(administrator, { email: administratorEmail, lands: '/home' });
   await administrator.goto('/organization/users');
-  await administrator.getByRole('combobox', { name: 'Persoana', exact: true }).click();
-  await administrator.getByRole('option', { name: 'Maria Popescu' }).click();
+  // From the reader's row, which opens the reminder with them chosen (28 Sep 2026) — so the name is checked, not picked.
+  await administrator.getByRole('row').filter({ hasText: reader }).getByRole('button', { name: 'Amintiți-i' }).click();
+  await expect(administrator.getByRole('combobox', { name: 'Persoana', exact: true })).toHaveText('Maria Popescu');
   await administrator.getByRole('combobox', { name: 'Raportul', exact: true }).click();
   await administrator.getByRole('option', { name: 'Brutăria Lina · 2026' }).click();
   return { administrator, reader, organizationId };

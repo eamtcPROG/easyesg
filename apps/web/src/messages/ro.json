@@ -1161,6 +1161,7 @@
       },
       "remind": {
         "heading": "Trimiteți un memento",
+        "open": "Trimiteți un memento",
         "intro": "Amintiți-i unui coleg de un raport încă deschis. Mementoul ajunge în notificările persoanei, cu nota dumneavoastră, dacă adăugați una.",
         "loading": "Se încarcă persoanele și rapoartele.",
         "person": "Persoana",
@@ -1175,6 +1176,7 @@
         "noteCount": "{used} din {limit} de caractere",
         "noteTooLong": "Nota are mai mult de {limit} de caractere, așa că mementoul nu poate fi trimis. Scurtați-o și trimiteți din nou.",
         "submit": "Trimiteți mementoul",
+        "cancel": "Renunțați",
         "sent": "Mementoul a fost trimis către {name}.",
         "sentBody": "Îl găsește în notificări, cu un link direct către raport.",
         "noReport": {
@@ -1187,12 +1189,13 @@
         },
         "unavailable": {
           "title": "Mementoul nu poate fi trimis deocamdată",
-          "body": "Nu am putut citi membrii sau rapoartele organizației, așa că nu știm ce vă putem oferi aici. Lista de mai sus este corectă.",
+          "body": "Nu am putut citi membrii sau rapoartele organizației, așa că nu știm ce vă putem oferi aici. Lista de acces este corectă.",
           "retry": "Încercați din nou"
         }
       },
       "actions": {
         "changeRole": "Rolul lui {email}",
+        "remind": "Amintiți-i",
         "remove": "Retrageți accesul",
         "resend": "Retrimiteți invitația",
         "revoke": "Anulați invitația",

@@ -71,7 +71,7 @@ const screenWith = (seats: { allowance: number | null; used: number }) => (
     timeZone="Europe/Chisinau"
     messages={{ organization: ro.organization, identity: ro.identity, forms: ro.forms, chrome: ro.chrome }}
   >
-    <AccessProvider page={emptyPage} view={DEFAULT_ACCESS_VIEW} seats={seatRegion(seats)}>
+    <AccessProvider page={emptyPage} view={DEFAULT_ACCESS_VIEW} seats={seatRegion(seats)} selfAccountId={null}>
       <AccessNotice />
       <InviteMember />
     </AccessProvider>

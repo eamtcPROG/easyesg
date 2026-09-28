@@ -2,6 +2,7 @@ import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { Suspense, type ReactNode } from 'react';
 import { readActiveMembership } from '@/server/data/memberships';
+import { readSession } from '@/server/session/session';
 import { ACCESS_READ, readOrganizationAccess } from '@/server/data/organization-access';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
@@ -31,9 +32,9 @@ import styles from '../styles/access.module.css';
  * theirs. **The seat region is computed here, once** (task 142): the counter beside the heading and
  * the invitation's arm read the same value, so they cannot disagree about whether the organization
  * is full — and the counter renders only on the ready arm, since a refused or failed read has no
- * count to state. **The reminder panel is a region of its own** (task 50.3, `remind-section.tsx`): it
+ * count to state. **The reminder is a region of its own** (task 50.3, `remind-section.tsx`): it
  * reads under its own boundary inside the provider, so the list does not wait on its reads and a
- * failure of either is the panel's partial state rather than the screen's. **Its poll sits above the arms** (task 149,
+ * failure of either is the reminder's partial state rather than the screen's. **Its poll sits above the arms** (task 149,
  * `access-poll.tsx`), keyed to the session's active organization — the membership read the global tier already made
  * in this request — so an `access.changed` frame for another organization moves nothing.
  */
@@ -43,9 +44,10 @@ export async function AccessSection({
   readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const view = readAccessView(await searchParams);
-  const [read, membership, t] = await Promise.all([
+  const [read, membership, session, t] = await Promise.all([
     readOrganizationAccess(view),
     readActiveMembership(),
+    readSession(),
     getTranslations(ACCESS_MESSAGES),
   ]);
 
@@ -82,12 +84,17 @@ export async function AccessSection({
     const seats = seatRegion(read.seats);
     counter = <SeatCounter region={seats} />;
     body = (
-      <AccessProvider page={read.page} view={view} seats={seats}>
+      <AccessProvider
+        page={read.page}
+        view={view}
+        seats={seats}
+        selfAccountId={session?.account.id ?? null}
+      >
         <AccessBoard />
-        {/* A dialogue over the list, open while the address says so; where it sits here is only
-            where it mounts. */}
+        {/* Two dialogues over the list, each open while the address says so; where they sit here is
+            only where they mount. */}
         <InviteMember />
-        {/* A region of its own, under its own boundary: the list above does not wait on its reads. */}
+        {/* A region of its own, under its own boundary: the list does not wait on its reads. */}
         <Suspense fallback={<RemindLoading />}>
           <RemindSection />
         </Suspense>

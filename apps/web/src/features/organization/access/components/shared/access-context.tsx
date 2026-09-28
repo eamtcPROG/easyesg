@@ -31,7 +31,13 @@ import {
   type Confirmation,
   type PlacedNotice,
 } from '../../tools/access-state';
-import { ACCESS_PANEL, accessPanelHref, readAccessPanel, type AccessPanel } from '../../tools/access-panel';
+import {
+  ACCESS_PANEL,
+  accessPanelHref,
+  readAccessPanel,
+  readRemindPerson,
+  type AccessPanel,
+} from '../../tools/access-panel';
 import type { SeatRegion } from '../../tools/seats';
 import type { AccessActionResult } from '../../actions/action-results';
 
@@ -53,7 +59,7 @@ import type { AccessActionResult } from '../../actions/action-results';
  *
  * **In `components/shared/` on one test: is it read by more than one sibling?** The section provides
  * it, and `board/`, `invite/` and — since task 50.3 — `remind/` read it: the board's notice, filters,
- * list, cells and confirmation, the invite dialogue and its form, the reminder panel and its form. So it
+ * list, cells and confirmation, the invite dialogue and its form, the reminder dialogue and its form. So it
  * sits where all of them can see it, one level above the regions.
  *
  * **What this is not.** It holds no server state — the rows arrive already read, filtered, sorted
@@ -88,6 +94,14 @@ interface AccessContextValue extends AccessState {
    * reason — the dialogue is reached through the provider, not handed props by the section.
    */
   readonly seats: SeatRegion;
+  /**
+   * The reader's own account — the sender a reminder is from, so the list offers no *remind* on their own
+   * row (§12.5.6's task-50.3 row (4)). `null` where no session could be read, which offers it on no row
+   * rather than on every one, as the reminder region itself does.
+   */
+  readonly selfAccountId: string | null;
+  /** The membership a reminder opened with, from its row's action — `null` when opened any other way. */
+  readonly remindPerson: string | null;
   /** True while a navigation this screen started is in flight. */
   readonly navigating: boolean;
   readonly setView: (next: Partial<AccessView>) => void;
@@ -110,13 +124,15 @@ interface AccessContextValue extends AccessState {
   /** Report a settled outcome, in the region that ran it. */
   readonly report: (notice: PlacedNotice) => void;
   /**
-   * Open and close the invite dialogue by its address (28 Sep 2026; `access-panel.ts`). The filter row's
-   * button, the list's first-use state and the reminder panel's *invite a colleague* all open it; its
-   * close control and a sent invitation close it. Each pushes an entry, as the console's dialogues do,
-   * so Back undoes the last of them.
+   * Open and close the two dialogues by their address (28 Sep 2026; `access-panel.ts`). The filter row's
+   * buttons open either; the list's first-use state and the reminder's *invite a colleague* open the
+   * invitation; a member's row opens the reminder with them chosen. The close control and a sent form
+   * close whichever is open. Each pushes an entry, as the console's dialogues do, so Back undoes the
+   * last of them.
    */
   readonly openInvite: () => void;
-  readonly closeInvite: () => void;
+  readonly openReminder: (person?: string) => void;
+  readonly closePanel: () => void;
 }
 
 const AccessContext = createContext<AccessContextValue | null>(null);
@@ -140,11 +156,13 @@ export function AccessProvider({
   page,
   view,
   seats,
+  selfAccountId,
   children,
 }: {
   readonly page: AccessPage;
   readonly view: AccessView;
   readonly seats: SeatRegion;
+  readonly selfAccountId: string | null;
   readonly children: ReactNode;
 }) {
   const t = useTranslations(ACCESS_MESSAGES);
@@ -152,19 +170,23 @@ export function AccessProvider({
   const router = useRouter();
   const [navigating, startNavigation] = useTransition();
   const [, startAction] = useTransition();
-  const inviting = readAccessPanel(useSearchParams()) === ACCESS_PANEL.INVITE;
-  const [state, dispatch] = useReducer(accessReducer, inviting, (open) => ({
+  const address = useSearchParams();
+  const panel = readAccessPanel(address);
+  const remindPerson = readRemindPerson(address);
+  const [state, dispatch] = useReducer(accessReducer, panel, (open) => ({
     ...INITIAL_ACCESS_STATE,
-    inviting: open,
+    panel: open,
   }));
 
   // **The address moved, so the state follows it — during render, not in an effect.** This is React's
   // "adjusting state when a prop changes": the dispatch re-runs this render before anything commits, so
-  // no frame shows the dialogue open over a refusal an earlier attempt left. Comparing against the
-  // state's own copy is what makes Back and Forward events too — a dispatch from the button alone
-  // would miss them (`AccessState.inviting`).
-  if (state.inviting !== inviting) {
-    dispatch({ type: inviting ? ACCESS_EVENT.INVITE_OPENED : ACCESS_EVENT.INVITE_CLOSED });
+  // no frame shows a dialogue open over a refusal an earlier attempt left. Comparing against the
+  // state's own copy is what makes Back and Forward events too — a dispatch from a button alone
+  // would miss them (`AccessState.panel`).
+  if (state.panel !== panel) {
+    dispatch(
+      panel === null ? { type: ACCESS_EVENT.PANEL_CLOSED } : { type: ACCESS_EVENT.PANEL_OPENED, panel },
+    );
   }
 
   const setView = useCallback(
@@ -230,8 +252,12 @@ export function AccessProvider({
   );
   // The address as it is at the press, read off `window` rather than off `useSearchParams()`: it is
   // the same value, and reading it here keeps both callbacks stable across every change of view.
-  const openInvite = useCallback(() => showPanel(ACCESS_PANEL.INVITE), []);
-  const closeInvite = useCallback(() => showPanel(null), []);
+  const openInvite = useCallback(() => showPanel({ panel: ACCESS_PANEL.INVITE }), []);
+  const openReminder = useCallback(
+    (person?: string) => showPanel({ panel: ACCESS_PANEL.REMIND, person: person ?? null }),
+    [],
+  );
+  const closePanel = useCallback(() => showPanel({ panel: null }), []);
 
   const value = useMemo<AccessContextValue>(
     () => ({
@@ -239,6 +265,8 @@ export function AccessProvider({
       page,
       view,
       seats,
+      selfAccountId,
+      remindPerson,
       navigating,
       setView,
       perform,
@@ -247,13 +275,16 @@ export function AccessProvider({
       starting,
       report,
       openInvite,
-      closeInvite,
+      openReminder,
+      closePanel,
     }),
     [
       state,
       page,
       view,
       seats,
+      selfAccountId,
+      remindPerson,
       navigating,
       setView,
       perform,
@@ -262,7 +293,8 @@ export function AccessProvider({
       starting,
       report,
       openInvite,
-      closeInvite,
+      openReminder,
+      closePanel,
     ],
   );
 
@@ -270,15 +302,15 @@ export function AccessProvider({
 }
 
 /**
- * A shallow move to the address with the dialogue opened or closed: Next's router follows
+ * A shallow move to the address with a dialogue opened or closed: Next's router follows
  * `history.pushState` and `useSearchParams` with it, and the server is not asked — nothing it reads
  * changed (`access-panel.ts`).
  */
-function showPanel(panel: AccessPanel | null): void {
+function showPanel(input: { readonly panel: AccessPanel | null; readonly person?: string | null }): void {
   const { pathname, search } = window.location;
-  const next = accessPanelHref({ pathname, search, panel });
-  // A sent invitation closes the dialogue, and the reader may have closed it while the send was in
-  // flight — a second entry for the same address would make Back do nothing once.
+  const next = accessPanelHref({ pathname, search, ...input });
+  // A sent form closes its dialogue, and the reader may have closed it while the send was in flight —
+  // a second entry for the same address would make Back do nothing once.
   if (next === `${pathname}${search}`) return;
   window.history.pushState(null, '', next);
 }

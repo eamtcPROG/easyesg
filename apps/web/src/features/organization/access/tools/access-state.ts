@@ -1,5 +1,6 @@
 import type { Notice } from '@/lib/notice';
 import type { AccessRow } from './access';
+import { ACCESS_PANEL, type AccessPanel } from './access-panel';
 
 /**
  * S-16's interaction state, as one value and the events that move it (26 Aug 2026, project owner).
@@ -61,10 +62,11 @@ export type { Notice };
  * Which region of S-16 shows the notice (28 Aug 2026).
  *
  * **The screen has several places an outcome can be reported, and only ever one outcome.** The list
- * reports row actions at its head; the invite dialogue reports a refusal beside the form that was
- * refused, and it must — the dialogue covers the list, so a refusal said at the list's head would be
- * said behind the thing the reader is looking at. A sent invitation is the list's since the form
- * became a dialogue (28 Sep 2026): the dialogue closes, and the notice stands above the row it added.
+ * reports row actions at its head; each dialogue — the invitation's, the reminder's — reports a refusal
+ * beside the form that was refused, and it must: the dialogue covers the list, so a refusal said at the
+ * list's head would be said behind the thing the reader is looking at. A sent invitation or reminder is
+ * the list's since both forms became dialogues (28 Sep 2026): the dialogue closes, and the notice stands
+ * above the list.
  *
  * Holding the region **in the notice** is what lets both be true at once: one value, so two
  * settled outcomes can never be on screen together, and `ACTION_STARTED` clears whichever is
@@ -75,11 +77,17 @@ export const NOTICE_REGION = {
   LIST: 'list',
   /** The invite dialogue, above the form whose submission was refused. */
   INVITE: 'invite',
-  /** The reminder panel (task 50.3), beside its form — the invite dialogue's reason, in a panel below the list. */
+  /** The reminder dialogue (task 50.3; a dialogue since 28 Sep 2026), above the form it refused. */
   REMIND: 'remind',
 } as const;
 
 export type NoticeRegion = (typeof NOTICE_REGION)[keyof typeof NOTICE_REGION];
+
+/** Where each dialogue says a refusal: in itself. The list's region belongs to no dialogue. */
+export const PANEL_NOTICE_REGION: Readonly<Record<AccessPanel, NoticeRegion>> = {
+  [ACCESS_PANEL.INVITE]: NOTICE_REGION.INVITE,
+  [ACCESS_PANEL.REMIND]: NOTICE_REGION.REMIND,
+};
 
 /** A notice and the region that renders it. */
 export interface PlacedNotice extends Notice {
@@ -99,21 +107,21 @@ export interface AccessState {
    */
   readonly pendingRowKey: string | null;
   /**
-   * Whether the invite dialogue was open **when this state last saw the address** (28 Sep 2026).
+   * Which dialogue was open **when this state last saw the address** (28 Sep 2026), or none.
    *
-   * The address decides whether it is open (`access-panel.ts`); this is the edge the provider compares
-   * it against, so that opening and closing are events here however they happened — the button, the
-   * close control, Back, Forward. An event dispatched only by the button would leave Forward reopening
-   * the dialogue over the refusal a previous attempt left.
+   * The address decides which is open (`access-panel.ts`); this is the edge the provider compares it
+   * against, so that opening and closing are events here however they happened — a button, a row's
+   * action, the close control, Back, Forward. An event dispatched only by a button would leave Forward
+   * reopening a dialogue over the refusal a previous attempt left.
    */
-  readonly inviting: boolean;
+  readonly panel: AccessPanel | null;
 }
 
 export const INITIAL_ACCESS_STATE: AccessState = {
   notice: null,
   confirming: null,
   pendingRowKey: null,
-  inviting: false,
+  panel: null,
 };
 
 /**
@@ -126,14 +134,14 @@ export const ACCESS_EVENT = {
   CONFIRMATION_REQUESTED: 'confirmation_requested',
   /** The reader backed out of it. */
   CONFIRMATION_DISMISSED: 'confirmation_dismissed',
-  /** An action left for the server — a row's, or the invite dialogue's. */
+  /** An action left for the server — a row's, or a dialogue's form. */
   ACTION_STARTED: 'action_started',
   /** It came back — with what it said, whether that is a success or a refusal. */
   ACTION_SETTLED: 'action_settled',
-  /** The address came to name the invite dialogue. */
-  INVITE_OPENED: 'invite_opened',
-  /** It stopped naming it — the close control, Escape, Back, or a sent invitation. */
-  INVITE_CLOSED: 'invite_closed',
+  /** The address came to name a dialogue — from none, or from the other one. */
+  PANEL_OPENED: 'panel_opened',
+  /** It stopped naming one — the close control, Escape, Back, or a sent form. */
+  PANEL_CLOSED: 'panel_closed',
 } as const;
 
 export type AccessEventType = (typeof ACCESS_EVENT)[keyof typeof ACCESS_EVENT];
@@ -141,11 +149,11 @@ export type AccessEventType = (typeof ACCESS_EVENT)[keyof typeof ACCESS_EVENT];
 export type AccessEvent =
   | { readonly type: typeof ACCESS_EVENT.CONFIRMATION_REQUESTED; readonly confirmation: Confirmation }
   | { readonly type: typeof ACCESS_EVENT.CONFIRMATION_DISMISSED }
-  /** `rowKey` is null for an action no row owns — the invite form's submission. */
+  /** `rowKey` is null for an action no row owns — a dialogue form's submission. */
   | { readonly type: typeof ACCESS_EVENT.ACTION_STARTED; readonly rowKey: string | null }
   | { readonly type: typeof ACCESS_EVENT.ACTION_SETTLED; readonly notice: PlacedNotice }
-  | { readonly type: typeof ACCESS_EVENT.INVITE_OPENED }
-  | { readonly type: typeof ACCESS_EVENT.INVITE_CLOSED };
+  | { readonly type: typeof ACCESS_EVENT.PANEL_OPENED; readonly panel: AccessPanel }
+  | { readonly type: typeof ACCESS_EVENT.PANEL_CLOSED };
 
 export function accessReducer(state: AccessState, event: AccessEvent): AccessState {
   switch (event.type) {
@@ -157,18 +165,18 @@ export function accessReducer(state: AccessState, event: AccessEvent): AccessSta
     case ACCESS_EVENT.CONFIRMATION_DISMISSED:
       return { ...state, confirming: null };
 
-    case ACCESS_EVENT.INVITE_OPENED:
-      // The confirmation's reason, for the invitation's dialogue: whatever the last action said is
-      // about something else, and a refusal left by an earlier attempt is about a form now empty.
-      return { ...state, inviting: true, notice: null };
+    case ACCESS_EVENT.PANEL_OPENED:
+      // The confirmation's reason, for the form dialogues: whatever the last action said is about
+      // something else, and a refusal left by an earlier attempt is about a form now empty.
+      return { ...state, panel: event.panel, notice: null };
 
-    case ACCESS_EVENT.INVITE_CLOSED:
-      // A refusal goes with the dialogue it was said in. The list's notice stays — a sent invitation
-      // reports there and closes the dialogue, so clearing it here would erase the success it caused.
+    case ACCESS_EVENT.PANEL_CLOSED:
+      // A refusal goes with the dialogue it was said in. The list's notice stays — a sent form reports
+      // there and closes its dialogue, so clearing it here would erase the success it caused.
       return {
         ...state,
-        inviting: false,
-        notice: state.notice?.region === NOTICE_REGION.INVITE ? null : state.notice,
+        panel: null,
+        notice: state.notice?.region === NOTICE_REGION.LIST ? state.notice : null,
       };
 
     case ACCESS_EVENT.ACTION_STARTED:
@@ -182,8 +190,8 @@ export function accessReducer(state: AccessState, event: AccessEvent): AccessSta
     default:
       // Everything at once, which is the case the three setters were spelling out by hand. The
       // dialogue closes whether or not the action came from one — an action started from a row
-      // button has no dialogue to close, and `null` is already `null`. `inviting` is the address's
-      // to move, not an outcome's, so it passes through.
+      // button has no dialogue to close, and `null` is already `null`. `panel` is the address's to
+      // move, not an outcome's, so it passes through.
       return { ...state, notice: event.notice, confirming: null, pendingRowKey: null };
   }
 }

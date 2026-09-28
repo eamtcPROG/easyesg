@@ -1,9 +1,12 @@
 'use client';
 
 import { USAGE_STANDING } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
+import { ACCESS_PANEL } from '../../../tools/access-panel';
+import { AccessDialog } from '../../shared/access-dialog';
 import { useAccess } from '../../shared/access-context';
+import { ACCESS_MESSAGES } from '../../shared/access-messages';
 import { InvitationsPaused } from '../states/invitations-paused';
-import { InviteDialog } from '../shared/invite-dialog';
 import { InviteForm } from '../form/invite-form';
 import { SeatsFull } from '../states/seats-full';
 
@@ -22,23 +25,24 @@ import { SeatsFull } from '../states/seats-full';
  * the form's; the two states have nothing to press, and are framed here.
  */
 export function InviteMember() {
-  const { seats, inviting } = useAccess();
+  const t = useTranslations(`${ACCESS_MESSAGES}.invite`);
+  const { seats, panel } = useAccess();
 
   if (seats.standing === USAGE_STANDING.UNKNOWN) {
     return (
-      <InviteDialog>
+      <AccessDialog panel={ACCESS_PANEL.INVITE} title={t('heading')}>
         <InvitationsPaused />
-      </InviteDialog>
+      </AccessDialog>
     );
   }
   if (seats.standing === USAGE_STANDING.REACHED) {
     return (
-      <InviteDialog>
+      <AccessDialog panel={ACCESS_PANEL.INVITE} title={t('heading')}>
         <SeatsFull region={seats} />
-      </InviteDialog>
+      </AccessDialog>
     );
   }
   // Keyed on the dialogue being open, so every opening is a new form: the form lives outside the
   // dialogue's content, which unmounts on close, and would otherwise keep the last attempt's fields.
-  return <InviteForm key={inviting ? 'open' : 'closed'} />;
+  return <InviteForm key={panel === ACCESS_PANEL.INVITE ? 'open' : 'closed'} />;
 }

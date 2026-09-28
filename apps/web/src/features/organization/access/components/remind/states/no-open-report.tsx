@@ -7,7 +7,7 @@ import { ROUTES } from '@/lib/routes';
 import { REMIND_MESSAGES } from '../shared/remind-messages';
 
 /**
- * The reminder panel with no open report (task 50.3): a reminder is about one, so there is nothing to remind about,
+ * The reminder with no open report (task 50.3): a reminder is about one, so there is nothing to remind about,
  * and the way on is the reports — where a period's report is started.
  */
 export function NoOpenReport() {

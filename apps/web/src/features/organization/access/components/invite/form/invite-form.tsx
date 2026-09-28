@@ -11,9 +11,10 @@ import { failureNotice, successNotice } from '@/lib/notice';
 import { inviteMemberAction } from '../../../actions/actions';
 import { INVITABLE_ROLES } from '../../../tools/access';
 import { NOTICE_REGION } from '../../../tools/access-state';
+import { ACCESS_PANEL } from '../../../tools/access-panel';
+import { AccessDialog } from '../../shared/access-dialog';
 import { useAccess } from '../../shared/access-context';
 import { ACCESS_MESSAGES } from '../../shared/access-messages';
-import { InviteDialog } from '../shared/invite-dialog';
 import styles from '../../styles/access.module.css';
 
 /**
@@ -64,7 +65,7 @@ export function InviteForm() {
   const formId = useId();
   // The screen's one notice, written here and rendered by the region it belongs to — see
   // `NOTICE_REGION` for why it is not this form's own state.
-  const { starting, report, closeInvite } = useAccess();
+  const { starting, report, closePanel } = useAccess();
 
   const { control, handleSubmit } = useForm<InviteFields>({
     defaultValues: { email: '' },
@@ -87,7 +88,7 @@ export function InviteForm() {
             action: t('sentAction'),
           }),
         });
-        closeInvite();
+        closePanel();
         return;
       }
       report({
@@ -107,10 +108,12 @@ export function InviteForm() {
   });
 
   return (
-    <InviteDialog
+    <AccessDialog
+      panel={ACCESS_PANEL.INVITE}
+      title={t('heading')}
       footer={
         <>
-          <Button type="button" variant={BUTTON_VARIANT.SECONDARY} onClick={closeInvite}>
+          <Button type="button" variant={BUTTON_VARIANT.SECONDARY} onClick={closePanel}>
             {t('cancel')}
           </Button>
           <Button type="submit" form={formId} busy={pending}>
@@ -125,7 +128,7 @@ export function InviteForm() {
         method="post"
         onSubmit={(event) => void submit(event)}
         noValidate
-        className={styles.inviteForm}
+        className={styles.dialogForm}
       >
         <FormSummary control={control} title={tForms('summaryTitle')} />
         <FormTextField
@@ -149,6 +152,6 @@ export function InviteForm() {
           rules={{ required: t('roleRequired') }}
         />
       </form>
-    </InviteDialog>
+    </AccessDialog>
   );
 }

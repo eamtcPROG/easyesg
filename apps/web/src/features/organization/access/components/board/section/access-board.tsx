@@ -5,12 +5,13 @@ import { AccessFilters } from '../regions/access-filters';
 import { AccessList } from '../list/access-list';
 import { AccessNotice } from '../regions/access-notice';
 import { InviteButton } from '../regions/invite-button';
+import { RemindButton } from '../regions/remind-button';
 import { useAccess } from '../../shared/access-context';
 import styles from '../../styles/access.module.css';
 
 /**
- * S-16's Index body — filter, sort, table, row action, pager (§4.6), and since 28 Sep 2026 the button
- * that opens the invitation dialogue, at the end of the filter row.
+ * S-16's Index body — filter, sort, table, row action, pager (§4.6), and since 28 Sep 2026 the two
+ * buttons that open the reminder's and the invitation's dialogues, at the end of the filter row.
  *
  * **The server does the work; this changes the address.** Filtering, sorting and paging all happen
  * in the read model on the server, from `searchParams`; every control here writes the URL and lets
@@ -35,7 +36,10 @@ export function AccessBoard() {
       <AccessNotice />
       <div className={styles.toolbar}>
         <AccessFilters />
-        <InviteButton />
+        <div className={styles.toolbarActions}>
+          <RemindButton />
+          <InviteButton />
+        </div>
       </div>
       <AccessList />
       <AccessConfirmation />

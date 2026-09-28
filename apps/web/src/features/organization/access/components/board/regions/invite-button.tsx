@@ -22,7 +22,7 @@ export function InviteButton() {
   const { openInvite } = useAccess();
 
   return (
-    <Button className={styles.inviteButton} onClick={openInvite}>
+    <Button className={styles.toolbarButton} onClick={openInvite}>
       {t('open')}
     </Button>
   );
