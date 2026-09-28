@@ -183,6 +183,28 @@ test('the reset flow: uniform request, stated consequence, new password signs in
   await page.waitForURL('**/create-organization');
 });
 
+/**
+ * S-02's reset request opens with the address typed on S-01 (`design_spec.md` S-02, amended 28 Sep 2026)
+ * — through a real client-side navigation, which the unit specs replace with a stand-in `Link`. It rides
+ * session storage, so the arrival's own address carries nothing (NFR-30). No account is needed: nothing is
+ * submitted, and the request's answer would be uniform anyway.
+ */
+test('the address typed on sign-in opens the reset request filled in, and stays out of the URL', async ({
+  page,
+}) => {
+  const email = addressFor('reset-carried');
+  await page.goto('/sign-in');
+  // Hydrated first: before then the link is a plain anchor and carries nothing, which is correct and
+  // not this journey. The submit is disabled until hydration (task 153), so it is the signal.
+  await expect(page.getByRole('button', { name: 'Intrați în cont' })).toBeEnabled();
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByRole('link', { name: 'V-ați uitat parola?' }).click();
+
+  await page.waitForURL('**/reset');
+  await expect(page.getByLabel('Adresa de e-mail')).toHaveValue(email);
+  expect(new URL(page.url()).search).toBe('');
+});
+
 test('a bare set-password arrival explains itself and offers the request route', async ({
   page,
 }) => {

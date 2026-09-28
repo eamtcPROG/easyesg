@@ -3,12 +3,13 @@
 import { Callout, CALLOUT_INTENT, Panel, TextLink } from '@easyesg/ui';
 import { FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { Link } from '@/i18n/navigation';
 import { requestPasswordResetAction } from '../actions/actions';
 import type { RequestResetResult } from '../actions/action-results';
+import { takeResetAddress } from '../../shared/store/reset-address-store';
 import styles from '../../shared/styles/identity-screens.module.css';
 import { ROUTES } from '@/lib/routes';
 import { CredentialSubmit } from '@/shared/credential-submit';
@@ -21,6 +22,10 @@ import { ScriptingRequired } from '@/shared/scripting-required';
  * state asserts only the conditional fact the API asserted: IF an account exists, a link is on
  * its way. A locked account may always request one — the link is what releases the lock
  * (task 21) — which is why S-01's locked state routes here.
+ *
+ * **Arriving from S-01, the address typed there is already in the field** (`design_spec.md` S-02,
+ * amended 28 Sep 2026), carried through session storage and never the URL, and editable like any
+ * typed value.
  *
  * States (§8.1 subset): rest · submitting · invalid · success (uniform) · error — recoverable
  * (the 429 throttle as received) · unreachable (bundled catalogue).
@@ -40,7 +45,14 @@ export function RequestResetForm() {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<RequestResetResult | null>(null);
 
-  const { control, handleSubmit } = useForm<RequestResetInput>({ mode: 'onTouched' });
+  const { control, handleSubmit, setValue } = useForm<RequestResetInput>({ mode: 'onTouched' });
+
+  // After hydration, because session storage has no server half to render from. Not validated on
+  // arrival: the field is judged when the reader leaves it or submits, exactly as a typed one is.
+  useEffect(() => {
+    const carried = takeResetAddress();
+    if (carried) setValue('email', carried);
+  }, [setValue]);
 
   const submit = handleSubmit((input) => {
     startTransition(async () => {

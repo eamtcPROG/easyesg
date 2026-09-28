@@ -972,7 +972,9 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **147 files here are Client Components** (28 Sep 2026: four since S-16's invitation and reminder became dialogues —
+  **148 files here are Client Components** (28 Sep 2026: one since S-02's reset request opens with the address typed on
+  S-01 — `identity/shared/store/reset-address-store.ts`, beside the verification hand-off's store, and not a component,
+  but its directive is what makes a server import fail loudly rather than read nothing; four since S-16's invitation and reminder became dialogues —
   their shared frame under `organization/access/components/shared/`, the filter row's two buttons that open them, and
   the reminder's loading state, which reads whether its dialogue is open; 24 Sep 2026: eight more since task 169 rebuilt S-28 as rows with its second factor as a flow — eighteen under `credentials/components/`, where its six sections and gate had been ten; one since the account layout's rail, `shared/account-rail.tsx`; 23 Sep 2026: three since task 153, `useHydrated` and the two credential-form parts in `shared/`; four since task 149, AD-15's provider, `useFrame`, `useRefreshPoll` and S-16's poll; four since task 52.3, S-27's form and its three sections; one since task 52.2.2, S-38's confirm-unsubscribe part, the screen's one press; one since task 51.4, S-16's standing cell, which draws FR-171's undeliverable chip beside the standing; 22 Sep 2026: five since task 50.3, S-16's reminder panel under
   `organization/access/components/remind/`; twelve since task 50.2.2, the notification panel's under

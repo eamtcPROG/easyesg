@@ -1,9 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ro from '@/messages/ro.json';
-import { PENDING_EMAIL_STORAGE_KEY } from '../../shared/tools/constants';
+import { PENDING_EMAIL_STORAGE_KEY, RESET_ADDRESS_STORAGE_KEY } from '../../shared/tools/constants';
 import { signInAction } from '../actions/actions';
 import { SignInForm } from './sign-in-form';
 
@@ -17,8 +17,26 @@ vi.mock('../actions/actions', () => ({
 }));
 
 vi.mock('@/i18n/navigation', () => ({
-  Link: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
-    <a href={String(href)} {...rest}>
+  // A client-side navigation, as the real `Link`'s is: the caller's `onClick` runs and the document
+  // is never replaced — which jsdom cannot do, and reports on stderr when an anchor asks it to.
+  Link: ({
+    href,
+    children,
+    onClick,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    onClick?: React.MouseEventHandler<HTMLAnchorElement>;
+  }) => (
+    <a
+      href={String(href)}
+      {...rest}
+      onClick={(event) => {
+        onClick?.(event);
+        event.preventDefault();
+      }}
+    >
       {children}
     </a>
   ),
@@ -159,5 +177,36 @@ describe('S-01 · sign-in form', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.querySelector('a[href="/reset"]')).not.toBeNull();
     expect(sessionStorage.getItem(PENDING_EMAIL_STORAGE_KEY)).toBeNull();
+
+    // …carrying the address just refused: this is the reader who has certainly typed it.
+    await user.click(within(alert).getByRole('link', { name: 'Resetați-vă parola' }));
+    expect(sessionStorage.getItem(RESET_ADDRESS_STORAGE_KEY)).toBe(EMAIL);
+  });
+
+  /**
+   * S-02's reset request opens with the address already typed here (`design_spec.md` S-02, amended
+   * 28 Sep 2026). It rides session storage and never the URL (NFR-30), so the link's own address is
+   * asserted unchanged beside the carried value.
+   */
+  it('carries the address already typed to the reset request, never in its URL', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText('Adresa de e-mail'), EMAIL);
+    const forgot = screen.getByRole('link', { name: 'V-ați uitat parola?' });
+    await user.click(forgot);
+
+    expect(sessionStorage.getItem(RESET_ADDRESS_STORAGE_KEY)).toBe(EMAIL);
+    expect(forgot).toHaveAttribute('href', '/reset');
+  });
+
+  it('carries nothing from an empty field, and forgets an address carried before', async () => {
+    const user = userEvent.setup();
+    sessionStorage.setItem(RESET_ADDRESS_STORAGE_KEY, 'alta.adresa@brutaria-lina.md');
+    renderForm();
+
+    await user.click(screen.getByRole('link', { name: 'V-ați uitat parola?' }));
+
+    expect(sessionStorage.getItem(RESET_ADDRESS_STORAGE_KEY)).toBeNull();
   });
 });

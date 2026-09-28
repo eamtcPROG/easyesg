@@ -1,5 +1,5 @@
 /**
- * **In `identity/shared/tools/` on one test — read by more than one journey: `register/` and `verify/` through the hand-off store, and both journeys' specs directly.**
+ * **In `identity/shared/tools/` on one test — read by more than one journey: `register/` and `verify/` through the verification hand-off, `sign-in/` and `reset/` through the reset-address store, and their specs directly.**
  *
  * Client-side pacing for the resend control on S-02 (`architecture.md` OQ-55 added the route;
  * the prototype draws a cooldown countdown beside the button).
@@ -23,3 +23,11 @@ export const PENDING_EMAIL_STORAGE_KEY = 'easyesg.verification.email';
 
 /** Sibling timestamp (epoch ms) pacing the cooldown across reloads of the pending screen. */
 export const RESEND_SENT_AT_STORAGE_KEY = 'easyesg.verification.sentAt';
+
+/**
+ * Where sign-in leaves the address a reader has typed for S-02's reset request (`design_spec.md` S-02,
+ * amended 28 Sep 2026). Session storage for the reason {@link PENDING_EMAIL_STORAGE_KEY} gives — an
+ * address is personal data and stays out of the URL (NFR-30) — and a key of its own, because that
+ * one tells the verification screen a confirmation is pending, which a reset is not.
+ */
+export const RESET_ADDRESS_STORAGE_KEY = 'easyesg.reset.email';

@@ -11,6 +11,7 @@ import { API_OUTCOME } from '@/lib/api-outcome';
 import { Link } from '@/i18n/navigation';
 import { signInAction } from '../actions/actions';
 import { rememberPendingVerification } from '../../shared/store/pending-verification-store';
+import { carryResetAddress } from '../../shared/store/reset-address-store';
 import type { SignInFailure } from '../actions/action-results';
 import styles from '../../shared/styles/identity-screens.module.css';
 import { ROUTES } from '@/lib/routes';
@@ -31,6 +32,9 @@ import { ScriptingRequired } from '@/shared/scripting-required';
  *    and routes to S-02's resend, with the address handed off the same way registration does;
  *  - `account-locked` — the reset link is the only release before Phase 8 (task 21), so the
  *    action slot routes there instead of a dead "try again".
+ *
+ * Both ways to S-02's reset request — that one and the password row's — carry the address the field
+ * holds, so the request opens with it filled in (`design_spec.md` S-02, amended 28 Sep 2026).
  *
  * Success never renders: the action redirects (UX-38's `?return=` target, or the §4.3 landing
  * — task 25 owns the real membership branch).
@@ -73,12 +77,15 @@ export function SignInForm({
   const [pending, startTransition] = useTransition();
   const [failure, setFailure] = useState<SignInFailure>(undefined);
 
-  const { control, handleSubmit } = useForm<SignInInput>({
+  const { control, handleSubmit, getValues } = useForm<SignInInput>({
     mode: 'onTouched',
     // The checkbox needs a declared starting value or its first render is uncontrolled; `false` is
     // also the wire default (§12.5.6), so the form and the API agree without either restating it.
     defaultValues: { remember: false },
   });
+
+  // Read at the press rather than watched, so typing re-renders nothing: only the press needs it.
+  const carryAddressToReset = () => carryResetAddress(getValues('email'));
 
   const submit = handleSubmit((input) => {
     setFailure(undefined);
@@ -123,7 +130,9 @@ export function SignInForm({
               </TextLink>
             ) : isLocked ? (
               <TextLink asChild>
-                <Link href={ROUTES.RESET}>{t('lockedAction')}</Link>
+                <Link href={ROUTES.RESET} onClick={carryAddressToReset}>
+                  {t('lockedAction')}
+                </Link>
               </TextLink>
             ) : null
           }
@@ -170,7 +179,9 @@ export function SignInForm({
             // 4 Sep 2026).
             labelAction={
               <TextLink asChild className={styles.labelLink}>
-                <Link href={ROUTES.RESET}>{t('forgot')}</Link>
+                <Link href={ROUTES.RESET} onClick={carryAddressToReset}>
+                  {t('forgot')}
+                </Link>
               </TextLink>
             }
           />
