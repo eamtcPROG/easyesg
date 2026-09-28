@@ -12,6 +12,8 @@ import type { Clock } from '@api/contracts/clock.port';
 import { ADMITS_ACCOUNT_IN_SETUP } from '../constants/account-setup-gate.constants';
 import type { AccessTokenVerifier } from '../interfaces/access-token-signer.interface';
 import type { RequestIdentityStore } from '../interfaces/request-identity-store.interface';
+import type { MemberActivityStore } from '../interfaces/member-activity-store.interface';
+import { activityRecordedSince } from '../domain/member-activity';
 import { sessionHasExpired } from '../domain/session-expiry';
 import { AccountSetupRequiredError, SessionExpiredError } from '../errors/session.errors';
 
@@ -59,6 +61,11 @@ const BEARER = /^Bearer (.+)$/;
  * has chosen none, gets `actorId` and no `organizationId`. `@RequiresAccount` routes then answer —
  * which is how `GET /memberships` tells the caller they have none — while `@RequiresRole` routes
  * answer `membership-required`. Refusing here would refuse the request that resolves the state.
+ *
+ * **It records the member's activity in the organization the request acts for** (FR-56; 28 Sep 2026) —
+ * the write `identity.membership.last_active_at` was created for and nothing had made, so S-16 said
+ * *not signed in yet* of everyone. At `member-activity.ts`'s grain, and through a port of its own whose
+ * statement runs outside the request's transaction.
  */
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -66,6 +73,7 @@ export class AuthGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly verifier: AccessTokenVerifier,
     private readonly store: RequestIdentityStore,
+    private readonly activity: MemberActivityStore,
     private readonly now: Clock,
   ) {}
 
@@ -116,6 +124,18 @@ export class AuthGuard implements CanActivate {
       memberships: identity.memberships,
       preferredOrganizationId: identity.preferredOrganizationId,
     });
+
+    // Activity is in an organization, so a request acting for none records none. After every refusal
+    // above, so a refused request is not presence.
+    if (active !== null) {
+      await this.activity.record({
+        accountId: identity.accountId,
+        membershipId: active.membershipId,
+        organizationId: active.organizationId,
+        at: now,
+        unlessSince: activityRecordedSince(now),
+      });
+    }
 
     // The context is the only thing that carries this forward. Writing it here — rather than onto
     // the request object — is what lets the exception filter, the interceptors and every repository

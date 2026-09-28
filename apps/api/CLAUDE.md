@@ -1400,9 +1400,11 @@ with no `id` attaches cleanly, migrates cleanly and fails on the first write —
 validated at creation. §7.9's `uuidv7()` convention is load-bearing here, not merely conventional.
 
 **Ignore a column the request path touches on every request.** `identity.membership.last_active_at`
-is in the ignore list because task 28's guard writes it per request, and capturing that would make
-the system's highest-volume writer a writer of its highest-volume audit table — to record that
-somebody was present. FR-54 is about who changed a *value*.
+is in the ignore list because `AuthGuard` writes it on a member's requests, and capturing that would
+make the system's highest-volume writer a writer of its highest-volume audit table — to record that
+somebody was present. FR-54 is about who changed a *value*. **The write itself only landed on 28 Sep
+2026**, at a five-minute grain in its own short transaction (`MEMBER_ACTIVITY_STORE`; §12.5.6's
+last-activity row): task 28 closed without it, and S-16 said *not signed in yet* of everyone until then.
 
 `TG_ARGV[0]` names the tenant column — `id` for the tenant root, `organization_id` everywhere else.
 `TG_ARGV[1..]` are columns to ignore. The comparison is over `jsonb` row images, so no table needs

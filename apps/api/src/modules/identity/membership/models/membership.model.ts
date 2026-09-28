@@ -81,14 +81,16 @@ export interface Membership {
  * from a column of identifiers: S-16 exists to be read by a person deciding whether the list is
  * right, and an OA cannot recognise a colleague from a UUID.
  *
- * Two of FR-56's four fields are honest gaps rather than omissions, and both close in a named task:
+ * Two of FR-56's four fields were honest gaps rather than omissions when this was written:
  *
  *  - **`status` is never `pending` here.** FR-56 asks for "active or pending invitation" and S-16
  *    renders one list, but a pending invitation is an `identity.invitation` row (task 26.1) and not
  *    a member of anything. The union happens in the read model when the other half exists.
- *  - **`lastActiveAt` is null until task 28.** Nothing writes `last_active_at` before `AuthGuard`
- *    resolves a request against the membership row. Serving null is the truthful answer; defaulting
- *    it to `createdAt` would report a fact about the invitation as a fact about the person.
+ *  - **`lastActiveAt` is null until the member's first request in the organization.** `AuthGuard`
+ *    writes it, at a five-minute grain — since 28 Sep 2026, task 28 having closed without the write it
+ *    was left for (`architecture.md` §12.5.6's last-activity row). Null stays the truthful answer for a
+ *    member who has not come back; defaulting it to `createdAt` would report a fact about the invitation
+ *    as a fact about the person.
  *
  * There is no display name, and that is FR-9's profile rather than this list's gap — registration
  * collects an address and a password and nothing else (UC-01).

@@ -17,6 +17,11 @@ import {
   type RequestIdentityStore,
 } from './interfaces/request-identity-store.interface';
 import { RequestIdentityStoreRepository } from '@api/infrastructure/persistence/identity/request-identity-store.repository';
+import { MemberActivityStoreRepository } from '@api/infrastructure/persistence/identity/member-activity-store.repository';
+import {
+  MEMBER_ACTIVITY_STORE,
+  type MemberActivityStore,
+} from './interfaces/member-activity-store.interface';
 import {
   ACCESS_TOKEN_SIGNER,
   ACCESS_TOKEN_VERIFIER,
@@ -89,15 +94,17 @@ const httpProviders: Provider[] = [
    */
   { provide: ACCESS_TOKEN_VERIFIER, useExisting: ACCESS_TOKEN_SIGNER },
   { provide: REQUEST_IDENTITY_STORE, useClass: RequestIdentityStoreRepository },
+  { provide: MEMBER_ACTIVITY_STORE, useClass: MemberActivityStoreRepository },
   {
     provide: AuthGuard,
-    inject: [Reflector, ACCESS_TOKEN_VERIFIER, REQUEST_IDENTITY_STORE, CLOCK],
+    inject: [Reflector, ACCESS_TOKEN_VERIFIER, REQUEST_IDENTITY_STORE, MEMBER_ACTIVITY_STORE, CLOCK],
     useFactory: (
       reflector: Reflector,
       verifier: AccessTokenVerifier,
       store: RequestIdentityStore,
+      activity: MemberActivityStore,
       now: Clock,
-    ) => new AuthGuard(reflector, verifier, store, now),
+    ) => new AuthGuard(reflector, verifier, store, activity, now),
   },
   {
     /**

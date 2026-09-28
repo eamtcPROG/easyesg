@@ -314,6 +314,11 @@ describe('members (UC-59, UC-62, UC-63, UC-64)', () => {
   // ── UC-59 ─────────────────────────────────────────────────────────────────────────────────────
 
   it('lists every member with their role, and nobody else’s', async () => {
+    // Every request records its actor's activity (FR-56, 28 Sep 2026), and earlier cases made some. Cleared, so
+    // what follows is this request's alone.
+    await asOrganization(owner, ORG, (run) =>
+      run('UPDATE identity.membership SET last_active_at = NULL WHERE organization_id = $1', [ORG]),
+    );
     const res = await http().get('/api/v1/members').set(admin.authorization).expect(200);
     const { objects } = res.body as {
       objects: { email: string; role: string; lastActiveAt: number | null }[];
@@ -327,8 +332,12 @@ describe('members (UC-59, UC-62, UC-63, UC-64)', () => {
       ].sort(),
     );
     expect(objects.map((m) => m.email)).not.toContain(EMAILS.outsider);
-    // FR-56's last activity, honestly absent until something writes it.
-    expect(objects.every((m) => m.lastActiveAt === null)).toBe(true);
+    // FR-56's last activity: the administrator's, recorded by the request that listed them, and nobody else's —
+    // a member who has made no request since is honestly absent.
+    const activity = Object.fromEntries(objects.map((m) => [m.email, m.lastActiveAt]));
+    expect(activity[EMAILS.admin]).toEqual(expect.any(Number));
+    expect(activity[EMAILS.editor]).toBeNull();
+    expect(activity[EMAILS.viewer]).toBeNull();
   });
 
   // ── UC-62, UC-64 ──────────────────────────────────────────────────────────────────────────────
