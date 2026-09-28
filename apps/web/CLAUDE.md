@@ -273,6 +273,14 @@ Three things to know before touching it:
   `SubContent` portals as a sibling of the layer that gets `auto` back — so the language submenu is
   unclickable. It is also the right semantics for chrome hanging off a header.
 
+**A section the reader's role may not open is drawn locked** (task 173; `design_spec.md` §4.2's amendment of
+28 Sep 2026). `administration` on `shared/workspace-sections.ts`'s list marks *Organization* and *Users & access*, and
+`workspaceSectionsFor(mayAdminister(membership))` is computed **on the server, where the membership is**: the band's
+`WorkspaceNavigationSection`, the rail's `AccountRailSection` and `GlobalTier` for the drawer each hand their client
+the result, so no Client Component holds a belief about a role. The lock is `packages/ui`'s `LockedNavEntry`, since
+this app cannot draw a glyph. **This mark is presentation only and moves with the api's guard** — a screen still
+answers its own address from the api's refusal, and UX-3's switch landing still probes rather than reading the mark.
+
 **On a signed-in screen the document does not scroll; a region does** (28 Sep 2026, project owner; `design_spec.md`
 §4.2's amendment of that date). The `(app)` layout is one viewport-tall column: the global tier, then `.body`, the
 scroll region the wizard and the three organization-free screens scroll in. `(workspace)` and `(account)` fill `.body`

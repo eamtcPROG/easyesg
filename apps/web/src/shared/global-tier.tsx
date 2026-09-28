@@ -4,10 +4,11 @@ import { NotificationsPanel } from '@/features/notifications/panel/components/se
 import { OrganizationCorner } from '@/features/organization/switcher/components/organization-corner';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
-import { readMemberships } from '@/server/data/memberships';
+import { mayAdminister, readMemberships } from '@/server/data/memberships';
 import { readSession } from '@/server/session/session';
 import { AccountCorner } from './account-corner';
 import { WorkspaceDrawer } from './workspace-drawer';
+import { workspaceSectionsFor } from './workspace-sections';
 import styles from './global-tier.module.css';
 
 /**
@@ -85,6 +86,9 @@ export async function GlobalTier() {
             />
           </span>
           <WorkspaceDrawer
+            // The band's rule at this frame (task 173): a section the active membership's role may not open is
+            // drawn locked. No membership resolved reads as not administering — the safe direction.
+            sections={workspaceSectionsFor(mayAdminister(active ?? null))}
             organization={
               active && resolved
                 ? {

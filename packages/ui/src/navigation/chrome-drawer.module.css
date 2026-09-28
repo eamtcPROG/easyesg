@@ -136,6 +136,15 @@
   text-decoration: none;
 }
 
+/* A locked section (task 173): the row's own box, so it lines up with the open ones; `LockedNavEntry` makes it
+   muted and adds the lock. `flex` rather than the entry's `inline-flex`, so the row spans the panel as a link's does —
+   under `.list` so it outranks the entry's own rule by specificity rather than by which stylesheet loaded last. */
+.list .locked {
+  display: flex;
+  padding: var(--space-5) var(--page-gutter);
+  font: 400 15px/24px var(--font-text);
+}
+
 .list :is(a):hover {
   background: var(--surface-sunken);
 }

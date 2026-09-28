@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AccountRail } from '@/shared/account-rail';
+import { AccountRailSection } from '@/shared/account-rail-section';
 import { OrganizationChoiceGate } from '@/shared/organization-choice-gate';
 import { WorkspaceFooter } from '@/shared/workspace-footer';
 import styles from './layout.module.css';
@@ -29,7 +29,7 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
     <>
       <OrganizationChoiceGate />
       <div className={styles.page}>
-        <AccountRail />
+        <AccountRailSection />
         <div className={styles.scroll}>
           <main className={styles.main}>{children}</main>
           <WorkspaceFooter />

@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ro from '@/messages/ro.json';
 import { AccountRail } from './account-rail';
+import { workspaceSectionsFor } from './workspace-sections';
 
 /**
  * The account pages' rail — its two halves, their order, their names, and which destination is current.
@@ -30,6 +31,9 @@ vi.mock('@/i18n/navigation', () => ({
   usePathname: () => nav.pathname,
 }));
 
+/** An Organization Administrator's rail — every section open, which the set, order and current cases read. */
+const ADMINISTERING = workspaceSectionsFor(true);
+
 const withIntl = (node: React.ReactNode) => (
   <NextIntlClientProvider locale="ro" messages={{ chrome: ro.chrome }}>
     {node}
@@ -49,7 +53,7 @@ beforeEach(() => {
 
 describe('the account rail', () => {
   it('draws the workspace sections above the rule, under the band’s own name', () => {
-    render(withIntl(<AccountRail />));
+    render(withIntl(<AccountRail sections={ADMINISTERING} />));
 
     // The band's set and order, and its accessible name — the rail is the workspace tier on these screens, and
     // `choose-organization.spec.ts` navigates by that name from S-28.
@@ -62,8 +66,31 @@ describe('the account rail', () => {
     ]);
   });
 
+  it('draws the organization and its users locked for a member who does not administer it, as the band does', () => {
+    render(withIntl(<AccountRail sections={workspaceSectionsFor(false)} />));
+
+    // Task 173, at the rail: the same two sections locked, the rest still links — read through the landmark, so a
+    // locked row that slipped into the account's half fails too.
+    const workspace = within(screen.getByRole('navigation', { name: 'Secțiunile organizației' }));
+    expect(
+      workspace
+        .getAllByRole('link')
+        .filter((link) => link.getAttribute('aria-disabled') === 'true')
+        .map((link) => [link.textContent, link.getAttribute('href')]),
+    ).toEqual([
+      ['Organizația (doar pentru administratorii organizației)', null],
+      ['Utilizatori și acces (doar pentru administratorii organizației)', null],
+    ]);
+    expect(
+      workspace
+        .getAllByRole('link')
+        .filter((link) => link.hasAttribute('href'))
+        .map((link) => link.textContent),
+    ).toEqual(['Acasă', 'Rapoarte', 'Entități']);
+  });
+
   it('draws Profile then Credentials below it, under the account menu’s name', () => {
-    render(withIntl(<AccountRail />));
+    render(withIntl(<AccountRail sections={ADMINISTERING} />));
 
     expect(linksIn('Contul dumneavoastră')).toEqual([
       ['Profil', '/account'],
@@ -72,7 +99,7 @@ describe('the account rail', () => {
   });
 
   it('marks Profile on S-27, and only Profile', () => {
-    render(withIntl(<AccountRail />));
+    render(withIntl(<AccountRail sections={ADMINISTERING} />));
 
     expect(current()).toEqual(['Profil']);
   });
@@ -80,7 +107,7 @@ describe('the account rail', () => {
   it('marks Credentials on S-28, and only Credentials', () => {
     nav.pathname = '/account/credentials';
 
-    render(withIntl(<AccountRail />));
+    render(withIntl(<AccountRail sections={ADMINISTERING} />));
 
     // An exact match, so `/account` being a prefix of this address does not mark Profile as well.
     expect(current()).toEqual(['Credențiale']);

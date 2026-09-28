@@ -62,7 +62,8 @@
       "reports": "Reports",
       "entities": "Entities",
       "organization": "Organisation",
-      "users": "Users & access"
+      "users": "Users & access",
+      "lockedNote": "(organisation administrators only)"
     },
     "index": {
       "sort": {

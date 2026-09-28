@@ -83,6 +83,43 @@ describe('WorkspaceNav', () => {
     expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/en/home');
   });
 
+  it('draws a locked item as a disabled entry, never a link to follow, and never current', () => {
+    const items = [
+      { key: 'home', href: '/home', label: 'Home' },
+      { key: 'users', href: '/users', label: 'Users', lockedNote: '(administrators only)' },
+    ] as const;
+
+    // Active on the locked item's own address: a reader who typed it meets the screen's permission state, and the
+    // band must not mark as current a section it says they cannot open (task 173).
+    render(<WorkspaceNav label="Sections" items={items} isActive={onHref('/users')} />);
+
+    const locked = screen.getByRole('link', { name: 'Users (administrators only)' });
+    expect(locked).toHaveAttribute('aria-disabled', 'true');
+    expect(locked).not.toHaveAttribute('href');
+    expect(screen.queryAllByRole('link', { current: 'page' })).toHaveLength(0);
+    // The open sibling is untouched.
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/home');
+  });
+
+  it('does not hand a locked item to renderItem', () => {
+    const items = [
+      { key: 'home', href: '/home', label: 'Home' },
+      { key: 'users', href: '/users', label: 'Users', lockedNote: '(administrators only)' },
+    ] as const;
+    const renderItem = vi.fn((item: (typeof items)[number], state: WorkspaceNavItemState) => (
+      <a href={item.href} {...state.linkProps}>
+        {item.label}
+      </a>
+    ));
+
+    render(<WorkspaceNav label="Sections" items={items} isActive={() => false} renderItem={renderItem} />);
+
+    // A custom rendering replaces the anchor, and a locked item has none — so its semantics stay the component's.
+    expect(renderItem).toHaveBeenCalledTimes(1);
+    expect(renderItem.mock.calls[0]?.[0]).toMatchObject({ key: 'home' });
+    expect(screen.getByRole('link', { name: 'Users (administrators only)' })).not.toHaveAttribute('href');
+  });
+
   it('carries extra item fields through to renderItem, still typed', () => {
     const items = [
       { key: 'reports', href: '/reports', label: 'Reports', count: 3 },

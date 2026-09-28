@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ro from '@/messages/ro.json';
 import { WorkspaceNavigation } from './workspace-navigation';
+import { workspaceSectionsFor } from './workspace-sections';
 
 /**
  * §4.2's workspace tier — its item set, its order, and which item is current (task 104).
@@ -41,6 +42,9 @@ vi.mock('@/i18n/navigation', () => ({
   usePathname: () => nav.pathname,
 }));
 
+/** The tier an Organization Administrator draws — every section open, which the order and current-section cases read. */
+const ADMINISTERING = workspaceSectionsFor(true);
+
 const withIntl = (node: React.ReactNode) => (
   <NextIntlClientProvider locale="ro" messages={{ chrome: ro.chrome }}>
     {node}
@@ -65,7 +69,7 @@ beforeEach(() => {
 
 describe('the workspace tier', () => {
   it('opens with Home and orders entities before the organization', () => {
-    render(withIntl(<WorkspaceNavigation />));
+    render(withIntl(<WorkspaceNavigation sections={ADMINISTERING} />));
 
     // §4.2, as amended 10 Sep 2026, and `EasyESG Workspace.dc.html` at every width. *Plan &
     // billing* is the sixth entry and is deliberately absent — its screens are Phase 7's, and this
@@ -80,7 +84,7 @@ describe('the workspace tier', () => {
   });
 
   it('names itself as the organization sections', () => {
-    render(withIntl(<WorkspaceNavigation />));
+    render(withIntl(<WorkspaceNavigation sections={ADMINISTERING} />));
 
     // The accessible name `reports.spec.ts` and `accessibility.spec.ts` both locate the band by.
     expect(screen.getByRole('navigation', { name: 'Secțiunile organizației' })).toBeInTheDocument();
@@ -89,7 +93,7 @@ describe('the workspace tier', () => {
   it('marks the section the reader is on, and only that one', () => {
     nav.pathname = '/entities';
 
-    render(withIntl(<WorkspaceNavigation />));
+    render(withIntl(<WorkspaceNavigation sections={ADMINISTERING} />));
 
     // A role-based query, which only became possible in task 105: `WorkspaceNav` now builds the
     // anchor and puts `aria-current` on it, where a screen reader moving link-to-link reads it.
@@ -98,10 +102,33 @@ describe('the workspace tier', () => {
     expect(currentSections()).toEqual(['Entități']);
   });
 
+  it('draws the organization and its users locked for a member who does not administer it', () => {
+    render(withIntl(<WorkspaceNavigation sections={workspaceSectionsFor(false)} />));
+
+    // Task 173: an editor or a viewer sees both sections and can follow neither. Exact lists on both sides of the
+    // line, so a section locked by mistake — Entities, whose reads are every member's — fails as surely as one left
+    // open. The note is part of the accessible name, which is what a screen reader lists.
+    expect(
+      screen
+        .getAllByRole('link')
+        .filter((link) => link.getAttribute('aria-disabled') === 'true')
+        .map((link) => [link.textContent, link.getAttribute('href')]),
+    ).toEqual([
+      ['Organizația (doar pentru administratorii organizației)', null],
+      ['Utilizatori și acces (doar pentru administratorii organizației)', null],
+    ]);
+    expect(
+      screen
+        .getAllByRole('link')
+        .filter((link) => link.hasAttribute('href'))
+        .map((link) => link.textContent),
+    ).toEqual(['Acasă', 'Rapoarte', 'Entități']);
+  });
+
   it('marks nothing when the reader is on a screen outside the tier', () => {
     nav.pathname = '/account/credentials';
 
-    render(withIntl(<WorkspaceNavigation />));
+    render(withIntl(<WorkspaceNavigation sections={ADMINISTERING} />));
 
     // S-28 lives under the account corner, not this tier (task 30.1) — so no section is current.
     expect(currentSections()).toEqual([]);

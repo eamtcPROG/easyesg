@@ -122,6 +122,33 @@ describe('ChromeDrawer', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('draws a locked section as the band does, and a tap on it leaves the panel standing', async () => {
+    render(
+      <ChromeDrawer
+        label="Menu"
+        closeLabel="Close"
+        sectionsLabel="Sections"
+        brand={<span>easyESG</span>}
+        items={[...SECTIONS, { key: 'users', href: '/users', label: 'Users', lockedNote: '(administrators only)' }]}
+        isActive={(item) => item.href === '/users'}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    const locked = screen.getByRole('link', { name: 'Users (administrators only)' });
+    expect(locked).toHaveAttribute('aria-disabled', 'true');
+    expect(locked).not.toHaveAttribute('href');
+    // Never current, even on its own address — the band's rule (task 173).
+    expect(screen.queryAllByRole('link', { current: 'page' })).toHaveLength(0);
+
+    // A tap on a locked row goes nowhere, so closing the panel would read as though it had. It stays open because
+    // the entry is a `<span>` and the delegated close rule matches `a, button` — so this fails if the entry becomes
+    // an anchor or the rule widens to `[role="link"]`.
+    await userEvent.click(locked);
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
   it('renders its sections through an injected link component', async () => {
     const Localized: NavLinkComponent = ({ href, children, ...rest }) => (
       <a href={`/ru${href}`} {...rest}>

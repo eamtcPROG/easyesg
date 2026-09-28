@@ -1,10 +1,10 @@
 'use client';
 
-import { ARIA_CURRENT } from '@easyesg/ui';
+import { ARIA_CURRENT, LockedNavEntry } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
 import { ACCOUNT_SECTIONS } from './account-sections';
-import { WORKSPACE_SECTIONS } from './workspace-sections';
+import type { WorkspaceSection } from './workspace-sections';
 import styles from './account-rail.module.css';
 
 /**
@@ -26,11 +26,13 @@ import styles from './account-rail.module.css';
  * chrome drawer carries both halves — the artboard's *"top sheet at compact"*.
  *
  * **What it carries is what renders**, as the band does: the artboard's *Plan & billing* arrives with Phase 7's screens,
- * through `WORKSPACE_SECTIONS`, and not before.
+ * through `WORKSPACE_SECTIONS`, and not before. **And a section the reader's role may not open is drawn locked**, as
+ * the band draws it (task 173) — `sections` arrives from `AccountRailSection`, which read the membership; the lock is
+ * `packages/ui`'s `LockedNavEntry`, since the icon set is that package's alone.
  *
  * A Client Component for `usePathname` alone — marking the current destination is the rail's whole navigational job.
  */
-export function AccountRail() {
+export function AccountRail({ sections }: { readonly sections: readonly WorkspaceSection[] }) {
   const tSections = useTranslations('chrome.workspaceNav');
   const tAccount = useTranslations('chrome.accountMenu');
   const pathname = usePathname();
@@ -40,7 +42,11 @@ export function AccountRail() {
       <nav aria-label={tSections('label')}>
         <RailLinks
           pathname={pathname}
-          links={WORKSPACE_SECTIONS.map((section) => ({ href: section.href, label: tSections(section.key) }))}
+          links={sections.map((section) => ({
+            href: section.href,
+            label: tSections(section.key),
+            lockedNote: section.locked ? tSections('lockedNote') : undefined,
+          }))}
         />
       </nav>
       <nav className={styles.account} aria-label={tAccount('label')}>
@@ -53,25 +59,32 @@ export function AccountRail() {
   );
 }
 
-/** One half of the rail. Every destination is a leaf address, so the current one is an exact match. */
+/**
+ * One half of the rail. Every destination is a leaf address, so the current one is an exact match. A row carrying a
+ * `lockedNote` is drawn locked and is never current — the band's rule.
+ */
 function RailLinks({
   links,
   pathname,
 }: {
-  readonly links: readonly { readonly href: string; readonly label: string }[];
+  readonly links: readonly { readonly href: string; readonly label: string; readonly lockedNote?: string }[];
   readonly pathname: string;
 }) {
   return (
     <ul className={styles.list}>
       {links.map((link) => (
         <li key={link.href}>
-          <Link
-            className={styles.link}
-            href={link.href}
-            aria-current={link.href === pathname ? ARIA_CURRENT.PAGE : undefined}
-          >
-            {link.label}
-          </Link>
+          {link.lockedNote === undefined ? (
+            <Link
+              className={styles.link}
+              href={link.href}
+              aria-current={link.href === pathname ? ARIA_CURRENT.PAGE : undefined}
+            >
+              {link.label}
+            </Link>
+          ) : (
+            <LockedNavEntry label={link.label} note={link.lockedNote} className={styles.locked} />
+          )}
         </li>
       ))}
     </ul>

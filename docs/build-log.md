@@ -25728,3 +25728,71 @@ Microsoft and the manual reminder — hold byte-identical payloads under the sam
 **Not restored here:** the owner's own Google configuration, which the earlier runs overwrote. Republishing their last
 version directly into the dev store was refused by the session's permissions, so it is re-entered on A-18 — and now
 survives both seeding and the suites.
+
+## Task 173 — The workspace tier locks what the reader's role may not open · 2026-09-28
+
+The owner: *the user should not see the tabs he is not allowed to navigate.* Every member's band drew *Organization*
+and *Users & access*, and for an editor or a viewer both led only to the screen's permission state — the controllers
+behind S-15 and S-16 carry `@RequiresRole(ORGANIZATION_ADMINISTRATOR)`. *Entities* is not in that set: its reads are every
+member's, only its writes the administrator's.
+
+**Three decisions, each the owner's, each put as a choice with the sources beside it.**
+
+- **Where the rule lives: the tenant application.** Against it stood UX-3's amendment — *"never a table of roles kept
+  in a front end"* — and every workspace screen's docblock (*"the screen never computes the caller's role"*). For it:
+  the role already reaches the browser tier on the membership, `mayWrite` and `mayAdminister` already hide affordances
+  by it, and the alternative — `GET /memberships` serving each membership's openable sections — was a contract change
+  for a fact the role already carries. `administration` sits on `WORKSPACE_SECTIONS`, citing `actors.md`'s RC line;
+  `workspaceSectionsFor` reads it against `mayAdminister`. UX-3's sentence is scoped to the switch landing, which still
+  probes the api, and §4.2's amendment records the assumption: the mark and the guard move together.
+- **Locked, not absent.** The first reading of the request was *hidden*; offered hidden, locked with a reason, and
+  locked alone, the owner chose locked. `WorkspaceNav`'s docblock had recorded the opposite — *"a section a reader may
+  not enter is absent from the set rather than shown greyed"*, on a reading of UX-1 — and that paragraph is replaced
+  rather than left beside the new behaviour.
+- **A lock and no visible text.** The option that named the administrator (UX-1's *"who that administrator is"*) needed
+  a read an editor may make, which does not exist — S-16's list is the administrator's. Nothing on the tier tells the
+  reader to ask anyone, so UX-1 is not engaged; a screen reader hears a note after the name.
+
+**`LockedNavEntry` is an inventory entry, not a state inside each surface**, because the account rail is `apps/web`'s
+and the icon set is `packages/ui`'s alone (`architecture.md` §12.1) — the rail could not draw the lock itself. It is
+ARIA's disabled link as a `<span role="link" aria-disabled>`: listed among the links, never focusable, and unable to
+become followable by an attribute added later. `WorkspaceNav` and `ChromeDrawer` gain **locked** among their states; a
+locked item is never current and never reaches `renderItem`.
+
+**Deviations from the design as presented.** It proposed a new tier-3 token for the muted colour; the nav modules
+already read tier-2 roles, and `--text-muted` on `--surface-default` is measured in both schemes (4.99:1 and 5.82:1), so
+no token was added. And the drawer first gained an `[aria-disabled]` exception in its close delegation — inert, since
+the entry is a `<span>` and the rule matches `a, button`. It was removed, and the drawer's spec says what actually keeps
+the panel standing.
+
+**Where the membership is read.** The layouts are shells, so the band and the rail each gained a Server Component
+(`WorkspaceNavigationSection`, `AccountRailSection`) that reads `readActiveMembership` — the global tier's `cache()`d
+read, so `GET /memberships` still goes out once — and hands the client its sections. The drawer's are computed in
+`GlobalTier`, which already holds the membership. **No membership resolved locks the two**, the safe direction: on S-04,
+S-35 and S-37 the compact drawer shows them locked, which is harmless there, since every section needs an organization.
+
+**Searched for the shape:** every reader of `WORKSPACE_SECTIONS` (the band, the drawer, the rail — all three changed),
+every `ROUTES.ORGANIZATION` and `ROUTES.ORGANIZATION_USERS` link outside the tier (one, inside S-16, which only an
+administrator reaches), and the console, whose `ConsoleNavSections` already omits a section a role has nothing in.
+
+**Proven.** `workspace-sections.spec.ts` pins the locked keys per standing as exact lists; `WorkspaceNav`, `ChromeDrawer`,
+the band and the rail each assert a locked item's name, `aria-disabled` and absent `href`, with the open sections as an
+exact list beside them. Making the entry an `<a>` fails two cases — the entry's own and the drawer's tap-stays-open —
+and nothing else. `global-tier.spec.ts` drives an editor through the band, the rail and the drawer on the served build,
+and then the typed address to S-16's permission state; an administrator's band locks nothing. **The server wiring is
+what only that journey can see**, so it was the one mutated: `WorkspaceNavigationSection` handing every reader the
+administrator's sections, rebuilt, fails the editor case on the band's exact list. Its first run failed on the drawer's
+tap — Playwright's actionability check refuses an `aria-disabled` element, which is the state under test — so the tap
+is `force`d, with the reason beside it. Units: `packages/ui` 355, `apps/web` 1,174, `apps/admin` 293.
+
+**Runs, by the table the change reaches** (`packages/*` → every dependent's row): the three unit suites, `lint`, the
+three workspaces' `typecheck`, `docs:check`, `routes:check`, and `e2e:web` over `identity`, `expansion` and `admin` —
+**274 of 280**, the tier's five passing on the rerun after the `force` fix. **The other five failures are the provider
+suites, and this change does not reach them**: `social.spec.ts`'s four were sent to the real `accounts.google.com`, and
+`identity-providers.spec.ts` found Google enabled where it expects the seed's disabled slot. The local store holds the
+owner's own Google configuration, which task 172 now keeps; the social suite waits for `google` to appear in the
+providers read, which an enabled operator slot satisfies before the api's poll has picked up the stub. Raised as a task
+of its own rather than fixed here. A childless row closes on what its change reaches (owner, 13 Sep 2026), so neither
+the review agents nor `gates:clean` ran; CI runs the full set on push, against a freshly seeded store.
+
+**Owed:** the entry's specimen in `EasyESG Components.dc.html`, which §11.5 records.

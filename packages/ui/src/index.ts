@@ -122,6 +122,8 @@ export {
   type WorkspaceNavProps,
 } from './navigation/workspace-nav';
 export { ChromeDrawer, type ChromeDrawerProps } from './navigation/chrome-drawer';
+// Task 173: a section the reader's role may not open — the band, the drawer and `apps/web`'s account rail draw it.
+export { LockedNavEntry, type LockedNavEntryProps } from './navigation/locked-nav-entry';
 export { NotificationBell, type NotificationBellProps } from './navigation/notification-bell';
 // Task 67.1: the console's side navigation, and the Global bar's tone that draws the console's band.
 export {

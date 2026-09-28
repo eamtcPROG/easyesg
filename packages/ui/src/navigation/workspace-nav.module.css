@@ -52,6 +52,13 @@
   border-radius: var(--radius-1);
 }
 
+/* A locked section (task 173) keeps the link's box, so the band's rhythm does not change with a role; its colour
+   and its lock are `LockedNavEntry`'s. No hover: nothing happens on a press. */
+.locked {
+  padding: var(--space-1) var(--space-3);
+  font: 500 15px/24px var(--font-text);
+}
+
 .item:hover :is(a) {
   color: var(--text-default);
   background: var(--surface-sunken);

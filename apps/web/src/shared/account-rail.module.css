@@ -51,6 +51,15 @@
   text-decoration: none;
 }
 
+/* A locked section (task 173): the link's box, so the rail's rhythm does not change with a role; `LockedNavEntry` makes
+   it muted and adds the lock. `flex` so it spans the column as a link's `block` does — under `.list` to outrank the
+   entry's own `inline-flex` by specificity rather than by which stylesheet loaded last. */
+.list .locked {
+  display: flex;
+  padding: var(--space-3) var(--space-4);
+  font: 400 14px/24px var(--font-text);
+}
+
 .link:hover {
   color: var(--text-default);
   background: var(--surface-sunken);

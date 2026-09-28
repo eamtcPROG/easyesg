@@ -62,7 +62,8 @@
       "reports": "Rapoarte",
       "entities": "Entități",
       "organization": "Organizația",
-      "users": "Utilizatori și acces"
+      "users": "Utilizatori și acces",
+      "lockedNote": "(doar pentru administratorii organizației)"
     },
     "index": {
       "sort": {

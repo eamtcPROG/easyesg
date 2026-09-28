@@ -9,7 +9,8 @@ import { useSignOut } from '@/features/identity/shared/components/sign-out-provi
 import { NotificationsEntry } from '@/features/notifications/count/components/notifications-entry';
 import { ACCOUNT_SECTIONS } from './account-sections';
 import { useLocaleNames } from './use-locale-names';
-import { WORKSPACE_SECTIONS } from './workspace-sections';
+import { useWorkspaceItems } from './use-workspace-items';
+import type { WorkspaceSection } from './workspace-sections';
 import styles from './workspace-drawer.module.css';
 
 /**
@@ -43,11 +44,17 @@ export interface WorkspaceDrawerProps {
    * row and the switcher cannot disagree about whether there is an organization.
    */
   readonly organization?: { readonly switcher: ReactNode; readonly id: string };
+  /**
+   * The workspace sections as this reader draws them (task 173) — a section their role may not open arrives locked.
+   * Computed by `GlobalTier` from the membership it has already read, so the drawer holds no belief about a role.
+   */
+  readonly sections: readonly WorkspaceSection[];
 }
 
-export function WorkspaceDrawer({ organization }: WorkspaceDrawerProps) {
+export function WorkspaceDrawer({ organization, sections }: WorkspaceDrawerProps) {
   const t = useTranslations('chrome');
   const tSections = useTranslations('chrome.workspaceNav');
+  const items = useWorkspaceItems(sections);
   const { formId, requestSignOut } = useSignOut();
   const { locale, locales } = useLocaleNames();
   const pathname = usePathname();
@@ -68,7 +75,7 @@ export function WorkspaceDrawer({ organization }: WorkspaceDrawerProps) {
         sectionsLabel={tSections('label')}
         brand={<BrandMark />}
         linkComponent={Link}
-        items={WORKSPACE_SECTIONS.map((section) => ({ ...section, label: tSections(section.key) }))}
+        items={items}
         isActive={(item) => item.href === pathname}
         organization={organization?.switcher}
         actions={

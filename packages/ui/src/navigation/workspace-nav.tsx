@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { LockedNavEntry } from './locked-nav-entry';
 import { Anchor, type NavLinkComponent } from './nav-link';
 import { ARIA_CURRENT } from './nav-link-vocabulary';
 import styles from './workspace-nav.module.css';
@@ -38,9 +39,13 @@ import styles from './workspace-nav.module.css';
  * passes `@/i18n/navigation`'s locale-aware `Link`, because a raw `next/link` drops the locale
  * prefix — and `label` arrives localized, exactly as the region's own `label` always has (UX-79).
  *
- * States (§8.1, the applicable subset): rest · hover · focus · **current**. There is no disabled
- * state — a section a reader may not enter is absent from the set rather than shown greyed, because
- * UX-1 requires a boundary to be explained by the screen that enforces it, not hinted at by chrome.
+ * States (§8.1, the applicable subset): rest · hover · focus · **current** · **locked**. The last is
+ * task 173's (project owner, 28 Sep 2026), and it reverses what this paragraph said until then — that a
+ * section a reader may not enter is *absent* from the set rather than shown greyed. The owner weighed
+ * the two and chose locked: an editor sees that the organization's administration exists and is not
+ * theirs, rather than a band that silently differs by role. The screen that enforces the boundary still
+ * explains it to anyone who reaches its address, so UX-1's reading here is unchanged; only the band's
+ * hint is new. A locked item is `LockedNavEntry`, never a link, and is never current.
  */
 
 /**
@@ -55,6 +60,13 @@ export interface WorkspaceNavItem {
   readonly href: string;
   /** Localized by the caller: this package owns no text (UX-79). */
   readonly label: string;
+  /**
+   * **Present when the reader's role may not open this section**, and then the item is drawn locked —
+   * a lock and no link — with this as what a screen reader hears after the label. One field rather than
+   * a flag and a note, so a locked item without its spoken reason cannot be written. Localized by the
+   * caller; whether the role opens the section is the caller's too.
+   */
+  readonly lockedNote?: string;
 }
 
 /** What `renderItem` is told, so a custom rendering can carry the same semantics. */
@@ -81,7 +93,8 @@ export interface WorkspaceNavProps<TItem extends WorkspaceNavItem = WorkspaceNav
   /**
    * Full control of an item's interior, for the cases the default cannot express — an icon beside
    * the label, a count after it. It replaces the anchor, so it also takes over `linkProps`; the
-   * default path is the one that cannot be got wrong.
+   * default path is the one that cannot be got wrong. **Not called for a locked item**, which has no
+   * anchor to replace and whose semantics are this component's to keep.
    */
   readonly renderItem?: (item: TItem, state: WorkspaceNavItemState) => ReactNode;
   /**
@@ -105,6 +118,16 @@ export function WorkspaceNav<TItem extends WorkspaceNavItem = WorkspaceNavItem>(
     <nav className={styles.nav} aria-label={label}>
       <ul className={styles.list}>
         {items.map((item) => {
+          if (item.lockedNote !== undefined) {
+            return (
+              <li key={item.key}>
+                <span className={styles.item}>
+                  <LockedNavEntry label={item.label} note={item.lockedNote} className={styles.locked} />
+                </span>
+              </li>
+            );
+          }
+
           const active = isActive(item);
           // Built once and handed to both paths, so the default rendering and a `renderItem` one
           // cannot disagree about what "current" means on the wire.

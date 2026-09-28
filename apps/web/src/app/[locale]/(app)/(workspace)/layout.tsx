@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { OrganizationChoiceGate } from '@/shared/organization-choice-gate';
 import { WorkspaceFooter } from '@/shared/workspace-footer';
-import { WorkspaceNavigation } from '@/shared/workspace-navigation';
+import { WorkspaceNavigationSection } from '@/shared/workspace-navigation-section';
 import styles from './layout.module.css';
 
 /**
@@ -39,7 +39,7 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
       {/* The page fills the `(app)` scroll region: the tier stays in place and the screen and its footer scroll beneath
           it (28 Sep 2026, project owner), the footer still at the foot of a short screen (24 Sep 2026). */}
       <div className={styles.page}>
-        <WorkspaceNavigation />
+        <WorkspaceNavigationSection />
         <div className={styles.scroll}>
           {/*
             `<main>` since task 30.1, and it does two things rather than one.

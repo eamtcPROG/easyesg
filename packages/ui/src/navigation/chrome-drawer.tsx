@@ -3,6 +3,7 @@
 import { Menu, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Dialog } from 'radix-ui';
+import { LockedNavEntry } from './locked-nav-entry';
 import { Anchor, type NavLinkComponent } from './nav-link';
 import { ARIA_CURRENT } from './nav-link-vocabulary';
 import type { WorkspaceNavItem } from './workspace-nav';
@@ -33,9 +34,10 @@ import styles from './chrome-drawer.module.css';
  * its own: the focus trap, Escape, the scroll lock, and `aria-modal` with a name. The repo's
  * `consequence-dialogue.tsx` already establishes the part set.
  *
- * States (§8.1, the applicable subset): closed · open · rest · hover · focus · **current**. No
- * loading or error state — every destination is a link this component already holds, so there is
- * nothing here that can be pending or fail.
+ * States (§8.1, the applicable subset): closed · open · rest · hover · focus · **current** · **locked**
+ * — a section the reader's role may not open, drawn as `LockedNavEntry` exactly as the band draws it
+ * (task 173). No loading or error state — every destination is a link this component already holds, so
+ * there is nothing here that can be pending or fail.
  */
 export interface ChromeDrawerProps<TItem extends WorkspaceNavItem = WorkspaceNavItem> {
   /** Names the trigger and the panel, localized by the caller — this package owns no text. */
@@ -117,6 +119,10 @@ export function ChromeDrawer<TItem extends WorkspaceNavItem = WorkspaceNavItem>(
            * just opened. A row **chosen** in that menu leaves, whatever element Radix draws it as, so
            * `[role^="menuitem"]` counts as an entry — and it arrives here at all only because React
            * bubbles a portalled menu's events through the tree that rendered it, not the DOM.
+           *
+           * **A locked section leaves nothing either** (task 173), and needs no exception here: it is a
+           * `<span role="link">`, which `a, button` does not match, so a tap on it leaves the panel standing.
+           * Widening the match to `[role="link"]` would close the panel over a row that went nowhere.
            */
           onClick={(event) => {
             const target = event.target as HTMLElement;
@@ -143,6 +149,14 @@ export function ChromeDrawer<TItem extends WorkspaceNavItem = WorkspaceNavItem>(
               <nav aria-label={sectionsLabel}>
                 <ul className={styles.list}>
                   {items.map((item) => {
+                    if (item.lockedNote !== undefined) {
+                      return (
+                        <li key={item.key}>
+                          <LockedNavEntry label={item.label} note={item.lockedNote} className={styles.locked} />
+                        </li>
+                      );
+                    }
+
                     const active = isActive(item);
                     return (
                       <li key={item.key} className={active ? styles.current : undefined}>

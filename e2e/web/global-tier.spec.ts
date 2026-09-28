@@ -137,6 +137,71 @@ test('the band and the workspace tier stay in place while the screen scrolls ben
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });
 
+/**
+ * Task 173 (project owner, 28 Sep 2026; §4.2's amendment): the organization's administration is drawn locked for a
+ * member whose role may not open it, in every frame that draws the workspace tier — the band, the account rail, and the
+ * compact drawer. **Asserted on the served build rather than only on the components**, because what decides the lock is
+ * the membership read on the server and handed down, and a jsdom spec is handed its sections by the test.
+ */
+const LOCKED_NOTE = '(doar pentru administratorii organizației)';
+
+test('an editor sees the organization’s administration locked, in the band, the rail and the drawer (§4.2)', async ({
+  page,
+}) => {
+  const email = addressFor('editor');
+  await registerAndVerify(page, email);
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX} Editare`, role: 'editor' }));
+  await signIn(page, email);
+
+  // The band. Exact lists on both sides of the line: a locked Entities fails as surely as an open Users.
+  const band = page.getByRole('navigation', { name: 'Secțiunile organizației' });
+  await expect(band.locator('[aria-disabled="true"]')).toHaveText([
+    `Organizația ${LOCKED_NOTE}`,
+    `Utilizatori și acces ${LOCKED_NOTE}`,
+  ]);
+  await expect(band.locator('a[href]')).toHaveText(['Acasă', 'Rapoarte', 'Entități']);
+
+  // The rail, where it replaces the band (S-27).
+  await page.goto('/account');
+  const rail = page.getByRole('navigation', { name: 'Secțiunile organizației' });
+  await expect(rail.locator('[aria-disabled="true"]')).toHaveText([
+    `Organizația ${LOCKED_NOTE}`,
+    `Utilizatori și acces ${LOCKED_NOTE}`,
+  ]);
+
+  // The drawer, at the phone frame — where a tap on a locked row must leave the panel standing, since it went nowhere.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/home');
+  await page.getByRole('button', { name: 'Meniu' }).click();
+  const drawer = page.getByRole('dialog', { name: 'Meniu' });
+  const locked = drawer.getByRole('link', { name: `Utilizatori și acces ${LOCKED_NOTE}` });
+  await expect(locked).toHaveAttribute('aria-disabled', 'true');
+  // `force`, because Playwright's actionability check refuses an `aria-disabled` element — which is the state this
+  // asserts. The reader's tap still lands; what is under test is that it goes nowhere and closes nothing.
+  await locked.click({ force: true });
+  await expect(drawer).toBeVisible();
+  await expect(page).toHaveURL(/\/home$/);
+
+  // The boundary is still the api's: the address typed rather than followed meets the screen's own permission state.
+  await page.goto('/organization/users');
+  await expect(page.getByText('Această pagină este pentru administratorii organizației')).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: 'Înapoi la pagina principală' })).toBeVisible();
+});
+
+test('an administrator’s tier locks nothing (§4.2)', async ({ page }) => {
+  const email = addressFor('administrator');
+  await registerAndVerify(page, email);
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX} Administrare` }));
+  await signIn(page, email);
+
+  const band = page.getByRole('navigation', { name: 'Secțiunile organizației' });
+  await expect(band.locator('[aria-disabled="true"]')).toHaveCount(0);
+  await expect(band.getByRole('link', { name: 'Utilizatori și acces', exact: true })).toHaveAttribute(
+    'href',
+    '/organization/users',
+  );
+});
+
 test('the user menu carries S-28 and the language choice, and signs out (§4.2, UC-06)', async ({
   page,
 }) => {

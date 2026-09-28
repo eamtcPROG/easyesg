@@ -3,7 +3,8 @@
 import { WorkspaceNav } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
-import { WORKSPACE_SECTIONS } from './workspace-sections';
+import { useWorkspaceItems } from './use-workspace-items';
+import type { WorkspaceSection } from './workspace-sections';
 
 /**
  * §4.2's **workspace** tier, wired (task 26.4).
@@ -20,6 +21,10 @@ import { WORKSPACE_SECTIONS } from './workspace-sections';
  * six since the 10 Sep 2026 amendment — of which five render; *Plan & billing* is absent because
  * its screens are Phase 7's.
  *
+ * **A section the reader's role may not open is drawn locked** (task 173): `sections` arrives from
+ * `WorkspaceNavigationSection`, which read the membership on the server, so this file holds no
+ * belief about a role — it draws what it is handed.
+ *
  * **S-28 left this set in task 30.1**, which is the correction that task promised rather than a
  * change of mind. Task 27.7 put credentials here with its reason stated — §4.2 puts it under the
  * account corner, no account corner existed, and an unreachable screen is worse than a temporarily
@@ -31,9 +36,11 @@ import { WORKSPACE_SECTIONS } from './workspace-sections';
  * layout — is a prop that one screen eventually forgets to pass, with no way to notice.
  */
 
-export function WorkspaceNavigation() {
+export function WorkspaceNavigation({ sections }: { readonly sections: readonly WorkspaceSection[] }) {
   const t = useTranslations('chrome.workspaceNav');
   const pathname = usePathname();
+  // The labels, and each locked section's spoken note, resolved once for the band and the drawer alike.
+  const items = useWorkspaceItems(sections);
 
   return (
     <WorkspaceNav
@@ -41,11 +48,7 @@ export function WorkspaceNavigation() {
       // The locale-aware `Link`, injected: `packages/ui` holds no router, and a raw `next/link`
       // would drop the prefix. The component builds the anchor and owns `aria-current` with it.
       linkComponent={Link}
-      // **The only mapping left is the label**, and it cannot be removed: this package owns no text
-      // (UX-79), so the localized string has to arrive from here. `key` and `href` pass through
-      // untouched, which is what task 105's API change was for — the previous shape needed a
-      // rendered anchor and a resolved boolean per entry, built in this `.map` on every render.
-      items={WORKSPACE_SECTIONS.map((section) => ({ ...section, label: t(section.key) }))}
+      items={items}
       // Exact comparison, because every section in this tier is a leaf address. A nav whose
       // sections had children would pass a prefix match instead, which is why the component takes
       // the predicate rather than an active key.
