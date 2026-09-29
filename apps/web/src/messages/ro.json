@@ -748,7 +748,14 @@
         "activity": "Activitatea",
         "sites": "Amplasamente",
         "standing": "Starea",
+        "actions": "Acțiuni",
         "unclassified": "Fără activitate stabilită"
+      },
+      "rowActions": {
+        "edit": "Editați",
+        "editNamed": "Editați {name}",
+        "view": "Vedeți",
+        "viewNamed": "Vedeți {name}"
       },
       "standing": {
         "active": "Activă",

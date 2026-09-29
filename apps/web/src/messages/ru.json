@@ -748,7 +748,14 @@
         "activity": "Вид деятельности",
         "sites": "Площадки",
         "standing": "Состояние",
+        "actions": "Действия",
         "unclassified": "Вид деятельности не указан"
+      },
+      "rowActions": {
+        "edit": "Изменить",
+        "editNamed": "Изменить «{name}»",
+        "view": "Открыть",
+        "viewNamed": "Открыть «{name}»"
       },
       "standing": {
         "active": "Активна",

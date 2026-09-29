@@ -748,7 +748,14 @@
         "activity": "Activity",
         "sites": "Sites",
         "standing": "Status",
+        "actions": "Actions",
         "unclassified": "No activity recorded"
+      },
+      "rowActions": {
+        "edit": "Edit",
+        "editNamed": "Edit {name}",
+        "view": "View",
+        "viewNamed": "View {name}"
       },
       "standing": {
         "active": "Active",

@@ -42,13 +42,18 @@ import { EntitiesToolbar } from './entities-toolbar';
  * — so its state is several values moving on named events and belongs in a reducer. Here a row
  * *navigates*, so the only state is the view, and the view lives in the address (UX-4). Adding a
  * provider for one value would be the ceremony the reducer rule explicitly excludes.
+ *
+ * **Every row ends in a labelled action** (29 Sep 2026, project owner: *"to be clear for the user how to edit it"*) —
+ * *edit* for an active entity and *view* for an archived one, whose record is read-only; the console's row button
+ * (§5.2), named for its row. The name stays a link as well: it is where a reader who already knows looks, and the
+ * button is where one who does not is told.
  */
 /**
  * The columns that are not sort dimensions, declared rather than written into a union — the
  * convention's own reason applies: a hand-written union has no runtime value, so the key would be
  * spelled again at the column that uses it and a typo would silently produce a second column.
  */
-const ENTITY_COLUMN = { ACTIVITY: 'activity' } as const;
+const ENTITY_COLUMN = { ACTIVITY: 'activity', ACTIONS: 'actions' } as const;
 
 export type EntityColumnKey = EntitySort | (typeof ENTITY_COLUMN)[keyof typeof ENTITY_COLUMN];
 
@@ -93,9 +98,6 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         sortable: true,
         cell: (row) => (
           <span className={styles.identity}>
-            {/* The row action is the name itself, which is what an Index row action should be when
-                the record is the only destination: a separate "Open" column would be a second
-                target for one intention. */}
             <TextLink asChild>
               <Link href={entityRoute(row.id)}>{row.name}</Link>
             </TextLink>
@@ -134,6 +136,28 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         cell: (row) => (
           <StatusChip tone={STANDING_TONE[row.standing]}>{t(`standing.${row.standing}`)}</StatusChip>
         ),
+      },
+      {
+        key: ENTITY_COLUMN.ACTIONS,
+        header: t('columns.actions'),
+        align: COLUMN_ALIGN.END,
+        cell: (row) => {
+          // An archived record takes no change (FR-20), so its button says it opens to be read.
+          const edits = row.standing === ENTITY_STANDING.ACTIVE;
+          return (
+            <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
+              <Link
+                href={entityRoute(row.id)}
+                // The visible word, and a name that begins with it (WCAG 2.5.3) and ends with the row.
+                aria-label={
+                  edits ? t('rowActions.editNamed', { name: row.name }) : t('rowActions.viewNamed', { name: row.name })
+                }
+              >
+                {edits ? t('rowActions.edit') : t('rowActions.view')}
+              </Link>
+            </Button>
+          );
+        },
       },
     ],
     [t, legalForms],

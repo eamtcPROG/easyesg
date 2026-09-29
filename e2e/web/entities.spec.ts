@@ -83,8 +83,16 @@ test('the first-use empty state teaches, and creating from it lands on the recor
 
   // And the list now shows it, with its activity in words rather than as `10.7`.
   await page.goto('/entities');
-  await expect(page.getByRole('link', { name: `${RUN_PREFIX} Brutăria` })).toBeVisible();
+  // `exact`, because the row's own action is a link too, named *Editați* and then the entity.
+  await expect(page.getByRole('link', { name: `${RUN_PREFIX} Brutăria`, exact: true })).toBeVisible();
   await expect(page.getByText('Fabricarea produselor de brutărie')).toBeVisible();
+
+  // 29 Sep 2026, project owner: the row says how to change it. The visible word is the verb and the name is the row's.
+  const edit = page.getByRole('link', { name: `Editați ${RUN_PREFIX} Brutăria`, exact: true });
+  await expect(edit).toHaveText('Editați');
+  await edit.click();
+  await page.waitForURL(/\/entities\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(`${RUN_PREFIX} Brutăria`);
 });
 
 test('the create form keeps its section and its way back, and the picker offers classes before any typing', async ({
@@ -204,10 +212,15 @@ test('archiving states its consequence, and the entity leaves active selection (
   // `.first()` here would have been its only record.
   await page.getByLabel('Filtrați după stare').click();
   await page.getByRole('option', { name: 'Doar arhivate' }).click();
-  await expect(page.getByRole('link', { name: `${RUN_PREFIX} Veche` })).toBeVisible();
+  await expect(page.getByRole('link', { name: `${RUN_PREFIX} Veche`, exact: true })).toBeVisible();
+
+  // An archived row's action says it opens to be read, since nothing on the record can change.
+  const view = page.getByRole('link', { name: `Vedeți ${RUN_PREFIX} Veche`, exact: true });
+  await expect(view).toHaveText('Vedeți');
+  await expect(page.getByRole('link', { name: `Editați ${RUN_PREFIX} Veche` })).toHaveCount(0);
 
   // And its master data is frozen: UX-13 requires the read-only state to name its cause.
-  await page.getByRole('link', { name: `${RUN_PREFIX} Veche` }).click();
+  await view.click();
   await expect(page.getByText('Entitate arhivată')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Salvați modificările' })).toHaveCount(0);
 });
@@ -226,7 +239,7 @@ test('the filter lives in the address, and its empty state is not the first-use 
   // remedy is different: clear the filter, not create your first object.
   await expect(page.getByText('Nicio entitate nu corespunde filtrului')).toBeVisible();
   await page.getByRole('button', { name: 'Ștergeți filtrul' }).click();
-  await expect(page.getByRole('link', { name: `${RUN_PREFIX} Activă` })).toBeVisible();
+  await expect(page.getByRole('link', { name: `${RUN_PREFIX} Activă`, exact: true })).toBeVisible();
 });
 
 test('the screen is live in all three locales', async ({ page }) => {
