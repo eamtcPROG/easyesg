@@ -1,12 +1,14 @@
 'use client';
 
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import styles from './data-table.module.css';
 import {
   COLUMN_ALIGN,
+  COLUMN_SIZE,
   SORT_DIRECTION,
   type ColumnAlign,
+  type ColumnSize,
   type SortDirection,
 } from './data-table-vocabulary';
 
@@ -45,8 +47,13 @@ export interface DataTableSort<TColumnKey extends string> {
 interface DataTableColumnShared<TRow, TColumnKey extends string> {
   readonly key: TColumnKey;
   readonly cell: (row: TRow) => ReactNode;
-  /** End-align a numeric column so digits line up; `t-numeric` carries tabular figures. */
+  /**
+   * End-align a numeric column so digits line up; `t-numeric` carries tabular figures. Centre a
+   * short value under a wider header.
+   */
   readonly align?: ColumnAlign;
+  /** `fill` to share the width equally with the other `fill` columns, `fit` to take the content's. */
+  readonly size?: ColumnSize;
 }
 
 /**
@@ -111,6 +118,7 @@ export function DataTable<TRow, TColumnKey extends string>({
   sortLabels,
 }: DataTableProps<TRow, TColumnKey>) {
   const sortable = onSortChange !== undefined && sortLabels !== undefined;
+  const fills = columns.filter((column) => column.size === COLUMN_SIZE.FILL).length;
 
   return (
     <div className={styles.scroller}>
@@ -124,7 +132,9 @@ export function DataTable<TRow, TColumnKey extends string>({
               <th
                 key={column.key}
                 scope="col"
-                className={column.align === COLUMN_ALIGN.END ? styles.end : undefined}
+                className={cellClass(column)}
+                // The header row is where the table reads a column's width.
+                style={headerWidth({ size: column.size, fills })}
                 // The one attribute that makes a sortable table navigable: a screen reader
                 // announces the current order on the header itself rather than leaving the reader
                 // to infer it from an icon.
@@ -151,10 +161,7 @@ export function DataTable<TRow, TColumnKey extends string>({
           {rows.map((row) => (
             <tr key={rowKey(row)}>
               {columns.map((column) => (
-                <td
-                  key={column.key}
-                  className={column.align === COLUMN_ALIGN.END ? styles.end : undefined}
-                >
+                <td key={column.key} className={cellClass(column)}>
                   {column.cell(row)}
                 </td>
               ))}
@@ -165,6 +172,30 @@ export function DataTable<TRow, TColumnKey extends string>({
     </div>
   );
 }
+
+const ALIGN_CLASS: Record<ColumnAlign, string | undefined> = {
+  [COLUMN_ALIGN.START]: undefined,
+  [COLUMN_ALIGN.CENTER]: styles.center,
+  [COLUMN_ALIGN.END]: styles.end,
+};
+
+/** A cell's alignment, and a `fit` column's refusal to wrap — the width it asks for is its content's. */
+const cellClass = ({ align, size }: { readonly align?: ColumnAlign; readonly size?: ColumnSize }): string | undefined =>
+  [align ? ALIGN_CLASS[align] : undefined, size === COLUMN_SIZE.FIT ? styles.fit : undefined]
+    .filter(Boolean)
+    .join(' ') || undefined;
+
+/**
+ * A column's width, stated on its header cell. **A `fill` column asks for an equal share of the
+ * whole and a `fit` column for 1%**: under the automatic table layout a column is never narrower
+ * than its content, so the 1% becomes the content's width and the `fill` columns divide the rest
+ * between them in equal parts. A column given no size asks for nothing.
+ */
+const headerWidth = ({ size, fills }: { readonly size?: ColumnSize; readonly fills: number }): CSSProperties | undefined => {
+  if (size === COLUMN_SIZE.FILL) return { inlineSize: `${100 / fills}%` };
+  if (size === COLUMN_SIZE.FIT) return { inlineSize: '1%' };
+  return undefined;
+};
 
 /**
  * The next sort a click produces: a new column starts ascending, the current one reverses.

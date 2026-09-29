@@ -13,7 +13,7 @@ restating it here would create the second copy that drifts. This file carries wh
 
 ## Current state
 
-64 components in nine folders, 39 spec files, `src/styles/tokens.css` at 481 lines — **light and
+64 components in nine folders, 40 spec files, `src/styles/tokens.css` at 481 lines — **light and
 dark since task 82**, with `styles/tokens.spec.ts` measuring every semantic pairing in both
 schemes against UX-101 and writing `styles/contrast-record.md` as it goes. That spec is a
 `.spec.ts` rather than a `.spec.tsx` and so is *not* in the 29: it renders nothing, it parses the
@@ -28,7 +28,7 @@ is not itself a gap.
 | `forms/` | 8 | The react-hook-form binding. **A separate entry point** — see the traps |
 | `feedback/` | 6 | Banner, Callout, EmptyState, ConsequenceDialogue, task 170's Dialog — a record or a form over a list — and the Expiring callout (28 Sep 2026), a submit's message that leaves after its dwell, with `useDismissible` beside it |
 | `navigation/` | 15 | GlobalBar — the console's band too, through a tone — task 50.2.1's NotificationBell, the band's notification entry and since 50.2.2 its panel's trigger, here because the icon set is — AccountMenu, WorkspaceNav, task 67.1's ConsoleNav, ChromeDrawer, LanguageSwitcher, Pagination, task 83.2's OrganizationSwitcher, task 170's ConsoleDrawer — the console navigation below `wide` — OverflowMenu, task 173's LockedNavEntry — a section the reader's role may not open, drawn by the band, the drawer and `apps/web`'s account rail — and the Breadcrumb (28 Sep 2026), a record's way back to the section it lies beneath, with `console-nav-sections.tsx`, the sections the column and the drawer both draw and a part rather than an inventory entry, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
-| `data-display/` | 4 | DataTable, StatusChip, and task 143's EnrolmentCode with its loading arm |
+| `data-display/` | 4 | DataTable — whose columns may fill, fit and centre since 29 Sep 2026 — StatusChip, and task 143's EnrolmentCode with its loading arm |
 | `disclosure/` | 1 | DisclosureField — the anatomy every B1–B11 module reuses (task 36.1) |
 | `domain/` | 5 | ReportingPeriodPicker, SaveStateIndicator, VersionPinIndicator, and §6.10's two from task 142 — UsageCounter beside an action, EntitlementGate after a refused one |
 | `archetypes/` | 6 | Focus, Index, Record, Wizard shells, and since 29 Sep 2026 the Record's card form, `RecordCard` — see `src/archetypes/README.md` |

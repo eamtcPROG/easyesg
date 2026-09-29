@@ -53,9 +53,23 @@
   text-align: end;
 }
 
-/* A sortable end-aligned header: the control fills the cell, so its content is what moves. */
+/* Centred, for a short value under a wider header — scoped under `.table` for the reason above. */
+.table .center {
+  text-align: center;
+}
+
+/* A `fit` column's width is its content's, so its content keeps to one line rather than asking for less. */
+.table .fit {
+  white-space: nowrap;
+}
+
+/* A sortable end-aligned or centred header: the control fills the cell, so its content is what moves. */
 .end .sortButton {
   justify-content: flex-end;
+}
+
+.center .sortButton {
+  justify-content: center;
 }
 
 .sortButton {

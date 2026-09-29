@@ -4,6 +4,7 @@ import {
   Button,
   BUTTON_VARIANT,
   COLUMN_ALIGN,
+  COLUMN_SIZE,
   EmptyState,
   StatusChip,
   STATUS_TONE,
@@ -96,6 +97,9 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         key: ENTITY_SORT.NAME,
         header: t('columns.entity'),
         sortable: true,
+        // The two text columns share the width equally, and the three short ones take only what they hold
+        // (29 Sep 2026, project owner: *"a better alignment of the columns for more symmetry"*).
+        size: COLUMN_SIZE.FILL,
         cell: (row) => (
           <span className={styles.identity}>
             <TextLink asChild>
@@ -112,6 +116,7 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
       {
         key: ENTITY_COLUMN.ACTIVITY,
         header: t('columns.activity'),
+        size: COLUMN_SIZE.FILL,
         cell: (row) =>
           row.activity.length > 0 ? (
             <span className={styles.activity}>{row.activity.join(' · ')}</span>
@@ -126,13 +131,18 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         key: ENTITY_SORT.SITES,
         header: t('columns.sites'),
         sortable: true,
-        align: COLUMN_ALIGN.END,
+        // Centred: a site count is a digit or two under a wider header, so there is no column of
+        // magnitudes for end alignment to line up.
+        align: COLUMN_ALIGN.CENTER,
+        size: COLUMN_SIZE.FIT,
         cell: (row) => <span className="t-numeric">{row.siteCount}</span>,
       },
       {
         key: ENTITY_SORT.STANDING,
         header: t('columns.standing'),
         sortable: true,
+        align: COLUMN_ALIGN.CENTER,
+        size: COLUMN_SIZE.FIT,
         cell: (row) => (
           <StatusChip tone={STANDING_TONE[row.standing]}>{t(`standing.${row.standing}`)}</StatusChip>
         ),
@@ -141,6 +151,7 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         key: ENTITY_COLUMN.ACTIONS,
         header: t('columns.actions'),
         align: COLUMN_ALIGN.END,
+        size: COLUMN_SIZE.FIT,
         cell: (row) => {
           // An archived record takes no change (FR-20), so its button says it opens to be read.
           const edits = row.standing === ENTITY_STANDING.ACTIVE;

@@ -157,8 +157,10 @@ export { ARIA_CURRENT, type AriaCurrent } from './navigation/nav-link-vocabulary
 // Data display — §11.5
 export {
   COLUMN_ALIGN,
+  COLUMN_SIZE,
   SORT_DIRECTION,
   type ColumnAlign,
+  type ColumnSize,
   type SortDirection,
 } from './data-display/data-table-vocabulary';
 export {
