@@ -26047,3 +26047,57 @@ Reviews and `gates:clean` did not run (owner, 13 Sep 2026). What the cold run co
 moved and one deleted, neither with a `dist/` copy, since `apps/web` builds fresh in `e2e:web`'s pre-hook; the contract
 resolves from source; and the lint cache, which types changed under unchanged files, was paid for by running lint
 uncached per workspace.
+
+## Task 178 — A failed setup hook left the e2e run hanging · 2026-09-29
+
+Found by task 177's run: `pnpm e2e` finished in 18.7 minutes at 1,442 passed and 15 failed — two suites,
+`factor-challenge` and `notification-centre`, whose `beforeAll` timed out — and then sat about twenty minutes without
+exiting until stopped. Both suites passed alone.
+
+**The timeouts were a stalled process, not a lock.** The row asked whether the cleanup `DELETE FROM identity.auth_attempt`
+could block for 120 s on another connection's lock. The test Postgres's log for the run's window answers no: four
+`FATAL: canceling authentication due to timeout` from the run's own connections at 13:15:34–38 UTC. Authentication
+precedes every query, so a client that cannot finish it in 60 s is a client not running — the node process, or the
+host, stalled — and no lock can cause that. `log_lock_waits` is off, so a lock wait would not have been logged either
+way; what settles it is that the stall reached the handshake. The frame jest printed on the `DELETE` is where it maps
+the hook, not where it waited. Task 85 diagnosed the same host running out of memory under the full suite; this is that
+again, and this task does not reopen it.
+
+**What held the run afterwards, measured.** Two throwaway probes, each a process that did not exit:
+
+- the setup times out after booting the application and the teardown stalls before `app.close()` — the process holds
+  one socket to the test Postgres and two to its Redis, listed by `process.getActiveResourcesInfo()` and the handle
+  list at teardown; the HTTP server was already released by task 87's `close-connections.ts`;
+- the setup times out **while the application is still booting** — the same, plus the `require … after the Jest
+  environment has been torn down` error from `ConfigurationStore.refreshIfStale` the real run logged. The poll timer
+  starts at the end of `init()`, so that error places the real run's application as finishing after its file ended.
+
+**The four options, and the one taken.** The configuration store's poll timer is **already `unref()`'d** — it fires on
+only because the sockets keep the loop alive, so unreffing it is not a fix. Closing the app first in each suite's
+teardown is sixty edits with a forgetting mode each, and a teardown stalled on its first statement still never reaches
+it. `--forceExit` would exit, and would equally hide a real leak in the application's own shutdown. **Taken: the
+harness tracks every application `NestFactory.create` and `createApplicationContext` return in a file, closes those still
+open when the file ends, and closes on arrival one that finishes booting after** — `test/support/close-applications.ts`,
+beside `close-connections.ts`, and the same decision the owner took for the servers on 1 Sep 2026: tracking, with no
+suite able to forget it. It releases the servers first, since Nest's express adapter waits in `close` for every active
+connection, and bounds each close at 10 s. Choosing it was applying that recorded decision rather than a new question.
+
+**One trap, found by the spec**: `NestFactory` returns the application inside a `Proxy` whose `set` trap answers
+without assigning, so `app.close = …` did nothing and the first spec run failed its untrack case. The wrapper is
+`Object.defineProperty`'d instead — untrapped, it reaches the application — and calls the prototype's `close` on the
+proxy, since reading `close` through the proxy would return Nest's exception wrapper around the property just defined.
+
+**Proven**: both probes, which hung indefinitely before, exit on their own after — 28 s and 23 s, exit code 1 as their
+failing setups require, with only a timer left at teardown. `close-applications.e2e-spec.ts` asserts the three cases
+(untracked when a suite closes it, closed at file end, closed on arrival), and each half was removed in turn: without
+the close on arrival one case fails, without the teardown's close two do. The probes were deleted.
+
+**Searched for the shape**: every setup that creates an application (`NestFactory.create`, and
+`createApplicationContext` in `billing-disabled` and `entrypoint-boot`) — all reached through the two wrapped methods,
+and none through `@nestjs/testing`. `test/README.md`'s table of handles gains the third row.
+
+**Verified**: `pnpm e2e` 1,460 of 1,460 across 61 suites, the new spec among them, **exiting on its own in 266 s** — the same
+suite took 18.7 minutes in task 177's run, which nothing here explains and which is task 85's memory finding again
+rather than this task's, the host carrying no dev servers this time; `pnpm e2e:worker` 9 of 9, whose boot spec builds its
+application through the wrapped `createApplicationContext`; the api's unit suite 1,438; `pnpm lint` and the api
+typecheck. Reviews and `gates:clean` did not run (owner, 13 Sep 2026): a test-harness file, nothing built from it.

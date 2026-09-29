@@ -128,6 +128,7 @@ handles do that, and the file shipped closing only one of them.**
 | --- | --- | --- |
 | a request the test abandoned | `server.closeAllConnections()` | task 85 |
 | the server itself, still listening | `server.close()` | task 87 |
+| the application itself — its database pool and Redis clients — when `app.close()` never ran | `support/close-applications.ts` | task 178 |
 
 Neither alone is enough, and that is measured rather than argued: with only the connections closed a
 listening server keeps the loop alive on its own, and with only the listener closed the live
@@ -139,3 +140,12 @@ database session, 21 minutes at 0 % CPU.
 `close-connections.e2e-spec.ts` asserts both, in two tests rather than one, and each has been seeded:
 remove `server.close()` and *"closes the listener"* fails `Expected: false, Received: true` **and**
 jest stops exiting. The header docblock carries the full measurement.
+
+**A third handle, found 29 Sep 2026 (task 178):** a setup hook that timed out left its application open, because the
+suite's teardown also stalled before its `app.close()` — or ran before a slow boot finished, so the application arrived
+after the file had ended. Either way the process held one socket to Postgres and two to Redis and never exited.
+`support/close-applications.ts` tracks every application `NestFactory` creates in a file, closes those still open when
+the file ends — after `close-connections.ts` has released the servers, since Nest's `close` waits for active
+connections — and closes on arrival one that boots after. `close-applications.e2e-spec.ts` asserts the three cases, and
+each is seeded. **`--forceExit` was declined**: it would hide a real leak in the application's own shutdown exactly as
+it would hide this one.
