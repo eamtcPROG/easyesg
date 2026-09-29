@@ -543,22 +543,22 @@
     },
     "create": {
       "title": "Configurați-vă organizația",
-      "subtitle": "Aceasta este compania pentru care se depune raportul. Deveniți administratorul ei și puteți invita colegi imediat ce există.",
-      "nameLabel": "Denumirea juridică",
-      "nameHelp": "Exact cum apare în registrul de stat. Se tipărește pe raport.",
-      "nameRequired": "Scrieți denumirea juridică a companiei, altfel organizația nu poate fi creată.",
-      "nameTooLong": "Denumirea depășește 200 de caractere și nu poate fi salvată. Scurtați-o până la denumirea din registrul de stat.",
-      "countryLabel": "Țara de înregistrare",
-      "countryHelp": "Stabilește formele juridice disponibile și apare pe raport.",
+      "subtitle": "Organizația este contul echipei dumneavoastră în easyESG. Odată cu ea creăm și prima companie — cea despre care este raportul. Deveniți administratorul ei și puteți invita colegi imediat.",
+      "nameLabel": "Denumirea companiei",
+      "nameHelp": "Ca în registrul de stat. Organizația și prima companie primesc amândouă această denumire; o puteți schimba ulterior la oricare dintre ele.",
+      "nameRequired": "Scrieți denumirea companiei, altfel organizația nu poate fi creată.",
+      "nameTooLong": "Denumirea depășește 200 de caractere și nu poate fi salvată. Scurtați-o.",
+      "countryLabel": "Țara",
+      "countryHelp": "Țara în care este înregistrată compania. Stabilește ce forme juridice și coduri de activitate vă oferim.",
       "countryPlaceholder": "Alegeți țara",
-      "countryRequired": "Alegeți țara în care este înregistrată compania, ca să știm ce forme juridice vă putem oferi.",
-      "contactEmailLabel": "E-mail de contact — opțional",
-      "contactEmailHelp": "Aici scriem despre această organizație. Îl puteți completa mai târziu în Organizație.",
+      "countryRequired": "Alegeți țara în care este înregistrată compania, ca să știm ce forme juridice și coduri de activitate vă putem oferi.",
+      "contactEmailLabel": "E-mail pentru mesajele easyESG — opțional",
+      "contactEmailHelp": "Aici vă scriem despre organizație. Nu se tipărește niciodată într-un raport.",
       "contactEmailInvalid": "Adresa nu are forma unei adrese de e-mail, așa că nu putem scrie la ea. Verificați dacă ați scris corect, de exemplu contact@companie.md.",
-      "contactPhoneLabel": "Telefon de contact — opțional",
-      "contactPhoneHelp": "În orice format. Îl puteți completa mai târziu în Organizație.",
+      "contactPhoneLabel": "Telefon — opțional",
+      "contactPhoneHelp": "În orice format. Nu se tipărește niciodată într-un raport.",
       "contactPhoneTooLong": "Numărul depășește 40 de caractere și nu poate fi salvat. Lăsați doar numărul de telefon.",
-      "oneIsEnough": "O singură organizație este de ajuns la început. Entitățile le adăugați sub ea după aceea.",
+      "oneIsEnough": "O singură organizație este de ajuns. Dacă raportați pentru mai multe companii, le adăugați pe celelalte la Entități, după ce o creați.",
       "submit": "Creați organizația",
       "waitingForInvitation": "Așteptați o invitație? Rugați-vă administratorul să invite această adresă.",
       "problemTitle": "Organizația nu a putut fi creată",
@@ -661,10 +661,10 @@
     },
     "profile": {
       "title": "Profilul organizației",
-      "lede": "Identitatea juridică ce se tipărește pe fiecare raport pe care îl depuneți.",
+      "lede": "Contul organizației în easyESG: numele ei și cum vă contactăm. Ce se tipărește în rapoarte ține de fiecare companie, la Entități.",
       "saved": {
         "title": "Profilul a fost salvat",
-        "body": "Valorile noi se aplică rapoartelor create de acum înainte. Rapoartele deja depuse păstrează valorile din momentul depunerii."
+        "body": "Datele organizației au fost actualizate."
       },
       "problemTitle": "Modificarea nu a putut fi salvată",
       "problemBody": "Profilul a rămas neschimbat din cauza unei erori la procesarea cererii.",
@@ -674,42 +674,23 @@
         "unknown": "Nicio modificare înregistrată încă."
       },
       "identity": {
-        "heading": "Identitatea juridică",
-        "lede": "Denumirea și forma juridică exact cum apar în registrul de stat.",
-        "name": "Denumirea juridică",
-        "nameHelp": "Se tipărește pe raport, așa cum o scrieți aici.",
-        "nameRequired": "Scrieți denumirea juridică a companiei, altfel profilul nu poate fi salvat.",
-        "nameTooLong": "Denumirea depășește 200 de caractere și nu poate fi salvată. Scurtați-o până la denumirea din registrul de stat.",
-        "country": "Țara de înregistrare",
-        "countryHelp": "Stabilește ce forme juridice vă putem oferi mai jos.",
+        "heading": "Organizația",
+        "lede": "Numele pe care îl vede echipa în easyESG și țara după care vă oferim formele juridice și codurile de activitate.",
+        "name": "Numele organizației",
+        "nameHelp": "Apare în easyESG și în mesajele pe care vi le trimitem. Nu se tipărește în rapoarte — acolo apare denumirea fiecărei companii, de la Entități.",
+        "nameRequired": "Scrieți numele organizației, altfel modificarea nu poate fi salvată.",
+        "nameTooLong": "Numele depășește 200 de caractere și nu poate fi salvat. Scurtați-l.",
+        "country": "Țara",
+        "countryHelp": "Stabilește ce forme juridice și coduri de activitate pot alege companiile dumneavoastră.",
         "countryPlaceholder": "Alegeți țara",
-        "countryRequired": "Alegeți țara în care este înregistrată compania, ca să știm ce forme juridice vă putem oferi.",
-        "legalForm": "Forma juridică",
-        "legalFormHelp": "Alegeți forma din registrul de stat. O puteți lăsa necompletată deocamdată.",
-        "legalFormPlaceholder": "Alegeți forma juridică"
-      },
-      "address": {
-        "heading": "Adresa juridică",
-        "lede": "Adresa înregistrată a companiei, nu adresa unde lucrați zi de zi.",
-        "line1": "Strada și numărul",
-        "line2": "Detalii suplimentare (bloc, oficiu)",
-        "locality": "Localitatea",
-        "postalCode": "Codul poștal",
-        "lineTooLong": "Rândul depășește 200 de caractere și nu poate fi salvat. Scurtați-l.",
-        "localityTooLong": "Localitatea depășește 120 de caractere și nu poate fi salvată. Scurtați-o.",
-        "postalCodeTooLong": "Codul poștal depășește 20 de caractere și nu poate fi salvat. Lăsați doar codul."
+        "countryRequired": "Alegeți țara, ca să știm ce forme juridice și coduri de activitate vă putem oferi."
       },
       "contacts": {
-        "heading": "Persoane de contact",
-        "lede": "Două contacte diferite: unul pentru noi, altul pentru cititorii raportului.",
-        "platformEmail": "E-mail de contact cu platforma",
-        "platformEmailHelp": "Aici vă scriem despre această organizație. Nu apare în raport.",
-        "platformPhone": "Telefon de contact",
-        "reportName": "Persoana de contact tipărită pe raport",
-        "reportNameHelp": "Cine răspunde la întrebări despre conținutul raportului. Poate fi altcineva decât administratorul contului.",
-        "reportEmail": "E-mailul tipărit pe raport",
-        "reportEmailHelp": "Apare pe copertă și îl vede oricine primește raportul.",
-        "reportNameTooLong": "Numele depășește 200 de caractere și nu poate fi salvat. Scurtați-l.",
+        "heading": "Cum vă contactăm",
+        "lede": "Pentru mesajele easyESG despre organizație. Nu se tipăresc niciodată în rapoarte.",
+        "platformEmail": "E-mail pentru mesajele easyESG",
+        "platformEmailHelp": "Aici vă scriem despre organizație.",
+        "platformPhone": "Telefon",
         "emailInvalid": "Adresa nu are forma unei adrese de e-mail, așa că nu putem scrie la ea. Verificați dacă ați scris corect, de exemplu contact@companie.md.",
         "phoneTooLong": "Numărul depășește 40 de caractere și nu poate fi salvat. Lăsați doar numărul de telefon."
       },
@@ -835,6 +816,17 @@
           "activityRemoveShort": "Ștergeți",
           "activityNone": "Nicio activitate aleasă încă."
         },
+        "address": {
+          "heading": "Adresa juridică",
+          "lede": "Adresa oficială a companiei din registrul de stat. Se tipărește în raportul acestei companii.",
+          "line1": "Strada și numărul",
+          "line2": "Detalii suplimentare (bloc, oficiu)",
+          "locality": "Localitatea",
+          "postalCode": "Codul poștal",
+          "lineTooLong": "Rândul depășește 200 de caractere și nu poate fi salvat. Scurtați-l.",
+          "localityTooLong": "Localitatea depășește 120 de caractere și nu poate fi salvată. Scurtați-o.",
+          "postalCodeTooLong": "Codul poștal depășește 20 de caractere și nu poate fi salvat. Lăsați doar codul."
+        },
         "boundary": {
           "heading": "Perimetrul de raportare",
           "lede": "Stabilește ce cifre intră în raport: doar entitatea, sau și filialele ei.",
@@ -888,7 +880,17 @@
           "confirm": "Plecați fără să salvați",
           "cancel": "Rămâneți pe pagină"
         },
-        "loading": "Se încarcă entitatea…"
+        "loading": "Se încarcă entitatea…",
+        "reportContact": {
+          "heading": "Persoana de contact pentru raport",
+          "lede": "Persoana căreia cititorii raportului acestei companii îi pot scrie despre conținutul lui. Se tipărește pe coperta raportului.",
+          "name": "Numele persoanei de contact",
+          "nameHelp": "Poate fi altcineva decât cel care administrează contul în easyESG.",
+          "email": "E-mailul persoanei de contact",
+          "emailHelp": "Îl vede oricine primește raportul.",
+          "nameTooLong": "Numele depășește 200 de caractere și nu poate fi salvat. Scurtați-l.",
+          "emailInvalid": "Adresa nu are forma unei adrese de e-mail, așa că nu i se poate scrie. Verificați dacă ați scris corect, de exemplu contact@companie.md."
+        }
       },
       "loading": "Se încarcă lista entităților…"
     },

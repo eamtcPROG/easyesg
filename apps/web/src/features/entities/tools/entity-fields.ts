@@ -15,6 +15,9 @@ import type { ConsolidationBasis } from './entities';
  * restores it and `isDirty` sees it — and `toRequest` is where a removed row stops existing. A row added since the last
  * save has nothing to keep, and the form drops it outright.
  *
+ * **The registered address and the report-cover contact are the entity's since task 177**, moved from S-15 with the
+ * rest of what a report prints; blanks are sent as `null`, as every other optional field is.
+ *
  * **The identifiers are the entity's since task 175** (FR-16 as amended): the IDNO and an optional LEI, blanks sent
  * as `null` — which clears a stored one — and the LEI upper-cased.
  *
@@ -44,6 +47,12 @@ export interface EntityFields {
   legalForm: string;
   idno: string;
   lei: string;
+  registeredAddressLine1: string;
+  registeredAddressLine2: string;
+  registeredLocality: string;
+  registeredPostalCode: string;
+  reportContactName: string;
+  reportContactEmail: string;
   consolidationBasis: string;
   sites: SiteFields[];
   consolidationMembers: MemberFields[];
@@ -63,6 +72,12 @@ export const toFields = (entity: ReportingEntity | null): EntityFields => ({
   legalForm: entity?.legalForm ?? '',
   idno: entity?.idno ?? '',
   lei: entity?.lei ?? '',
+  registeredAddressLine1: entity?.registeredAddressLine1 ?? '',
+  registeredAddressLine2: entity?.registeredAddressLine2 ?? '',
+  registeredLocality: entity?.registeredLocality ?? '',
+  registeredPostalCode: entity?.registeredPostalCode ?? '',
+  reportContactName: entity?.reportContactName ?? '',
+  reportContactEmail: entity?.reportContactEmail ?? '',
   consolidationBasis: entity?.consolidationBasis ?? '',
   sites: (entity?.sites ?? []).map((site) => ({
     id: site.id,
@@ -98,6 +113,12 @@ export const toRequest = (
   // Upper-cased because the API stores the canonical form, and a record re-seeded from its answer must not read as
   // changed — S-15's reason while the field was its (task 175 moved it here).
   lei: orNull(fields.lei)?.toUpperCase() ?? null,
+  registeredAddressLine1: orNull(fields.registeredAddressLine1),
+  registeredAddressLine2: orNull(fields.registeredAddressLine2),
+  registeredLocality: orNull(fields.registeredLocality),
+  registeredPostalCode: orNull(fields.registeredPostalCode),
+  reportContactName: orNull(fields.reportContactName),
+  reportContactEmail: orNull(fields.reportContactEmail),
   naceCodes: codes.map((code) => code.code),
   consolidationBasis:
     fields.consolidationBasis === '' ? null : (fields.consolidationBasis as ConsolidationBasis),

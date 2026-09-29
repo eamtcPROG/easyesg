@@ -9,6 +9,10 @@ import {
   moveIdentifiersToEntities,
   moveIdentifiersToOrganizations,
 } from '../src/infrastructure/persistence/migrations/1791331200000-identifiers-on-entity';
+import {
+  moveProfileToEntities,
+  moveProfileToOrganizations,
+} from '../src/infrastructure/persistence/migrations/1791417600000-profile-on-entity';
 import { connectAs } from './support/database';
 
 /**
@@ -319,6 +323,158 @@ describe('the migrations’ data steps, against rows (task 164)', () => {
           runner.query(`SELECT idno, lei FROM core.organization WHERE id = $1`, [group]),
         )) as { idno: string | null; lei: string | null }[];
         expect(rows).toEqual([{ idno: '1009600041284', lei: null }]);
+      });
+    });
+  });
+
+  describe('task 177’s profile, from the organization to the entities it describes', () => {
+    const ORGANIZATION = 'core.organization';
+    const ENTITY = 'core.reporting_entity';
+
+    /** The schema both steps run in: the organization's columns back beside the entity's. */
+    const restoreOrganizationProfile = (runner: QueryRunner) =>
+      runner.query(`
+        ALTER TABLE core.organization
+          ADD COLUMN legal_form text, ADD COLUMN registered_address_line1 text, ADD COLUMN registered_address_line2 text,
+          ADD COLUMN registered_locality text, ADD COLUMN registered_postal_code text,
+          ADD COLUMN report_contact_name text, ADD COLUMN report_contact_email text`);
+
+    interface Profile {
+      legal_form?: string;
+      registered_address_line1?: string;
+      registered_locality?: string;
+      report_contact_name?: string;
+      report_contact_email?: string;
+    }
+
+    const seedOrganization = async (runner: QueryRunner, name: string, profile: Profile = {}): Promise<string> => {
+      const [{ id }] = (await unforced(runner, ORGANIZATION, () =>
+        runner.query(
+          `INSERT INTO core.organization (name, country_code, legal_form, registered_address_line1, registered_locality,
+                                          report_contact_name, report_contact_email)
+           VALUES ($1, 'MD', $2, $3, $4, $5, $6) RETURNING id`,
+          [
+            name,
+            profile.legal_form ?? null,
+            profile.registered_address_line1 ?? null,
+            profile.registered_locality ?? null,
+            profile.report_contact_name ?? null,
+            profile.report_contact_email ?? null,
+          ],
+        ),
+      )) as { id: string }[];
+      return id;
+    };
+
+    const seedEntity = async (
+      runner: QueryRunner,
+      entity: { organizationId: string; name: string; createdAt: string; archived?: boolean; profile?: Profile },
+    ): Promise<string> => {
+      const profile = entity.profile ?? {};
+      const [{ id }] = (await unforced(runner, ENTITY, () =>
+        runner.query(
+          `INSERT INTO core.reporting_entity (organization_id, name, status, archived_at, created_at, legal_form,
+                                              registered_address_line1, registered_locality,
+                                              report_contact_name, report_contact_email)
+           VALUES ($1, $2, $3, CASE WHEN $3 = 'archived' THEN $4::timestamptz END, $4, $5, $6, $7, $8, $9) RETURNING id`,
+          [
+            entity.organizationId,
+            entity.name,
+            entity.archived ? 'archived' : 'active',
+            entity.createdAt,
+            profile.legal_form ?? null,
+            profile.registered_address_line1 ?? null,
+            profile.registered_locality ?? null,
+            profile.report_contact_name ?? null,
+            profile.report_contact_email ?? null,
+          ],
+        ),
+      )) as { id: string }[];
+      return id;
+    };
+
+    const entitiesOf = async (runner: QueryRunner, organizationId: string) =>
+      (await unforced(runner, ENTITY, () =>
+        runner.query(
+          `SELECT name, legal_form, registered_address_line1, registered_locality, report_contact_name,
+                  report_contact_email
+             FROM core.reporting_entity WHERE organization_id = $1 ORDER BY created_at, id`,
+          [organizationId],
+        ),
+      )) as Record<string, string | null>[];
+
+    it('`up` fills the oldest active entity’s address and form, every active entity’s contact, and founds one', async () => {
+      await inRolledBack(async (runner) => {
+        await restoreOrganizationProfile(runner);
+        const group = await seedOrganization(runner, 'Grup', {
+          legal_form: 'sa',
+          registered_address_line1: 'str. Ștefan cel Mare 1',
+          registered_locality: 'Chișinău',
+          report_contact_name: 'Ana Rusu',
+          report_contact_email: 'raport@grup.md',
+        });
+        await seedEntity(runner, { organizationId: group, name: 'Veche', createdAt: '2026-01-01T00:00:00Z', archived: true });
+        await seedEntity(runner, {
+          organizationId: group,
+          name: 'Mama',
+          createdAt: '2026-02-01T00:00:00Z',
+          profile: { legal_form: 'srl' },
+        });
+        await seedEntity(runner, { organizationId: group, name: 'Fiica', createdAt: '2026-03-01T00:00:00Z' });
+        const alone = await seedOrganization(runner, 'Singur', { report_contact_name: 'Ion Popa' });
+        const bare = await seedOrganization(runner, 'Fără');
+
+        await moveProfileToEntities(runner);
+
+        const none = { legal_form: null, registered_address_line1: null, registered_locality: null };
+        const contact = { report_contact_name: 'Ana Rusu', report_contact_email: 'raport@grup.md' };
+        expect(await entitiesOf(runner, group)).toEqual([
+          // Archived and not receiving: its master data is frozen (FR-20), so it takes nothing.
+          { name: 'Veche', ...none, report_contact_name: null, report_contact_email: null },
+          // Receiving: the address, and its own legal form kept over the organization's.
+          {
+            name: 'Mama',
+            legal_form: 'srl',
+            registered_address_line1: 'str. Ștefan cel Mare 1',
+            registered_locality: 'Chișinău',
+            ...contact,
+          },
+          // The report contact printed on every report the organization produced, so every active entity keeps it.
+          { name: 'Fiica', ...none, ...contact },
+        ]);
+        expect(await entitiesOf(runner, alone)).toEqual([
+          { name: 'Singur', ...none, report_contact_name: 'Ion Popa', report_contact_email: null },
+        ]);
+        expect(await entitiesOf(runner, bare)).toEqual([]);
+      });
+    });
+
+    it('`down` gives each organization its receiving entity’s values', async () => {
+      await inRolledBack(async (runner) => {
+        await restoreOrganizationProfile(runner);
+        const group = await seedOrganization(runner, 'Grup');
+        await seedEntity(runner, {
+          organizationId: group,
+          name: 'Mama',
+          createdAt: '2026-02-01T00:00:00Z',
+          profile: { legal_form: 'srl', registered_locality: 'Chișinău', report_contact_name: 'Ana Rusu' },
+        });
+        await seedEntity(runner, {
+          organizationId: group,
+          name: 'Fiica',
+          createdAt: '2026-03-01T00:00:00Z',
+          profile: { legal_form: 'sa', registered_locality: 'Bălți' },
+        });
+
+        await moveProfileToOrganizations(runner);
+
+        const rows = (await unforced(runner, ORGANIZATION, () =>
+          runner.query(
+            `SELECT legal_form, registered_locality, report_contact_name FROM core.organization WHERE id = $1`,
+            [group],
+          ),
+        )) as Record<string, string | null>[];
+        expect(rows).toEqual([{ legal_form: 'srl', registered_locality: 'Chișinău', report_contact_name: 'Ana Rusu' }]);
       });
     });
   });

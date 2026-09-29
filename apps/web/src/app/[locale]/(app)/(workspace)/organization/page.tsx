@@ -5,8 +5,9 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
 /**
  * S-15 — Organization profile · OA · UC-50 · Record
  *
- * The legal identity that propagates into every report the organization produces (FR-15). FR-16's
- * identifiers were this screen's until task 175 made them each reporting entity's; they are S-13's.
+ * The organization's account — its name, its country and how easyESG reaches it (FR-15 as amended). What a report
+ * prints is each reporting entity's, on S-13: the identifiers since task 175, and the legal form, the registered
+ * address and the report-cover contact since task 177.
  *
  * **The screen never computes the caller's role.** `OrganizationController` carries
  * `@RequiresRole(ORGANIZATION_ADMINISTRATOR)` at class level, so an editor or a viewer is refused
@@ -17,8 +18,8 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * VAT registration, the e-Factura recipient and the callout about issued invoices are FR-106's
  * billing account and belong to S-23, and a default report language is not an organization setting
  * at all — FR-52 makes export language a choice taken per export, at S-11. `design_spec.md` S-15
- * records all three, and the *report-cover contact* is the fourth, which turned out to be a real
- * field nobody had written down and now amends FR-15.
+ * records all three. The *report-cover contact* the prototype also drew here was a real field, added to FR-15 by task
+ * 30.3 and moved to each company by task 177.
  *
  * **The catalogue reaches the browser from the root layout, once** (task 99) — this screen used to
  * mount its own scoped provider, which is what that paragraph described.

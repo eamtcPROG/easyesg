@@ -1,9 +1,5 @@
 import { UpdateOrganizationProfile } from './update-organization-profile.use-case';
-import {
-  CountryNotSupportedError,
-  LegalFormUnknownError,
-  OrganizationNotFoundError,
-} from '../errors/organization.errors';
+import { CountryNotSupportedError, OrganizationNotFoundError } from '../errors/organization.errors';
 import {
   FakeOrganizationStore,
   FakeOrganizationVocabulary,
@@ -23,55 +19,30 @@ describe('UpdateOrganizationProfile (UC-50)', () => {
   };
 
   it('applies the fields the patch names and leaves the rest alone', async () => {
-    const { useCase } = build(anOrganization({ registeredLocality: 'Chișinău' }));
+    const { useCase } = build(anOrganization({ contactEmail: 'contact@cascaval.md' }));
 
-    const updated = await useCase.execute({ patch: { name: 'Cașcaval SRL', legalForm: 'srl' } });
+    const updated = await useCase.execute({ patch: { name: 'Cașcaval SRL' } });
 
     expect(updated.name).toBe('Cașcaval SRL');
-    expect(updated.legalForm).toBe('srl');
-    expect(updated.registeredLocality).toBe('Chișinău');
+    expect(updated.contactEmail).toBe('contact@cascaval.md');
     expect(updated.updatedAt).toEqual(at);
   });
 
   it('clears a field given an explicit null, which is a different request from omitting it', async () => {
-    const { useCase } = build(anOrganization({ legalForm: 'srl', contactPhone: '+37322000000' }));
+    const { useCase } = build(anOrganization({ contactEmail: 'contact@cascaval.md', contactPhone: '+37322000000' }));
 
-    const updated = await useCase.execute({ patch: { legalForm: null } });
+    const updated = await useCase.execute({ patch: { contactEmail: null } });
 
-    // Clearing a legal form is always permitted: an organization that has not decided is a state
-    // S-15 must be able to return to, and refusing it would make a wrong choice unfixable.
-    expect(updated.legalForm).toBeNull();
+    expect(updated.contactEmail).toBeNull();
     expect(updated.contactPhone).toBe('+37322000000');
   });
 
-  it('refuses a legal form the organization’s country does not register', async () => {
-    const { store, useCase } = build();
+  // Task 177: the legal form is each entity's, so a country that registers a vocabulary is all a move needs — the
+  // entities' forms are not re-checked while one country registers one (§12.5.6's task-177 row).
+  it('moves to another country that registers a vocabulary', async () => {
+    const { useCase } = build();
 
-    await expect(useCase.execute({ patch: { legalForm: 'pfa' } })).rejects.toBeInstanceOf(
-      LegalFormUnknownError,
-    );
-    expect(store.current?.legalForm).toBeNull();
-  });
-
-  it('checks the form against the country the patch RESULTS in, not the stored one', async () => {
-    const { store, useCase } = build(anOrganization({ legalForm: 'srl' }));
-
-    // `srl` is registered for MD and not for RO, so moving the organization to RO would strand the
-    // form it already holds. Checking against the stored country would pass this and leave a value
-    // no list contains — invisible until S-15 renders a select with nothing selected.
-    await expect(useCase.execute({ patch: { countryCode: 'RO' } })).rejects.toBeInstanceOf(
-      LegalFormUnknownError,
-    );
-    expect(store.current?.countryCode).toBe('MD');
-  });
-
-  it('permits a country change that carries a form the new country also registers', async () => {
-    const { useCase } = build(anOrganization({ legalForm: 'sa' }));
-
-    const updated = await useCase.execute({ patch: { countryCode: 'ro' } });
-
-    expect(updated.countryCode).toBe('RO');
-    expect(updated.legalForm).toBe('sa');
+    expect((await useCase.execute({ patch: { countryCode: 'ro' } })).countryCode).toBe('RO');
   });
 
   it('normalises the submitted country before storing it', async () => {

@@ -16,6 +16,7 @@ import {
   EntityArchivedError,
   EntityNotFoundError,
   IdnoMalformedError,
+  LegalFormUnknownError,
   LeiCheckDigitsError,
   LeiMalformedError,
   NaceCodeUnknownError,
@@ -61,6 +62,7 @@ export class ManageReportingEntity {
       members: command.entity.consolidationMembers,
     });
     await this.admitNaceCodes(command.entity.naceCodes);
+    await this.admitLegalForm(command.entity.legalForm);
     return this.store.create({ entity: command.entity, at: this.now() });
   }
 
@@ -73,6 +75,7 @@ export class ManageReportingEntity {
 
     admitIdentifiers(command.patch);
     if (command.patch.naceCodes !== undefined) await this.admitNaceCodes(command.patch.naceCodes);
+    if (command.patch.legalForm !== undefined) await this.admitLegalForm(command.patch.legalForm);
 
     // FR-19, against the state the patch *results in* rather than the state it arrived at — the
     // same rule shape as the organization's legal form against its resulting country. Three
@@ -107,6 +110,22 @@ export class ManageReportingEntity {
 
     if (!(await this.store.archive({ entityId: command.entityId, at: this.now() }))) {
       throw new EntityNotFoundError();
+    }
+  }
+
+  /**
+   * A stated legal form must be in the vocabulary registered for the organization's country (§7.2) — the organization's
+   * rule until task 177 moved the legal form here. `null` clears it and is always permitted: an entity whose form is not
+   * decided yet is a state S-13 must be able to return to.
+   */
+  private async admitLegalForm(legalForm: string | null): Promise<void> {
+    if (legalForm === null) return;
+
+    const organization = await this.organizations.findBoundOrganization();
+    if (!organization) throw new EntityNotFoundError();
+
+    if (!(this.vocabulary.legalFormsFor(organization.countryCode) ?? []).includes(legalForm)) {
+      throw new LegalFormUnknownError();
     }
   }
 

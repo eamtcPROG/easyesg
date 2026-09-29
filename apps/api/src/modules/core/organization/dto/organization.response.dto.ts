@@ -8,13 +8,8 @@ import type { Organization, OrganizationChangeAttribution } from '../models/orga
  * one place that conversion happens (§6.8, OQ-50). OpenAPI can only describe them as `integer`, so
  * the unit is stated in each `@ApiProperty` because nothing else will.
  *
- * **The address is flat, mirroring the model and the audit trail.** `core.field_change` records one
- * row per column that moved, so S-15's change history names `registered_locality`; nesting the
- * address on the wire would give one organization two vocabularies and a mapping between them.
- *
- * **`legalForm` is a key, not a label.** OQ-43 puts the wording in the committed catalogues, so the
- * front end resolves `srl` to *Societate cu Răspundere Limitată*. Sending the label instead would
- * make this endpoint a translation surface and pin the language at the moment of the read.
+ * **The account, since task 177**: its name, country and platform contact. The legal form, the registered address
+ * and the report-cover contact are each reporting entity's, on `ReportingEntityResponseDto`.
  */
 /**
  * FR-15's *attributed and timestamped*, as one object rather than two loose fields.
@@ -61,7 +56,7 @@ export class OrganizationResponseDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
 
-  @ApiProperty({ description: 'The registered legal name.' })
+  @ApiProperty({ description: 'The organization’s name — the account’s, shown to its members.' })
   name: string;
 
   @ApiProperty({ example: 'MD', description: 'ISO 3166-1 alpha-2, upper case.' })
@@ -70,51 +65,15 @@ export class OrganizationResponseDto {
   @ApiProperty({
     type: String,
     nullable: true,
-    description:
-      'A key from the vocabulary registered for countryCode, or null where none is recorded yet — ' +
-      'S-04 does not collect it. Resolve it to a label through the message catalogue; it is never ' +
-      'a sentence.',
-  })
-  legalForm: string | null;
-
-  @ApiProperty({ type: String, nullable: true })
-  registeredAddressLine1: string | null;
-
-  @ApiProperty({ type: String, nullable: true })
-  registeredAddressLine2: string | null;
-
-  @ApiProperty({ type: String, nullable: true })
-  registeredLocality: string | null;
-
-  @ApiProperty({ type: String, nullable: true })
-  registeredPostalCode: string | null;
-
-  @ApiProperty({
-    type: String,
-    nullable: true,
     format: 'email',
     description:
-      'How the PLATFORM reaches this organization. Distinct from reportContactEmail, which is ' +
-      'printed on the report cover for its readers.',
+      'How the PLATFORM reaches this organization. Never printed on a report: the contact a report ' +
+      'names is each reporting entity’s (task 177).',
   })
   contactEmail: string | null;
 
   @ApiProperty({ type: String, nullable: true })
   contactPhone: string | null;
-
-  @ApiProperty({
-    type: String,
-    nullable: true,
-    description:
-      'FR-15’s report-cover contact — the person a reader of the published report contacts about ' +
-      'its content. A second contact rather than a rename of contactEmail: in an SME the account ' +
-      'administrator and the person who answers a question about a figure in B3 are routinely ' +
-      'different people. Collected on S-15 only; S-04 sets neither.',
-  })
-  reportContactName: string | null;
-
-  @ApiProperty({ type: String, nullable: true, format: 'email' })
-  reportContactEmail: string | null;
 
   @ApiProperty({
     type: OrganizationChangeAttributionDto,
@@ -137,15 +96,8 @@ export class OrganizationResponseDto {
     this.id = organization.id;
     this.name = organization.name;
     this.countryCode = organization.countryCode;
-    this.legalForm = organization.legalForm;
-    this.registeredAddressLine1 = organization.registeredAddressLine1;
-    this.registeredAddressLine2 = organization.registeredAddressLine2;
-    this.registeredLocality = organization.registeredLocality;
-    this.registeredPostalCode = organization.registeredPostalCode;
     this.contactEmail = organization.contactEmail;
     this.contactPhone = organization.contactPhone;
-    this.reportContactName = organization.reportContactName;
-    this.reportContactEmail = organization.reportContactEmail;
     this.lastChange =
       organization.lastChange === null
         ? null

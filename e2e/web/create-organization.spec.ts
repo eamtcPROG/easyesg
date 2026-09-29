@@ -68,10 +68,12 @@ test('a member of nothing founds an organization and lands in it (UC-49, D-1)', 
 
   // Preselected, because the vocabulary holds one entry: the field states the country without
   // asking anyone to choose from a list of one.
-  await expect(page.getByLabel('Țara de înregistrare')).toHaveText(/Republica Moldova/);
+  await expect(page.getByLabel('Țara', { exact: true })).toHaveText(/Republica Moldova/);
 
-  await page.getByLabel('Denumirea juridică').fill(name);
-  await page.getByLabel(/E-mail de contact/).fill(`contact-${RUN_PREFIX}@example.md`);
+  // Task 177: the screen says what the act creates — the team's account, and its first company.
+  await expect(page.getByText('Odată cu ea creăm și prima companie', { exact: false })).toBeVisible();
+  await page.getByLabel('Denumirea companiei').fill(name);
+  await page.getByLabel(/E-mail pentru mesajele easyESG/).fill(`contact-${RUN_PREFIX}@example.md`);
   await page.getByRole('button', { name: 'Creați organizația' }).click();
 
   // §5's exit. The founding transaction pointed the session here, so `/home` resolves it without
@@ -89,6 +91,10 @@ test('a member of nothing founds an organization and lands in it (UC-49, D-1)', 
   await expect(page.getByRole('banner').getByText(name)).toBeVisible();
   await page.goto('/organization/users');
   await expect(page.getByRole('heading', { name: 'Utilizatori și acces', level: 1 })).toBeVisible();
+
+  // And the first company is there, named after it, as the screen said it would be (UC-49 as amended).
+  await page.goto('/entities');
+  await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
 });
 
 test('a missing legal name is refused inline and in the summary (UX-111)', async ({ page }) => {
@@ -98,7 +104,7 @@ test('a missing legal name is refused inline and in the summary (UX-111)', async
 
   // Both halves, because they are two obligations: the inline message at the point of entry
   // (UX-20) and the form-level summary that links to it (UX-111). Exactly one of each.
-  await expect(page.getByText('Scrieți denumirea juridică a companiei, altfel organizația nu poate fi creată.')).toHaveCount(2);
+  await expect(page.getByText('Scrieți denumirea companiei, altfel organizația nu poate fi creată.')).toHaveCount(2);
   await expect(page).toHaveURL(/create-organization/);
 });
 
@@ -109,10 +115,10 @@ test('the screen is live in all three locales', async ({ page }) => {
 
   await page.goto('/en/create-organization');
   await expect(page.getByRole('heading', { name: 'Set up your organisation', level: 1 })).toBeVisible();
-  await expect(page.getByLabel('Country of registration')).toHaveText(/Republic of Moldova/);
+  await expect(page.getByLabel('Country', { exact: true })).toHaveText(/Republic of Moldova/);
 
   await page.goto('/ru/create-organization');
   await expect(page.getByRole('heading', { name: 'Настройте свою организацию', level: 1 })).toBeVisible();
-  await expect(page.getByLabel('Страна регистрации')).toHaveText(/Республика Молдова/);
+  await expect(page.getByLabel('Страна', { exact: true })).toHaveText(/Республика Молдова/);
 });
 

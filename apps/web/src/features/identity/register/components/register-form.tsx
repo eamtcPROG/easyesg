@@ -15,6 +15,7 @@ import styles from '../../shared/styles/identity-screens.module.css';
 import { ROUTES } from '@/lib/routes';
 import { CredentialSubmit } from '@/shared/credential-submit';
 import { ScriptingRequired } from '@/shared/scripting-required';
+import { EMAIL_SHAPE } from '@/lib/email-shape';
 
 /**
  * S-01 · Register (UC-01) — email + password per the S-01 content list and the task-19 API.
@@ -37,9 +38,6 @@ interface RegisterInput {
   email: string;
   password: string;
 }
-
-/** Light shape check only — deliverability is unknowable client-side; the API is authoritative. */
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export interface RegisterFormProps {
   /**

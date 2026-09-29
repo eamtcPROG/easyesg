@@ -4,7 +4,7 @@ import { RecordShell } from '@easyesg/ui';
 import { FormSummary } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useReducer, useTransition } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import type { Organization } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { failureNotice, successNotice } from '@/lib/notice';
@@ -13,26 +13,26 @@ import { RecordNotice } from '@/shared/record-notice';
 import { updateOrganizationProfileAction } from '../../actions/actions';
 import { toFields, toPatch, type ProfileFields } from '../../tools/profile-fields';
 import { RECORD_EVENT, initialRecordState, recordReducer, visibleNotice } from '@/lib/record-state';
-import { AddressSection } from '../sections/address-section';
 import { ContactsSection } from '../sections/contacts-section';
 import { IdentitySection } from '../sections/identity-section';
 import { PROFILE_MESSAGES } from '../shared/profile-messages';
-import type { CountryOption } from '../shared/vocabulary';
+import type { VocabularyOption } from '../shared/vocabulary';
 import { ProfileAttribution } from './profile-attribution';
 
 /**
- * S-15's body — UC-50 on the Record archetype (FR-15). UC-51's identifiers were a fourth section here until task
- * 175 moved them to each reporting entity, on S-13.
+ * S-15's body — UC-50 on the Record archetype (FR-15): **the account**, its name, country and platform contact. What a
+ * report prints is each reporting entity's, on S-13 — the identifiers since task 175, and the legal form, the
+ * registered address and the report contact since task 177, which took this screen from four sections to two.
  *
  * **This file composes and commits; nothing else.** It was 430 lines holding four sections' worth of
  * fields, an attribution line, a controls row, three outcome callouts, two conversions and three
  * pieces of state (task 129). What is left is the two things no part can do: own the one `control`
  * every field registers against, and turn a settled action into the screen's next state.
  *
- * **One form over three sections, with one save**, which is the difference from S-28. That screen's
+ * **One form over two sections, with one save**, which is the difference from S-28. That screen's
  * sections each commit their own thing because each is a separate credential operation; here §5's
  * Controls row is *edit; save; cancel* for the record, and the artboard draws a single Discard/Save
- * pair at the foot. So `sections/` is grouping, not scope — three groups of fields over one
+ * pair at the foot. So `sections/` is grouping, not scope — two groups of fields over one
  * `control`, and `RecordControls` is the only thing that submits.
  *
  * **Save is inert until a field differs**, which the artboard states in words. `formState.isDirty` is
@@ -68,7 +68,7 @@ import { ProfileAttribution } from './profile-attribution';
 export interface OrganizationProfileFormProps {
   readonly organization: Organization;
   /** Each country the platform operates in, labelled, with its own labelled legal forms. */
-  readonly countries: readonly CountryOption[];
+  readonly countries: readonly VocabularyOption[];
 }
 
 export function OrganizationProfileForm({
@@ -94,16 +94,6 @@ export function OrganizationProfileForm({
   // route to a newer record (a navigation, a reload) remounts this component and re-runs
   // `defaultValues`. And the cure was worse than the disease in the one case it would have fired,
   // since resetting a form somebody is typing in discards their work.
-  //
-  // The legal forms of the country currently CHOSEN, not the one stored: the API re-checks the form
-  // against the country the patch results in and refuses a move that would strand it, so offering
-  // the old country's forms after a change would build a request the API is about to reject.
-  // `useWatch`, not `watch()`: it subscribes to this one field instead of re-rendering the whole
-  // form on every keystroke anywhere in it, and it is the API `react-hooks/incompatible-library`
-  // accepts — `watch()` cannot be memoized safely. `register-form.tsx` records the same choice.
-  // It stays here rather than in `IdentitySection` so there is one subscription, not two.
-  const chosenCountry = useWatch({ control, name: 'countryCode' });
-  const legalForms = countries.find((country) => country.value === chosenCountry)?.legalForms ?? [];
 
   const submit = handleSubmit((fields) => {
     dispatch({ kind: RECORD_EVENT.SUBMITTED });
@@ -172,8 +162,7 @@ export function OrganizationProfileForm({
             asymmetry in one place and is a unit spec. */}
         <RecordNotice notice={visibleNotice(state, formState.isDirty)} />
 
-        <IdentitySection control={control} countries={countries} legalForms={legalForms} />
-        <AddressSection control={control} />
+        <IdentitySection control={control} countries={countries} />
         <ContactsSection control={control} />
       </RecordShell>
     </form>

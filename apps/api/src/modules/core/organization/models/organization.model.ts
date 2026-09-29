@@ -26,50 +26,27 @@ export type OrgRelationshipKind =
   (typeof ORG_RELATIONSHIP_KIND)[keyof typeof ORG_RELATIONSHIP_KIND];
 
 /**
- * FR-15's profile, plus the two facts UC-49 establishes at creation.
+ * FR-15's profile — **the account**, since task 177: its name, its country and how the platform reaches it.
  *
- * **The address is flat, not nested, and the reason is the audit trail.** `core.field_change`
- * records one row per column that moved (FR-54), so the change history S-15 renders names
- * `registered_locality` and not `registered_address`. A nested wire object would give the same
- * organization two vocabularies — one an OA reads in the history, one their client sends — and the
- * mapping between them would be a rule somebody has to know.
+ * **What a report prints is the reporting entity's** (FR-15 and FR-17 as amended, §12.5.6's task-177 row): the legal
+ * form, the registered address and the report-cover contact left this record for `ReportingEntity`, as the identifiers
+ * had with task 175. A report is about its entity, and nothing here reaches one.
  *
- * **Everything but `name` and `countryCode` is nullable, because S-04 does not collect it.** The
- * founding screen takes the legal name, the country and the contact details; legal form, registered
- * address and (in 29.2) the identifiers belong to S-15, filled in against an organization that
- * already exists. A non-nullable column no creation flow supplies can only be satisfied by
- * inventing a value.
+ * **The contact details are nullable, because S-04 need not collect them**: a founder who has not decided which address
+ * the platform should write to is not blocked from creating the organization to find out.
  */
 export interface Organization {
   readonly id: string;
-  /** FR-15's *registered* name. The only field both UC-49 and UC-50 require. */
+  /** The account's name, shown to its members; the first reporting entity takes it at founding (task 175). */
   readonly name: string;
   /**
-   * ISO 3166-1 alpha-2, upper case. Not merely an address part: it selects the legal-form
-   * vocabulary (§7.2), so it is a fact about the organization before it is a line of its address.
+   * ISO 3166-1 alpha-2, upper case. It selects the legal-form and activity vocabularies the organization's entities
+   * are held to (§7.2) — an account setting, not a line of an address, which is each entity's since task 177.
    */
   readonly countryCode: string;
-  /** A configuration key, admitted against the vocabulary registered for `countryCode`. */
-  readonly legalForm: string | null;
-  readonly registeredAddressLine1: string | null;
-  readonly registeredAddressLine2: string | null;
-  readonly registeredLocality: string | null;
-  readonly registeredPostalCode: string | null;
   /** How the **platform** reaches the organization: verification, invitations, notifications. */
   readonly contactEmail: string | null;
   readonly contactPhone: string | null;
-  /**
-   * FR-15's report-cover contact (amended 29 Aug 2026, task 30.3) — the person a reader of the
-   * **published report** contacts about its content.
-   *
-   * **A second contact, not a rename of the pair above**, and the distinction is the reason it is
-   * two more columns: the platform writes to `contactEmail` *about* the organization, while this is
-   * printed on the cover *of a document that leaves the platform*. In an SME the first is whoever
-   * administers the account and the second is whoever will answer a bank's question about a figure
-   * in B3, and those are routinely different people.
-   */
-  readonly reportContactName: string | null;
-  readonly reportContactEmail: string | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
   /**
@@ -125,13 +102,6 @@ export interface NewOrganization {
 export type OrganizationProfilePatch = Partial<{
   readonly name: string;
   readonly countryCode: string;
-  readonly legalForm: string | null;
-  readonly registeredAddressLine1: string | null;
-  readonly registeredAddressLine2: string | null;
-  readonly registeredLocality: string | null;
-  readonly registeredPostalCode: string | null;
   readonly contactEmail: string | null;
   readonly contactPhone: string | null;
-  readonly reportContactName: string | null;
-  readonly reportContactEmail: string | null;
 }>;

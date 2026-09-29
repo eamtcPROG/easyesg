@@ -2886,29 +2886,19 @@ export interface components {
         OrganizationResponseDto: {
             /** Format: uuid */
             id: string;
-            /** @description The registered legal name. */
+            /** @description The organization’s name — the account’s, shown to its members. */
             name: string;
             /**
              * @description ISO 3166-1 alpha-2, upper case.
              * @example MD
              */
             countryCode: string;
-            /** @description A key from the vocabulary registered for countryCode, or null where none is recorded yet — S-04 does not collect it. Resolve it to a label through the message catalogue; it is never a sentence. */
-            legalForm: string | null;
-            registeredAddressLine1: string | null;
-            registeredAddressLine2: string | null;
-            registeredLocality: string | null;
-            registeredPostalCode: string | null;
             /**
              * Format: email
-             * @description How the PLATFORM reaches this organization. Distinct from reportContactEmail, which is printed on the report cover for its readers.
+             * @description How the PLATFORM reaches this organization. Never printed on a report: the contact a report names is each reporting entity’s (task 177).
              */
             contactEmail: string | null;
             contactPhone: string | null;
-            /** @description FR-15’s report-cover contact — the person a reader of the published report contacts about its content. A second contact rather than a rename of contactEmail: in an SME the account administrator and the person who answers a question about a figure in B3 are routinely different people. Collected on S-15 only; S-04 sets neither. */
-            reportContactName: string | null;
-            /** Format: email */
-            reportContactEmail: string | null;
             /** @description Who last changed any field of this record, and when (FR-15). Read from the per-field audit trail the database writes, not from a column the application maintains. Null where the trail holds nothing for this record — an unusual state, and a real answer rather than an error. */
             lastChange: components["schemas"]["OrganizationChangeAttributionDto"] | null;
             /** @description Unix epoch milliseconds when the organization was created. */
@@ -2942,27 +2932,16 @@ export interface components {
             legalForms: string[];
         };
         UpdateOrganizationProfileRequestDto: {
-            /** @description The registered legal name (FR-15). */
+            /** @description The organization’s name — the account’s (FR-15). */
             name?: string;
             /**
-             * @description ISO 3166-1 alpha-2. Changing it re-checks the stored legal form against the new country’s vocabulary, so a move that would strand the form is refused with problem type legal-form-unknown rather than silently leaving a value no list contains.
+             * @description ISO 3166-1 alpha-2 — the country whose legal-form and activity vocabularies the organization’s entities are held to. A country that registers none is refused (country-not-supported).
              * @example MD
              */
             countryCode?: string;
-            /** @description A key from the vocabulary registered for the organization’s country — see GET /organizations/legal-forms. Null clears it, which is always permitted: an organization that has not decided is a state S-15 must be able to return to. */
-            legalForm?: string | null;
-            registeredAddressLine1?: string | null;
-            registeredAddressLine2?: string | null;
-            /** @description City, town or village. */
-            registeredLocality?: string | null;
-            registeredPostalCode?: string | null;
             /** Format: email */
             contactEmail?: string | null;
             contactPhone?: string | null;
-            /** @description FR-15’s report-cover contact — the person a reader of the published report contacts about its content, printed on the cover. A second contact rather than a rename of contactEmail, which is how the platform reaches the organization. Null clears it. */
-            reportContactName?: string | null;
-            /** Format: email */
-            reportContactEmail?: string | null;
         };
         ConsolidationMemberResponseDto: {
             /** Format: uuid */
@@ -2999,6 +2978,15 @@ export interface components {
              * @example 7LTWFZYICNSX8D621K86
              */
             lei: string | null;
+            /** @description The registered address’s first line, or null. */
+            registeredAddressLine1: string | null;
+            registeredAddressLine2: string | null;
+            registeredLocality: string | null;
+            registeredPostalCode: string | null;
+            /** @description The contact printed on this entity’s report cover (task 177), or null. */
+            reportContactName: string | null;
+            /** Format: email */
+            reportContactEmail: string | null;
             naceCodes: string[];
             /**
              * @description Archived entities leave active selection and keep their reports and exports (FR-20). They remain readable here; their master data is read-only.
@@ -3080,6 +3068,16 @@ export interface components {
              * @example 7LTWFZYICNSX8D621K86
              */
             lei?: string | null;
+            /** @description The first line of the entity’s registered address, from the state register (FR-17 as amended; the organization’s until task 177). Null clears it. */
+            registeredAddressLine1?: string | null;
+            registeredAddressLine2?: string | null;
+            /** @description City, town or village. */
+            registeredLocality?: string | null;
+            registeredPostalCode?: string | null;
+            /** @description The person a reader of this entity’s report contacts about its content, printed on its cover — FR-15’s report-cover contact, the entity’s since task 177. Distinct from the organization’s contactEmail, which is how the platform reaches the account. Null clears it. */
+            reportContactName?: string | null;
+            /** Format: email */
+            reportContactEmail?: string | null;
             /**
              * @description CAEM Rev.2 codes — 1:1 with NACE Rev.2 to four characters, which is what B1 exports. Each is admitted against the classifier registered for the organization’s country; an empty array means the entity is not classified yet, which FR-17 permits.
              * @example [
@@ -3113,6 +3111,16 @@ export interface components {
              * @example 7LTWFZYICNSX8D621K86
              */
             lei?: string | null;
+            /** @description The first line of the entity’s registered address, from the state register (FR-17 as amended; the organization’s until task 177). Null clears it. */
+            registeredAddressLine1?: string | null;
+            registeredAddressLine2?: string | null;
+            /** @description City, town or village. */
+            registeredLocality?: string | null;
+            registeredPostalCode?: string | null;
+            /** @description The person a reader of this entity’s report contacts about its content, printed on its cover — FR-15’s report-cover contact, the entity’s since task 177. Distinct from the organization’s contactEmail, which is how the platform reaches the account. Null clears it. */
+            reportContactName?: string | null;
+            /** Format: email */
+            reportContactEmail?: string | null;
             /**
              * @description CAEM Rev.2 codes — 1:1 with NACE Rev.2 to four characters, which is what B1 exports. Each is admitted against the classifier registered for the organization’s country; an empty array means the entity is not classified yet, which FR-17 permits.
              * @example [
@@ -6116,7 +6124,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description An activity code the organization’s country does not register (problem type nace-code-unknown) — the classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2 — a consolidated basis with nothing inside the boundary (consolidation-boundary-empty), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits). */
+            /** @description An activity code the organization’s country does not register (problem type nace-code-unknown) — the classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2 — a legal form it does not register (legal-form-unknown), a consolidated basis with nothing inside the boundary (consolidation-boundary-empty), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits). */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -6215,7 +6223,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description A consolidated basis with nothing inside the boundary (problem type consolidation-boundary-empty), an unregistered activity code (nace-code-unknown), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits). */
+            /** @description A consolidated basis with nothing inside the boundary (problem type consolidation-boundary-empty), an unregistered activity code (nace-code-unknown) or legal form (legal-form-unknown), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits). */
             400: {
                 headers: {
                     [name: string]: unknown;

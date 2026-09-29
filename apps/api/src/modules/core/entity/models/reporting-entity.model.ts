@@ -103,6 +103,22 @@ export interface ReportingEntity {
    */
   readonly lei: string | null;
   /**
+   * The entity's registered address, from the state register (FR-17 as amended; task 177 moved it here from the
+   * organization, which is the account). **Flat, not nested, for the audit trail's reason**: `core.field_change` records
+   * one row per column that moved, so a correction names `registered_locality`, not a whole address document.
+   */
+  readonly registeredAddressLine1: string | null;
+  readonly registeredAddressLine2: string | null;
+  readonly registeredLocality: string | null;
+  readonly registeredPostalCode: string | null;
+  /**
+   * The person a reader of **this entity's report** contacts about its content, printed on its cover (FR-15's
+   * report-cover contact, the entity's since task 177). A second contact beside the organization's `contactEmail`,
+   * which is how the platform reaches the account — and a group's companies may each name their own.
+   */
+  readonly reportContactName: string | null;
+  readonly reportContactEmail: string | null;
+  /**
    * FR-17's "NACE code(s)" — plural, and an entity genuinely has several: a bakery that also runs a
    * café carries both. Admitted against the classifier registered for the country (CAEM Rev.2 for
    * Moldova), which is 1:1 with NACE to four characters, so what is stored is what B1 exports.
@@ -134,6 +150,12 @@ export interface NewReportingEntity {
   readonly legalForm: string | null;
   readonly idno: string | null;
   readonly lei: string | null;
+  readonly registeredAddressLine1: string | null;
+  readonly registeredAddressLine2: string | null;
+  readonly registeredLocality: string | null;
+  readonly registeredPostalCode: string | null;
+  readonly reportContactName: string | null;
+  readonly reportContactEmail: string | null;
   readonly naceCodes: readonly string[];
   readonly sites: readonly NewSite[];
   readonly consolidationBasis: ConsolidationBasis | null;
@@ -156,6 +178,12 @@ export type ReportingEntityPatch = Partial<{
   readonly legalForm: string | null;
   readonly idno: string | null;
   readonly lei: string | null;
+  readonly registeredAddressLine1: string | null;
+  readonly registeredAddressLine2: string | null;
+  readonly registeredLocality: string | null;
+  readonly registeredPostalCode: string | null;
+  readonly reportContactName: string | null;
+  readonly reportContactEmail: string | null;
   readonly naceCodes: readonly string[];
   readonly sites: readonly NewSite[];
   readonly consolidationBasis: ConsolidationBasis | null;

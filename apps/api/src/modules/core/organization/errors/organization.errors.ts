@@ -5,11 +5,9 @@ import { ProblemType, type ProblemTypeSlug } from '@api/app/filters/problem-type
  * Organization failures, as `DomainError`s carrying message keys (see `account.errors.ts`, whose
  * header this file inherits).
  *
- * **Both value refusals are `400`, and neither is a `ValidationFailed`.** The generic slug would
- * tell S-04 and S-15 that *something* in the body was wrong, and the two states below have
- * different resolutions that a front end cannot derive from wording: one is *pick another form
- * from the list*, the other is *the platform does not operate in that country yet, and no edit to
- * this form will change that*. This is `last-administrator`'s argument applied to a second pair.
+ * **The country refusal is a `400` of its own, not a `ValidationFailed`**: its resolution — *the platform does not
+ * operate in that country yet, and no edit to this form will change that* — is not one a front end can derive from a
+ * generic slug. Its sibling, the legal-form refusal, is the entity's since task 177 (`entity.errors.ts`).
  *
  * Neither discloses anything a caller could not read from the vocabulary endpoint, which is
  * unauthenticated configuration about what the platform offers rather than about any tenant.
@@ -30,24 +28,6 @@ export class CountryNotSupportedError extends DomainError {
 
   constructor() {
     super('core.organization.country_not_supported');
-  }
-}
-
-/**
- * The submitted legal form is not in the vocabulary registered for the organization's country
- * (FR-15, AD-4).
- *
- * **Reached by changing the country as well as by changing the form**, which is why the check is
- * against the patch's resulting country rather than the stored one: moving an organization from
- * `MD` to a country whose vocabulary does not carry its current form would otherwise leave a
- * stored value no list contains.
- */
-export class LegalFormUnknownError extends DomainError {
-  readonly problemType: ProblemTypeSlug = ProblemType.LegalFormUnknown;
-  readonly status = 400;
-
-  constructor() {
-    super('core.organization.legal_form_unknown');
   }
 }
 

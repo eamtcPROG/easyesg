@@ -438,7 +438,7 @@ test('a save made after the session ended elsewhere is sent to sign in, and back
 }) => {
   const email = await aSignedInMember(page, 'ended-write');
   await page.goto('/organization');
-  await page.getByLabel('Localitatea').fill('Bălți');
+  await page.getByLabel('Telefon', { exact: true }).fill('+373 231 00000');
 
   await endSessionsOf({ email });
   await page.getByRole('button', { name: 'Salvați modificările' }).click();

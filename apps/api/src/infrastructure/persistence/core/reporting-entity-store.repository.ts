@@ -21,6 +21,12 @@ interface EntityRow {
   legal_form: string | null;
   idno: string | null;
   lei: string | null;
+  registered_address_line1: string | null;
+  registered_address_line2: string | null;
+  registered_locality: string | null;
+  registered_postal_code: string | null;
+  report_contact_name: string | null;
+  report_contact_email: string | null;
   nace_codes: string[];
   status: EntityStatus;
   consolidation_basis: ConsolidationBasis | null;
@@ -41,8 +47,9 @@ interface SiteRow {
   longitude: string | null;
 }
 
-const ENTITY_COLUMNS = `id, name, legal_form, idno, lei, nace_codes, status, consolidation_basis,
-        archived_at, created_at, updated_at`;
+const ENTITY_COLUMNS = `id, name, legal_form, idno, lei, registered_address_line1, registered_address_line2,
+        registered_locality, registered_postal_code, report_contact_name, report_contact_email, nace_codes, status,
+        consolidation_basis, archived_at, created_at, updated_at`;
 const MEMBER_COLUMNS = `id, reporting_entity_id, name, idno, lei, country_code`;
 const SITE_COLUMNS = `id, reporting_entity_id, name, address_line1, locality, postal_code,
         country_code, latitude, longitude`;
@@ -53,6 +60,12 @@ const PATCHABLE = {
   legalForm: 'legal_form',
   idno: 'idno',
   lei: 'lei',
+  registeredAddressLine1: 'registered_address_line1',
+  registeredAddressLine2: 'registered_address_line2',
+  registeredLocality: 'registered_locality',
+  registeredPostalCode: 'registered_postal_code',
+  reportContactName: 'report_contact_name',
+  reportContactEmail: 'report_contact_email',
   naceCodes: 'nace_codes',
   consolidationBasis: 'consolidation_basis',
 } as const satisfies Record<
@@ -100,6 +113,12 @@ const toEntity = (
   legalForm: row.legal_form,
   idno: row.idno,
   lei: row.lei,
+  registeredAddressLine1: row.registered_address_line1,
+  registeredAddressLine2: row.registered_address_line2,
+  registeredLocality: row.registered_locality,
+  registeredPostalCode: row.registered_postal_code,
+  reportContactName: row.report_contact_name,
+  reportContactEmail: row.report_contact_email,
   naceCodes: row.nace_codes,
   status: row.status,
   consolidationBasis: row.consolidation_basis,
@@ -190,14 +209,22 @@ export class ReportingEntityStoreRepository
     // the returned row passes the policy that task 29.1's founding insert could not.
     const rows = await this.manager.query<EntityRow[]>(
       `INSERT INTO core.reporting_entity
-              (organization_id, name, legal_form, idno, lei, nace_codes, consolidation_basis, created_at, updated_at)
-            VALUES (${this.boundOrganization}, $1, $2, $3, $4, $5, $6, $7, $7)
+              (organization_id, name, legal_form, idno, lei, registered_address_line1, registered_address_line2,
+               registered_locality, registered_postal_code, report_contact_name, report_contact_email, nace_codes,
+               consolidation_basis, created_at, updated_at)
+            VALUES (${this.boundOrganization}, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)
          RETURNING ${ENTITY_COLUMNS}`,
       [
         input.entity.name,
         input.entity.legalForm,
         input.entity.idno,
         input.entity.lei,
+        input.entity.registeredAddressLine1,
+        input.entity.registeredAddressLine2,
+        input.entity.registeredLocality,
+        input.entity.registeredPostalCode,
+        input.entity.reportContactName,
+        input.entity.reportContactEmail,
         input.entity.naceCodes,
         input.entity.consolidationBasis,
         input.at,

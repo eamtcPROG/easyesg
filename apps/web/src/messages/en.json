@@ -543,22 +543,22 @@
     },
     "create": {
       "title": "Set up your organisation",
-      "subtitle": "This is the company the report is filed for. You become its administrator and can invite colleagues as soon as it exists.",
-      "nameLabel": "Legal name",
-      "nameHelp": "Exactly as it appears in the state register. It prints on the report.",
-      "nameRequired": "Enter the company’s legal name, or the organisation cannot be created.",
-      "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it to the name in the state register.",
-      "countryLabel": "Country of registration",
-      "countryHelp": "It decides which legal forms are available, and it appears on the report.",
+      "subtitle": "Your organisation is your team’s account on easyESG. We create your first company with it — the one your report is about. You become the administrator and can invite colleagues straight away.",
+      "nameLabel": "Company name",
+      "nameHelp": "As it appears in the state register. Your organisation and your first company both take this name; you can rename either later.",
+      "nameRequired": "Enter the company name, or the organisation cannot be created.",
+      "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it.",
+      "countryLabel": "Country",
+      "countryHelp": "Where the company is registered. It decides which legal forms and activity codes we offer.",
       "countryPlaceholder": "Choose a country",
-      "countryRequired": "Choose the country the company is registered in, so we know which legal forms to offer you.",
-      "contactEmailLabel": "Contact email — optional",
-      "contactEmailHelp": "Where we write to you about this organisation. You can add it later under Organisation.",
+      "countryRequired": "Choose the country the company is registered in, so we know which legal forms and activity codes to offer you.",
+      "contactEmailLabel": "Email for easyESG messages — optional",
+      "contactEmailHelp": "Where we write to you about your organisation. It is never printed on a report.",
       "contactEmailInvalid": "That is not the shape of an email address, so we could not write to it. Check the spelling — for example contact@company.md.",
-      "contactPhoneLabel": "Contact phone — optional",
-      "contactPhoneHelp": "Any format. You can add it later under Organisation.",
+      "contactPhoneLabel": "Phone — optional",
+      "contactPhoneHelp": "Any format. It is never printed on a report.",
       "contactPhoneTooLong": "The number is longer than 40 characters and cannot be saved. Leave only the phone number.",
-      "oneIsEnough": "One organisation is enough to start. You add entities under it afterwards.",
+      "oneIsEnough": "One organisation is enough. If you report for several companies, add the others under Entities once it exists.",
       "submit": "Create organisation",
       "waitingForInvitation": "Waiting for an invitation instead? Ask your administrator to invite this address.",
       "problemTitle": "The organisation could not be created",
@@ -661,10 +661,10 @@
     },
     "profile": {
       "title": "Organisation profile",
-      "lede": "The legal identity printed on every report you file.",
+      "lede": "Your organisation’s account on easyESG: its name and how we reach you. What a report prints belongs to each company, under Entities.",
       "saved": {
         "title": "Profile saved",
-        "body": "The new values apply to reports created from now on. Reports already filed keep the values in force when they were prepared."
+        "body": "Your organisation’s details are updated."
       },
       "problemTitle": "The change could not be saved",
       "problemBody": "The profile is unchanged because the request could not be processed.",
@@ -674,42 +674,23 @@
         "unknown": "No change recorded yet."
       },
       "identity": {
-        "heading": "Legal identity",
-        "lede": "The name and legal form exactly as they appear in the state register.",
-        "name": "Legal name",
-        "nameHelp": "It prints on the report as you write it here.",
-        "nameRequired": "Enter the company’s legal name, or the profile cannot be saved.",
-        "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it to the name in the state register.",
-        "country": "Country of registration",
-        "countryHelp": "It decides which legal forms we can offer you below.",
+        "heading": "Organisation",
+        "lede": "The name your team sees in easyESG, and the country whose legal forms and activity codes we offer.",
+        "name": "Organisation name",
+        "nameHelp": "Shown in easyESG and in the messages we send you. It is not printed on reports — each company’s own name is, under Entities.",
+        "nameRequired": "Enter the organisation’s name, or the change cannot be saved.",
+        "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it.",
+        "country": "Country",
+        "countryHelp": "It decides which legal forms and activity codes your companies can choose from.",
         "countryPlaceholder": "Choose a country",
-        "countryRequired": "Choose the country the company is registered in, so we know which legal forms to offer you.",
-        "legalForm": "Legal form",
-        "legalFormHelp": "Choose the form from the state register. You can leave it empty for now.",
-        "legalFormPlaceholder": "Choose a legal form"
-      },
-      "address": {
-        "heading": "Registered address",
-        "lede": "The company’s registered address, not the place you work from day to day.",
-        "line1": "Street and number",
-        "line2": "Further detail (block, office)",
-        "locality": "Town or city",
-        "postalCode": "Postal code",
-        "lineTooLong": "The line is longer than 200 characters and cannot be saved. Shorten it.",
-        "localityTooLong": "The locality is longer than 120 characters and cannot be saved. Shorten it.",
-        "postalCodeTooLong": "The postal code is longer than 20 characters and cannot be saved. Leave only the code."
+        "countryRequired": "Choose the country, so we know which legal forms and activity codes to offer you."
       },
       "contacts": {
-        "heading": "Contacts",
-        "lede": "Two different contacts: one for us, one for the people who read the report.",
-        "platformEmail": "Contact email for the platform",
-        "platformEmailHelp": "Where we write to you about this organisation. It does not appear in the report.",
-        "platformPhone": "Contact phone",
-        "reportName": "Contact printed on the report",
-        "reportNameHelp": "Who answers questions about the report’s content. It may be someone other than the account administrator.",
-        "reportEmail": "Email printed on the report",
-        "reportEmailHelp": "It appears on the cover and is seen by everyone who receives the report.",
-        "reportNameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it.",
+        "heading": "How we reach you",
+        "lede": "For messages from easyESG about your organisation. Never printed on a report.",
+        "platformEmail": "Email for easyESG messages",
+        "platformEmailHelp": "Where we write to you about your organisation.",
+        "platformPhone": "Phone",
         "emailInvalid": "That is not the shape of an email address, so we could not write to it. Check the spelling — for example contact@company.md.",
         "phoneTooLong": "The number is longer than 40 characters and cannot be saved. Leave only the phone number."
       },
@@ -835,6 +816,17 @@
           "activityRemoveShort": "Remove",
           "activityNone": "No activity chosen yet."
         },
+        "address": {
+          "heading": "Registered address",
+          "lede": "The company’s official address from the state register. It is printed on this company’s report.",
+          "line1": "Street and number",
+          "line2": "Further detail (block, office)",
+          "locality": "Town or city",
+          "postalCode": "Postal code",
+          "lineTooLong": "The line is longer than 200 characters and cannot be saved. Shorten it.",
+          "localityTooLong": "The locality is longer than 120 characters and cannot be saved. Shorten it.",
+          "postalCodeTooLong": "The postal code is longer than 20 characters and cannot be saved. Leave only the code."
+        },
         "boundary": {
           "heading": "Reporting boundary",
           "lede": "It decides which figures enter the report: this entity alone, or its subsidiaries too.",
@@ -888,7 +880,17 @@
           "confirm": "Leave without saving",
           "cancel": "Stay on the page"
         },
-        "loading": "Loading the entity…"
+        "loading": "Loading the entity…",
+        "reportContact": {
+          "heading": "Contact for the report",
+          "lede": "The person readers of this company’s report can write to about its content. Printed on the report’s cover.",
+          "name": "Contact name",
+          "nameHelp": "It can be someone other than the person who manages easyESG.",
+          "email": "Contact email",
+          "emailHelp": "Everyone who receives the report will see it.",
+          "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it.",
+          "emailInvalid": "That is not the shape of an email address, so nobody could write to it. Check the spelling — for example contact@company.md."
+        }
       },
       "loading": "Loading the reporting entities…"
     },

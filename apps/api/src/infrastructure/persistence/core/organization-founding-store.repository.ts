@@ -13,20 +13,13 @@ interface OrganizationRow {
   id: string;
   name: string;
   country_code: string;
-  legal_form: string | null;
-  registered_address_line1: string | null;
-  registered_address_line2: string | null;
-  registered_locality: string | null;
-  registered_postal_code: string | null;
   contact_email: string | null;
   contact_phone: string | null;
   created_at: Date;
   updated_at: Date;
 }
 
-const RETURNED_COLUMNS = `id, name, country_code, legal_form,
-        registered_address_line1, registered_address_line2, registered_locality,
-        registered_postal_code, contact_email, contact_phone, created_at, updated_at`;
+const RETURNED_COLUMNS = `id, name, country_code, contact_email, contact_phone, created_at, updated_at`;
 
 /**
  * The `OrganizationFoundingStore` adapter — UC-49's two writes in one transaction (FR-13, D-1).
@@ -150,16 +143,8 @@ export class OrganizationFoundingStoreRepository implements OrganizationFounding
         id: row.id,
         name: row.name,
         countryCode: row.country_code,
-        legalForm: row.legal_form,
-        registeredAddressLine1: row.registered_address_line1,
-        registeredAddressLine2: row.registered_address_line2,
-        registeredLocality: row.registered_locality,
-        registeredPostalCode: row.registered_postal_code,
         contactEmail: row.contact_email,
         contactPhone: row.contact_phone,
-        // S-04 collects neither (task 30.3): a founding screen has no report to put a cover on.
-        reportContactName: null,
-        reportContactEmail: null,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         // **Null on the founding read, and not because it is unknown.** The capture trigger has

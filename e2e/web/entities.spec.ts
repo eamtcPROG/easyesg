@@ -7,7 +7,7 @@ import {
 } from './support/db';
 
 /**
- * S-13 in a real browser (UC-51 … UC-55; FR-16 … FR-20; tasks 30.4.2, 30.4.3 and 175).
+ * S-13 in a real browser (UC-51 … UC-55; FR-16 … FR-20; tasks 30.4.2, 30.4.3, 175 and 177).
  *
  * What only a round trip shows here is the classifier reaching the screen as **words**: the picker
  * searches a 996-entry vocabulary through a Server Action, the list resolves the codes an entity
@@ -240,6 +240,31 @@ test('the filter lives in the address, and its empty state is not the first-use 
   await expect(page.getByText('Nicio entitate nu corespunde filtrului')).toBeVisible();
   await page.getByRole('button', { name: 'Ștergeți filtrul' }).click();
   await expect(page.getByRole('link', { name: `${RUN_PREFIX} Activă`, exact: true })).toBeVisible();
+});
+
+/**
+ * What a report prints, on the company (task 177, which moved it here from S-15): the registered address and the
+ * contact printed on the report's cover, stated on the create form and read back after a reload — the API's answer,
+ * not what the form held.
+ */
+test('the registered address and the report contact are the company’s, and survive a reload', async ({ page }) => {
+  await signedIn(page, 'report-facts');
+  await page.goto('/entities/new');
+  await page.getByLabel('Denumirea entității').fill(`${RUN_PREFIX} Adresă`);
+
+  await page.getByLabel('Strada și numărul').fill('str. Ștefan cel Mare 1');
+  // Exact, because a site row's locality is labelled apart and a substring would reach for it.
+  await page.getByLabel('Localitatea', { exact: true }).fill('Chișinău');
+  await page.getByLabel('Numele persoanei de contact').fill('Ana Rusu');
+  await page.getByLabel('E-mailul persoanei de contact').fill(`raport-${RUN_PREFIX}@example.md`);
+  await page.getByRole('button', { name: 'Adăugați entitatea' }).click();
+  await page.waitForURL(/\/entities\/[0-9a-f-]{36}$/);
+
+  await page.reload();
+  await expect(page.getByLabel('Strada și numărul')).toHaveValue('str. Ștefan cel Mare 1');
+  await expect(page.getByLabel('Localitatea', { exact: true })).toHaveValue('Chișinău');
+  await expect(page.getByLabel('Numele persoanei de contact')).toHaveValue('Ana Rusu');
+  await expect(page.getByLabel('E-mailul persoanei de contact')).toHaveValue(`raport-${RUN_PREFIX}@example.md`);
 });
 
 /**

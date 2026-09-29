@@ -14,6 +14,7 @@ import styles from '../../shared/styles/identity-screens.module.css';
 import { ROUTES } from '@/lib/routes';
 import { CredentialSubmit } from '@/shared/credential-submit';
 import { ScriptingRequired } from '@/shared/scripting-required';
+import { EMAIL_SHAPE } from '@/lib/email-shape';
 
 /**
  * S-02 · Request a password reset (FR-6, UC-08) — the reset-request route from S-01.
@@ -33,8 +34,6 @@ import { ScriptingRequired } from '@/shared/scripting-required';
 interface RequestResetInput {
   email: string;
 }
-
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function RequestResetForm() {
   const t = useTranslations('identity.resetRequest');

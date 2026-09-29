@@ -5,6 +5,7 @@ import {
   EntityArchivedError,
   EntityNotFoundError,
   IdnoMalformedError,
+  LegalFormUnknownError,
   LeiCheckDigitsError,
   LeiMalformedError,
   NaceCodeUnknownError,
@@ -38,6 +39,12 @@ describe('ManageReportingEntity', () => {
     lei: null,
     naceCodes: [],
     sites: [],
+    registeredAddressLine1: null,
+    registeredAddressLine2: null,
+    registeredLocality: null,
+    registeredPostalCode: null,
+    reportContactName: null,
+    reportContactEmail: null,
     consolidationBasis: null,
     consolidationMembers: [],
   };
@@ -156,6 +163,64 @@ describe('ManageReportingEntity', () => {
       const created = await useCase.create({ entity: { ...NEW, idno: '1003600158029' } });
 
       expect(created.idno).toBe('1003600158029');
+    });
+  });
+
+  // Task 177: the organization is the account, so what a report prints is the entity's — its legal form, held to the
+  // organization's country as the organization's was, and the address and the report contact that moved here.
+  describe('what the report prints (task 177 moved it here from the organization)', () => {
+    it('admits a legal form the organization’s country registers, and refuses one it does not', async () => {
+      const { useCase } = build([]);
+
+      await expect(useCase.create({ entity: { ...NEW, legalForm: 'sa' } })).resolves.toMatchObject({ legalForm: 'sa' });
+      // `pfa` is a Romanian form, and the organization is Moldovan.
+      await expect(useCase.create({ entity: { ...NEW, legalForm: 'pfa' } })).rejects.toBeInstanceOf(
+        LegalFormUnknownError,
+      );
+    });
+
+    it('refuses an unregistered legal form on an edit, and lets one be cleared', async () => {
+      const { store, useCase } = build();
+
+      await expect(
+        useCase.update({ entityId: store.all[0].id, patch: { legalForm: 'pfa' } }),
+      ).rejects.toBeInstanceOf(LegalFormUnknownError);
+      expect(store.all[0].legalForm).toBe('srl');
+
+      // An entity whose form is not decided yet is a state S-13 must be able to return to.
+      const cleared = await useCase.update({ entityId: store.all[0].id, patch: { legalForm: null } });
+      expect(cleared.legalForm).toBeNull();
+    });
+
+    it('records the registered address and the report contact on a new entity and on an edit', async () => {
+      const { store, useCase } = build([]);
+
+      const created = await useCase.create({
+        entity: {
+          ...NEW,
+          registeredAddressLine1: 'str. Ștefan cel Mare 1',
+          registeredLocality: 'Chișinău',
+          reportContactName: 'Ana Rusu',
+          reportContactEmail: 'ana@cafeneaua.md',
+        },
+      });
+      expect(created).toMatchObject({
+        registeredAddressLine1: 'str. Ștefan cel Mare 1',
+        registeredLocality: 'Chișinău',
+        reportContactName: 'Ana Rusu',
+        reportContactEmail: 'ana@cafeneaua.md',
+      });
+
+      const edited = await useCase.update({
+        entityId: store.all[0].id,
+        patch: { registeredPostalCode: 'MD-2001', reportContactEmail: null },
+      });
+      expect(edited).toMatchObject({
+        registeredLocality: 'Chișinău',
+        registeredPostalCode: 'MD-2001',
+        reportContactName: 'Ana Rusu',
+        reportContactEmail: null,
+      });
     });
   });
 

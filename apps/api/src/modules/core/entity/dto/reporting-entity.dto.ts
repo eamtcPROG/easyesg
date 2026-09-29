@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
+  IsEmail,
   IsIn,
   IsOptional,
   IsString,
@@ -178,6 +179,69 @@ class ReportingEntityFieldsDto {
   lei?: string | null;
 
   @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    maxLength: 200,
+    description:
+      'The first line of the entity’s registered address, from the state register (FR-17 as amended; the ' +
+      'organization’s until task 177). Null clears it.',
+  })
+  @Trim()
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @Length(1, 200)
+  registeredAddressLine1?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 200 })
+  @Trim()
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @Length(1, 200)
+  registeredAddressLine2?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 120, description: 'City, town or village.' })
+  @Trim()
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @Length(1, 120)
+  registeredLocality?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 20 })
+  @Trim()
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @Length(1, 20)
+  registeredPostalCode?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    maxLength: 200,
+    description:
+      'The person a reader of this entity’s report contacts about its content, printed on its cover — ' +
+      'FR-15’s report-cover contact, the entity’s since task 177. Distinct from the organization’s ' +
+      'contactEmail, which is how the platform reaches the account. Null clears it.',
+  })
+  @Trim()
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @Length(1, 200)
+  reportContactName?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'email', maxLength: 320 })
+  @Trim()
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsEmail()
+  @Length(1, 320)
+  reportContactEmail?: string | null;
+
+  @ApiPropertyOptional({
     type: [String],
     example: ['10.71', '56.10'],
     description:
@@ -310,6 +374,18 @@ export class ReportingEntityResponseDto {
       'one is held, the export writes it as the report’s entity identifier.',
   })
   lei: string | null;
+  @ApiProperty({ type: String, nullable: true, description: 'The registered address’s first line, or null.' })
+  registeredAddressLine1: string | null;
+  @ApiProperty({ type: String, nullable: true }) registeredAddressLine2: string | null;
+  @ApiProperty({ type: String, nullable: true }) registeredLocality: string | null;
+  @ApiProperty({ type: String, nullable: true }) registeredPostalCode: string | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The contact printed on this entity’s report cover (task 177), or null.',
+  })
+  reportContactName: string | null;
+  @ApiProperty({ type: String, nullable: true, format: 'email' }) reportContactEmail: string | null;
   @ApiProperty({ type: [String] }) naceCodes: string[];
 
   @ApiProperty({
@@ -346,6 +422,12 @@ export class ReportingEntityResponseDto {
     this.legalForm = entity.legalForm;
     this.idno = entity.idno;
     this.lei = entity.lei;
+    this.registeredAddressLine1 = entity.registeredAddressLine1;
+    this.registeredAddressLine2 = entity.registeredAddressLine2;
+    this.registeredLocality = entity.registeredLocality;
+    this.registeredPostalCode = entity.registeredPostalCode;
+    this.reportContactName = entity.reportContactName;
+    this.reportContactEmail = entity.reportContactEmail;
     this.naceCodes = [...entity.naceCodes];
     this.status = entity.status;
     this.archivedAt = entity.archivedAt?.getTime() ?? null;

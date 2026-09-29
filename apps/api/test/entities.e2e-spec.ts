@@ -491,6 +491,80 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
     });
   });
 
+  /**
+   * Task 177: the organization is the account, and what a report prints is the entity's — its legal form, held to the
+   * organization's country as the organization's used to be, and the registered address and the report-cover contact
+   * that moved here. Read back by a second request, so what is asserted is what was stored.
+   */
+  describe('what the report prints (task 177)', () => {
+    it('records the registered address and the report contact, and reads them back', async () => {
+      await http()
+        .patch(`/api/v1/entities/${entityId}`)
+        .set(admin.authorization)
+        .send({
+          registeredAddressLine1: 'str. Ștefan cel Mare 1',
+          registeredLocality: 'Chișinău',
+          registeredPostalCode: 'MD-2001',
+          reportContactName: 'Ana Rusu',
+          reportContactEmail: 'raport@lina.md',
+        })
+        .expect(200);
+
+      const read = await http().get(`/api/v1/entities/${entityId}`).set(admin.authorization).expect(200);
+      expect((read.body as { object: Record<string, unknown> }).object).toMatchObject({
+        registeredAddressLine1: 'str. Ștefan cel Mare 1',
+        registeredAddressLine2: null,
+        registeredLocality: 'Chișinău',
+        registeredPostalCode: 'MD-2001',
+        reportContactName: 'Ana Rusu',
+        reportContactEmail: 'raport@lina.md',
+      });
+
+      // Audited on the entity like every other column, which is what FR-15's *attributed and timestamped* now rests on.
+      const changes = await asOrganization(owner, ORG, (run) =>
+        run(
+          `SELECT DISTINCT field_name FROM core.field_change
+            WHERE record_id = $1 AND operation = 'UPDATE'
+              AND (field_name LIKE 'registered_%' OR field_name LIKE 'report_contact_%')
+            ORDER BY field_name`,
+          [entityId],
+        ),
+      );
+      expect(changes).toEqual([
+        { field_name: 'registered_address_line1' },
+        { field_name: 'registered_locality' },
+        { field_name: 'registered_postal_code' },
+        { field_name: 'report_contact_email' },
+        { field_name: 'report_contact_name' },
+      ]);
+    });
+
+    it('refuses a report contact email that is not an address', async () => {
+      await http()
+        .patch(`/api/v1/entities/${entityId}`)
+        .set(admin.authorization)
+        .send({ reportContactEmail: 'not-an-address' })
+        .expect(400);
+    });
+
+    it('refuses a legal form the organization’s country does not register, on a new entity and an edit', async () => {
+      // `pfa` is a Romanian form, and this organization is Moldovan.
+      const onEdit = await http()
+        .patch(`/api/v1/entities/${entityId}`)
+        .set(admin.authorization)
+        .send({ legalForm: 'pfa' })
+        .expect(400);
+      expect((onEdit.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/legal-form-unknown`);
+
+      const onCreate = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({ name: 'Lina Română', legalForm: 'pfa' })
+        .expect(400);
+      expect((onCreate.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/legal-form-unknown`);
+    });
+  });
+
   describe('archiving (UC-55, FR-20)', () => {
     it('archives, and the entity remains readable with its history intact', async () => {
       await http()

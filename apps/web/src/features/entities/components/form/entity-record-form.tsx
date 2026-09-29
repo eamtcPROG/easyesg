@@ -21,7 +21,9 @@ import {
   initialEntityRecordState,
   visibleNotice,
 } from '../../tools/entity-record-state';
+import { AddressSection } from '../sections/address/address-section';
 import { BoundarySection } from '../sections/boundary/boundary-section';
+import { ReportContactSection } from '../sections/contact/report-contact-section';
 import { IdentitySection } from '../sections/identity/identity-section';
 import { SitesSection } from '../sections/sites/sites-section';
 import { ENTITY_RECORD_MESSAGES } from '../shared/entity-messages';
@@ -215,8 +217,10 @@ export function EntityRecordForm({ entity, activity, suggestions, legalForms }: 
             suggestions={suggestions}
             onCodesChangeAction={(codes) => dispatch({ kind: ENTITY_EVENT.CODES_CHANGED, codes })}
           />
+          <AddressSection control={control} archived={archived} />
           <BoundarySection control={control} archived={archived} />
           <SitesSection control={control} archived={archived} />
+          <ReportContactSection control={control} archived={archived} />
         </RecordCard>
 
         {/* §6.14 and UX-70: the consequence names the object and what stops, and UX-69's reassurance

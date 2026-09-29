@@ -25975,3 +25975,75 @@ The browser suite did not run: the change is api-only, the table's run for that 
 had been stopped by the owner during the task, so no journey was driven against it either. Reviews and `gates:clean`
 did not run (owner, 13 Sep 2026) — a two-field defect on one path, with no type another workspace consumes changed
 beyond one description string.
+
+## Task 177 — The organization held what a report prints · 2026-09-29
+
+The owner, looking at S-15's legal form, registered address and report contacts: *should this stay in the
+organisation or the entity?* — and then *implement now, and update the labels to be clear for the user what happens*,
+with organization creation in the task. Each field was placed by who reads it, checked rather than assumed: VSME's
+Digital Template (`config/efrag/`) reports the reporting entity's name, identifier, currency and period, and B1 the
+undertaking's legal form, NACE codes, boundary and sites — no account fact, and no cover contact on EFRAG's own cover
+page; B1 already pre-filled its legal form from the **entity's** snapshot (`entity-defaults.ts`); and nothing in the api
+read the organization's legal form, address or report contact. `architecture.md` §12.5.6's task-177 row carries the
+decisions; FR-15, FR-17, UC-50, UC-52, S-04, S-13, S-15 and §7.2 are amended.
+
+**What moved.**
+
+- **Schema** (`1791417600000-profile-on-entity`): the registered address's four columns and the report contact's two
+  join `core.reporting_entity`, flat and nullable as they were; `core.organization` drops them and its `legal_form`,
+  which duplicated the entity's own. The data step fills only what an entity leaves empty — the address and the legal
+  form into the oldest active entity (task 175's receiving order), the report contact into every active entity, since
+  it printed on all their reports — and founds an entity for an organization holding any of them and none. Two cases in
+  `migration-data-steps.e2e-spec.ts`, **both failing with the `NO FORCE` lift removed**, measured.
+- **The legal-form rule moved with the field.** An entity's legal form was never checked against its country — the
+  organization's was — so the check now runs on the entity's create and edit, against the organization's country, as
+  its activity codes already did; `LegalFormUnknownError` moved to `entity.errors.ts` with its key, its words unchanged
+  (they already said *the change was not saved*). The unit cases fail with the check removed. A country change is no
+  longer checked against any legal form — **recorded as a deferral**: one country registers a vocabulary, so the second
+  one is what must add a check over the entities' forms.
+- **API**: the organization's model, DTOs, both stores and the profile use case shed seven fields; the entity's gain
+  six, with the organization's validators carried across unchanged. A client still sending one of them to
+  `PATCH /organization` is refused rather than ignored — `forbidNonWhitelisted` — and an e2e case pins it.
+- **S-15** is two sections now, the account and how easyESG reaches it; the country select no longer carries forms.
+- **S-13's record** gains *Registered address* after the identity — in two pairs, lines together and the town beside
+  its postal code, using the card's width as the identity section does — and *Contact for the report* last. The address
+  section moved by `git mv`, not copy.
+- **One email-shape check**: `lib/email-shape.ts` replaces four identical declarations (S-04, register, reset, S-15),
+  which S-13's report contact would have made five.
+
+**The words, separately authored in all three languages** (Romanian first, formal register):
+
+- **S-04** says what the act creates: *the organisation is your team's account on easyESG; we create your first
+  company with it — the one your report is about*. The name is *Company name*, whose help says both take it and either
+  can be renamed; the email is *Email for easyESG messages — never printed on a report*; the closing line points a
+  multi-company reader to Entities.
+- **S-15** says it is the account and where the rest is: *what a report prints belongs to each company, under
+  Entities*; *Organisation name — not printed on reports*; *How we reach you — never printed on a report*. The save
+  message no longer claims the values reach reports created from now on, which stopped being true.
+- **S-13**: *Registered address — printed on this company's report*; *Contact for the report — the person readers of
+  this company's report can write to about its content, printed on the cover*, with help that it may be someone other
+  than whoever manages easyESG. In Russian the section is named by its page title, *«Отчитывающиеся организации»*,
+  since the navigation's *Организации* would read as the account.
+
+**Searched for the shape**: every reader of the seven organization columns and their DTO fields across the api, both
+apps, both browser suites and their fixtures; every e2e locator on a relabelled field (S-04's name, country and email,
+S-15's legal form, locality and contacts, one in `session.spec.ts`); every document naming S-15 as where a report's
+legal identity lives. Nothing else declared the email pattern.
+
+**Verified**: the api's unit suite 1,438 and the web's 1,211 (one run failed an S-16 invite case at 1 s under the full
+suite's load; it passed three runs alone and the next full run); `migrations:check` — the revert on the test stack and
+61 invariants on each, so the dev database holds the move; `openapi:check` with the regenerated contract staged; the
+admin and api typechecks; `docs:check` 46 of 46. `pnpm e2e`: 1,442 passed and 15 failed in two suites whose setup
+hooks timed out — `factor-challenge`'s on a cleanup `DELETE`, `notification-centre`'s booting the app — and both
+passed 15 of 15 run alone; **the run then did not exit**, jest held by the configuration store's poll timer in the app
+the failed setups never closed, and was stopped after about twenty minutes idle. That is a finding about the suites'
+teardown under a failed `beforeAll`, not about this change, and is raised rather than fixed here. `e2e:web` over
+identity and expansion: **258 of 260**, the two failures — `accelerated-surfaces.spec.ts:291`, a sign-in that did not
+land in 30 s, and `wizard.spec.ts:499`, task 174's known case — passing rerun alone; every case this task wrote or
+edited passed in the run. Lint cold, per workspace (web, api, admin, packages, e2e): clean. The worker boot was not run:
+no consumer changed.
+
+Reviews and `gates:clean` did not run (owner, 13 Sep 2026). What the cold run could see here was judged instead: a file
+moved and one deleted, neither with a `dist/` copy, since `apps/web` builds fresh in `e2e:web`'s pre-hook; the contract
+resolves from source; and the lint cache, which types changed under unchanged files, was paid for by running lint
+uncached per workspace.

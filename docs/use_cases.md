@@ -113,7 +113,7 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-47 | View the change history of a report | RC | See who changed which value, when, and from what | MVP | FR-54, FR-55 |
 | UC-48 | Select the language of an exported report | RC | Choose export language independently of interface language | MVP | FR-52 |
 | UC-49 | Create an organization | OA | Establish the organization record and become its administrator | MVP | FR-13, FR-14 |
-| UC-50 | View and edit the organization profile | OA | Maintain legal form, name, address and contact details | MVP | FR-15 |
+| UC-50 | View and edit the organization profile | OA | Maintain the account's name, country and contact details | MVP | FR-15 |
 | UC-51 | Maintain entity identifiers | OA | Record and validate each reporting entity's IDNO, and an LEI where the entity holds one | MVP | FR-16 |
 | UC-52 | Create a reporting entity | OA | Establish a legal entity that will be reported on | MVP | FR-17 |
 | UC-53 | Edit reporting entity master data | OA | Keep entity master data current without altering filed reports | MVP | FR-17, FR-18 |
@@ -1178,9 +1178,9 @@ their numbers put them.
 - **Preconditions:** The organization exists and the user holds the OA role.
 - **Trigger:** The Administrator opens the organization profile.
 - **Main success scenario:**
-  1. The Administrator maintains the organization's legal form, registered name, registered address and contact details.
+  1. The Administrator maintains the organization's name, its country and the contact details the platform writes to. **Amended 29 Sep 2026 (project owner, task 177):** the legal form, the registered address and the report-cover contact are each reporting entity's (UC-52, UC-53).
   2. Changes are attributed and timestamped.
-- **Business rules:** These values propagate into every report the organization produces. They are distinct from billing account details (UC-108), because the invoiced legal person is not always the reporting entity.
+- **Business rules:** These values are the account's. A report prints its reporting entity's legal identity, not the organization's (amended 29 Sep 2026). They are distinct from billing account details (UC-108), because the invoiced legal person is not always the reporting entity.
 - **Related FRs:** FR-15
 - **Related UCs:** UC-51, UC-108
 
@@ -1204,7 +1204,7 @@ their numbers put them.
 - **Preconditions:** The organization exists.
 - **Trigger:** The Administrator creates a legal entity that will be reported on.
 - **Main success scenario:**
-  1. The Administrator captures the entity's legal form, NACE code(s) and site locations.
+  1. The Administrator captures the entity's legal form, NACE code(s) and site locations, and — since 29 Sep 2026, from the organization's profile — its registered address and the contact printed on its report's cover.
 - **Business rules:** An organization may hold several entities; most SMEs will hold exactly one, but the model does not assume it. **The first is created with the organization** (UC-49, 29 Sep 2026), so this use case is how a group adds its further companies.
 - **Related FRs:** FR-17
 - **Related UCs:** UC-19, UC-53, UC-54, UC-56

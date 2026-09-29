@@ -175,8 +175,9 @@ export class EntitiesController {
     status: 400,
     description:
       'An activity code the organization’s country does not register (problem type ' +
-      'nace-code-unknown) — the classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2 — a ' +
-      'consolidated basis with nothing inside the boundary (consolidation-boundary-empty), or an ' +
+      'nace-code-unknown) — the classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2 — a legal ' +
+      'form it does not register (legal-form-unknown), a consolidated basis with nothing inside the ' +
+      'boundary (consolidation-boundary-empty), or an ' +
       'identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree ' +
       '(identifier-check-digits).',
     content: { 'application/problem+json': {} },
@@ -190,6 +191,12 @@ export class EntitiesController {
         legalForm: body.legalForm ?? null,
         idno: body.idno ?? null,
         lei: body.lei ?? null,
+        registeredAddressLine1: body.registeredAddressLine1 ?? null,
+        registeredAddressLine2: body.registeredAddressLine2 ?? null,
+        registeredLocality: body.registeredLocality ?? null,
+        registeredPostalCode: body.registeredPostalCode ?? null,
+        reportContactName: body.reportContactName ?? null,
+        reportContactEmail: body.reportContactEmail ?? null,
         naceCodes: body.naceCodes ?? [],
         sites: (body.sites ?? []).map((site) => ({
           id: site.id,
@@ -223,7 +230,8 @@ export class EntitiesController {
     status: 400,
     description:
       'A consolidated basis with nothing inside the boundary (problem type ' +
-      'consolidation-boundary-empty), an unregistered activity code (nace-code-unknown), or an ' +
+      'consolidation-boundary-empty), an unregistered activity code (nace-code-unknown) or legal ' +
+      'form (legal-form-unknown), or an ' +
       'identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree ' +
       '(identifier-check-digits).',
     content: { 'application/problem+json': {} },
@@ -246,6 +254,12 @@ export class EntitiesController {
         ...(body.legalForm !== undefined ? { legalForm: body.legalForm } : {}),
         ...(body.idno !== undefined ? { idno: body.idno } : {}),
         ...(body.lei !== undefined ? { lei: body.lei } : {}),
+        ...(body.registeredAddressLine1 !== undefined ? { registeredAddressLine1: body.registeredAddressLine1 } : {}),
+        ...(body.registeredAddressLine2 !== undefined ? { registeredAddressLine2: body.registeredAddressLine2 } : {}),
+        ...(body.registeredLocality !== undefined ? { registeredLocality: body.registeredLocality } : {}),
+        ...(body.registeredPostalCode !== undefined ? { registeredPostalCode: body.registeredPostalCode } : {}),
+        ...(body.reportContactName !== undefined ? { reportContactName: body.reportContactName } : {}),
+        ...(body.reportContactEmail !== undefined ? { reportContactEmail: body.reportContactEmail } : {}),
         ...(body.naceCodes !== undefined ? { naceCodes: body.naceCodes } : {}),
         ...(body.consolidationBasis !== undefined
           ? { consolidationBasis: body.consolidationBasis }

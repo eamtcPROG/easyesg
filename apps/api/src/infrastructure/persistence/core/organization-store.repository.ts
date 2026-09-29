@@ -13,15 +13,8 @@ interface OrganizationRow {
   id: string;
   name: string;
   country_code: string;
-  legal_form: string | null;
-  registered_address_line1: string | null;
-  registered_address_line2: string | null;
-  registered_locality: string | null;
-  registered_postal_code: string | null;
   contact_email: string | null;
   contact_phone: string | null;
-  report_contact_name: string | null;
-  report_contact_email: string | null;
   created_at: Date;
   updated_at: Date;
   /** From the lateral join below, not from `core.organization`. Null on a record with no trail. */
@@ -34,21 +27,11 @@ interface OrganizationRow {
 const PATCHABLE = {
   name: 'name',
   countryCode: 'country_code',
-  legalForm: 'legal_form',
-  registeredAddressLine1: 'registered_address_line1',
-  registeredAddressLine2: 'registered_address_line2',
-  registeredLocality: 'registered_locality',
-  registeredPostalCode: 'registered_postal_code',
   contactEmail: 'contact_email',
   contactPhone: 'contact_phone',
-  reportContactName: 'report_contact_name',
-  reportContactEmail: 'report_contact_email',
 } as const satisfies Record<keyof OrganizationProfilePatch, string>;
 
-const SELECTED_COLUMNS = `o.id, o.name, o.country_code, o.legal_form,
-        o.registered_address_line1, o.registered_address_line2, o.registered_locality,
-        o.registered_postal_code, o.contact_email, o.contact_phone,
-        o.report_contact_name, o.report_contact_email, o.created_at, o.updated_at`;
+const SELECTED_COLUMNS = `o.id, o.name, o.country_code, o.contact_email, o.contact_phone, o.created_at, o.updated_at`;
 
 /**
  * FR-15's attribution, answered from the trail that already records it (task 30.3).
@@ -85,15 +68,8 @@ const toOrganization = (row: OrganizationRow): Organization => ({
   id: row.id,
   name: row.name,
   countryCode: row.country_code,
-  legalForm: row.legal_form,
-  registeredAddressLine1: row.registered_address_line1,
-  registeredAddressLine2: row.registered_address_line2,
-  registeredLocality: row.registered_locality,
-  registeredPostalCode: row.registered_postal_code,
   contactEmail: row.contact_email,
   contactPhone: row.contact_phone,
-  reportContactName: row.report_contact_name,
-  reportContactEmail: row.report_contact_email,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
   // The moment is what makes an attribution one: an actor with no time answers nothing, so the

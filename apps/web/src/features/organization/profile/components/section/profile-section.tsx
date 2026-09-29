@@ -11,11 +11,11 @@ import { PROFILE_MESSAGES } from '../shared/profile-messages';
 import styles from '../styles/organization-profile.module.css';
 
 /**
- * S-15's one region: the read and which of §8.1's arms applies (UC-50, UC-51; cut out of the route
- * by task 134's parent-close review). **The screen never computes the caller's role** —
+ * S-15's one region: the read and which of §8.1's arms applies (UC-50; cut out of the route by task 134's
+ * parent-close review). **The screen never computes the caller's role** —
  * `OrganizationController` carries `@RequiresRole(ORGANIZATION_ADMINISTRATOR)` at class level, so an
- * editor or a viewer is refused and this renders the permission state from that refusal. Country
- * and legal-form keys are resolved to words here, where the catalogue object can be indexed — see
+ * editor or a viewer is refused and this renders the permission state from that refusal. Country keys are
+ * resolved to words here, where the catalogue object can be indexed — see
  * `VocabularyOption`'s docblock for why a translator call cannot take these values.
  */
 export async function ProfileSection() {
@@ -54,11 +54,9 @@ export async function ProfileSection() {
     );
   } else {
     const countryLabels: Readonly<Record<string, string>> = messages.organization.countries;
-    const formLabels: Readonly<Record<string, string>> = messages.organization.legalForms;
     const countries = read.countries.map((country) => ({
       value: country.countryCode,
       label: countryLabels[country.countryCode] ?? country.countryCode,
-      legalForms: country.legalForms.map((form) => ({ value: form, label: formLabels[form] ?? form })),
     }));
     body = <OrganizationProfileForm organization={read.organization} countries={countries} />;
   }

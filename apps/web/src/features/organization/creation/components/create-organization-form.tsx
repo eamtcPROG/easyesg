@@ -11,6 +11,7 @@ import { useRouter } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { createOrganizationAction } from '../actions/actions';
 import styles from './create-organization.module.css';
+import { EMAIL_SHAPE } from '@/lib/email-shape';
 
 /**
  * S-04's form — UC-49, FR-13, D-1: creating grants the creator the Organization Administrator
@@ -62,9 +63,6 @@ interface CreateOrganizationFields {
   contactEmail: string;
   contactPhone: string;
 }
-
-/** Light shape check only, as on S-01: deliverability is unknowable client-side. */
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function CreateOrganizationForm({ countries }: CreateOrganizationFormProps) {
   const t = useTranslations('organization.create');

@@ -9,6 +9,12 @@ const entity = (over: Partial<ReportingEntity>): ReportingEntity => ({
   legalForm: 'srl',
   idno: null,
   lei: null,
+  registeredAddressLine1: null,
+  registeredAddressLine2: null,
+  registeredLocality: null,
+  registeredPostalCode: null,
+  reportContactName: null,
+  reportContactEmail: null,
   naceCodes: [],
   status: ENTITY_STANDING.ACTIVE,
   archivedAt: null,
@@ -27,6 +33,12 @@ describe('toFields', () => {
       legalForm: '',
       idno: '',
       lei: '',
+      registeredAddressLine1: '',
+      registeredAddressLine2: '',
+      registeredLocality: '',
+      registeredPostalCode: '',
+      reportContactName: '',
+      reportContactEmail: '',
       consolidationBasis: '',
       sites: [],
       consolidationMembers: [],
@@ -81,6 +93,12 @@ describe('toRequest', () => {
         legalForm: '',
         idno: '',
         lei: '',
+        registeredAddressLine1: '',
+        registeredAddressLine2: '',
+        registeredLocality: '',
+        registeredPostalCode: '',
+        reportContactName: '',
+        reportContactEmail: '',
         consolidationBasis: '',
         sites: [{ ...EMPTY_SITE, name: 'Sediu ' }],
         consolidationMembers: [{ ...EMPTY_MEMBER, id: 'm1', name: 'Filiala' }],
@@ -94,6 +112,12 @@ describe('toRequest', () => {
       legalForm: null,
       idno: null,
       lei: null,
+      registeredAddressLine1: null,
+      registeredAddressLine2: null,
+      registeredLocality: null,
+      registeredPostalCode: null,
+      reportContactName: null,
+      reportContactEmail: null,
       naceCodes: ['10.71'],
       consolidationBasis: null,
       sites: [{ name: 'Sediu', addressLine1: null, locality: null, postalCode: null }],
@@ -110,6 +134,12 @@ describe('toRequest', () => {
         legalForm: '',
         idno: '',
         lei: '',
+        registeredAddressLine1: '',
+        registeredAddressLine2: '',
+        registeredLocality: '',
+        registeredPostalCode: '',
+        reportContactName: '',
+        reportContactEmail: '',
         consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED,
         sites: [
           { ...EMPTY_SITE, id: 's1', name: 'Depozit', removed: true },
@@ -136,6 +166,25 @@ describe('toRequest', () => {
     expect({ idno: cleared.idno, lei: cleared.lei }).toEqual({ idno: null, lei: null });
   });
 
+  it('sends the registered address and the report contact trimmed, a cleared one as null (task 177)', () => {
+    const fields = toFields(
+      entity({ registeredLocality: 'Chișinău', reportContactName: 'Ana Rusu', reportContactEmail: 'ana@lina.md' }),
+    );
+    expect(fields).toMatchObject({ registeredLocality: 'Chișinău', registeredAddressLine1: '', reportContactName: 'Ana Rusu' });
+
+    const request = toRequest(
+      { ...fields, registeredAddressLine1: ' str. Ștefan cel Mare 1 ', reportContactEmail: '  ' },
+      [],
+    );
+    expect(request).toMatchObject({
+      registeredAddressLine1: 'str. Ștefan cel Mare 1',
+      registeredAddressLine2: null,
+      registeredLocality: 'Chișinău',
+      reportContactName: 'Ana Rusu',
+      reportContactEmail: null,
+    });
+  });
+
   it('sends a stated basis as itself', () => {
     const request = toRequest(
       {
@@ -143,6 +192,12 @@ describe('toRequest', () => {
         legalForm: 'srl',
         idno: '',
         lei: '',
+        registeredAddressLine1: '',
+        registeredAddressLine2: '',
+        registeredLocality: '',
+        registeredPostalCode: '',
+        reportContactName: '',
+        reportContactEmail: '',
         consolidationBasis: CONSOLIDATION_BASIS.INDIVIDUAL,
         sites: [],
         consolidationMembers: [],

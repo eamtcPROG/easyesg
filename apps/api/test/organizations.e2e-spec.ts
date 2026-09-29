@@ -47,7 +47,6 @@ const EMAILS = {
 
 /** Kept out of the vocabulary on purpose — the two refusals need a country and a form that are not. */
 const UNSUPPORTED_COUNTRY = 'FR';
-const UNREGISTERED_FORM = 'pfa';
 
 interface Problem {
   type?: string;
@@ -162,15 +161,14 @@ describe('organizations (UC-49, UC-50)', () => {
         })
         .expect(201);
 
-      const organization = (created.body as { object: { id: string; name: string; countryCode: string; legalForm: string | null } })
-        .object;
+      const organization = (created.body as { object: { id: string; name: string; countryCode: string } }).object;
       foundedId = organization.id;
 
       expect(organization.name).toBe('Fabrica de Cașcaval SRL');
       // Stored as ISO renders it, though the caller sent lower case.
       expect(organization.countryCode).toBe('MD');
-      // S-04 does not collect the legal form; it is S-15's, and null is the honest answer.
-      expect(organization.legalForm).toBeNull();
+      // The account holds no legal form: it is each entity's since task 177, and the first entity's is S-13's to state.
+      expect(organization).not.toHaveProperty('legalForm');
 
       // Read with the tenant bound. `membership_tenant_select` compares `organization_id` to
       // `app.current_org` and `FORCE ROW LEVEL SECURITY` subjects `esg_migrator` to it too, so the
@@ -272,13 +270,11 @@ describe('organizations (UC-49, UC-50)', () => {
     });
 
     it('accepts a patch, leaves the fields it does not name, and clears on an explicit null', async () => {
-      const first = await http()
+      await http()
         .patch('/api/v1/organization')
         .set(founder.authorization)
-        .send({ legalForm: 'srl', registeredLocality: 'Chișinău', contactPhone: '+37322000000' })
+        .send({ contactEmail: 'contact@cascaval.md', contactPhone: '+37322000000' })
         .expect(200);
-
-      expect((first.body as { object: { legalForm: string } }).object.legalForm).toBe('srl');
 
       const second = await http()
         .patch('/api/v1/organization')
@@ -286,14 +282,11 @@ describe('organizations (UC-49, UC-50)', () => {
         .send({ contactPhone: null })
         .expect(200);
 
-      const organization = (second.body as {
-        object: { legalForm: string; registeredLocality: string; contactPhone: string | null };
-      }).object;
+      const organization = (second.body as { object: { contactEmail: string; contactPhone: string | null } }).object;
       expect(organization.contactPhone).toBeNull();
       // Absent from the patch, so untouched — the distinction the whole patch type is written
       // around, and the one a `?? null` somewhere in the chain would quietly destroy.
-      expect(organization.legalForm).toBe('srl');
-      expect(organization.registeredLocality).toBe('Chișinău');
+      expect(organization.contactEmail).toBe('contact@cascaval.md');
     });
 
     it('records each changed field against the acting user (FR-15)', async () => {
@@ -305,12 +298,10 @@ describe('organizations (UC-49, UC-50)', () => {
           [foundedId, founder.accountId],
         ),
       );
-      // One row per column that moved, which is why the address is columns rather than jsonb: an
-      // address held as one document would record "the address changed" and not which line.
       expect(changes).toEqual(
         expect.arrayContaining([
-          { field_name: 'legal_form', new_value: 'srl' },
-          { field_name: 'registered_locality', new_value: 'Chișinău' },
+          { field_name: 'contact_email', new_value: 'contact@cascaval.md' },
+          { field_name: 'contact_phone', new_value: '+37322000000' },
         ]),
       );
     });
@@ -336,65 +327,37 @@ describe('organizations (UC-49, UC-50)', () => {
       expect(typeof lastChange?.at).toBe('number');
     });
 
-    it('holds the report-cover contact apart from the platform contact (FR-15, amended)', async () => {
-      const patched = await http()
-        .patch('/api/v1/organization')
-        .set(founder.authorization)
-        .send({
-          contactEmail: 'platforma@example.md',
-          reportContactName: 'Ana Rusu',
-          reportContactEmail: 'raport@example.md',
-        })
-        .expect(200);
+    // Task 177: the organization is the account, and what a report prints is each entity's — so the profile neither
+    // answers with those fields nor takes them, and a client still sending one is told rather than silently ignored.
+    it('holds nothing a report prints, and refuses a patch that names one', async () => {
+      const response = await http().get('/api/v1/organization').set(founder.authorization).expect(200);
+      const organization = (response.body as { object: Record<string, unknown> }).object;
+      for (const field of [
+        'legalForm',
+        'registeredAddressLine1',
+        'registeredAddressLine2',
+        'registeredLocality',
+        'registeredPostalCode',
+        'reportContactName',
+        'reportContactEmail',
+      ]) {
+        expect(organization).not.toHaveProperty(field);
+      }
 
-      const organization = (patched.body as {
-        object: { contactEmail: string; reportContactName: string; reportContactEmail: string };
-      }).object;
-
-      // Two contacts, and the point of the field is that they differ: the platform writes to the
-      // first about the organization, the second is printed on a document that leaves the platform.
-      expect(organization.contactEmail).toBe('platforma@example.md');
-      expect(organization.reportContactName).toBe('Ana Rusu');
-      expect(organization.reportContactEmail).toBe('raport@example.md');
-
-      // Audited like every other column, with no migration change — the capture trigger compares
-      // `jsonb` row images, so a new column is captured the moment it exists (task 14).
-      const changes = await asOrganization(owner, foundedId, (run) =>
-        run(
-          // `operation = 'UPDATE'` matters: the INSERT records every column of a created row
-          // including the ones left empty (task 14's decision, pinned by `field-change-audit`), so
-          // an unscoped match here counts each field twice and says nothing about this patch.
-          `SELECT field_name FROM core.field_change
-            WHERE record_id = $1 AND operation = 'UPDATE' AND field_name LIKE 'report_contact%'
-            ORDER BY field_name`,
-          [foundedId],
-        ),
-      );
-      expect(changes).toEqual([
-        { field_name: 'report_contact_email' },
-        { field_name: 'report_contact_name' },
-      ]);
-    });
-
-    it('refuses a legal form the country does not register', async () => {
       const refused = await http()
         .patch('/api/v1/organization')
         .set(founder.authorization)
-        .send({ legalForm: UNREGISTERED_FORM })
+        .send({ reportContactName: 'Ana Rusu' })
         .expect(400);
-
-      expect((refused.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/legal-form-unknown`);
+      expect((refused.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/validation-failed`);
     });
 
-    it('refuses a country move that would strand the form the organization already holds', async () => {
+    it('refuses a country that registers no vocabulary, and leaves the row unchanged', async () => {
       const refused = await http()
         .patch('/api/v1/organization')
         .set(founder.authorization)
         .send({ countryCode: UNSUPPORTED_COUNTRY })
         .expect(400);
-
-      // The country registers nothing at all, so this is the outer refusal rather than the form
-      // one — and the row is unchanged, which is what makes the two distinguishable.
       expect((refused.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/country-not-supported`);
 
       const unchanged = await http()

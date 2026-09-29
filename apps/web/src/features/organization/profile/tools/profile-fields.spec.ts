@@ -6,28 +6,20 @@ import { toFields, toPatch, type ProfileFields } from './profile-fields';
  * The one invariant this pair carries: **`''` and `null` are the same absence, and they round-trip**
  * (task 129). Before the split both directions sat inside the form — `toFields` as a module constant,
  * the patch as an object literal built inside the submit handler — so this could only be exercised by
- * driving a browser through thirteen fields (eleven since task 175 moved the identifiers to S-13).
+ * driving a browser through every field — thirteen until tasks 175 and 177 moved what a report prints to S-13.
  *
  * **Asserted over the whole object, never field by field.** The failure mode here is one field
  * forgotten in one direction: a `??` missing from `toFields` renders `null` into an input, and an
  * `orNull` missing from `toPatch` sends `''` to an API that accepts it for nothing. A spec naming
- * three fields would pass with the other eight wrong, which is the shape the eleven-way repetition
- * invites.
+ * one field would pass with the other three wrong, which is the shape a field-by-field spec invites.
  */
 const stored = (over: Partial<Organization> = {}): Organization =>
   ({
     id: 'org-1',
     name: 'Brutăria',
     countryCode: 'MD',
-    legalForm: null,
-    registeredAddressLine1: null,
-    registeredAddressLine2: null,
-    registeredLocality: null,
-    registeredPostalCode: null,
     contactEmail: null,
     contactPhone: null,
-    reportContactName: null,
-    reportContactEmail: null,
     lastChange: null,
     ...over,
   }) as unknown as Organization;
@@ -42,15 +34,8 @@ describe('toFields', () => {
     expect(fields).toStrictEqual({
       name: 'Brutăria',
       countryCode: 'MD',
-      legalForm: '',
-      registeredAddressLine1: '',
-      registeredAddressLine2: '',
-      registeredLocality: '',
-      registeredPostalCode: '',
       contactEmail: '',
       contactPhone: '',
-      reportContactName: '',
-      reportContactEmail: '',
     });
   });
 });
@@ -64,7 +49,7 @@ describe('toPatch', () => {
   it('turns every empty and whitespace-only field back into null', () => {
     // Whitespace is the case a bare falsiness test misses: a reader who clears a field by selecting
     // its contents and typing a space has cleared it, and `' '` is not a value the API accepts.
-    const patch = toPatch(typed({ legalForm: '   ', registeredLocality: '', contactPhone: ' \t ' }));
+    const patch = toPatch(typed({ contactEmail: '   ', contactPhone: ' \t ' }));
 
     const { name, countryCode, ...optional } = patch;
     expect(name).toBe('Brutăria');
@@ -73,19 +58,19 @@ describe('toPatch', () => {
   });
 
   it('trims what it keeps, so a stray space cannot make a saved field read as dirty', () => {
-    expect(toPatch(typed({ name: '  Brutăria SRL  ', registeredLocality: ' Chișinău ' }))).toMatchObject(
-      { name: 'Brutăria SRL', registeredLocality: 'Chișinău' },
+    expect(toPatch(typed({ name: '  Brutăria SRL  ', contactPhone: ' +373 22 000 000 ' }))).toMatchObject(
+      { name: 'Brutăria SRL', contactPhone: '+373 22 000 000' },
     );
   });
 
   it('round-trips a stored record unchanged', () => {
     // The composition is what the screen actually does on every save: read the record, seed the
     // form, send it back. Anything that survives one direction and not the other shows up here.
-    const record = stored({ legalForm: 'srl', registeredLocality: 'Chișinău', contactEmail: 'a@b.md' });
+    const record = stored({ contactEmail: 'a@b.md' });
 
-    expect(toPatch(toFields(record))).toMatchObject({
-      legalForm: 'srl',
-      registeredLocality: 'Chișinău',
+    expect(toPatch(toFields(record))).toStrictEqual({
+      name: 'Brutăria',
+      countryCode: 'MD',
       contactEmail: 'a@b.md',
       contactPhone: null,
     });

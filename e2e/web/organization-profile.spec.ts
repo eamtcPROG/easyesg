@@ -7,18 +7,18 @@ import {
 } from './support/db';
 
 /**
- * S-15 in a real browser (UC-50; FR-15; task 30.3). FR-16's identifiers were this screen's until task 175 made
- * them each reporting entity's; their journey is `entities.spec.ts`'s now.
+ * S-15 in a real browser (UC-50; FR-15; task 30.3) — **the account**, since task 177: its name, country and how
+ * easyESG reaches it. What a report prints is each company's — the identifiers since task 175, the legal form, the
+ * registered address and the report contact since 177 — and those journeys are `entities.spec.ts`'s.
  *
- * Two things only a round trip shows, and each is a different task's code agreeing with another's:
+ * What only a round trip shows here:
  *
  *  - **The attribution names the person who just saved.** It is read from `core.field_change`, a
  *    table written by a trigger inside the same transaction as the write, and `updateProfile`
  *    re-reads rather than using `RETURNING` precisely so the line is not the state before the
  *    change. Nothing hermetic can see that ordering.
- *  - **A legal-form key resolves to a sentence.** The form arrives as `srl` and the catalogue is
- *    what makes it readable; a key on the screen is the defect CLAUDE.md's user-facing-text rule
- *    names, and it renders identically to a correct label until somebody reads it.
+ *  - **The screen says what it is not.** A reader looking for what a report prints is told where it is, and
+ *    finds no field for it here.
  */
 const RUN_PREFIX = `e2e-web-profile-${process.pid}-${Date.now()}`;
 const addressFor = (label: string) => `${RUN_PREFIX}-${label}@example.md`;
@@ -68,11 +68,11 @@ test('the administrator edits the profile, and save is inert until something dif
   await expect(page.getByText('Nimic modificat încă', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Salvați modificările' })).toBeDisabled();
 
-  // A configuration key resolved to a sentence — `srl` never reaches the screen.
-  await page.getByLabel('Forma juridică').click();
-  await page.getByRole('option', { name: 'Societate cu răspundere limitată (SRL)' }).click();
+  // Task 177: the account holds nothing a report prints, and says where that is.
+  await expect(page.getByText('Ce se tipărește în rapoarte ține de fiecare companie', { exact: false })).toBeVisible();
+  await expect(page.getByLabel('Forma juridică')).toHaveCount(0);
 
-  await page.getByLabel('Localitatea').fill('Chișinău');
+  await page.getByLabel('Telefon', { exact: true }).fill('+373 22 000 000');
   await expect(page.getByRole('button', { name: 'Salvați modificările' })).toBeEnabled();
   await page.getByRole('button', { name: 'Salvați modificările' }).click();
 
@@ -87,27 +87,21 @@ test('the administrator edits the profile, and save is inert until something dif
 
   // It survives a reload, which is what says it was stored rather than held in the form.
   await page.reload();
-  await expect(page.getByLabel('Localitatea')).toHaveValue('Chișinău');
-  await expect(page.getByLabel('Forma juridică')).toHaveText(/Societate cu răspundere limitată/);
+  await expect(page.getByLabel('Telefon', { exact: true })).toHaveValue('+373 22 000 000');
 });
 
-test('the two contacts are separate fields, and the report one says so', async ({ page }) => {
+test('the contact is easyESG’s own, and the report’s is not asked for here', async ({ page }) => {
   await signedIn(page, 'contacts');
   await page.goto('/organization');
 
-  await page.getByLabel('E-mail de contact cu platforma').fill(`platforma-${RUN_PREFIX}@example.md`);
-  await page.getByLabel('E-mailul tipărit pe raport').fill(`raport-${RUN_PREFIX}@example.md`);
-  await page.getByLabel('Persoana de contact tipărită pe raport').fill('Ana Rusu');
+  // One contact, whose it is in its label; the report's contact is each company's, on S-13 (task 177).
+  await page.getByLabel('E-mail pentru mesajele easyESG').fill(`platforma-${RUN_PREFIX}@example.md`);
+  await expect(page.getByLabel('E-mailul persoanei de contact')).toHaveCount(0);
   await page.getByRole('button', { name: 'Salvați modificările' }).click();
 
   await expect(page.getByText('Profilul a fost salvat')).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel('E-mail de contact cu platforma')).toHaveValue(
-    `platforma-${RUN_PREFIX}@example.md`,
-  );
-  await expect(page.getByLabel('E-mailul tipărit pe raport')).toHaveValue(
-    `raport-${RUN_PREFIX}@example.md`,
-  );
+  await expect(page.getByLabel('E-mail pentru mesajele easyESG')).toHaveValue(`platforma-${RUN_PREFIX}@example.md`);
 });
 
 test('a member who does not administer the organization is told so, not shown an error', async ({

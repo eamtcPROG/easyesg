@@ -9,17 +9,12 @@
  * AD-4 makes true. The page indexes the catalogue object and falls back to the key, which is OQ-43's
  * stated behaviour for a value registered ahead of its wording.
  *
- * **In `shared/` because the shell takes it as a prop and `identity-section.tsx` renders it** (task
- * 129) — the same admission test the two `shared/` folders on S-05 use. S-04's creation form carries
- * its own declaration of the same shape; merging them would mean a module `profile/` and `creation/`
- * both read, which is a feature-level decision rather than this split's.
+ * **In `shared/` because the shell takes it as a prop and `identity-section.tsx` renders it** (task 129) — the same
+ * admission test the two `shared/` folders on S-05 use. The countries alone since task 177, the legal form being each
+ * entity's. S-04's creation form carries its own declaration of the same shape; merging them would mean a module
+ * `profile/` and `creation/` both read, which is a feature-level decision rather than this split's.
  */
 export interface VocabularyOption {
   readonly value: string;
   readonly label: string;
-}
-
-/** Each country the platform operates in, labelled, with its own labelled legal forms. */
-export interface CountryOption extends VocabularyOption {
-  readonly legalForms: readonly VocabularyOption[];
 }

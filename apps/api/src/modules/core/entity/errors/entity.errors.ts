@@ -59,6 +59,22 @@ export class ConsolidationBoundaryEmptyError extends DomainError {
 }
 
 /**
+ * The submitted legal form is not in the vocabulary registered for the organization's country (FR-17, AD-4) — the
+ * organization's refusal until task 177 moved the legal form to the entity, where B1 already read it.
+ *
+ * **Its own `400`, not a `ValidationFailed`**: the resolution is *pick another form from the list*, which a front end
+ * cannot derive from a generic slug — the same argument `NaceCodeUnknownError` makes for the activity codes beside it.
+ */
+export class LegalFormUnknownError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.LegalFormUnknown;
+  readonly status = 400;
+
+  constructor() {
+    super('core.entity.legal_form_unknown');
+  }
+}
+
+/**
  * The entity is archived, so its master data is no longer editable (FR-20, UC-55).
  *
  * `409` rather than `404`: the entity exists and is readable — its historical reports must stay

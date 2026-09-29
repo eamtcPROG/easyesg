@@ -2243,7 +2243,7 @@
             }
           },
           "400": {
-            "description": "An activity code the organization’s country does not register (problem type nace-code-unknown) — the classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2 — a consolidated basis with nothing inside the boundary (consolidation-boundary-empty), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits).",
+            "description": "An activity code the organization’s country does not register (problem type nace-code-unknown) — the classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2 — a legal form it does not register (legal-form-unknown), a consolidated basis with nothing inside the boundary (consolidation-boundary-empty), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits).",
             "content": {
               "application/problem+json": {}
             }
@@ -2411,7 +2411,7 @@
             }
           },
           "400": {
-            "description": "A consolidated basis with nothing inside the boundary (problem type consolidation-boundary-empty), an unregistered activity code (nace-code-unknown), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits).",
+            "description": "A consolidated basis with nothing inside the boundary (problem type consolidation-boundary-empty), an unregistered activity code (nace-code-unknown) or legal form (legal-form-unknown), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits).",
             "content": {
               "application/problem+json": {}
             }
@@ -8015,53 +8015,22 @@
           },
           "name": {
             "type": "string",
-            "description": "The registered legal name."
+            "description": "The organization’s name — the account’s, shown to its members."
           },
           "countryCode": {
             "type": "string",
             "example": "MD",
             "description": "ISO 3166-1 alpha-2, upper case."
           },
-          "legalForm": {
-            "type": "string",
-            "nullable": true,
-            "description": "A key from the vocabulary registered for countryCode, or null where none is recorded yet — S-04 does not collect it. Resolve it to a label through the message catalogue; it is never a sentence."
-          },
-          "registeredAddressLine1": {
-            "type": "string",
-            "nullable": true
-          },
-          "registeredAddressLine2": {
-            "type": "string",
-            "nullable": true
-          },
-          "registeredLocality": {
-            "type": "string",
-            "nullable": true
-          },
-          "registeredPostalCode": {
-            "type": "string",
-            "nullable": true
-          },
           "contactEmail": {
             "type": "string",
             "nullable": true,
             "format": "email",
-            "description": "How the PLATFORM reaches this organization. Distinct from reportContactEmail, which is printed on the report cover for its readers."
+            "description": "How the PLATFORM reaches this organization. Never printed on a report: the contact a report names is each reporting entity’s (task 177)."
           },
           "contactPhone": {
             "type": "string",
             "nullable": true
-          },
-          "reportContactName": {
-            "type": "string",
-            "nullable": true,
-            "description": "FR-15’s report-cover contact — the person a reader of the published report contacts about its content. A second contact rather than a rename of contactEmail: in an SME the account administrator and the person who answers a question about a figure in B3 are routinely different people. Collected on S-15 only; S-04 sets neither."
-          },
-          "reportContactEmail": {
-            "type": "string",
-            "nullable": true,
-            "format": "email"
           },
           "lastChange": {
             "nullable": true,
@@ -8086,15 +8055,8 @@
           "id",
           "name",
           "countryCode",
-          "legalForm",
-          "registeredAddressLine1",
-          "registeredAddressLine2",
-          "registeredLocality",
-          "registeredPostalCode",
           "contactEmail",
           "contactPhone",
-          "reportContactName",
-          "reportContactEmail",
           "lastChange",
           "createdAt",
           "updatedAt"
@@ -8157,38 +8119,12 @@
           "name": {
             "type": "string",
             "maxLength": 200,
-            "description": "The registered legal name (FR-15)."
+            "description": "The organization’s name — the account’s (FR-15)."
           },
           "countryCode": {
             "type": "string",
             "example": "MD",
-            "description": "ISO 3166-1 alpha-2. Changing it re-checks the stored legal form against the new country’s vocabulary, so a move that would strand the form is refused with problem type legal-form-unknown rather than silently leaving a value no list contains."
-          },
-          "legalForm": {
-            "type": "string",
-            "nullable": true,
-            "description": "A key from the vocabulary registered for the organization’s country — see GET /organizations/legal-forms. Null clears it, which is always permitted: an organization that has not decided is a state S-15 must be able to return to."
-          },
-          "registeredAddressLine1": {
-            "type": "string",
-            "nullable": true,
-            "maxLength": 200
-          },
-          "registeredAddressLine2": {
-            "type": "string",
-            "nullable": true,
-            "maxLength": 200
-          },
-          "registeredLocality": {
-            "type": "string",
-            "nullable": true,
-            "maxLength": 120,
-            "description": "City, town or village."
-          },
-          "registeredPostalCode": {
-            "type": "string",
-            "nullable": true,
-            "maxLength": 20
+            "description": "ISO 3166-1 alpha-2 — the country whose legal-form and activity vocabularies the organization’s entities are held to. A country that registers none is refused (country-not-supported)."
           },
           "contactEmail": {
             "type": "string",
@@ -8200,18 +8136,6 @@
             "type": "string",
             "nullable": true,
             "maxLength": 40
-          },
-          "reportContactName": {
-            "type": "string",
-            "nullable": true,
-            "maxLength": 200,
-            "description": "FR-15’s report-cover contact — the person a reader of the published report contacts about its content, printed on the cover. A second contact rather than a rename of contactEmail, which is how the platform reaches the organization. Null clears it."
-          },
-          "reportContactEmail": {
-            "type": "string",
-            "nullable": true,
-            "format": "email",
-            "maxLength": 320
           }
         }
       },
@@ -8319,6 +8243,33 @@
             "example": "7LTWFZYICNSX8D621K86",
             "description": "The Legal Entity Identifier, or null. Optional by OQ-18: few Moldovan SMEs hold one; where one is held, the export writes it as the report’s entity identifier."
           },
+          "registeredAddressLine1": {
+            "type": "string",
+            "nullable": true,
+            "description": "The registered address’s first line, or null."
+          },
+          "registeredAddressLine2": {
+            "type": "string",
+            "nullable": true
+          },
+          "registeredLocality": {
+            "type": "string",
+            "nullable": true
+          },
+          "registeredPostalCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "reportContactName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The contact printed on this entity’s report cover (task 177), or null."
+          },
+          "reportContactEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email"
+          },
           "naceCodes": {
             "type": "array",
             "items": {
@@ -8375,6 +8326,12 @@
           "legalForm",
           "idno",
           "lei",
+          "registeredAddressLine1",
+          "registeredAddressLine2",
+          "registeredLocality",
+          "registeredPostalCode",
+          "reportContactName",
+          "reportContactEmail",
           "naceCodes",
           "status",
           "archivedAt",
@@ -8505,6 +8462,40 @@
             "example": "7LTWFZYICNSX8D621K86",
             "description": "FR-16’s optional additional identifier — the Legal Entity Identifier (ISO 17442), upper case. Both its shape and its ISO 7064 MOD 97-10 check digits are verified, and the two refuse with different problem types because they have different resolutions. Null clears it."
           },
+          "registeredAddressLine1": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200,
+            "description": "The first line of the entity’s registered address, from the state register (FR-17 as amended; the organization’s until task 177). Null clears it."
+          },
+          "registeredAddressLine2": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200
+          },
+          "registeredLocality": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 120,
+            "description": "City, town or village."
+          },
+          "registeredPostalCode": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 20
+          },
+          "reportContactName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200,
+            "description": "The person a reader of this entity’s report contacts about its content, printed on its cover — FR-15’s report-cover contact, the entity’s since task 177. Distinct from the organization’s contactEmail, which is how the platform reaches the account. Null clears it."
+          },
+          "reportContactEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email",
+            "maxLength": 320
+          },
           "naceCodes": {
             "example": [
               "10.71",
@@ -8568,6 +8559,40 @@
             "nullable": true,
             "example": "7LTWFZYICNSX8D621K86",
             "description": "FR-16’s optional additional identifier — the Legal Entity Identifier (ISO 17442), upper case. Both its shape and its ISO 7064 MOD 97-10 check digits are verified, and the two refuse with different problem types because they have different resolutions. Null clears it."
+          },
+          "registeredAddressLine1": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200,
+            "description": "The first line of the entity’s registered address, from the state register (FR-17 as amended; the organization’s until task 177). Null clears it."
+          },
+          "registeredAddressLine2": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200
+          },
+          "registeredLocality": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 120,
+            "description": "City, town or village."
+          },
+          "registeredPostalCode": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 20
+          },
+          "reportContactName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200,
+            "description": "The person a reader of this entity’s report contacts about its content, printed on its cover — FR-15’s report-cover contact, the entity’s since task 177. Distinct from the organization’s contactEmail, which is how the platform reaches the account. Null clears it."
+          },
+          "reportContactEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email",
+            "maxLength": 320
           },
           "naceCodes": {
             "example": [
