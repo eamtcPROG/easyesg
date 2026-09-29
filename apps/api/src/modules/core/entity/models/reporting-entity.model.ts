@@ -91,6 +91,18 @@ export interface ReportingEntity {
   /** A configuration key from the vocabulary registered for the organization's country. */
   readonly legalForm: string | null;
   /**
+   * FR-16's **primary** identifier (OQ-18) — Moldova's thirteen-digit state identification number, the entity's own
+   * since task 175: VSME's *Entity Identifier* is the reporting undertaking's, one per report, and a group's companies
+   * each hold their own. Null until recorded; what makes it required is that a report cannot be filed without it
+   * (task 40), not a constraint on this record.
+   */
+  readonly idno: string | null;
+  /**
+   * FR-16's optional additional identifier — the Legal Entity Identifier (ISO 17442). Held by very few Moldovan SMEs,
+   * which is why OQ-18 declined to make it primary; where one is held, the XBRL export writes it (task 175).
+   */
+  readonly lei: string | null;
+  /**
    * FR-17's "NACE code(s)" — plural, and an entity genuinely has several: a bakery that also runs a
    * café carries both. Admitted against the classifier registered for the country (CAEM Rev.2 for
    * Moldova), which is 1:1 with NACE to four characters, so what is stored is what B1 exports.
@@ -112,12 +124,20 @@ export interface ReportingEntity {
   readonly updatedAt: Date;
 }
 
-/** What UC-52 establishes. Sites are optional at creation — an entity may be located later. */
+/**
+ * What UC-52 establishes. Sites are optional at creation — an entity may be located later — and so is the reporting
+ * boundary (UC-54), which S-13's create form offers beside them: null and empty when not stated, and held to FR-19's
+ * rule when it is (task 176 — the create path used to drop both).
+ */
 export interface NewReportingEntity {
   readonly name: string;
   readonly legalForm: string | null;
+  readonly idno: string | null;
+  readonly lei: string | null;
   readonly naceCodes: readonly string[];
   readonly sites: readonly NewSite[];
+  readonly consolidationBasis: ConsolidationBasis | null;
+  readonly consolidationMembers: readonly NewConsolidationMember[];
 }
 
 export type NewSite = Omit<Site, 'id'> & { readonly id?: string };
@@ -134,6 +154,8 @@ export type NewSite = Omit<Site, 'id'> & { readonly id?: string };
 export type ReportingEntityPatch = Partial<{
   readonly name: string;
   readonly legalForm: string | null;
+  readonly idno: string | null;
+  readonly lei: string | null;
   readonly naceCodes: readonly string[];
   readonly sites: readonly NewSite[];
   readonly consolidationBasis: ConsolidationBasis | null;

@@ -75,6 +75,15 @@
   color: var(--text-body);
 }
 
+/* The IDNO cell, as the index artboard draws it: the activity's text, in tabular figures so thirteen digits line up
+   down the column. Not the numeric role — that is a magnitude's, set larger, and an identifier is read, not compared. */
+.idno {
+  font: 400 14px/20px var(--font-text);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-body);
+  white-space: nowrap;
+}
+
 /* The foot bar's note that something differs from what was stored — muted, and first, so the two buttons keep the
    bar's end where the artboard draws them. */
 .unsaved {

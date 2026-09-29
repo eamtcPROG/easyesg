@@ -14,8 +14,6 @@ interface OrganizationRow {
   name: string;
   country_code: string;
   legal_form: string | null;
-  idno: string | null;
-  lei: string | null;
   registered_address_line1: string | null;
   registered_address_line2: string | null;
   registered_locality: string | null;
@@ -26,7 +24,7 @@ interface OrganizationRow {
   updated_at: Date;
 }
 
-const RETURNED_COLUMNS = `id, name, country_code, legal_form, idno, lei,
+const RETURNED_COLUMNS = `id, name, country_code, legal_form,
         registered_address_line1, registered_address_line2, registered_locality,
         registered_postal_code, contact_email, contact_phone, created_at, updated_at`;
 
@@ -57,8 +55,8 @@ const RETURNED_COLUMNS = `id, name, country_code, legal_form, idno, lei,
  * measurement and sidesteps it by generating the id in JavaScript; this path cannot, because §7.9's
  * key must stay time-ordered and `randomUUID()` is a v4.
  *
- * **There are three writes, not two.** The organization, the founding membership, and the session
- * pointed at what was just created. The third is easy to read as a nicety and is not: two
+ * **There are four writes, not two.** The organization, the founding membership, the organization's first
+ * reporting entity (task 175), and the session pointed at what was just created. The third is easy to read as a nicety and is not: two
  * memberships with no stated preference resolve to *no* active organization, so omitting it locks
  * an existing member out of the organization they were already using — see the port's header.
  *
@@ -119,7 +117,17 @@ export class OrganizationFoundingStoreRepository implements OrganizationFounding
         [input.founderAccountId, id, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR, MEMBERSHIP_STATUS.ACTIVE],
       );
 
-      // The third write, and it belongs in this transaction rather than after it: without it a
+      // UC-49's third step (task 175, project owner, 29 Sep 2026): the organization's first reporting entity, named
+      // after it. Most SMEs are one company, and until then a single-company founder typed the same name twice with
+      // nothing saying why; a group adds its other companies on S-13. In this transaction because an organization
+      // committed without it is the state this write exists to end, and bound as the rest are, so the insert passes
+      // the entity's tenant policy and the capture trigger attributes it to the founder.
+      await queryRunner.query(
+        `INSERT INTO core.reporting_entity (organization_id, name) VALUES ($1, $2)`,
+        [id, input.organization.name],
+      );
+
+      // The session write, and it belongs in this transaction rather than after it: without it a
       // member of one organization who founds a second is left with two memberships and no stated
       // preference, which `selectActiveMembership` answers with **null** — no active organization
       // at all, on the next request, for the one they were already using.
@@ -143,8 +151,6 @@ export class OrganizationFoundingStoreRepository implements OrganizationFounding
         name: row.name,
         countryCode: row.country_code,
         legalForm: row.legal_form,
-        idno: row.idno,
-        lei: row.lei,
         registeredAddressLine1: row.registered_address_line1,
         registeredAddressLine2: row.registered_address_line2,
         registeredLocality: row.registered_locality,

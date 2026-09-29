@@ -46,8 +46,8 @@ const RUN = `${process.pid}-${Date.now()}`;
 const HOUR = 60 * 60 * 1000;
 
 const TOKEN = `sa${Array.from({ length: 10 }, () => 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]).join('')}`;
-const ALFA = { name: `Acces Alfa ${TOKEN}`, idno: `7${String(Date.now()).slice(-12)}` };
-const BETA = { name: `Acces Beta ${TOKEN}`, idno: `8${String(Date.now()).slice(-12)}` };
+const ALFA = { name: `Acces Alfa ${TOKEN}` };
+const BETA = { name: `Acces Beta ${TOKEN}` };
 
 const TICKET = 'SUP-4417';
 const REASON = 'Proprietarul raportează că cifra pentru Scope 2 lipsește din export după recalculare.';
@@ -182,14 +182,10 @@ describe('support access by the organization’s consent (UC-85, UC-86; task 67.
    * The id is generated here, not returned: `RETURNING` makes the new row pass the table's SELECT policies, and
    * with no organization bound it passes none (`organization-register.e2e-spec.ts` found it first).
    */
-  const createOrganization = async (organization: { name: string; idno: string }): Promise<string> => {
+  const createOrganization = async (organization: { name: string }): Promise<string> => {
     const id = randomUUID();
     await asOrganization(owner, null, (run) =>
-      run(`INSERT INTO core.organization (id, name, country_code, idno) VALUES ($1, $2, 'MD', $3)`, [
-        id,
-        organization.name,
-        organization.idno,
-      ]),
+      run(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, $2, 'MD')`, [id, organization.name]),
     );
     return id;
   };

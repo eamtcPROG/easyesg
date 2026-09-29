@@ -13,6 +13,7 @@ import { AuditModule } from '@api/modules/platform/audit/audit.module';
 import { AdminSessionStoreRepository } from '@api/infrastructure/persistence/platform/admin-session-store.repository';
 import { IdentityProviderConfigurationStoreRepository } from '@api/infrastructure/persistence/platform/identity-provider-configuration-store.repository';
 import { ConfigProviderEnvironment } from '@api/infrastructure/adapters/provider-environment/config-provider-environment.adapter';
+import { OrganizationEntitiesStoreRepository } from '@api/infrastructure/persistence/platform/organization-entities-store.repository';
 import { OrganizationMembersStoreRepository } from '@api/infrastructure/persistence/platform/organization-members-store.repository';
 import { OrganizationRegisterStoreRepository } from '@api/infrastructure/persistence/platform/organization-register-store.repository';
 import { SupportAccessRequestCountsRepository } from '@api/infrastructure/persistence/platform/support-access-request-counts.repository';
@@ -29,6 +30,7 @@ import { AdminInvitationAcceptanceController } from './controllers/admin-invitat
 import { AdminNotificationCategoriesController } from './controllers/admin-notification-categories.controller';
 import { AdminInvitationsController } from './controllers/admin-invitations.controller';
 import { AdminSessionController } from './controllers/admin-session.controller';
+import { OrganizationEntitiesController } from './controllers/organization-entities.controller';
 import { OrganizationMembersController } from './controllers/organization-members.controller';
 import { OrganizationRegisterController } from './controllers/organization-register.controller';
 import { SystemAuditLogController } from './controllers/system-audit-log.controller';
@@ -74,6 +76,7 @@ import { AdminInvitationAcceptanceService } from './services/admin-invitation-ac
 import { AdminInvitationsService } from './services/admin-invitations.service';
 import { AdminSessionService } from './services/admin-session.service';
 import { IdentityProvidersService } from './services/identity-providers.service';
+import { OrganizationEntitiesService } from './services/organization-entities.service';
 import { OrganizationMembersService } from './services/organization-members.service';
 import { OrganizationRegisterService } from './services/organization-register.service';
 import { SystemAuditLogService } from './services/system-audit-log.service';
@@ -96,7 +99,12 @@ import { PreviewAdminInvitation } from './use-cases/preview-admin-invitation.use
 import { ReadAdminCredentials } from './use-cases/read-admin-credentials.use-case';
 import { ReadOrganizationRegisterRow } from './use-cases/read-organization-register-row.use-case';
 import { DiscloseMemberPhone } from './use-cases/disclose-member-phone.use-case';
+import { ListOrganizationEntities } from './use-cases/list-organization-entities.use-case';
 import { ListOrganizationMembers } from './use-cases/list-organization-members.use-case';
+import {
+  ORGANIZATION_ENTITIES_STORE,
+  type OrganizationEntitiesStore,
+} from './interfaces/organization-entities-store.interface';
 import {
   ORGANIZATION_MEMBERS_STORE,
   type OrganizationMembersStore,
@@ -176,6 +184,14 @@ const httpProviders: Provider[] = [
     provide: DiscloseMemberPhone,
     inject: [ORGANIZATION_MEMBERS_STORE],
     useFactory: (store: OrganizationMembersStore) => new DiscloseMemberPhone(store),
+  },
+  // Task 175 — A-02's record's entities, each with its IDNO.
+  { provide: ORGANIZATION_ENTITIES_STORE, useClass: OrganizationEntitiesStoreRepository },
+  OrganizationEntitiesService,
+  {
+    provide: ListOrganizationEntities,
+    inject: [ORGANIZATION_ENTITIES_STORE],
+    useFactory: (store: OrganizationEntitiesStore) => new ListOrganizationEntities(store),
   },
   // A-08's support-access column (task 67.9): a count across every organization, so through `esg_admin_ro`.
   { provide: SUPPORT_ACCESS_REQUEST_COUNTS, useClass: SupportAccessRequestCountsRepository },
@@ -385,6 +401,7 @@ const workerProviders: Provider[] = [AdminInvitationEmailHandler];
           AdminSessionController,
           OrganizationRegisterController,
           OrganizationMembersController,
+          OrganizationEntitiesController,
           AdminAccountsController,
           AdminInvitationsController,
           AdminInvitationAcceptanceController,

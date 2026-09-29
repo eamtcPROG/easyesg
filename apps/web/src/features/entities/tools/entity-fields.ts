@@ -15,6 +15,9 @@ import type { ConsolidationBasis } from './entities';
  * restores it and `isDirty` sees it — and `toRequest` is where a removed row stops existing. A row added since the last
  * save has nothing to keep, and the form drops it outright.
  *
+ * **The identifiers are the entity's since task 175** (FR-16 as amended): the IDNO and an optional LEI, blanks sent
+ * as `null` — which clears a stored one — and the LEI upper-cased.
+ *
  * **The consolidation basis is null until stated**, which VSME asks explicitly, so there is no
  * default answering it on the undertaking's behalf (FR-19): `''` in the form is the unstated case
  * and `null` is what it sends.
@@ -39,6 +42,8 @@ export interface MemberFields {
 export interface EntityFields {
   name: string;
   legalForm: string;
+  idno: string;
+  lei: string;
   consolidationBasis: string;
   sites: SiteFields[];
   consolidationMembers: MemberFields[];
@@ -56,6 +61,8 @@ const kept = (row: { readonly removed: boolean }): boolean => !row.removed;
 export const toFields = (entity: ReportingEntity | null): EntityFields => ({
   name: entity?.name ?? '',
   legalForm: entity?.legalForm ?? '',
+  idno: entity?.idno ?? '',
+  lei: entity?.lei ?? '',
   consolidationBasis: entity?.consolidationBasis ?? '',
   sites: (entity?.sites ?? []).map((site) => ({
     id: site.id,
@@ -87,6 +94,10 @@ export const toRequest = (
 ): CreateReportingEntityRequest => ({
   name: fields.name.trim(),
   legalForm: orNull(fields.legalForm),
+  idno: orNull(fields.idno),
+  // Upper-cased because the API stores the canonical form, and a record re-seeded from its answer must not read as
+  // changed — S-15's reason while the field was its (task 175 moved it here).
+  lei: orNull(fields.lei)?.toUpperCase() ?? null,
   naceCodes: codes.map((code) => code.code),
   consolidationBasis:
     fields.consolidationBasis === '' ? null : (fields.consolidationBasis as ConsolidationBasis),

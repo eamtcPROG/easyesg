@@ -145,6 +145,39 @@ class ReportingEntityFieldsDto {
   legalForm?: string | null;
 
   @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: '1003600158022',
+    description:
+      'FR-16’s primary identifier — Moldova’s thirteen-digit state identification number, the ' +
+      'entity’s own (task 175). Its shape is validated on entry; the thirteenth digit is a check ' +
+      'digit whose algorithm is not published in the defining instrument, so it is not yet ' +
+      'verified. Null clears it.',
+  })
+  @Trim()
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @Length(1, 13)
+  idno?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: '7LTWFZYICNSX8D621K86',
+    description:
+      'FR-16’s optional additional identifier — the Legal Entity Identifier (ISO 17442), upper ' +
+      'case. Both its shape and its ISO 7064 MOD 97-10 check digits are verified, and the two ' +
+      'refuse with different problem types because they have different resolutions. Null clears it.',
+  })
+  @Trim()
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @Length(1, 20)
+  lei?: string | null;
+
+  @ApiPropertyOptional({
     type: [String],
     example: ['10.71', '56.10'],
     description:
@@ -261,6 +294,22 @@ export class ReportingEntityResponseDto {
   @ApiProperty({ format: 'uuid' }) id: string;
   @ApiProperty() name: string;
   @ApiProperty({ type: String, nullable: true }) legalForm: string | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '1003600158022',
+    description: 'FR-16’s primary identifier, or null until recorded.',
+  })
+  idno: string | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '7LTWFZYICNSX8D621K86',
+    description:
+      'The Legal Entity Identifier, or null. Optional by OQ-18: few Moldovan SMEs hold one; where ' +
+      'one is held, the export writes it as the report’s entity identifier.',
+  })
+  lei: string | null;
   @ApiProperty({ type: [String] }) naceCodes: string[];
 
   @ApiProperty({
@@ -295,6 +344,8 @@ export class ReportingEntityResponseDto {
     this.id = entity.id;
     this.name = entity.name;
     this.legalForm = entity.legalForm;
+    this.idno = entity.idno;
+    this.lei = entity.lei;
     this.naceCodes = [...entity.naceCodes];
     this.status = entity.status;
     this.archivedAt = entity.archivedAt?.getTime() ?? null;

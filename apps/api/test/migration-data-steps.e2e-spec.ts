@@ -5,6 +5,10 @@ import { backfillLastRaisedAt } from '../src/infrastructure/persistence/migratio
 import { deleteAddressDeliveries } from '../src/infrastructure/persistence/migrations/1790726400000-address-notices';
 import { backfillNoticeApplication } from '../src/infrastructure/persistence/migrations/1790812800000-notice-application';
 import { backfillPasswordChangedAt } from '../src/infrastructure/persistence/migrations/1791244800000-password-changed-at';
+import {
+  moveIdentifiersToEntities,
+  moveIdentifiersToOrganizations,
+} from '../src/infrastructure/persistence/migrations/1791331200000-identifiers-on-entity';
 import { connectAs } from './support/database';
 
 /**
@@ -210,6 +214,112 @@ describe('the migrations’ data steps, against rows (task 164)', () => {
         runner.query(`SELECT id FROM audit.support_access_log WHERE id = ANY($1::uuid[])`, [[request, acquisition]]),
       )) as { id: string }[];
       expect(rows).toEqual([{ id: acquisition }]);
+    });
+  });
+
+  describe('task 175’s identifiers, between the organization and its entities', () => {
+    const ORGANIZATION = 'core.organization';
+    const ENTITY = 'core.reporting_entity';
+
+    /** The schema both steps run in: the entity's columns and the organization's, side by side. */
+    const restoreOrganizationIdentifiers = (runner: QueryRunner) =>
+      runner.query(`ALTER TABLE core.organization ADD COLUMN idno text, ADD COLUMN lei text`);
+
+    const seedOrganization = async (
+      runner: QueryRunner,
+      organization: { name: string; idno?: string; lei?: string },
+    ): Promise<string> => {
+      const [{ id }] = (await unforced(runner, ORGANIZATION, () =>
+        runner.query(
+          `INSERT INTO core.organization (name, country_code, idno, lei) VALUES ($1, 'MD', $2, $3) RETURNING id`,
+          [organization.name, organization.idno ?? null, organization.lei ?? null],
+        ),
+      )) as { id: string }[];
+      return id;
+    };
+
+    const seedEntity = async (
+      runner: QueryRunner,
+      entity: { organizationId: string; name: string; createdAt: string; archived?: boolean; idno?: string },
+    ): Promise<string> => {
+      const [{ id }] = (await unforced(runner, ENTITY, () =>
+        runner.query(
+          `INSERT INTO core.reporting_entity (organization_id, name, status, archived_at, created_at, idno)
+           VALUES ($1, $2, $3, CASE WHEN $3 = 'archived' THEN $4::timestamptz END, $4, $5) RETURNING id`,
+          [entity.organizationId, entity.name, entity.archived ? 'archived' : 'active', entity.createdAt, entity.idno ?? null],
+        ),
+      )) as { id: string }[];
+      return id;
+    };
+
+    const entitiesOf = async (runner: QueryRunner, organizationId: string) =>
+      (await unforced(runner, ENTITY, () =>
+        runner.query(
+          `SELECT id, name, idno, lei FROM core.reporting_entity WHERE organization_id = $1 ORDER BY created_at, id`,
+          [organizationId],
+        ),
+      )) as { id: string; name: string; idno: string | null; lei: string | null }[];
+
+    it('`up` moves them onto the oldest active entity, founds one where there is none, and leaves the rest', async () => {
+      await inRolledBack(async (runner) => {
+        await restoreOrganizationIdentifiers(runner);
+        const group = await seedOrganization(runner, { name: 'Grup', idno: '1009600041284', lei: '5299000J2N45DDNE4Y28' });
+        const archived = await seedEntity(runner, {
+          organizationId: group,
+          name: 'Veche',
+          createdAt: '2026-01-01T00:00:00Z',
+          archived: true,
+        });
+        const receiving = await seedEntity(runner, { organizationId: group, name: 'Mama', createdAt: '2026-02-01T00:00:00Z' });
+        const later = await seedEntity(runner, { organizationId: group, name: 'Fiica', createdAt: '2026-03-01T00:00:00Z' });
+        const alone = await seedOrganization(runner, { name: 'Singur', idno: '1003600012345' });
+        const bare = await seedOrganization(runner, { name: 'Fără' });
+
+        await moveIdentifiersToEntities(runner);
+
+        expect(await entitiesOf(runner, group)).toEqual([
+          { id: archived, name: 'Veche', idno: null, lei: null },
+          { id: receiving, name: 'Mama', idno: '1009600041284', lei: '5299000J2N45DDNE4Y28' },
+          { id: later, name: 'Fiica', idno: null, lei: null },
+        ]);
+        expect(await entitiesOf(runner, alone)).toEqual([
+          { id: expect.any(String) as string, name: 'Singur', idno: '1003600012345', lei: null },
+        ]);
+        expect(await entitiesOf(runner, bare)).toEqual([]);
+      });
+    });
+
+    it('`down` gives each organization its oldest active entity’s, and drops a later one’s', async () => {
+      await inRolledBack(async (runner) => {
+        await restoreOrganizationIdentifiers(runner);
+        const group = await seedOrganization(runner, { name: 'Grup' });
+        await seedEntity(runner, {
+          organizationId: group,
+          name: 'Veche',
+          createdAt: '2026-01-01T00:00:00Z',
+          archived: true,
+          idno: '1002600000001',
+        });
+        await seedEntity(runner, {
+          organizationId: group,
+          name: 'Mama',
+          createdAt: '2026-02-01T00:00:00Z',
+          idno: '1009600041284',
+        });
+        await seedEntity(runner, {
+          organizationId: group,
+          name: 'Fiica',
+          createdAt: '2026-03-01T00:00:00Z',
+          idno: '1003600012345',
+        });
+
+        await moveIdentifiersToOrganizations(runner);
+
+        const rows = (await unforced(runner, ORGANIZATION, () =>
+          runner.query(`SELECT idno, lei FROM core.organization WHERE id = $1`, [group]),
+        )) as { idno: string | null; lei: string | null }[];
+        expect(rows).toEqual([{ idno: '1009600041284', lei: null }]);
+      });
     });
   });
 });

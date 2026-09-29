@@ -50,6 +50,7 @@ import { NotificationPreference1790985600000 } from './1790985600000-notificatio
 import { PreferenceAtDispatch1791072000000 } from './1791072000000-preference-at-dispatch';
 import { AccountProfile1791158400000 } from './1791158400000-account-profile';
 import { PasswordChangedAt1791244800000 } from './1791244800000-password-changed-at';
+import { IdentifiersOnEntity1791331200000 } from './1791331200000-identifiers-on-entity';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -120,4 +121,5 @@ export const migrations = [
   PreferenceAtDispatch1791072000000,
   AccountProfile1791158400000,
   PasswordChangedAt1791244800000,
+  IdentifiersOnEntity1791331200000,
 ];

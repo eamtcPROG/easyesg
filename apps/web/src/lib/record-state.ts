@@ -110,7 +110,7 @@ export function recordReducer<T>(state: RecordState<T>, event: RecordEvent<T>): 
       return { report: null, record: state.record };
 
     // The stored record moves to what the API answered, not to what was typed: the API normalises
-    // (S-15's trimmed name and upper-cased LEI, S-27's phone in one spelling) and a form re-seeded from the reader's own text
+    // (S-15's trimmed name and upper-cased country, S-27's phone in one spelling) and a form re-seeded from the reader's own text
     // would show a permanently dirty field they cannot clean.
     case RECORD_EVENT.SAVED:
       return { report: { kind: RECORD_REPORT.SAVED, notice: event.notice }, record: event.stored };

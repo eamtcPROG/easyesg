@@ -1,9 +1,11 @@
+import { validateIdno, validateLei } from '@easyesg/validation';
 import type { Clock } from '@api/contracts/clock.port';
 import type { OrganizationVocabulary } from '@api/modules/core/organization/interfaces/organization-vocabulary.interface';
 import type { OrganizationStore } from '@api/modules/core/organization/interfaces/organization-store.interface';
 import {
   CONSOLIDATION_BASIS,
   ENTITY_STATUS,
+  type ConsolidationBasis,
   type NewReportingEntity,
   type ReportingEntity,
   type ReportingEntityPatch,
@@ -13,6 +15,9 @@ import {
   ConsolidationBoundaryEmptyError,
   EntityArchivedError,
   EntityNotFoundError,
+  IdnoMalformedError,
+  LeiCheckDigitsError,
+  LeiMalformedError,
   NaceCodeUnknownError,
 } from '../errors/entity.errors';
 
@@ -49,6 +54,12 @@ export class ManageReportingEntity {
   ) {}
 
   async create(command: CreateEntityCommand): Promise<ReportingEntity> {
+    admitIdentifiers(command.entity);
+    // FR-19 on a new entity, which has no stored state for the rule to read: what it states is what it results in.
+    admitBoundary({
+      basis: command.entity.consolidationBasis,
+      members: command.entity.consolidationMembers,
+    });
     await this.admitNaceCodes(command.entity.naceCodes);
     return this.store.create({ entity: command.entity, at: this.now() });
   }
@@ -60,23 +71,23 @@ export class ManageReportingEntity {
     // stay retrievable — so this is a refusal about state rather than about existence.
     if (existing.status === ENTITY_STATUS.ARCHIVED) throw new EntityArchivedError();
 
+    admitIdentifiers(command.patch);
     if (command.patch.naceCodes !== undefined) await this.admitNaceCodes(command.patch.naceCodes);
 
     // FR-19, against the state the patch *results in* rather than the state it arrived at — the
     // same rule shape as the organization's legal form against its resulting country. Three
     // requests reach this refusal: setting the basis with no members stored, clearing the members
     // while the basis stands, and doing both at once.
-    const basis =
-      command.patch.consolidationBasis !== undefined
-        ? command.patch.consolidationBasis
-        : existing.consolidationBasis;
-    const members =
-      command.patch.consolidationMembers !== undefined
-        ? command.patch.consolidationMembers
-        : existing.consolidationMembers;
-    if (basis === CONSOLIDATION_BASIS.CONSOLIDATED && members.length === 0) {
-      throw new ConsolidationBoundaryEmptyError();
-    }
+    admitBoundary({
+      basis:
+        command.patch.consolidationBasis !== undefined
+          ? command.patch.consolidationBasis
+          : existing.consolidationBasis,
+      members:
+        command.patch.consolidationMembers !== undefined
+          ? command.patch.consolidationMembers
+          : existing.consolidationMembers,
+    });
 
     const updated = await this.store.update({
       entityId: command.entityId,
@@ -119,5 +130,41 @@ export class ManageReportingEntity {
     for (const code of codes) {
       if (!registered.has(code)) throw new NaceCodeUnknownError();
     }
+  }
+}
+
+/**
+ * FR-16's identifiers, as submitted (task 175 moved them here from the organization's profile with the identifiers).
+ *
+ * **Validated here rather than by a `@Matches` on the DTO**, so the shared rule in `packages/validation` is the only
+ * implementation: S-13 shows the same verdict inline as the Administrator types (§9.8), and a second copy in a
+ * decorator would be the drift that package exists to prevent. It also lets the refusal tell a malformed value from
+ * one whose check digits disagree, which NFR-79 needs apart — one says retype it, the other go back to the register.
+ *
+ * `null` clears an identifier and is always permitted; `undefined` leaves it alone.
+ */
+function admitIdentifiers(identifiers: { readonly idno?: string | null; readonly lei?: string | null }): void {
+  if (identifiers.idno !== undefined && identifiers.idno !== null && !validateIdno(identifiers.idno).shape) {
+    throw new IdnoMalformedError();
+  }
+  if (identifiers.lei !== undefined && identifiers.lei !== null) {
+    const verdict = validateLei(identifiers.lei);
+    if (!verdict.shape) throw new LeiMalformedError();
+    // `checkDigits` is `false` only when the shape passed, so the two refusals cannot overlap.
+    if (verdict.checkDigits === false) throw new LeiCheckDigitsError();
+  }
+}
+
+/**
+ * FR-19's rule, over the boundary a write results in: a consolidated basis names a boundary, and one with nothing
+ * inside it names nothing, while every figure in the report would be bounded by it. **One function for the create and
+ * the edit** — the create path carried no copy until task 176, and admitted exactly the boundary this refuses.
+ */
+function admitBoundary(boundary: {
+  readonly basis: ConsolidationBasis | null;
+  readonly members: readonly unknown[];
+}): void {
+  if (boundary.basis === CONSOLIDATION_BASIS.CONSOLIDATED && boundary.members.length === 0) {
+    throw new ConsolidationBoundaryEmptyError();
   }
 }

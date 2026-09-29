@@ -32,7 +32,9 @@ interface RegisterDbRow {
  *
  * **Account-level metadata, and this `SELECT` list is where that is true.** Each column is one
  * decision in `design_spec.md` §5.2: name and IDNO, registration, **active** entities, a report
- * **count**, and the most recent sign-in by an active member. No column of `core.report` beyond its
+ * **count**, and the most recent sign-in by an active member. **The IDNO is an entity's since task 175**
+ * (FR-16 as amended): the row shows its earliest entity holding one, and a search matches every entity's,
+ * so a group is found by any of its companies' numbers. No column of `core.report` beyond its
  * existence is read, and `identity.session` is readable by this role only as `(account_id,
  * created_at)` — the migration's column grant, so a later edit reaching for more fails at the
  * database rather than in review.
@@ -51,7 +53,11 @@ interface RegisterDbRow {
  * direction would put the least informative row at the top.
  */
 const REGISTER = `
-  SELECT o.id, o.name, o.idno, o.created_at,
+  SELECT o.id, o.name,
+         (SELECT e.idno FROM core.reporting_entity e
+           WHERE e.organization_id = o.id AND e.idno IS NOT NULL
+           ORDER BY e.created_at, e.id LIMIT 1) AS idno,
+         o.created_at,
          (SELECT count(*)::int FROM core.reporting_entity e
            WHERE e.organization_id = o.id AND e.status = '${ENTITY_STATUS.ACTIVE}') AS entity_count,
          (SELECT count(*)::int FROM core.report r
@@ -62,10 +68,12 @@ const REGISTER = `
            WHERE m.organization_id = o.id AND m.status = '${MEMBERSHIP_STATUS.ACTIVE}') AS last_sign_in_at
     FROM core.organization o`;
 
-/** `$1` is the escaped search term, or null for none. */
+/** `$1` is the escaped search term, or null for none. An IDNO matches as a prefix of any of the organization's entities'. */
 const MATCHES = `($1::text IS NULL
                  OR name ILIKE '%' || $1::text || '%' ESCAPE '!'
-                 OR idno LIKE $1::text || '%' ESCAPE '!')`;
+                 OR EXISTS (SELECT 1 FROM core.reporting_entity e
+                             WHERE e.organization_id = register.id
+                               AND e.idno LIKE $1::text || '%' ESCAPE '!'))`;
 
 const escapeLikePattern = (term: string): string => term.replace(/[!%_]/gu, (c) => `!${c}`);
 

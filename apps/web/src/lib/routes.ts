@@ -65,7 +65,7 @@ export const ROUTES = {
   ORGANIZATION_UNAVAILABLE: '/organization-unavailable',
   /** S-37 — several memberships, and none chosen for this session (task 83.3). */
   CHOOSE_ORGANIZATION: '/choose-organization',
-  /** S-15 — the organization profile and its identifiers (task 30.3). */
+  /** S-15 — the organization profile (task 30.3); its identifiers are each entity's since task 175. */
   ORGANIZATION: '/organization',
   /** S-13 — the entities index (task 30.4.2). */
   ENTITIES: '/entities',

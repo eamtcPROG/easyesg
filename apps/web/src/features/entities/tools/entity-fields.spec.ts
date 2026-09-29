@@ -7,6 +7,8 @@ const entity = (over: Partial<ReportingEntity>): ReportingEntity => ({
   id: 'e1',
   name: 'Brutăria',
   legalForm: 'srl',
+  idno: null,
+  lei: null,
   naceCodes: [],
   status: ENTITY_STANDING.ACTIVE,
   archivedAt: null,
@@ -23,6 +25,8 @@ describe('toFields', () => {
     expect(toFields(null)).toEqual({
       name: '',
       legalForm: '',
+      idno: '',
+      lei: '',
       consolidationBasis: '',
       sites: [],
       consolidationMembers: [],
@@ -63,6 +67,10 @@ describe('toFields', () => {
       { id: 'm1', name: 'Filiala', idno: '', countryCode: 'MD', removed: false },
     ]);
   });
+
+  it('holds the entity’s identifiers, a stored null as an empty field (task 175)', () => {
+    expect(toFields(entity({ idno: '1003600158022', lei: null }))).toMatchObject({ idno: '1003600158022', lei: '' });
+  });
 });
 
 describe('toRequest', () => {
@@ -71,6 +79,8 @@ describe('toRequest', () => {
       {
         name: '  Brutăria ',
         legalForm: '',
+        idno: '',
+        lei: '',
         consolidationBasis: '',
         sites: [{ ...EMPTY_SITE, name: 'Sediu ' }],
         consolidationMembers: [{ ...EMPTY_MEMBER, id: 'm1', name: 'Filiala' }],
@@ -82,6 +92,8 @@ describe('toRequest', () => {
     expect(request).toStrictEqual({
       name: 'Brutăria',
       legalForm: null,
+      idno: null,
+      lei: null,
       naceCodes: ['10.71'],
       consolidationBasis: null,
       sites: [{ name: 'Sediu', addressLine1: null, locality: null, postalCode: null }],
@@ -96,6 +108,8 @@ describe('toRequest', () => {
       {
         name: 'B',
         legalForm: '',
+        idno: '',
+        lei: '',
         consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED,
         sites: [
           { ...EMPTY_SITE, id: 's1', name: 'Depozit', removed: true },
@@ -112,9 +126,27 @@ describe('toRequest', () => {
     expect(request.consolidationMembers?.map((member) => member.id)).toEqual(['m2']);
   });
 
+  it('sends the identifiers trimmed, the LEI upper-cased, and a cleared one as null (task 175)', () => {
+    const fields = toFields(entity({}));
+    const typed = toRequest({ ...fields, idno: ' 1003600158022 ', lei: '7ltwfzyicnsx8d621k86 ' }, []);
+    expect({ idno: typed.idno, lei: typed.lei }).toEqual({ idno: '1003600158022', lei: '7LTWFZYICNSX8D621K86' });
+
+    // `null` is what clears a stored identifier on the API, and `''` is what a cleared field holds.
+    const cleared = toRequest({ ...fields, idno: '', lei: '  ' }, []);
+    expect({ idno: cleared.idno, lei: cleared.lei }).toEqual({ idno: null, lei: null });
+  });
+
   it('sends a stated basis as itself', () => {
     const request = toRequest(
-      { name: 'B', legalForm: 'srl', consolidationBasis: CONSOLIDATION_BASIS.INDIVIDUAL, sites: [], consolidationMembers: [] },
+      {
+        name: 'B',
+        legalForm: 'srl',
+        idno: '',
+        lei: '',
+        consolidationBasis: CONSOLIDATION_BASIS.INDIVIDUAL,
+        sites: [],
+        consolidationMembers: [],
+      },
       [],
     );
     expect(request.consolidationBasis).toBe(CONSOLIDATION_BASIS.INDIVIDUAL);

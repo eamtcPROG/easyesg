@@ -110,8 +110,9 @@ describe('per-field audit capture (FR-54, FR-55, P-11)', () => {
         //
         // **This list has now grown three times in three tasks**, and the growth is the point worth
         // noting rather than the list. Task 29.1 took it from three entries to eleven, 29.2 to
-        // thirteen, 30.3 to fifteen — and an organization founded through S-04 supplies four of
-        // them, so eleven of the fifteen rows record that a field was left empty. The cost is one audit row per column per insert,
+        // thirteen, 30.3 to fifteen, and task 175 back to thirteen when the identifiers left for the
+        // reporting entity — and an organization founded through S-04 supplies four of them, so nine
+        // of the thirteen rows record that a field was left empty. The cost is one audit row per column per insert,
         // paid by every future column on every audited table. Task 34 is where it stops being
         // academic: `core.report_disclosure_value` carries four mutually exclusive value columns,
         // so every disclosure written would record three empty fields on the highest-volume table
@@ -122,9 +123,7 @@ describe('per-field audit capture (FR-54, FR-55, P-11)', () => {
           'country_code',
           'created_at',
           'id',
-          'idno',
           'legal_form',
-          'lei',
           'name',
           'registered_address_line1',
           'registered_address_line2',

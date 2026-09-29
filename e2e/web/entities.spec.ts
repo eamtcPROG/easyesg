@@ -7,7 +7,7 @@ import {
 } from './support/db';
 
 /**
- * S-13 in a real browser (UC-52 … UC-55; FR-17 … FR-20; tasks 30.4.2 and 30.4.3).
+ * S-13 in a real browser (UC-51 … UC-55; FR-16 … FR-20; tasks 30.4.2, 30.4.3 and 175).
  *
  * What only a round trip shows here is the classifier reaching the screen as **words**: the picker
  * searches a 996-entry vocabulary through a Server Action, the list resolves the codes an entity
@@ -242,6 +242,45 @@ test('the filter lives in the address, and its empty state is not the first-use 
   await expect(page.getByRole('link', { name: `${RUN_PREFIX} Activă`, exact: true })).toBeVisible();
 });
 
+/**
+ * FR-16 on the entity (task 175, which moved it here from S-15): `@easyesg/validation` refuses a malformed identifier
+ * inline and the API re-validates the same value with the same functions (§9.8) — so what this proves is not that a
+ * regex works but that one implementation serves both. Shape and check digits are two verdicts with two resolutions,
+ * retype it versus check you copied the right one, which a single boolean would collapse.
+ */
+test('an identifier is refused with a sentence that says which half is wrong, and the IDNO reaches the list', async ({
+  page,
+}) => {
+  await signedIn(page, 'identifiers');
+  await page.goto('/entities/new');
+  await page.getByLabel('Denumirea entității').fill(`${RUN_PREFIX} Identificatori`);
+
+  const lei = page.getByLabel('Identificator de entitate juridică (LEI)', { exact: false });
+  await page.getByLabel('IDNO').fill('123');
+  await lei.fill('NOT-A-LEI');
+  await page.getByRole('button', { name: 'Adăugați entitatea' }).click();
+  // Twice each: inline beside the field, and in the summary that links to it (UX-111).
+  await expect(page.getByText('IDNO-ul nu are 13 cifre', { exact: false })).toHaveCount(2);
+  await expect(page.getByText('Codul LEI nu are 20 de caractere', { exact: false })).toHaveCount(2);
+
+  // Twenty valid characters whose check digits disagree: the shape passes and the checksum does not.
+  await lei.fill('7LTWFZYICNSX8D621K00');
+  await page.getByRole('button', { name: 'Adăugați entitatea' }).click();
+  await expect(page.getByText('Cifrele de control ale codului LEI', { exact: false })).toHaveCount(2);
+
+  // A published LEI, so the MOD 97-10 fixture is a real value rather than one this suite produced.
+  await page.getByLabel('IDNO').fill('1003600158022');
+  await lei.fill('7ltwfzyicnsx8d621k86');
+  await page.getByRole('button', { name: 'Adăugați entitatea' }).click();
+  await page.waitForURL(/\/entities\/[0-9a-f-]{36}$/);
+  // Stored in its canonical form, so the record re-seeded from the answer is not dirty.
+  await expect(lei).toHaveValue('7LTWFZYICNSX8D621K86');
+
+  await page.goto('/entities');
+  const row = page.getByRole('row').filter({ hasText: `${RUN_PREFIX} Identificatori` });
+  await expect(row).toContainText('1003600158022');
+});
+
 test('the screen is live in all three locales', async ({ page }) => {
   await signedIn(page, 'locales');
 
@@ -250,9 +289,15 @@ test('the screen is live in all three locales', async ({ page }) => {
 
   await page.goto('/en/entities');
   await expect(page.getByRole('heading', { name: 'Reporting entities', level: 1 })).toBeVisible();
+  // The LEI label carries its expansion in every locale and is never the bare abbreviation (design_spec S-13's LEI
+  // rule, S-15's until task 175) — to a Moldovan reader `LEI` reads as the currency.
+  await page.goto('/en/entities/new');
+  await expect(page.getByLabel('Legal Entity Identifier (LEI)', { exact: false })).toBeVisible();
 
   await page.goto('/ru/entities');
   await expect(
     page.getByRole('heading', { name: 'Отчитывающиеся организации', level: 1 }),
   ).toBeVisible();
+  await page.goto('/ru/entities/new');
+  await expect(page.getByLabel('Идентификатор юридического лица (LEI)', { exact: false })).toBeVisible();
 });

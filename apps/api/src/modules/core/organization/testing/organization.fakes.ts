@@ -27,8 +27,6 @@ export const anOrganization = (overrides: Partial<Organization> = {}): Organizat
   name: 'Fabrica de Cașcaval',
   countryCode: 'MD',
   legalForm: null,
-  idno: null,
-  lei: null,
   registeredAddressLine1: null,
   registeredAddressLine2: null,
   registeredLocality: null,

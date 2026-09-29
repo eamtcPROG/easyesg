@@ -76,6 +76,8 @@ export interface EntityRow {
   readonly id: string;
   readonly name: string;
   readonly legalForm: string | null;
+  /** The entity's IDNO (FR-16; the entity's since task 175), or null while it records none. */
+  readonly idno: string | null;
   readonly codes: readonly string[];
   readonly activity: readonly string[];
   readonly siteCount: number;
@@ -177,6 +179,7 @@ export const toEntityRows = (input: {
     id: entity.id,
     name: entity.name,
     legalForm: entity.legalForm,
+    idno: entity.idno,
     codes: entity.naceCodes,
     activity: entity.naceCodes.flatMap((code: string) => {
       const label = input.activity.get(code);

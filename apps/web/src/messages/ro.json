@@ -688,17 +688,6 @@
         "legalFormHelp": "Alegeți forma din registrul de stat. O puteți lăsa necompletată deocamdată.",
         "legalFormPlaceholder": "Alegeți forma juridică"
       },
-      "identifiers": {
-        "heading": "Identificatorii entității",
-        "lede": "Ajung în raport și sunt verificați de instrumentele EFRAG la depunere.",
-        "idno": "IDNO",
-        "idnoHelp": "Numărul de identificare de stat — 13 cifre, de pe certificatul de înregistrare.",
-        "idnoMalformed": "IDNO-ul nu are 13 cifre, așa că nu poate fi înregistrat. Rescrieți-l exact cum apare pe certificatul de înregistrare, fără spații.",
-        "lei": "Identificator de entitate juridică (LEI)",
-        "leiHelp": "Cod internațional de 20 de caractere, cerut de unele bănci și cumpărători din UE. Majoritatea companiilor mici din Moldova nu au unul — lăsați câmpul gol dacă nu aveți.",
-        "leiMalformed": "Codul LEI nu are 20 de caractere din litere mari și cifre, așa că nu poate fi înregistrat. Rescrieți-l exact cum apare în certificatul LEI.",
-        "leiCheckDigits": "Cifrele de control ale codului LEI nu corespund restului codului, deci codul nu este valid. Verificați dacă ați copiat codul potrivit."
-      },
       "address": {
         "heading": "Adresa juridică",
         "lede": "Adresa înregistrată a companiei, nu adresa unde lucrați zi de zi.",
@@ -745,6 +734,8 @@
       "add": "Adăugați o entitate",
       "columns": {
         "entity": "Entitatea",
+        "idno": "IDNO",
+        "idnoMissing": "Neînregistrat",
         "activity": "Activitatea",
         "sites": "Amplasamente",
         "standing": "Starea",
@@ -820,13 +811,20 @@
         },
         "identity": {
           "heading": "Identitatea entității",
-          "lede": "Denumirea și forma juridică, așa cum apar în registrul de stat.",
+          "lede": "Denumirea, forma juridică și identificatorii, așa cum apar în registrul de stat — ajung în raportul acestei entități.",
           "name": "Denumirea entității",
           "nameHelp": "Se tipărește pe raportul acestei entități.",
           "nameRequired": "Scrieți denumirea entității, altfel ea nu poate fi salvată.",
           "nameTooLong": "Denumirea depășește 200 de caractere și nu poate fi salvată. Scurtați-o.",
           "legalForm": "Forma juridică",
           "legalFormPlaceholder": "Alegeți forma juridică",
+          "idno": "IDNO",
+          "idnoHelp": "Numărul de identificare de stat — 13 cifre, de pe certificatul de înregistrare.",
+          "idnoMalformed": "IDNO-ul nu are 13 cifre, așa că nu poate fi înregistrat. Rescrieți-l exact cum apare pe certificatul de înregistrare, fără spații.",
+          "lei": "Identificator de entitate juridică (LEI)",
+          "leiHelp": "Cod internațional de 20 de caractere, cerut de unele bănci și cumpărători din UE. Majoritatea companiilor mici din Moldova nu au unul — lăsați câmpul gol dacă nu aveți.",
+          "leiMalformed": "Codul LEI nu are 20 de caractere din litere mari și cifre, așa că nu poate fi înregistrat. Rescrieți-l exact cum apare în certificatul LEI.",
+          "leiCheckDigits": "Cifrele de control ale codului LEI nu corespund restului codului, deci codul nu este valid. Verificați dacă ați copiat codul potrivit.",
           "activity": "Activitățile entității (CAEM)",
           "activityHelp": "Scrieți denumirea activității sau codul. Activitatea decide ce întrebări despre apă și poluare apar în raport.",
           "activityPlaceholder": "de exemplu: brutărie sau 10.71",

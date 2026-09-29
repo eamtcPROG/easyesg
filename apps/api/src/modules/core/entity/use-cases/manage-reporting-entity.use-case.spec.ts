@@ -4,6 +4,9 @@ import {
   ConsolidationBoundaryEmptyError,
   EntityArchivedError,
   EntityNotFoundError,
+  IdnoMalformedError,
+  LeiCheckDigitsError,
+  LeiMalformedError,
   NaceCodeUnknownError,
 } from '../errors/entity.errors';
 import { FakeReportingEntityStore, anEntity } from '../testing/entity.fakes';
@@ -28,7 +31,16 @@ describe('ManageReportingEntity', () => {
     return { store, useCase };
   };
 
-  const NEW = { name: 'Cafeneaua Lina', legalForm: 'srl', naceCodes: [], sites: [] };
+  const NEW = {
+    name: 'Cafeneaua Lina',
+    legalForm: 'srl',
+    idno: null,
+    lei: null,
+    naceCodes: [],
+    sites: [],
+    consolidationBasis: null,
+    consolidationMembers: [],
+  };
 
   describe('activity codes (FR-17)', () => {
     it('admits codes the country’s classifier registers', async () => {
@@ -70,6 +82,80 @@ describe('ManageReportingEntity', () => {
       await expect(
         useCase.create({ entity: { ...NEW, naceCodes: ['10.11'] } }),
       ).rejects.toBeInstanceOf(NaceCodeUnknownError);
+    });
+  });
+
+  describe("FR-16's identifiers (task 175 moved them here from the organization)", () => {
+    // A real, published LEI (Deutsche Bank AG), so the corpus cannot agree with a wrong
+    // implementation the way an invented string would.
+    const LEI = '7LTWFZYICNSX8D621K86';
+    const IDNO = '1003600158022';
+
+    it('records both, at creation and on an edit, when they are valid', async () => {
+      const { store, useCase } = build();
+
+      const created = await useCase.create({ entity: { ...NEW, idno: IDNO, lei: LEI } });
+      expect([created.idno, created.lei]).toEqual([IDNO, LEI]);
+
+      const edited = await useCase.update({ entityId: store.all[0].id, patch: { idno: IDNO } });
+      expect(edited.idno).toBe(IDNO);
+    });
+
+    it('clears either on an explicit null, since neither is required here', async () => {
+      const { store, useCase } = build([anEntity({ idno: IDNO, lei: LEI })]);
+
+      // What makes the IDNO required is that a report cannot be filed without it (task 40), not
+      // this record — so S-13 must be able to empty a field somebody filled in wrongly.
+      const updated = await useCase.update({ entityId: store.all[0].id, patch: { idno: null, lei: null } });
+
+      expect(updated.idno).toBeNull();
+      expect(updated.lei).toBeNull();
+    });
+
+    it.each([
+      ['twelve digits', '100360015802'],
+      ['fourteen digits', '10036001580222'],
+      ['a letter', '100360015802X'],
+    ])('refuses an IDNO of %s, on creation and on an edit, writing nothing', async (_label, idno) => {
+      const { store, useCase } = build();
+      const before = store.all.length;
+
+      await expect(useCase.create({ entity: { ...NEW, idno } })).rejects.toBeInstanceOf(IdnoMalformedError);
+      expect(store.all).toHaveLength(before);
+      await expect(useCase.update({ entityId: store.all[0].id, patch: { idno } })).rejects.toBeInstanceOf(
+        IdnoMalformedError,
+      );
+      expect(store.all[0].idno).toBeNull();
+    });
+
+    it('refuses a malformed LEI distinctly from one whose check digits disagree', async () => {
+      const { store, useCase } = build();
+      const entityId = store.all[0].id;
+
+      // Wrong shape: nineteen characters. The resolution is to retype it.
+      await expect(useCase.update({ entityId, patch: { lei: LEI.slice(0, 19) } })).rejects.toBeInstanceOf(
+        LeiMalformedError,
+      );
+
+      // Right shape, two adjacent characters transposed. Nothing about the value looks wrong, and
+      // only the checksum sees it — which is the whole argument for running one. The resolution is
+      // different too: go back to the register rather than retype.
+      await expect(
+        useCase.update({ entityId, patch: { lei: '7LTWFZYICNSX8D62K186' } }),
+      ).rejects.toBeInstanceOf(LeiCheckDigitsError);
+    });
+
+    it('does not refuse an IDNO on its check digit, because that algorithm is unknown', async () => {
+      const { useCase } = build();
+
+      // Thirteen digits whose thirteenth is almost certainly not the right check digit — and it is
+      // accepted, deliberately. §7.2 records why: the algorithm is not published in the defining
+      // instrument, a candidate reproduced 2 of 12 real IDNOs, and a guessed one would refuse real
+      // registrations rather than catch mistyped ones. This test is what makes that a decision
+      // rather than an omission, and it is the one to change when the norm is found.
+      const created = await useCase.create({ entity: { ...NEW, idno: '1003600158029' } });
+
+      expect(created.idno).toBe('1003600158029');
     });
   });
 
@@ -184,6 +270,38 @@ describe('ManageReportingEntity', () => {
       // is inert rather than gone, and switching back does not mean retyping the group.
       expect(updated.consolidationBasis).toBe(CONSOLIDATION_BASIS.INDIVIDUAL);
       expect(updated.consolidationMembers).toHaveLength(1);
+    });
+
+    // Task 176: the create path dropped the boundary, and with it the rule — so a new entity could be consolidated
+    // over nothing, which the edit refuses.
+    it('records a basis and its subsidiaries stated at creation', async () => {
+      const { useCase } = build([]);
+
+      const created = await useCase.create({
+        entity: { ...NEW, consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED, consolidationMembers: [SUBSIDIARY] },
+      });
+
+      expect(created.consolidationBasis).toBe(CONSOLIDATION_BASIS.CONSOLIDATED);
+      expect(created.consolidationMembers.map((member) => member.name)).toEqual(['Lina Distribuție SRL']);
+    });
+
+    it('refuses creating a consolidated entity with nothing inside the boundary, writing nothing', async () => {
+      const { store, useCase } = build([]);
+
+      await expect(
+        useCase.create({ entity: { ...NEW, consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED } }),
+      ).rejects.toBeInstanceOf(ConsolidationBoundaryEmptyError);
+      expect(store.all).toHaveLength(0);
+    });
+
+    it('records subsidiaries stated at creation whatever the basis, as the edit does', async () => {
+      const { useCase } = build([]);
+
+      // Unstated or individual, the list is inert rather than refused — the edit's rule, not a second one.
+      const created = await useCase.create({ entity: { ...NEW, consolidationMembers: [SUBSIDIARY] } });
+
+      expect(created.consolidationBasis).toBeNull();
+      expect(created.consolidationMembers).toHaveLength(1);
     });
   });
 

@@ -29,6 +29,8 @@ const ENTITY: ReportingEntity = {
   id: 'e1',
   name: 'Brutăria Lina SRL',
   legalForm: null,
+  idno: null,
+  lei: null,
   naceCodes: [],
   status: ENTITY_STANDING.ACTIVE,
   archivedAt: null,

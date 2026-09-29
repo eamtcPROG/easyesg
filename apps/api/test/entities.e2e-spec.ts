@@ -57,6 +57,8 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
   interface EntityBody {
     id: string;
     name: string;
+    idno: string | null;
+    lei: string | null;
     naceCodes: string[];
     status: string;
     archivedAt: number | null;
@@ -384,6 +386,108 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
         .set(editor.authorization)
         .send({ consolidationBasis: CONSOLIDATION_BASIS.INDIVIDUAL })
         .expect(403);
+    });
+
+    // Task 176: the create path accepted both fields and dropped them, so an entity S-13 created consolidated arrived
+    // unstated and empty. The read back is a second request, so what is asserted is what was stored, not only echoed.
+    it('records a basis and its subsidiaries stated at creation, and reads them back', async () => {
+      const created = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({
+          name: 'Grupul Lina',
+          consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED,
+          consolidationMembers: [{ name: 'Lina Retail SRL', idno: '1003600012345', countryCode: 'md' }],
+        })
+        .expect(201);
+      const { id } = (created.body as { object: EntityBody }).object;
+
+      const read = await http().get(`/api/v1/entities/${id}`).set(admin.authorization).expect(200);
+      const entity = (read.body as { object: EntityBody }).object;
+      expect(entity.consolidationBasis).toBe(CONSOLIDATION_BASIS.CONSOLIDATED);
+      expect(entity.consolidationMembers.map(({ name, idno }) => ({ name, idno }))).toEqual([
+        { name: 'Lina Retail SRL', idno: '1003600012345' },
+      ]);
+    });
+
+    it('refuses creating a consolidated entity with nothing inside the boundary, and creates nothing', async () => {
+      const refused = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({ name: 'Grupul gol', consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED })
+        .expect(400);
+      expect((refused.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/consolidation-boundary-empty`);
+
+      const listed = await http().get('/api/v1/entities').set(admin.authorization).expect(200);
+      const names = (listed.body as { objects: EntityBody[] }).objects.map((entity) => entity.name);
+      expect(names).not.toContain('Grupul gol');
+    });
+  });
+
+  /**
+   * FR-16 over the wire (UC-51) — the half `packages/validation`'s corpus cannot show: that the rule is reached by the
+   * route, and that the two failures arrive as different problem types so S-13 can offer different resolutions. The
+   * identifiers are the entity's since task 175; these cases were the organization's until then.
+   */
+  describe('the entity’s identifiers (UC-51, FR-16; task 175)', () => {
+    const LEI = '7LTWFZYICNSX8D621K86'; // Deutsche Bank AG, a published value.
+    const IDNO = '1003600158022';
+
+    const patch = (body: object) => http().patch(`/api/v1/entities/${entityId}`).set(admin.authorization).send(body);
+
+    it('records the IDNO and the LEI on a new entity, and returns them', async () => {
+      const created = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({ name: 'Lina Logistică', idno: '1009600041284' })
+        .expect(201);
+      const entity = (created.body as { object: EntityBody }).object;
+      expect({ idno: entity.idno, lei: entity.lei }).toEqual({ idno: '1009600041284', lei: null });
+    });
+
+    it('records them on an existing one', async () => {
+      const response = await patch({ idno: IDNO, lei: LEI }).expect(200);
+      const entity = (response.body as { object: EntityBody }).object;
+      expect({ idno: entity.idno, lei: entity.lei }).toEqual({ idno: IDNO, lei: LEI });
+    });
+
+    it('refuses a malformed IDNO, on a new entity as on an existing one', async () => {
+      const onEdit = await patch({ idno: '100360015802' }).expect(400);
+      expect((onEdit.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/identifier-malformed`);
+
+      const onCreate = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({ name: 'Lina Refuzată', idno: '10036001580AB' })
+        .expect(400);
+      expect((onCreate.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/identifier-malformed`);
+    });
+
+    it('tells a malformed LEI apart from one whose check digits disagree', async () => {
+      const malformed = await patch({ lei: LEI.slice(0, 19) }).expect(400);
+      expect((malformed.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/identifier-malformed`);
+
+      // Two adjacent characters transposed: the shape is perfect and only the checksum sees it. A different slug
+      // because the way out is different — check the register, not the keyboard.
+      const checksum = await patch({ lei: '7LTWFZYICNSX8D62K186' }).expect(400);
+      expect((checksum.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/identifier-check-digits`);
+      expect((checksum.body as { detail?: string }).detail).toBeDefined();
+    });
+
+    it('leaves the stored identifiers untouched when a patch is refused', async () => {
+      const response = await http().get(`/api/v1/entities/${entityId}`).set(admin.authorization).expect(200);
+      const entity = (response.body as { object: EntityBody }).object;
+      expect({ idno: entity.idno, lei: entity.lei }).toEqual({ idno: IDNO, lei: LEI });
+    });
+
+    it('clears an identifier on an explicit null, and keeps the one the patch does not name', async () => {
+      const response = await patch({ lei: null }).expect(200);
+      const entity = (response.body as { object: EntityBody }).object;
+      expect({ idno: entity.idno, lei: entity.lei }).toEqual({ idno: IDNO, lei: null });
+    });
+
+    it('is refused to a Reporting Contributor, like every other write', async () => {
+      await http().patch(`/api/v1/entities/${entityId}`).set(editor.authorization).send({ idno: IDNO }).expect(403);
     });
   });
 

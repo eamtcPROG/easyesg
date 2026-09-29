@@ -3,11 +3,10 @@ import { PROFILE_MESSAGES } from '@/features/organization/profile/components/sha
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
- * S-15 — Organization profile and identifiers · OA · UC-50, UC-51 · Record
+ * S-15 — Organization profile · OA · UC-50 · Record
  *
- * The legal identity that propagates into every report the organization produces (FR-15), and
- * FR-16's identifiers — **IDNO primary, LEI optional** (OQ-18; DUNS, EU ID and PermID are not
- * modelled and this screen must not offer them).
+ * The legal identity that propagates into every report the organization produces (FR-15). FR-16's
+ * identifiers were this screen's until task 175 made them each reporting entity's; they are S-13's.
  *
  * **The screen never computes the caller's role.** `OrganizationController` carries
  * `@RequiresRole(ORGANIZATION_ADMINISTRATOR)` at class level, so an editor or a viewer is refused

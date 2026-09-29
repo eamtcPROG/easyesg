@@ -25,7 +25,7 @@ export const isOrganizationRegisterSort = (value: string): value is Organization
   (Object.values(ORGANIZATION_REGISTER_SORT) as readonly string[]).includes(value);
 
 export interface OrganizationRegisterQuery {
-  /** Matched against the name anywhere and the IDNO as a prefix; `null` when nothing is searched. */
+  /** Matched against the name anywhere and any of its entities' IDNOs as a prefix; `null` when nothing is searched. */
   readonly search: string | null;
   readonly sort: OrganizationRegisterSort;
   readonly descending: boolean;
@@ -36,7 +36,10 @@ export interface OrganizationRegisterQuery {
 export interface OrganizationRegisterRow {
   readonly id: string;
   readonly name: string;
-  /** Null until the organization's profile records one (task 29.3's identifiers are optional). */
+  /**
+   * Its earliest reporting entity's IDNO — the identifiers are each entity's since task 175 — or null while none of
+   * them records one (task 29.3's identifiers are optional).
+   */
   readonly idno: string | null;
   readonly registeredAt: Date;
   /** Active reporting entities; an archived one is history, not a current part of the account. */

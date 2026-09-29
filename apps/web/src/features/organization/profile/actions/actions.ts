@@ -16,8 +16,8 @@ import { api } from '@/server/api/api-client';
  * would be redundant — a layout revalidation refetches every segment beneath it.
  *
  * **The organization comes back and the screen re-seeds its form from it**, which is what makes
- * the save/discard pair honest: the API normalises (a trimmed name, an upper-cased country and
- * LEI), so a form left holding what the reader typed would show a dirty field they cannot clean.
+ * the save/discard pair honest: the API normalises (a trimmed name, an upper-cased country), so a
+ * form left holding what the reader typed would show a dirty field they cannot clean.
  */
 export async function updateOrganizationProfileAction(
   patch: UpdateOrganizationRequest,

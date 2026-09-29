@@ -18,6 +18,8 @@ import {
  */
 const entity = (over: Partial<ReportingEntity> & { id: string; name: string }): ReportingEntity => ({
   legalForm: 'srl',
+  idno: null,
+  lei: null,
   naceCodes: [],
   status: ENTITY_STANDING.ACTIVE,
   archivedAt: null,

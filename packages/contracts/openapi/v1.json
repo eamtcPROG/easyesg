@@ -2243,7 +2243,7 @@
             }
           },
           "400": {
-            "description": "An activity code the organization’s country does not register (problem type nace-code-unknown). The classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2.",
+            "description": "An activity code the organization’s country does not register (problem type nace-code-unknown) — the classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2 — a consolidated basis with nothing inside the boundary (consolidation-boundary-empty), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits).",
             "content": {
               "application/problem+json": {}
             }
@@ -2411,7 +2411,7 @@
             }
           },
           "400": {
-            "description": "A consolidated basis with nothing inside the boundary (problem type consolidation-boundary-empty), or an unregistered activity code (nace-code-unknown).",
+            "description": "A consolidated basis with nothing inside the boundary (problem type consolidation-boundary-empty), an unregistered activity code (nace-code-unknown), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits).",
             "content": {
               "application/problem+json": {}
             }
@@ -4547,7 +4547,7 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "Matched against the organization’s name anywhere in it, case-insensitively, and against its IDNO as a prefix. Its own parameter rather than a filter, because a name may contain the filter grammar’s separators. Trimmed; blank means no search.",
+            "description": "Matched against the organization’s name anywhere in it, case-insensitively, and against each of its reporting entities’ IDNOs as a prefix. Its own parameter rather than a filter, because a name may contain the filter grammar’s separators. Trimmed; blank means no search.",
             "schema": {}
           }
         ],
@@ -4788,6 +4788,71 @@
           }
         },
         "summary": "Show one member’s phone number",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/organizations/{organizationId}/entities": {
+      "get": {
+        "description": "Task 175. Each entity’s name, IDNO and whether it is archived — master data, never report content. Recorded in the support access log before it runs.",
+        "operationId": "OrganizationEntitiesController_list",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every reporting entity, the active ones first, each group by name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/OrganizationEntityResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "404": {
+            "description": "No organization in the register holds this id (problem type not-found).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "The organization’s reporting entities",
         "tags": [
           "platform"
         ]
@@ -7962,18 +8027,6 @@
             "nullable": true,
             "description": "A key from the vocabulary registered for countryCode, or null where none is recorded yet — S-04 does not collect it. Resolve it to a label through the message catalogue; it is never a sentence."
           },
-          "idno": {
-            "type": "string",
-            "nullable": true,
-            "example": "1003600158022",
-            "description": "FR-16’s primary identifier, or null until S-15 records it — S-04 collects none."
-          },
-          "lei": {
-            "type": "string",
-            "nullable": true,
-            "example": "7LTWFZYICNSX8D621K86",
-            "description": "The Legal Entity Identifier, or null. Optional by OQ-18: few Moldovan SMEs hold one, and it is kept so B1 stays conformant for the readers who require it."
-          },
           "registeredAddressLine1": {
             "type": "string",
             "nullable": true
@@ -8034,8 +8087,6 @@
           "name",
           "countryCode",
           "legalForm",
-          "idno",
-          "lei",
           "registeredAddressLine1",
           "registeredAddressLine2",
           "registeredLocality",
@@ -8117,18 +8168,6 @@
             "type": "string",
             "nullable": true,
             "description": "A key from the vocabulary registered for the organization’s country — see GET /organizations/legal-forms. Null clears it, which is always permitted: an organization that has not decided is a state S-15 must be able to return to."
-          },
-          "idno": {
-            "type": "string",
-            "nullable": true,
-            "example": "1003600158022",
-            "description": "FR-16’s primary identifier — Moldova’s thirteen-digit state identification number. Its shape is validated on entry; the thirteenth digit is a check digit whose algorithm is not published in the defining instrument, so it is not yet verified. Null clears it."
-          },
-          "lei": {
-            "type": "string",
-            "nullable": true,
-            "example": "7LTWFZYICNSX8D621K86",
-            "description": "FR-16’s optional additional identifier — the Legal Entity Identifier (ISO 17442), upper case. Both its shape and its ISO 7064 MOD 97-10 check digits are verified, and the two refuse with different problem types because they have different resolutions. Null clears it."
           },
           "registeredAddressLine1": {
             "type": "string",
@@ -8268,6 +8307,18 @@
             "type": "string",
             "nullable": true
           },
+          "idno": {
+            "type": "string",
+            "nullable": true,
+            "example": "1003600158022",
+            "description": "FR-16’s primary identifier, or null until recorded."
+          },
+          "lei": {
+            "type": "string",
+            "nullable": true,
+            "example": "7LTWFZYICNSX8D621K86",
+            "description": "The Legal Entity Identifier, or null. Optional by OQ-18: few Moldovan SMEs hold one; where one is held, the export writes it as the report’s entity identifier."
+          },
           "naceCodes": {
             "type": "array",
             "items": {
@@ -8322,6 +8373,8 @@
           "id",
           "name",
           "legalForm",
+          "idno",
+          "lei",
           "naceCodes",
           "status",
           "archivedAt",
@@ -8440,6 +8493,18 @@
             "nullable": true,
             "description": "A key from the country’s legal-form vocabulary."
           },
+          "idno": {
+            "type": "string",
+            "nullable": true,
+            "example": "1003600158022",
+            "description": "FR-16’s primary identifier — Moldova’s thirteen-digit state identification number, the entity’s own (task 175). Its shape is validated on entry; the thirteenth digit is a check digit whose algorithm is not published in the defining instrument, so it is not yet verified. Null clears it."
+          },
+          "lei": {
+            "type": "string",
+            "nullable": true,
+            "example": "7LTWFZYICNSX8D621K86",
+            "description": "FR-16’s optional additional identifier — the Legal Entity Identifier (ISO 17442), upper case. Both its shape and its ISO 7064 MOD 97-10 check digits are verified, and the two refuse with different problem types because they have different resolutions. Null clears it."
+          },
           "naceCodes": {
             "example": [
               "10.71",
@@ -8491,6 +8556,18 @@
             "type": "string",
             "nullable": true,
             "description": "A key from the country’s legal-form vocabulary."
+          },
+          "idno": {
+            "type": "string",
+            "nullable": true,
+            "example": "1003600158022",
+            "description": "FR-16’s primary identifier — Moldova’s thirteen-digit state identification number, the entity’s own (task 175). Its shape is validated on entry; the thirteenth digit is a check digit whose algorithm is not published in the defining instrument, so it is not yet verified. Null clears it."
+          },
+          "lei": {
+            "type": "string",
+            "nullable": true,
+            "example": "7LTWFZYICNSX8D621K86",
+            "description": "FR-16’s optional additional identifier — the Legal Entity Identifier (ISO 17442), upper case. Both its shape and its ISO 7064 MOD 97-10 check digits are verified, and the two refuse with different problem types because they have different resolutions. Null clears it."
           },
           "naceCodes": {
             "example": [
@@ -10488,7 +10565,7 @@
             "type": "string",
             "nullable": true,
             "example": "1009600041284",
-            "description": "The organization’s IDNO. Null until its profile records one."
+            "description": "The IDNO of the organization’s earliest reporting entity holding one — the identifiers are each entity’s. Null while none of its entities records one."
           },
           "registeredAt": {
             "type": "number",
@@ -10567,6 +10644,38 @@
         },
         "required": [
           "phone"
+        ]
+      },
+      "OrganizationEntityResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "Lina SRL"
+          },
+          "idno": {
+            "type": "string",
+            "nullable": true,
+            "example": "1009600041284",
+            "description": "The entity’s IDNO. Null while it records none."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "archived"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "idno",
+          "status"
         ]
       },
       "AdminRosterRowResponseDto": {

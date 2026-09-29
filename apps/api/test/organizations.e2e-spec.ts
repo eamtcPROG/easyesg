@@ -188,6 +188,27 @@ describe('organizations (UC-49, UC-50)', () => {
       ]);
     });
 
+    it('creates its first reporting entity, named after it and attributed to the founder (UC-49, task 175)', async () => {
+      // In the founding transaction, so a single company never has to add the entity it already is. Attributed like
+      // the rest: the insert runs after `app.current_user` is bound.
+      const entities = await asOrganization(owner, foundedId, (run) =>
+        run(`SELECT id, name, status FROM core.reporting_entity WHERE organization_id = $1`, [foundedId]),
+      );
+      expect(entities).toEqual([
+        { id: expect.any(String) as string, name: 'Fabrica de Cașcaval SRL', status: 'active' },
+      ]);
+      const [{ id: entityId }] = entities as { id: string }[];
+
+      const changes = await asOrganization(owner, foundedId, (run) =>
+        run(
+          `SELECT DISTINCT actor_id FROM core.field_change
+            WHERE table_name = 'core.reporting_entity' AND record_id = $1`,
+          [entityId],
+        ),
+      );
+      expect(changes).toEqual([{ actor_id: founder.accountId }]);
+    });
+
     it('attributes the creation to the founder in the change history (FR-15)', async () => {
       // FR-15 requires every change attributed and timestamped, and nothing in the request tier
       // records one: `core.capture_field_change` does, reading the actor from `app.current_user`.
@@ -381,76 +402,6 @@ describe('organizations (UC-49, UC-50)', () => {
         .set(founder.authorization)
         .expect(200);
       expect((unchanged.body as { object: { countryCode: string } }).object.countryCode).toBe('MD');
-    });
-
-    /**
-     * FR-16 over the wire (UC-51) — the half `packages/validation`'s corpus cannot show: that the
-     * rule is actually reached by the route, and that the two failures arrive as different problem
-     * types so S-15 can offer different resolutions.
-     */
-    describe('entity identifiers (UC-51, FR-16)', () => {
-      const LEI = '7LTWFZYICNSX8D621K86'; // Deutsche Bank AG, a published value.
-      const IDNO = '1003600158022';
-
-      it('records the IDNO and the LEI, and returns them', async () => {
-        const response = await http()
-          .patch('/api/v1/organization')
-          .set(founder.authorization)
-          .send({ idno: IDNO, lei: LEI })
-          .expect(200);
-
-        const organization = (response.body as { object: { idno: string; lei: string } }).object;
-        expect(organization.idno).toBe(IDNO);
-        expect(organization.lei).toBe(LEI);
-      });
-
-      it('refuses a malformed IDNO', async () => {
-        const refused = await http()
-          .patch('/api/v1/organization')
-          .set(founder.authorization)
-          .send({ idno: '100360015802' })
-          .expect(400);
-
-        expect((refused.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/identifier-malformed`);
-      });
-
-      it('tells a malformed LEI apart from one whose check digits disagree', async () => {
-        const malformed = await http()
-          .patch('/api/v1/organization')
-          .set(founder.authorization)
-          .send({ lei: LEI.slice(0, 19) })
-          .expect(400);
-        expect((malformed.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/identifier-malformed`);
-
-        // Two adjacent characters transposed: the shape is perfect and only the checksum sees it.
-        // Different slug because the way out is different — check the register, not the keyboard.
-        const checksum = await http()
-          .patch('/api/v1/organization')
-          .set(founder.authorization)
-          .send({ lei: '7LTWFZYICNSX8D62K186' })
-          .expect(400);
-        expect((checksum.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/identifier-check-digits`);
-        expect((checksum.body as Problem).detail).toBeDefined();
-      });
-
-      it('leaves the stored identifiers untouched when a patch is refused', async () => {
-        const response = await http()
-          .get('/api/v1/organization')
-          .set(founder.authorization)
-          .expect(200);
-
-        expect((response.body as { object: { lei: string } }).object.lei).toBe(LEI);
-      });
-
-      it('clears an identifier on an explicit null', async () => {
-        const response = await http()
-          .patch('/api/v1/organization')
-          .set(founder.authorization)
-          .send({ lei: null })
-          .expect(200);
-
-        expect((response.body as { object: { lei: string | null } }).object.lei).toBeNull();
-      });
     });
 
     it('refuses a member of nothing, who has no organization to read', async () => {

@@ -2,6 +2,7 @@ import type { OrganizationRegisterRow } from '@easyesg/contracts';
 import { BUTTON_VARIANT, Button, CALLOUT_INTENT, Callout, Dialog, TextLink } from '@easyesg/ui';
 import { Link } from '@tanstack/react-router';
 import { useFormatter, useTranslations } from 'use-intl';
+import { OrganizationEntities } from './organization-entities';
 import { OrganizationMembers } from './organization-members';
 
 /**
@@ -19,7 +20,8 @@ import { OrganizationMembers } from './organization-members';
  * **What it shows is the row the table already holds, and since task 167 the organization's people**
  * (`organization-members.tsx`; §12.5.6's task-167 row) — who each account belongs to and a phone where one was
  * given, one reveal at a time. That second route publishes contact data and nothing an organization reports, so the
- * boundary the callout states stays true.
+ * boundary the callout states stays true. **Since task 175 its entities too** (`organization-entities.tsx`), each with
+ * its IDNO — the identifiers being each entity's — which is why the row's single IDNO is not repeated here.
  */
 export function OrganizationRecord({
   row,
@@ -45,8 +47,6 @@ export function OrganizationRecord({
       }
     >
       <dl className="t-body grid grid-cols-[auto_1fr] gap-x-[var(--space-4)] gap-y-[var(--space-2)]">
-        <dt className="text-[var(--text-muted)]">{t('record.idno')}</dt>
-        <dd>{row.idno ?? t('table.idnoMissing')}</dd>
         <dt className="text-[var(--text-muted)]">{t('record.registered')}</dt>
         <dd>{format.dateTime(row.registeredAt, 'long')}</dd>
         <dt className="text-[var(--text-muted)]">{t('record.entities')}</dt>
@@ -60,6 +60,7 @@ export function OrganizationRecord({
             : format.dateTime(row.lastSignInAt, 'stamp')}
         </dd>
       </dl>
+      <OrganizationEntities organizationId={row.id} />
       <OrganizationMembers organizationId={row.id} />
       <Callout
         intent={CALLOUT_INTENT.INFO}

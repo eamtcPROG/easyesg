@@ -17,12 +17,14 @@ import { NO_CONTENT_RESPONSE } from '@api/app/interceptors/global-response.inter
 import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
 import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
 import {
+  type ConsolidationMemberRequestDto,
   CreateReportingEntityRequestDto,
   NaceCodeResponseDto,
   ReportingEntityResponseDto,
   UpdateReportingEntityRequestDto,
 } from '../dto/reporting-entity.dto';
 import { NACE_SEARCH_DEFAULT_LIMIT } from '../constants/nace-search.constants';
+import type { NewConsolidationMember } from '../models/reporting-entity.model';
 import { EntityService } from '../services/entity.service';
 
 /**
@@ -173,7 +175,10 @@ export class EntitiesController {
     status: 400,
     description:
       'An activity code the organization’s country does not register (problem type ' +
-      'nace-code-unknown). The classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2.',
+      'nace-code-unknown) — the classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2 — a ' +
+      'consolidated basis with nothing inside the boundary (consolidation-boundary-empty), or an ' +
+      'identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree ' +
+      '(identifier-check-digits).',
     content: { 'application/problem+json': {} },
   })
   async create(
@@ -183,6 +188,8 @@ export class EntitiesController {
       entity: {
         name: body.name,
         legalForm: body.legalForm ?? null,
+        idno: body.idno ?? null,
+        lei: body.lei ?? null,
         naceCodes: body.naceCodes ?? [],
         sites: (body.sites ?? []).map((site) => ({
           id: site.id,
@@ -194,6 +201,8 @@ export class EntitiesController {
           latitude: site.latitude ?? null,
           longitude: site.longitude ?? null,
         })),
+        consolidationBasis: body.consolidationBasis ?? null,
+        consolidationMembers: (body.consolidationMembers ?? []).map(toMember),
       },
     });
     return new ReportingEntityResponseDto(entity);
@@ -214,7 +223,9 @@ export class EntitiesController {
     status: 400,
     description:
       'A consolidated basis with nothing inside the boundary (problem type ' +
-      'consolidation-boundary-empty), or an unregistered activity code (nace-code-unknown).',
+      'consolidation-boundary-empty), an unregistered activity code (nace-code-unknown), or an ' +
+      'identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree ' +
+      '(identifier-check-digits).',
     content: { 'application/problem+json': {} },
   })
   @ApiResponse({
@@ -233,20 +244,14 @@ export class EntitiesController {
       patch: {
         ...(body.name !== undefined ? { name: body.name } : {}),
         ...(body.legalForm !== undefined ? { legalForm: body.legalForm } : {}),
+        ...(body.idno !== undefined ? { idno: body.idno } : {}),
+        ...(body.lei !== undefined ? { lei: body.lei } : {}),
         ...(body.naceCodes !== undefined ? { naceCodes: body.naceCodes } : {}),
         ...(body.consolidationBasis !== undefined
           ? { consolidationBasis: body.consolidationBasis }
           : {}),
         ...(body.consolidationMembers !== undefined
-          ? {
-              consolidationMembers: body.consolidationMembers.map((member) => ({
-                id: member.id,
-                name: member.name,
-                idno: member.idno ?? null,
-                lei: member.lei ?? null,
-                countryCode: member.countryCode?.toUpperCase() ?? null,
-              })),
-            }
+          ? { consolidationMembers: body.consolidationMembers.map(toMember) }
           : {}),
         ...(body.sites !== undefined
           ? {
@@ -291,3 +296,15 @@ export class EntitiesController {
     return NO_CONTENT_RESPONSE;
   }
 }
+
+/**
+ * One subsidiary as the wire sends it, as the model holds it — the same on create and on edit, which is why it is
+ * written once: the create path used to carry no copy at all, and dropped the boundary (task 176).
+ */
+const toMember = (member: ConsolidationMemberRequestDto): NewConsolidationMember => ({
+  id: member.id,
+  name: member.name,
+  idno: member.idno ?? null,
+  lei: member.lei ?? null,
+  countryCode: member.countryCode?.toUpperCase() ?? null,
+});

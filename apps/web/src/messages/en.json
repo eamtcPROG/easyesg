@@ -688,17 +688,6 @@
         "legalFormHelp": "Choose the form from the state register. You can leave it empty for now.",
         "legalFormPlaceholder": "Choose a legal form"
       },
-      "identifiers": {
-        "heading": "Entity identifiers",
-        "lede": "These reach the report and are checked by EFRAG’s own tooling at filing time.",
-        "idno": "IDNO",
-        "idnoHelp": "The state identification number — 13 digits, from your registration certificate.",
-        "idnoMalformed": "The IDNO is not 13 digits, so it cannot be recorded. Retype it exactly as it appears on the registration certificate, without spaces.",
-        "lei": "Legal Entity Identifier (LEI)",
-        "leiHelp": "A 20-character international code, required by some banks and EU buyers. Most small Moldovan companies do not hold one — leave it empty if you do not.",
-        "leiMalformed": "The LEI is not 20 upper-case letters and digits, so it cannot be recorded. Retype it exactly as it appears on your LEI certificate.",
-        "leiCheckDigits": "The LEI’s check digits do not agree with the rest of the code, so the code is not valid. Check that you copied the right one."
-      },
       "address": {
         "heading": "Registered address",
         "lede": "The company’s registered address, not the place you work from day to day.",
@@ -745,6 +734,8 @@
       "add": "Add an entity",
       "columns": {
         "entity": "Entity",
+        "idno": "IDNO",
+        "idnoMissing": "Not recorded",
         "activity": "Activity",
         "sites": "Sites",
         "standing": "Status",
@@ -820,13 +811,20 @@
         },
         "identity": {
           "heading": "Entity identity",
-          "lede": "The name and legal form as they appear in the state register.",
+          "lede": "The name, legal form and identifiers as they appear in the state register — they reach this entity’s report.",
           "name": "Entity name",
           "nameHelp": "It prints on this entity’s report.",
           "nameRequired": "Enter the entity’s name, or it cannot be saved.",
           "nameTooLong": "The name is longer than 200 characters and cannot be saved. Shorten it.",
           "legalForm": "Legal form",
           "legalFormPlaceholder": "Choose a legal form",
+          "idno": "IDNO",
+          "idnoHelp": "The state identification number — 13 digits, from your registration certificate.",
+          "idnoMalformed": "The IDNO is not 13 digits, so it cannot be recorded. Retype it exactly as it appears on the registration certificate, without spaces.",
+          "lei": "Legal Entity Identifier (LEI)",
+          "leiHelp": "A 20-character international code, required by some banks and EU buyers. Most small Moldovan companies do not hold one — leave it empty if you do not.",
+          "leiMalformed": "The LEI is not 20 upper-case letters and digits, so it cannot be recorded. Retype it exactly as it appears on your LEI certificate.",
+          "leiCheckDigits": "The LEI’s check digits do not agree with the rest of the code, so the code is not valid. Check that you copied the right one.",
           "activity": "Entity activities (NACE)",
           "activityHelp": "Type the activity’s name or its code. The activity decides which water and pollution questions appear in the report.",
           "activityPlaceholder": "for example: bakery or 10.71",

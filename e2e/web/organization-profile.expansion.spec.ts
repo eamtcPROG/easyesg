@@ -11,9 +11,9 @@ import { exactlyPadded } from './support/expansion';
  * S-15 at +40% (UX-94, UX-73's three frames; task 30.3), in the `expansion` project so the
  * catalogue is actually padded — see `credentials.expansion.spec.ts` for why that project exists.
  *
- * **The screen with the most to lose from expansion so far.** Thirteen labelled fields, four of
- * them carrying help text, two selects whose options are full sentences (*Societate cu răspundere
- * limitată (SRL)*), an LEI label that is an expansion by design rather than an abbreviation, and a
+ * **The screen with the most to lose from expansion so far.** Eleven labelled fields — thirteen until
+ * task 175 moved the IDNO and the LEI to S-13, whose expansion spec carries the LEI's long label now —
+ * two selects whose options are full sentences (*Societate cu răspundere limitată (SRL)*), and a
  * save/discard pair sharing a row with a sentence about dirty state.
  */
 const RUN_PREFIX = `e2e-web-profile-x-${process.pid}-${Date.now()}`;

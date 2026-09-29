@@ -267,7 +267,6 @@
       },
       "record": {
         "close": "Închideți fișa",
-        "idno": "IDNO",
         "registered": "Înregistrată",
         "entities": "Entități active",
         "reports": "Rapoarte",
@@ -276,6 +275,19 @@
         "boundaryBody": "Fișa cuprinde doar date la nivel de cont. Pentru a citi conținutul unei organizații este nevoie de un acces de suport, acordat cu un motiv și referința tichetului, care expiră singur și este înregistrat în jurnal.",
         "requestAccess": "Cereți acces de suport",
         "requestAccessMenu": "Cereți acces de suport…",
+        "entityList": {
+          "heading": "Entitățile organizației",
+          "loading": "Se încarcă entitățile organizației…",
+          "none": "Organizația nu are încă nicio entitate raportoare.",
+          "idno": "IDNO {idno}",
+          "noIdno": "Fără IDNO înregistrat.",
+          "status": {
+            "active": "Activă",
+            "archived": "Arhivată"
+          },
+          "unavailableTitle": "Entitățile nu au putut fi citite",
+          "unavailableBody": "Lista entităților nu este disponibilă acum, iar restul fișei rămâne valabil. Încercați din nou peste câteva momente."
+        },
         "members": {
           "heading": "Persoanele organizației",
           "loading": "Se încarcă persoanele organizației…",

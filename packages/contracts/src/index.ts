@@ -283,6 +283,8 @@ export type OrganizationRegisterRow = components['schemas']['OrganizationRegiste
 export type OrganizationMember = components['schemas']['OrganizationMemberResponseDto'];
 /** Task 167 — one member's phone, disclosed to one operator and recorded in the system audit log. */
 export type DisclosedPhone = components['schemas']['DisclosedPhoneResponseDto'];
+/** Task 175 — a reporting entity of an organization, as A-02's record lists it: its name, IDNO and status. */
+export type OrganizationEntity = components['schemas']['OrganizationEntityResponseDto'];
 
 // platform — A-08's accounts, invitations and log, and A-20's acceptance (FR-80, FR-81; task 67.4).
 /** One row of A-08's account table: an account in either realm, or a pending invitation. */

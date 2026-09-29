@@ -13,8 +13,9 @@ import type { NewOrganization, Organization } from '../models/organization.model
  */
 export interface OrganizationFoundingStore {
   /**
-   * FR-13 in one transaction: the organization, and the membership that makes its creator the
-   * Organization Administrator (D-1).
+   * FR-13 in one transaction: the organization, the membership that makes its creator the
+   * Organization Administrator (D-1), and — since task 175 — the organization's first reporting
+   * entity, named after it (UC-49's third step).
    *
    * **One transaction is the requirement, not a convenience.** An organization committed without
    * its founding membership is unreachable by everyone including the person who made it — no
@@ -26,7 +27,7 @@ export interface OrganizationFoundingStore {
     readonly organization: NewOrganization;
     readonly founderAccountId: string;
     /**
-     * The session to point at the organization just created — the third write, and it is not a
+     * The session to point at the organization just created — the last write, and it is not a
      * convenience.
      *
      * `selectActiveMembership` answers **null** for an account holding two memberships with no

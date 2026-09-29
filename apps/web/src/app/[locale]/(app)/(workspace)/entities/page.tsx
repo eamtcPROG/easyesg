@@ -3,13 +3,14 @@ import { ENTITIES_MESSAGES } from '@/features/entities/components/shared/entity-
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
- * S-13 — Entities index · OA · UC-52 … UC-55 · Index
+ * S-13 — Entities index · OA · UC-51 … UC-55 · Index
  *
- * The legal entities that are reported on (FR-17 … FR-20). **Four of the artboard's six columns
- * belong to other tasks and are refused rather than invented**: entity IDNO and its *verified*
- * marker are FR-107's fiscal lookup on the billing account, employee count is B1 disclosure data
- * (UC-19) rather than entity master data, the periods column is task 31's, and the entitlement
- * counter above the action is task 54.2's — the same deferral S-16 recorded for seats.
+ * The legal entities that are reported on (FR-16 … FR-20). **Two of the artboard's six columns
+ * belong to other tasks and are refused rather than invented**: employee count is B1 disclosure
+ * data (UC-19) rather than entity master data, and the periods column is task 31's — and so are the
+ * IDNO's *verified* marker, FR-107's fiscal lookup on the billing account, and the entitlement
+ * counter above the action, task 54.2's, the same deferral S-16 recorded for seats. The IDNO itself
+ * is the column beside the name since task 175, which made the identifiers each entity's.
  *
  * **The screen never computes the caller's role**, which is S-15's and S-16's rule: the writes are
  * `@RequiresRole(ORGANIZATION_ADMINISTRATOR)` and the reads are open to every member, so this

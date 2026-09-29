@@ -60,7 +60,7 @@ traps each one left — grouped by area rather than by the task that built it.
   nothing else, opaque refresh rows rotated by conditional consume with a 30 s race grace and
   reuse-revocation, 7 d idle / 30 d absolute computed at the point of use, OQ-35), password reset,
   §12.5.6's throttle and lockout; the admin realm (`POST /auth/admin/session/challenge` →
-  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3) with its record's people — `GET /admin/organizations/{id}/members` and `POST …/members/{accountId}/phone-disclosure`, one phone at a time, each an `@AuditAction` row naming the person (167); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4); A-19's own credentials (`GET /admin/credentials`, `POST /admin/credentials/{password,totp/enrolment,totp/confirmation,recovery-codes}`) and the recovery sign-in (`POST /auth/admin/session/recovery`) (144); support access (`GET/POST /admin/support-access`, `POST /admin/organizations/{id}/support-access/{requestId}/end` with its three report reads, `GET /support-access`, `POST /support-access/{requestId}/{grant,decline,end}`) and one register row by id (`GET /admin/organizations/{id}`) (67.9); A-18's identity providers (`GET /admin/identity-providers`, `POST /admin/identity-providers/{provider}/{configuration,enablement,disablement}`) (67.11); A-17's notification categories (`GET /admin/notification-categories`, `POST /admin/notification-categories/{category}/{preview,publication,reversion}`) (67.10);
+  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3) with its record's people — `GET /admin/organizations/{id}/members` and `POST …/members/{accountId}/phone-disclosure`, one phone at a time, each an `@AuditAction` row naming the person (167), and its entities — `GET /admin/organizations/{id}/entities`, each with its IDNO (175); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4); A-19's own credentials (`GET /admin/credentials`, `POST /admin/credentials/{password,totp/enrolment,totp/confirmation,recovery-codes}`) and the recovery sign-in (`POST /auth/admin/session/recovery`) (144); support access (`GET/POST /admin/support-access`, `POST /admin/organizations/{id}/support-access/{requestId}/end` with its three report reads, `GET /support-access`, `POST /support-access/{requestId}/{grant,decline,end}`) and one register row by id (`GET /admin/organizations/{id}`) (67.9); A-18's identity providers (`GET /admin/identity-providers`, `POST /admin/identity-providers/{provider}/{configuration,enablement,disablement}`) (67.11); A-17's notification categories (`GET /admin/notification-categories`, `POST /admin/notification-categories/{category}/{preview,publication,reversion}`) (67.10);
   social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`), and the
   setup a provider registration completes (`GET /account/setup`, `POST /account/setup/{password,profile}`,
   `POST /auth/account-setup/password`) (155);
@@ -70,7 +70,9 @@ traps each one left — grouped by area rather than by the task that built it.
   `POST /invitations/{id}/email`, `DELETE /invitations/{id}`,
   `POST /invitations/{preview,acceptance}`); and S-16's union read model (`GET /access`, 131).
 - **Organization** (`core/organization`, `core/entity`; task 29): organizations and reporting
-  entities, with the country's legal forms and NACE classifier as configuration artefacts.
+  entities, with the country's legal forms and NACE classifier as configuration artefacts. **Since task 175 the
+  IDNO and LEI are each entity's** (`core.reporting_entity`), and `POST /organizations` writes the organization's
+  first entity, named after it, in the founding transaction (§12.5.6's task-175 row).
 - **Reporting core** (`platform/taxonomy`, `core/period`, `core/disclosure`, `core/comparatives`;
   tasks 31, 33, 34, 89, 91): the taxonomy registry (`TAXONOMY_REGISTRY` over three `config/seed`
   artefacts per registered version) and its typed facade in `packages/vsme`; reporting periods
@@ -992,8 +994,8 @@ carries a permissive `WITH CHECK (true)`.
 **`core.organization` carries a third policy, active only before a tenant is bound** (task 25.3).
 It is what lets the switcher read the names of every organization an account belongs to. The
 `app.current_org IS NULL` conjunct is load-bearing and measured: without it, a request bound to one
-organization sees every organization its actor belongs to, which would put task 29's IDNO and
-registered address outside the active tenant on every request. `tenant-isolation.e2e-spec.ts` has
+organization sees every organization its actor belongs to, which would put task 29's
+registered address — and until task 175 its IDNO — outside the active tenant on every request. `tenant-isolation.e2e-spec.ts` has
 the only test that would catch its removal.
 
 Task 28.4 pays task 23's audit deferral: **every admin sign-in attempt is a row in

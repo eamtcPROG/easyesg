@@ -21,8 +21,11 @@ import styles from './create-organization.module.css';
  * contact details"*; §5's Content row says the same; `CreateOrganizationRequestDto` accepts
  * exactly those. The Workspace artboard draws five different ones — IDNO, VAT code, primary
  * activity, reporting currency — and each has an owner elsewhere or none at all: VAT code is
- * FR-106's billing account, IDNO is FR-16 and S-15's, activity is FR-17's on the reporting entity,
+ * FR-106's billing account, IDNO is FR-16's on the reporting entity (S-13, since task 175), activity is FR-17's there,
  * and reporting currency is in no document in the set. OQ-20 carries the evidence.
+ *
+ * **The organization's first reporting entity is created with it** (UC-49 as amended, task 175), named after it, so
+ * a single company never adds the entity it already is — which is why nothing here asks for one.
  *
  * **The country is a select even though the vocabulary holds one entry at MVP.** It is
  * configuration (AD-4) that moves without a redeploy, it selects the legal-form vocabulary the API

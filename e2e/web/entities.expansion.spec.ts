@@ -11,7 +11,7 @@ import { exactlyPadded } from './support/expansion';
  * S-13 at +40% (UX-94, UX-73's three frames; tasks 30.4.2 and 30.4.3).
  *
  * Both halves, because they fail differently: the Index is a **table**, which is the one layout
- * that cannot wrap its way out of expansion — four padded column headers over a padded status chip
+ * that cannot wrap its way out of expansion — six padded column headers over a padded status chip
  * is where a horizontal scrollbar appears if anything is going to.
  */
 const RUN_PREFIX = `e2e-web-entities-x-${process.pid}-${Date.now()}`;

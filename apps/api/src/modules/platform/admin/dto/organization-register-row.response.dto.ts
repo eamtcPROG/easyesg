@@ -19,7 +19,9 @@ export class OrganizationRegisterRowResponseDto {
     type: String,
     nullable: true,
     example: '1009600041284',
-    description: 'The organization’s IDNO. Null until its profile records one.',
+    description:
+      'The IDNO of the organization’s earliest reporting entity holding one — the identifiers are each ' +
+      'entity’s. Null while none of its entities records one.',
   })
   idno: string | null;
 

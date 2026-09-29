@@ -52,8 +52,8 @@ export class OrganizationRegisterController {
     name: 'search',
     required: false,
     description:
-      'Matched against the organization’s name anywhere in it, case-insensitively, and against its ' +
-      'IDNO as a prefix. Its own parameter rather than a filter, because a name may contain the ' +
+      'Matched against the organization’s name anywhere in it, case-insensitively, and against each of ' +
+      'its reporting entities’ IDNOs as a prefix. Its own parameter rather than a filter, because a name may contain the ' +
       'filter grammar’s separators. Trimmed; blank means no search.',
   })
   @ApiQuery({

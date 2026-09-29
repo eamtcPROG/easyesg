@@ -56,7 +56,8 @@ test('a Platform Administrator finds an organization and opens its record, which
 }) => {
   const email = emailFor('pa');
   provision(email, OPERATOR_ROLE.PLATFORM_ADMINISTRATOR);
-  await seedOrganization({ name: ORGANIZATION, idno: `7${randomOf('0123456789', 12)}` });
+  const idno = `7${randomOf('0123456789', 12)}`;
+  await seedOrganization({ name: ORGANIZATION, idno });
 
   await page.goto('/sign-in');
   await signIn(page, email);
@@ -76,6 +77,11 @@ test('a Platform Administrator finds an organization and opens its record, which
   await page.waitForURL(/[?&]selected=/u);
   await expect(recordDialog(page, ORGANIZATION)).toContainText(ORGANIZATION);
   await expect(recordDialog(page, ORGANIZATION)).toContainText('Conținutul rapoartelor nu este afișat');
+  // Task 175: the record lists the organization's entities, each with the IDNO it holds.
+  const entities = recordDialog(page, ORGANIZATION).getByRole('region', { name: 'Entitățile organizației' });
+  await expect(entities.getByRole('listitem')).toHaveCount(1);
+  await expect(entities.getByRole('listitem')).toContainText(`IDNO ${idno}`);
+  await expect(entities.getByRole('listitem')).toContainText('Activă');
 
   // UX-4: the search and the open record are the address, so a reload reopens both.
   await page.reload();

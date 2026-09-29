@@ -51,8 +51,9 @@ const randomOf = (alphabet: string, length: number) =>
 /** Letters only, so no search for an IDNO's digits can match a name by accident. */
 const TOKEN = `rg${randomOf('abcdefghijklmnopqrstuvwxyz', 10)}`;
 const IDNO_TAIL = randomOf('0123456789', 12);
-const ALFA = { name: `Registru Alfa ${TOKEN}`, idno: `7${IDNO_TAIL}` };
-const BETA = { name: `Registru Beta ${TOKEN}`, idno: `8${IDNO_TAIL}` };
+/** Alfa's IDNOs are its entities' since task 175: the kept entity's, and the archived one's, which still finds it. */
+const ALFA = { name: `Registru Alfa ${TOKEN}`, idno: `7${IDNO_TAIL}`, archivedIdno: `8${IDNO_TAIL}` };
+const BETA = { name: `Registru Beta ${TOKEN}` };
 
 interface RegisterRow {
   id: string;
@@ -102,14 +103,10 @@ describe('the organization register (A-02, UC-69; task 67.3)', () => {
    * policies, and with no organization bound it passes none — the insert is admitted and the
    * returning is refused, as this suite's first run found.
    */
-  const createOrganization = async (organization: { name: string; idno: string }): Promise<string> => {
+  const createOrganization = async (organization: { name: string }): Promise<string> => {
     const id = randomUUID();
     await asOrganization(owner, null, (run) =>
-      run(`INSERT INTO core.organization (id, name, country_code, idno) VALUES ($1, $2, 'MD', $3)`, [
-        id,
-        organization.name,
-        organization.idno,
-      ]),
+      run(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, $2, 'MD')`, [id, organization.name]),
     );
     return id;
   };
@@ -124,12 +121,13 @@ describe('the organization register (A-02, UC-69; task 67.3)', () => {
     return rows[0].id;
   };
 
-  const createEntity = async (name: string): Promise<string> => {
+  const createEntity = async (name: string, idno: string): Promise<string> => {
     const response = await http()
       .post('/api/v1/entities')
       .set(administrator.authorization)
       .send({
         name,
+        idno,
         legalForm: 'srl',
         naceCodes: ['10.71'],
         sites: [{ name: `${name} — sediu`, locality: 'Chișinău', countryCode: 'MD' }],
@@ -169,8 +167,8 @@ describe('the organization register (A-02, UC-69; task 67.3)', () => {
       });
 
     // One active entity carrying a period and a report, and one archived — which must not count.
-    const kept = await createEntity('Brutăria Lina');
-    const archived = await createEntity('Depozitul vechi');
+    const kept = await createEntity('Brutăria Lina', ALFA.idno);
+    const archived = await createEntity('Depozitul vechi', ALFA.archivedIdno);
     await http()
       .post(`/api/v1/entities/${archived}/archive`)
       .set(administrator.authorization)
@@ -246,7 +244,7 @@ describe('the organization register (A-02, UC-69; task 67.3)', () => {
       'reportCount',
     ]);
     expect(alfa).toMatchObject({ name: ALFA.name, idno: ALFA.idno, entityCount: 1, reportCount: 1 });
-    expect(beta).toMatchObject({ name: BETA.name, entityCount: 0, reportCount: 0, lastSignInAt: null });
+    expect(beta).toMatchObject({ name: BETA.name, idno: null, entityCount: 0, reportCount: 0, lastSignInAt: null });
 
     // Activity is the administrator's sign-in, not the removed member's later one — read from the
     // database's own record rather than a host clock.
@@ -268,6 +266,53 @@ describe('the organization register (A-02, UC-69; task 67.3)', () => {
     // The same digits from the middle of the IDNO are not a prefix, so they find nothing of this run.
     const byTail = await register(platform.cookie, `?search=${ALFA.idno.slice(4)}`).expect(200);
     expect(idsOf(byTail)).not.toContain(alfaId);
+  });
+
+  // Task 175: the IDNO is each entity's, so a group is found by any of its companies' numbers — an archived one's
+  // included, since that may be the number a caller still quotes — and its row shows its earliest entity's.
+  it('finds an organization by any of its entities’ IDNOs, and shows its earliest entity’s', async () => {
+    const byArchived = await register(platform.cookie, `?search=${ALFA.archivedIdno}`).expect(200);
+    expect(idsOf(byArchived)).toEqual([alfaId]);
+    expect(bodyOf(byArchived).objects[0].idno).toBe(ALFA.idno);
+  });
+
+  describe('the record’s entities (task 175)', () => {
+    const entities = (headers: Record<string, string>, organizationId: string) => {
+      const call = http().get(`/api/v1/admin/organizations/${organizationId}/entities`);
+      for (const [header, value] of Object.entries(headers)) call.set(header, value);
+      return call;
+    };
+
+    it('lists every entity with its IDNO, the active ones first, and logs the read naming the organization', async () => {
+      const since = await databaseNow(analyst);
+      const response = await entities(platform.cookie, alfaId).expect(200);
+      const rows = (response.body as { objects: Record<string, unknown>[] }).objects;
+      expect(rows.map(({ name, idno, status }) => ({ name, idno, status }))).toEqual([
+        { name: 'Brutăria Lina', idno: ALFA.idno, status: 'active' },
+        { name: 'Depozitul vechi', idno: ALFA.archivedIdno, status: 'archived' },
+      ]);
+      // Master data and nothing more: a site, a boundary or a period reaching this route would be a new key here.
+      expect(Object.keys(rows[0]).sort()).toEqual(['id', 'idno', 'name', 'status']);
+
+      const logged = await analyst.query<Record<string, unknown>[]>(
+        `SELECT organization_id, purpose FROM audit.support_access_log WHERE requester_id = $1 AND occurred_at >= $2`,
+        [platform.accountId, since],
+      );
+      expect(logged).toEqual([{ organization_id: alfaId, purpose: 'organization_register' }]);
+    });
+
+    it('answers an organization with no entity with none, and an id no organization holds with not-found', async () => {
+      const none = await entities(platform.cookie, betaId).expect(200);
+      expect((none.body as { objects: unknown[] }).objects).toEqual([]);
+
+      const unknown = await entities(platform.cookie, randomUUID()).expect(404);
+      expect(typeOf(unknown)).toBe(problemTypeUri(ProblemType.NotFound));
+    });
+
+    it('refuses a Billing Operator', async () => {
+      const refused = await entities(billing.cookie, alfaId).expect(403);
+      expect(typeOf(refused)).toBe(problemTypeUri(ProblemType.InsufficientRole));
+    });
   });
 
   it('reads a search’s wildcard characters as characters', async () => {

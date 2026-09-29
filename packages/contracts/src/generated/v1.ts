@@ -1659,6 +1659,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/organizations/{organizationId}/entities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The organization’s reporting entities
+         * @description Task 175. Each entity’s name, IDNO and whether it is archived — master data, never report content. Recorded in the support access log before it runs.
+         */
+        get: operations["OrganizationEntitiesController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/accounts": {
         parameters: {
             query?: never;
@@ -2875,16 +2895,6 @@ export interface components {
             countryCode: string;
             /** @description A key from the vocabulary registered for countryCode, or null where none is recorded yet — S-04 does not collect it. Resolve it to a label through the message catalogue; it is never a sentence. */
             legalForm: string | null;
-            /**
-             * @description FR-16’s primary identifier, or null until S-15 records it — S-04 collects none.
-             * @example 1003600158022
-             */
-            idno: string | null;
-            /**
-             * @description The Legal Entity Identifier, or null. Optional by OQ-18: few Moldovan SMEs hold one, and it is kept so B1 stays conformant for the readers who require it.
-             * @example 7LTWFZYICNSX8D621K86
-             */
-            lei: string | null;
             registeredAddressLine1: string | null;
             registeredAddressLine2: string | null;
             registeredLocality: string | null;
@@ -2941,16 +2951,6 @@ export interface components {
             countryCode?: string;
             /** @description A key from the vocabulary registered for the organization’s country — see GET /organizations/legal-forms. Null clears it, which is always permitted: an organization that has not decided is a state S-15 must be able to return to. */
             legalForm?: string | null;
-            /**
-             * @description FR-16’s primary identifier — Moldova’s thirteen-digit state identification number. Its shape is validated on entry; the thirteenth digit is a check digit whose algorithm is not published in the defining instrument, so it is not yet verified. Null clears it.
-             * @example 1003600158022
-             */
-            idno?: string | null;
-            /**
-             * @description FR-16’s optional additional identifier — the Legal Entity Identifier (ISO 17442), upper case. Both its shape and its ISO 7064 MOD 97-10 check digits are verified, and the two refuse with different problem types because they have different resolutions. Null clears it.
-             * @example 7LTWFZYICNSX8D621K86
-             */
-            lei?: string | null;
             registeredAddressLine1?: string | null;
             registeredAddressLine2?: string | null;
             /** @description City, town or village. */
@@ -2989,6 +2989,16 @@ export interface components {
             id: string;
             name: string;
             legalForm: string | null;
+            /**
+             * @description FR-16’s primary identifier, or null until recorded.
+             * @example 1003600158022
+             */
+            idno: string | null;
+            /**
+             * @description The Legal Entity Identifier, or null. Optional by OQ-18: few Moldovan SMEs hold one; where one is held, the export writes it as the report’s entity identifier.
+             * @example 7LTWFZYICNSX8D621K86
+             */
+            lei: string | null;
             naceCodes: string[];
             /**
              * @description Archived entities leave active selection and keep their reports and exports (FR-20). They remain readable here; their master data is read-only.
@@ -3061,6 +3071,16 @@ export interface components {
             /** @description A key from the country’s legal-form vocabulary. */
             legalForm?: string | null;
             /**
+             * @description FR-16’s primary identifier — Moldova’s thirteen-digit state identification number, the entity’s own (task 175). Its shape is validated on entry; the thirteenth digit is a check digit whose algorithm is not published in the defining instrument, so it is not yet verified. Null clears it.
+             * @example 1003600158022
+             */
+            idno?: string | null;
+            /**
+             * @description FR-16’s optional additional identifier — the Legal Entity Identifier (ISO 17442), upper case. Both its shape and its ISO 7064 MOD 97-10 check digits are verified, and the two refuse with different problem types because they have different resolutions. Null clears it.
+             * @example 7LTWFZYICNSX8D621K86
+             */
+            lei?: string | null;
+            /**
              * @description CAEM Rev.2 codes — 1:1 with NACE Rev.2 to four characters, which is what B1 exports. Each is admitted against the classifier registered for the organization’s country; an empty array means the entity is not classified yet, which FR-17 permits.
              * @example [
              *       "10.71",
@@ -3083,6 +3103,16 @@ export interface components {
         UpdateReportingEntityRequestDto: {
             /** @description A key from the country’s legal-form vocabulary. */
             legalForm?: string | null;
+            /**
+             * @description FR-16’s primary identifier — Moldova’s thirteen-digit state identification number, the entity’s own (task 175). Its shape is validated on entry; the thirteenth digit is a check digit whose algorithm is not published in the defining instrument, so it is not yet verified. Null clears it.
+             * @example 1003600158022
+             */
+            idno?: string | null;
+            /**
+             * @description FR-16’s optional additional identifier — the Legal Entity Identifier (ISO 17442), upper case. Both its shape and its ISO 7064 MOD 97-10 check digits are verified, and the two refuse with different problem types because they have different resolutions. Null clears it.
+             * @example 7LTWFZYICNSX8D621K86
+             */
+            lei?: string | null;
             /**
              * @description CAEM Rev.2 codes — 1:1 with NACE Rev.2 to four characters, which is what B1 exports. Each is admitted against the classifier registered for the organization’s country; an empty array means the entity is not classified yet, which FR-17 permits.
              * @example [
@@ -3882,7 +3912,7 @@ export interface components {
             /** @example Brutăria Lina SRL */
             name: string;
             /**
-             * @description The organization’s IDNO. Null until its profile records one.
+             * @description The IDNO of the organization’s earliest reporting entity holding one — the identifiers are each entity’s. Null while none of its entities records one.
              * @example 1009600041284
              */
             idno: string | null;
@@ -3919,6 +3949,19 @@ export interface components {
              * @example +37369123456
              */
             phone: string;
+        };
+        OrganizationEntityResponseDto: {
+            /** Format: uuid */
+            id: string;
+            /** @example Lina SRL */
+            name: string;
+            /**
+             * @description The entity’s IDNO. Null while it records none.
+             * @example 1009600041284
+             */
+            idno: string | null;
+            /** @enum {string} */
+            status: "active" | "archived";
         };
         AdminRosterRowResponseDto: {
             /**
@@ -6073,7 +6116,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description An activity code the organization’s country does not register (problem type nace-code-unknown). The classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2. */
+            /** @description An activity code the organization’s country does not register (problem type nace-code-unknown) — the classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2 — a consolidated basis with nothing inside the boundary (consolidation-boundary-empty), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits). */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -6172,7 +6215,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description A consolidated basis with nothing inside the boundary (problem type consolidation-boundary-empty), or an unregistered activity code (nace-code-unknown). */
+            /** @description A consolidated basis with nothing inside the boundary (problem type consolidation-boundary-empty), an unregistered activity code (nace-code-unknown), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits). */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7779,7 +7822,7 @@ export interface operations {
                 page?: number;
                 /** @description One ordering: `<name|registered|entities|reports|activity>,<asc|desc>`. Defaults to `name,asc`. An ordering this route does not offer falls back to the default. */
                 order?: unknown;
-                /** @description Matched against the organization’s name anywhere in it, case-insensitively, and against its IDNO as a prefix. Its own parameter rather than a filter, because a name may contain the filter grammar’s separators. Trimmed; blank means no search. */
+                /** @description Matched against the organization’s name anywhere in it, case-insensitively, and against each of its reporting entities’ IDNOs as a prefix. Its own parameter rather than a filter, because a name may contain the filter grammar’s separators. Trimmed; blank means no search. */
                 search?: unknown;
             };
             header?: never;
@@ -7963,6 +8006,57 @@ export interface operations {
                 };
             };
             /** @description The account is not an active member of this organization, or gave no phone number (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    OrganizationEntitiesController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every reporting entity, the active ones first, each group by name. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["OrganizationEntityResponseDto"][];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No organization in the register holds this id (problem type not-found). */
             404: {
                 headers: {
                     [name: string]: unknown;

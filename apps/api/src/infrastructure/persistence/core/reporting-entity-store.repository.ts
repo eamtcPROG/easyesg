@@ -19,6 +19,8 @@ interface EntityRow {
   id: string;
   name: string;
   legal_form: string | null;
+  idno: string | null;
+  lei: string | null;
   nace_codes: string[];
   status: EntityStatus;
   consolidation_basis: ConsolidationBasis | null;
@@ -39,7 +41,7 @@ interface SiteRow {
   longitude: string | null;
 }
 
-const ENTITY_COLUMNS = `id, name, legal_form, nace_codes, status, consolidation_basis,
+const ENTITY_COLUMNS = `id, name, legal_form, idno, lei, nace_codes, status, consolidation_basis,
         archived_at, created_at, updated_at`;
 const MEMBER_COLUMNS = `id, reporting_entity_id, name, idno, lei, country_code`;
 const SITE_COLUMNS = `id, reporting_entity_id, name, address_line1, locality, postal_code,
@@ -49,6 +51,8 @@ const SITE_COLUMNS = `id, reporting_entity_id, name, address_line1, locality, po
 const PATCHABLE = {
   name: 'name',
   legalForm: 'legal_form',
+  idno: 'idno',
+  lei: 'lei',
   naceCodes: 'nace_codes',
   consolidationBasis: 'consolidation_basis',
 } as const satisfies Record<
@@ -94,6 +98,8 @@ const toEntity = (
   id: row.id,
   name: row.name,
   legalForm: row.legal_form,
+  idno: row.idno,
+  lei: row.lei,
   naceCodes: row.nace_codes,
   status: row.status,
   consolidationBasis: row.consolidation_basis,
@@ -183,15 +189,27 @@ export class ReportingEntityStoreRepository
     // ordinary `organization_id = app.current_org`, and the insert supplies that very value — so
     // the returned row passes the policy that task 29.1's founding insert could not.
     const rows = await this.manager.query<EntityRow[]>(
-      `INSERT INTO core.reporting_entity (organization_id, name, legal_form, nace_codes, created_at, updated_at)
-            VALUES (${this.boundOrganization}, $1, $2, $3, $4, $4)
+      `INSERT INTO core.reporting_entity
+              (organization_id, name, legal_form, idno, lei, nace_codes, consolidation_basis, created_at, updated_at)
+            VALUES (${this.boundOrganization}, $1, $2, $3, $4, $5, $6, $7, $7)
          RETURNING ${ENTITY_COLUMNS}`,
-      [input.entity.name, input.entity.legalForm, input.entity.naceCodes, input.at],
+      [
+        input.entity.name,
+        input.entity.legalForm,
+        input.entity.idno,
+        input.entity.lei,
+        input.entity.naceCodes,
+        input.entity.consolidationBasis,
+        input.at,
+      ],
     );
     const created = rows[0];
     await this.syncSites(created.id, input.entity.sites, input.at);
-    const sites = await this.sitesFor([created.id]);
-    return toEntity(created, sites.get(created.id) ?? [], []);
+    // The boundary's members through the edit path's own sync (task 176), so a create and a save hold a member the
+    // same way; on a new entity there is nothing stored for the sync to keep or remove.
+    await this.syncMembers(created.id, input.entity.consolidationMembers, input.at);
+    const [sites, members] = await Promise.all([this.sitesFor([created.id]), this.membersFor([created.id])]);
+    return toEntity(created, sites.get(created.id) ?? [], members.get(created.id) ?? []);
   }
 
   async update(input: {

@@ -25856,3 +25856,122 @@ reader the suites need `pnpm dev:up` — root and api `CLAUDE.md`, the Playwrigh
 whose timing command ran jest bare against `esg`. CI's steps are unchanged; its failure logs print both stacks. Runs:
 lint, `docs:check`, the three stack suites and `migrations:check` as above. The review agents did not run (owner,
 13 Sep 2026).
+
+## Task 175 — The identifiers are the entity's, and an organization is founded with its first entity · 2026-09-29
+
+The owner, after S-13's review, on what an entity is: *"this can be ambiguous for a small business that does software
+for example has 3 employee. and by this logic it means entity should have IDNO"*. To a single company the organization
+and the entity are one legal person, yet the organization held the IDNO while FR-16 and OQ-18 both called it the
+*entity* identifier — so a group's companies would all have reported under one number. **Checked against EFRAG before
+asking**: the VSME Digital Template 1.3.0 carries one *Entity Identifier* and *Scheme* per report, the undertaking's,
+with the scheme a closed list (LEI, DUNS, EU ID, PermID) that does not know IDNO. The owner's answers, in two batches,
+are `architecture.md` §12.5.6's task-175 row: identifiers on the entity (IDNO primary, LEI optional); the export writes
+the LEI where held and otherwise the IDNO under a platform scheme (task 46's to spell); the first entity founded with
+the organization, for new organizations only; A-02 searching entity IDNOs; the migration moving identifiers to the
+oldest entity or founding one.
+
+**What moved, by layer.**
+
+- **Schema.** `1791331200000-identifiers-on-entity` adds `idno`/`lei` to `core.reporting_entity` with task 29.2's
+  shape CHECKs and partial index, moves the data, then drops the organization's columns, constraints and index. The
+  receiving entity is the oldest **active** one, else the oldest — an archived entity's master data is frozen (FR-20),
+  and writing into it would have been a change nobody could make through the product. An organization holding
+  identifiers and no entity gets one, named after it; one holding none is left alone. `down` is lossy and says so.
+  The data step is two exported functions with two cases in `migration-data-steps.e2e-spec.ts`; each case rebuilds the
+  schema the step runs in (the organization's columns back, inside the rolled-back transaction — task 165's case is the
+  precedent) and **both fail with the `NO FORCE` lift removed**, measured.
+- **Founding.** `OrganizationFoundingStoreRepository` writes the entity as its third statement, after `app.current_user`
+  is bound, so the entity passes its tenant policy and `core.capture_field_change` attributes it to the founder —
+  `organizations.e2e-spec.ts` asserts both. The browser suite's `grantMembership` still inserts organizations directly,
+  so S-13's first-use empty state keeps a fixture that reaches it.
+- **API.** The organization's model, DTOs, store, patch and use case lose the identifiers; the entity's gain them, with
+  the three error classes moved from `organization.errors.ts` to `entity.errors.ts` and their keys with them in all
+  three catalogues. `admitIdentifiers` in `ManageReportingEntity` judges both create and update — the same
+  `@easyesg/validation` functions as before, shape and check digits still two problem types.
+- **A-02.** The register's row shows the IDNO of the earliest entity holding one; the search matches any entity's IDNO
+  as a prefix — an archived one's included, since that may be the number a caller quotes. The record's entity list is
+  **its own route**, `GET /admin/organizations/{id}/entities`, rather than a field on `GET /admin/organizations/{id}`:
+  that route is A-07's, which needs no entities, and the members route (task 167) had already set the record's shape —
+  one small port per list, `esg_admin_ro`, logged under the register's purpose. The record drops its single IDNO line,
+  which the list now says better.
+- **S-13.** The IDNO and LEI sit in the identity section as a second pair beneath the name and the legal form, which is
+  where the artboard draws the IDNO; the index gains the artboard's IDNO column, *Not recorded* where there is none. The
+  LEI labelling rule moved with the field, in `design_spec.md` too, and the words moved from S-15's namespace to S-13's.
+- **S-15** loses its identifiers section; its spec, expansion spec and docblocks count eleven fields, not thirteen.
+
+**Deferred rather than decided.** The S-13 artboard draws a refusal of an IDNO another entity of the same organization
+holds. Nothing refuses it: task 29.2's *no uniqueness* stands, recorded as a deferral in the task-175 row with what
+would change. **Found and not fixed**: `POST /entities` ignores the consolidation basis and members the create form
+sends — pre-existing, raised as its own task rather than folded in here.
+
+**Searched for the shape**: every reader of `o.idno`/`o.lei` and of the organization DTO's identifiers across the api,
+both apps, both browser suites and their fixtures (the admin one seeded `core.organization.idno`); every suite founding
+an organization through the API and then counting its entities (only `organizations.e2e-spec.ts`, which now asserts the
+entity); every document line naming S-15 as the identifiers' screen (`design_spec.md`'s screen table, traceability row,
+S-04's validation line and S-15's UC/FR lists; the web route and page docblocks; `record-state.ts`).
+
+**Verified**: the api's unit suite 1,434 of 1,434 and the web's 1,208 of 1,208 and the console's 296 of 296; `pnpm e2e` 1,451 of
+1,451 once `support-access.e2e-spec.ts` stopped seeding `core.organization.idno` (its first run failed all 14 cases on
+the dropped column — a reader the sweep had listed and not yet edited); `pnpm e2e:worker` 9 of 9, the admin module's
+provider list having changed; `migrations:check` — the revert on the test stack and 61 invariants on each stack, so
+the dev database now holds the migration; `openapi:check` with the regenerated contract staged (107 paths); `routes:check`;
+`docs:check` 46 of 46; and `pnpm e2e:web` over identity, expansion and admin, **282 of 284**. The two failures,
+`web/credentials.spec.ts:103` (the sign-in form never appeared inside 30 s) and `admin/session.spec.ts:103` (the factor
+step never appeared), are on paths this change does not reach and both pass rerun alone against the same build —
+task 174's entry records the same kind of timeout under this host's memory pressure. The log's
+`destination stream closed early` server lines sit beside choose-organization, notifications, profile, users-access,
+wizard and credentials cases, none beside an entities, S-15, S-04 or console case; not investigated further here.
+**Lint was run cold**, because the contract's `Organization` and `ReportingEntity` types changed under files whose own
+bytes did not — the root `CLAUDE.md`'s task 33.2 case. A single uncached `eslint .` ran out of heap on this 8 GB host
+after 2 m 49 s, so it ran per workspace (`apps/web`, `apps/admin`, `apps/api`, `packages`, `e2e`, `tools`), each
+clean. **One correction after the suite**, from a screenshot: the index's IDNO cell used the numeric role, which set
+thirteen digits larger and heavier than every text cell beside them; the artboard draws the activity's size in tabular
+figures, and `.idno` in the feature's stylesheet now does — a class and one rule, re-checked by lint, the web unit
+suite and screenshots at 1440 and 390 with no sideways scroll; the browser suite was not rerun for it, its IDNO
+assertion reading the text.
+
+Reviews did not run, and neither did `gates:clean` (owner, 13 Sep 2026: heavy runs only when truly required). What
+the cold run could see here was judged case by case instead: the deleted section file has no `dist/` copy, since
+`apps/web` builds fresh in `e2e:web`'s pre-hook; `packages/contracts` resolves from source, so it has none either; and
+the one warm-state risk left, the lint cache, was paid for above. CI's full set on the push covers the rest.
+
+## Task 176 — A new entity lost its reporting boundary · 2026-09-29
+
+Found by task 175's work and raised as its own task rather than folded in: `POST /entities` accepted
+`consolidationBasis` and `consolidationMembers` — they are on the fields class `CreateReportingEntityRequestDto` and
+`UpdateReportingEntityRequestDto` share — and the create handler named neither, `NewReportingEntity` had no field for
+them and the store's `INSERT` wrote neither. S-13's create form sends both (`entity-fields.ts`'s `toRequest`), so an
+entity created consolidated arrived with the basis unstated and no subsidiaries, and FR-19's rule never ran on a
+create: a consolidated basis over an empty boundary, which the edit refuses, was admitted.
+
+**Confirmed before it was fixed**: two cases added to `entities.e2e-spec.ts`'s boundary block both failed against the
+unchanged code — the created entity read back with basis `null`, and the empty-boundary create was admitted.
+
+**The fix follows the edit path rather than growing a second one.**
+
+- `NewReportingEntity` gains the basis and the members, so the type now says a create carries them.
+- The controller's member mapping was written once, inline in `update`; it is `toMember` now and both handlers call it.
+- FR-19's rule was inline in `update` too; it is `admitBoundary` beside `admitIdentifiers`, called by both — on a
+  create against what the request states, on an edit against what the patch results in. Members stated without a
+  consolidated basis are recorded, as the edit records them.
+- `ReportingEntityStoreRepository.create` writes `consolidation_basis` in its `INSERT` and syncs the members through
+  the edit's own `syncMembers`, then reads them back with the sites.
+- The fake store models the create's boundary, and three unit cases cover it: recorded, refused writing nothing, and
+  members with no basis. **The refusal case fails with `admitBoundary` removed from `create`**, measured.
+- The create route's 400 description names `consolidation-boundary-empty`, so the contract moved by that one line.
+
+**No web change.** S-13's boundary section already leaves the empty-boundary refusal to the API rather than
+pre-empting it, and the record form renders a create's refusal the way it renders an edit's.
+
+**Searched for the shape**: every `Create…RequestDto`'s fields against its handler's reads — organizations, reports
+and entities — none unread now; the entities pair is the only create and update sharing a base fields class. A
+one-off script rather than a gate: it would have caught this, and three DTOs are not yet a pattern worth a rule.
+
+**Verified**: the two new e2e cases, failing before and passing after; the entities suite 34 of 34; the api's unit suite
+1,437 of 1,437, the entity use case's 23 among them; `pnpm e2e` 1,453 of 1,453, the boot spec included; `openapi:check`
+with the one-line description change staged; `pnpm lint`; the api's `typecheck`.
+
+The browser suite did not run: the change is api-only, the table's run for that is the api's, and the api dev server
+had been stopped by the owner during the task, so no journey was driven against it either. Reviews and `gates:clean`
+did not run (owner, 13 Sep 2026) — a two-field defect on one path, with no type another workspace consumes changed
+beyond one description string.

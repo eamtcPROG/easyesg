@@ -15,30 +15,30 @@ import { toFields, toPatch, type ProfileFields } from '../../tools/profile-field
 import { RECORD_EVENT, initialRecordState, recordReducer, visibleNotice } from '@/lib/record-state';
 import { AddressSection } from '../sections/address-section';
 import { ContactsSection } from '../sections/contacts-section';
-import { IdentifiersSection } from '../sections/identifiers-section';
 import { IdentitySection } from '../sections/identity-section';
 import { PROFILE_MESSAGES } from '../shared/profile-messages';
 import type { CountryOption } from '../shared/vocabulary';
 import { ProfileAttribution } from './profile-attribution';
 
 /**
- * S-15's body — UC-50 and UC-51 on the Record archetype (FR-15, FR-16).
+ * S-15's body — UC-50 on the Record archetype (FR-15). UC-51's identifiers were a fourth section here until task
+ * 175 moved them to each reporting entity, on S-13.
  *
  * **This file composes and commits; nothing else.** It was 430 lines holding four sections' worth of
  * fields, an attribution line, a controls row, three outcome callouts, two conversions and three
  * pieces of state (task 129). What is left is the two things no part can do: own the one `control`
  * every field registers against, and turn a settled action into the screen's next state.
  *
- * **One form over four sections, with one save**, which is the difference from S-28. That screen's
+ * **One form over three sections, with one save**, which is the difference from S-28. That screen's
  * sections each commit their own thing because each is a separate credential operation; here §5's
  * Controls row is *edit; save; cancel* for the record, and the artboard draws a single Discard/Save
- * pair at the foot. So `sections/` is grouping, not scope — four groups of fields over one
+ * pair at the foot. So `sections/` is grouping, not scope — three groups of fields over one
  * `control`, and `RecordControls` is the only thing that submits.
  *
  * **Save is inert until a field differs**, which the artboard states in words. `formState.isDirty` is
  * what react-hook-form computes against `defaultValues`, so the screen re-seeds them from the API's
- * answer after every successful save: the API normalises (a trimmed name, an upper-cased country and
- * LEI), and a form left holding what the reader typed would show a permanently dirty field they
+ * answer after every successful save: the API normalises (a trimmed name, an upper-cased country), and
+ * a form left holding what the reader typed would show a permanently dirty field they
  * cannot clean.
  *
  * **State is one reducer, not three `useState`s** — `@/lib/record-state.ts` carries the argument and
@@ -173,7 +173,6 @@ export function OrganizationProfileForm({
         <RecordNotice notice={visibleNotice(state, formState.isDirty)} />
 
         <IdentitySection control={control} countries={countries} legalForms={legalForms} />
-        <IdentifiersSection control={control} />
         <AddressSection control={control} />
         <ContactsSection control={control} />
       </RecordShell>

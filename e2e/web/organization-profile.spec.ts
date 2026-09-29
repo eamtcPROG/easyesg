@@ -7,14 +7,11 @@ import {
 } from './support/db';
 
 /**
- * S-15 in a real browser (UC-50, UC-51; FR-15, FR-16; task 30.3).
+ * S-15 in a real browser (UC-50; FR-15; task 30.3). FR-16's identifiers were this screen's until task 175 made
+ * them each reporting entity's; their journey is `entities.spec.ts`'s now.
  *
- * Three things only a round trip shows, and each is a different task's code agreeing with another's:
+ * Two things only a round trip shows, and each is a different task's code agreeing with another's:
  *
- *  - **The identifier rules are the API's own.** `@easyesg/validation` refuses a malformed LEI
- *    inline and the API re-validates the same value with the same functions (§9.8) — so what this
- *    proves is not that a regex works but that one implementation serves both, which is the whole
- *    reason that package exists.
  *  - **The attribution names the person who just saved.** It is read from `core.field_change`, a
  *    table written by a trigger inside the same transaction as the write, and `updateProfile`
  *    re-reads rather than using `RETURNING` precisely so the line is not the state before the
@@ -26,9 +23,6 @@ import {
 const RUN_PREFIX = `e2e-web-profile-${process.pid}-${Date.now()}`;
 const addressFor = (label: string) => `${RUN_PREFIX}-${label}@example.md`;
 const PASSWORD = 'Parola123!';
-
-/** A published LEI, so the MOD 97-10 fixture is a real value rather than one this suite produced. */
-const VALID_LEI = '7LTWFZYICNSX8D621K86';
 
 const organizations: string[] = [];
 
@@ -97,34 +91,6 @@ test('the administrator edits the profile, and save is inert until something dif
   await expect(page.getByLabel('Forma juridică')).toHaveText(/Societate cu răspundere limitată/);
 });
 
-test('an identifier is refused with a sentence that says which half is wrong (FR-16)', async ({
-  page,
-}) => {
-  await signedIn(page, 'identifiers');
-  await page.goto('/organization');
-
-  // Shape and check digits are two verdicts with two resolutions — retype it, versus check you
-  // copied the right one. A single boolean would say neither.
-  await page.getByLabel('IDNO').fill('123');
-  await page.getByLabel('Identificator de entitate juridică (LEI)', { exact: false }).fill('NOT-A-LEI');
-  await page.getByRole('button', { name: 'Salvați modificările' }).click();
-
-  await expect(page.getByText('IDNO-ul nu are 13 cifre', { exact: false })).toHaveCount(2);
-  await expect(page.getByText('Codul LEI nu are 20 de caractere', { exact: false })).toHaveCount(2);
-
-  // Twenty valid characters whose check digits disagree: the shape passes and the checksum does
-  // not, which is the sentence the other message cannot say.
-  await page.getByLabel('Identificator de entitate juridică (LEI)', { exact: false }).fill('7LTWFZYICNSX8D621K00');
-  await page.getByRole('button', { name: 'Salvați modificările' }).click();
-  await expect(page.getByText('Cifrele de control ale codului LEI', { exact: false })).toHaveCount(2);
-
-  // And the pair the API accepts, which is the same rule running on the other side of the wire.
-  await page.getByLabel('IDNO').fill('1003600158022');
-  await page.getByLabel('Identificator de entitate juridică (LEI)', { exact: false }).fill(VALID_LEI);
-  await page.getByRole('button', { name: 'Salvați modificările' }).click();
-  await expect(page.getByText('Profilul a fost salvat')).toBeVisible();
-});
-
 test('the two contacts are separate fields, and the report one says so', async ({ page }) => {
   await signedIn(page, 'contacts');
   await page.goto('/organization');
@@ -164,11 +130,7 @@ test('the screen is live in all three locales', async ({ page }) => {
 
   await page.goto('/en/organization');
   await expect(page.getByRole('heading', { name: 'Organisation profile', level: 1 })).toBeVisible();
-  // The LEI label carries its expansion in every locale and is never the bare abbreviation
-  // (design_spec S-15, 28 Aug 2026) — to a Moldovan reader `LEI` reads as the currency.
-  await expect(page.getByLabel('Legal Entity Identifier (LEI)')).toBeVisible();
 
   await page.goto('/ru/organization');
   await expect(page.getByRole('heading', { name: 'Профиль организации', level: 1 })).toBeVisible();
-  await expect(page.getByLabel('Идентификатор юридического лица (LEI)')).toBeVisible();
 });

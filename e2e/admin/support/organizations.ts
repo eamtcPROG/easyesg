@@ -43,13 +43,22 @@ const inTransaction = async (organizationId: string, work: (client: Client) => P
   }
 };
 
+/**
+ * An organization and its first reporting entity, named after it and holding the IDNO — the state a founding leaves
+ * since task 175, where the identifiers are each entity's and the register finds an organization by them.
+ */
 export async function seedOrganization(input: { name: string; idno: string }): Promise<string> {
   const id = randomUUID();
-  await inTransaction('', async (client) => {
-    await client.query(
-      `INSERT INTO core.organization (id, name, country_code, idno) VALUES ($1, $2, 'MD', $3)`,
-      [id, input.name, input.idno],
-    );
+  await inTransaction(id, async (client) => {
+    await client.query(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, $2, 'MD')`, [
+      id,
+      input.name,
+    ]);
+    await client.query(`INSERT INTO core.reporting_entity (organization_id, name, idno) VALUES ($1, $2, $3)`, [
+      id,
+      input.name,
+      input.idno,
+    ]);
   });
   seeded.add(id);
   return id;

@@ -114,7 +114,7 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-48 | Select the language of an exported report | RC | Choose export language independently of interface language | MVP | FR-52 |
 | UC-49 | Create an organization | OA | Establish the organization record and become its administrator | MVP | FR-13, FR-14 |
 | UC-50 | View and edit the organization profile | OA | Maintain legal form, name, address and contact details | MVP | FR-15 |
-| UC-51 | Maintain entity identifiers | OA | Record and validate the IDNO, and an LEI where the organization holds one | MVP | FR-16 |
+| UC-51 | Maintain entity identifiers | OA | Record and validate each reporting entity's IDNO, and an LEI where the entity holds one | MVP | FR-16 |
 | UC-52 | Create a reporting entity | OA | Establish a legal entity that will be reported on | MVP | FR-17 |
 | UC-53 | Edit reporting entity master data | OA | Keep entity master data current without altering filed reports | MVP | FR-17, FR-18 |
 | UC-54 | Define the consolidation scope of an entity | OA | Set the individual or consolidated reporting boundary | MVP | FR-19 |
@@ -302,8 +302,8 @@ Three domains, thirty-seven modules. Modules are a reading and estimating aid, n
 | Export | UC-41 … UC-44 | RC |
 | Comparative periods | UC-45, UC-46 | RC |
 | Traceability | UC-47, UC-48 | RC |
-| Organization profile | UC-49 … UC-51 | OA |
-| Reporting entity | UC-52 … UC-55 | OA |
+| Organization profile | UC-49, UC-50 | OA |
+| Reporting entity | UC-51 … UC-55 | OA |
 | Reporting period | UC-56 … UC-58 | OA |
 | Users & access | UC-59 … UC-64 | OA |
 | Plan & oversight | UC-65 … UC-67 | OA |
@@ -1166,6 +1166,7 @@ their numbers put them.
 - **Main success scenario:**
   1. The user creates the organization record — legal name, country, contact details.
   2. The system automatically grants the creating user the Organization Administrator role over it (D-1).
+  3. The system creates the organization's first reporting entity, named after the organization (UC-52). **Added 29 Sep 2026 (project owner)**: most SMEs are one company, and until then a single-company user typed the same name twice — once here, once as an entity — with nothing saying why.
 - **Business rules:** The organization is created against the generic org-relationship model, with only the "direct SME org" type active at MVP, so Advisor, Buyer and Licensee relationship types can be introduced later without a schema change.
 - **Related FRs:** FR-13, FR-14
 - **Related UCs:** UC-01, UC-02, UC-03, UC-52
@@ -1186,15 +1187,15 @@ their numbers put them.
 ### UC-51 — Maintain entity identifiers
 
 - **Primary actor:** OA
-- **Module:** Organization profile
-- **Preconditions:** The organization exists.
+- **Module:** Reporting entity (**moved 29 Sep 2026** from Organization profile)
+- **Preconditions:** The reporting entity exists.
 - **Trigger:** The Administrator records or updates an identifier.
 - **Main success scenario:**
-  1. The Administrator records the IDNO as the primary identifier, and an LEI alongside it where the organization holds one.
+  1. The Administrator records the entity's IDNO as the primary identifier, and an LEI alongside it where the entity holds one.
   2. The system validates format and checksum on entry.
-- **Business rules:** An identifier that fails validation downstream in EFRAG's own tooling is expensive to discover at filing time. **Amended 28 Aug 2026** — this use case previously read "LEI as primary identifier, or a DUNS number, EU ID or PermID where no LEI exists", the scheme `architecture.md` OQ-18 reversed on 18 Aug 2026. IDNO is universal and free across the tenant population; LEI carries an annual fee and is held by very few Moldovan SMEs, so it is optional and kept for the banks and EU buyers whose reading of B1 requires one. DUNS, EU ID and PermID are not modelled at MVP.
+- **Business rules:** **Amended 29 Sep 2026 (project owner) — the identifiers are each reporting entity's, not the organization's.** EFRAG's VSME Digital Template ties its *Entity Identifier* to the reporting undertaking, one per report, and each company of a group holds its own IDNO; on the organization, every entity of a group would have reported under one number. An identifier that fails validation downstream in EFRAG's own tooling is expensive to discover at filing time. **Amended 28 Aug 2026** — this use case previously read "LEI as primary identifier, or a DUNS number, EU ID or PermID where no LEI exists", the scheme `architecture.md` OQ-18 reversed on 18 Aug 2026. IDNO is universal and free across the tenant population; LEI carries an annual fee and is held by very few Moldovan SMEs, so it is optional and kept for the banks and EU buyers whose reading of B1 requires one. DUNS, EU ID and PermID are not modelled at MVP.
 - **Related FRs:** FR-16
-- **Related UCs:** UC-50
+- **Related UCs:** UC-52, UC-53
 
 ### UC-52 — Create a reporting entity
 
@@ -1204,7 +1205,7 @@ their numbers put them.
 - **Trigger:** The Administrator creates a legal entity that will be reported on.
 - **Main success scenario:**
   1. The Administrator captures the entity's legal form, NACE code(s) and site locations.
-- **Business rules:** An organization may hold several entities; most SMEs will hold exactly one, but the model does not assume it.
+- **Business rules:** An organization may hold several entities; most SMEs will hold exactly one, but the model does not assume it. **The first is created with the organization** (UC-49, 29 Sep 2026), so this use case is how a group adds its further companies.
 - **Related FRs:** FR-17
 - **Related UCs:** UC-19, UC-53, UC-54, UC-56
 

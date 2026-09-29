@@ -54,7 +54,7 @@ import { EntitiesToolbar } from './entities-toolbar';
  * convention's own reason applies: a hand-written union has no runtime value, so the key would be
  * spelled again at the column that uses it and a typo would silently produce a second column.
  */
-const ENTITY_COLUMN = { ACTIVITY: 'activity', ACTIONS: 'actions' } as const;
+const ENTITY_COLUMN = { IDNO: 'idno', ACTIVITY: 'activity', ACTIONS: 'actions' } as const;
 
 export type EntityColumnKey = EntitySort | (typeof ENTITY_COLUMN)[keyof typeof ENTITY_COLUMN];
 
@@ -97,7 +97,7 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         key: ENTITY_SORT.NAME,
         header: t('columns.entity'),
         sortable: true,
-        // The two text columns share the width equally, and the three short ones take only what they hold
+        // The two text columns share the width equally, and the four short ones take only what they hold
         // (29 Sep 2026, project owner: *"a better alignment of the columns for more symmetry"*).
         size: COLUMN_SIZE.FILL,
         cell: (row) => (
@@ -112,6 +112,22 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
             ) : null}
           </span>
         ),
+      },
+      {
+        // Beside the name, as the index artboard draws it: the IDNO is how an entity is told apart from a namesake, and
+        // the entity's since task 175 (FR-16 as amended).
+        key: ENTITY_COLUMN.IDNO,
+        header: t('columns.idno'),
+        size: COLUMN_SIZE.FIT,
+        cell: (row) =>
+          row.idno === null ? (
+            // Said rather than left blank, for `unclassified`'s reason: task 40's rules will ask for one at filing.
+            <span className={`t-caption ${styles.sub}`}>{t('columns.idnoMissing')}</span>
+          ) : (
+            <span className={styles.idno} translate="no">
+              {row.idno}
+            </span>
+          ),
       },
       {
         key: ENTITY_COLUMN.ACTIVITY,
