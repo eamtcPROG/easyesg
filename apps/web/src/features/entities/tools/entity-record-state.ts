@@ -40,6 +40,12 @@ export const ENTITY_EVENT = {
   ARCHIVE_REQUESTED: 'archive_requested',
   /** The reader cancelled the dialogue. */
   ARCHIVE_DISMISSED: 'archive_dismissed',
+  /** The reader followed the way back with changes unsaved; the question opens. */
+  LEAVE_REQUESTED: 'leave_requested',
+  /** The reader chose to stay. */
+  LEAVE_DISMISSED: 'leave_dismissed',
+  /** The reader chose to leave without saving; the page is changing. */
+  LEAVE_CONFIRMED: 'leave_confirmed',
 } as const;
 
 export type EntityEventKind = (typeof ENTITY_EVENT)[keyof typeof ENTITY_EVENT];
@@ -51,7 +57,10 @@ export type EntityEvent =
   | { readonly kind: typeof ENTITY_EVENT.DISCARDED }
   | { readonly kind: typeof ENTITY_EVENT.CODES_CHANGED; readonly codes: readonly NaceCodeMatch[] }
   | { readonly kind: typeof ENTITY_EVENT.ARCHIVE_REQUESTED }
-  | { readonly kind: typeof ENTITY_EVENT.ARCHIVE_DISMISSED };
+  | { readonly kind: typeof ENTITY_EVENT.ARCHIVE_DISMISSED }
+  | { readonly kind: typeof ENTITY_EVENT.LEAVE_REQUESTED; readonly href: string }
+  | { readonly kind: typeof ENTITY_EVENT.LEAVE_DISMISSED }
+  | { readonly kind: typeof ENTITY_EVENT.LEAVE_CONFIRMED };
 
 /** Which side settled — two members rather than a boolean, because they differ in how long they stay true. */
 export const ENTITY_REPORT = {
@@ -74,6 +83,11 @@ export interface EntityRecordState {
   /** The activity list as the reader has it. */
   readonly codes: readonly NaceCodeMatch[];
   readonly confirmingArchive: boolean;
+  /**
+   * Where the reader asked to go while changes were unsaved (project owner, 28 Sep 2026) — the question is open while
+   * this is set, and *leave* goes there. The address rather than a flag, so the answer cannot go somewhere else.
+   */
+  readonly leaving: string | null;
 }
 
 export const initialEntityRecordState = (activity: readonly NaceCodeMatch[]): EntityRecordState => ({
@@ -81,6 +95,7 @@ export const initialEntityRecordState = (activity: readonly NaceCodeMatch[]): En
   served: activity,
   codes: activity,
   confirmingArchive: false,
+  leaving: null,
 });
 
 /** Whether the activity list differs from what was stored — the half of "dirty" the form cannot see. */
@@ -130,5 +145,13 @@ export function entityRecordReducer(state: EntityRecordState, event: EntityEvent
 
     case ENTITY_EVENT.ARCHIVE_DISMISSED:
       return { ...state, confirmingArchive: false };
+
+    case ENTITY_EVENT.LEAVE_REQUESTED:
+      return { ...state, leaving: event.href };
+
+    // Staying and leaving both close the question; they differ in what the form does next, not in what it holds.
+    case ENTITY_EVENT.LEAVE_DISMISSED:
+    case ENTITY_EVENT.LEAVE_CONFIRMED:
+      return { ...state, leaving: null };
   }
 }

@@ -65,6 +65,9 @@
       "users": "Users & access",
       "lockedNote": "(organisation administrators only)"
     },
+    "breadcrumb": {
+      "label": "Breadcrumb"
+    },
     "index": {
       "sort": {
         "sortBy": "Sort by {column}",
@@ -793,9 +796,11 @@
         "lede": "The entity’s master data. Reports already filed keep the values in force when they were prepared.",
         "createTitle": "Add an entity",
         "createLede": "An entity is the company a report is prepared for. You can fill it in gradually.",
+        "back": "Back to reporting entities",
         "save": "Save changes",
         "create": "Add the entity",
         "discard": "Discard",
+        "unsaved": "Unsaved changes",
         "saved": {
           "title": "Entity saved",
           "body": "The new values apply to reports prepared from now on. Reports already filed keep the values in force when they were prepared."
@@ -840,10 +845,12 @@
           "memberNameRequired": "Enter the subsidiary’s name, or the boundary cannot be saved.",
           "memberIdno": "Subsidiary IDNO",
           "addMember": "Add a subsidiary",
-          "removeMember": "Remove the subsidiary"
+          "removeMember": "Remove the subsidiary {member}",
+          "membersNone": "No subsidiaries inside the boundary.",
+          "memberRemoved": "“{member}” will leave the boundary when you save your changes."
         },
         "sites": {
-          "heading": "Sites",
+          "heading": "Sites · {count}",
           "lede": "The places the entity operates from. They decide the biodiversity questions.",
           "site": "Site {position}",
           "name": "Site name",
@@ -851,15 +858,30 @@
           "address": "Address",
           "locality": "Town or city",
           "add": "Add a site",
-          "remove": "Remove the site"
+          "remove": "Remove the site {site}",
+          "none": "No sites recorded.",
+          "removed": "“{site}” will be removed when you save your changes."
+        },
+        "rows": {
+          "remove": "Remove",
+          "undo": "Undo"
         },
         "archive": {
           "action": "Archive the entity",
+          "panelTitle": "Archived, never deleted",
           "title": "Archive this entity?",
           "consequence": "The entity leaves active selection: you can no longer open new periods for it and it stops appearing in lists. Its master data becomes uneditable.",
           "retained": "Reports already filed and their exports remain available exactly as they were distributed. Nothing is deleted.",
           "confirm": "Archive the entity",
           "cancel": "Cancel"
+        },
+        "leave": {
+          "title": "Leave without saving?",
+          "newObject": "The new entity",
+          "consequence": "The changes you made on this page are not saved and will be lost.",
+          "retained": "What is already saved stays as it was.",
+          "confirm": "Leave without saving",
+          "cancel": "Stay on the page"
         },
         "loading": "Loading the entity…"
       },

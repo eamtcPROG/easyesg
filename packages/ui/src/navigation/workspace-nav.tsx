@@ -86,8 +86,8 @@ export interface WorkspaceNavProps<TItem extends WorkspaceNavItem = WorkspaceNav
   readonly items: readonly TItem[];
   /**
    * Which item the reader is on. **A predicate rather than an active key**, because the matching
-   * rule is the consumer's: this tier compares the pathname exactly, and a nav over nested routes
-   * would need a prefix match. A component that guessed would be wrong for one of them.
+   * rule is the consumer's: `apps/web`'s tier keeps a section current on the addresses beneath it,
+   * and a nav of leaf addresses would compare exactly. A component that guessed would be wrong for one of them.
    */
   readonly isActive: (item: TItem) => boolean;
   /**

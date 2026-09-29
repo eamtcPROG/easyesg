@@ -26,11 +26,35 @@
   color: var(--text-body);
 }
 
-.filters {
+/* The filter row (28 Sep 2026, project owner): the facet at the start and *add an entity* at the end, on the field's
+   baseline — S-16's row and §5.2's symmetric one. **Below `wide` one column**, the facet and then the button, each the
+   row's full width; **from `wide` one row**. `wide` because it is the one boundary with a stated value (§3.3's 1024px). */
+.toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--space-5);
-  align-items: flex-end;
+}
+
+/* The button's edges meet the select's rather than sitting a few pixels short on the shared baseline. */
+.toolbar .toolbarButton {
+  min-block-size: var(--field-block-size);
+}
+
+@media (min-width: 64rem) {
+  .toolbar {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  /* One facet, at half the width S-16 gives its two, so it reads as a filter rather than a form field. */
+  .filters {
+    flex: 0 1 17rem;
+  }
+
+  .toolbar .toolbarButton {
+    flex-shrink: 0;
+  }
 }
 
 .identity {
@@ -51,26 +75,160 @@
   color: var(--text-body);
 }
 
-/* The save/discard/archive row. Wraps rather than compressing: at 390 the three buttons are wider
-   than the frame, and a +40% catalogue makes that true earlier. */
-.actions {
+/* The foot bar's note that something differs from what was stored — muted, and first, so the two buttons keep the
+   bar's end where the artboard draws them. */
+.unsaved {
+  color: var(--text-muted);
+}
+
+/* Two fields to a row where the card has room — the record artboard's pairing — and one below `compact`'s 40rem, where
+   a pair would leave each field too narrow for a +40% label. A lone field keeps its column's width rather than the
+   row's, so a select does not stretch across the card. */
+.fieldPair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5) var(--space-6);
+  align-items: start;
+}
+
+@media (min-width: 40rem) {
+  .fieldPair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* The record's side column: *Archive, never delete* — the Panel's edge and ground, with its own heading. */
+.sidePanel {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+.sidePanelTitle,
+.sidePanelBody {
+  margin: 0;
+}
+
+.sidePanelBody {
+  color: var(--text-body);
+}
+
+/* A row collection — the sites, or the subsidiaries inside the boundary (28 Sep 2026): one framed list with a rule
+   between rows, as the artboard's table draws sites, then the add control beneath it. */
+.rows {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-4);
 }
 
-/* One row of a sub-collection — a site, or a subsidiary inside the boundary. A `fieldset` with its
-   own legend, because a screen reader arriving at "Name" needs to know WHICH site it belongs to;
-   the position is the only thing that distinguishes them before one is named. */
+.rowList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+}
+
+.rowList > li + li {
+  border-block-start: 1px solid var(--border-default);
+}
+
+/* A removed row's ground follows the list's corners rather than squaring them off. */
+.rowList > li:first-child {
+  border-start-start-radius: calc(var(--radius-2) - 1px);
+  border-start-end-radius: calc(var(--radius-2) - 1px);
+}
+
+.rowList > li:last-child {
+  border-end-start-radius: calc(var(--radius-2) - 1px);
+  border-end-end-radius: calc(var(--radius-2) - 1px);
+}
+
+.rowsEmpty {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.row {
+  container: entity-row / inline-size;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
 .rowGroup {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-3);
+}
+
+/* The row's name and its removal on one line. The removal is at the top of the row, so nothing a field says beneath it
+   can move it — which is what made a removal take two presses (29 Sep 2026). */
+.rowHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-block-size: 40px;
+}
+
+.rowName {
+  min-inline-size: 0;
+  font: 600 15px/24px var(--font-text);
+  color: var(--text-default);
+  overflow-wrap: anywhere;
+}
+
+/* The fields as many to a line as get 12rem each, stacked where none do — a small form at `compact`, and a +40%
+   catalogue wraps a column rather than overflowing. */
+.rowFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--space-4) var(--space-5);
+  align-items: start;
+}
+
+/* **One line of a table once the row has 36rem** — the artboard's sites table — with the first field, the row's name,
+   half as wide again as each of the others, since it is the longest thing a reader types into a row. By the row's own
+   width rather than the viewport's, so it holds beside the side column and beneath it alike. */
+@container entity-row (min-width: 36rem) {
+  .rowFields {
+    grid-auto-flow: column;
+    grid-template-columns: minmax(0, 3fr);
+    grid-auto-columns: minmax(0, 2fr);
+  }
+}
+
+/* Beneath the list, the list's full width, so it reads as the place the next row goes. */
+.addRow {
+  inline-size: 100%;
+}
+
+/* A removed row, collapsed to what the save will do and its undo — on the sunken ground, because it is a row on its way
+   out rather than one the reader is editing. */
+.removedRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--surface-sunken);
+}
+
+/* At the row's end whether or not the sentence wraps it onto a line of its own — where the removal it undoes stood. */
+.removedRow .removedUndo {
+  margin-inline-start: auto;
+}
+
+.removedSentence {
   margin: 0;
-  padding: var(--space-5);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-2);
+  min-inline-size: 0;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
 }
 
 .activityPicker {

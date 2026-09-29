@@ -20,6 +20,8 @@ const CLASSIFIER: NaceCode[] = [
   { code: '10.7', labels: { ro: 'Fabricarea produselor de brutărie', en: 'Manufacture of bakery products' } },
   { code: '10.71', labels: { ro: 'Fabricarea pâinii; fabricarea prăjiturilor', en: 'Manufacture of bread' } },
   { code: '10.72', labels: { ro: 'Fabricarea biscuiţilor şi pişcoturilor', en: 'Manufacture of rusks' } },
+  // Ahead of 49.41 in code order and naming transport only mid-label — the pair the ranking cases read.
+  { code: '33.15', labels: { ro: 'Repararea mijloacelor de transport naval', en: 'Repair of ships' } },
   // No English: the fallback path, which no production payload exercises now that the seed carries
   // all three — and which a fourth country would reach on its first day.
   { code: '49.41', labels: { ro: 'Transporturi rutiere de mărfuri' } },
@@ -82,9 +84,43 @@ describe('NaceCodeLookup — search (FR-17)', () => {
     expect(matches).toEqual([{ code: '49.41', label: 'Transporturi rutiere de mărfuri' }]);
   });
 
-  it('answers nothing for an empty query, and does not read the classifier to say so', async () => {
-    await expect(run('')).resolves.toEqual([]);
-    await expect(run('   ')).resolves.toEqual([]);
+  it('answers the first classes for an empty query, and nothing above a class', async () => {
+    // The picker's first focus (28 Sep 2026). The section, the division and the group come first in
+    // code order and are left out: B1 exports a four-character code, so the easiest pick must be one.
+    await expect(run('')).resolves.toEqual([
+      { code: '10.71', label: 'Fabricarea pâinii; fabricarea prăjiturilor' },
+      { code: '10.72', label: 'Fabricarea biscuiţilor şi pişcoturilor' },
+      { code: '33.15', label: 'Repararea mijloacelor de transport naval' },
+      { code: '49.41', label: 'Transporturi rutiere de mărfuri' },
+    ]);
+    expect((await run('   ', 'ro', 2)).map((m) => m.code)).toEqual(['10.71', '10.72']);
+  });
+
+  it('matches the words typed in any order', async () => {
+    expect((await run('prajiturilor fabricarea')).map((m) => m.code)).toEqual(['10.71']);
+  });
+
+  it('matches a word typed without the ending the label inflects it with', async () => {
+    // *pâine* typed, *pâinii* written — Romanian inflects at the end, and a reader types the base form.
+    expect((await run('paine')).map((m) => m.code)).toEqual(['10.71']);
+    // Four letters or fewer keep every one: a stem of two would match half the classifier.
+    expect(await run('pax')).toEqual([]);
+  });
+
+  it('ranks a label that begins with the query above one that merely holds it', async () => {
+    // 33.15 comes first in code order and names transport mid-label; 49.41 begins with it.
+    expect((await run('transport')).map((m) => m.code)).toEqual(['49.41', '33.15']);
+  });
+
+  it('ranks a whole-word match above a stem match, whatever the classifier order', async () => {
+    // `manufacture` begins four English labels, and reaches the section's *manufacturing*, listed
+    // first, only through its stem `manufactu` — so the section moves to the end.
+    expect((await run('manufacture', 'en')).map((m) => m.code)).toEqual(['10', '10.7', '10.71', '10.72', 'C']);
+  });
+
+  it('still answers a match inside a word, after every better one', async () => {
+    // `ansport` begins no word and is no stem of one; it is inside both transport labels.
+    expect((await run('ansport')).map((m) => m.code)).toEqual(['33.15', '49.41']);
   });
 
   it('bounds the answer, and clamps a limit outside the permitted range', async () => {

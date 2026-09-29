@@ -19,7 +19,7 @@ describe('entityRecordReducer', () => {
   const initial = initialEntityRecordState([bread]);
 
   it('starts with nothing to report and the served codes as the reader’s', () => {
-    expect(initial).toEqual({ report: null, served: [bread], codes: [bread], confirmingArchive: false });
+    expect(initial).toEqual({ report: null, served: [bread], codes: [bread], confirmingArchive: false, leaving: null });
     expect(codesChanged(initial)).toBe(false);
   });
 
@@ -57,6 +57,17 @@ describe('entityRecordReducer', () => {
     const after = entityRecordReducer(edited, { kind: ENTITY_EVENT.DISCARDED });
     expect(after.codes).toEqual([bread]);
     expect(after.report).toBeNull();
+  });
+
+  it('holds where the reader asked to go until they stay or leave, and touches nothing else', () => {
+    const edited = entityRecordReducer(initial, { kind: ENTITY_EVENT.CODES_CHANGED, codes: [bread, pastry] });
+    const asking = entityRecordReducer(edited, { kind: ENTITY_EVENT.LEAVE_REQUESTED, href: '/entities' });
+
+    expect(asking.leaving).toBe('/entities');
+    // The question asks about the edits; opening it must not be what loses them.
+    expect(asking.codes).toEqual([bread, pastry]);
+    expect(entityRecordReducer(asking, { kind: ENTITY_EVENT.LEAVE_DISMISSED })).toEqual(edited);
+    expect(entityRecordReducer(asking, { kind: ENTITY_EVENT.LEAVE_CONFIRMED }).leaving).toBeNull();
   });
 });
 

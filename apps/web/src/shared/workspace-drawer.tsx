@@ -10,7 +10,7 @@ import { NotificationsEntry } from '@/features/notifications/count/components/no
 import { ACCOUNT_SECTIONS } from './account-sections';
 import { useLocaleNames } from './use-locale-names';
 import { useWorkspaceItems } from './use-workspace-items';
-import type { WorkspaceSection } from './workspace-sections';
+import { currentSectionKey, type WorkspaceSection } from './workspace-sections';
 import styles from './workspace-drawer.module.css';
 
 /**
@@ -58,6 +58,7 @@ export function WorkspaceDrawer({ organization, sections }: WorkspaceDrawerProps
   const { formId, requestSignOut } = useSignOut();
   const { locale, locales } = useLocaleNames();
   const pathname = usePathname();
+  const current = currentSectionKey(sections, pathname);
   const searchParams = useSearchParams();
 
   // The query travels with a locale switch, exactly as it does in the account corner: UX-4 makes
@@ -76,7 +77,8 @@ export function WorkspaceDrawer({ organization, sections }: WorkspaceDrawerProps
         brand={<BrandMark />}
         linkComponent={Link}
         items={items}
-        isActive={(item) => item.href === pathname}
+        // The band's rule: the section the address lies within, so a record beneath one keeps it current.
+        isActive={(item) => item.key === current}
         organization={organization?.switcher}
         actions={
           <>

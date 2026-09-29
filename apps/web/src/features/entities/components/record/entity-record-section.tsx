@@ -72,7 +72,12 @@ export async function EntityRecordSection({ entityId }: { readonly entityId: str
 
   return (
     <div className={styles.screen}>
-      <EntityRecordForm entity={read.entity} activity={read.activity} legalForms={legalForms} />
+      <EntityRecordForm
+        entity={read.entity}
+        activity={read.activity}
+        suggestions={read.suggestions}
+        legalForms={legalForms}
+      />
     </div>
   );
 }

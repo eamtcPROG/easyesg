@@ -385,6 +385,9 @@ test('axe finds no violations on the entity record', async ({ page }) => {
 
   await page.goto('/entities/new');
   await page.getByRole('button', { name: 'Adăugați un amplasament' }).click();
+  // The subsidiaries are offered once the boundary is consolidated (28 Sep 2026), so the scan states it first.
+  await page.getByLabel('Baza de consolidare').click();
+  await page.getByRole('option', { name: /Consolidată/ }).click();
   await page.getByRole('button', { name: 'Adăugați o filială' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await scan(page);

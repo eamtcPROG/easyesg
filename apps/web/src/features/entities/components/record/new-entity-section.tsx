@@ -2,6 +2,7 @@ import type { CountryLegalForms, Organization } from '@easyesg/contracts';
 import { getMessages } from 'next-intl/server';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '@/server/api/api-client';
+import { readActivitySuggestions } from '@/server/data/entities';
 import { isPermissionRefusal } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { legalFormOptions } from '../../tools/legal-forms';
@@ -14,12 +15,14 @@ import styles from '../styles/entities.module.css';
  * **It reads the organization to know which legal forms to offer**, because that vocabulary is scoped by the
  * organization's country (§7.2) — the same country the API admits activity codes against. A failure leaves the select
  * empty rather than failing the screen: an entity is worth creating with a name alone, and every other field on this
- * record is optional by FR-17.
+ * record is optional by FR-17. **And the activity picker's suggestions**, read beside it, so the list is there on the
+ * field's first focus (`readActivitySuggestions`).
  */
 export async function NewEntitySection() {
-  const [organization, vocabulary, messages] = await Promise.all([
+  const [organization, vocabulary, suggestions, messages] = await Promise.all([
     api.get<Organization>('/organization'),
     api.getList<CountryLegalForms>('/organizations/legal-forms'),
+    readActivitySuggestions(),
     getMessages(),
   ]);
 
@@ -34,7 +37,7 @@ export async function NewEntitySection() {
 
   return (
     <div className={styles.screen}>
-      <EntityRecordForm entity={null} activity={[]} legalForms={legalForms} />
+      <EntityRecordForm entity={null} activity={[]} suggestions={suggestions} legalForms={legalForms} />
     </div>
   );
 }

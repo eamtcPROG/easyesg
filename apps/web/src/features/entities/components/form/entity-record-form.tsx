@@ -1,9 +1,9 @@
 'use client';
 
-import { Callout, CALLOUT_INTENT, ConsequenceDialogue, RecordShell } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, ConsequenceDialogue, RecordCard } from '@easyesg/ui';
 import { FormSummary } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
-import { useReducer, useTransition } from 'react';
+import { useMemo, useReducer, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import type { NaceCodeMatch, ReportingEntity } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
@@ -21,11 +21,14 @@ import {
   initialEntityRecordState,
   visibleNotice,
 } from '../../tools/entity-record-state';
-import { BoundarySection } from '../sections/boundary-section';
-import { IdentitySection } from '../sections/identity-section';
-import { SitesSection } from '../sections/sites-section';
+import { BoundarySection } from '../sections/boundary/boundary-section';
+import { IdentitySection } from '../sections/identity/identity-section';
+import { SitesSection } from '../sections/sites/sites-section';
 import { ENTITY_RECORD_MESSAGES } from '../shared/entity-messages';
+import { EntityArchivePanel } from './entity-archive-panel';
+import { EntityBreadcrumb } from './entity-breadcrumb';
 import { EntityControls } from './entity-controls';
+import { GuardedLink, LeaveGuardContext, type LeaveGuard } from './leave-guard';
 
 /**
  * S-13's Record — UC-52, UC-53, UC-54 and UC-55 on one screen (FR-17 … FR-20).
@@ -39,6 +42,11 @@ import { EntityControls } from './entity-controls';
  * does not. A change here rewrites what other people see inside an open report, so it waits for an
  * explicit act and says what the act will cause."* So `sections/` is grouping, not scope, and
  * `EntityControls` is the only thing that submits.
+ *
+ * **The card form of the Record** (28 Sep 2026, project owner): `RecordCard`'s one surface with the sections inside
+ * and the commit at its foot, the archive in the side column, and an arrow before the title back to the index. The
+ * arrow and the breadcrumb are one guarded link (`leave-guard.tsx`), and **this file answers the guard**, because it
+ * is what knows whether anything is unsaved — the question it opens is the reducer's `leaving`.
  *
  * **State is one reducer, not four `useState`s** — `tools/entity-record-state.ts` carries the
  * argument and the transitions are a unit spec. What is rendered is derived from that state: a
@@ -56,11 +64,13 @@ export interface EntityRecordFormProps {
   readonly entity: ReportingEntity | null;
   /** The words for the codes it already holds. Empty in create mode. */
   readonly activity: readonly NaceCodeMatch[];
+  /** What the activity picker offers before anything is typed. */
+  readonly suggestions: readonly NaceCodeMatch[];
   /** Legal forms for the organization's country, already labelled by the page. */
   readonly legalForms: readonly { readonly value: string; readonly label: string }[];
 }
 
-export function EntityRecordForm({ entity, activity, legalForms }: EntityRecordFormProps) {
+export function EntityRecordForm({ entity, activity, suggestions, legalForms }: EntityRecordFormProps) {
   const t = useTranslations(ENTITY_RECORD_MESSAGES);
   const tForms = useTranslations('forms');
   const tCommon = useTranslations('identity');
@@ -70,6 +80,8 @@ export function EntityRecordForm({ entity, activity, legalForms }: EntityRecordF
   const [state, dispatch] = useReducer(entityRecordReducer, activity, initialEntityRecordState);
 
   const archived = entity?.status === ENTITY_STANDING.ARCHIVED;
+  // What the record is called, in its heading and at the end of the way back alike.
+  const title = entity ? entity.name : t('createTitle');
 
   const { control, handleSubmit, reset, formState } = useForm<EntityFields>({
     mode: 'onTouched',
@@ -78,6 +90,19 @@ export function EntityRecordForm({ entity, activity, legalForms }: EntityRecordF
 
   // The activity list lives outside the form, so `isDirty` cannot see it — OR'd in from the state.
   const dirty = formState.isDirty || codesChanged(state);
+
+  // Rebuilt only when `dirty` moves, so the two links reading it do not re-render on every keystroke; `dispatch` is
+  // stable by React's guarantee.
+  const guard = useMemo<LeaveGuard>(
+    () => ({
+      holds: (href) => {
+        if (!dirty) return false;
+        dispatch({ kind: ENTITY_EVENT.LEAVE_REQUESTED, href });
+        return true;
+      },
+    }),
+    [dirty],
+  );
 
   // The two failure arms differ only in which fallback copy applies: nothing reached the server, so
   // the screen owns the whole sentence including the "what now"; or the server answered, and its
@@ -140,66 +165,96 @@ export function EntityRecordForm({ entity, activity, legalForms }: EntityRecordF
   };
 
   return (
-    <form method="post" onSubmit={(event) => void submit(event)} noValidate>
-      <RecordShell
-        title={entity ? entity.name : t('createTitle')}
-        summary={entity ? t('lede') : t('createLede')}
-        actions={
-          archived ? null : (
-            <EntityControls
-              entity={entity}
-              dirty={dirty}
-              busy={pending}
-              onDiscardAction={() => {
-                dispatch({ kind: ENTITY_EVENT.DISCARDED });
-                reset(toFields(entity));
-              }}
-              onArchiveRequestedAction={() => dispatch({ kind: ENTITY_EVENT.ARCHIVE_REQUESTED })}
-            />
-          )
-        }
-      >
-        <FormSummary control={control} title={tForms('summaryTitle')} />
+    <LeaveGuardContext.Provider value={guard}>
+      <form method="post" onSubmit={(event) => void submit(event)} noValidate>
+        <RecordCard
+          breadcrumb={<EntityBreadcrumb current={title} />}
+          back={{ href: ROUTES.ENTITIES, label: t('back') }}
+          linkComponent={GuardedLink}
+          title={title}
+          summary={entity ? t('lede') : t('createLede')}
+          actions={
+            archived ? null : (
+              <EntityControls
+                entity={entity}
+                dirty={dirty}
+                busy={pending}
+                onDiscardAction={() => {
+                  dispatch({ kind: ENTITY_EVENT.DISCARDED });
+                  reset(toFields(entity));
+                }}
+              />
+            )
+          }
+          aside={
+            entity && !archived ? (
+              <EntityArchivePanel
+                onArchiveRequestedAction={() => dispatch({ kind: ENTITY_EVENT.ARCHIVE_REQUESTED })}
+              />
+            ) : null
+          }
+        >
+          <FormSummary control={control} title={tForms('summaryTitle')} />
 
-        {/* UX-13: a read-only state names which of the three causes applies. Here it is FR-20's
-            archive, and nothing restores editing — saying so is more honest than implying a
-            reversal the product does not offer. */}
-        {archived ? (
-          <Callout intent={CALLOUT_INTENT.INFO} title={t('archived.title')} action={null}>
-            {t('archived.body')}
-          </Callout>
+          {/* UX-13: a read-only state names which of the three causes applies. Here it is FR-20's
+              archive, and nothing restores editing — saying so is more honest than implying a
+              reversal the product does not offer. */}
+          {archived ? (
+            <Callout intent={CALLOUT_INTENT.INFO} title={t('archived.title')} action={null}>
+              {t('archived.body')}
+            </Callout>
+          ) : null}
+
+          <RecordNotice notice={visibleNotice(state, dirty)} />
+
+          <IdentitySection
+            control={control}
+            legalForms={legalForms}
+            archived={archived}
+            codes={state.codes}
+            suggestions={suggestions}
+            onCodesChangeAction={(codes) => dispatch({ kind: ENTITY_EVENT.CODES_CHANGED, codes })}
+          />
+          <BoundarySection control={control} archived={archived} />
+          <SitesSection control={control} archived={archived} />
+        </RecordCard>
+
+        {/* §6.14 and UX-70: the consequence names the object and what stops, and UX-69's reassurance
+            names what survives. FR-20 makes that reassurance the whole point — filed reports stay
+            downloadable exactly as distributed. */}
+        {entity ? (
+          <ConsequenceDialogue
+            open={state.confirmingArchive}
+            object={entity.name}
+            title={t('archive.title')}
+            consequence={t('archive.consequence')}
+            retained={t('archive.retained')}
+            confirmLabel={t('archive.confirm')}
+            cancelLabel={t('archive.cancel')}
+            busy={pending}
+            onConfirm={archive}
+            onCancel={() => dispatch({ kind: ENTITY_EVENT.ARCHIVE_DISMISSED })}
+          />
         ) : null}
 
-        <RecordNotice notice={visibleNotice(state, dirty)} />
-
-        <IdentitySection
-          control={control}
-          legalForms={legalForms}
-          archived={archived}
-          codes={state.codes}
-          onCodesChangeAction={(codes) => dispatch({ kind: ENTITY_EVENT.CODES_CHANGED, codes })}
-        />
-        <BoundarySection control={control} archived={archived} />
-        <SitesSection control={control} archived={archived} />
-      </RecordShell>
-
-      {/* §6.14 and UX-70: the consequence names the object and what stops, and UX-69's reassurance
-          names what survives. FR-20 makes that reassurance the whole point — filed reports stay
-          downloadable exactly as distributed. */}
-      {entity ? (
+        {/* Leaving with changes unsaved: the object is the record by name, and what survives is what was stored — of
+            which an unsaved entity has nothing, so its dialogue says only what is lost. */}
         <ConsequenceDialogue
-          open={state.confirmingArchive}
-          object={entity.name}
-          title={t('archive.title')}
-          consequence={t('archive.consequence')}
-          retained={t('archive.retained')}
-          confirmLabel={t('archive.confirm')}
-          cancelLabel={t('archive.cancel')}
-          busy={pending}
-          onConfirm={archive}
-          onCancel={() => dispatch({ kind: ENTITY_EVENT.ARCHIVE_DISMISSED })}
+          open={state.leaving !== null}
+          object={entity ? entity.name : t('leave.newObject')}
+          title={t('leave.title')}
+          consequence={t('leave.consequence')}
+          retained={entity ? t('leave.retained') : undefined}
+          confirmLabel={t('leave.confirm')}
+          cancelLabel={t('leave.cancel')}
+          onConfirm={() => {
+            if (state.leaving === null) return;
+            router.push(state.leaving);
+            dispatch({ kind: ENTITY_EVENT.LEAVE_CONFIRMED });
+          }}
+          onCancel={() => dispatch({ kind: ENTITY_EVENT.LEAVE_DISMISSED })}
         />
-      ) : null}
-    </form>
+      </form>
+    </LeaveGuardContext.Provider>
   );
 }

@@ -89,3 +89,143 @@
   color: var(--text-muted);
   margin: 0;
 }
+
+/*
+ * ── The card form, `RecordCard` (28 Sep 2026) ────────────────────────────────────────────────────
+ *
+ * In this stylesheet rather than its own because it draws `RecordSection` — one section, two frames —
+ * and a section's classes are this module's. Inside the card a section loses its box and is ruled off
+ * from the one above it: the artboard draws one surface with its groups inside, not a box per group.
+ */
+
+/* A container, so the side column is placed by the room the card has rather than by the viewport: no breakpoint wider
+   than `wide` has a value (OQ-13), and beside a column the surface's width is what matters. No width cap — the
+   workspace column is fluid, and at 1440 the surface lands on the artboard's own 1000px. */
+.card {
+  container: record-card / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* The way back stands midway in the page's top inset — half of `--page-block` above it and half
+   below — where it would otherwise have the whole inset above and a hairline beneath. `--page-block`
+   is the inset every workspace screen sits at, which is the one assumption this makes about its page. */
+.trail {
+  margin-block: calc(var(--page-block) / -2) calc(var(--page-block) / 2 - var(--space-6));
+}
+
+/* The arrow centred on the title and its summary together (29 Sep 2026, project owner: *"align in center for
+   symmetry"*), so it has as much of the block above it as below. */
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
+/* The secondary button's surface and edge. */
+.back {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 36px;
+  block-size: 36px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  color: var(--text-default);
+}
+
+.back:hover {
+  background: var(--surface-sunken);
+}
+
+.backIcon {
+  inline-size: 18px;
+  block-size: 18px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* The side column beside the surface once the surface keeps 40rem beside its 22rem — 64rem of card — and beneath it
+   otherwise, so a narrow window never squeezes the form to make room for the column. */
+@container record-card (min-width: 64rem) {
+  .layoutWithAside {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+  }
+}
+
+.surface {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+  box-shadow: var(--elevation-1);
+}
+
+.surfaceBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-5);
+}
+
+@media (min-width: 40rem) {
+  .surfaceBody {
+    padding: var(--space-7);
+  }
+}
+
+.surfaceBody > .section {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  padding: 0;
+}
+
+.surfaceBody > .section + .section {
+  border-block-start: 1px solid var(--border-default);
+  padding-block-start: var(--space-6);
+}
+
+/* The surface's foot: the record's commit, at the end, as the artboard draws it. */
+.surfaceActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-block-start: 1px solid var(--border-default);
+}
+
+@media (min-width: 40rem) {
+  .surfaceActions {
+    padding: var(--space-5) var(--space-7);
+  }
+}
+
+.aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}

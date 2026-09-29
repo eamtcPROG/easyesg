@@ -10,6 +10,11 @@ import type { ConsolidationBasis } from './entities';
  * omits is removed. So the form holds both lists and sends what it holds — a per-row write would
  * have to invent an ordering between "add" and "remove" that the endpoint does not have.
  *
+ * **A row the store holds is marked `removed` rather than dropped** (project owner, 28 Sep 2026): the reader sees it
+ * collapse to a line they can undo, and it leaves the store only with the save. So the flag is form state — a discard
+ * restores it and `isDirty` sees it — and `toRequest` is where a removed row stops existing. A row added since the last
+ * save has nothing to keep, and the form drops it outright.
+ *
  * **The consolidation basis is null until stated**, which VSME asks explicitly, so there is no
  * default answering it on the undertaking's behalf (FR-19): `''` in the form is the unstated case
  * and `null` is what it sends.
@@ -20,6 +25,7 @@ export interface SiteFields {
   addressLine1: string;
   locality: string;
   postalCode: string;
+  removed: boolean;
 }
 
 export interface MemberFields {
@@ -27,6 +33,7 @@ export interface MemberFields {
   name: string;
   idno: string;
   countryCode: string;
+  removed: boolean;
 }
 
 export interface EntityFields {
@@ -38,10 +45,13 @@ export interface EntityFields {
 }
 
 /** A row the reporter has just added — no id, and the store learns of it when the save does. */
-export const EMPTY_SITE: SiteFields = { name: '', addressLine1: '', locality: '', postalCode: '' };
-export const EMPTY_MEMBER: MemberFields = { name: '', idno: '', countryCode: '' };
+export const EMPTY_SITE: SiteFields = { name: '', addressLine1: '', locality: '', postalCode: '', removed: false };
+export const EMPTY_MEMBER: MemberFields = { name: '', idno: '', countryCode: '', removed: false };
 
 const orNull = (value: string): string | null => (value.trim() ? value.trim() : null);
+
+/** A row the reader has not removed — the only kind a save sends. */
+const kept = (row: { readonly removed: boolean }): boolean => !row.removed;
 
 export const toFields = (entity: ReportingEntity | null): EntityFields => ({
   name: entity?.name ?? '',
@@ -53,12 +63,14 @@ export const toFields = (entity: ReportingEntity | null): EntityFields => ({
     addressLine1: site.addressLine1 ?? '',
     locality: site.locality ?? '',
     postalCode: site.postalCode ?? '',
+    removed: false,
   })),
   consolidationMembers: (entity?.consolidationMembers ?? []).map((member) => ({
     id: member.id,
     name: member.name,
     idno: member.idno ?? '',
     countryCode: member.countryCode ?? '',
+    removed: false,
   })),
 });
 
@@ -78,14 +90,14 @@ export const toRequest = (
   naceCodes: codes.map((code) => code.code),
   consolidationBasis:
     fields.consolidationBasis === '' ? null : (fields.consolidationBasis as ConsolidationBasis),
-  sites: fields.sites.map((site) => ({
+  sites: fields.sites.filter(kept).map((site) => ({
     ...(site.id ? { id: site.id } : {}),
     name: site.name.trim(),
     addressLine1: orNull(site.addressLine1),
     locality: orNull(site.locality),
     postalCode: orNull(site.postalCode),
   })),
-  consolidationMembers: fields.consolidationMembers.map((member) => ({
+  consolidationMembers: fields.consolidationMembers.filter(kept).map((member) => ({
     ...(member.id ? { id: member.id } : {}),
     name: member.name.trim(),
     idno: orNull(member.idno),

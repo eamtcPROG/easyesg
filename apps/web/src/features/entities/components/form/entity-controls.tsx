@@ -7,51 +7,45 @@ import { ENTITY_RECORD_MESSAGES } from '../shared/entity-messages';
 import styles from '../styles/entities.module.css';
 
 /**
- * §5's Controls row for the record — save, discard, and for a stored record the archive (UC-52 …
- * UC-55).
+ * §5's Controls row for the record — the surface's foot bar, as the S-13 artboard draws it: whether anything is
+ * unsaved, then *discard* and *save* at the end (UC-52, UC-53; 28 Sep 2026). The archive moved to the side column,
+ * beside the sentence that says what it keeps (`entity-archive-panel.tsx`).
  *
  * **One save for three sections**: the artboard's own caption says the wizard autosaves and this
  * does not, because a change here rewrites what other people see inside an open report, so it
  * waits for an explicit act. `sections/` holds three groups of fields over **one** `control`, and
  * this is the only place that submits.
  *
- * It takes the record rather than a `creating` flag — the label and the archive control both
- * follow from whether one exists — and `dirty` and `busy` rather than `formState`, which keeps it
- * out of react-hook-form entirely; the two booleans are named fields, per the root file's rule.
+ * It takes the record rather than a `creating` flag — the label follows from whether one exists — and `dirty` and
+ * `busy` rather than `formState`, which keeps it out of react-hook-form entirely.
  */
 export function EntityControls({
   entity,
   dirty,
   busy,
   onDiscardAction,
-  onArchiveRequestedAction,
 }: {
   readonly entity: ReportingEntity | null;
   readonly dirty: boolean;
   readonly busy: boolean;
   readonly onDiscardAction: () => void;
-  readonly onArchiveRequestedAction: () => void;
 }) {
   const t = useTranslations(ENTITY_RECORD_MESSAGES);
 
   return (
-    <div className={styles.actions}>
-      <Button type="submit" busy={busy} disabled={!dirty}>
-        {entity ? t('save') : t('create')}
-      </Button>
+    <>
+      {dirty ? <span className={`t-caption ${styles.unsaved}`}>{t('unsaved')}</span> : null}
       <Button
         type="button"
-        variant={BUTTON_VARIANT.SUBTLE}
+        variant={BUTTON_VARIANT.SECONDARY}
         disabled={!dirty || busy}
         onClick={onDiscardAction}
       >
         {t('discard')}
       </Button>
-      {entity ? (
-        <Button type="button" variant={BUTTON_VARIANT.DESTRUCTIVE} onClick={onArchiveRequestedAction}>
-          {t('archive.action')}
-        </Button>
-      ) : null}
-    </div>
+      <Button type="submit" busy={busy} disabled={!dirty}>
+        {entity ? t('save') : t('create')}
+      </Button>
+    </>
   );
 }

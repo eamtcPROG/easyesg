@@ -1,4 +1,4 @@
-import { Button, Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { readEntityList } from '@/server/data/entities';
@@ -73,11 +73,6 @@ export async function EntitiesSection({
           <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
           <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
         </div>
-        {read.status === TENANT_READ.READY ? (
-          <Button asChild>
-            <Link href={ROUTES.ENTITY_NEW}>{t('add')}</Link>
-          </Button>
-        ) : null}
       </header>
       {body}
     </div>

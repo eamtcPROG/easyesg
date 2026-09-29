@@ -65,6 +65,9 @@
       "users": "Utilizatori și acces",
       "lockedNote": "(doar pentru administratorii organizației)"
     },
+    "breadcrumb": {
+      "label": "Firimituri"
+    },
     "index": {
       "sort": {
         "sortBy": "Sortați după {column}",
@@ -793,9 +796,11 @@
         "lede": "Datele de bază ale entității. Rapoartele deja depuse păstrează valorile din momentul pregătirii lor.",
         "createTitle": "Adăugați o entitate",
         "createLede": "Entitatea este compania pentru care se pregătește raportul. O puteți completa treptat.",
+        "back": "Înapoi la entitățile raportoare",
         "save": "Salvați modificările",
         "create": "Adăugați entitatea",
         "discard": "Renunțați",
+        "unsaved": "Modificări nesalvate",
         "saved": {
           "title": "Entitatea a fost salvată",
           "body": "Valorile noi se aplică rapoartelor pregătite de acum înainte. Rapoartele deja depuse păstrează valorile din momentul pregătirii."
@@ -840,10 +845,12 @@
           "memberNameRequired": "Scrieți denumirea filialei, altfel perimetrul nu poate fi salvat.",
           "memberIdno": "IDNO-ul filialei",
           "addMember": "Adăugați o filială",
-          "removeMember": "Ștergeți filiala"
+          "removeMember": "Ștergeți filiala {member}",
+          "membersNone": "Nicio filială inclusă în perimetru.",
+          "memberRemoved": "„{member}” va fi scoasă din perimetru când salvați modificările."
         },
         "sites": {
-          "heading": "Amplasamente",
+          "heading": "Amplasamente · {count}",
           "lede": "Locurile în care entitatea își desfășoară activitatea. Ele decid întrebările despre biodiversitate.",
           "site": "Amplasamentul {position}",
           "name": "Denumirea amplasamentului",
@@ -851,15 +858,30 @@
           "address": "Adresa",
           "locality": "Localitatea",
           "add": "Adăugați un amplasament",
-          "remove": "Ștergeți amplasamentul"
+          "remove": "Ștergeți amplasamentul {site}",
+          "none": "Niciun amplasament înregistrat.",
+          "removed": "„{site}” va fi șters când salvați modificările."
+        },
+        "rows": {
+          "remove": "Ștergeți",
+          "undo": "Anulați"
         },
         "archive": {
           "action": "Arhivați entitatea",
+          "panelTitle": "Se arhivează, nu se șterge",
           "title": "Arhivați această entitate?",
           "consequence": "Entitatea iese din selecția activă: nu mai puteți deschide perioade noi pentru ea și nu mai apare în liste. Datele ei de bază devin needitabile.",
           "retained": "Rapoartele deja depuse și exporturile lor rămân disponibile exact așa cum au fost distribuite. Nimic nu se șterge.",
           "confirm": "Arhivați entitatea",
           "cancel": "Renunțați"
+        },
+        "leave": {
+          "title": "Plecați fără să salvați?",
+          "newObject": "Entitatea nouă",
+          "consequence": "Modificările făcute pe această pagină nu sunt salvate și se vor pierde.",
+          "retained": "Ce este deja salvat rămâne neschimbat.",
+          "confirm": "Plecați fără să salvați",
+          "cancel": "Rămâneți pe pagină"
         },
         "loading": "Se încarcă entitatea…"
       },

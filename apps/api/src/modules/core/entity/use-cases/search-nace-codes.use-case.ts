@@ -13,7 +13,7 @@ export interface ResolveNaceCodesCommand {
 }
 
 export interface SearchNaceCodesCommand {
-  /** What the reader typed. Empty is a real input and answers nothing — see the class docblock. */
+  /** What the reader typed. Empty is a real input and answers the first classes — see the class docblock. */
   readonly query: string;
   /** The request's negotiated locale, resolved by the service as every ambient value is. */
   readonly locale: string;
@@ -36,6 +36,76 @@ const fold = (value: string): string =>
 
 /** Codes are matched on their digits alone, so `10.71`, `1071` and `10 71` are one query. */
 const bareCode = (value: string): string => value.replace(/[^0-9a-z]/giu, '').toLowerCase();
+
+/** A label or a query cut into its words — letters and digits in any script, everything else a gap. */
+const wordsOf = (folded: string): string[] => folded.split(/[^\p{L}\p{N}]+/u).filter((word) => word !== '');
+
+/**
+ * A **class**, the four-character code B1 exports (`10.71`) — as against a section (`C`), a division
+ * (`10`) or a group (`10.7`), which the classifier carries for its hierarchy and which the picker's
+ * suggestions leave out.
+ */
+const isClass = (code: string): boolean => /^\d{4}$/u.test(bareCode(code));
+
+/**
+ * How well an entry answers the query, best first — the order results are ranked in, and within one
+ * rank the classifier's own order holds. Declared as a vocabulary because the numbers are compared,
+ * and a literal `2` at the comparison would say nothing about what it outranks.
+ */
+const MATCH = {
+  /** The digits typed begin the entry's code. */
+  CODE: 0,
+  /** The label begins with what was typed. */
+  LABEL_START: 1,
+  /** Every word typed begins a word of the label, in any order. */
+  WORD_START: 2,
+  /** Every word typed, less an inflected ending, begins a word of the label. */
+  STEM: 3,
+  /** Every word typed appears somewhere inside the label. */
+  WITHIN: 4,
+} as const;
+
+type MatchRank = (typeof MATCH)[keyof typeof MATCH];
+
+/** What the reader typed, read once per search rather than once per entry. */
+interface Reading {
+  readonly folded: string;
+  readonly digits: string;
+  readonly words: readonly string[];
+  readonly stems: readonly string[];
+}
+
+/**
+ * **A word loses its last two letters as a stem once it is longer than four**, because Romanian and
+ * Russian inflect at the end: a reader types *pâine* and the classifier says *pâinii*, types *хлеб* and
+ * it says *хлеба*. Shorter words keep every letter, since cutting *pâin* to *pâ* would match half the
+ * classifier. A stem match ranks below a whole-word one, so an exact word still comes first.
+ */
+const STEM_FROM = 5;
+const STEM_CUT = 2;
+const stemOf = (word: string): string => (word.length >= STEM_FROM ? word.slice(0, -STEM_CUT) : word);
+
+const readQuery = (query: string): Reading => {
+  const folded = fold(query).replace(/\s+/gu, ' ');
+  const words = wordsOf(folded);
+  return { folded, digits: bareCode(query), words, stems: words.map(stemOf) };
+};
+
+/** The entry's rank for this query, or null where it does not answer it. */
+const rankOf = (reading: Reading, entry: { readonly code: string; readonly label: string }): MatchRank | null => {
+  if (reading.digits !== '' && bareCode(entry.code).startsWith(reading.digits)) return MATCH.CODE;
+  if (reading.words.length === 0) return null;
+
+  const label = fold(entry.label);
+  if (label.startsWith(reading.folded)) return MATCH.LABEL_START;
+
+  const labelWords = wordsOf(label);
+  const beginsAWord = (start: string): boolean => labelWords.some((word) => word.startsWith(start));
+  if (reading.words.every(beginsAWord)) return MATCH.WORD_START;
+  if (reading.stems.every(beginsAWord)) return MATCH.STEM;
+  if (reading.words.every((word) => label.includes(word))) return MATCH.WITHIN;
+  return null;
+};
 
 /**
  * S-13's activity vocabulary (FR-17, tasks 30.4.1 and 30.4.2) — the classifier **searched** for a
@@ -66,11 +136,16 @@ const bareCode = (value: string): string => value.replace(/[^0-9a-z]/giu, '').to
  * would answer three rows where one was asked for. It also answers in the caller's order rather
  * than the classifier's, because the caller is rendering a record's own list.
  *
- * **An empty query answers an empty list, deliberately.** The alternatives were both worse: the
- * first `n` codes in order is an arbitrary slice of agriculture, and the 21 sections — which reads
- * like a navigational starting point — would invite storing a **section** where B1 exports a
- * four-character code, so the picker's most convenient answer would be the one that leaves FR-17
- * unsatisfied. The control prompts instead.
+ * **An empty query answers the classifier's first classes** (project owner, 28 Sep 2026: the picker
+ * shows ten on first focus, so a reader sees what it holds before typing). It answered nothing until
+ * then, and the reason recorded for that still decides *which* entries: the first `n` in code order
+ * are a division, a group and then classes, and the 21 sections would read like a starting point —
+ * both invite storing a code B1 does not export. So the answer is **classes only**, the
+ * four-character codes, in code order; everything above them stays reachable by search.
+ *
+ * **A typed query ranks rather than filters in classifier order** (same decision). The words may come
+ * in any order, an inflected ending does not stop a match, and what answers best comes first — see
+ * `MATCH`. Within one rank the classifier's order holds, so the hierarchy still reads top-down.
  */
 export class NaceCodeLookup {
   constructor(
@@ -101,34 +176,35 @@ export class NaceCodeLookup {
   }
 
   async search(command: SearchNaceCodesCommand): Promise<NaceCodeMatch[]> {
-    const query = command.query.trim();
-    if (query === '') return [];
-
     const classifier = await this.classifier();
     if (!classifier) return [];
 
     const limit = Math.min(Math.max(command.limit, 1), NACE_SEARCH_MAX_LIMIT);
-    const folded = fold(query);
-    const digits = bareCode(query);
+    const query = command.query.trim();
 
-    // Two passes rather than one sort, and the order is the point: somebody who typed a code wants
-    // that code first, and somebody who typed a word wants the shortest useful list. A single pass
-    // scored by "does it look like a code" guesses at intent; two passes read the input twice and
-    // guess at nothing. The classifier is already in code order (the adapter sorts once), so each
-    // pass preserves the hierarchy.
-    const byCode: NaceCodeMatch[] = [];
-    const byLabel: NaceCodeMatch[] = [];
-
-    for (const entry of classifier) {
-      const label = this.label(entry, command.locale);
-      if (digits !== '' && bareCode(entry.code).startsWith(digits)) {
-        byCode.push({ code: entry.code, label });
-        continue;
-      }
-      if (fold(label).includes(folded)) byLabel.push({ code: entry.code, label });
+    if (query === '') {
+      return classifier
+        .filter((entry) => isClass(entry.code))
+        .slice(0, limit)
+        .map((entry) => ({ code: entry.code, label: this.label(entry, command.locale) }));
     }
 
-    return [...byCode, ...byLabel].slice(0, limit);
+    // Somebody who typed a code wants that code first, and somebody who typed words wants the entry
+    // that says them best — so the rank reads the input rather than guessing whether it "looks like a
+    // code". The classifier is already in code order (the adapter sorts once), and `sort` is stable,
+    // so each rank keeps the hierarchy.
+    const reading = readQuery(query);
+    const ranked: { readonly match: NaceCodeMatch; readonly rank: MatchRank }[] = [];
+    for (const entry of classifier) {
+      const match = { code: entry.code, label: this.label(entry, command.locale) };
+      const rank = rankOf(reading, match);
+      if (rank !== null) ranked.push({ match, rank });
+    }
+
+    return ranked
+      .sort((a, b) => a.rank - b.rank)
+      .slice(0, limit)
+      .map(({ match }) => match);
   }
 
   /**

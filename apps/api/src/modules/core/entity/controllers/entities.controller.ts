@@ -87,11 +87,18 @@ export class EntitiesController {
       'redeploy. **This searches server-side and answers a bounded page**: the classifier is 996 ' +
       'entries across three languages, and shipping it to a browser to filter there is a payload ' +
       'no screen budget admits. The query matches a code by its digits — 10.71, 1071 and 10 71 ' +
-      'are one query — and a label without regard to case or diacritics, because a reader types ' +
-      'brutarie for brutărie. An empty query answers an empty list rather than an arbitrary slice ' +
-      'of the classifier. Labels arrive in the request’s negotiated language.',
+      'are one query — and a label by its words, in any order, without regard to case, diacritics ' +
+      'or an inflected ending, because a reader types paine for pâinii. Results are ranked: a code ' +
+      'match, then a label beginning with the query, then every word beginning a word of the label, ' +
+      'then its stem doing so, then every word appearing inside it — each rank in classifier order. ' +
+      'An empty query answers the classifier’s first classes, the four-character codes B1 exports, ' +
+      'in code order. Labels arrive in the request’s negotiated language.',
   })
-  @ApiQuery({ name: 'q', required: false, description: 'What the reader typed. Empty answers nothing.' })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    description: 'What the reader typed. Empty answers the first classes, in code order.',
+  })
   @ApiQuery({
     name: 'codes',
     required: false,
@@ -108,7 +115,7 @@ export class EntitiesController {
   })
   @ApiListResponse(NaceCodeResponseDto, {
     status: 200,
-    description: 'Matching codes, code matches before label matches, each in classifier order.',
+    description: 'Matching codes, best match first, each rank in classifier order.',
   })
   async searchNaceCodes(
     @Query('q') query = '',

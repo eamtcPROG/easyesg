@@ -50,10 +50,17 @@ describe('toFields', () => {
     );
     expect(fields.consolidationBasis).toBe(CONSOLIDATION_BASIS.CONSOLIDATED);
     expect(fields.sites).toEqual([
-      { id: 's1', name: 'Sediu', addressLine1: 'Str. Ștefan cel Mare 1', locality: '', postalCode: '' },
+      {
+        id: 's1',
+        name: 'Sediu',
+        addressLine1: 'Str. Ștefan cel Mare 1',
+        locality: '',
+        postalCode: '',
+        removed: false,
+      },
     ]);
     expect(fields.consolidationMembers).toEqual([
-      { id: 'm1', name: 'Filiala', idno: '', countryCode: 'MD' },
+      { id: 'm1', name: 'Filiala', idno: '', countryCode: 'MD', removed: false },
     ]);
   });
 });
@@ -80,6 +87,29 @@ describe('toRequest', () => {
       sites: [{ name: 'Sediu', addressLine1: null, locality: null, postalCode: null }],
       consolidationMembers: [{ id: 'm1', name: 'Filiala', idno: null, countryCode: null }],
     });
+  });
+
+  it('leaves a removed row out, so the whole-collection save deletes it', () => {
+    // 28 Sep 2026: removing a stored row marks it, and the store forgets it only on the save — the API's semantics
+    // make an omitted stored row a removed one.
+    const request = toRequest(
+      {
+        name: 'B',
+        legalForm: '',
+        consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED,
+        sites: [
+          { ...EMPTY_SITE, id: 's1', name: 'Depozit', removed: true },
+          { ...EMPTY_SITE, id: 's2', name: 'Sediu' },
+        ],
+        consolidationMembers: [
+          { ...EMPTY_MEMBER, id: 'm1', name: 'Filiala veche', removed: true },
+          { ...EMPTY_MEMBER, id: 'm2', name: 'Filiala nouă' },
+        ],
+      },
+      [],
+    );
+    expect(request.sites?.map((site) => site.id)).toEqual(['s2']);
+    expect(request.consolidationMembers?.map((member) => member.id)).toEqual(['m2']);
   });
 
   it('sends a stated basis as itself', () => {

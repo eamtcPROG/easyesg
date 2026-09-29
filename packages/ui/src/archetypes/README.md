@@ -7,7 +7,7 @@ none is an escalation to design review, not a licence to invent.
 | --- | --- | --- |
 | `Focus` | One task, no navigation | S-01, S-02, S-03, S-04, S-20, S-25 |
 | `Index` | Find one among many | S-06, S-11, S-13, S-16, S-21, S-22, S-26 |
-| `Record` | View and edit one object's attributes | S-13, S-14, S-15, S-23, S-27, S-28 |
+| `Record` | View and edit one object's attributes | S-13, S-14, S-15, S-23, S-27, S-28 — `RecordShell`, and since 29 Sep 2026 its card form `RecordCard` for S-13 |
 | `Wizard` | Ordered progression with completion state | S-07, S-09, S-19 |
 | `Panel` | Auxiliary context beside a primary task | S-08, S-11, S-12 |
 | `Document` | Faithful preview of a rendered artefact | S-10 |

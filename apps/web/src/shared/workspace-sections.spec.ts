@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { workspaceSectionsFor } from './workspace-sections';
+import { currentSectionKey, workspaceSectionsFor } from './workspace-sections';
 
 /**
  * Which sections a reader's tier draws locked (task 173).
@@ -28,5 +28,29 @@ describe('workspaceSectionsFor', () => {
 
     expect(workspaceSectionsFor(false).map((section) => section.key)).toEqual(order);
     expect(workspaceSectionsFor(true).map((section) => section.key)).toEqual(order);
+  });
+});
+
+describe('currentSectionKey', () => {
+  const sections = workspaceSectionsFor(true);
+
+  it('answers the section itself', () => {
+    expect(currentSectionKey(sections, '/entities')).toBe('entities');
+  });
+
+  it('keeps a section current on the addresses beneath it', () => {
+    // 28 Sep 2026: the create form and a record are still *Entities*, and so are an entity's periods.
+    expect(currentSectionKey(sections, '/entities/new')).toBe('entities');
+    expect(currentSectionKey(sections, '/entities/0190c7a2-7e5d-7000-8000-000000000001/periods')).toBe('entities');
+  });
+
+  it('answers the deepest section where one lies beneath another', () => {
+    expect(currentSectionKey(sections, '/organization/users')).toBe('users');
+    expect(currentSectionKey(sections, '/organization')).toBe('organization');
+  });
+
+  it('matches whole segments, and answers nothing outside the tier', () => {
+    expect(currentSectionKey(sections, '/entitiesx')).toBeNull();
+    expect(currentSectionKey(sections, '/account/credentials')).toBeNull();
   });
 });

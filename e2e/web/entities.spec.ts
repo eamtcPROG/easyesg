@@ -87,6 +87,65 @@ test('the first-use empty state teaches, and creating from it lands on the recor
   await expect(page.getByText('Fabricarea produselor de brutărie')).toBeVisible();
 });
 
+test('the create form keeps its section and its way back, and the picker offers classes before any typing', async ({
+  page,
+}) => {
+  await signedIn(page, 'wayback');
+  await page.goto('/entities');
+
+  // 28 Sep 2026: the add action stands in the filter row, and the section stays current beneath the index.
+  await page.getByRole('link', { name: 'Adăugați o entitate' }).click();
+  await page.waitForURL('**/entities/new');
+  const tier = page.getByRole('navigation', { name: 'Secțiunile organizației' });
+  await expect(tier.getByRole('link', { name: 'Entități' })).toHaveAttribute('aria-current', 'page');
+  await expect(tier.locator('[aria-current="page"]')).toHaveCount(1);
+
+  // The classifier's first classes, read with the page — the api answers an empty query with them since that date.
+  await page.getByLabel(/Activitățile entității/).focus();
+  await expect(page.getByRole('option')).toHaveCount(10);
+  await expect(page.getByRole('option').first()).toContainText('01.11');
+
+  await page.getByRole('navigation', { name: 'Firimituri' }).getByRole('link', { name: 'Entități raportoare' }).click();
+  await page.waitForURL(/\/entities$/);
+});
+
+test('the arrow and the breadcrumb ask before leaving unsaved changes, and not otherwise', async ({ page }) => {
+  // 28 Sep 2026, project owner: a go-back arrow before the title, and a question before the record's ways back lose work.
+  await signedIn(page, 'leave');
+  await page.goto('/entities/new');
+  await page.getByRole('link', { name: 'Înapoi la entitățile raportoare' }).click();
+  await page.waitForURL(/\/entities$/);
+
+  await page.goto('/entities/new');
+  await page.getByLabel('Denumirea entității').fill(`${RUN_PREFIX} Ciornă`);
+  await page.getByRole('link', { name: 'Înapoi la entitățile raportoare' }).click();
+  const question = page.getByRole('alertdialog');
+  await expect(question).toContainText('Plecați fără să salvați?');
+  await question.getByRole('button', { name: 'Rămâneți pe pagină' }).click();
+  await expect(page).toHaveURL(/\/entities\/new$/);
+  await expect(page.getByLabel('Denumirea entității')).toHaveValue(`${RUN_PREFIX} Ciornă`);
+
+  await page.getByRole('navigation', { name: 'Firimituri' }).getByRole('link', { name: 'Entități raportoare' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Plecați fără să salvați' }).click();
+  await page.waitForURL(/\/entities$/);
+  await expect(page.getByText(`${RUN_PREFIX} Ciornă`)).toHaveCount(0);
+});
+
+test('one press removes a site nobody has named yet', async ({ page }) => {
+  // 29 Sep 2026, project owner: the press that took focus off the blank name showed its "required" message, the row
+  // grew, and the removal moved out from under the pointer before the click completed — so it took two presses. Only a
+  // real layout can show that, which is why this is a browser case.
+  await signedIn(page, 'blankremove');
+  await page.goto('/entities/new');
+  await page.getByRole('button', { name: 'Adăugați un amplasament' }).click();
+  await expect(page.getByLabel('Denumirea amplasamentului')).toBeFocused();
+
+  await page.getByRole('button', { name: 'Ștergeți amplasamentul Amplasamentul 1' }).click();
+
+  await expect(page.getByLabel('Denumirea amplasamentului')).toHaveCount(0);
+  await expect(page.getByText('Scrieți denumirea amplasamentului')).toHaveCount(0);
+});
+
 test('sites and the reporting boundary are whole-collection saves (FR-19, UC-54)', async ({
   page,
 }) => {

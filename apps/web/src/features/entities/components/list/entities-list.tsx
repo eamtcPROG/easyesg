@@ -5,7 +5,6 @@ import {
   BUTTON_VARIANT,
   COLUMN_ALIGN,
   EmptyState,
-  Select,
   StatusChip,
   STATUS_TONE,
   TextLink,
@@ -20,7 +19,6 @@ import {
   ENTITY_FILTER_ANY,
   ENTITY_SORT,
   ENTITY_STANDING,
-  ENTITY_STANDING_FILTERS,
   entityViewQuery,
   type EntityPage,
   type EntityRow,
@@ -30,6 +28,7 @@ import {
 } from '../../tools/entities';
 import { ENTITIES_MESSAGES } from '../shared/entity-messages';
 import styles from '../styles/entities.module.css';
+import { EntitiesToolbar } from './entities-toolbar';
 
 /**
  * S-13's list, as an instance of the Index archetype (§4.6).
@@ -37,7 +36,7 @@ import styles from '../styles/entities.module.css';
  * Everything that is not about *this* screen is `IndexShell` and the app's `IndexView` binding —
  * the empty-state choice and its rule, the table-and-pager composition, and the seven chrome
  * strings every Index needs. What is left is what only S-13 knows: its columns, its caption, its
- * filter, and two empty states that teach something specific.
+ * filter row (`EntitiesToolbar`), and two empty states that teach something specific.
  *
  * **No context provider, unlike S-16.** That screen's rows act — a role change, a removal, a resend
  * — so its state is several values moving on named events and belongs in a reducer. Here a row
@@ -142,19 +141,10 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
 
   return (
     <>
-      <div className={styles.filters}>
-        <Select
-          label={t('filter.standing')}
-          value={view.standing}
-          onValueChange={(next) =>
-            setView({ standing: next as EntityView['standing'] })
-          }
-          options={ENTITY_STANDING_FILTERS.map((option) => ({
-            value: option,
-            label: t(`filter.options.${option}`),
-          }))}
-        />
-      </div>
+      <EntitiesToolbar
+        standing={view.standing}
+        onStandingChangeAction={(standing) => setView({ standing })}
+      />
 
       <IndexView<EntityRow, EntityColumnKey>
         page={page}

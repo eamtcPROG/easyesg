@@ -4,7 +4,7 @@ import { WorkspaceNav } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
 import { useWorkspaceItems } from './use-workspace-items';
-import type { WorkspaceSection } from './workspace-sections';
+import { currentSectionKey, type WorkspaceSection } from './workspace-sections';
 
 /**
  * §4.2's **workspace** tier, wired (task 26.4).
@@ -41,6 +41,7 @@ export function WorkspaceNavigation({ sections }: { readonly sections: readonly 
   const pathname = usePathname();
   // The labels, and each locked section's spoken note, resolved once for the band and the drawer alike.
   const items = useWorkspaceItems(sections);
+  const current = currentSectionKey(sections, pathname);
 
   return (
     <WorkspaceNav
@@ -49,10 +50,9 @@ export function WorkspaceNavigation({ sections }: { readonly sections: readonly 
       // would drop the prefix. The component builds the anchor and owns `aria-current` with it.
       linkComponent={Link}
       items={items}
-      // Exact comparison, because every section in this tier is a leaf address. A nav whose
-      // sections had children would pass a prefix match instead, which is why the component takes
-      // the predicate rather than an active key.
-      isActive={(item) => item.href === pathname}
+      // The section the address lies within, not an exact match: `/entities/new` and an entity's record are
+      // still *Entities* (`currentSectionKey` says why the longest wins).
+      isActive={(item) => item.key === current}
     />
   );
 }

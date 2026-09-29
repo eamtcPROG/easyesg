@@ -68,6 +68,12 @@ export {
   type RecordSectionProps,
   type RecordShellProps,
 } from './archetypes/record-shell';
+// 28 Sep 2026: the Record's card form — the S-13 record artboard's one surface, foot bar and side column.
+export {
+  RecordCard,
+  type RecordCardBack,
+  type RecordCardProps,
+} from './archetypes/record-card';
 export {
   WizardModuleItem,
   WizardShell,
@@ -127,6 +133,8 @@ export { ChromeDrawer, type ChromeDrawerProps } from './navigation/chrome-drawer
 // Task 173: a section the reader's role may not open — the band, the drawer and `apps/web`'s account rail draw it.
 export { LockedNavEntry, type LockedNavEntryProps } from './navigation/locked-nav-entry';
 export { NotificationBell, type NotificationBellProps } from './navigation/notification-bell';
+// 28 Sep 2026: the way back from a record to the section it lies beneath — S-13's record first.
+export { Breadcrumb, type BreadcrumbProps, type BreadcrumbStep } from './navigation/breadcrumb';
 // Task 67.1: the console's side navigation, and the Global bar's tone that draws the console's band.
 export {
   ConsoleNav,

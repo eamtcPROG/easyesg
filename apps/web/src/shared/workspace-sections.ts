@@ -70,3 +70,28 @@ export const workspaceSectionsFor = (administers: boolean): readonly WorkspaceSe
     href,
     locked: administration && !administers,
   }));
+
+/** The address is the section's, or lies beneath it — by whole segments, so `/entitiesx` is not `/entities`. */
+const liesWithin = (pathname: string, href: string): boolean =>
+  pathname === href || pathname.startsWith(`${href}/`);
+
+/**
+ * The section an address belongs to, or null outside the tier (project owner, 28 Sep 2026).
+ *
+ * **The longest section address the path lies within**, not an exact match: a section's records and forms are
+ * addresses beneath it — `/entities/new`, an entity, its periods — and the reader on them is still in *Entities*.
+ * The longest wins because one section lies beneath another: `/organization/users` is *Users & access*, not
+ * *Organization*. A locked section can be the answer; drawing it as never current is the renderer's rule.
+ */
+export const currentSectionKey = (
+  sections: readonly Pick<WorkspaceSection, 'key' | 'href'>[],
+  pathname: string,
+): WorkspaceSectionKey | null => {
+  let current: Pick<WorkspaceSection, 'key' | 'href'> | null = null;
+  for (const section of sections) {
+    if (liesWithin(pathname, section.href) && (current === null || section.href.length > current.href.length)) {
+      current = section;
+    }
+  }
+  return current?.key ?? null;
+};

@@ -102,6 +102,23 @@ describe('the workspace tier', () => {
     expect(currentSections()).toEqual(['Entități']);
   });
 
+  it('keeps the section current on an address beneath it', () => {
+    // 28 Sep 2026: the create form lies beneath the index, and the reader on it is still in *Entities*.
+    nav.pathname = '/entities/new';
+
+    render(withIntl(<WorkspaceNavigation sections={ADMINISTERING} />));
+
+    expect(currentSections()).toEqual(['Entități']);
+  });
+
+  it('marks users and access, not the organization, beneath the organization', () => {
+    nav.pathname = '/organization/users';
+
+    render(withIntl(<WorkspaceNavigation sections={ADMINISTERING} />));
+
+    expect(currentSections()).toEqual(['Utilizatori și acces']);
+  });
+
   it('draws the organization and its users locked for a member who does not administer it', () => {
     render(withIntl(<WorkspaceNavigation sections={workspaceSectionsFor(false)} />));
 

@@ -972,7 +972,10 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **148 files here are Client Components** (28 Sep 2026: one since S-02's reset request opens with the address typed on
+  **155 files here are Client Components** (29 Sep 2026: two since S-13's card — the guarded link its ways back share,
+and the side column's archive panel; 28 Sep 2026: five since S-13's review — the index's filter row and the
+record's breadcrumb, and the three row parts sites and subsidiaries share under `entities/components/sections/shared/`,
+where the hook beside them carries no directive; one since S-02's reset request opens with the address typed on
   S-01 — `identity/shared/store/reset-address-store.ts`, beside the verification hand-off's store, and not a component,
   but its directive is what makes a server import fail loudly rather than read nothing; four since S-16's invitation and reminder became dialogues —
   their shared frame under `organization/access/components/shared/`, the filter row's two buttons that open them, and

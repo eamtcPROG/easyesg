@@ -841,7 +841,7 @@ export interface paths {
         };
         /**
          * Search the activity classifier registered for the organization’s country
-         * @description FR-17’s NACE code(s), offered rather than only validated. The classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2, and it is configuration (AD-4) — so the set moves without a redeploy. **This searches server-side and answers a bounded page**: the classifier is 996 entries across three languages, and shipping it to a browser to filter there is a payload no screen budget admits. The query matches a code by its digits — 10.71, 1071 and 10 71 are one query — and a label without regard to case or diacritics, because a reader types brutarie for brutărie. An empty query answers an empty list rather than an arbitrary slice of the classifier. Labels arrive in the request’s negotiated language.
+         * @description FR-17’s NACE code(s), offered rather than only validated. The classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2, and it is configuration (AD-4) — so the set moves without a redeploy. **This searches server-side and answers a bounded page**: the classifier is 996 entries across three languages, and shipping it to a browser to filter there is a payload no screen budget admits. The query matches a code by its digits — 10.71, 1071 and 10 71 are one query — and a label by its words, in any order, without regard to case, diacritics or an inflected ending, because a reader types paine for pâinii. Results are ranked: a code match, then a label beginning with the query, then every word beginning a word of the label, then its stem doing so, then every word appearing inside it — each rank in classifier order. An empty query answers the classifier’s first classes, the four-character codes B1 exports, in code order. Labels arrive in the request’s negotiated language.
          */
         get: operations["EntitiesController_searchNaceCodes"];
         put?: never;
@@ -6091,7 +6091,7 @@ export interface operations {
                 limit?: number;
                 /** @description Comma-separated codes a record already holds, resolved to their words in the negotiated language. Takes precedence over q, matches exactly rather than by prefix, answers in the order given, and drops a code the classifier no longer carries rather than inventing a label for it. */
                 codes?: unknown;
-                /** @description What the reader typed. Empty answers nothing. */
+                /** @description What the reader typed. Empty answers the first classes, in code order. */
                 q?: unknown;
             };
             header?: never;
@@ -6100,7 +6100,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Matching codes, code matches before label matches, each in classifier order. */
+            /** @description Matching codes, best match first, each rank in classifier order. */
             200: {
                 headers: {
                     [name: string]: unknown;

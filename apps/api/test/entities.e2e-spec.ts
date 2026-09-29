@@ -247,9 +247,13 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
       expect(label(ro.body)).not.toBe('10.71');
     });
 
-    it('bounds the answer and refuses nothing for an empty query', async () => {
-      const empty = await search(admin, '');
-      expect(codes(empty.body)).toEqual([]);
+    it('bounds the answer, and answers an empty query with the first classes', async () => {
+      // 28 Sep 2026: the picker's first focus. Classes only — four characters, the level B1 exports — so the seeded
+      // classifier's section, division and groups ahead of 01.11 are left out, and `limit` bounds it like any page.
+      const empty = await http().get('/api/v1/entities/nace-codes?q=&limit=10').set(admin.authorization).expect(200);
+      expect(codes(empty.body)).toEqual([
+        '01.11', '01.12', '01.13', '01.14', '01.15', '01.16', '01.19', '01.21', '01.22', '01.23',
+      ]);
 
       // A one-character query matches broadly; the page is what keeps 996 rows off the wire.
       const broad = await http()
