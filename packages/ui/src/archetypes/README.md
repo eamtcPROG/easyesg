@@ -18,3 +18,7 @@ none is an escalation to design review, not a licence to invent.
 Two labels in the §4.4 inventory are **compositions, not archetypes** (OQ-7, closed): S-09 is a
 Wizard sub-flow and S-18 is a Comparison. A composition inherits the complete state set of its
 base archetype and defines none of its own.
+
+**`PageHeading` is not an archetype** — it is the heading with its way back (the trail above the title, the arrow
+before it) that `RecordCard` built for S-13 and gave up on 30 Sep 2026, when S-14's Index and Record took S-13's
+conventions. `RecordCard` and `RecordShell` render it; an Index renders it itself, since its header is the caller's.

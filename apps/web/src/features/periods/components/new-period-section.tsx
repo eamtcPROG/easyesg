@@ -3,7 +3,7 @@ import { getTimeZone, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { todayIn } from '@/lib/legal-date';
 import { ROUTES } from '@/lib/routes';
-import { readPeriodRecord } from '@/server/data/periods';
+import { readNewPeriod } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { yearOfDay } from '../tools/period-fields';
@@ -12,22 +12,13 @@ import { PERIODS_MESSAGES } from './periods-messages';
 import styles from './periods.module.css';
 
 /**
- * S-14's record for one period (UC-56 … UC-58; cut out of the route by task 137, `shell-composes-only`): the read, and
- * which of §8.1's arms applies — refused, unreachable, or the record, its entity named in the trail above it.
- *
- * **The reopenings are read with the period rather than behind a disclosure**: UX-72 requires an amendment to look
- * like an amendment, and one that has to be opened to be seen is one a reader can miss. The read-only state is the
- * form's, because it is the form's controls that stop taking input.
+ * S-14's record in its **create** mode (UC-56): the read, and which of §8.1's arms applies — refused, unreachable, or
+ * the form under a trail that names its entity. `PeriodRecordSection`'s arms, for the same read's failures. The read is
+ * the entity, for the trail, and the years its periods hold, for the year list (`readNewPeriod` says why).
  */
-export async function PeriodRecordSection({
-  entityId,
-  periodId,
-}: {
-  readonly entityId: string;
-  readonly periodId: string;
-}) {
+export async function NewPeriodSection({ entityId }: { readonly entityId: string }) {
   const [read, t, timeZone] = await Promise.all([
-    readPeriodRecord({ entityId, periodId }),
+    readNewPeriod(entityId),
     getTranslations(PERIODS_MESSAGES),
     getTimeZone(),
   ]);
@@ -60,10 +51,10 @@ export async function PeriodRecordSection({
 
   return (
     <div className={styles.record}>
+      {/* Chișinău's year, on the server — the configured zone (`i18n/request.ts`), never the browser's clock. */}
       <PeriodRecordForm
         entity={{ id: read.entity.id, name: read.entity.name }}
-        period={read.period}
-        reopenings={read.reopenings}
+        reopenings={[]}
         currentYear={yearOfDay(todayIn(timeZone, new Date()))}
         takenYears={read.takenYears}
       />

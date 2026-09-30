@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   ReportingPeriodPicker,
   periodRangeIsOrdered,
+  reportingPeriodFieldIds,
   type ReportingPeriodValue,
 } from './reporting-period-picker';
 
@@ -21,6 +22,20 @@ const LABELS = {
 
 const EMPTY: ReportingPeriodValue = { fiscalYear: '', start: '', end: '', due: '' };
 
+/** The screen's years, newest first — one of them taken, as S-14 offers them. */
+const YEARS = [
+  { value: '2027', label: '2027' },
+  { value: '2026', label: '2026' },
+  { value: '2025', label: '2025', disabled: true, description: 'A period is already open for this year.' },
+];
+
+/** jsdom implements neither, and Radix Select calls both while opening — `form-select.spec.tsx`'s stubs. */
+beforeAll(() => {
+  Element.prototype.hasPointerCapture = vi.fn(() => false);
+  Element.prototype.releasePointerCapture = vi.fn();
+  Element.prototype.scrollIntoView = vi.fn();
+});
+
 const renderPicker = (
   value: Partial<ReportingPeriodValue> = {},
   onChange = vi.fn(),
@@ -30,6 +45,8 @@ const renderPicker = (
     <ReportingPeriodPicker
       value={{ ...EMPTY, ...value }}
       onChange={onChange}
+      fiscalYears={YEARS}
+      placeholders={{ fiscalYear: 'Choose the year' }}
       labels={LABELS}
       rangeMessage="The period ends before it starts."
       disabled={disabled}
@@ -37,6 +54,19 @@ const renderPicker = (
   );
   return onChange;
 };
+
+describe('reportingPeriodFieldIds', () => {
+  /** A summary link reaches a field only if the id it targets is the one rendered — so the picker renders these. */
+  it('names the ids the four controls actually carry', () => {
+    renderPicker();
+    const ids = reportingPeriodFieldIds();
+
+    expect(screen.getByRole('combobox', { name: 'Fiscal year' })).toHaveAttribute('id', ids.fiscalYear);
+    expect(screen.getByLabelText('Period start')).toHaveAttribute('id', ids.start);
+    expect(screen.getByLabelText('Period end')).toHaveAttribute('id', ids.end);
+    expect(screen.getByLabelText('Due date')).toHaveAttribute('id', ids.due);
+  });
+});
 
 describe('periodRangeIsOrdered', () => {
   it('accepts an ordered range and refuses a reversed one', () => {
@@ -88,13 +118,35 @@ describe('ReportingPeriodPicker', () => {
   });
 
   it('reports the whole value when one field changes, so the four stay one thing', async () => {
-    const onChange = renderPicker({ fiscalYear: '2026', start: '2026-01-01' });
+    const onChange = renderPicker({ start: '2026-01-01' });
 
-    await userEvent.type(screen.getByLabelText('Fiscal year'), '7');
+    await userEvent.click(screen.getByRole('combobox', { name: 'Fiscal year' }));
+    await userEvent.click(await screen.findByRole('option', { name: '2027' }));
 
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ fiscalYear: '20267', start: '2026-01-01' }),
-    );
+    expect(onChange).toHaveBeenCalledWith({ ...EMPTY, fiscalYear: '2027', start: '2026-01-01' });
+  });
+
+  /**
+   * 30 Sep 2026 (project owner): the fiscal year is chosen, not typed, so it cannot be anything but
+   * a year — and nothing is chosen until the reader chooses, since a wrong year is the expensive,
+   * invisible mistake this component exists for.
+   */
+  it('offers the screen’s years with nothing chosen, and a taken year cannot be chosen', async () => {
+    const onChange = renderPicker();
+
+    const trigger = screen.getByRole('combobox', { name: 'Fiscal year' });
+    expect(trigger).toHaveTextContent('Choose the year');
+    await userEvent.click(trigger);
+    expect((await screen.findAllByRole('option')).map((option) => option.textContent)).toEqual([
+      '2027',
+      '2026',
+      expect.stringContaining('2025'),
+    ]);
+
+    const taken = screen.getByRole('option', { name: /2025/ });
+    expect(taken).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.click(taken);
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   /**
@@ -105,7 +157,9 @@ describe('ReportingPeriodPicker', () => {
   it('is read-only as a whole when the period is locked', () => {
     renderPicker({ start: '2026-01-01', end: '2026-12-31' }, vi.fn(), true);
 
-    for (const label of Object.values(LABELS)) {
+    // The year is a combobox now, so it is found by role; the dates are still labelled inputs.
+    expect(screen.getByRole('combobox', { name: 'Fiscal year' })).toBeDisabled();
+    for (const label of [LABELS.start, LABELS.end, LABELS.due]) {
       expect(screen.getByLabelText(label)).toBeDisabled();
     }
   });

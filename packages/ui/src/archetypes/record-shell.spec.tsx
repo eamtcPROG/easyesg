@@ -52,6 +52,21 @@ describe('RecordShell', () => {
     expect(document.getElementById('password')).toHaveAttribute('id', 'password');
   });
 
+  it('carries the trail and the arrow before its one heading, where its address lies beneath another page', () => {
+    // 30 Sep 2026: S-14's record takes S-13's way back, through `PageHeading`.
+    shell({
+      breadcrumb: <nav aria-label="Breadcrumb">trail</nav>,
+      back: { href: '/entities/e1/periods', label: 'Back to reporting periods' },
+    });
+
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    const back = screen.getByRole('link', { name: 'Back to reporting periods' });
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(back).toHaveAttribute('href', '/entities/e1/periods');
+    expect(trail.compareDocumentPosition(back) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(back.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('omits the record-level action bar when a Record commits per section', () => {
     // S-28's shape: six independent actions and no single save. A fixture here would render an
     // empty bar, or take a boolean to suppress it — the smell UX-89 names.

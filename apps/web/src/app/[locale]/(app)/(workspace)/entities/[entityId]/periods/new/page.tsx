@@ -1,5 +1,4 @@
-import { PeriodRecordForm } from '@/features/periods/components/period-record-form';
-import styles from '@/features/periods/components/periods.module.css';
+import { NewPeriodSection } from '@/features/periods/components/new-period-section';
 import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/i18n/page';
 
 /**
@@ -8,10 +7,9 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  * **A literal segment rather than a query flag**, following `ENTITY_NEW`: an unsaved new period is
  * an address the reader can return to (UX-4).
  *
- * It reads nothing. Everything the create form needs is the entity id in the path — the version pin
- * and the prior-period link are the system's to resolve at open (FR-45, FR-66, DR-4), so there is
- * nothing to fetch and no failure arm to draw. A refusal arrives from the write and the form
- * renders it.
+ * **This file is a shell** (`shell-composes-only`): it pins the locale and renders the section, which
+ * reads the entity its trail names and decides the arm — the page read nothing until S-14 took S-13's
+ * way back (30 Sep 2026). `loading.tsx` beside it is the screen's `loading — initial`.
  */
 const MESSAGES = 'organization.periods';
 
@@ -23,9 +21,5 @@ export default async function NewReportingPeriodPage({ params }: Props) {
   const { entityId } = await params;
   await activateRequestLocale(params as unknown as LocaleParams);
 
-  return (
-    <div className={styles.record}>
-      <PeriodRecordForm entityId={entityId} reopenings={[]} />
-    </div>
-  );
+  return <NewPeriodSection entityId={entityId} />;
 }

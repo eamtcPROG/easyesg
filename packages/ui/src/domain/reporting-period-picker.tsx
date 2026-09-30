@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { DateField } from '../form/date-field';
-import { TextField } from '../form/text-field';
+import { Select, type SelectOption } from '../form/select';
 import styles from './reporting-period-picker.module.css';
 
 /**
@@ -29,6 +29,11 @@ import styles from './reporting-period-picker.module.css';
  *
  * **The words.** Every label, help string and message arrives localized from the caller, as
  * everywhere in this package.
+ *
+ * **Which years may be chosen.** The fiscal year is chosen from a list rather than typed (project
+ * owner, 30 Sep 2026: a text field did not say it wanted a year, and a typed *"2025/2026"* reached the
+ * api as no number at all). Which years are offered, and which are already taken, are the screen's
+ * facts — its clock and its entity's periods — so they arrive as options, each carrying its own words.
  */
 
 /** The four values as one thing, which is the point of the component. ISO date halves. */
@@ -56,9 +61,29 @@ export const periodRangeIsOrdered = (value: {
   readonly end: string;
 }): boolean => !value.start || !value.end || value.end >= value.start;
 
+/**
+ * The id each of the four controls carries — exported so a form's error summary (UX-111) links to the field it names
+ * with the ids this component actually renders, rather than restating its naming and drifting from it.
+ */
+export const reportingPeriodFieldIds = (
+  idPrefix = 'reporting-period',
+): Readonly<Record<keyof ReportingPeriodValue, string>> => ({
+  fiscalYear: `${idPrefix}-fiscal-year`,
+  start: `${idPrefix}-start`,
+  end: `${idPrefix}-end`,
+  due: `${idPrefix}-due`,
+});
+
 export interface ReportingPeriodPickerProps {
   readonly value: ReportingPeriodValue;
   readonly onChange: (next: ReportingPeriodValue) => void;
+  /**
+   * The years the fiscal year may take, in the order to offer them. A year already taken comes
+   * `disabled`, with `description` saying why; the value on screen must be among them.
+   */
+  readonly fiscalYears: readonly SelectOption[];
+  /** Shown until something is chosen — never a restatement of the label (UX-110). */
+  readonly placeholders?: { readonly fiscalYear?: ReactNode };
   readonly labels: {
     readonly fiscalYear: ReactNode;
     readonly start: ReactNode;
@@ -86,30 +111,35 @@ export interface ReportingPeriodPickerProps {
 export function ReportingPeriodPicker({
   value,
   onChange,
+  fiscalYears,
+  placeholders,
   labels,
   help,
   errors,
   rangeMessage,
   disabled,
-  idPrefix = 'reporting-period',
+  idPrefix,
 }: ReportingPeriodPickerProps) {
+  const ids = reportingPeriodFieldIds(idPrefix);
   const ordered = periodRangeIsOrdered(value);
   const set = (patch: Partial<ReportingPeriodValue>) => onChange({ ...value, ...patch });
 
   return (
     <fieldset className={styles.picker} disabled={disabled}>
-      <TextField
-        id={`${idPrefix}-fiscal-year`}
+      <Select
+        id={ids.fiscalYear}
         label={labels.fiscalYear}
         help={help?.fiscalYear}
         error={errors?.fiscalYear}
-        inputMode="numeric"
+        options={fiscalYears}
+        placeholder={placeholders?.fiscalYear}
         value={value.fiscalYear}
-        onChange={(event) => set({ fiscalYear: event.target.value })}
+        onValueChange={(fiscalYear) => set({ fiscalYear })}
+        disabled={disabled}
       />
       <div className={styles.range}>
         <DateField
-          id={`${idPrefix}-start`}
+          id={ids.start}
           label={labels.start}
           help={help?.start}
           error={errors?.start}
@@ -117,7 +147,7 @@ export function ReportingPeriodPicker({
           onChange={(event) => set({ start: event.target.value })}
         />
         <DateField
-          id={`${idPrefix}-end`}
+          id={ids.end}
           label={labels.end}
           help={help?.end}
           // The range failure is shown on the END field, which is the one the reader most likely
@@ -130,7 +160,7 @@ export function ReportingPeriodPicker({
         />
       </div>
       <DateField
-        id={`${idPrefix}-due`}
+        id={ids.due}
         label={labels.due}
         help={help?.due}
         error={errors?.due}

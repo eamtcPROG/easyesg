@@ -5,12 +5,14 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
 /**
  * S-13 — Entities index · OA · UC-51 … UC-55 · Index
  *
- * The legal entities that are reported on (FR-16 … FR-20). **Two of the artboard's six columns
- * belong to other tasks and are refused rather than invented**: employee count is B1 disclosure
- * data (UC-19) rather than entity master data, and the periods column is task 31's — and so are the
- * IDNO's *verified* marker, FR-107's fiscal lookup on the billing account, and the entitlement
- * counter above the action, task 54.2's, the same deferral S-16 recorded for seats. The IDNO itself
- * is the column beside the name since task 175, which made the identifiers each entity's.
+ * The legal entities that are reported on (FR-16 … FR-20). **One of the artboard's six columns
+ * belongs to another task and is refused rather than invented**: employee count is B1 disclosure
+ * data (UC-19) rather than entity master data — and so are the IDNO's *verified* marker, FR-107's
+ * fiscal lookup on the billing account, and the entitlement counter above the action, task 54.2's,
+ * the same deferral S-16 recorded for seats. The IDNO itself is the column beside the name since
+ * task 175, which made the identifiers each entity's. **The periods column is S-14's way in** since
+ * 29 Sep 2026: it was deferred here to task 31, that task closed without it, and S-14 was left with
+ * no way in but a typed address.
  *
  * **The screen never computes the caller's role**, which is S-15's and S-16's rule: the writes are
  * `@RequiresRole(ORGANIZATION_ADMINISTRATOR)` and the reads are open to every member, so this

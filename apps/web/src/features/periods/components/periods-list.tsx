@@ -3,14 +3,14 @@
 import {
   BUTTON_VARIANT,
   Button,
+  COLUMN_ALIGN,
+  COLUMN_SIZE,
   EmptyState,
-  Select,
   StatusChip,
-  STATUS_TONE,
   TextLink,
   VersionPinIndicator,
 } from '@easyesg/ui';
-import type { DataTableColumn, StatusTone } from '@easyesg/ui';
+import type { DataTableColumn } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useTransition } from 'react';
 import { IndexView } from '@/shared/index-view';
@@ -20,16 +20,15 @@ import {
   PERIOD_FILTER_ANY,
   PERIOD_SORT,
   PERIOD_STANDING,
-  PERIOD_STANDING_FILTERS,
+  PERIOD_STANDING_TONE,
   periodViewQuery,
   type PeriodPage,
   type PeriodRow,
   type PeriodSort,
-  type PeriodStanding,
   type PeriodView,
 } from '../tools/periods';
 import { PERIODS_MESSAGES } from './periods-messages';
-import styles from './periods.module.css';
+import { PeriodsToolbar } from './periods-toolbar';
 
 /**
  * S-14's list, as an instance of the Index archetype (§4.6).
@@ -41,20 +40,9 @@ import styles from './periods.module.css';
 
 /** Columns that are not sort dimensions, declared rather than written as a union — the convention's
  *  own reason: a hand-written union has no runtime value, so a typo makes a second column. */
-const PERIOD_COLUMN = { DATES: 'dates', PIN: 'pin' } as const;
+const PERIOD_COLUMN = { DATES: 'dates', PIN: 'pin', ACTIONS: 'actions' } as const;
 
 export type PeriodColumnKey = PeriodSort | (typeof PERIOD_COLUMN)[keyof typeof PERIOD_COLUMN];
-
-/**
- * Open is positive; locked is **neutral, not an error**. FR-22 makes locking a deliberate act that
- * gives the change history a defensible endpoint — a reader whose period is locked has done the
- * right thing, and an alarming tone would say otherwise. `EntitiesList` draws archived the same way
- * for the same reason.
- */
-const STANDING_TONE: Record<PeriodStanding, StatusTone> = {
-  [PERIOD_STANDING.OPEN]: STATUS_TONE.POSITIVE,
-  [PERIOD_STANDING.LOCKED]: STATUS_TONE.NEUTRAL,
-};
 
 export interface PeriodsListProps {
   readonly entityId: string;
@@ -129,8 +117,32 @@ export function PeriodsList({ entityId, page, view }: PeriodsListProps) {
         header: t('columns.standing'),
         sortable: true,
         cell: (row) => (
-          <StatusChip tone={STANDING_TONE[row.standing]}>{t(`standing.${row.standing}`)}</StatusChip>
+          <StatusChip tone={PERIOD_STANDING_TONE[row.standing]}>{t(`standing.${row.standing}`)}</StatusChip>
         ),
+      },
+      {
+        // 30 Sep 2026, project owner: each row ends in a labelled action, as S-13's rows do — *edit* for an open period
+        // and *view* for a locked one, whose record is read-only (FR-22). The year stays a link to the same record.
+        key: PERIOD_COLUMN.ACTIONS,
+        header: t('columns.actions'),
+        align: COLUMN_ALIGN.END,
+        size: COLUMN_SIZE.FIT,
+        cell: (row) => {
+          const edits = row.standing === PERIOD_STANDING.OPEN;
+          // A year as a string, never a number ICU would group ("2 026").
+          const year = String(row.fiscalYear);
+          return (
+            <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
+              <Link
+                href={periodRoute({ entityId, periodId: row.id })}
+                // The visible word, and a name that begins with it (WCAG 2.5.3) and ends with the row.
+                aria-label={edits ? t('rowActions.editNamed', { year }) : t('rowActions.viewNamed', { year })}
+              >
+                {edits ? t('rowActions.edit') : t('rowActions.view')}
+              </Link>
+            </Button>
+          );
+        },
       },
     ],
     [entityId, t],
@@ -138,17 +150,11 @@ export function PeriodsList({ entityId, page, view }: PeriodsListProps) {
 
   return (
     <>
-      <div className={styles.filters}>
-        <Select
-          label={t('filter.standing')}
-          value={view.standing}
-          onValueChange={(next) => setView({ standing: next as PeriodView['standing'] })}
-          options={PERIOD_STANDING_FILTERS.map((option) => ({
-            value: option,
-            label: t(`filter.options.${option}`),
-          }))}
-        />
-      </div>
+      <PeriodsToolbar
+        entityId={entityId}
+        standing={view.standing}
+        onStandingChangeAction={(standing) => setView({ standing })}
+      />
 
       <IndexView<PeriodRow, PeriodColumnKey>
         page={page}

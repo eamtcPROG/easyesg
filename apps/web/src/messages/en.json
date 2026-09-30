@@ -120,7 +120,14 @@
       "save": "Save changes",
       "discard": "Discard",
       "unsaved": "You have unsaved changes.",
-      "pristine": "Nothing changed yet — save stays inert until a value differs."
+      "pristine": "Nothing changed yet — save stays inert until a value differs.",
+      "leave": {
+        "title": "Leave without saving?",
+        "consequence": "The changes you made on this page are not saved and will be lost.",
+        "retained": "What is already saved stays as it was.",
+        "confirm": "Leave without saving",
+        "cancel": "Stay on the page"
+      }
     }
   },
   "identity": {
@@ -719,6 +726,7 @@
         "idnoMissing": "Not recorded",
         "activity": "Activity",
         "sites": "Sites",
+        "periods": "Periods",
         "standing": "Status",
         "actions": "Actions",
         "unclassified": "No activity recorded"
@@ -727,7 +735,18 @@
         "edit": "Edit",
         "editNamed": "Edit {name}",
         "view": "View",
-        "viewNamed": "View {name}"
+        "viewNamed": "View {name}",
+        "periods": "Periods",
+        "periodsNamed": "Periods — {name}"
+      },
+      "periods": {
+        "entry": "{year} {standing}",
+        "more": "and {count} more",
+        "none": "No periods yet",
+        "named": "{summary} — reporting periods of {name}",
+        "panelTitle": "Periods on this entity",
+        "panelNone": "No period has been opened for this entity yet.",
+        "unavailable": "The periods could not be shown here. The link below still opens their list."
       },
       "standing": {
         "active": "Active",
@@ -873,12 +892,7 @@
           "cancel": "Cancel"
         },
         "leave": {
-          "title": "Leave without saving?",
-          "newObject": "The new entity",
-          "consequence": "The changes you made on this page are not saved and will be lost.",
-          "retained": "What is already saved stays as it was.",
-          "confirm": "Leave without saving",
-          "cancel": "Stay on the page"
+          "newObject": "The new entity"
         },
         "loading": "Loading the entity…",
         "reportContact": {
@@ -897,6 +911,7 @@
     "periods": {
       "title": "Reporting periods",
       "lede": "Every report is prepared for a period. The period fixes the version of the standard and links last year, which is where comparatives come from.",
+      "backToEntity": "Back to {name}",
       "caption": "The entity’s reporting periods",
       "open": "Open a period",
       "columns": {
@@ -907,7 +922,14 @@
         "dueNone": "No due date",
         "pin": "Standard version",
         "taxonomy": "Taxonomy",
-        "standing": "State"
+        "standing": "State",
+        "actions": "Actions"
+      },
+      "rowActions": {
+        "edit": "Edit",
+        "editNamed": "Edit the {year} period",
+        "view": "View",
+        "viewNamed": "View the {year} period"
       },
       "standing": {
         "open": "Open",
@@ -937,15 +959,22 @@
         "createTitle": "New period",
         "titleYear": "{year} period",
         "createLede": "The version of the standard and the link to last year are set automatically when the period opens. The dates are yours to set.",
+        "back": "Back to reporting periods",
         "lede": "The period’s dates, and the date by which the report must be complete.",
         "create": "Open the period",
         "save": "Save",
         "discard": "Discard changes",
         "fiscalYear": "Fiscal year",
-        "fiscalYearHelp": "The year the company labels its financial year with. It need not match the calendar year.",
+        "fiscalYearHelp": "The year the company labels its financial year with. When the dates are empty, choosing it fills them with 1 January – 31 December; change them if the financial year is not the calendar year.",
+        "fiscalYearPlaceholder": "Choose the year",
+        "fiscalYearTaken": "A period is already open for this year.",
+        "fiscalYearRequired": "Choose the period’s fiscal year.",
         "start": "First day of the period",
         "end": "Last day of the period",
         "endHelp": "The last day inside the period, not the first day after it.",
+        "startRequired": "Enter the first day of the period.",
+        "endRequired": "Enter the last day of the period.",
+        "datesOverlap": "These dates overlap another period of this entity. Choose days no other period covers.",
         "due": "Due date",
         "dueHelp": "When the report must be complete. This is a different fact from the end of the period, and it is what deadline notices count down to.",
         "rangeInvalid": "The period ends before it starts, so it was not saved. Choose an end day that falls after the start day.",
@@ -953,7 +982,8 @@
           "linked": "Last year is linked, so comparatives resolve automatically.",
           "none": "This is the entity’s first period, so there is no earlier year to draw comparatives from."
         },
-        "loading": "Loading the reporting period…"
+        "loading": "Loading the reporting period…",
+        "createLoading": "Preparing the new period…"
       },
       "pins": {
         "taxonomy": "VSME taxonomy",

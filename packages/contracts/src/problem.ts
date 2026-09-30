@@ -84,6 +84,10 @@ export const PROBLEM_TYPE = {
   /** The proof a first password needs has lapsed — the provider sign-in or the confirmation link is older than a
    *  quarter-hour (task 155). S-36 offers signing in with the provider again rather than a retry. */
   AccountSetupProofStale: 'https://easyesg.md/problems/account-setup-proof-stale',
+  /** Another period of the same entity already covers part of these dates (UC-56; the database's exclusion constraint,
+   *  30 Sep 2026 for its first reader). S-14's form marks the two dates as the fields to change, beside the api's own
+   *  sentence, so the refusal says which fields were wrong. */
+  PeriodOverlaps: 'https://easyesg.md/problems/period-overlaps',
 } as const;
 
 export type ProblemTypeUri = (typeof PROBLEM_TYPE)[keyof typeof PROBLEM_TYPE];

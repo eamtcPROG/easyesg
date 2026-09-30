@@ -7,6 +7,7 @@ import {
   PERIOD_SORT_DIRECTION,
   PERIOD_STANDING,
   applyPeriodView,
+  periodStanding,
   periodViewQuery,
   readPeriodView,
   toPeriodRows,
@@ -75,6 +76,15 @@ describe('toPeriodRows', () => {
 
     expect(first.hasPrior).toBe(false);
     expect(second.hasPrior).toBe(true);
+  });
+});
+
+describe('periodStanding', () => {
+  it('reads open from an absent lock and locked from any instant — the epoch itself included', () => {
+    expect(periodStanding({ lockedAt: null })).toBe('open');
+    expect(periodStanding({ lockedAt: 1_780_000_000_000 })).toBe('locked');
+    // Zero is a falsy instant and still a lock: a `!lockedAt` shortcut would read it as open.
+    expect(periodStanding({ lockedAt: 0 })).toBe('locked');
   });
 });
 

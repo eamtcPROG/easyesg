@@ -1,0 +1,72 @@
+/*
+ * A page's heading with its way back — moved here from `record-shell.module.css` with `PageHeading` (30 Sep 2026),
+ * rule for rule, so the screens that already drew it draw it unchanged. Every value is a token (UX-127).
+ */
+
+/* The way back stands midway in the page's top inset — half of `--page-block` above it and half
+   below — where it would otherwise have the whole inset above and a hairline beneath. `--page-block`
+   is the inset every workspace screen sits at, and `--space-6` the gap of the column the heading
+   stands in, which are the two assumptions this makes about its page. */
+.trail {
+  margin-block: calc(var(--page-block) / -2) calc(var(--page-block) / 2 - var(--space-6));
+}
+
+/* The arrow centred on the title and its summary together (29 Sep 2026, project owner: *"align in center for
+   symmetry"*), so it has as much of the block above it as below. */
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
+/* The secondary button's surface and edge. */
+.back {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 36px;
+  block-size: 36px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  color: var(--text-default);
+}
+
+.back:hover {
+  background: var(--surface-sunken);
+}
+
+.backIcon {
+  inline-size: 18px;
+  block-size: 18px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.title {
+  font: 600 28px/34px var(--font-text);
+  letter-spacing: -0.015em;
+  color: var(--text-default);
+  margin: 0;
+}
+
+.summary {
+  font: 400 15px/24px var(--font-text);
+  color: var(--text-muted);
+  margin: 0;
+}

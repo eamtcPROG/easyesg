@@ -1,7 +1,14 @@
 import 'server-only';
-import type { CountryLegalForms, NaceCodeMatch, Organization, ReportingEntity } from '@easyesg/contracts';
+import type {
+  CountryLegalForms,
+  NaceCodeMatch,
+  Organization,
+  ReportingEntity,
+  ReportingPeriod,
+} from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { toEntityRows, type EntityRow } from '@/features/entities/tools/entities';
+import { periodsByEntity, toEntityPeriods, type EntityPeriod } from '@/features/entities/tools/entity-periods';
 import { api } from '../api/api-client';
 import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
 
@@ -15,6 +22,10 @@ import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tena
  * every row are resolved together through `?codes=`, which matches exactly and answers in the order
  * given. Searching per code would be N requests *and* wrong: `?q=` matches by prefix, so `10.7`
  * would answer three rows where one was asked for.
+ *
+ * **The periods column is one request too** — `GET /periods` answers the organization when no entity is named, and
+ * each row carries its entity, so the list's way into S-14 costs one read beside the entities rather than one per row.
+ * Like the activity labels, a failure there leaves the list standing: the column still leads to each entity's periods.
  */
 export type EntityListRead =
   | {
@@ -53,7 +64,11 @@ export async function readActivitySuggestions(): Promise<readonly NaceCodeMatch[
 }
 
 export async function readEntityList(): Promise<EntityListRead> {
-  const entities = await api.getList<ReportingEntity>('/entities');
+  // Independent reads, so they do not queue (`async-parallel`); the activity labels wait on the codes the first answers.
+  const [entities, periods] = await Promise.all([
+    api.getList<ReportingEntity>('/entities'),
+    api.getList<ReportingPeriod>('/periods'),
+  ]);
 
   if (isPermissionRefusal(entities)) return { status: TENANT_READ.FORBIDDEN };
   if (entities.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
@@ -62,7 +77,14 @@ export async function readEntityList(): Promise<EntityListRead> {
   const codes = [...new Set(entities.value.items.flatMap((entity) => entity.naceCodes))];
   const activity = await resolveActivity(codes);
 
-  return { status: TENANT_READ.READY, rows: toEntityRows({ entities: entities.value.items, activity }) };
+  return {
+    status: TENANT_READ.READY,
+    rows: toEntityRows({
+      entities: entities.value.items,
+      activity,
+      periods: periods.status === API_OUTCOME.Ok ? periodsByEntity(periods.value.items) : null,
+    }),
+  };
 }
 
 export type EntityRecordRead =
@@ -80,15 +102,22 @@ export type EntityRecordRead =
        * not be read, which offers none rather than guessing a country.
        */
       readonly countryCode: string | null;
+      /**
+       * Its periods, newest first, for the side panel that leads to S-14 — `null` when they could not be read, which
+       * the panel says rather than claiming there are none. The record is what the reader came for, so this read
+       * failing does not fail it.
+       */
+      readonly periods: readonly EntityPeriod[] | null;
     }
   | TenantReadRefusal;
 
 export async function readEntityRecord(entityId: string): Promise<EntityRecordRead> {
-  const [entity, vocabulary, organization, suggestions] = await Promise.all([
+  const [entity, vocabulary, organization, suggestions, periods] = await Promise.all([
     api.get<ReportingEntity>(`/entities/${entityId}`),
     api.getList<CountryLegalForms>('/organizations/legal-forms'),
     api.get<Organization>('/organization'),
     readActivitySuggestions(),
+    api.getList<ReportingPeriod>(`/periods?reportingEntityId=${encodeURIComponent(entityId)}`),
   ]);
 
   if (isPermissionRefusal(entity)) return { status: TENANT_READ.FORBIDDEN };
@@ -108,5 +137,6 @@ export async function readEntityRecord(entityId: string): Promise<EntityRecordRe
     suggestions,
     countries: vocabulary.status === API_OUTCOME.Ok ? vocabulary.value.items : [],
     countryCode: organization.status === API_OUTCOME.Ok ? organization.value.countryCode : null,
+    periods: periods.status === API_OUTCOME.Ok ? toEntityPeriods(periods.value.items) : null,
   };
 }

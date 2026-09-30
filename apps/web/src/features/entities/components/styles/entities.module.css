@@ -106,7 +106,16 @@
   }
 }
 
-/* The record's side column: *Archive, never delete* — the Panel's edge and ground, with its own heading. */
+/* A row's two buttons — its periods, then its record — side by side at the table's end edge, never wrapping under
+   one another: the column is sized to what it holds. */
+.rowActions {
+  display: inline-flex;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+/* The record's side column — *Periods on this entity*, then *Archive, never delete* — each the Panel's edge and
+   ground, with its own heading. */
 .sidePanel {
   display: flex;
   flex-direction: column;
@@ -125,6 +134,28 @@
 
 .sidePanelBody {
   color: var(--text-body);
+}
+
+/* The panel's years, one framed row each with the standing at its end, as the record artboard draws them. Stretched
+   across the panel, whose own items sit at its start. */
+.periodList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-self: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.periodItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
 }
 
 /* A row collection — the sites, or the subsidiaries inside the boundary (28 Sep 2026): one framed list with a rule

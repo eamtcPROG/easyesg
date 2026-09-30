@@ -6,7 +6,8 @@ import styles from '@/features/periods/components/periods.module.css';
 /**
  * The screen's **loading — initial** (§8.1, UX-90), on S-16's precedent: the whole body blocks on
  * one read, so there is no shell worth streaming ahead of it and a route-level `loading.tsx` is
- * the boundary. The heading is the real one, so nothing shifts when the content arrives. **No
+ * the boundary. The heading is the real one; the trail and the arrow arrive with the read, since both
+ * name the entity it answers — S-13's record's loading state draws neither, for the same reason. **No
  * `activateRequestLocale` here** — Next passes `loading.tsx` no props, so messages resolve through
  * `requestLocale` alone, which is correct only while `[locale]` declares `force-dynamic`
  * (`apps/web/CLAUDE.md` names this file kind as the first to check when §14.2's decision is taken).

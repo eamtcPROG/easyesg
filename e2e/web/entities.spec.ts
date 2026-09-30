@@ -3,6 +3,7 @@ import {
   cleanupAccounts,
   cleanupOrganizations,
   grantMembership,
+  seedOpenPeriod,
   verificationTokenFor,
 } from './support/db';
 
@@ -87,12 +88,143 @@ test('the first-use empty state teaches, and creating from it lands on the recor
   await expect(page.getByRole('link', { name: `${RUN_PREFIX} Brutăria`, exact: true })).toBeVisible();
   await expect(page.getByText('Fabricarea produselor de brutărie')).toBeVisible();
 
+  // An entity with no periods is the one whose reader most needs S-14, where the first is opened — so *none* is a link.
+  await expect(
+    page.getByRole('link', { name: `Nicio perioadă încă — perioadele de raportare ale entității ${RUN_PREFIX} Brutăria` }),
+  ).toHaveAttribute('href', /\/entities\/[0-9a-f-]{36}\/periods$/);
+
   // 29 Sep 2026, project owner: the row says how to change it. The visible word is the verb and the name is the row's.
   const edit = page.getByRole('link', { name: `Editați ${RUN_PREFIX} Brutăria`, exact: true });
   await expect(edit).toHaveText('Editați');
   await edit.click();
   await page.waitForURL(/\/entities\/[0-9a-f-]{36}$/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText(`${RUN_PREFIX} Brutăria`);
+});
+
+test('each entity leads to its reporting periods, from the list and from its record', async ({ page }) => {
+  // 29 Sep 2026, project owner: S-14 had shipped with no way in from S-13 but a typed address.
+  await signedIn(page, 'periods');
+  const organizationId = organizations[organizations.length - 1];
+  const name = `${RUN_PREFIX} Panificația`;
+  const { entityId, periodId } = await seedOpenPeriod({ organizationId, name });
+
+  // The list's cell: the year with S-14's standing word, the whole of it one link named for its row.
+  await page.goto('/entities');
+  const cell = page.getByRole('link', { name: `2026 Deschisă — perioadele de raportare ale entității ${name}` });
+  await expect(cell).toHaveText('2026 Deschisă');
+  await cell.click();
+  await page.waitForURL(`**/entities/${entityId}/periods`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Perioade de raportare');
+
+  // 30 Sep 2026, project owner: and a button that says so, since a reader may not know the cell is a link.
+  await page.goto('/entities');
+  const periods = page.getByRole('link', { name: `Perioade — ${name}`, exact: true });
+  await expect(periods).toHaveText('Perioade');
+  await periods.click();
+  await page.waitForURL(`**/entities/${entityId}/periods`);
+
+  // The record's side panel: the year leads to its period, and the link beneath to the entity's whole list.
+  await page.goto(`/entities/${entityId}`);
+  const panel = page.getByRole('region', { name: 'Perioadele entității' });
+  await expect(panel.getByRole('listitem')).toHaveCount(1);
+  await expect(panel.getByRole('listitem')).toContainText('Deschisă');
+  await panel.getByRole('link', { name: '2026', exact: true }).click();
+  await page.waitForURL(`**/entities/${entityId}/periods/${periodId}`);
+
+  await page.goto(`/entities/${entityId}`);
+  await panel.getByRole('link', { name: 'Perioade de raportare', exact: true }).click();
+  await page.waitForURL(`**/entities/${entityId}/periods`);
+
+  // Like the arrow and the breadcrumb, the panel asks before an unsaved edit is lost.
+  await page.goto(`/entities/${entityId}`);
+  await page.getByLabel('Denumirea entității').fill(`${name} — ciornă`);
+  await panel.getByRole('link', { name: 'Perioade de raportare', exact: true }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Rămâneți pe pagină' }).click();
+  await expect(page).toHaveURL(new RegExp(`/entities/${entityId}$`));
+  await expect(page.getByLabel('Denumirea entității')).toHaveValue(`${name} — ciornă`);
+});
+
+test('S-14 carries S-13’s way back — a trail, an arrow up, the action in the filter row, and a question before a loss', async ({
+  page,
+}) => {
+  // 30 Sep 2026, project owner: S-14 did not respect the conventions S-13 had set.
+  await signedIn(page, 'wayup');
+  const organizationId = organizations[organizations.length - 1];
+  const name = `${RUN_PREFIX} Cofetăria`;
+  // The year list is built around the current year, so the seeded period takes it and next year is the free one.
+  const thisYear = new Date().getFullYear();
+  const nextYear = String(thisYear + 1);
+  const { entityId, periodId } = await seedOpenPeriod({ organizationId, name, fiscalYear: thisYear });
+  const trail = page.getByRole('navigation', { name: 'Firimituri' });
+
+  // The list: its trail names the entity, each step as the page it leads to names itself.
+  await page.goto(`/entities/${entityId}/periods`);
+  await expect(trail.getByRole('link', { name: 'Entități raportoare' })).toHaveAttribute('href', /\/entities$/);
+  await expect(trail.getByRole('link', { name, exact: true })).toHaveAttribute('href', new RegExp(`/entities/${entityId}$`));
+  await expect(trail.locator('[aria-current="page"]')).toHaveText('Perioade de raportare');
+
+  // Opening a period stands at the end of the filter row, on the facet's baseline, as S-13's add action does.
+  const open = page.getByRole('link', { name: 'Deschideți o perioadă' });
+  const openBox = await open.boundingBox();
+  const facetBox = await page.getByLabel('Filtrați după stare').boundingBox();
+  expect(openBox && facetBox && Math.abs(openBox.y + openBox.height - (facetBox.y + facetBox.height))).toBeLessThanOrEqual(1);
+  expect(openBox && facetBox && openBox.x > facetBox.x + facetBox.width).toBe(true);
+
+  // Each row ends in a labelled action, as S-13's do — *edit* for an open period, named for its row.
+  const edit = page.getByRole('link', { name: `Editați perioada ${thisYear}`, exact: true });
+  await expect(edit).toHaveText('Editați');
+  await expect(edit).toHaveAttribute('href', new RegExp(`/entities/${entityId}/periods/${periodId}$`));
+
+  // The arrow leads up to the entity, the trail's last step.
+  await page.getByRole('link', { name: `Înapoi la ${name}` }).click();
+  await page.waitForURL(new RegExp(`/entities/${entityId}$`));
+
+  // A period's record: the list is a step, the record is current, and the arrow leads back to the list.
+  await page.goto(`/entities/${entityId}/periods/${periodId}`);
+  await expect(trail.getByRole('link', { name: 'Perioade de raportare' })).toHaveAttribute(
+    'href',
+    new RegExp(`/entities/${entityId}/periods$`),
+  );
+  await expect(trail.locator('[aria-current="page"]')).toHaveText(`Perioada ${thisYear}`);
+  await page.getByRole('link', { name: 'Înapoi la perioadele de raportare' }).click();
+  await page.waitForURL(`**/entities/${entityId}/periods`);
+
+  await open.click();
+  await page.waitForURL(`**/entities/${entityId}/periods/new`);
+  await expect(trail.locator('[aria-current="page"]')).toHaveText('Perioadă nouă');
+
+  // Nothing is chosen yet, and a save pressed now names every missing field — on the field and in a summary (UX-111).
+  const year = page.getByRole('combobox', { name: 'Anul fiscal' });
+  await expect(year).toHaveText('Alegeți anul');
+  await page.getByRole('button', { name: 'Deschideți perioada' }).click();
+  const summary = page.getByRole('alert').filter({ hasText: 'Câteva câmpuri au nevoie de atenție' });
+  await expect(summary.getByRole('link')).toHaveText([
+    'Alegeți anul fiscal al perioadei.',
+    'Introduceți prima zi a perioadei.',
+    'Introduceți ultima zi a perioadei.',
+  ]);
+  await expect(year).toHaveAttribute('aria-invalid', 'true');
+
+  // The year is chosen from a list: this year is the seeded period's and says so; next year fills the empty dates.
+  await year.click();
+  await expect(page.getByRole('option', { name: new RegExp(`^${thisYear}`) })).toHaveAttribute('aria-disabled', 'true');
+  await page.getByRole('option', { name: nextYear, exact: true }).click();
+  await expect(year).toHaveText(nextYear);
+  await expect(page.getByLabel('Prima zi a perioadei', { exact: true })).toHaveValue(`${nextYear}-01-01`);
+  await expect(page.getByLabel('Ultima zi a perioadei', { exact: true })).toHaveValue(`${nextYear}-12-31`);
+  await expect(summary).toHaveCount(0);
+
+  // The form asks before the chosen year is lost, and keeps it on *stay*.
+  await page.getByRole('link', { name: 'Înapoi la perioadele de raportare' }).click();
+  const question = page.getByRole('alertdialog');
+  await expect(question).toContainText('Plecați fără să salvați?');
+  await question.getByRole('button', { name: 'Rămâneți pe pagină' }).click();
+  await expect(page).toHaveURL(/\/periods\/new$/);
+  await expect(year).toHaveText(nextYear);
+
+  await trail.getByRole('link', { name: 'Perioade de raportare' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Plecați fără să salvați' }).click();
+  await page.waitForURL(`**/entities/${entityId}/periods`);
 });
 
 test('the create form keeps its section and its way back, and the picker offers classes before any typing', async ({

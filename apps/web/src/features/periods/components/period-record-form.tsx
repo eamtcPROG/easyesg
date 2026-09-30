@@ -6,22 +6,36 @@ import {
   CALLOUT_INTENT,
   Callout,
   ConsequenceDialogue,
+  FormErrorSummary,
   RecordShell,
   ReportingPeriodPicker,
   TextField,
   VersionPinIndicator,
   periodRangeIsOrdered,
+  reportingPeriodFieldIds,
   type ReportingPeriodValue,
 } from '@easyesg/ui';
-import type { PeriodReopening, ReportingPeriod } from '@easyesg/contracts';
+import type { PeriodReopening, ReportingEntity, ReportingPeriod } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
-import { useReducer, useState, useTransition } from 'react';
+import { useMemo, useReducer, useState, useTransition } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { noticeFromOutcome } from '@/lib/notice';
+import { GuardedLink, LeaveGuardContext, type LeaveGuard } from '@/shared/leave-guard';
 import { RecordNotice } from '@/shared/record-notice';
 import { legalDate } from '@/lib/legal-date';
-import { periodRoute } from '@/lib/routes';
+import { entityPeriodsRoute, periodRoute } from '@/lib/routes';
+import {
+  FIELD_PROBLEM,
+  fieldProblems,
+  fiscalYearChoices,
+  missingFields,
+  refusedFields,
+  withCalendarYearDates,
+  type FieldProblem,
+  type PeriodField,
+  type RequiredField,
+} from '../tools/period-fields';
 import {
   INITIAL_PERIOD_RECORD_STATE,
   PERIOD_DIALOGUE,
@@ -37,6 +51,7 @@ import {
   reopenPeriodAction,
   updatePeriodAction,
 } from '../actions/actions';
+import { PeriodsBreadcrumb } from './periods-breadcrumb';
 import { PERIODS_MESSAGES } from './periods-messages';
 import styles from './periods.module.css';
 
@@ -52,14 +67,39 @@ import styles from './periods.module.css';
  * **The lock is not a role gate**, so this screen never says "you may not" to an administrator — it
  * says the period is locked and names the way through (FR-22 as amended, §12.5.6's task-31.2 row).
  *
+ * **S-13's way back** (project owner, 30 Sep 2026): the trail above the title and the arrow before it,
+ * up to the entity's periods, **and both ask before leaving unsaved changes** — this file answers the
+ * guard (`shared/leave-guard.tsx`), because it is what knows whether anything is unsaved.
+ *
+ * **The fiscal year is chosen from a list, and a save says which field is wrong** (project owner, 30 Sep
+ * 2026). The years are the last five and the next, around Chișinău's current year, which the section
+ * reads on the server; a year another period holds is listed disabled, and choosing one fills empty
+ * dates with its calendar year (`tools/period-fields.ts`). A save pressed with something missing is
+ * refused here, before any request, and each field then says what it lacks, with a summary above
+ * them (UX-111); an overlap refusal marks the two dates beside the api's own sentence.
+ *
  * State is a reducer in `record-state.ts`; the dates are one `ReportingPeriodPicker` rather than
  * four fields, because §11.5 reserves that component for exactly this screen.
  */
+/** The four controls' ids, so the summary's links land on the fields the picker renders. */
+const FIELD_IDS = reportingPeriodFieldIds();
+
+/** What each required field says when a save finds it empty. */
+const MISSING_MESSAGE = {
+  fiscalYear: 'record.fiscalYearRequired',
+  start: 'record.startRequired',
+  end: 'record.endRequired',
+} as const satisfies Record<RequiredField, string>;
 export interface PeriodRecordFormProps {
-  readonly entityId: string;
+  /** The entity the period belongs to — its id for the addresses, its name for the trail. Nothing more crosses. */
+  readonly entity: Pick<ReportingEntity, 'id' | 'name'>;
   /** Absent in create mode. §4.6's Record covers both, as S-13's does. */
   readonly period?: ReportingPeriod;
   readonly reopenings: readonly PeriodReopening[];
+  /** Chișinău's year, read on the server — never this browser's clock (the footer's rule). */
+  readonly currentYear: number;
+  /** The years the entity's periods already hold, this one's included; `fiscalYearChoices` frees its own. */
+  readonly takenYears: readonly number[];
 }
 
 const toValue = (period?: ReportingPeriod): ReportingPeriodValue => ({
@@ -69,8 +109,10 @@ const toValue = (period?: ReportingPeriod): ReportingPeriodValue => ({
   due: period?.dueDate?.date ?? '',
 });
 
-export function PeriodRecordForm({ entityId, period, reopenings }: PeriodRecordFormProps) {
+export function PeriodRecordForm({ entity, period, reopenings, currentYear, takenYears }: PeriodRecordFormProps) {
+  const entityId = entity.id;
   const t = useTranslations(PERIODS_MESSAGES);
+  const tForms = useTranslations('forms');
   const router = useRouter();
   const [, startNavigation] = useTransition();
   const [state, dispatch] = useReducer(periodRecordReducer, INITIAL_PERIOD_RECORD_STATE);
@@ -80,7 +122,48 @@ export function PeriodRecordForm({ entityId, period, reopenings }: PeriodRecordF
 
   const locked = period?.lockedAt != null;
   const ordered = periodRangeIsOrdered(value);
-  const complete = value.fiscalYear !== '' && value.start !== '' && value.end !== '';
+  // What leaving would lose: the dates as they differ from what is stored, and a reopening's reason being written.
+  const edited = periodValueDiffers(value, toValue(period));
+  const dirty = edited || reason.trim() !== '';
+  const title = period ? t('record.titleYear', { year: String(period.fiscalYear) }) : t('record.createTitle');
+
+  // A year as a string, never a number ICU would group ("2 026"); a taken year says why it cannot be chosen.
+  const fiscalYears = fiscalYearChoices({ currentYear, takenYears, ownYear: period?.fiscalYear }).map(
+    ({ year, taken }) => ({
+      value: String(year),
+      label: String(year),
+      disabled: taken,
+      description: taken ? t('record.fiscalYearTaken') : undefined,
+    }),
+  );
+
+  // One list feeds both the fields' messages and the summary, so they cannot disagree.
+  const problems = fieldProblems({
+    value,
+    checked: state.checked,
+    refused: state.report?.kind === PERIOD_REPORT.REFUSED ? state.report.fields : [],
+  });
+  const messageFor = (field: RequiredField, problem: FieldProblem): string => {
+    if (problem === FIELD_PROBLEM.RANGE) return t('record.rangeInvalid');
+    if (problem === FIELD_PROBLEM.OVERLAPS) return t('record.datesOverlap');
+    return t(MISSING_MESSAGE[field]);
+  };
+  const fieldErrors: Partial<Record<PeriodField, string>> = Object.fromEntries(
+    problems.map(({ field, problem }) => [field, messageFor(field, problem)]),
+  );
+
+  // Rebuilt only when `dirty` moves, so the links reading it do not re-render on every keystroke; `dispatch` is stable
+  // by React's guarantee.
+  const guard = useMemo<LeaveGuard>(
+    () => ({
+      holds: (href) => {
+        if (!dirty) return false;
+        dispatch({ type: PERIOD_RECORD_EVENT.LEAVE_REQUESTED, href });
+        return true;
+      },
+    }),
+    [dirty],
+  );
 
   /** One translation for all four writes, through the shared helper rather than a fourth copy. */
   const settle = (outcome: Parameters<typeof noticeFromOutcome>[0]['outcome']): boolean => {
@@ -89,17 +172,22 @@ export function PeriodRecordForm({ entityId, period, reopenings }: PeriodRecordF
       report: {
         kind: outcome.status === API_OUTCOME.Ok ? PERIOD_REPORT.SAVED : PERIOD_REPORT.REFUSED,
         notice: noticeFromOutcome({
-        outcome,
-        success: { title: t('saved.title'), body: t('saved.body') },
-        unreachable: { title: t('error.unreachable.title'), body: t('error.unreachable.body') },
+          outcome,
+          success: { title: t('saved.title'), body: t('saved.body') },
+          unreachable: { title: t('error.unreachable.title'), body: t('error.unreachable.body') },
         }),
+        fields: refusedFields(outcome),
       },
     });
     return outcome.status === API_OUTCOME.Ok;
   };
 
   const save = () => {
-    if (!ordered || !complete) return;
+    // Refused here, and said: every field that is missing or out of order now names itself.
+    if (!ordered || missingFields(value).length > 0) {
+      dispatch({ type: PERIOD_RECORD_EVENT.INCOMPLETE });
+      return;
+    }
     dispatch({ type: PERIOD_RECORD_EVENT.SUBMITTED });
     void (async () => {
       const dates = {
@@ -148,9 +236,12 @@ export function PeriodRecordForm({ entityId, period, reopenings }: PeriodRecordF
   };
 
   return (
-    <>
+    <LeaveGuardContext.Provider value={guard}>
       <RecordShell
-        title={period ? t('record.titleYear', { year: String(period.fiscalYear) }) : t('record.createTitle')}
+        breadcrumb={<PeriodsBreadcrumb entity={entity} record={title} linkComponent={GuardedLink} />}
+        back={{ href: entityPeriodsRoute(entityId), label: t('record.back') }}
+        linkComponent={GuardedLink}
+        title={title}
         summary={period ? t('record.lede') : t('record.createLede')}
         actions={
           locked ? (
@@ -170,7 +261,9 @@ export function PeriodRecordForm({ entityId, period, reopenings }: PeriodRecordF
             </div>
           ) : (
             <div className={styles.actions}>
-              <Button type="button" busy={state.pending} disabled={!complete} onClick={save}>
+              {/* Never disabled for what is missing: a button that refuses in silence says nothing about which field
+                  is wrong, and a press here names them. */}
+              <Button type="button" busy={state.pending} onClick={save}>
                 {period ? t('record.save') : t('record.create')}
               </Button>
               {period ? (
@@ -202,11 +295,22 @@ export function PeriodRecordForm({ entityId, period, reopenings }: PeriodRecordF
         {/* Derived, not stored: a success says *the record on screen is what was saved*, which stops
             being true the moment the picker differs — while a refusal stands until the next attempt
             (§8.1's Success row; the S-15 decision, applied here by task 134). */}
-        <RecordNotice notice={visibleNotice(state, periodValueDiffers(value, toValue(period)))} />
+        <RecordNotice notice={visibleNotice(state, edited)} />
+
+        <FormErrorSummary
+          title={tForms('summaryTitle')}
+          items={problems.map(({ field, problem }) => ({
+            fieldId: FIELD_IDS[field],
+            message: messageFor(field, problem),
+          }))}
+        />
 
         <ReportingPeriodPicker
           value={value}
-          onChange={setValue}
+          onChange={(next) => setValue((previous) => withCalendarYearDates({ previous, next }))}
+          fiscalYears={fiscalYears}
+          placeholders={{ fiscalYear: t('record.fiscalYearPlaceholder') }}
+          errors={fieldErrors}
           disabled={locked || state.pending}
           labels={{
             fiscalYear: t('record.fiscalYear'),
@@ -300,6 +404,25 @@ export function PeriodRecordForm({ entityId, period, reopenings }: PeriodRecordF
           onCancel={() => dispatch({ type: PERIOD_RECORD_EVENT.DISMISSED })}
         />
       ) : null}
-    </>
+
+      {/* Leaving with changes unsaved — S-13's question in the form layer's words. The object is the record by name,
+          and what survives is what was stored, of which a new period has nothing, so its dialogue says only what is
+          lost. */}
+      <ConsequenceDialogue
+        open={state.leaving !== null}
+        object={title}
+        title={tForms('record.leave.title')}
+        consequence={tForms('record.leave.consequence')}
+        retained={period ? tForms('record.leave.retained') : undefined}
+        confirmLabel={tForms('record.leave.confirm')}
+        cancelLabel={tForms('record.leave.cancel')}
+        onConfirm={() => {
+          if (state.leaving === null) return;
+          router.push(state.leaving);
+          dispatch({ type: PERIOD_RECORD_EVENT.LEAVE_CONFIRMED });
+        }}
+        onCancel={() => dispatch({ type: PERIOD_RECORD_EVENT.LEAVE_DISMISSED })}
+      />
+    </LeaveGuardContext.Provider>
   );
 }

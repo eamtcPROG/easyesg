@@ -18,10 +18,12 @@ import {
 const SAVED = {
   kind: PERIOD_REPORT.SAVED,
   notice: { intent: CALLOUT_INTENT.SUCCESS, title: 'Saved', body: 'Recorded.', action: null },
+  fields: [],
 };
 const FAILED = {
   kind: PERIOD_REPORT.REFUSED,
   notice: { intent: CALLOUT_INTENT.ERROR, title: 'Refused', body: 'Locked.', action: null },
+  fields: [],
 };
 
 const after = (state: PeriodRecordState, ...actions: Parameters<typeof periodRecordReducer>[1][]) =>
@@ -44,7 +46,41 @@ describe('periodRecordReducer', () => {
       pending: true,
       dialogue: null,
       report: null,
+      leaving: null,
+      checked: false,
     });
+  });
+
+  /** 30 Sep 2026: a save pressed with something missing says which fields, and takes the last answer's notice away. */
+  it('marks the form checked on a save refused here, and clears the notice above it', () => {
+    const refused = after(INITIAL_PERIOD_RECORD_STATE, { type: PERIOD_RECORD_EVENT.SETTLED, report: FAILED });
+    const checked = after(refused, { type: PERIOD_RECORD_EVENT.INCOMPLETE });
+
+    expect(checked).toEqual({ ...INITIAL_PERIOD_RECORD_STATE, checked: true });
+    // An answer later leaves the check standing: the fields' messages derive from the values, not from this flag alone.
+    expect(after(checked, { type: PERIOD_RECORD_EVENT.SUBMITTED }, { type: PERIOD_RECORD_EVENT.SETTLED, report: SAVED }).checked).toBe(true);
+  });
+
+  /** 30 Sep 2026: S-13's question before leaving unsaved changes, taken by S-14's record. */
+  it('holds where the reader asked to go until they stay or leave, and touches nothing else', () => {
+    const refused = after(INITIAL_PERIOD_RECORD_STATE, { type: PERIOD_RECORD_EVENT.SETTLED, report: FAILED });
+    const asking = after(refused, { type: PERIOD_RECORD_EVENT.LEAVE_REQUESTED, href: '/entities/e1/periods' });
+
+    expect(asking).toEqual({ ...refused, leaving: '/entities/e1/periods' });
+    expect(after(asking, { type: PERIOD_RECORD_EVENT.LEAVE_DISMISSED })).toEqual(refused);
+    expect(after(asking, { type: PERIOD_RECORD_EVENT.LEAVE_CONFIRMED })).toEqual(refused);
+  });
+
+  it('leaves an open question standing when a write settles — the question is the reader’s, not the write’s', () => {
+    const asking = after(
+      INITIAL_PERIOD_RECORD_STATE,
+      { type: PERIOD_RECORD_EVENT.SUBMITTED },
+      { type: PERIOD_RECORD_EVENT.LEAVE_REQUESTED, href: '/entities/e1' },
+      { type: PERIOD_RECORD_EVENT.SETTLED, report: SAVED },
+    );
+
+    expect(asking.leaving).toBe('/entities/e1');
+    expect(asking.pending).toBe(false);
   });
 
   it('closes whichever dialogue asked, on a refusal as much as on a success', () => {

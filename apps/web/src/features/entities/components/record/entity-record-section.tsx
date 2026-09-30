@@ -77,6 +77,7 @@ export async function EntityRecordSection({ entityId }: { readonly entityId: str
         activity={read.activity}
         suggestions={read.suggestions}
         legalForms={legalForms}
+        periods={read.periods}
       />
     </div>
   );

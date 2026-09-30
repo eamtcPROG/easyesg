@@ -1,6 +1,6 @@
 import 'server-only';
 import type { PeriodReopening, ReportingEntity, ReportingPeriod } from '@easyesg/contracts';
-import { API_OUTCOME } from '@/lib/api-outcome';
+import { API_OUTCOME, type ApiOutcome, type ListResult } from '@/lib/api-outcome';
 import { api } from '../api/api-client';
 import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
 
@@ -71,6 +71,41 @@ export async function readOrganizationPeriods(): Promise<OverviewRead> {
   return { status: TENANT_READ.READY, periods: periods.value.items };
 }
 
+/**
+ * S-14's create form's read (30 Sep 2026) — the entity alone, for the trail that names it. The form read nothing until
+ * S-14 took S-13's way back (project owner): the version pin and the prior period are the system's to resolve at open
+ * (FR-45, FR-66, DR-4), but a trail reading *Reporting entities / OkFlora / Reporting periods / New period* needs the
+ * entity's name, and a refusal here is one the reader would otherwise meet only at the write.
+ */
+export type NewPeriodRead =
+  | {
+      readonly status: typeof TENANT_READ.READY;
+      readonly entity: ReportingEntity;
+      /** The years its periods already hold — `takenYears`' reason. */
+      readonly takenYears: readonly number[];
+    }
+  | TenantReadRefusal;
+
+/**
+ * The fiscal years an entity's periods already hold, which S-14's year list offers disabled (30 Sep 2026). **A failed
+ * read answers none rather than failing the form**: the list then offers every year, and the api's own overlap
+ * refusal — which marks the dates — still stands behind it.
+ */
+const takenYears = (periods: ApiOutcome<ListResult<ReportingPeriod>>): readonly number[] =>
+  periods.status === API_OUTCOME.Ok ? periods.value.items.map((period) => period.fiscalYear) : [];
+
+export async function readNewPeriod(entityId: string): Promise<NewPeriodRead> {
+  const [entity, periods] = await Promise.all([
+    api.get<ReportingEntity>(`/entities/${entityId}`),
+    api.getList<ReportingPeriod>(`/periods?reportingEntityId=${encodeURIComponent(entityId)}`),
+  ]);
+
+  if (isPermissionRefusal(entity)) return { status: TENANT_READ.FORBIDDEN };
+  if (entity.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
+
+  return { status: TENANT_READ.READY, entity: entity.value, takenYears: takenYears(periods) };
+}
+
 export type PeriodRecordRead =
   | {
       readonly status: typeof TENANT_READ.READY;
@@ -82,6 +117,8 @@ export type PeriodRecordRead =
        * be seen is one a reader can miss, which is the state the requirement exists to prevent.
        */
       readonly reopenings: readonly PeriodReopening[];
+      /** The years the entity's periods hold, this one's included — `takenYears`' reason. */
+      readonly takenYears: readonly number[];
     }
   | TenantReadRefusal;
 
@@ -89,10 +126,11 @@ export async function readPeriodRecord(input: {
   readonly entityId: string;
   readonly periodId: string;
 }): Promise<PeriodRecordRead> {
-  const [entity, period, reopenings] = await Promise.all([
+  const [entity, period, reopenings, periods] = await Promise.all([
     api.get<ReportingEntity>(`/entities/${input.entityId}`),
     api.get<ReportingPeriod>(`/periods/${input.periodId}`),
     api.getList<PeriodReopening>(`/periods/${input.periodId}/reopenings`),
+    api.getList<ReportingPeriod>(`/periods?reportingEntityId=${encodeURIComponent(input.entityId)}`),
   ]);
 
   if (isPermissionRefusal(entity) || isPermissionRefusal(period)) {
@@ -111,5 +149,6 @@ export async function readPeriodRecord(input: {
     // which is honest — and the lock state, which is the fact that actually gates editing, comes
     // from the period itself rather than from this list.
     reopenings: reopenings.status === API_OUTCOME.Ok ? reopenings.value.items : [],
+    takenYears: takenYears(periods),
   };
 }

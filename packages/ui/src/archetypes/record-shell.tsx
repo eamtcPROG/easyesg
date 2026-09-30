@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import type { NavLinkComponent } from '../navigation/nav-link';
+import { PageHeading, type PageBack } from './page-heading';
 import styles from './record-shell.module.css';
 
 /**
@@ -32,9 +34,19 @@ import styles from './record-shell.module.css';
  * visible only to a screen reader. `IndexShell`'s empty-state evidence is the same kind of rule:
  * easy to get right once, easy to lose on the fourth screen.
  *
+ * **The heading is `PageHeading`'s** (30 Sep 2026), shared with `RecordCard`: without `breadcrumb` and `back` it is
+ * the `hgroup` above alone, and with them the trail and the arrow S-13's record set — which S-14's record takes, its
+ * address lying beneath an entity's.
+ *
  * **No text and no router**, per the package rule: every string arrives as a prop or a node.
  */
 export interface RecordShellProps {
+  /** The trail above the title — a `Breadcrumb`, for a Record whose address lies beneath another page's. */
+  breadcrumb?: ReactNode;
+  /** The arrow before the title, back to where the record lies. */
+  back?: PageBack;
+  /** The app's link, for the arrow. A plain anchor where there is no router to inject. */
+  linkComponent?: NavLinkComponent;
   /** The identity header — what object this is. Rendered as the page's one `<h1>`. */
   title: ReactNode;
   /** One or two sentences under the title (UX-17), where the object needs explaining. */
@@ -55,13 +67,25 @@ export interface RecordShellProps {
   children: ReactNode;
 }
 
-export function RecordShell({ title, summary, actions, attribution, children }: RecordShellProps) {
+export function RecordShell({
+  breadcrumb,
+  back,
+  linkComponent,
+  title,
+  summary,
+  actions,
+  attribution,
+  children,
+}: RecordShellProps) {
   return (
     <div className={styles.record}>
-      <hgroup className={styles.identity}>
-        <h1 className={styles.title}>{title}</h1>
-        {summary ? <p className={styles.summary}>{summary}</p> : null}
-      </hgroup>
+      <PageHeading
+        breadcrumb={breadcrumb}
+        back={back}
+        linkComponent={linkComponent}
+        title={title}
+        summary={summary}
+      />
 
       <div className={styles.sections}>{children}</div>
 

@@ -3,8 +3,8 @@
 import { Breadcrumb } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { ROUTES } from '@/lib/routes';
+import { GuardedLink } from '@/shared/leave-guard';
 import { ENTITIES_MESSAGES } from '../shared/entity-messages';
-import { GuardedLink } from './leave-guard';
 
 /**
  * The record's way back to the index it lies beneath — *Reporting entities / Brutăria Lina SRL*, as the S-13 artboard
@@ -12,7 +12,7 @@ import { GuardedLink } from './leave-guard';
  * both modes: an unsaved entity is a record too, and the create form was the address that had no exit but the band.
  *
  * **The step back is named as the index names itself**, its heading rather than the band's shorter tab, so the link
- * says where it lands. **It asks before leaving unsaved changes**, as the arrow does (`leave-guard.tsx`).
+ * says where it lands. **It asks before leaving unsaved changes**, as the arrow does (`shared/leave-guard.tsx`).
  */
 export function EntityBreadcrumb({ current }: { readonly current: string }) {
   const t = useTranslations(ENTITIES_MESSAGES);

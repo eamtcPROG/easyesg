@@ -1,6 +1,6 @@
-import { ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Anchor, type NavLinkComponent } from '../navigation/nav-link';
+import type { NavLinkComponent } from '../navigation/nav-link';
+import { PageHeading, type PageBack } from './page-heading';
 import styles from './record-shell.module.css';
 
 /**
@@ -15,21 +15,16 @@ import styles from './record-shell.module.css';
  * sections are `RecordSection`, one `<h2>` each under this file's one `<h1>`, and the stylesheet they share is what
  * takes their boxes off inside the surface.
  *
- * **The back control is data, and the anchor is built here**, `Breadcrumb`'s shape: the arrow is this package's icon,
- * and the app injects its router — and, where leaving can lose work, a link that asks first. Its name is a visually
- * hidden sentence rather than a label attribute, so any injected link carries it.
+ * **The heading with its way back is `PageHeading`'s** since 30 Sep 2026, when S-14 needed it on an Index and on
+ * `RecordShell` too; it was built here first, and this card renders it unchanged.
  *
  * **No text and no router**, the package rule: every word arrives as a prop or a node.
  *
  * States (§8.1): those of the Record it frames — the caller's notices and read-only state go in `children`, above the
  * sections, and a Record with nothing to commit passes no `actions`.
  */
-export interface RecordCardBack {
-  /** Where the record lies — the index it was opened from. */
-  readonly href: string;
-  /** What a screen reader hears for the arrow, naming where it leads. Localized by the caller. */
-  readonly label: string;
-}
+/** The arrow's destination and its name — `PageHeading`'s, kept under the name S-13's caller already imports. */
+export type RecordCardBack = PageBack;
 
 export interface RecordCardProps {
   /** The trail above the title — a `Breadcrumb`. It stands midway in the page's top inset. */
@@ -60,24 +55,15 @@ export function RecordCard({
   aside,
   children,
 }: RecordCardProps) {
-  const Link = linkComponent ?? Anchor;
-
   return (
     <div className={styles.card}>
-      {breadcrumb ? <div className={styles.trail}>{breadcrumb}</div> : null}
-
-      <div className={styles.titleRow}>
-        {back ? (
-          <Link href={back.href} className={styles.back}>
-            <ArrowLeft aria-hidden="true" className={styles.backIcon} />
-            <span className={styles.visuallyHidden}>{back.label}</span>
-          </Link>
-        ) : null}
-        <hgroup className={styles.identity}>
-          <h1 className={styles.title}>{title}</h1>
-          {summary ? <p className={styles.summary}>{summary}</p> : null}
-        </hgroup>
-      </div>
+      <PageHeading
+        breadcrumb={breadcrumb}
+        back={back}
+        linkComponent={linkComponent}
+        title={title}
+        summary={summary}
+      />
 
       <div className={aside ? `${styles.layout} ${styles.layoutWithAside}` : styles.layout}>
         <div className={styles.surface}>

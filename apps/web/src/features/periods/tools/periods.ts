@@ -1,4 +1,4 @@
-import type { IndexPage } from '@easyesg/ui';
+import { STATUS_TONE, type IndexPage, type StatusTone } from '@easyesg/ui';
 import type { ReportingPeriod } from '@easyesg/contracts';
 
 /**
@@ -23,6 +23,25 @@ export const PERIOD_STANDING = {
 } as const;
 
 export type PeriodStanding = (typeof PERIOD_STANDING)[keyof typeof PERIOD_STANDING];
+
+/**
+ * A period's standing, read off the lock. **Beside the vocabulary rather than in each reader**, because S-13 shows a
+ * period's standing too — its list's periods column and its record's side panel — and a second copy of this one
+ * comparison is a second place the two screens could come to disagree about the same period.
+ */
+export const periodStanding = (period: Pick<ReportingPeriod, 'lockedAt'>): PeriodStanding =>
+  period.lockedAt === null ? PERIOD_STANDING.OPEN : PERIOD_STANDING.LOCKED;
+
+/**
+ * Open is positive; locked is **neutral, not an error**. FR-22 makes locking a deliberate act that gives the change
+ * history a defensible endpoint — a reader whose period is locked has done the right thing, and an alarming tone would
+ * say otherwise. `EntitiesList` draws archived the same way for the same reason. Here rather than in S-14's list for
+ * `periodStanding`'s reason: S-13's side panel draws the same chip.
+ */
+export const PERIOD_STANDING_TONE: Record<PeriodStanding, StatusTone> = {
+  [PERIOD_STANDING.OPEN]: STATUS_TONE.POSITIVE,
+  [PERIOD_STANDING.LOCKED]: STATUS_TONE.NEUTRAL,
+};
 
 /** The filter's "no filter" member. A real value, because the URL has to be able to say it. */
 export const PERIOD_FILTER_ANY = 'any';
@@ -160,7 +179,7 @@ export const toPeriodRows = (periods: readonly ReportingPeriod[]): PeriodRow[] =
     start: period.periodStart.date,
     end: period.periodEnd.date,
     due: period.dueDate?.date ?? null,
-    standing: period.lockedAt === null ? PERIOD_STANDING.OPEN : PERIOD_STANDING.LOCKED,
+    standing: periodStanding(period),
     templateVersion: period.templateVersion,
     taxonomyVersion: period.taxonomyVersion,
     hasPrior: period.priorPeriodId !== null,

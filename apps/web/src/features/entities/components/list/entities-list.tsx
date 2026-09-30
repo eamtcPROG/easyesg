@@ -15,7 +15,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useTransition } from 'react';
 import { IndexView } from '@/shared/index-view';
 import { Link, useRouter } from '@/i18n/navigation';
-import { ROUTES, entityRoute, withQuery } from '@/lib/routes';
+import { ROUTES, entityPeriodsRoute, entityRoute, withQuery } from '@/lib/routes';
 import {
   ENTITY_FILTER_ANY,
   ENTITY_SORT,
@@ -30,6 +30,7 @@ import {
 import { ENTITIES_MESSAGES } from '../shared/entity-messages';
 import styles from '../styles/entities.module.css';
 import { EntitiesToolbar } from './entities-toolbar';
+import { EntityPeriodsCell } from './entity-periods-cell';
 
 /**
  * S-13's list, as an instance of the Index archetype (§4.6).
@@ -47,14 +48,15 @@ import { EntitiesToolbar } from './entities-toolbar';
  * **Every row ends in a labelled action** (29 Sep 2026, project owner: *"to be clear for the user how to edit it"*) —
  * *edit* for an active entity and *view* for an archived one, whose record is read-only; the console's row button
  * (§5.2), named for its row. The name stays a link as well: it is where a reader who already knows looks, and the
- * button is where one who does not is told.
+ * button is where one who does not is told. **The periods cell and its *periods* button are the same pair** (30 Sep
+ * 2026, project owner), for the same reason.
  */
 /**
  * The columns that are not sort dimensions, declared rather than written into a union — the
  * convention's own reason applies: a hand-written union has no runtime value, so the key would be
  * spelled again at the column that uses it and a typo would silently produce a second column.
  */
-const ENTITY_COLUMN = { IDNO: 'idno', ACTIVITY: 'activity', ACTIONS: 'actions' } as const;
+const ENTITY_COLUMN = { IDNO: 'idno', ACTIVITY: 'activity', PERIODS: 'periods', ACTIONS: 'actions' } as const;
 
 export type EntityColumnKey = EntitySort | (typeof ENTITY_COLUMN)[keyof typeof ENTITY_COLUMN];
 
@@ -97,7 +99,7 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         key: ENTITY_SORT.NAME,
         header: t('columns.entity'),
         sortable: true,
-        // The two text columns share the width equally, and the four short ones take only what they hold
+        // The two text columns share the width equally, and the short ones take only what they hold
         // (29 Sep 2026, project owner: *"a better alignment of the columns for more symmetry"*).
         size: COLUMN_SIZE.FILL,
         cell: (row) => (
@@ -154,6 +156,13 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         cell: (row) => <span className="t-numeric">{row.siteCount}</span>,
       },
       {
+        // The way into S-14 for the row's entity, and one of the short columns: two years and their standing at most.
+        key: ENTITY_COLUMN.PERIODS,
+        header: t('columns.periods'),
+        size: COLUMN_SIZE.FIT,
+        cell: (row) => <EntityPeriodsCell row={row} />,
+      },
+      {
         key: ENTITY_SORT.STANDING,
         header: t('columns.standing'),
         sortable: true,
@@ -172,17 +181,26 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
           // An archived record takes no change (FR-20), so its button says it opens to be read.
           const edits = row.standing === ENTITY_STANDING.ACTIVE;
           return (
-            <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
-              <Link
-                href={entityRoute(row.id)}
-                // The visible word, and a name that begins with it (WCAG 2.5.3) and ends with the row.
-                aria-label={
-                  edits ? t('rowActions.editNamed', { name: row.name }) : t('rowActions.viewNamed', { name: row.name })
-                }
-              >
-                {edits ? t('rowActions.edit') : t('rowActions.view')}
-              </Link>
-            </Button>
+            <span className={styles.rowActions}>
+              {/* 30 Sep 2026, project owner: the periods cell is a link, and a reader may not know to press it — so
+                  the row says where its periods are too, as it says how to edit. Archived included: its periods stay. */}
+              <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
+                <Link href={entityPeriodsRoute(row.id)} aria-label={t('rowActions.periodsNamed', { name: row.name })}>
+                  {t('rowActions.periods')}
+                </Link>
+              </Button>
+              <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
+                <Link
+                  href={entityRoute(row.id)}
+                  // The visible word, and a name that begins with it (WCAG 2.5.3) and ends with the row.
+                  aria-label={
+                    edits ? t('rowActions.editNamed', { name: row.name }) : t('rowActions.viewNamed', { name: row.name })
+                  }
+                >
+                  {edits ? t('rowActions.edit') : t('rowActions.view')}
+                </Link>
+              </Button>
+            </span>
           );
         },
       },

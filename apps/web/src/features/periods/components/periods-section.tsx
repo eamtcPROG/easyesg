@@ -1,22 +1,26 @@
-import { Button, Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
+import { Callout, CALLOUT_INTENT, PageHeading, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { readPeriodList } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
-import { ROUTES, newPeriodRoute } from '@/lib/routes';
+import { ROUTES, entityRoute } from '@/lib/routes';
 import { applyPeriodView, readPeriodView, toPeriodRows } from '../tools/periods';
+import { PeriodsBreadcrumb } from './periods-breadcrumb';
 import { PeriodsList } from './periods-list';
 import { PERIODS_MESSAGES } from './periods-messages';
 import styles from './periods.module.css';
 
 /**
- * S-14's index region: the read, the header, and which of §8.1's arms applies (UC-56 … UC-58; cut
- * out of the route by task 134's parent-close review). **The heading names the entity** once the
+ * S-14's index region: the read, the heading, and which of §8.1's arms applies (UC-56 … UC-58; cut
+ * out of the route by task 134's parent-close review). **The trail names the entity** once the
  * read answers, because a period only means anything against one and an organization reporting on
- * three has three of these lists. The screen never computes the caller's role — the writes are
- * `@RequiresRole(ORGANIZATION_ADMINISTRATOR)`, the reads are open to every member.
+ * three has three of these lists — and the arrow beside the heading leads up to that entity, as
+ * S-13's record's leads up to its index (project owner, 30 Sep 2026: S-14 takes S-13's
+ * conventions). Both wait on the read, since both name what it answers; a refused or failed read
+ * draws the heading alone, as S-13's record does. The screen never computes the caller's role —
+ * the writes are `@RequiresRole(ORGANIZATION_ADMINISTRATOR)`, the reads are open to every member.
  */
 export async function PeriodsSection({
   entityId,
@@ -61,27 +65,20 @@ export async function PeriodsSection({
   } else {
     const view = readPeriodView(query);
     const page = applyPeriodView({ rows: toPeriodRows(read.periods), view });
-    body = (
-      <>
-        <p className="t-caption">{read.entity.name}</p>
-        <PeriodsList entityId={entityId} page={page} view={view} />
-      </>
-    );
+    body = <PeriodsList entityId={entityId} page={page} view={view} />;
   }
+
+  const ready = read.status === TENANT_READ.READY;
 
   return (
     <div className={styles.screen}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
-          <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
-        </div>
-        {read.status === TENANT_READ.READY ? (
-          <Button asChild>
-            <Link href={newPeriodRoute(entityId)}>{t('open')}</Link>
-          </Button>
-        ) : null}
-      </header>
+      <PageHeading
+        breadcrumb={ready ? <PeriodsBreadcrumb entity={read.entity} linkComponent={Link} /> : undefined}
+        back={ready ? { href: entityRoute(entityId), label: t('backToEntity', { name: read.entity.name }) } : undefined}
+        linkComponent={Link}
+        title={t('title')}
+        summary={t('lede')}
+      />
       {body}
     </div>
   );

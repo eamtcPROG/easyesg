@@ -74,6 +74,8 @@ export {
   type RecordCardBack,
   type RecordCardProps,
 } from './archetypes/record-card';
+// 30 Sep 2026: the heading with its way back, out of `RecordCard` — S-14's Index and Record take S-13's conventions.
+export { PageHeading, type PageBack, type PageHeadingProps } from './archetypes/page-heading';
 export {
   WizardModuleItem,
   WizardShell,
@@ -198,6 +200,7 @@ export {
 export {
   ReportingPeriodPicker,
   periodRangeIsOrdered,
+  reportingPeriodFieldIds,
   type ReportingPeriodPickerProps,
   type ReportingPeriodValue,
 } from './domain/reporting-period-picker';

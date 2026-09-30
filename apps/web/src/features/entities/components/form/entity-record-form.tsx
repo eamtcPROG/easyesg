@@ -9,10 +9,12 @@ import type { NaceCodeMatch, ReportingEntity } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
 import { failureNotice, successNotice } from '@/lib/notice';
 import { RecordNotice } from '@/shared/record-notice';
+import { GuardedLink, LeaveGuardContext, type LeaveGuard } from '@/shared/leave-guard';
 import { useRouter } from '@/i18n/navigation';
 import { ROUTES, entityRoute } from '@/lib/routes';
 import { archiveEntityAction, createEntityAction, updateEntityAction } from '../../actions/actions';
 import { ENTITY_STANDING } from '../../tools/entities';
+import type { EntityPeriod } from '../../tools/entity-periods';
 import { toFields, toRequest, type EntityFields } from '../../tools/entity-fields';
 import {
   ENTITY_EVENT,
@@ -30,7 +32,7 @@ import { ENTITY_RECORD_MESSAGES } from '../shared/entity-messages';
 import { EntityArchivePanel } from './entity-archive-panel';
 import { EntityBreadcrumb } from './entity-breadcrumb';
 import { EntityControls } from './entity-controls';
-import { GuardedLink, LeaveGuardContext, type LeaveGuard } from './leave-guard';
+import { EntityPeriodsPanel } from './entity-periods-panel';
 
 /**
  * S-13's Record — UC-52, UC-53, UC-54 and UC-55 on one screen (FR-17 … FR-20).
@@ -46,9 +48,10 @@ import { GuardedLink, LeaveGuardContext, type LeaveGuard } from './leave-guard';
  * `EntityControls` is the only thing that submits.
  *
  * **The card form of the Record** (28 Sep 2026, project owner): `RecordCard`'s one surface with the sections inside
- * and the commit at its foot, the archive in the side column, and an arrow before the title back to the index. The
- * arrow and the breadcrumb are one guarded link (`leave-guard.tsx`), and **this file answers the guard**, because it
- * is what knows whether anything is unsaved — the question it opens is the reducer's `leaving`.
+ * and the commit at its foot, the periods and the archive in the side column, and an arrow before the title back to
+ * the index. The arrow, the breadcrumb and the periods panel's links are one guarded link (`shared/leave-guard.tsx`),
+ * and **this file answers the guard**, because it is what knows whether anything is unsaved — the question it opens is
+ * the reducer's `leaving`.
  *
  * **State is one reducer, not four `useState`s** — `tools/entity-record-state.ts` carries the
  * argument and the transitions are a unit spec. What is rendered is derived from that state: a
@@ -70,9 +73,12 @@ export interface EntityRecordFormProps {
   readonly suggestions: readonly NaceCodeMatch[];
   /** Legal forms for the organization's country, already labelled by the page. */
   readonly legalForms: readonly { readonly value: string; readonly label: string }[];
+  /** Its periods, for the side column's way into S-14 — null when they could not be read, and in create mode, where
+   *  there is no entity for them to belong to and the panel is not drawn. */
+  readonly periods: readonly EntityPeriod[] | null;
 }
 
-export function EntityRecordForm({ entity, activity, suggestions, legalForms }: EntityRecordFormProps) {
+export function EntityRecordForm({ entity, activity, suggestions, legalForms, periods }: EntityRecordFormProps) {
   const t = useTranslations(ENTITY_RECORD_MESSAGES);
   const tForms = useTranslations('forms');
   const tCommon = useTranslations('identity');
@@ -189,10 +195,16 @@ export function EntityRecordForm({ entity, activity, suggestions, legalForms }: 
             )
           }
           aside={
-            entity && !archived ? (
-              <EntityArchivePanel
-                onArchiveRequestedAction={() => dispatch({ kind: ENTITY_EVENT.ARCHIVE_REQUESTED })}
-              />
+            // The periods first, as the record artboard stacks them; the archive only while there is one to make.
+            entity ? (
+              <>
+                <EntityPeriodsPanel entityId={entity.id} periods={periods} />
+                {archived ? null : (
+                  <EntityArchivePanel
+                    onArchiveRequestedAction={() => dispatch({ kind: ENTITY_EVENT.ARCHIVE_REQUESTED })}
+                  />
+                )}
+              </>
             ) : null
           }
         >
@@ -246,11 +258,11 @@ export function EntityRecordForm({ entity, activity, suggestions, legalForms }: 
         <ConsequenceDialogue
           open={state.leaving !== null}
           object={entity ? entity.name : t('leave.newObject')}
-          title={t('leave.title')}
-          consequence={t('leave.consequence')}
-          retained={entity ? t('leave.retained') : undefined}
-          confirmLabel={t('leave.confirm')}
-          cancelLabel={t('leave.cancel')}
+          title={tForms('record.leave.title')}
+          consequence={tForms('record.leave.consequence')}
+          retained={entity ? tForms('record.leave.retained') : undefined}
+          confirmLabel={tForms('record.leave.confirm')}
+          cancelLabel={tForms('record.leave.cancel')}
           onConfirm={() => {
             if (state.leaving === null) return;
             router.push(state.leaving);

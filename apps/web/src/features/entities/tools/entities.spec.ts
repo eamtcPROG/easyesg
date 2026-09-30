@@ -55,6 +55,7 @@ describe('toEntityRows', () => {
     const [row] = toEntityRows({
       entities: [entity({ id: 'e1', name: 'Brutăria', naceCodes: ['99.99', '10.71'] })],
       activity: new Map([['10.71', 'Fabricarea pâinii']]),
+      periods: new Map(),
     });
 
     expect(row.activity).toEqual(['Fabricarea pâinii']);
@@ -68,10 +69,24 @@ describe('toEntityRows', () => {
         entity({ id: 'e1', name: 'A', sites: [site('s1'), site('s2')], status: 'archived' }),
       ],
       activity: new Map(),
+      periods: new Map(),
     });
 
     expect(row.siteCount).toBe(2);
     expect(row.standing).toBe(ENTITY_STANDING.ARCHIVED);
+  });
+
+  it('gives an entity with no periods an empty list, and every entity null when the periods were not read', () => {
+    const period = { id: 'p1', fiscalYear: 2026, standing: 'open' } as const;
+    const entities = [entity({ id: 'e1', name: 'A' }), entity({ id: 'e2', name: 'B' })];
+
+    const [held, none] = toEntityRows({ entities, activity: new Map(), periods: new Map([['e1', [period]]]) });
+    expect(held.periods).toEqual([period]);
+    // None is a fact the column states; unread below is not, and the two must stay apart.
+    expect(none.periods).toEqual([]);
+
+    const unread = toEntityRows({ entities, activity: new Map(), periods: null });
+    expect(unread.map((row) => row.periods)).toEqual([null, null]);
   });
 });
 
@@ -108,6 +123,7 @@ describe('applyEntityView', () => {
       entity({ id: 'b', name: 'Brutăria', sites: [site('s1'), site('s2')] }),
     ],
     activity: new Map(),
+    periods: new Map(),
   });
 
   it('puts active entities before archived ones by default', () => {

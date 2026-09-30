@@ -1,13 +1,5 @@
 .screen { display: flex; flex-direction: column; gap: var(--space-6); }
 
-.header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-5);
-  flex-wrap: wrap;
-}
-
 .title { margin: 0; }
 .lede { margin: var(--space-2) 0 0; color: var(--text-body); max-width: var(--measure-text); }
 .list { margin: 0; }
@@ -17,5 +9,35 @@
 .amendments { display: flex; flex-direction: column; gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
 .amendment { border-left: 2px solid var(--border-default); padding-left: var(--space-4); }
 .amendmentReason { margin: var(--space-2) 0 0; color: var(--text-body); }
-.filters { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+
+/* The filter row (30 Sep 2026, project owner): S-13's, rule for rule — the facet at the start and *open a period* at
+   the end, on the field's baseline. **Below `wide` one column**, the facet and then the button, each the row's full
+   width; **from `wide` one row**. `wide` because it is the one boundary with a stated value (§3.3's 1024px). */
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* The button's edges meet the select's rather than sitting a few pixels short on the shared baseline. */
+.toolbar .toolbarButton {
+  min-block-size: var(--field-block-size);
+}
+
+@media (min-width: 64rem) {
+  .toolbar {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  /* One facet, at S-13's width for its one, so it reads as a filter rather than a form field. */
+  .filters {
+    flex: 0 1 17rem;
+  }
+
+  .toolbar .toolbarButton {
+    flex-shrink: 0;
+  }
+}
 .reopen { display: flex; flex-direction: column; gap: var(--space-4); border: 1px solid var(--border-default); border-radius: var(--radius-2); padding: var(--space-5); }

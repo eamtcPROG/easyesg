@@ -37,7 +37,13 @@ export async function NewEntitySection() {
 
   return (
     <div className={styles.screen}>
-      <EntityRecordForm entity={null} activity={[]} suggestions={suggestions} legalForms={legalForms} />
+      <EntityRecordForm
+        entity={null}
+        activity={[]}
+        suggestions={suggestions}
+        legalForms={legalForms}
+        periods={null}
+      />
     </div>
   );
 }

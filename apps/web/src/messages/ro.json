@@ -120,7 +120,14 @@
       "save": "Salvați modificările",
       "discard": "Renunțați",
       "unsaved": "Aveți modificări nesalvate.",
-      "pristine": "Nimic modificat încă — salvarea rămâne inactivă până când o valoare diferă."
+      "pristine": "Nimic modificat încă — salvarea rămâne inactivă până când o valoare diferă.",
+      "leave": {
+        "title": "Plecați fără să salvați?",
+        "consequence": "Modificările făcute pe această pagină nu sunt salvate și se vor pierde.",
+        "retained": "Ce este deja salvat rămâne neschimbat.",
+        "confirm": "Plecați fără să salvați",
+        "cancel": "Rămâneți pe pagină"
+      }
     }
   },
   "identity": {
@@ -719,6 +726,7 @@
         "idnoMissing": "Neînregistrat",
         "activity": "Activitatea",
         "sites": "Amplasamente",
+        "periods": "Perioade",
         "standing": "Starea",
         "actions": "Acțiuni",
         "unclassified": "Fără activitate stabilită"
@@ -727,7 +735,18 @@
         "edit": "Editați",
         "editNamed": "Editați {name}",
         "view": "Vedeți",
-        "viewNamed": "Vedeți {name}"
+        "viewNamed": "Vedeți {name}",
+        "periods": "Perioade",
+        "periodsNamed": "Perioade — {name}"
+      },
+      "periods": {
+        "entry": "{year} {standing}",
+        "more": "și încă {count}",
+        "none": "Nicio perioadă încă",
+        "named": "{summary} — perioadele de raportare ale entității {name}",
+        "panelTitle": "Perioadele entității",
+        "panelNone": "Pentru această entitate nu s-a deschis încă nicio perioadă.",
+        "unavailable": "Perioadele nu au putut fi afișate aici. Linkul de mai jos deschide în continuare lista lor."
       },
       "standing": {
         "active": "Activă",
@@ -873,12 +892,7 @@
           "cancel": "Renunțați"
         },
         "leave": {
-          "title": "Plecați fără să salvați?",
-          "newObject": "Entitatea nouă",
-          "consequence": "Modificările făcute pe această pagină nu sunt salvate și se vor pierde.",
-          "retained": "Ce este deja salvat rămâne neschimbat.",
-          "confirm": "Plecați fără să salvați",
-          "cancel": "Rămâneți pe pagină"
+          "newObject": "Entitatea nouă"
         },
         "loading": "Se încarcă entitatea…",
         "reportContact": {
@@ -897,6 +911,7 @@
     "periods": {
       "title": "Perioade de raportare",
       "lede": "Fiecare raport se pregătește pentru o perioadă. Perioada fixează versiunea standardului și leagă anul precedent, de unde se preiau comparativele.",
+      "backToEntity": "Înapoi la {name}",
       "caption": "Perioadele entității",
       "open": "Deschideți o perioadă",
       "columns": {
@@ -907,7 +922,14 @@
         "dueNone": "Fără termen",
         "pin": "Versiunea standardului",
         "taxonomy": "Taxonomie",
-        "standing": "Starea"
+        "standing": "Starea",
+        "actions": "Acțiuni"
+      },
+      "rowActions": {
+        "edit": "Editați",
+        "editNamed": "Editați perioada {year}",
+        "view": "Vedeți",
+        "viewNamed": "Vedeți perioada {year}"
       },
       "standing": {
         "open": "Deschisă",
@@ -937,15 +959,22 @@
         "createTitle": "Perioadă nouă",
         "titleYear": "Perioada {year}",
         "createLede": "Versiunea standardului și legătura cu anul precedent se stabilesc automat la deschidere. Datele le stabiliți dumneavoastră.",
+        "back": "Înapoi la perioadele de raportare",
         "lede": "Datele perioadei și termenul până la care raportul trebuie finalizat.",
         "create": "Deschideți perioada",
         "save": "Salvați",
         "discard": "Renunțați la modificări",
         "fiscalYear": "Anul fiscal",
-        "fiscalYearHelp": "Anul cu care compania își denumește exercițiul. Poate să nu coincidă cu anul calendaristic.",
+        "fiscalYearHelp": "Anul cu care compania își denumește exercițiul. Dacă datele sunt goale, alegerea lui le completează cu 1 ianuarie – 31 decembrie; le puteți schimba dacă exercițiul nu coincide cu anul calendaristic.",
+        "fiscalYearPlaceholder": "Alegeți anul",
+        "fiscalYearTaken": "Pentru acest an există deja o perioadă.",
+        "fiscalYearRequired": "Alegeți anul fiscal al perioadei.",
         "start": "Prima zi a perioadei",
         "end": "Ultima zi a perioadei",
         "endHelp": "Ultima zi inclusă în perioadă, nu prima zi de după.",
+        "startRequired": "Introduceți prima zi a perioadei.",
+        "endRequired": "Introduceți ultima zi a perioadei.",
+        "datesOverlap": "Aceste date se suprapun cu o altă perioadă a entității. Alegeți zile pe care nu le acoperă altă perioadă.",
         "due": "Termenul de finalizare",
         "dueHelp": "Data până la care raportul trebuie să fie gata. Este altceva decât sfârșitul perioadei și este data de la care pornesc notificările.",
         "rangeInvalid": "Perioada se încheie înainte să înceapă, așa că nu a fost salvată. Alegeți o zi de sfârșit ulterioară zilei de început.",
@@ -953,7 +982,8 @@
           "linked": "Anul precedent este legat, deci comparativele se preiau automat.",
           "none": "Este prima perioadă a acestei entități, deci nu există an precedent din care să se preia comparative."
         },
-        "loading": "Se încarcă perioada de raportare…"
+        "loading": "Se încarcă perioada de raportare…",
+        "createLoading": "Se pregătește perioada nouă…"
       },
       "pins": {
         "taxonomy": "Taxonomie VSME",

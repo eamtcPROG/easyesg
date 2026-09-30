@@ -1,5 +1,6 @@
 import type { IndexPage } from '@easyesg/ui';
 import type { ReportingEntity } from '@easyesg/contracts';
+import type { EntityPeriod } from './entity-periods';
 
 /**
  * S-13's read model — the entities an organization reports on (FR-17 … FR-20, UC-52 … UC-55).
@@ -10,11 +11,12 @@ import type { ReportingEntity } from '@easyesg/contracts';
  * through a browser.
  *
  * **The row is thinner than the artboard's, and each omission has an owner.** `EasyESG Organization
- * Admin.dc.html` draws six columns; four of them belong elsewhere and are refused rather than
- * invented — entity **IDNO** and its *verified* marker are FR-107's fiscal lookup on the billing
- * account, **employee count** is B1 disclosure data (UC-19) and not entity master data at all, the
- * **periods** column is task 31's, and the **entitlement counter** above the action is task 54.2's,
- * the same deferral S-16 recorded for seats. What is left is what FR-17 actually puts on an entity.
+ * Admin.dc.html` draws six columns; what is refused rather than invented is the IDNO's *verified*
+ * marker, FR-107's fiscal lookup on the billing account; **employee count**, which is B1 disclosure
+ * data (UC-19) and not entity master data at all; and the **entitlement counter** above the action,
+ * task 54.2's, the same deferral S-16 recorded for seats. The IDNO itself is the entity's since
+ * task 175, and the **periods** column — deferred here to task 31, and never picked up when that
+ * task closed — is the list's way into S-14 since 29 Sep 2026 (`entity-periods.ts`).
  */
 
 /** What the status column says. The API's own vocabulary; a screen may not invent a third. */
@@ -83,6 +85,11 @@ export interface EntityRow {
   readonly siteCount: number;
   readonly consolidationBasis: string | null;
   readonly standing: EntityStanding;
+  /**
+   * Its periods, newest first — or **null when they could not be read**, which is not *none*: the column still leads
+   * to S-14, and says only where the periods are rather than claiming there are none.
+   */
+  readonly periods: readonly EntityPeriod[] | null;
 }
 
 export interface EntityView {
@@ -169,11 +176,13 @@ const compareBy = (left: EntityRow, right: EntityRow, sort: EntitySort): number 
  *
  * The activity words are looked up by code rather than positionally: `resolve` drops a code the
  * classifier has retired, so the two lists are not the same length and zipping them would label
- * the wrong code.
+ * the wrong code. The periods are looked up by entity for the same reason — `periodsByEntity`
+ * names only the entities that have some — and `null` for the whole map is a read that failed.
  */
 export const toEntityRows = (input: {
   readonly entities: readonly ReportingEntity[];
   readonly activity: ReadonlyMap<string, string>;
+  readonly periods: ReadonlyMap<string, readonly EntityPeriod[]> | null;
 }): EntityRow[] =>
   input.entities.map((entity) => ({
     id: entity.id,
@@ -190,6 +199,7 @@ export const toEntityRows = (input: {
     standing: entity.status === ENTITY_STANDING.ARCHIVED
       ? ENTITY_STANDING.ARCHIVED
       : ENTITY_STANDING.ACTIVE,
+    periods: input.periods === null ? null : (input.periods.get(entity.id) ?? []),
   }));
 
 export const applyEntityView = (input: {

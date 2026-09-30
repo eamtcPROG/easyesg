@@ -1,5 +1,6 @@
 import type { ReportingPeriodValue } from '@easyesg/ui';
 import type { Notice } from '@/lib/notice';
+import type { RequiredField } from './period-fields';
 
 /**
  * S-14's Record screen state (task 32.1.2).
@@ -43,6 +44,8 @@ export type PeriodReportKind = (typeof PERIOD_REPORT)[keyof typeof PERIOD_REPORT
 export interface PeriodReport {
   readonly kind: PeriodReportKind;
   readonly notice: PeriodNotice;
+  /** The fields a refusal names (`refusedFields`) — marked on the form beside the sentence above it. Empty otherwise. */
+  readonly fields: readonly RequiredField[];
 }
 
 export interface PeriodRecordState {
@@ -50,12 +53,26 @@ export interface PeriodRecordState {
   readonly dialogue: PeriodDialogue | null;
   /** The last settled outcome, or nothing attempted and nothing to report. */
   readonly report: PeriodReport | null;
+  /**
+   * Where the reader asked to go with changes unsaved — the arrow's or a breadcrumb step's address (30 Sep 2026, S-13's
+   * question taken by S-14). The question is open while this is set, and *leave* goes there. The address rather than a
+   * flag, so the answer cannot go somewhere else.
+   */
+  readonly leaving: string | null;
+  /**
+   * A save was pressed with something missing (30 Sep 2026, project owner: the form said nothing about which field was
+   * wrong). From then on each missing field says so and the summary lists them; the messages themselves are derived
+   * from the values, so filling a field clears its own.
+   */
+  readonly checked: boolean;
 }
 
 export const INITIAL_PERIOD_RECORD_STATE: PeriodRecordState = {
   pending: false,
   dialogue: null,
   report: null,
+  leaving: null,
+  checked: false,
 };
 
 /** Whether the picker's value differs from the stored period's — the half of "dirty" this record has. */
@@ -81,40 +98,62 @@ export const visibleNotice = (state: PeriodRecordState, dirty: boolean): PeriodN
  * this gathers.
  */
 export const PERIOD_RECORD_EVENT = {
+  /** A save was pressed and refused here, before any request, because something is missing or out of order. */
+  INCOMPLETE: 'incomplete',
   SUBMITTED: 'submitted',
   SETTLED: 'settled',
   DIALOGUE_REQUESTED: 'dialogue_requested',
   DISMISSED: 'dismissed',
+  /** The reader followed a way out with changes unsaved; the question opens. */
+  LEAVE_REQUESTED: 'leave_requested',
+  /** The reader chose to stay. */
+  LEAVE_DISMISSED: 'leave_dismissed',
+  /** The reader chose to leave without saving; the page is changing. */
+  LEAVE_CONFIRMED: 'leave_confirmed',
 } as const;
 
 export type PeriodRecordAction =
+  | { readonly type: typeof PERIOD_RECORD_EVENT.INCOMPLETE }
   | { readonly type: typeof PERIOD_RECORD_EVENT.SUBMITTED }
   | { readonly type: typeof PERIOD_RECORD_EVENT.SETTLED; readonly report: PeriodReport }
   | {
       readonly type: typeof PERIOD_RECORD_EVENT.DIALOGUE_REQUESTED;
       readonly dialogue: PeriodDialogue;
     }
-  | { readonly type: typeof PERIOD_RECORD_EVENT.DISMISSED };
+  | { readonly type: typeof PERIOD_RECORD_EVENT.DISMISSED }
+  | { readonly type: typeof PERIOD_RECORD_EVENT.LEAVE_REQUESTED; readonly href: string }
+  | { readonly type: typeof PERIOD_RECORD_EVENT.LEAVE_DISMISSED }
+  | { readonly type: typeof PERIOD_RECORD_EVENT.LEAVE_CONFIRMED };
 
 export function periodRecordReducer(
   state: PeriodRecordState,
   action: PeriodRecordAction,
 ): PeriodRecordState {
   switch (action.type) {
+    case PERIOD_RECORD_EVENT.INCOMPLETE:
+      // The fields say what is wrong now, so the last answer's notice goes as a submit's does.
+      return { ...state, checked: true, report: null };
     case PERIOD_RECORD_EVENT.SUBMITTED:
       // The previous notice goes now rather than when the answer arrives: a success message sitting
       // above an action in flight tells the reader the wrong thing for as long as the request takes.
       return { ...state, pending: true, report: null };
     case PERIOD_RECORD_EVENT.SETTLED:
       // Whichever dialogue asked closes on the answer, success or refusal — a confirmation left
-      // open over a rendered result invites confirming twice.
-      return { pending: false, dialogue: null, report: action.report };
+      // open over a rendered result invites confirming twice. A leave question is the reader's,
+      // not the write's, so the answer leaves it as it was.
+      return { ...state, pending: false, dialogue: null, report: action.report };
     case PERIOD_RECORD_EVENT.DIALOGUE_REQUESTED:
       // Opening a confirmation clears a stale notice too: the reader is asking about the next
       // action, and the last one's outcome above the question reads as being about this one.
       return { ...state, dialogue: action.dialogue, report: null };
     case PERIOD_RECORD_EVENT.DISMISSED:
       return { ...state, dialogue: null };
+    case PERIOD_RECORD_EVENT.LEAVE_REQUESTED:
+      return { ...state, leaving: action.href };
+    // Staying and leaving both close the question; they differ in what the form does next, not in what it holds.
+    case PERIOD_RECORD_EVENT.LEAVE_DISMISSED:
+    case PERIOD_RECORD_EVENT.LEAVE_CONFIRMED:
+      return { ...state, leaving: null };
     default:
       return state;
   }
