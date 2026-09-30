@@ -240,6 +240,15 @@
     grid-template-columns: minmax(0, 3fr);
     grid-auto-columns: minmax(0, 2fr);
   }
+
+  /* **A row of more than three fields is lines of three** (task 180.1): a site holds six — its name, address and town,
+     then its postal code, country and coordinates — and six to one line leaves each too narrow to read what it holds.
+     The name's column stays the widest, the postal code under it. Read off the row's own children, so the
+     subsidiaries' two fields keep their one line and nothing is told which it is. */
+  .rowFields:has(> :nth-child(4)) {
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) minmax(0, 2fr);
+  }
 }
 
 /* Beneath the list, the list's full width, so it reads as the place the next row goes. */

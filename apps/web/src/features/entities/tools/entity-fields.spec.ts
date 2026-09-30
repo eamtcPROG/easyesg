@@ -72,11 +72,13 @@ describe('toFields', () => {
         addressLine1: 'Str. Ștefan cel Mare 1',
         locality: '',
         postalCode: '',
+        countryCode: '',
+        coordinates: '',
         removed: false,
       },
     ]);
     expect(fields.consolidationMembers).toEqual([
-      { id: 'm1', name: 'Filiala', idno: '', countryCode: 'MD', removed: false },
+      { id: 'm1', name: 'Filiala', idno: '', lei: '', countryCode: 'MD', removed: false },
     ]);
   });
 
@@ -120,9 +122,74 @@ describe('toRequest', () => {
       reportContactEmail: null,
       naceCodes: ['10.71'],
       consolidationBasis: null,
-      sites: [{ name: 'Sediu', addressLine1: null, locality: null, postalCode: null }],
-      consolidationMembers: [{ id: 'm1', name: 'Filiala', idno: null, countryCode: null }],
+      sites: [
+        {
+          name: 'Sediu',
+          addressLine1: null,
+          locality: null,
+          postalCode: null,
+          countryCode: null,
+          latitude: null,
+          longitude: null,
+        },
+      ],
+      consolidationMembers: [{ id: 'm1', name: 'Filiala', idno: null, lei: null, countryCode: null }],
     });
+  });
+
+  it('sends back every column a stored row holds, so a save clears nothing the form does not show (task 180.1)', () => {
+    // The wipe this case exists for: the api replaces a row whole and maps an absent field to null, so a site's country
+    // and coordinates, and a subsidiary's LEI, used to be cleared by every save of the record.
+    const stored = entity({
+      sites: [
+        {
+          id: 's1',
+          name: 'Sediu',
+          addressLine1: 'Str. Ștefan cel Mare 1',
+          locality: 'Chișinău',
+          postalCode: 'MD-2012',
+          countryCode: 'MD',
+          latitude: '47.024512',
+          longitude: '28.832363',
+        },
+      ],
+      consolidationMembers: [{ id: 'm1', name: 'Filiala', idno: null, lei: '7LTWFZYICNSX8D621K86', countryCode: 'MD' }],
+    });
+
+    const request = toRequest(toFields(stored), []);
+
+    expect(request.sites).toStrictEqual([
+      {
+        id: 's1',
+        name: 'Sediu',
+        addressLine1: 'Str. Ștefan cel Mare 1',
+        locality: 'Chișinău',
+        postalCode: 'MD-2012',
+        countryCode: 'MD',
+        latitude: '47.024512',
+        longitude: '28.832363',
+      },
+    ]);
+    expect(request.consolidationMembers?.[0]).toMatchObject({ lei: '7LTWFZYICNSX8D621K86', countryCode: 'MD' });
+  });
+
+  it('sends the coordinates as the api’s two strings, and none where the field is empty', () => {
+    const fields = toFields(entity({}));
+    const request = toRequest(
+      {
+        ...fields,
+        sites: [
+          { ...EMPTY_SITE, name: 'Hala', coordinates: '47,0105; 28,8638' },
+          { ...EMPTY_SITE, name: 'Depozit', coordinates: '' },
+        ],
+      },
+      [],
+    );
+
+    expect(request.sites?.map((site) => [site.latitude, site.longitude])).toEqual([
+      ['47.0105', '28.8638'],
+      [null, null],
+    ]);
   });
 
   it('leaves a removed row out, so the whole-collection save deletes it', () => {

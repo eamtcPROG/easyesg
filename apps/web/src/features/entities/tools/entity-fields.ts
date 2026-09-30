@@ -1,4 +1,5 @@
 import type { CreateReportingEntityRequest, NaceCodeMatch, ReportingEntity } from '@easyesg/contracts';
+import { COORDINATES, formatCoordinates, parseCoordinates } from './coordinates';
 import type { ConsolidationBasis } from './entities';
 
 /**
@@ -21,6 +22,11 @@ import type { ConsolidationBasis } from './entities';
  * **The identifiers are the entity's since task 175** (FR-16 as amended): the IDNO and an optional LEI, blanks sent
  * as `null` — which clears a stored one — and the LEI upper-cased.
  *
+ * **Every column a row holds is sent back, whether or not the form shows it** (task 180.1). The save replaces a row
+ * whole — the api maps an absent field to `null` — so a column the form did not carry was cleared by every save: a
+ * site's country and coordinates, a subsidiary's LEI. A site now shows all six of its facts; a subsidiary's LEI has no
+ * input yet and travels through the form untouched.
+ *
  * **The consolidation basis is null until stated**, which VSME asks explicitly, so there is no
  * default answering it on the undertaking's behalf (FR-19): `''` in the form is the unstated case
  * and `null` is what it sends.
@@ -31,6 +37,9 @@ export interface SiteFields {
   addressLine1: string;
   locality: string;
   postalCode: string;
+  countryCode: string;
+  /** *47.0105, 28.8638* — one field as a map copies it; `coordinates.ts` converts it to the api's two strings. */
+  coordinates: string;
   removed: boolean;
 }
 
@@ -38,6 +47,8 @@ export interface MemberFields {
   id?: string;
   name: string;
   idno: string;
+  /** No input on S-13 yet; carried so a save does not clear one set elsewhere. */
+  lei: string;
   countryCode: string;
   removed: boolean;
 }
@@ -59,8 +70,16 @@ export interface EntityFields {
 }
 
 /** A row the reporter has just added — no id, and the store learns of it when the save does. */
-export const EMPTY_SITE: SiteFields = { name: '', addressLine1: '', locality: '', postalCode: '', removed: false };
-export const EMPTY_MEMBER: MemberFields = { name: '', idno: '', countryCode: '', removed: false };
+export const EMPTY_SITE: SiteFields = {
+  name: '',
+  addressLine1: '',
+  locality: '',
+  postalCode: '',
+  countryCode: '',
+  coordinates: '',
+  removed: false,
+};
+export const EMPTY_MEMBER: MemberFields = { name: '', idno: '', lei: '', countryCode: '', removed: false };
 
 const orNull = (value: string): string | null => (value.trim() ? value.trim() : null);
 
@@ -85,12 +104,15 @@ export const toFields = (entity: ReportingEntity | null): EntityFields => ({
     addressLine1: site.addressLine1 ?? '',
     locality: site.locality ?? '',
     postalCode: site.postalCode ?? '',
+    countryCode: site.countryCode ?? '',
+    coordinates: formatCoordinates(site),
     removed: false,
   })),
   consolidationMembers: (entity?.consolidationMembers ?? []).map((member) => ({
     id: member.id,
     name: member.name,
     idno: member.idno ?? '',
+    lei: member.lei ?? '',
     countryCode: member.countryCode ?? '',
     removed: false,
   })),
@@ -122,17 +144,25 @@ export const toRequest = (
   naceCodes: codes.map((code) => code.code),
   consolidationBasis:
     fields.consolidationBasis === '' ? null : (fields.consolidationBasis as ConsolidationBasis),
-  sites: fields.sites.filter(kept).map((site) => ({
-    ...(site.id ? { id: site.id } : {}),
-    name: site.name.trim(),
-    addressLine1: orNull(site.addressLine1),
-    locality: orNull(site.locality),
-    postalCode: orNull(site.postalCode),
-  })),
+  sites: fields.sites.filter(kept).map((site) => {
+    // Invalid coordinates never reach here — the field's rule refuses the save — so anything but a pair is none.
+    const coordinates = parseCoordinates(site.coordinates);
+    return {
+      ...(site.id ? { id: site.id } : {}),
+      name: site.name.trim(),
+      addressLine1: orNull(site.addressLine1),
+      locality: orNull(site.locality),
+      postalCode: orNull(site.postalCode),
+      countryCode: orNull(site.countryCode),
+      latitude: coordinates.kind === COORDINATES.VALID ? coordinates.latitude : null,
+      longitude: coordinates.kind === COORDINATES.VALID ? coordinates.longitude : null,
+    };
+  }),
   consolidationMembers: fields.consolidationMembers.filter(kept).map((member) => ({
     ...(member.id ? { id: member.id } : {}),
     name: member.name.trim(),
     idno: orNull(member.idno),
+    lei: orNull(member.lei),
     countryCode: orNull(member.countryCode),
   })),
 });

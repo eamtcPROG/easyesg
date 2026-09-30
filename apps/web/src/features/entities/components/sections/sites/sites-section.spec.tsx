@@ -59,7 +59,7 @@ function Harness({
   const { control, handleSubmit } = useForm<EntityFields>({ mode: 'onTouched', defaultValues: toFields(entity) });
   return (
     <form onSubmit={(event) => void handleSubmit((fields) => onSave(toRequest(fields, [])))(event)}>
-      <SitesSection control={control} archived={archived} />
+      <SitesSection control={control} archived={archived} countries={COUNTRIES} />
       <button type="submit">Salvează</button>
     </form>
   );
@@ -74,6 +74,9 @@ const renderSites = (entity: ReportingEntity | null, archived = false) => {
   );
   return { onSave, user: userEvent.setup() };
 };
+
+/** The one country the platform registers today, as the record section names it. */
+const COUNTRIES = [{ value: 'MD', label: 'Republica Moldova' }];
 
 const sitesSent = (onSave: ReturnType<typeof vi.fn>) =>
   (onSave.mock.calls[0]?.[0] as CreateReportingEntityRequest | undefined)?.sites?.map((site) => site.name);
@@ -168,6 +171,38 @@ describe('S-13 · sites', () => {
     await user.click(screen.getByRole('button', { name: 'Salvează' }));
 
     expect(sitesSent(onSave)).toEqual(['Depozit Strășeni']);
+  });
+
+  it('captures a site whole — postal code, country and coordinates — and sends each as the api stores it (task 180.1)', async () => {
+    const { user, onSave } = renderSites(ENTITY);
+    await user.click(screen.getByRole('button', { name: 'Adăugați un amplasament' }));
+    const added = screen.getByRole('group', { name: 'Amplasamentul 3' });
+
+    await user.type(within(added).getByLabelText('Denumirea amplasamentului'), 'Hala');
+    await user.type(within(added).getByLabelText('Codul poștal'), 'MD-2012');
+    await user.type(within(added).getByLabelText('Coordonatele'), '47.0105, 28.8638');
+    await user.click(screen.getByRole('button', { name: 'Salvează' }));
+
+    const sent = onSave.mock.calls[0]?.[0].sites?.at(-1);
+    // The new site starts in the one registered country, so the reader need not choose it.
+    expect(sent).toMatchObject({
+      name: 'Hala',
+      postalCode: 'MD-2012',
+      countryCode: 'MD',
+      latitude: '47.0105',
+      longitude: '28.8638',
+    });
+  });
+
+  it('refuses a save while the coordinates are not a pair, and says what to type', async () => {
+    const { user, onSave } = renderSites(ENTITY);
+    const field = within(screen.getByRole('group', { name: 'Sediu' })).getByLabelText('Coordonatele');
+
+    await user.type(field, 'Chișinău');
+    await user.click(screen.getByRole('button', { name: 'Salvează' }));
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(field).toHaveAccessibleDescription(/Acestea nu sunt coordonate/u);
   });
 
   it('says so when there are none, and offers no change while archived', () => {

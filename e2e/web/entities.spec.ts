@@ -312,12 +312,19 @@ test('sites and the reporting boundary are whole-collection saves (FR-19, UC-54)
   await page.getByLabel('Denumirea entității').fill(`${RUN_PREFIX} Grup`);
   await page.getByRole('button', { name: 'Adăugați un amplasament' }).click();
   await page.getByLabel('Denumirea amplasamentului').fill('Depozit Strășeni');
+  // A site whole (task 180.1): its postal code and coordinates, and the one registered country already chosen. Scoped
+  // to the site's own group — the registered address has a postal code of its own.
+  const site = page.getByRole('group', { name: 'Depozit Strășeni' });
+  await site.getByLabel('Codul poștal').fill('MD-3701');
+  await site.getByLabel('Coordonatele').fill('47.0891, 28.3889');
   await page.getByRole('button', { name: 'Adăugați entitatea' }).click();
   await page.waitForURL(/\/entities\/[0-9a-f-]{36}$/);
 
   // Reloaded from the API, which is what says the collection was saved rather than held in a form.
   await page.reload();
   await expect(page.getByLabel('Denumirea amplasamentului')).toHaveValue('Depozit Strășeni');
+  await expect(site.getByLabel('Codul poștal')).toHaveValue('MD-3701');
+  await expect(site.getByLabel('Coordonatele')).toHaveValue('47.0891, 28.3889');
 
   // VSME asks the boundary question explicitly, so nothing answers it by default — and setting
   // `consolidated` with no subsidiary is the API's refusal to make, not the screen's to pre-empt.
@@ -331,6 +338,12 @@ test('sites and the reporting boundary are whole-collection saves (FR-19, UC-54)
   await page.getByLabel('Denumirea filialei').fill('Lina Logistic SRL');
   await page.getByRole('button', { name: 'Salvați modificările' }).click();
   await expect(page.getByText('Entitatea a fost salvată')).toBeVisible();
+
+  // **A second save of the record keeps what the first stored** (task 180.1): every save used to send a site without
+  // its country and coordinates, and the api, replacing the row whole, cleared them.
+  await page.reload();
+  await expect(site.getByLabel('Coordonatele')).toHaveValue('47.0891, 28.3889');
+  await expect(site.getByRole('combobox', { name: 'Țara' })).toHaveText(/Republica Moldova/u);
 });
 
 test('archiving states its consequence, and the entity leaves active selection (FR-20)', async ({

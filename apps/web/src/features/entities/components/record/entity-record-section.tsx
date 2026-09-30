@@ -5,6 +5,7 @@ import { ROUTES } from '@/lib/routes';
 import { readEntityRecord } from '@/server/data/entities';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
+import { countryOptions } from '../../tools/countries';
 import { legalFormOptions } from '../../tools/legal-forms';
 import { EntityRecordForm } from '../form/entity-record-form';
 import { ENTITIES_MESSAGES } from '../shared/entity-messages';
@@ -69,6 +70,8 @@ export async function EntityRecordSection({ entityId }: { readonly entityId: str
     countryCode: read.countryCode,
     labels: messages.organization.legalForms,
   });
+  // The countries a site may be in (task 180.1) — the same set B1's `CountryOfSite` offers.
+  const countries = countryOptions({ vocabulary: read.countries, labels: messages.organization.countries });
 
   return (
     <div className={styles.screen}>
@@ -77,6 +80,7 @@ export async function EntityRecordSection({ entityId }: { readonly entityId: str
         activity={read.activity}
         suggestions={read.suggestions}
         legalForms={legalForms}
+        countries={countries}
         periods={read.periods}
       />
     </div>

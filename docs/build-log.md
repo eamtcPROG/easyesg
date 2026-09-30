@@ -26165,3 +26165,34 @@ here and not changed. The new journey's press is by the keyboard, since Playwrig
 as not enabled.
 
 **Verified**: `packages/ui` unit 423; `apps/web` unit 1,262; `apps/admin` unit 296; typecheck in all three; `pnpm lint`; `routes:check`; `docs:check`, its counts moved in three `CLAUDE.md` files; `e2e:web` `identity`, `expansion` and `admin` 286 of 289, the three the race above, all in `wizard.spec.ts` — which then passed 44 of 44 run twice over at four workers after the waits. By hand in the running app at 1440, 834 and 390 in ro, en and ru: the document's overflow 0, no horizontal scroll, the drawer opening from *+14* and from *All modules* and closing behind a chosen step, the ⋯'s items reachable by keyboard, the Export note on a press. Reviews and `gates:clean` did not run (owner, 13 Sep 2026): a sub-step, and the parent stays open. Reviewed against `vercel-react-best-practices` and `vercel-composition-patterns` — slots rather than boolean props, and no memoization case in the three new Client Components.
+
+## Task 180.1 — S-13 captures a whole site, and stops wiping it · 2026-09-30
+
+The owner, on task 179's close: *"the user already completed some information, for example sites — in the report it
+should be already completed"*. Traced first rather than assumed, and B1 **was** pre-filling a site — address, postal
+code, city, country and GPS, from the period's FR-18 snapshot, since task 91.2. Three things kept that from a reader, and
+the owner decided all three the same day (task 180's row): the snapshot is taken when the period opens, before most
+readers fill the company in (180.2); S-13 captured a site's name, address and city only; and **every S-13 save wiped a
+site's country and coordinates** — the form did not carry them, the api maps an absent field to `null`, and the save
+replaces a row whole. This sub-step is the second and third.
+
+**A site is six facts now**: name, address, town, then postal code, country and coordinates. The country offers the
+countries the platform registers, which is the set B1's `CountryOfSite` already offers (§12.5.6's task-91.1 row), and a
+new row starts in the one registered — S-04's rule. **The coordinates are one field typed as a map copies them**,
+`coordinates.ts` owning the conversion to the api's two decimal-degree strings: strings throughout and cut past the sixth
+place, never rounded through a float, since the api's own description says a coordinate drifting in its last places is
+a biodiversity determination that changes (BR-APP-3). Comma decimals are accepted where a semicolon or space separates
+the pair, which is how a Romanian or Russian locale writes them. The browser run found the display half: the api returns
+`numeric(9,6)` as stored, so *47.0891* came back as *47.089100* — the display drops the padding.
+
+**The wipe, and the shape searched for**: the form now round-trips every column a row holds. The same shape was on the
+subsidiaries — their LEI has no input and was not carried, so a save cleared one set through the api — and is fixed in
+the same change. Nothing else in S-13's form omits a column of what it saves. **A row of more than three fields is lines of
+three** from 36rem, read off the row's children with `:has()`, so the subsidiaries' two fields keep their one line and no
+row is told which layout it has; `design_spec.md` S-13 is amended, since it said a site's fields form one line.
+
+**Verified**: `apps/web` unit 1,277, the entity specs among them — the wipe case proven to fail with the LEI's
+round-trip removed; typecheck; `pnpm lint`; `docs:check`; `e2e:web` `identity` and `expansion` 263 of 264, the one the
+journey this task extended, which failed twice for its own reasons — a postal-code label the registered address shares,
+then the padding above — and passed 12 of 12 with its file on a fresh build. By hand at 1440: a site entered whole,
+saved, reloaded, all six facts back. Reviews and `gates:clean` did not run (owner, 13 Sep 2026): a sub-step.

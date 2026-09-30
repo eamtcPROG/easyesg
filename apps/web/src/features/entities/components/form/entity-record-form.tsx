@@ -16,6 +16,7 @@ import { archiveEntityAction, createEntityAction, updateEntityAction } from '../
 import { ENTITY_STANDING } from '../../tools/entities';
 import type { EntityPeriod } from '../../tools/entity-periods';
 import { toFields, toRequest, type EntityFields } from '../../tools/entity-fields';
+import type { CountryOption } from '../../tools/countries';
 import {
   ENTITY_EVENT,
   codesChanged,
@@ -73,12 +74,21 @@ export interface EntityRecordFormProps {
   readonly suggestions: readonly NaceCodeMatch[];
   /** Legal forms for the organization's country, already labelled by the page. */
   readonly legalForms: readonly { readonly value: string; readonly label: string }[];
+  /** The countries a site may be in, named (task 180.1). */
+  readonly countries: readonly CountryOption[];
   /** Its periods, for the side column's way into S-14 — null when they could not be read, and in create mode, where
    *  there is no entity for them to belong to and the panel is not drawn. */
   readonly periods: readonly EntityPeriod[] | null;
 }
 
-export function EntityRecordForm({ entity, activity, suggestions, legalForms, periods }: EntityRecordFormProps) {
+export function EntityRecordForm({
+  entity,
+  activity,
+  suggestions,
+  legalForms,
+  countries,
+  periods,
+}: EntityRecordFormProps) {
   const t = useTranslations(ENTITY_RECORD_MESSAGES);
   const tForms = useTranslations('forms');
   const tCommon = useTranslations('identity');
@@ -231,7 +241,7 @@ export function EntityRecordForm({ entity, activity, suggestions, legalForms, pe
           />
           <AddressSection control={control} archived={archived} />
           <BoundarySection control={control} archived={archived} />
-          <SitesSection control={control} archived={archived} />
+          <SitesSection control={control} archived={archived} countries={countries} />
           <ReportContactSection control={control} archived={archived} />
         </RecordCard>
 
