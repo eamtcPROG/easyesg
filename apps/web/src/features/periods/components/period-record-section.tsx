@@ -2,6 +2,7 @@ import { CALLOUT_INTENT, Callout, TextLink } from '@easyesg/ui';
 import { getTimeZone, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { todayIn } from '@/lib/legal-date';
+import { PERIODS_FROM_PARAM, readPeriodsFrom } from '@/lib/periods-from';
 import { ROUTES } from '@/lib/routes';
 import { readPeriodRecord } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
@@ -22,11 +23,14 @@ import styles from './periods.module.css';
 export async function PeriodRecordSection({
   entityId,
   periodId,
+  searchParams,
 }: {
   readonly entityId: string;
   readonly periodId: string;
+  readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [read, t, timeZone] = await Promise.all([
+  const [query, read, t, timeZone] = await Promise.all([
+    searchParams,
     readPeriodRecord({ entityId, periodId }),
     getTranslations(PERIODS_MESSAGES),
     getTimeZone(),
@@ -66,6 +70,8 @@ export async function PeriodRecordSection({
         reopenings={read.reopenings}
         currentYear={yearOfDay(todayIn(timeZone, new Date()))}
         takenYears={read.takenYears}
+        // Where the reader came from, so the way back to the list still leads on to it (`periods-from.ts`).
+        from={readPeriodsFrom(query[PERIODS_FROM_PARAM])}
       />
     </div>
   );

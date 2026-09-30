@@ -1,5 +1,6 @@
 import { STATUS_TONE, type IndexPage, type StatusTone } from '@easyesg/ui';
 import type { ReportingPeriod } from '@easyesg/contracts';
+import { PERIODS_FROM_PARAM, readPeriodsFrom, type PeriodsFrom } from '@/lib/periods-from';
 
 /**
  * S-14's read model — the reporting periods an entity files against (FR-21, FR-22, FR-45, FR-66;
@@ -95,6 +96,11 @@ export interface PeriodView {
   readonly sort: PeriodSort;
   readonly direction: PeriodSortDirection;
   readonly page: number;
+  /**
+   * Where the reader came from (`periods-from.ts`), in the view so a filter or a sort keeps it in the address — a
+   * change that dropped it would send the arrow up a level from a list the reader opened from S-13's.
+   */
+  readonly from: PeriodsFrom | null;
 }
 
 /**
@@ -110,6 +116,7 @@ export const DEFAULT_PERIOD_VIEW: PeriodView = {
   sort: PERIOD_SORT.YEAR,
   direction: PERIOD_SORT_DIRECTION.DESCENDING,
   page: 1,
+  from: null,
 };
 
 /** An entity files once a year, so a page is a decade and a half. The archetype carries pagination
@@ -137,6 +144,7 @@ export const readPeriodView = (
     direction:
       oneOf(Object.values(PERIOD_SORT_DIRECTION), single('dir')) ?? DEFAULT_PERIOD_VIEW.direction,
     page: Number.isFinite(page) && page > 0 ? page : DEFAULT_PERIOD_VIEW.page,
+    from: readPeriodsFrom(params[PERIODS_FROM_PARAM]),
   };
 };
 
@@ -148,6 +156,7 @@ export const periodViewQuery = (view: PeriodView): string => {
   if (view.sort !== DEFAULT_PERIOD_VIEW.sort) params.set('sort', view.sort);
   if (view.direction !== DEFAULT_PERIOD_VIEW.direction) params.set('dir', view.direction);
   if (view.page !== DEFAULT_PERIOD_VIEW.page) params.set('page', String(view.page));
+  if (view.from !== null) params.set(PERIODS_FROM_PARAM, view.from);
   return params.toString();
 };
 

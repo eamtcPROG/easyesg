@@ -2,6 +2,7 @@ import { Breadcrumb, type NavLinkComponent } from '@easyesg/ui';
 import type { ReportingEntity } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { ENTITIES_MESSAGES } from '@/features/entities/components/shared/entity-messages';
+import type { PeriodsFrom } from '@/lib/periods-from';
 import { ROUTES, entityPeriodsRoute, entityRoute } from '@/lib/routes';
 import { PERIODS_MESSAGES } from './periods-messages';
 
@@ -12,17 +13,21 @@ import { PERIODS_MESSAGES } from './periods-messages';
  * S-14's heading.
  *
  * **`record` is the one difference between the two screens**: without it this is S-14's list and its heading is the
- * current page; with it the heading is a step and the record is current. **Directive-free and not async**, so the list
+ * current page; with it the heading is a step and the record is current — a step that carries `from` on, so the list
+ * it leads to still knows where the reader came from (`periods-from.ts`). **Directive-free and not async**, so the list
  * renders it on the server with the plain link and the record inside its client form with the guarded one.
  */
 export function PeriodsBreadcrumb({
   entity,
   record,
+  from,
   linkComponent,
 }: {
   readonly entity: Pick<ReportingEntity, 'id' | 'name'>;
   /** The record's title, when the trail ends at one period rather than at the list. */
   readonly record?: string;
+  /** Where the reader came from, for the step back to the list. */
+  readonly from?: PeriodsFrom | null;
   readonly linkComponent: NavLinkComponent;
 }) {
   const t = useTranslations(PERIODS_MESSAGES);
@@ -33,11 +38,12 @@ export function PeriodsBreadcrumb({
     { href: ROUTES.ENTITIES, label: tEntities('title') },
     { href: entityRoute(entity.id), label: entity.name },
   ];
+  const throughList = [...upToEntity, { href: entityPeriodsRoute(entity.id, from), label: t('title') }];
 
   return (
     <Breadcrumb
       label={tChrome('label')}
-      trail={record === undefined ? upToEntity : [...upToEntity, { href: entityPeriodsRoute(entity.id), label: t('title') }]}
+      trail={record === undefined ? upToEntity : throughList}
       current={record ?? t('title')}
       linkComponent={linkComponent}
     />

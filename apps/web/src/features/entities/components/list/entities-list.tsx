@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useTransition } from 'react';
 import { IndexView } from '@/shared/index-view';
 import { Link, useRouter } from '@/i18n/navigation';
+import { PERIODS_FROM } from '@/lib/periods-from';
 import { ROUTES, entityPeriodsRoute, entityRoute, withQuery } from '@/lib/routes';
 import {
   ENTITY_FILTER_ANY,
@@ -185,7 +186,10 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
               {/* 30 Sep 2026, project owner: the periods cell is a link, and a reader may not know to press it — so
                   the row says where its periods are too, as it says how to edit. Archived included: its periods stay. */}
               <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
-                <Link href={entityPeriodsRoute(row.id)} aria-label={t('rowActions.periodsNamed', { name: row.name })}>
+                <Link
+                  href={entityPeriodsRoute(row.id, PERIODS_FROM.ENTITIES)}
+                  aria-label={t('rowActions.periodsNamed', { name: row.name })}
+                >
                   {t('rowActions.periods')}
                 </Link>
               </Button>

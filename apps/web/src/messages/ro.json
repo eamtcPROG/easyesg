@@ -911,7 +911,11 @@
     "periods": {
       "title": "Perioade de raportare",
       "lede": "Fiecare raport se pregătește pentru o perioadă. Perioada fixează versiunea standardului și leagă anul precedent, de unde se preiau comparativele.",
-      "backToEntity": "Înapoi la {name}",
+      "back": {
+        "entity": "Înapoi la {name}",
+        "entities": "Înapoi la entitățile raportoare",
+        "newReport": "Înapoi la raportul nou"
+      },
       "caption": "Perioadele entității",
       "open": "Deschideți o perioadă",
       "columns": {

@@ -11,12 +11,15 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  *
  * States (§8.1): ready · read-only (locked, FR-22) · error — permission · error — recoverable.
  */
-type Props = { params: Promise<{ locale: string; entityId: string; periodId: string }> };
+type Props = {
+  params: Promise<{ locale: string; entityId: string; periodId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
 export const generateMetadata = localizedPageTitle(PERIODS_MESSAGES);
 
-export default async function ReportingPeriodRecordPage({ params }: Props) {
+export default async function ReportingPeriodRecordPage({ params, searchParams }: Props) {
   const { entityId, periodId } = await params;
   await activateRequestLocale(params as unknown as LocaleParams);
-  return <PeriodRecordSection entityId={entityId} periodId={periodId} />;
+  return <PeriodRecordSection entityId={entityId} periodId={periodId} searchParams={searchParams} />;
 }

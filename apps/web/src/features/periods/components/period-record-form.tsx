@@ -24,6 +24,7 @@ import { noticeFromOutcome } from '@/lib/notice';
 import { GuardedLink, LeaveGuardContext, type LeaveGuard } from '@/shared/leave-guard';
 import { RecordNotice } from '@/shared/record-notice';
 import { legalDate } from '@/lib/legal-date';
+import type { PeriodsFrom } from '@/lib/periods-from';
 import { entityPeriodsRoute, periodRoute } from '@/lib/routes';
 import {
   FIELD_PROBLEM,
@@ -100,6 +101,8 @@ export interface PeriodRecordFormProps {
   readonly currentYear: number;
   /** The years the entity's periods already hold, this one's included; `fiscalYearChoices` frees its own. */
   readonly takenYears: readonly number[];
+  /** Where the reader came from (`periods-from.ts`), carried back to the list so its arrow still leads there. */
+  readonly from: PeriodsFrom | null;
 }
 
 const toValue = (period?: ReportingPeriod): ReportingPeriodValue => ({
@@ -109,7 +112,14 @@ const toValue = (period?: ReportingPeriod): ReportingPeriodValue => ({
   due: period?.dueDate?.date ?? '',
 });
 
-export function PeriodRecordForm({ entity, period, reopenings, currentYear, takenYears }: PeriodRecordFormProps) {
+export function PeriodRecordForm({
+  entity,
+  period,
+  reopenings,
+  currentYear,
+  takenYears,
+  from,
+}: PeriodRecordFormProps) {
   const entityId = entity.id;
   const t = useTranslations(PERIODS_MESSAGES);
   const tForms = useTranslations('forms');
@@ -209,7 +219,7 @@ export function PeriodRecordForm({ entity, period, reopenings, currentYear, take
       // A created period gets its own address, so the reader can return to it (UX-4).
       if (ok && !period && outcome.status === API_OUTCOME.Ok) {
         const created = outcome.value;
-        startNavigation(() => router.push(periodRoute({ entityId, periodId: created.id })));
+        startNavigation(() => router.push(periodRoute({ entityId, periodId: created.id, from })));
       }
     })();
   };
@@ -238,8 +248,8 @@ export function PeriodRecordForm({ entity, period, reopenings, currentYear, take
   return (
     <LeaveGuardContext.Provider value={guard}>
       <RecordShell
-        breadcrumb={<PeriodsBreadcrumb entity={entity} record={title} linkComponent={GuardedLink} />}
-        back={{ href: entityPeriodsRoute(entityId), label: t('record.back') }}
+        breadcrumb={<PeriodsBreadcrumb entity={entity} record={title} from={from} linkComponent={GuardedLink} />}
+        back={{ href: entityPeriodsRoute(entityId, from), label: t('record.back') }}
         linkComponent={GuardedLink}
         title={title}
         summary={period ? t('record.lede') : t('record.createLede')}

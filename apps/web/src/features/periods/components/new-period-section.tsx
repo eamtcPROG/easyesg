@@ -2,6 +2,7 @@ import { CALLOUT_INTENT, Callout, TextLink } from '@easyesg/ui';
 import { getTimeZone, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { todayIn } from '@/lib/legal-date';
+import { PERIODS_FROM_PARAM, readPeriodsFrom } from '@/lib/periods-from';
 import { ROUTES } from '@/lib/routes';
 import { readNewPeriod } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
@@ -16,8 +17,15 @@ import styles from './periods.module.css';
  * the form under a trail that names its entity. `PeriodRecordSection`'s arms, for the same read's failures. The read is
  * the entity, for the trail, and the years its periods hold, for the year list (`readNewPeriod` says why).
  */
-export async function NewPeriodSection({ entityId }: { readonly entityId: string }) {
-  const [read, t, timeZone] = await Promise.all([
+export async function NewPeriodSection({
+  entityId,
+  searchParams,
+}: {
+  readonly entityId: string;
+  readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [query, read, t, timeZone] = await Promise.all([
+    searchParams,
     readNewPeriod(entityId),
     getTranslations(PERIODS_MESSAGES),
     getTimeZone(),
@@ -57,6 +65,8 @@ export async function NewPeriodSection({ entityId }: { readonly entityId: string
         reopenings={[]}
         currentYear={yearOfDay(todayIn(timeZone, new Date()))}
         takenYears={read.takenYears}
+        // Where the reader came from, so the way back to the list still leads on to it (`periods-from.ts`).
+        from={readPeriodsFrom(query[PERIODS_FROM_PARAM])}
       />
     </div>
   );

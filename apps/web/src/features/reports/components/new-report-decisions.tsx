@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import type { ReportCreationRead } from '@/server/data/reports';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { Link } from '@/i18n/navigation';
+import { PERIODS_FROM } from '@/lib/periods-from';
 import { ROUTES, entityPeriodsRoute, withQuery } from '@/lib/routes';
 import { CreateReportForm } from './create-report-form';
 import { REPORT_CREATION_MESSAGES } from './reports-messages';
@@ -96,8 +97,9 @@ export async function NewReportDecisions({
               intent={CALLOUT_INTENT.ATTENTION}
               title={t('period.noneTitle')}
               action={
+                // It says where it came from, so S-14's arrow returns here with the entity still chosen.
                 <TextLink asChild>
-                  <Link href={entityPeriodsRoute(entityId)}>{t('period.noneAction')}</Link>
+                  <Link href={entityPeriodsRoute(entityId, PERIODS_FROM.NEW_REPORT)}>{t('period.noneAction')}</Link>
                 </TextLink>
               }
             >

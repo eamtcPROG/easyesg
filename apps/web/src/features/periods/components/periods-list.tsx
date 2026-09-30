@@ -76,7 +76,7 @@ export function PeriodsList({ entityId, page, view }: PeriodsListProps) {
         sortable: true,
         cell: (row) => (
           <TextLink asChild>
-            <Link href={periodRoute({ entityId, periodId: row.id })}>{row.fiscalYear}</Link>
+            <Link href={periodRoute({ entityId, periodId: row.id, from: view.from })}>{row.fiscalYear}</Link>
           </TextLink>
         ),
       },
@@ -134,7 +134,7 @@ export function PeriodsList({ entityId, page, view }: PeriodsListProps) {
           return (
             <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
               <Link
-                href={periodRoute({ entityId, periodId: row.id })}
+                href={periodRoute({ entityId, periodId: row.id, from: view.from })}
                 // The visible word, and a name that begins with it (WCAG 2.5.3) and ends with the row.
                 aria-label={edits ? t('rowActions.editNamed', { year }) : t('rowActions.viewNamed', { year })}
               >
@@ -145,13 +145,14 @@ export function PeriodsList({ entityId, page, view }: PeriodsListProps) {
         },
       },
     ],
-    [entityId, t],
+    [entityId, t, view.from],
   );
 
   return (
     <>
       <PeriodsToolbar
         entityId={entityId}
+        from={view.from}
         standing={view.standing}
         onStandingChangeAction={(standing) => setView({ standing })}
       />
@@ -175,7 +176,7 @@ export function PeriodsList({ entityId, page, view }: PeriodsListProps) {
               title={t('empty.firstUse.title')}
               action={
                 <Button asChild>
-                  <Link href={newPeriodRoute(entityId)}>{t('empty.firstUse.action')}</Link>
+                  <Link href={newPeriodRoute(entityId, view.from)}>{t('empty.firstUse.action')}</Link>
                 </Button>
               }
             >

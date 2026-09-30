@@ -91,7 +91,7 @@ test('the first-use empty state teaches, and creating from it lands on the recor
   // An entity with no periods is the one whose reader most needs S-14, where the first is opened — so *none* is a link.
   await expect(
     page.getByRole('link', { name: `Nicio perioadă încă — perioadele de raportare ale entității ${RUN_PREFIX} Brutăria` }),
-  ).toHaveAttribute('href', /\/entities\/[0-9a-f-]{36}\/periods$/);
+  ).toHaveAttribute('href', /\/entities\/[0-9a-f-]{36}\/periods\?from=entities$/);
 
   // 29 Sep 2026, project owner: the row says how to change it. The visible word is the verb and the name is the row's.
   const edit = page.getByRole('link', { name: `Editați ${RUN_PREFIX} Brutăria`, exact: true });
@@ -113,15 +113,29 @@ test('each entity leads to its reporting periods, from the list and from its rec
   const cell = page.getByRole('link', { name: `2026 Deschisă — perioadele de raportare ale entității ${name}` });
   await expect(cell).toHaveText('2026 Deschisă');
   await cell.click();
-  await page.waitForURL(`**/entities/${entityId}/periods`);
+  await page.waitForURL(`**/entities/${entityId}/periods?from=entities`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Perioade de raportare');
 
+  // 30 Sep 2026, project owner: the arrow returns to where the reader came from — here, the list of entities.
+  const toEntities = page.getByRole('link', { name: 'Înapoi la entitățile raportoare' });
+  await expect(toEntities).toHaveAttribute('href', /\/entities$/);
+
+  // It keeps that through a filter and through a period's record and back.
+  await page.getByLabel('Filtrați după stare').click();
+  await page.getByRole('option', { name: 'Doar deschise' }).click();
+  await page.waitForURL(/[?&]from=entities/);
+  await page.getByRole('link', { name: 'Editați perioada 2026', exact: true }).click();
+  await page.waitForURL(`**/entities/${entityId}/periods/${periodId}?from=entities`);
+  await page.getByRole('link', { name: 'Înapoi la perioadele de raportare' }).click();
+  await page.waitForURL(`**/entities/${entityId}/periods?from=entities`);
+  await toEntities.click();
+  await page.waitForURL(/\/entities$/);
+
   // 30 Sep 2026, project owner: and a button that says so, since a reader may not know the cell is a link.
-  await page.goto('/entities');
   const periods = page.getByRole('link', { name: `Perioade — ${name}`, exact: true });
   await expect(periods).toHaveText('Perioade');
   await periods.click();
-  await page.waitForURL(`**/entities/${entityId}/periods`);
+  await page.waitForURL(`**/entities/${entityId}/periods?from=entities`);
 
   // The record's side panel: the year leads to its period, and the link beneath to the entity's whole list.
   await page.goto(`/entities/${entityId}`);
@@ -129,11 +143,14 @@ test('each entity leads to its reporting periods, from the list and from its rec
   await expect(panel.getByRole('listitem')).toHaveCount(1);
   await expect(panel.getByRole('listitem')).toContainText('Deschisă');
   await panel.getByRole('link', { name: '2026', exact: true }).click();
-  await page.waitForURL(`**/entities/${entityId}/periods/${periodId}`);
+  await page.waitForURL(`**/entities/${entityId}/periods/${periodId}?from=entity`);
 
+  // Opened from the entity, the arrow returns to the entity.
   await page.goto(`/entities/${entityId}`);
   await panel.getByRole('link', { name: 'Perioade de raportare', exact: true }).click();
-  await page.waitForURL(`**/entities/${entityId}/periods`);
+  await page.waitForURL(`**/entities/${entityId}/periods?from=entity`);
+  await page.getByRole('link', { name: `Înapoi la ${name}` }).click();
+  await page.waitForURL(new RegExp(`/entities/${entityId}$`));
 
   // Like the arrow and the breadcrumb, the panel asks before an unsaved edit is lost.
   await page.goto(`/entities/${entityId}`);

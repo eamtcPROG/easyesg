@@ -3,6 +3,7 @@
 import { Button, Select } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import type { PeriodsFrom } from '@/lib/periods-from';
 import { newPeriodRoute } from '@/lib/routes';
 import { PERIOD_STANDING_FILTERS, type PeriodView } from '../tools/periods';
 import { PERIODS_MESSAGES } from './periods-messages';
@@ -17,10 +18,13 @@ import styles from './periods.module.css';
  */
 export function PeriodsToolbar({
   entityId,
+  from,
   standing,
   onStandingChangeAction,
 }: {
   readonly entityId: string;
+  /** Where the reader came from, carried on so the create form's way back still knows (`periods-from.ts`). */
+  readonly from: PeriodsFrom | null;
   readonly standing: PeriodView['standing'];
   readonly onStandingChangeAction: (standing: PeriodView['standing']) => void;
 }) {
@@ -40,7 +44,7 @@ export function PeriodsToolbar({
         />
       </div>
       <Button asChild className={styles.toolbarButton}>
-        <Link href={newPeriodRoute(entityId)}>{t('open')}</Link>
+        <Link href={newPeriodRoute(entityId, from)}>{t('open')}</Link>
       </Button>
     </div>
   );

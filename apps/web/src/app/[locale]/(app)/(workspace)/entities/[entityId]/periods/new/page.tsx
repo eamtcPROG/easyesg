@@ -13,13 +13,16 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  */
 const MESSAGES = 'organization.periods';
 
-type Props = { params: Promise<{ locale: string; entityId: string }> };
+type Props = {
+  params: Promise<{ locale: string; entityId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
 export const generateMetadata = localizedPageTitle(MESSAGES);
 
-export default async function NewReportingPeriodPage({ params }: Props) {
+export default async function NewReportingPeriodPage({ params, searchParams }: Props) {
   const { entityId } = await params;
   await activateRequestLocale(params as unknown as LocaleParams);
 
-  return <NewPeriodSection entityId={entityId} />;
+  return <NewPeriodSection entityId={entityId} searchParams={searchParams} />;
 }

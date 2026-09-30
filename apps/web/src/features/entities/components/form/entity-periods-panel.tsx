@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import { PERIODS_MESSAGES } from '@/features/periods/components/periods-messages';
 import { PERIOD_STANDING_TONE } from '@/features/periods/tools/periods';
+import { PERIODS_FROM } from '@/lib/periods-from';
 import { entityPeriodsRoute, periodRoute } from '@/lib/routes';
 import { GuardedLink } from '@/shared/leave-guard';
 import { PERIODS_NAMED, newestPeriods, type EntityPeriod } from '../../tools/entity-periods';
@@ -14,7 +15,8 @@ import styles from '../styles/entities.module.css';
 /**
  * The record's side column — *Periods on this entity*, as the S-13 record artboard draws it above the archive panel,
  * and **the record's way into S-14** (`design_spec.md` §5, S-13's exits; amended 29 Sep 2026). Each year leads to its
- * period, and the link beneath to the entity's whole list, which is where a period is opened.
+ * period, and the link beneath to the entity's whole list, which is where a period is opened. Both say they came from
+ * the entity, so S-14's arrow returns here (`periods-from.ts`).
  *
  * **Drawn for every stored entity, archived included**: an archived entity's periods and filed reports survive it
  * (FR-20), so they stay one press away. **Its links ask before leaving unsaved changes**, as the arrow and the
@@ -50,7 +52,7 @@ export function EntityPeriodsPanel({
           {named.map((period) => (
             <li key={period.id} className={styles.periodItem}>
               <TextLink asChild>
-                <GuardedLink href={periodRoute({ entityId, periodId: period.id })}>
+                <GuardedLink href={periodRoute({ entityId, periodId: period.id, from: PERIODS_FROM.ENTITY })}>
                   <span className="t-numeric">{period.fiscalYear}</span>
                 </GuardedLink>
               </TextLink>
@@ -65,7 +67,7 @@ export function EntityPeriodsPanel({
 
       {/* Named as S-14 names itself, so the link says where it lands — the breadcrumb's rule for its step back. */}
       <TextLink asChild>
-        <GuardedLink href={entityPeriodsRoute(entityId)}>{tPeriods('title')}</GuardedLink>
+        <GuardedLink href={entityPeriodsRoute(entityId, PERIODS_FROM.ENTITY)}>{tPeriods('title')}</GuardedLink>
       </TextLink>
     </section>
   );

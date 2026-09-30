@@ -1,3 +1,5 @@
+import { PERIODS_FROM_PARAM, type PeriodsFrom } from './periods-from';
+
 /**
  * Every address this app links to, declared once (26 Aug 2026).
  *
@@ -124,14 +126,18 @@ export const entityRoute = (entityId: string): string => `/entities/${entityId}`
  * requires `reportingEntityId`, and an organization reporting on three entities has three period
  * lists. A flat `/periods` would need the entity in a query parameter, which UX-4 permits for a
  * *view* and not for the subject of the screen.
+ *
+ * **`from` names where the reader came from**, so the arrow returns there (§11.5's Back-to-context,
+ * 30 Sep 2026; `periods-from.ts`). S-14's three addresses all take it, because each carries it on to
+ * the next — through a period's record and back, the arrow still knows. Absent, it leads up a level.
  */
-export const entityPeriodsRoute = (entityId: string): string =>
-  `/entities/${entityId}/periods`;
+export const entityPeriodsRoute = (entityId: string, from?: PeriodsFrom | null): string =>
+  withPeriodsFrom(`/entities/${entityId}/periods`, from);
 
 /** S-14's Record in its create mode. A literal segment rather than a query flag, so an unsaved new
  *  period is an address the reader can return to (UX-4) — `ENTITY_NEW`'s reasoning. */
-export const newPeriodRoute = (entityId: string): string =>
-  `/entities/${entityId}/periods/new`;
+export const newPeriodRoute = (entityId: string, from?: PeriodsFrom | null): string =>
+  withPeriodsFrom(`/entities/${entityId}/periods/new`, from);
 
 /**
  * S-14's Record for one period.
@@ -144,7 +150,13 @@ export const newPeriodRoute = (entityId: string): string =>
 export const periodRoute = (input: {
   readonly entityId: string;
   readonly periodId: string;
-}): string => `/entities/${input.entityId}/periods/${input.periodId}`;
+  readonly from?: PeriodsFrom | null;
+}): string => withPeriodsFrom(`/entities/${input.entityId}/periods/${input.periodId}`, input.from);
+
+/** An S-14 address carrying its origin, or the bare address when there is none. */
+function withPeriodsFrom(path: string, from: PeriodsFrom | null | undefined): string {
+  return from ? `${path}?${PERIODS_FROM_PARAM}=${from}` : path;
+}
 
 /**
  * A path with a query string, or the bare path when there is none.

@@ -151,7 +151,8 @@ describe('the view lives in the address (UX-4)', () => {
       sort: PERIOD_SORT.DUE,
       direction: PERIOD_SORT_DIRECTION.ASCENDING,
       page: 3,
-    };
+      from: 'entities',
+    } as const;
 
     expect(readPeriodView(Object.fromEntries(new URLSearchParams(periodViewQuery(view))))).toEqual(
       view,
@@ -169,5 +170,14 @@ describe('the view lives in the address (UX-4)', () => {
     expect(view.standing).toBe(PERIOD_FILTER_ANY);
     expect(view.sort).toBe(DEFAULT_PERIOD_VIEW.sort);
     expect(view.page).toBe(1);
+  });
+
+  /** 30 Sep 2026: a filter changed on a list opened from S-13's must keep the arrow pointing back there. */
+  it('keeps where the reader came from through a filter change, and never takes a path for it', () => {
+    const opened = readPeriodView({ from: 'entities' });
+    const filtered = periodViewQuery({ ...opened, standing: PERIOD_STANDING.OPEN });
+
+    expect(new URLSearchParams(filtered).get('from')).toBe('entities');
+    expect(readPeriodView({ from: 'https://example.com' }).from).toBeNull();
   });
 });

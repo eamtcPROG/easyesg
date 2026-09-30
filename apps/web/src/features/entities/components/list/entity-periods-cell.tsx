@@ -4,6 +4,7 @@ import { TextLink } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { PERIODS_MESSAGES } from '@/features/periods/components/periods-messages';
 import { Link } from '@/i18n/navigation';
+import { PERIODS_FROM } from '@/lib/periods-from';
 import { entityPeriodsRoute } from '@/lib/routes';
 import type { EntityRow } from '../../tools/entities';
 import { PERIODS_NAMED, newestPeriods } from '../../tools/entity-periods';
@@ -39,7 +40,10 @@ export function EntityPeriodsCell({ row }: { readonly row: EntityRow }) {
 
   return (
     <TextLink asChild>
-      <Link href={entityPeriodsRoute(row.id)} aria-label={t('named', { summary, name: row.name })}>
+      <Link
+        href={entityPeriodsRoute(row.id, PERIODS_FROM.ENTITIES)}
+        aria-label={t('named', { summary, name: row.name })}
+      >
         {summary}
       </Link>
     </TextLink>
