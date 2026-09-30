@@ -18,6 +18,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@easyesg/admin", "start:dev"],
       "port": 3200
+    },
+    {
+      "name": "design",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "3900", "--bind", "127.0.0.1", "--directory", "design/screens"],
+      "port": 3900
     }
   ]
 }

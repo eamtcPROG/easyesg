@@ -8,6 +8,7 @@ import {
   seedReport,
   verificationTokenFor,
 } from './support/db';
+import { untilHydrated } from './support/hydration';
 
 /**
  * S-07's shell (task 35.1) — the one claim the deliverable makes: **B1–B11 navigable, and every step
@@ -80,8 +81,9 @@ test('opens at a step, moves between modules, and every step restores from its U
   await page.waitForURL(`**/reports/${reportId}/B1`);
 
   const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
-  await expect(rail.getByRole('link', { name: 'B1', exact: true })).toBeVisible();
-  await expect(rail.getByRole('link', { name: 'C9', exact: true })).toBeVisible();
+  // Each module by its reference and its name (task 179.1) — exact, so B1 cannot also match B10 and B11.
+  await expect(rail.getByRole('link', { name: 'B1 — Baza de întocmire', exact: true })).toBeVisible();
+  await expect(rail.getByRole('link', { name: 'C9 — Echilibrul de gen în conducere', exact: true })).toBeVisible();
 
   // The current step is announced, not merely coloured — a rail that showed position visually only
   // would leave a screen-reader user unable to tell which of twenty modules they are in (NFR-75).
@@ -92,16 +94,17 @@ test('opens at a step, moves between modules, and every step restores from its U
   // only half delivered. Asserting the role as well as the attribute is what fails if it drifts
   // back onto a wrapper.
   //
-  // And `{ name: 'B1', exact: true }` rather than the `filter({ hasText: 'B1' }).first()` this
-  // line used: `hasText` matches B1, B10 and B11, so the `.first()` was disambiguating a locator
+  // And the link's exact name — *B1 — Baza de întocmire* since task 179.1 named the modules — rather than
+  // the `filter({ hasText: 'B1' }).first()` this line used: `hasText` matches B1, B10 and B11, so the
+  // `.first()` was disambiguating a locator
   // that had three answers — `CLAUDE.md`'s *".first() is a finding, not locator style"*, and the
   // same shape the B6 and B7 assertions in this file were already corrected to.
-  await expect(rail.getByRole('link', { name: 'B1', exact: true })).toHaveAttribute(
+  await expect(rail.getByRole('link', { name: 'B1 — Baza de întocmire', exact: true })).toHaveAttribute(
     'aria-current',
     'step',
   );
 
-  await rail.getByRole('link', { name: 'B3', exact: true }).click();
+  await rail.getByRole('link', { name: 'B3 — Energie și emisii', exact: true }).click();
   await page.waitForURL(`**/reports/${reportId}/B3`);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('B3');
 
@@ -114,13 +117,56 @@ test('opens at a step, moves between modules, and every step restores from its U
   // rather than the shape — `CLAUDE.md`'s *"'is this one right?' and 'are there others?' are
   // different questions"*, demonstrated inside the change made for it. Scoped to the rail and
   // named exactly for the reason stated above.
-  await expect(rail.getByRole('link', { name: 'B7', exact: true })).toHaveAttribute(
+  await expect(rail.getByRole('link', { name: 'B7 — Resurse, circularitate și deșeuri', exact: true })).toHaveAttribute(
     'aria-current',
     'step',
   );
 
   // UX-5's single, always-visible way out, which states that work is saved.
   await expect(page.getByRole('link', { name: /Ieșiți din raport/ })).toBeVisible();
+});
+
+/**
+ * S-07's chrome as the artboards draw it (task 179.1; `design_spec.md` S-07's amendment of 30 Sep 2026) — what only a
+ * browser can show: the bar names the report from the read, an action drawn ahead of its screen says why it cannot be
+ * used, and below `wide` the module list opens as a drawer that moves between steps and closes behind itself.
+ */
+test('the bar names the report, and at 390 the modules open as a drawer (S-07, task 179.1)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'chrome');
+  await page.goto(`/reports/${reportId}/B1`);
+
+  // The report by its year and scope, then the company, the period as a range and S-06's word for its standing.
+  await expect(page.getByText('VSME 2026 — Modulul de bază', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(new RegExp(`^${RUN_PREFIX}-entity · 1 ianuarie\\s–\\s31 decembrie 2026 · În lucru$`, 'u')),
+  ).toBeVisible();
+
+  // Drawn and not available: still reachable, heard as unavailable with its reason, and the reason shown on a press.
+  const exportAction = page.getByRole('button', { name: 'Exportați', exact: true });
+  await expect(exportAction).toHaveAttribute('aria-disabled', 'true');
+  await expect(exportAction).toHaveAccessibleDescription(/Exportul nu este încă disponibil/u);
+  // By the keyboard, which is the claim: a `disabled` button could not be focused at all. (Playwright's `click()`
+  // counts `aria-disabled` as not enabled and would wait on it, though a pointer press reaches it as a key does.)
+  await untilHydrated(exportAction);
+  await exportAction.focus();
+  await page.keyboard.press('Enter');
+  // Radix's popover content is a `dialog`, unnamed — the only one open at this moment.
+  await expect(page.getByRole('dialog')).toContainText('Exportul nu este încă disponibil');
+  await page.keyboard.press('Escape');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  // The docked list leaves the page at this width; the stepper names where the reader is.
+  await expect(page.getByText('B1 · 1 din 20', { exact: true })).toBeVisible();
+  const allModules = page.getByRole('button', { name: 'Toate modulele', exact: true });
+  await untilHydrated(allModules);
+  await allModules.click();
+
+  const drawer = page.getByRole('dialog', { name: 'Toate modulele' });
+  await drawer.getByRole('link', { name: 'B3 — Energie și emisii', exact: true }).click();
+  await page.waitForURL(`**/reports/${reportId}/B3`);
+  await expect(drawer).toHaveCount(0);
+  await expect(page.getByText('B3 · 3 din 20', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('B3 — Energie și emisii');
 });
 
 test('answers a module the pinned taxonomy does not carry with a 404, not an empty shell', async ({
@@ -301,7 +347,7 @@ test('B2 renders and stores each of its kinds, with no code of its own (UC-20)',
 
   // The store is the fact, not the indicator (NFR-56). One text and one numeric, because those are
   // two different value columns and a dispatch that got either wrong would still look right.
-  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
     timeout: 15_000,
   });
   await expect
@@ -400,7 +446,7 @@ test('B3 reports energy along its breakdown, named by member (UC-21)', async ({ 
   const renewable = group.getByRole('textbox', { name: 'Energie regenerabilă', exact: true });
   await renewable.fill('120');
   await renewable.blur();
-  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
     timeout: 15_000,
   });
 
@@ -448,6 +494,7 @@ test('B4 reports an emission against a pollutant the reporter names (UC-22)', as
   // 94 pollutants, filtered locally. **Not 94 rows** — the count is what separates a classification
   // from a breakdown, and getting it wrong is 282 fields on one screen.
   const picker = unassigned.getByRole('combobox', { name: 'Tipul de poluant' });
+  await untilHydrated(picker);
   await picker.fill('Amoniac');
   await page.getByRole('option', { name: 'Amoniac (NH3)' }).click();
 
@@ -456,7 +503,7 @@ test('B4 reports an emission against a pollutant the reporter names (UC-22)', as
   const air = ammonia.getByRole('textbox', { name: 'Cantitatea de emisii în aer' });
   await air.fill('12');
   await air.blur();
-  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
     timeout: 15_000,
   });
 
@@ -523,6 +570,7 @@ test('B7 reports waste against an entry of the published list, and says whose la
 
   // A leaf, found by its code — which is what a reporter matches against their own waste manifest,
   // and the half of the entry that is language-independent.
+  await untilHydrated(picker);
   await picker.fill('01 01 01');
   await page.getByRole('option', { name: /Wastes from mineral metalliferous excavation/u }).click();
 
@@ -593,6 +641,7 @@ test('B8 asks headcount per named country, and turnover only past fifty (UC-26)'
   // **Romanian, from the platform.** `Republica Moldova` appears in no catalogue and in no EFRAG
   // file — it is `Intl.DisplayNames` resolved against the request's negotiated locale, which is the
   // half only a browser can show.
+  await untilHydrated(picker);
   await picker.fill('Moldova');
   await page.getByRole('option', { name: 'Republica Moldova', exact: true }).click();
 
@@ -805,10 +854,11 @@ test('a unit is shown where the standard fixes it and asked where it admits seve
   // amounts are cells of a classification row, so they do not exist until the row is named. An
   // amount asked before *of what* is exactly what that task removed.
   await page.goto(`/reports/${reportId}/B4`);
-  await page
+  const pollutant = page
     .getByRole('group', { name: 'Tipul de poluant — de ales' })
-    .getByRole('combobox', { name: 'Tipul de poluant' })
-    .fill('Azbest');
+    .getByRole('combobox', { name: 'Tipul de poluant' });
+  await untilHydrated(pollutant);
+  await pollutant.fill('Azbest');
   await page.getByRole('option', { name: 'Azbest' }).click();
 
   const air = page.getByRole('group', { name: 'Cantitatea de emisii în aer' });
@@ -826,7 +876,7 @@ test('a unit is shown where the standard fixes it and asked where it admits seve
   const amount = air.getByRole('textbox');
   await amount.fill('12');
   await amount.blur();
-  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
     timeout: 15_000,
   });
 
@@ -908,7 +958,7 @@ test('B5 asks about each site the report knows, and names it (UC-23)', async ({ 
   });
   await near.click();
   await page.getByRole('option', { name: 'Nu', exact: true }).click();
-  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/Salvat/u, {
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
     timeout: 15_000,
   });
 
@@ -950,11 +1000,12 @@ test('B6 applies once B1 says the undertaking manufactures, and asks in m³ (UC-
   const organizationId = organizationOf.get(reportId) ?? '';
   const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
 
-  // Ruled out to begin with, on an entity whose snapshot already says `10.71` — bakery products,
-  // four levels under the manufacturing section the rule names. Nothing is stored yet.
+  // Waiting on B1 to begin with, on an entity whose snapshot already says `10.71` — bakery products,
+  // four levels under the manufacturing section the rule names. Nothing is stored yet, so the rule has
+  // no answer to decide on, and the rail says what B6 waits for (task 179.1) rather than ruling it out.
   await page.goto(`/reports/${reportId}/B6`);
-  const b6 = rail.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'B6', exact: true }) });
-  await expect(b6).toHaveText(/Nu se aplică/u);
+  const b6 = rail.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'B6 — Apă', exact: true }) });
+  await expect(b6).toContainText('Așteaptă răspunsurile din B1');
 
   // Opening B1 commits its shown defaults, which is what turns the snapshot's activity code into
   // the report's own answer (§12.5.6, task 91.2).
@@ -978,7 +1029,8 @@ test('B6 applies once B1 says the undertaking manufactures, and asks in m³ (UC-
     .toBe('nace:NACE_C1071');
 
   await page.goto(`/reports/${reportId}/B6`);
-  await expect(b6).not.toHaveText(/Nu se aplică/u);
+  await expect(b6).not.toContainText('Așteaptă răspunsurile din B1');
+  await expect(b6).not.toContainText('Nu se aplică');
 
   // **UC-24's two steps, and there are four fields rather than the three it used to name.** The use
   // case was amended on 8 Sep 2026 against EFRAG's own package: its step 1 listed withdrawal, the
@@ -1040,7 +1092,7 @@ test('B6 applies once B1 says the undertaking manufactures, and asks in m³ (UC-
     .toMatchObject({ valueNumeric: '1450', unitCode: 'm3', state: 'ok' });
 });
 
-test('a module the rules ruled out says so on the rail rather than counting to zero (FR-28)', async ({
+test('a module waiting on B1 says so on the rail rather than counting to zero (FR-28, UX-9)', async ({
   page,
 }) => {
   const reportId = await signedInWithReport(page, 'b1rules', [{ name: 'Hala', locality: 'Chișinău' }]);
@@ -1051,11 +1103,15 @@ test('a module the rules ruled out says so on the rail rather than counting to z
   // **B6's own item**, not the first match on the rail: the test is named for B6, and a rail-wide
   // text locator would keep passing if B6's applicability broke while another module happened to
   // show the same words (convention review, 3 Sep 2026 — `.first()` is a finding, not a style).
-  const b6 = rail.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'B6', exact: true }) });
-  await expect(b6).toHaveText(/Nu se aplică/u);
+  //
+  // **Waiting, not ruled out** (task 179.1): the fixture's entity has no activity code, so B1 holds no answer for
+  // the sector rule to decide on — the rail's *waits on your B1 answers*. The ruled-out state, an answer that
+  // decides against the module, is `module-state.spec.ts`'s.
+  const b6 = rail.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'B6 — Apă', exact: true }) });
+  await expect(b6).toContainText('Așteaptă răspunsurile din B1');
   // And it is the only module in that state on an untouched B1, which is what makes the assertion
-  // above about B6 rather than about the rail.
-  await expect(rail.getByText('Nu se aplică')).toHaveCount(1);
+  // above about B6 rather than about the rail. Exact, so the roll-up's sentence naming B6 is not a second match.
+  await expect(rail.getByText('Așteaptă răspunsurile din B1', { exact: true })).toHaveCount(1);
 });
 
 /**
@@ -1403,13 +1459,16 @@ test('a section declared omitted reads as a third state on the rail (UC-30, UX-2
   // than locator style; scoping to the navigation and matching the link exactly removes the
   // ambiguity instead of stepping around it.
   const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
-  const railB7 = rail.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'B7', exact: true }) });
+  const railB7 = rail.getByRole('listitem').filter({
+    has: page.getByRole('link', { name: 'B7 — Resurse, circularitate și deșeuri', exact: true }),
+  });
   await expect(railB7).toHaveCount(1);
-  await expect(railB7).not.toContainText('omis');
+  await expect(railB7).not.toContainText('Omis');
 
   // **The module-level member, named exactly.** `.first()` after a loose filter picked a *section*
   // of B7, and one section of three is correctly not an omission — the test was asserting the
   // derivation was wrong when it was right.
+  await untilHydrated(declaration.getByRole('combobox'));
   await declaration.getByRole('combobox').fill('Utilizarea resurselor');
   await page
     .getByRole('option', {
@@ -1442,11 +1501,13 @@ test('a section declared omitted reads as a third state on the rail (UC-30, UX-2
   // the rail is a Server Component fed by the step read, so it reflects a write on the next render
   // rather than optimistically — which is the honest thing for a state the api derives.
   await page.reload();
-  await expect(railB7).toContainText('omis', { timeout: 15_000 });
+  await expect(railB7).toContainText('Omis', { timeout: 15_000 });
   // And only that module: the declaration is per section and must not spread to its neighbour.
   await expect(
-    rail.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'B8', exact: true }) }),
-  ).not.toContainText('omis');
+    rail
+      .getByRole('listitem')
+      .filter({ has: page.getByRole('link', { name: 'B8 — Caracteristicile personalului', exact: true }) }),
+  ).not.toContainText('Omis');
 });
 
 /**

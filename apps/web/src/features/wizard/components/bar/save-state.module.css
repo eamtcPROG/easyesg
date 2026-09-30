@@ -1,0 +1,16 @@
+/* The two lengths of *saved* (task 179.1): the long one from `medium` up, the short one at `compact`. `display: none`,
+   so the length not shown is neither drawn nor read by the live region. */
+
+.short {
+  display: none;
+}
+
+@media (max-width: 39.9375rem) {
+  .long {
+    display: none;
+  }
+
+  .short {
+    display: inline;
+  }
+}

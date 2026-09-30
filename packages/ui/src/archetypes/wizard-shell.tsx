@@ -1,6 +1,4 @@
 import type { ReactNode } from 'react';
-import { Anchor, type NavLinkComponent } from '../navigation/nav-link';
-import { ARIA_CURRENT } from '../navigation/nav-link-vocabulary';
 import styles from './wizard-shell.module.css';
 
 /**
@@ -15,29 +13,30 @@ import styles from './wizard-shell.module.css';
  * navigational choice is *which module*, and leaving the workspace navigation visible would offer
  * a reporter three ways out of a form they are told is saving continuously.
  *
- * **The exit control is a fixture, not a slot.** UX-5 requires it be single, always visible and
- * explicitly labelled — a screen that could omit it would be a screen that traps someone in a
- * wizard, so the prop is required and the shell renders it in one place. `saveState` is beside it
- * for UX-35's *"one fixed location"*, and is a slot only because S-09's sub-flows inherit the shell
- * without owning the report's save state.
+ * **Drawn as the artboards draw it since task 179.1** (`design_spec.md` S-07's amendment of 30 Sep 2026): the bar in
+ * the workspace tier's place, then the list — docked beside the step at `wide`, and below it at the narrower frames as
+ * the caller's `compactModules`, a strip or a stepper — then the step. **The bar and the list stay in place and the step
+ * scrolls**, as the workspace band does over its screens (§4.2): the shell fills the `(app)` layout's region exactly and
+ * scrolls a region of its own, and the docked list scrolls within itself only on a window shorter than it.
+ *
+ * **The bar is required**, because it carries UX-5's way out — `WizardBar` makes its exit required in turn — so no
+ * screen built on this shell can omit it.
  *
  * **No text and no router**, per the package rule: every string and every link arrives as a node.
- * The rail's items are the app's own `Link`s wrapped in `WizardModuleItem`, which is what keeps
- * `packages/ui` out of `next/navigation` and reusable by the admin console.
  */
 export interface WizardShellProps {
-  /** `WizardModuleItem`s — the persistent module list (UX-5). */
+  /** `WizardBar` — the way out, the report, the save state, the actions. */
+  bar: ReactNode;
+  /** `WizardModuleGroup`s — the persistent module list, docked at `wide` (UX-5). */
   modules: ReactNode;
   /** Labels the module list for assistive technology; the app supplies the word. */
   modulesLabel: string;
+  /** The list below `wide` — `WizardModuleSwitcher`. */
+  compactModules?: ReactNode;
   /** The step header's own heading — the module in plain language beside its reference (UX-11). */
   title: ReactNode;
   /** How much of this step remains outstanding (UX-11). Rendered under the title. */
   progress?: ReactNode;
-  /** UX-35's save-state indicator, in the one fixed location this shell gives it. */
-  saveState?: ReactNode;
-  /** UX-5's single, always-visible, explicitly labelled way out. Required by construction. */
-  exit: ReactNode;
   /** S-08 beside the step content, simultaneously visible at `wide` (§3.3). */
   panel?: ReactNode;
   /** The step's fields. */
@@ -45,125 +44,51 @@ export interface WizardShellProps {
 }
 
 export function WizardShell({
+  bar,
   modules,
   modulesLabel,
+  compactModules,
   title,
   progress,
-  saveState,
-  exit,
   panel,
   children,
 }: WizardShellProps) {
   return (
     <div className={styles.shell}>
-      {/* `nav` rather than a list in a `div`: the module rail IS this screen's navigation once the
-          workspace tier is suppressed, and a screen reader that cannot find a landmark here has no
-          way to move between steps except by reading the whole form. */}
-      <nav className={styles.rail} aria-label={modulesLabel}>
-        <ol className={styles.modules}>{modules}</ol>
-      </nav>
+      {bar}
+      {compactModules ? <div className={styles.compact}>{compactModules}</div> : null}
 
-      {/*
-        **`main`, not a `div` whose class happens to be called `main`** (UX-99, 9 Sep 2026). The
-        rail above is this screen's `navigation` and the class name read like a landmark without
-        being one, so `getByRole('main')` found nothing on S-07 … S-12 — a screen-reader user had
-        chrome to skip and nothing to skip *to*, on the largest screen in the product.
-        `accessibility.spec.ts` could not have caught it twice over: its tags are WCAG success
-        criteria and `landmark-one-main` is axe's **best-practice** set, and no wizard screen is in
-        its list.
+      <div className={styles.frame}>
+        {/* `nav` rather than a list in a `div`: the module list IS this screen's navigation once the workspace tier is
+            suppressed, and a screen reader that cannot find a landmark here has no way to move between steps except by
+            reading the whole form. Drawn at `wide` only; below it the same steps are `compactModules`. */}
+        <nav className={styles.rail} aria-label={modulesLabel}>
+          {modules}
+        </nav>
 
-        **The element goes here rather than around the shell**, which is task 30.1's rule followed
-        rather than restated: the rail must stay outside, and a landmark that swallowed it would
-        give a screen reader a `main` whose first content is the navigation it wanted to skip. That
-        is the same reason `(workspace)`'s layout puts `<main>` around only `{children}` and leaves
-        `WorkspaceNavigation` above it.
+        <div className={styles.scroll}>
+          {/*
+            **`main`, not a `div` whose class happens to be called `main`** (UX-99, 9 Sep 2026). The rail beside it is
+            this screen's `navigation`, and a class name that read like a landmark without being one left
+            `getByRole('main')` finding nothing on S-07 … S-12 — a screen-reader user had chrome to skip and nothing to
+            skip *to*. **The element wraps the step alone**: the rail and the bar stay outside, or a screen reader would
+            find a `main` whose first content is the navigation it wanted to skip — the reason `(workspace)`'s layout
+            puts `<main>` around only its children, and why the sibling archetypes, which render inside that layout,
+            have none.
+          */}
+          <main className={styles.main}>
+            <header className={styles.header}>
+              <h1 className={styles.title}>{title}</h1>
+              {progress ? <p className={styles.progress}>{progress}</p> : null}
+            </header>
 
-        **And it is why the three sibling archetypes are correct with none.** `FocusColumn` renders
-        one and `FocusShell` composes it; `IndexShell` and `RecordShell` are used only inside
-        `(workspace)`, whose layout already supplies it — task 30.1 considered putting it in
-        `RecordShell` and declined, recording that doing so *"would have treated the symptom"*. Two
-        `main` landmarks is this defect wearing the opposite sign.
-      */}
-      <main className={styles.main}>
-        <header className={styles.header}>
-          <div className={styles.heading}>
-            <h1 className={styles.title}>{title}</h1>
-            {progress ? <p className={styles.progress}>{progress}</p> : null}
-          </div>
-          {/* One fixed location for both, so the indicator does not move as a step's content
-              changes height — UX-35 is about the location as much as the four states. */}
-          <div className={styles.controls}>
-            {saveState}
-            {exit}
-          </div>
-        </header>
-
-        <div className={styles.body}>
-          <div className={styles.step}>{children}</div>
-          {panel ? <aside className={styles.panel}>{panel}</aside> : null}
+            <div className={styles.body}>
+              <div className={styles.step}>{children}</div>
+              {panel ? <aside className={styles.panel}>{panel}</aside> : null}
+            </div>
+          </main>
         </div>
-      </main>
+      </div>
     </div>
-  );
-}
-
-/**
- * One module in the rail.
- *
- * **`current` drives `aria-current="step"`, not just a colour.** The Wizard's whole subject is
- * position in an ordered progression, and a rail that showed position only visually would leave a
- * screen-reader user unable to tell which of eleven modules they are in — a WCAG 2.2 AA failure
- * that renders identically (NFR-75).
- *
- * **That claim was only half true until task 106, and this is what it took to deliver it.** The
- * attribute sat on this `<li>` while the anchor came in as `children`, because the app owns the
- * router and the component could not reach a finished element. An `<li>` is `role="listitem"`, so
- * it is at least in the accessibility tree — better than the `<span>` the workspace tier had (task
- * 105) — but neither is announced when a reader moves **link-to-link**, which is how anyone
- * navigates a rail of eleven steps. So this now takes `href` and `label` and builds the anchor,
- * with the router injected through `linkComponent`; the package still holds no router and no text.
- *
- * **The anchor is the styled element, not a span inside one.** It carries the padding, the radius
- * and the current background directly, which removes a wrapper and makes the whole padded box the
- * click target — before this, only the text was clickable and the padding around it was dead.
- */
-export interface WizardModuleItemProps {
-  /** The step's address. */
-  readonly href: string;
-  /**
-   * What the reader sees — the module's own reference, `B1` … `C9`. A `ReactNode` rather than a
-   * string because the plain-language name arrives beside it once task 36 has one per module.
-   */
-  readonly label: ReactNode;
-  readonly current?: boolean;
-  /** The per-module state indicator UX-5 requires the list to carry. */
-  readonly indicator?: ReactNode;
-  /**
-   * The app's own link. Optional — a plain anchor otherwise, which is correct for a
-   * server-rendered rail and wrong visibly rather than silently if the app needed its router.
-   */
-  readonly linkComponent?: NavLinkComponent;
-}
-
-export function WizardModuleItem({
-  href,
-  label,
-  current = false,
-  indicator,
-  linkComponent,
-}: WizardModuleItemProps) {
-  const Link = linkComponent ?? Anchor;
-
-  return (
-    <li className={styles.module}>
-      <Link
-        href={href}
-        className={current ? styles.moduleCurrent : styles.moduleLink}
-        {...(current ? ({ 'aria-current': ARIA_CURRENT.STEP } as const) : {})}
-      >
-        {label}
-      </Link>
-      {indicator ? <span className={styles.indicator}>{indicator}</span> : null}
-    </li>
   );
 }

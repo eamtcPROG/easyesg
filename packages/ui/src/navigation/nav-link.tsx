@@ -21,13 +21,19 @@ import type { AriaCurrent } from './nav-link-vocabulary';
 
 /**
  * The shape of a link a navigation surface can render. Deliberately narrow rather than a
- * polymorphic `as`: these four props are all any of them sets.
+ * polymorphic `as`: these five props are all any of them sets.
+ *
+ * **`aria-description` since task 179.1**, the wizard's step list the consumer that needed it: a step's state —
+ * *In progress · 3 outstanding* — is heard with the link but is not part of its name, which would change every time a
+ * field is answered. A string attribute rather than `aria-describedby`, because an id would have to be unique across
+ * the rail and the drawer that draws the same steps again.
  */
 export type NavLinkComponent = ComponentType<{
   href: string;
   children: ReactNode;
   className?: string;
   'aria-current'?: AriaCurrent;
+  'aria-description'?: string;
 }>;
 
 /**

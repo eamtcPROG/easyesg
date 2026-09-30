@@ -12,13 +12,21 @@ import { useWhenSessionHeld } from '../providers/use-when-session-held';
  * is still held (`use-when-session-held.ts`).
  *
  * **Injected as a component, as before**, so `WizardModuleItem` keeps owning the anchor and the
- * `aria-current="step"` on it (task 106). It is a Client Component handed to a server-rendered rail by
+ * `aria-current="step"` on it (task 106), and since task 179.1 the step's state as its `aria-description` — both
+ * passed on here, since an attribute this link drops is one the rail's promise silently loses. The strip below `wide`
+ * injects it too. It is a Client Component handed to a server-rendered rail by
  * reference, which crosses nothing: the rail renders it, and its children are the item's label and count.
  *
  * A modified click is left to the browser (`plain-click.ts`), and so is prefetching — the probe delays only
  * the moment of navigating, not the route's readiness.
  */
-export function StepLink({ href, children, className, 'aria-current': ariaCurrent }: ComponentProps<NavLinkComponent>) {
+export function StepLink({
+  href,
+  children,
+  className,
+  'aria-current': ariaCurrent,
+  'aria-description': ariaDescription,
+}: ComponentProps<NavLinkComponent>) {
   const router = useRouter();
   const whenSessionHeld = useWhenSessionHeld();
 
@@ -29,7 +37,7 @@ export function StepLink({ href, children, className, 'aria-current': ariaCurren
   };
 
   return (
-    <Link href={href} className={className} aria-current={ariaCurrent} onClick={onClick}>
+    <Link href={href} className={className} aria-current={ariaCurrent} aria-description={ariaDescription} onClick={onClick}>
       {children}
     </Link>
   );

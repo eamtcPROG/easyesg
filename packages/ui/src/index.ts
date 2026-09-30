@@ -76,12 +76,18 @@ export {
 } from './archetypes/record-card';
 // 30 Sep 2026: the heading with its way back, out of `RecordCard` — S-14's Index and Record take S-13's conventions.
 export { PageHeading, type PageBack, type PageHeadingProps } from './archetypes/page-heading';
+export { WizardShell, type WizardShellProps } from './archetypes/wizard-shell';
+// 30 Sep 2026 (task 179.1): S-07 drawn as its artboards — the bar, the step list's groups and rows, and the list below
+// `wide`. The states are exported from their directive-free module, the package's rule for a vocabulary.
+export { WizardBar, type WizardBarProps } from './archetypes/wizard-bar';
+export { WizardModuleGroup, type WizardModuleGroupProps } from './archetypes/wizard-module-group';
+export { WizardModuleItem, type WizardModuleItemProps } from './archetypes/wizard-module-item';
 export {
-  WizardModuleItem,
-  WizardShell,
-  type WizardModuleItemProps,
-  type WizardShellProps,
-} from './archetypes/wizard-shell';
+  WizardModuleSwitcher,
+  type WizardModuleSwitcherProps,
+  type WizardSwitcherStep,
+} from './archetypes/wizard-module-switcher';
+export { WIZARD_STEP_STATE, type WizardStepState } from './archetypes/wizard-step-vocabulary';
 
 export { PasswordField, type PasswordFieldProps } from './form/password-field';
 export { Select, type SelectOption, type SelectProps } from './form/select';
@@ -153,6 +159,8 @@ export {
   type OverflowMenuProps,
 } from './navigation/overflow-menu';
 export { GLOBAL_BAR_TONE, type GlobalBarTone } from './navigation/global-bar-vocabulary';
+// 30 Sep 2026 (task 179.1): the square arrow out of `PageHeading`, now also the wizard's bar's way out.
+export { BackArrow, type BackArrowProps } from './navigation/back-arrow';
 export { type NavLinkComponent } from './navigation/nav-link';
 export { ARIA_CURRENT, type AriaCurrent } from './navigation/nav-link-vocabulary';
 

@@ -1,111 +1,88 @@
+/*
+ * The Wizard archetype's frame (task 179.1): the bar, the list below `wide`, and the docked list beside a step that
+ * scrolls on its own. Every value is a token (UX-127).
+ */
+
+/* Fills the `(app)` layout's scroll region exactly, so that region never scrolls here: the bar stays in place and only
+   `.scroll` moves — the workspace layout's arrangement (§4.2, amended 30 Sep 2026 for the wizard). */
 .shell {
-  display: grid;
-  grid-template-columns: minmax(12rem, 16rem) 1fr;
-  gap: var(--space-6);
-  align-items: start;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 0;
 }
 
-/* The rail collapses above the step below `wide` (§3.3): the module list stays visible, because
-   UX-5 requires it, but it stops competing with the reading measure UX-74 sets for the step. */
-@media (max-width: 63.9375rem) {
-  .shell {
-    grid-template-columns: 1fr;
+.compact {
+  flex-shrink: 0;
+  border-block-end: 1px solid var(--border-default);
+  background: var(--surface-default);
+}
+
+@media (min-width: 64rem) {
+  .compact {
+    display: none;
   }
 }
 
-.rail {
-  position: sticky;
-  top: var(--space-4);
-}
-
-.modules {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.frame {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.module {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.moduleLink,
-.moduleCurrent {
-  display: block;
   flex: 1;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-1);
-  color: var(--text-default);
-  /* Moved here from `apps/web`'s own stylesheet in task 106, with the anchor this component now
-     builds. The app had been styling an element it passed in; a link's resting presentation is
-     this package's, and the hover underline keeps colour from being the sole carrier (UX-102). */
-  text-decoration: none;
+  min-block-size: 0;
 }
 
-.moduleLink:hover,
-.moduleCurrent:hover {
-  text-decoration: underline;
+/* The Reporting Core rail's 312px. `display: none` below `wide` rather than visibility, so the steps leave the
+   accessibility tree where `compactModules` draws them instead. */
+.rail {
+  position: relative;
+  display: none;
+  flex-shrink: 0;
+  inline-size: 312px;
+  padding-block: var(--space-5) var(--space-6);
+  overflow-y: auto;
+  border-inline-end: 1px solid var(--border-default);
+  background: var(--surface-default);
 }
 
-.moduleCurrent {
-  background: var(--surface-sunken);
-  font-weight: 600;
+@media (min-width: 64rem) {
+  .rail {
+    display: block;
+  }
 }
 
-.indicator {
-  flex: none;
-  color: var(--text-muted);
+/* The step's own scroll region. `scroll-padding` is `<main>`'s block inset, for the router's `scrollIntoView()` after a
+   navigation — the workspace layout's reason.
+
+   **`position: relative` on both regions, and it is load-bearing** (measured 30 Sep 2026, task 179.1): a field's
+   visually hidden label is `position: absolute` with no positioned ancestor, so its containing block was the viewport —
+   it escaped this region's overflow and made the document itself scroll, carrying the bar away with it. A positioned
+   scroll container is the containing block that keeps such an element inside, and clipped by, the region it is in. */
+.scroll {
+  position: relative;
+  flex: 1;
+  min-inline-size: 0;
+  overflow-y: auto;
+  scroll-padding-block-start: var(--page-block);
 }
 
 .main {
-  min-width: 0;
+  padding: var(--page-block) var(--page-gutter);
 }
 
 .header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-  margin-block-end: var(--space-5);
-}
-
-.heading {
-  min-width: 0;
+  margin-block-end: var(--space-6);
 }
 
 .title {
   margin: 0;
-  font-size: 1.5rem;
-  line-height: 1.25;
+  color: var(--text-default);
+  font: 600 28px/34px var(--font-text);
+  letter-spacing: -0.015em;
 }
 
 .progress {
-  margin: var(--space-2) 0 0;
+  margin: var(--space-3) 0 0;
   color: var(--text-muted);
-  font-size: 0.875rem;
-}
-
-.controls {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  min-width: 0;
-  max-width: 100%;
-}
-
-/* Wide: the pair keeps its width and the heading yields. Narrow: it drops under the heading and
-   wraps, because a +40% exit sentence beside a 12rem indicator is wider than a phone (UX-94). */
-@media (min-width: 48rem) {
-  .controls {
-    flex: none;
-  }
+  font: 400 14px/20px var(--font-text);
 }
 
 .body {

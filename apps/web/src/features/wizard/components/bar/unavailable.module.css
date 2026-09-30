@@ -1,0 +1,20 @@
+/*
+ * An action drawn ahead of its screen (task 179.1): the button's own look, dimmed as `Button` dims a disabled one, and
+ * the note a press opens. Tokens only (UX-127).
+ */
+
+.pending[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.note {
+  max-inline-size: 20rem;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-raised);
+  box-shadow: var(--elevation-2);
+  color: var(--text-body);
+  font: 400 13px/19px var(--font-text);
+}

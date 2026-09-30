@@ -1,6 +1,6 @@
-import { ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Anchor, type NavLinkComponent } from '../navigation/nav-link';
+import { BackArrow } from '../navigation/back-arrow';
+import type { NavLinkComponent } from '../navigation/nav-link';
 import styles from './page-heading.module.css';
 
 /**
@@ -10,9 +10,9 @@ import styles from './page-heading.module.css';
  * Record beneath an entity — takes S-13's conventions, and a heading written again per archetype is the one-off UX-89
  * names. `RecordCard` and `RecordShell` render it; an Index renders it itself, since its header is the caller's.
  *
- * **The back control is data, and the anchor is built here**, `Breadcrumb`'s shape: the arrow is this package's icon,
- * and the app injects its router — and, where leaving can lose work, a link that asks first. Its name is a visually
- * hidden sentence rather than a label attribute, so any injected link carries it.
+ * **The back control is data**, `Breadcrumb`'s shape: the arrow is `BackArrow`, its own part since the wizard's bar
+ * became its second reader (task 179.1), and the app injects its router — and, where leaving can lose work, a link
+ * that asks first.
  *
  * **Directive-free**: it holds no state, so a Server Component renders it as readily as a Client one. **No text and no
  * router**, the package rule: every word arrives as a prop or a node.
@@ -43,8 +43,6 @@ export interface PageHeadingProps {
 }
 
 export function PageHeading({ breadcrumb, back, linkComponent, title, summary }: PageHeadingProps) {
-  const Link = linkComponent ?? Anchor;
-
   const identity = (
     <hgroup className={styles.identity}>
       <h1 className={styles.title}>{title}</h1>
@@ -60,10 +58,7 @@ export function PageHeading({ breadcrumb, back, linkComponent, title, summary }:
           screen had before this file, unchanged for the ones that offer no way back. */}
       {back ? (
         <div className={styles.titleRow}>
-          <Link href={back.href} className={styles.back}>
-            <ArrowLeft aria-hidden="true" className={styles.backIcon} />
-            <span className={styles.visuallyHidden}>{back.label}</span>
-          </Link>
+          <BackArrow href={back.href} label={back.label} linkComponent={linkComponent} />
           {identity}
         </div>
       ) : (

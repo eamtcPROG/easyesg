@@ -15,9 +15,10 @@ import { ReadOnlyBanner } from '../banner/read-only-banner';
 import { StepFields } from '../fields/section/step-fields';
 import { AutosaveProvider } from '../providers/autosave-context';
 import { WizardReauthentication } from '../session/wizard-reauthentication';
-import { ModuleRail } from '../shell/module-rail';
-import { SaveState } from '../shell/save-state';
-import { WizardExit } from '../shell/wizard-exit';
+import { moduleLabel } from '../../tools/module-words';
+import { ReportBar } from '../bar/report-bar';
+import { ModuleRail } from '../rail/module-rail';
+import { ModuleSwitcher } from '../rail/module-switcher';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 
 /**
@@ -29,9 +30,9 @@ import { WIZARD_MESSAGES } from '../shared/wizard-messages';
  * could not mark which step is current — and `aria-current="step"` is the whole of how a
  * screen-reader user knows where they are in an ordered progression (NFR-75).
  *
- * **The provider wraps the shell, not the fields.** The indicator is in the header, the banner
- * above the fields, the exit control beside the indicator — four regions of one state, and a
- * provider around any one of them would invite the rest to keep state of their own.
+ * **The provider wraps the shell, not the fields.** The indicator and the exit are in the bar (task 179.1), the
+ * banner above the fields — regions of one state, and a provider around any one of them would invite the rest to keep
+ * state of their own.
  *
  * A module the pinned taxonomy does not carry is not a step: 404 rather than an empty shell, so a
  * stale deep link says so instead of rendering a wizard with nothing in it.
@@ -80,25 +81,22 @@ export async function WizardStep({
   const outstanding = summary === undefined ? 0 : summary.total - summary.answered;
   const readOnly = read.readOnly !== null;
   const fields = labelledOptions(read.step.fields, messages.organization.countries);
+  // One list, drawn twice: docked at `wide`, and in the drawer below it (task 179.1).
+  const rail = <ModuleRail reportId={reportId} modules={read.modules} current={module} />;
 
   return (
     <AutosaveProvider reportId={reportId} accountId={session.account.id}>
       <WizardShell
+        bar={<ReportBar report={read.report} modules={read.modules} readOnly={read.readOnly} />}
         modulesLabel={t('rail.label')}
-        modules={
-          <ModuleRail
-            reportId={reportId}
-            modules={read.modules}
-            current={module}
-            answeredLabel={(m) => t('rail.answered', { answered: m.answered, total: m.total })}
-            inapplicableLabel={t('rail.inapplicable')}
-            omittedLabel={t('rail.omitted')}
-          />
+        modules={rail}
+        compactModules={
+          <ModuleSwitcher reportId={reportId} modules={read.modules} current={module}>
+            {rail}
+          </ModuleSwitcher>
         }
-        title={t('step.title', { module })}
+        title={moduleLabel(t, module)}
         progress={t('step.outstanding', { count: outstanding })}
-        saveState={readOnly ? null : <SaveState />}
-        exit={<WizardExit />}
       >
         {read.readOnly === null ? null : (
           <ReadOnlyBanner

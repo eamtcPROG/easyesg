@@ -1,0 +1,12 @@
+/*
+ * The module list's closing sentence — the Reporting Core rail's foot (task 179.1). The list itself is `packages/ui`'s
+ * Wizard step list; the per-state styles this file held until then went with the indicator they coloured.
+ */
+
+.footer {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-5) var(--space-5) 0;
+  border-block-start: 1px solid var(--border-default);
+  color: var(--text-muted);
+  font: 400 13px/19px var(--font-text);
+}

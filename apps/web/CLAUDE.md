@@ -361,8 +361,9 @@ segments 404 without a session. `e2e/web/address-states.spec.ts` asserts both ha
 over `features/wizard/tools/autosave-state.ts`'s reducer, the IndexedDB `PendingWriteStore` with its
 memory fallback, and `putDisclosureValues`, the **first browser-originated write** through
 `app/api/[...path]`. The step page renders §6.2's anatomy through `features/wizard/components/fields/`
-(`StepFields` → `StepField` → `DisclosureControl`, one control per kind), with the indicator in `WizardShell`'s
-`saveState` slot, the unsynced banner above the fields, and the exit control's consequence dialogue.
+(`StepFields` → `StepField` → `DisclosureControl`, one control per kind), with the indicator in the bar
+(`WizardBar`'s `saveState`, since task 179.1), the unsynced banner above the fields, and the exit — the bar's arrow,
+`components/bar/exit-link.tsx` — with its consequence dialogue.
 Four things to know before touching it:
 
 - **The reducer owns what is unacknowledged; Query owns only the wire.** `FLUSH_SUCCEEDED` is
@@ -972,7 +973,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **159 files here are Client Components** (30 Sep 2026: one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to
+  **162 files here are Client Components** (30 Sep 2026: three more since task 179.1 drew S-07 as its artboards — the module list below `wide`, the bar's action drawn ahead of its screen, and the bar's ⋯ at `compact`; the exit and the save state moved into the bar and are counted once; one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to
   S-13 and added the report-contact section beside it; one fewer since task 175 moved S-15's identifiers section to
   S-13's identity section; two since S-13's card — the guarded link its ways back share,
 and the side column's archive panel; 28 Sep 2026: five since S-13's review — the index's filter row and the

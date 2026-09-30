@@ -1,0 +1,82 @@
+/*
+ * The Wizard's bar — the Reporting Screens artboard's 60px white bar under the band (task 179.1). Every value is a
+ * token (UX-127).
+ */
+
+.bar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  min-block-size: 60px;
+  padding: var(--space-3) var(--page-gutter);
+  border-block-end: 1px solid var(--border-default);
+  background: var(--surface-default);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
+/* The title and its line yield to the controls — cut with an ellipsis rather than wrapped, so the bar keeps its height
+   as a +40% string arrives (UX-94) and nothing below it moves. */
+.text {
+  min-inline-size: 0;
+}
+
+.title,
+.meta {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title {
+  color: var(--text-default);
+  font: 600 15px/20px var(--font-text);
+}
+
+.meta {
+  color: var(--text-muted);
+  font: 400 13px/18px var(--font-text);
+}
+
+.controls {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.overflow {
+  display: none;
+}
+
+@media (max-width: 39.9375rem) {
+  .bar {
+    gap: var(--space-4);
+  }
+
+  .controls {
+    gap: var(--space-3);
+  }
+
+  .actions {
+    display: none;
+  }
+
+  .overflow {
+    display: block;
+  }
+}

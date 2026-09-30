@@ -20,38 +20,6 @@
   min-inline-size: 0;
 }
 
-/* The secondary button's surface and edge. */
-.back {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 36px;
-  block-size: 36px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-1);
-  background: var(--surface-default);
-  color: var(--text-default);
-}
-
-.back:hover {
-  background: var(--surface-sunken);
-}
-
-.backIcon {
-  inline-size: 18px;
-  block-size: 18px;
-}
-
-.visuallyHidden {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .identity {
   display: flex;
   flex-direction: column;

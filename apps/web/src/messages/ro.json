@@ -1312,13 +1312,62 @@
       "title": "Raport",
       "exit": "Ieșiți din raport — lucrul este salvat",
       "rail": {
-        "answered": "{answered} din {total}",
-        "inapplicable": "Nu se aplică",
         "label": "Secțiunile raportului",
-        "omitted": "omis"
+        "groups": {
+          "basic": "Modulul de bază",
+          "comprehensive": "Modulul cuprinzător"
+        },
+        "count": "{done} din {counted} finalizate",
+        "discounted": "Nu se numără: {modules}.",
+        "waiting": "{modules} așteaptă răspunsurile din B1.",
+        "footer": "Le puteți completa în orice ordine. Doar modulele care depind de răspunsurile din B1 le așteaptă.",
+        "state": {
+          "complete": "Finalizat",
+          "inProgress": "În lucru · {count, plural, one {un câmp rămas} few {# câmpuri rămase} other {# de câmpuri rămase}}",
+          "notStarted": "Neînceput",
+          "omitted": "Omis",
+          "waiting": "Așteaptă răspunsurile din B1",
+          "inapplicable": "Nu se aplică"
+        },
+        "all": "Toate modulele",
+        "more": "{count, plural, one {Încă un modul} few {Încă # module} other {Încă # de module}}",
+        "position": "{module} · {position} din {total}",
+        "close": "Închideți lista modulelor"
+      },
+      "modules": {
+        "B1": "Baza de întocmire",
+        "B2": "Practici și politici",
+        "B3": "Energie și emisii",
+        "B4": "Poluare",
+        "B5": "Biodiversitate",
+        "B6": "Apă",
+        "B7": "Resurse, circularitate și deșeuri",
+        "B8": "Caracteristicile personalului",
+        "B9": "Sănătate și securitate în muncă",
+        "B10": "Remunerare, negociere colectivă și formare",
+        "B11": "Condamnări și amenzi",
+        "C1": "Strategie și model de afaceri",
+        "C2": "Practici și politici în detaliu",
+        "C3": "Ținte de reducere și tranziție",
+        "C4": "Riscuri climatice",
+        "C5": "Mai multe despre personal",
+        "C6": "Politici privind drepturile omului",
+        "C7": "Incidente grave privind drepturile omului",
+        "C8": "Venituri din anumite sectoare",
+        "C9": "Echilibrul de gen în conducere"
+      },
+      "moduleLabel": "{module} — {name}",
+      "bar": {
+        "title": "VSME {year} — {scope, select, basic {Modulul de bază} other {Modulul de bază și cel cuprinzător}}",
+        "meta": "{entity} · {period} · {standing}",
+        "export": "Exportați",
+        "review": "Revizuiți raportul",
+        "exportUnavailable": "Exportul nu este încă disponibil. Tot ce completați este salvat și va fi inclus în export când acesta va fi disponibil.",
+        "reviewUnavailable": "Revizuirea întregului raport nu este încă disponibilă. Între timp puteți completa și salva fiecare secțiune.",
+        "unavailableSuffix": "{action} — încă nu este disponibil",
+        "more": "Mai multe acțiuni pentru acest raport"
       },
       "step": {
-        "title": "Secțiunea {module}",
         "outstanding": "{count, plural, =0 {Nimic de completat} one {Un câmp rămas} few {# câmpuri rămase} other {# de câmpuri rămase}}"
       },
       "forbidden": {
@@ -1331,10 +1380,12 @@
       },
       "saveState": {
         "label": "Starea salvării",
-        "saved": "Salvat",
+        "saved": "Toate modificările sunt salvate",
         "saving": "Se salvează…",
         "queued": "În așteptare — fără conexiune",
-        "failed": "Salvarea nu a reușit"
+        "failed": "Salvarea nu a reușit",
+        "savedShort": "Salvat",
+        "savedAt": "{state} · {time}"
       },
       "queue": {
         "offlineTitle": "Modificările nu au fost încă trimise",

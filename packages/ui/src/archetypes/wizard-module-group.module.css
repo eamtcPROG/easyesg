@@ -1,0 +1,78 @@
+/*
+ * The Wizard step list's group and roll-up — the Reporting Core rail's head (task 179.1). Every value is a token.
+ */
+
+.group + .group {
+  margin-block-start: var(--space-5);
+  border-block-start: 1px solid var(--border-default);
+  padding-block-start: var(--space-5);
+}
+
+.rollUp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 var(--space-5) var(--space-5);
+  border-block-end: 1px solid var(--border-default);
+}
+
+.heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin: 0;
+}
+
+/* The artboard's mono eyebrow. */
+.name {
+  color: var(--text-muted);
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.count {
+  flex-shrink: 0;
+  color: var(--text-body);
+  font: 400 13px/18px var(--font-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.segments {
+  display: flex;
+  gap: 3px;
+}
+
+.segment {
+  flex: 1;
+  block-size: 6px;
+  border-radius: 2px;
+  background: var(--border-default);
+}
+
+.segment[data-state='complete'] {
+  background: var(--wizard-step-complete);
+}
+
+.segment[data-state='in_progress'] {
+  background: var(--state-attention);
+}
+
+.segment[data-state='omitted'] {
+  background: var(--module-state-reasoned);
+}
+
+.note {
+  margin: 0;
+  color: var(--text-muted);
+  font: 400 13px/19px var(--font-text);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--space-3) 0 0;
+  list-style: none;
+}

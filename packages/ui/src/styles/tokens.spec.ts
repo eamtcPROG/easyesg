@@ -144,6 +144,9 @@ const TEXT: Pairing[] = [
   // 4.32:1 — the account menu's address line, and every select and combobox item description.
   { what: 'muted text in a popover', fg: '--text-muted', bg: '--surface-raised', floor: 4.5 },
   { what: 'text on the accent', fg: '--text-on-accent', bg: '--accent', floor: 4.5 },
+  // The Wizard step list's current row (task 179.1): its name and its line on the accent's tint.
+  { what: 'current wizard step name', fg: '--text-default', bg: '--accent-tint', floor: 4.5 },
+  { what: 'current wizard step line', fg: '--state-ok', bg: '--accent-tint', floor: 4.5 },
   { what: 'Focus header text', fg: '--focus-header-text', bg: '--focus-header-surface', floor: 4.5 },
   { what: 'Focus header muted text', fg: '--focus-header-text-muted', bg: '--focus-header-surface', floor: 4.5 },
   { what: 'global bar text', fg: '--globalbar-text', bg: '--globalbar-surface', floor: 4.5 },

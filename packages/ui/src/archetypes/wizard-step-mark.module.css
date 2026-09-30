@@ -1,0 +1,48 @@
+/*
+ * The step mark — the Reporting Core rail's 20px square, one tone per state. Tier 2 roles and the two tier-3 tokens
+ * the cascade declared for this list (`--wizard-step-complete`, `--module-state-reasoned`); no colour is written here.
+ */
+
+.mark {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 20px;
+  block-size: 20px;
+  border-radius: var(--radius-1);
+  font: 700 12px/1 var(--font-text);
+}
+
+.icon {
+  inline-size: 13px;
+  block-size: 13px;
+}
+
+.mark[data-state='complete'] {
+  background: var(--state-ok-tint);
+  color: var(--wizard-step-complete);
+}
+
+.mark[data-state='in_progress'] {
+  background: var(--state-attention-tint);
+  color: var(--state-attention);
+}
+
+/* An empty well: nothing has happened, so the mark says nothing but its edge. */
+.mark[data-state='not_started'] {
+  border: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+}
+
+.mark[data-state='omitted'] {
+  background: var(--state-reasoned-tint);
+  color: var(--module-state-reasoned);
+}
+
+.mark[data-state='waiting'],
+.mark[data-state='inapplicable'] {
+  border: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}

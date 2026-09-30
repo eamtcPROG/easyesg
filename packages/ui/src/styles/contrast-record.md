@@ -7,7 +7,7 @@ both; UX-101 sets the floors. This table is the record that deliverable asks for
 spec that generates it is the gate — so a token change that breaks a floor fails the build
 rather than silently making this file wrong.
 
-68 pairings, each measured in both schemes.
+70 pairings, each measured in both schemes.
 
 | Pairing | Tokens | Light | Dark | Floor | Verdict |
 | --- | --- | --- | --- | --- | --- |
@@ -21,6 +21,8 @@ rather than silently making this file wrong.
 | muted text on the page ground | `--text-muted` on `--surface-sunken` | 4.61:1 | 6.72:1 | 4.5:1 | pass |
 | muted text in a popover | `--text-muted` on `--surface-raised` | 4.99:1 | 4.66:1 | 4.5:1 | pass |
 | text on the accent | `--text-on-accent` on `--accent` | 6.38:1 | 7.02:1 | 4.5:1 | pass |
+| current wizard step name | `--text-default` on `--accent-tint` | 15.61:1 | 13.86:1 | 4.5:1 | pass |
+| current wizard step line | `--state-ok` on `--accent-tint` | 7.73:1 | 7.4:1 | 4.5:1 | pass |
 | Focus header text | `--focus-header-text` on `--focus-header-surface` | 11.51:1 | 10.15:1 | 4.5:1 | pass |
 | Focus header muted text | `--focus-header-text-muted` on `--focus-header-surface` | 9.02:1 | 6.84:1 | 4.5:1 | pass |
 | global bar text | `--globalbar-text` on `--globalbar-surface` | 11.51:1 | 10.15:1 | 4.5:1 | pass |

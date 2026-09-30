@@ -97,3 +97,15 @@ export function todayIn(timezone: string, now: Date): string {
     parts.find((part) => part.type === type)?.value ?? '';
   return `${value('year')}-${value('month')}-${value('day')}`;
 }
+
+/**
+ * The calendar day as an instant **for display only** — midnight UTC of that date (task 179.1).
+ *
+ * A legal date is a day and its zone, and turning it into an instant is how *31 December* lands in the wrong year; so
+ * this is never compared, stored or sent. It exists for one thing: `i18n/formats.ts`'s `calendar` format, which formats
+ * **in UTC**, so the day that comes back out is the day that went in, whatever the reader's zone or the configured one.
+ * The pair is the conversion; either half alone is the bug.
+ */
+export function calendarDay(legal: LegalDate): Date {
+  return new Date(`${legal.date}T00:00:00Z`);
+}

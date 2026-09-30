@@ -159,7 +159,7 @@ test('a value persists on blur with no save action, and reloads from the server 
 
   // UX-34: there is no save button in the wizard.
   await expect(page.getByRole('button', { name: /salv/iu })).toHaveCount(0);
-  await expect(saveState(page)).toHaveText(/Salvat/u);
+  await expect(saveState(page)).toHaveText(/sunt salvate/u);
 
   await answer(page, { label: EMPLOYEES.label, value: '42' });
 
@@ -167,7 +167,7 @@ test('a value persists on blur with no save action, and reloads from the server 
   await expect
     .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: EMPLOYEES.elementKey }))
     .toMatchObject({ valueNumeric: '42', state: 'ok' });
-  await expect(saveState(page)).toHaveText(/Salvat/u);
+  await expect(saveState(page)).toHaveText(/sunt salvate/u);
 
   // Read back from the server, not from the browser's state.
   await page.reload();
@@ -181,7 +181,7 @@ test('a value that is not a number is refused at the field and never sent', asyn
   await answer(page, { label: EMPLOYEES.label, value: 'abc' });
 
   await expect(page.getByText('Valoarea nu este un număr.', { exact: false })).toBeVisible();
-  await expect(saveState(page)).toHaveText(/Salvat/u);
+  await expect(saveState(page)).toHaveText(/sunt salvate/u);
   expect(
     await disclosureValueOf({ organizationId, reportId, elementKey: EMPLOYEES.elementKey }),
   ).toBeNull();
@@ -212,7 +212,7 @@ test('offline changes queue, the reader is warned, and the queue drains on recon
   await expect
     .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: TURNOVER.elementKey }))
     .toMatchObject({ valueNumeric: '1000' });
-  await expect(saveState(page)).toHaveText(/Salvat/u);
+  await expect(saveState(page)).toHaveText(/sunt salvate/u);
   await expect(page.getByText('Modificările nu au fost încă trimise')).toHaveCount(0);
 });
 
@@ -242,7 +242,7 @@ test('a queued change survives the tab being closed and is sent when the report 
   await expect
     .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: EMPLOYEES.elementKey }))
     .toMatchObject({ valueNumeric: '7' });
-  await expect(saveState(next)).toHaveText(/Salvat/u);
+  await expect(saveState(next)).toHaveText(/sunt salvate/u);
 });
 
 test('leaving the wizard with unsent changes asks first, with a chance to stay (UX-37)', async ({
@@ -300,7 +300,7 @@ test('signing out while a change is still going sends it first (UC-06, UX-37)', 
   const { reportId, organizationId } = await signedInWithReport(page, 'signout-sends');
   await openB1(page, reportId);
   // B1 commits a default on arrival (FR-27), so the step settles before the only change that matters here.
-  await expect(saveState(page)).toHaveText(/Salvat/u);
+  await expect(saveState(page)).toHaveText(/sunt salvate/u);
 
   // The write is held open, so *sent first* is observable rather than a race this test would win anyway.
   let release = (): void => undefined;
@@ -332,7 +332,7 @@ test('signing out while a change cannot be sent asks first, with a chance to sta
   const email = addressFor('signout-asks');
   const { reportId, organizationId } = await signedInWithReport(page, 'signout-asks');
   await openB1(page, reportId);
-  await expect(saveState(page)).toHaveText(/Salvat/u);
+  await expect(saveState(page)).toHaveText(/sunt salvate/u);
 
   // The api refuses the write, as a period locked mid-session would (FR-22): the queue is stuck with the
   // connection up, which is the only state in which a sign-out would abandon anything.

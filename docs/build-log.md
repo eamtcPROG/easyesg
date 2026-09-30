@@ -26101,3 +26101,67 @@ suite took 18.7 minutes in task 177's run, which nothing here explains and which
 rather than this task's, the host carrying no dev servers this time; `pnpm e2e:worker` 9 of 9, whose boot spec builds its
 application through the wrapped `createApplicationContext`; the api's unit suite 1,438; `pnpm lint` and the api
 typecheck. Reviews and `gates:clean` did not run (owner, 13 Sep 2026): a test-harness file, nothing built from it.
+
+## Task 179.1 — S-07's bar and module list, drawn as the artboards draw them · 2026-09-30
+
+The project owner, on the wizard: *"it does not correspond at all with the design"*, taken chrome first. What stood: a bare
+list of references with a count beside each (*B1 · 3 of 5*), the exit, the save state and the heading in one row, and
+below `wide` the whole list stacked above the step. The decisions are `design_spec.md` S-07's amendment of this date, and
+four were the owner's, asked in one batch: **the bar is `EasyESG Reporting Screens.dc.html`'s** (the owner sent its
+crop — the square arrow, *VSME 2025 — Basic Module*, the period line) where `EasyESG Reporting Core.dc.html` draws *←
+Reports* text; **the rail is Reporting Core's**, marks and a line in words, where Reporting Screens draws coloured dots
+that are mostly validation verdicts and colour alone; **the actions the bar draws are shown disabled with their reason**
+rather than left out until their screens ship — the one answer against the global tier's *carries what renders*, and the
+owner's; and **the module names are platform-authored in the web catalogue**, on task 36.10's precedent, rather than
+EFRAG's titles served through the api. Two smaller ones were the owner's too: the company is named in the bar's line
+although the artboard omits it, and the standing uses S-06's words rather than the artboard's *draft*.
+
+**Five of the rail's six states are the api's counts read in an order, and the order is the decision.** Omitted first
+(task 36.13's order); then not applicable, split on the cause's `answer` — null exactly when the deciding B1 answer is
+absent, so *waits on your B1 answers*, and with an answer, *does not apply*; then the counts. The artboard's sixth,
+*In progress · n findings*, is task 42's and is not derived. **This changed what three browser journeys asserted**: B6
+on an untouched B1 read *Nu se aplică* and now reads *Așteaptă răspunsurile din B1*, because nothing in B1 is stored
+yet and the sector rule has no answer to decide on — which is the artboard's *Appears once B1 is complete*, worded as
+what it actually waits for (a site listed, a code given) rather than B1's completion. The ruled-out branch keeps its
+unit spec. The roll-up discounts omitted and ruled-out modules and keeps waiting ones (UX-21).
+
+**The step's state is the link's `aria-description`, not its name** — *B1 — Basis for preparation* stays one link as
+fields are answered, which is task 106's reason for keeping the old count outside the link. A string attribute rather
+than `aria-describedby`, since the same steps are drawn twice (docked, and in the drawer) and an id would have to be
+unique across both. `NavLinkComponent` widened by that one attribute, and `StepLink` passes it on.
+
+**Measured, and the one defect the build found**: at 1440 the document itself scrolled, 3,654 px, carrying the bar
+away. The fields' visually hidden labels are `position: absolute` with no positioned ancestor, so their containing block
+was the viewport and they escaped the step's scroll region. `position: relative` on the shell's two scroll regions; the
+document's overflow is 0 after, at 1440, 834 and 390. Searched for the shape under the workspace layout (S-13's record,
+the same kind of labels): its overflow is 0, so the fix stays the wizard's.
+
+**The ⋯ at 390 lists enabled items that say they are not available yet**, not disabled ones: Radix skips a disabled
+menu item in the keyboard order, so a menu of two would open onto nothing reachable. **The bar's time is the api's**, the
+newest `lastAnsweredAt` on arrival and each flush's committed `updatedAt` after, never the browser's clock. **A period is
+two legal dates formatted as a range** through `calendarDay` and a `calendar` format pinned to UTC — its spec configures a
+zone west of UTC so it bites on any host.
+
+**Structure**: `packages/ui` gains the bar, the step list's group, row and mark, the switcher below `wide` with its
+windowing rule, and `BackArrow`, pulled out of `PageHeading` for its second reader; `WizardModuleItem` left
+`wizard-shell.tsx`. `apps/web`'s `components/shell/` became `bar/` and `rail/`, mirroring the section's `return`. The
+rail's list is serialized twice in the Flight payload, docked and as the drawer's children — about twenty rows, for one
+component drawing both; `server-dedup-props` considered and declined for that. `step.title` (*Section B1*) was dead once
+the heading named the module, and is removed from the three catalogues.
+
+**Not done here**: the step heading and the fields as the artboard draws them, and B1 pre-filled from the company's record
+— the owner's next slices. The api sends C1 … C9 on a Basic-scope report, and the rail draws them as a second group as it
+listed them before; hiding them is task 79's *"shown when 78.1's flag says"*, not closed in passing.
+
+**The browser suite found a race the journeys already had, widened.** Under the full run's load three combobox
+journeys failed — a different three each run — and none failed in isolation (9 of 9, each case three times). The trace
+answered it: after `fill('Amoniac')` the input held the text and `aria-expanded` was still `false`, so the fill had landed
+before React hydrated the field and no `onChange` ran. This change makes the step larger to hydrate — the list drawn twice,
+the strip, the bar's parts — so the race is lost more often, but it was the journeys' to lose: the suite's convention is
+to wait for a hydration signal (the credential forms' disabled submit, task 153) and the wizard's comboboxes had none.
+`e2e/web/support/hydration.ts`'s `untilHydrated` waits for React's props on the element, and the five combobox fills and
+the new journey's two presses call it. A reader typing that early loses the keystrokes the same way; that is recorded
+here and not changed. The new journey's press is by the keyboard, since Playwright's `click()` counts `aria-disabled`
+as not enabled.
+
+**Verified**: `packages/ui` unit 423; `apps/web` unit 1,262; `apps/admin` unit 296; typecheck in all three; `pnpm lint`; `routes:check`; `docs:check`, its counts moved in three `CLAUDE.md` files; `e2e:web` `identity`, `expansion` and `admin` 286 of 289, the three the race above, all in `wizard.spec.ts` — which then passed 44 of 44 run twice over at four workers after the waits. By hand in the running app at 1440, 834 and 390 in ro, en and ru: the document's overflow 0, no horizontal scroll, the drawer opening from *+14* and from *All modules* and closing behind a chosen step, the ⋯'s items reachable by keyboard, the Export note on a press. Reviews and `gates:clean` did not run (owner, 13 Sep 2026): a sub-step, and the parent stays open. Reviewed against `vercel-react-best-practices` and `vercel-composition-patterns` — slots rather than boolean props, and no memoization case in the three new Client Components.

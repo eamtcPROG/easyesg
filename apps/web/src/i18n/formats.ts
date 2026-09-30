@@ -32,6 +32,13 @@ export const formats = {
     // The time of day alone — S-26's "Today, 09:02" (task 50.2.1), where the day is already said in words.
     clock: { timeStyle: 'short' },
     /**
+     * A **legal** calendar day — a period's start or end — from `calendarDay()` in `lib/legal-date.ts` (task 179.1).
+     * **In UTC, and that is the point**: `calendarDay` makes midnight UTC of the day, so formatting it anywhere else
+     * could print the day before. Its own `timeZone` outranks the configured one (next-intl applies the global zone only
+     * to a format that names none). S-07's bar formats a period with it as a range — *1 January – 31 December 2025*.
+     */
+    calendar: { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' },
+    /**
      * A bare year — the copyright notice, and later any year-only label.
      *
      * It exists as a *date* format rather than being interpolated as a number on purpose: ICU

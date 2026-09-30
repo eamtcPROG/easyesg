@@ -1312,13 +1312,62 @@
       "title": "Report",
       "exit": "Leave the report — your work is saved",
       "rail": {
-        "answered": "{answered} of {total}",
-        "inapplicable": "Does not apply",
         "label": "Report sections",
-        "omitted": "omitted"
+        "groups": {
+          "basic": "Basic Module",
+          "comprehensive": "Comprehensive Module"
+        },
+        "count": "{done} of {counted} done",
+        "discounted": "Not counted: {modules}.",
+        "waiting": "{modules} {count, plural, one {waits} other {wait}} on your B1 answers.",
+        "footer": "Answer them in any order. Only the modules that depend on your B1 answers wait for them.",
+        "state": {
+          "complete": "Complete",
+          "inProgress": "In progress · {count} outstanding",
+          "notStarted": "Not started",
+          "omitted": "Omitted",
+          "waiting": "Waits on your B1 answers",
+          "inapplicable": "Does not apply"
+        },
+        "all": "All modules",
+        "more": "{count, plural, one {One more module} other {# more modules}}",
+        "position": "{module} · {position} of {total}",
+        "close": "Close the module list"
+      },
+      "modules": {
+        "B1": "Basis for preparation",
+        "B2": "Practices and policies",
+        "B3": "Energy and emissions",
+        "B4": "Pollution",
+        "B5": "Biodiversity",
+        "B6": "Water",
+        "B7": "Resources, circularity and waste",
+        "B8": "Workforce characteristics",
+        "B9": "Health and safety",
+        "B10": "Pay, bargaining and training",
+        "B11": "Convictions and fines",
+        "C1": "Strategy and business model",
+        "C2": "Practices and policies in more detail",
+        "C3": "Reduction targets and transition",
+        "C4": "Climate risks",
+        "C5": "More on the workforce",
+        "C6": "Human rights policies",
+        "C7": "Severe human rights incidents",
+        "C8": "Revenue from certain sectors",
+        "C9": "Gender balance in governance"
+      },
+      "moduleLabel": "{module} — {name}",
+      "bar": {
+        "title": "VSME {year} — {scope, select, basic {Basic Module} other {Basic and Comprehensive Modules}}",
+        "meta": "{entity} · {period} · {standing}",
+        "export": "Export",
+        "review": "Review the report",
+        "exportUnavailable": "Export is not available yet. Everything you answer is saved and will be in the export when it opens.",
+        "reviewUnavailable": "Reviewing the whole report is not available yet. Each section can be answered and saved meanwhile.",
+        "unavailableSuffix": "{action} — not available yet",
+        "more": "More actions for this report"
       },
       "step": {
-        "title": "Section {module}",
         "outstanding": "{count, plural, =0 {Nothing left to answer} one {One field left} other {# fields left}}"
       },
       "forbidden": {
@@ -1331,10 +1380,12 @@
       },
       "saveState": {
         "label": "Save state",
-        "saved": "Saved",
+        "saved": "All changes saved",
         "saving": "Saving…",
         "queued": "Queued — no connection",
-        "failed": "Save failed"
+        "failed": "Save failed",
+        "savedShort": "Saved",
+        "savedAt": "{state} · {time}"
       },
       "queue": {
         "offlineTitle": "Changes not yet sent",
