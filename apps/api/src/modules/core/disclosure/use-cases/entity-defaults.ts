@@ -3,30 +3,10 @@ import {
   CONSOLIDATION_BASIS,
   type ConsolidationBasis,
 } from '@api/modules/core/entity/models/reporting-entity.model';
+import { B1_ELEMENT } from '../models/b1-element.model';
 import type { EntitySnapshot } from '../models/entity-snapshot.model';
 import { REPORT_SCOPE, type ReportScope } from '../models/report.model';
 import type { DisclosureDefault } from '../models/wizard-step.model';
-
-/**
- * What the platform already knows and will not re-request (task 91.2; FR-27, UX-109, D-2).
- *
- * **B1's elements that the entity record or the report itself already answers**, by name. These are
- * EFRAG's element keys, pinned here rather than read from anywhere, and `entity-defaults.spec.ts`
- * asserts each against both registered versions' artefacts — so a release that renames one fails a
- * hermetic spec rather than quietly pre-filling nothing.
- */
-export const B1_ELEMENT = {
-  BASIS_FOR_PREPARATION: 'BasisForPreparation',
-  BASIS_FOR_REPORTING: 'BasisForReporting',
-  LEGAL_FORM: 'UndertakingsLegalForm',
-  ACTIVITY_CODES: 'NaceSectorClassificationCodes',
-  SITE_ADDRESS: 'AddressOfSite',
-  SITE_POSTAL_CODE: 'PostalCodeOfSite',
-  SITE_CITY: 'CityOfSite',
-  SITE_COUNTRY: 'CountryOfSite',
-  SITE_GPS: 'GPSLocationOfSite',
-  SUBSIDIARY_NAME: 'NameOfTheSubsidiary',
-} as const;
 
 /** The domains those choice fields draw from, qualified as the registry keys them (task 91.1). */
 export const B1_DOMAIN = {

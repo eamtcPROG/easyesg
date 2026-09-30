@@ -26196,3 +26196,36 @@ round-trip removed; typecheck; `pnpm lint`; `docs:check`; `e2e:web` `identity` a
 journey this task extended, which failed twice for its own reasons — a postal-code label the registered address shares,
 then the padding above — and passed 12 of 12 with its file on a fresh build. By hand at 1440: a site entered whole,
 saved, reloaded, all six facts back. Reviews and `gates:clean` did not run (owner, 13 Sep 2026): a sub-step.
+
+## Task 180.2 — The copy follows the company until B1 is opened · 2026-09-30
+
+FR-27 as amended by the owner this day, `architecture.md` §12.5.6's task-180.2 row carrying the reasons: saving a
+reporting entity re-takes the FR-18 snapshot of each of its periods that is not locked and whose report stores none of
+the answers the record gives. What was traced first: B1 had been pre-filling sites since task 91.2, and the snapshot was
+taken at period open — before most readers fill the company in, because a report needs a period and the product's own
+flow puts the period first.
+
+**Where it is written, and why there**: on the entity's save, in its transaction, through a port of its own
+(`EntitySnapshotRefresh`) that the period store's adapter implements — the api never writes on a read (§12.5.6's
+task-91.2 row), and an entity use case depending on the whole period store would depend on opening and locking periods
+it never does. **One statement**: which periods are due, the one new snapshot and the repointing are a single `WITH`,
+so they are one consistent read of the save's transaction; the previous copy stays, immutable by grant. The snapshot's
+document is one SQL expression both writers share, so period open and the save cannot take different pictures.
+
+**"B1 opened" is B1's record keys stored**, since opening B1 commits every default it shows at once and
+`BasisForPreparation` always has one. `B1_ELEMENT` moved from `entity-defaults.ts` to a model for it — an adapter reads a
+module's vocabulary, never its use cases, and no adapter imported a use-case file before this, so it did not start. **Why
+B5 is safe**: a re-taken snapshot may order sites differently, and B5's site answers are keyed by ordinal — but B5's site
+questions apply only once B1's site rows are stored (BR-APP-3), which is exactly when the copy stops.
+
+**What changed in the proof**: `wizard.e2e-spec.ts` proved FR-18 by editing the entity after the period opened and
+asserting the default did not move, which the amendment makes wrong before B1 is opened. It is three cases now — the
+company filled in before B1 is opened arrives in it, sites and all; after B1 is opened the report keeps its answers (the
+old case's D-2 half kept whole); a locked period's copy never moves. **Each proven to bite**: without the use case's
+call the first fails (*CooperativeMember* expected, *PrivateLimitedLiability…* received), and without the *not opened*
+condition the second fails the other way round.
+
+**Verified**: api unit 1,441 (the use case's three new cases — it asks once, for the entity it wrote, at that moment; not
+on a refusal; not on a creation); `pnpm e2e` 1,462 of 1,462 across 61 suites, the entrypoint's HTTP boot among them;
+typecheck; `pnpm lint`; `docs:check`. No controller, DTO or migration changed, so neither `openapi:check` nor
+`migrations:check` was reached. Reviews and `gates:clean` did not run (owner, 13 Sep 2026): a sub-step.

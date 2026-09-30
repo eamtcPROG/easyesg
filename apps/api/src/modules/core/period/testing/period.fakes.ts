@@ -6,6 +6,7 @@ import type {
   TaxonomyPin,
   TaxonomyRegistry,
 } from '@api/contracts/taxonomy-registry.port';
+import type { EntitySnapshotRefresh } from '../interfaces/entity-snapshot-refresh.interface';
 import type { ReportingPeriodStore } from '../interfaces/reporting-period-store.interface';
 import type {
   NewReportingPeriod,
@@ -204,5 +205,19 @@ export class FakeTaxonomyRegistry implements TaxonomyRegistry {
 
   axis(): TaxonomyAxis | null {
     return null;
+  }
+}
+
+/**
+ * The entity's save carrying the record into its periods (task 180.2), recorded rather than performed: which periods
+ * are due is a question about the database's rows, answered in `wizard.e2e-spec.ts`; what a use-case spec can hold is
+ * that the save asks, once, for the entity it wrote, at the moment it wrote it.
+ */
+export class FakeEntitySnapshotRefresh implements EntitySnapshotRefresh {
+  readonly calls: { readonly reportingEntityId: string; readonly at: Date }[] = [];
+
+  followRecord(input: { readonly reportingEntityId: string; readonly at: Date }): Promise<number> {
+    this.calls.push(input);
+    return Promise.resolve(0);
   }
 }

@@ -10,6 +10,7 @@ import {
   type ReportingEntity,
   type ReportingEntityPatch,
 } from '../models/reporting-entity.model';
+import type { EntitySnapshotRefresh } from '@api/modules/core/period/interfaces/entity-snapshot-refresh.interface';
 import type { ReportingEntityStore } from '../interfaces/reporting-entity-store.interface';
 import {
   ConsolidationBoundaryEmptyError,
@@ -45,12 +46,18 @@ export interface ArchiveEntityCommand {
  * entity has sites which may be anywhere, but the classifier that governs its activity codes is the
  * one its organization is registered under. Reading it per call keeps a country change (UC-50)
  * applying to the next entity edit without anything having to invalidate a cache.
+ *
+ * **A save carries the entity into the periods whose B1 has not been opened** (FR-27 as amended 30 Sep 2026, task
+ * 180.2): once the record is written, `EntitySnapshotRefresh` re-takes their snapshot in the same transaction, so a
+ * reader who fills the company in after opening a period finds it in B1. Neither a creation (no period yet) nor an
+ * archive (the record is frozen, FR-20) has anything to carry.
  */
 export class ManageReportingEntity {
   constructor(
     private readonly store: ReportingEntityStore,
     private readonly organizations: OrganizationStore,
     private readonly vocabulary: OrganizationVocabulary,
+    private readonly snapshots: EntitySnapshotRefresh,
     private readonly now: Clock,
   ) {}
 
@@ -92,12 +99,10 @@ export class ManageReportingEntity {
           : existing.consolidationMembers,
     });
 
-    const updated = await this.store.update({
-      entityId: command.entityId,
-      patch: command.patch,
-      at: this.now(),
-    });
+    const at = this.now();
+    const updated = await this.store.update({ entityId: command.entityId, patch: command.patch, at });
     if (!updated) throw new EntityNotFoundError();
+    await this.snapshots.followRecord({ reportingEntityId: command.entityId, at });
     return updated;
   }
 

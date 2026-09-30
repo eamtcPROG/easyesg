@@ -2,6 +2,7 @@ import { Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
 import { ReportingEntityStoreRepository } from '@api/infrastructure/persistence/core/reporting-entity-store.repository';
+import { ReportingPeriodStoreRepository } from '@api/infrastructure/persistence/core/reporting-period-store.repository';
 import { OrganizationStoreRepository } from '@api/infrastructure/persistence/core/organization-store.repository';
 import {
   ORGANIZATION_STORE,
@@ -12,6 +13,10 @@ import {
   type OrganizationVocabulary,
 } from '@api/modules/core/organization/interfaces/organization-vocabulary.interface';
 import { OrganizationVocabularyService } from '@api/modules/core/organization/services/organization-vocabulary.service';
+import {
+  ENTITY_SNAPSHOT_REFRESH,
+  type EntitySnapshotRefresh,
+} from '@api/modules/core/period/interfaces/entity-snapshot-refresh.interface';
 import { EntitiesController } from './controllers/entities.controller';
 import {
   REPORTING_ENTITY_STORE,
@@ -51,6 +56,8 @@ const httpProviders: Provider[] = [
   { provide: REPORTING_ENTITY_STORE, useClass: ReportingEntityStoreRepository },
   { provide: ORGANIZATION_STORE, useClass: OrganizationStoreRepository },
   { provide: ORGANIZATION_VOCABULARY, useClass: OrganizationVocabularyService },
+  // The period store's adapter, behind the one capability the entity's save needs of it (task 180.2).
+  { provide: ENTITY_SNAPSHOT_REFRESH, useClass: ReportingPeriodStoreRepository },
   { provide: CLOCK, useValue: () => new Date() },
   {
     provide: NaceCodeLookup,
@@ -60,13 +67,14 @@ const httpProviders: Provider[] = [
   },
   {
     provide: ManageReportingEntity,
-    inject: [REPORTING_ENTITY_STORE, ORGANIZATION_STORE, ORGANIZATION_VOCABULARY, CLOCK],
+    inject: [REPORTING_ENTITY_STORE, ORGANIZATION_STORE, ORGANIZATION_VOCABULARY, ENTITY_SNAPSHOT_REFRESH, CLOCK],
     useFactory: (
       store: ReportingEntityStore,
       organizations: OrganizationStore,
       vocabulary: OrganizationVocabulary,
+      snapshots: EntitySnapshotRefresh,
       now: Clock,
-    ) => new ManageReportingEntity(store, organizations, vocabulary, now),
+    ) => new ManageReportingEntity(store, organizations, vocabulary, snapshots, now),
   },
 ];
 

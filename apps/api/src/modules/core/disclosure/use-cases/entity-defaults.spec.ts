@@ -5,7 +5,8 @@ import { TaxonomyRegistryService } from '@api/modules/platform/taxonomy/services
 import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-configuration-store';
 import type { EntitySnapshot } from '../models/entity-snapshot.model';
 import { REPORT_SCOPE } from '../models/report.model';
-import { B1_DOMAIN, B1_ELEMENT, BASIS_MEMBER, SCOPE_MEMBER, entityDefaults } from './entity-defaults';
+import { B1_ELEMENT } from '../models/b1-element.model';
+import { B1_DOMAIN, BASIS_MEMBER, SCOPE_MEMBER, entityDefaults } from './entity-defaults';
 
 /**
  * B1's defaults (task 91.2; FR-27, UX-109, D-2) — every mapping as a unit case, and the pinned

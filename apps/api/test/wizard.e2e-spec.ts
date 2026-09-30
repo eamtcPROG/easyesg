@@ -400,24 +400,50 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     expect(modules.find((m) => m.module === 'B1')?.answered).toBe(0);
   });
 
-  it('keeps the snapshot’s defaults after the entity changes, and a stored answer replaces the default without touching the entity (FR-18, D-2)', async () => {
-    // A dedicated entity, so the shared fixture's snapshot is not what this test edits.
+  /** A dedicated entity and a report on its 2026 period, so the shared fixture's snapshot is not what a case edits. */
+  const ownReport = async (name: string): Promise<{ entityId: string; periodId: string; reportId: string }> => {
     const created = await http().post('/api/v1/entities').set(admin.authorization).send({
-      name: 'Moara Veche', legalForm: 'srl', naceCodes: ['10.61'], sites: [],
+      name, legalForm: 'srl', naceCodes: ['10.61'], sites: [],
     }).expect(201);
-    const ownEntity = (created.body as { object: { id: string } }).object.id;
+    const entityId = (created.body as { object: { id: string } }).object.id;
     const period = (await http().post('/api/v1/periods').set(admin.authorization).send({
-      reportingEntityId: ownEntity, fiscalYear: 2026,
+      reportingEntityId: entityId, fiscalYear: 2026,
       periodStart: { date: '2026-01-01', timezone: CHISINAU },
       periodEnd: { date: '2026-12-31', timezone: CHISINAU },
     }).expect(201)).body as { object: { id: string } };
-    const reportId = await createReport(period.object.id);
+    return { entityId, periodId: period.object.id, reportId: await createReport(period.object.id) };
+  };
 
-    // The Administrator corrects the record AFTER the period opened.
-    await http().patch(`/api/v1/entities/${ownEntity}`).set(admin.authorization)
+  it('follows the entity into B1 until B1 is opened — the company filled in after the period opened (FR-27 as amended, task 180.2)', async () => {
+    const { entityId, reportId } = await ownReport('Moara Nouă');
+
+    // The Administrator fills the company in AFTER the period opened, and nobody has opened B1: the product's own
+    // order — a period is what a report needs, and the company's details come later.
+    await http().patch(`/api/v1/entities/${entityId}`).set(admin.authorization).send({
+      legalForm: 'cp',
+      sites: [{ name: 'Moara', addressLine1: 'str. Morii 3', locality: 'Soroca', countryCode: 'MD' }],
+    }).expect(200);
+
+    const step = await readStep(reportId);
+    expect(defaultOf(step, 'UndertakingsLegalForm')).toBe('vsme:CooperativeMember');
+    expect(defaultOf(step, 'CityOfSite')).toBe('Soroca');
+    expect(defaultOf(step, 'CountryOfSite')).toBe('country:MD');
+  });
+
+  it('keeps the report’s answers once B1 is opened, and a stored answer replaces the default without touching the entity (FR-18, FR-27, D-2)', async () => {
+    const { entityId, reportId } = await ownReport('Moara Veche');
+
+    // B1 opened: opening it commits every default it shows, and any one of the record's keys stored is the fact the
+    // copy stops on. A row in any state counts, `missing` included.
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: [{ elementKey: 'BasisForPreparation', state: DISCLOSURE_STATE.MISSING }],
+    }).expect(200);
+
+    // The Administrator corrects the record AFTER B1 was opened.
+    await http().patch(`/api/v1/entities/${entityId}`).set(admin.authorization)
       .send({ legalForm: 'cp' }).expect(200);
 
-    // The filing keeps the values in force when it was prepared (FR-18), not the entity's now.
+    // The filing keeps the values in force when B1 was opened, not the entity's now.
     expect(defaultOf(await readStep(reportId), 'UndertakingsLegalForm')).toBe('vsme:PrivateLimitedLiabilityUndertakingMember');
 
     // The reporter answers otherwise. The store row wins, the default is gone for that key only …
@@ -438,8 +464,18 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
 
     // D-2: the disclosure never wrote the master record — it still says what the Administrator set.
     const entity = objectOf<{ legalForm: string }>((await http()
-      .get(`/api/v1/entities/${ownEntity}`).set(admin.authorization).expect(200)).body);
+      .get(`/api/v1/entities/${entityId}`).set(admin.authorization).expect(200)).body);
     expect(entity.legalForm).toBe('cp');
+  });
+
+  it('never moves a locked period’s copy, B1 opened or not (FR-18)', async () => {
+    const { entityId, periodId, reportId } = await ownReport('Moara Închisă');
+    await http().post(`/api/v1/periods/${periodId}/lock`).set(admin.authorization).expect(200);
+
+    await http().patch(`/api/v1/entities/${entityId}`).set(admin.authorization)
+      .send({ legalForm: 'cp' }).expect(200);
+
+    expect(defaultOf(await readStep(reportId), 'UndertakingsLegalForm')).toBe('vsme:PrivateLimitedLiabilityUndertakingMember');
   });
 
   it('says which fields repeat, and a fixed member axis does not (task 36.2)', async () => {

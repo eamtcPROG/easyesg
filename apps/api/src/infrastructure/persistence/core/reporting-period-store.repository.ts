@@ -4,6 +4,8 @@ import {
   REPORT_STATUS,
   type ReportStatus,
 } from '@api/modules/core/disclosure/models/report.model';
+import { RECORD_ANSWERED_ELEMENTS } from '@api/modules/core/disclosure/models/b1-element.model';
+import type { EntitySnapshotRefresh } from '@api/modules/core/period/interfaces/entity-snapshot-refresh.interface';
 import type { ReportingPeriodStore } from '@api/modules/core/period/interfaces/reporting-period-store.interface';
 import {
   PeriodLockedError,
@@ -146,6 +148,21 @@ const PATCHABLE = {
  * (P0001) would have made them all look alike.
  */
 /**
+ * The snapshot's document, as one SQL expression over `core.reporting_entity e`: the row, its sites and its consolidation
+ * members, each collection ordered by name so the sites' positions — B1's ordinals — are stable (§12.5.6's task-91.2
+ * row). **One copy for the two writers**, period open and the entity's save (task 180.2), so the two cannot take
+ * different pictures of the same entity.
+ */
+const SNAPSHOT_PAYLOAD = `to_jsonb(e) || jsonb_build_object(
+    'sites', COALESCE((SELECT jsonb_agg(to_jsonb(s) ORDER BY s.name, s.id)
+                         FROM core.site s
+                        WHERE s.reporting_entity_id = e.id), '[]'::jsonb),
+    'consolidation_members',
+      COALESCE((SELECT jsonb_agg(to_jsonb(m) ORDER BY m.name, m.id)
+                  FROM core.consolidation_member m
+                 WHERE m.reporting_entity_id = e.id), '[]'::jsonb))`;
+
+/**
  * Both writes translate the same two refusals, so they translate them the same way.
  *
  * **The lock is re-raised from the database even though the use case checks it first**, and that is
@@ -161,7 +178,7 @@ const translate = (error: unknown): never => {
 @Injectable()
 export class ReportingPeriodStoreRepository
   extends TenantRepository<never>
-  implements ReportingPeriodStore
+  implements ReportingPeriodStore, EntitySnapshotRefresh
 {
   protected readonly entity = 'core.reporting_period' as never;
 
@@ -453,20 +470,53 @@ export class ReportingPeriodStoreRepository
   private async takeEntitySnapshot(reportingEntityId: string, at: Date): Promise<string | null> {
     const rows = await this.manager.query<{ id: string }[]>(
       `INSERT INTO core.entity_snapshot (organization_id, reporting_entity_id, taken_at, payload)
-       SELECT e.organization_id, e.id, $2, to_jsonb(e) || jsonb_build_object(
-                'sites', COALESCE((SELECT jsonb_agg(to_jsonb(s) ORDER BY s.name, s.id)
-                                     FROM core.site s
-                                    WHERE s.reporting_entity_id = e.id), '[]'::jsonb),
-                'consolidation_members',
-                  COALESCE((SELECT jsonb_agg(to_jsonb(m) ORDER BY m.name, m.id)
-                              FROM core.consolidation_member m
-                             WHERE m.reporting_entity_id = e.id), '[]'::jsonb))
+       SELECT e.organization_id, e.id, $2, ${SNAPSHOT_PAYLOAD}
          FROM core.reporting_entity e
         WHERE e.id = $1
       RETURNING id`,
       [reportingEntityId, at],
     );
     return rows[0]?.id ?? null;
+  }
+
+  /**
+   * FR-27 as amended 30 Sep 2026 (task 180.2): the entity's periods that are not locked, and whose report stores none of
+   * the answers the record gives, take a fresh copy — **one statement**, so which periods are due, the copy and the
+   * repointing are one consistent read of the transaction the entity's save is in.
+   *
+   * **One snapshot for all of them**, inserted only when some period is due: the entity is one thing at one moment. The
+   * copy each period held before stays where it is, immutable by grant, and simply stops being pointed at. A locked
+   * period is left alone twice over — `locked_at` excludes it here, and `refuse_locked_write` would refuse the update.
+   */
+  async followRecord(input: { reportingEntityId: string; at: Date }): Promise<number> {
+    const rows = await this.manager.query<{ id: string }[]>(
+      `WITH due AS (
+         SELECT p.id
+           FROM core.reporting_period p
+          WHERE p.reporting_entity_id = $1
+            AND p.locked_at IS NULL
+            AND NOT EXISTS (
+                  SELECT 1
+                    FROM core.report r
+                    JOIN core.report_disclosure_value v ON v.report_id = r.id
+                   WHERE r.reporting_period_id = p.id
+                     AND v.element_key = ANY($3::text[]))
+       ), taken AS (
+         INSERT INTO core.entity_snapshot (organization_id, reporting_entity_id, taken_at, payload)
+         SELECT e.organization_id, e.id, $2, ${SNAPSHOT_PAYLOAD}
+           FROM core.reporting_entity e
+          WHERE e.id = $1
+            AND EXISTS (SELECT 1 FROM due)
+         RETURNING id
+       )
+       UPDATE core.reporting_period p
+          SET entity_snapshot_id = taken.id
+         FROM due, taken
+        WHERE p.id = due.id
+      RETURNING p.id`,
+      [input.reportingEntityId, input.at, RECORD_ANSWERED_ELEMENTS],
+    );
+    return rows.length;
   }
 
   /**

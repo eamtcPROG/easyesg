@@ -16,6 +16,7 @@ import {
   FakeOrganizationVocabulary,
   anOrganization,
 } from '@api/modules/core/organization/testing/organization.fakes';
+import { FakeEntitySnapshotRefresh } from '@api/modules/core/period/testing/period.fakes';
 
 /** UC-52, UC-53, UC-55 (FR-17, FR-18, FR-20). No database, no container. */
 describe('ManageReportingEntity', () => {
@@ -23,13 +24,15 @@ describe('ManageReportingEntity', () => {
 
   const build = (rows = [anEntity()]) => {
     const store = new FakeReportingEntityStore(rows);
+    const snapshots = new FakeEntitySnapshotRefresh();
     const useCase = new ManageReportingEntity(
       store,
       new FakeOrganizationStore(),
       new FakeOrganizationVocabulary(),
+      snapshots,
       () => at,
     );
-    return { store, useCase };
+    return { store, snapshots, useCase };
   };
 
   const NEW = {
@@ -48,6 +51,33 @@ describe('ManageReportingEntity', () => {
     consolidationBasis: null,
     consolidationMembers: [],
   };
+
+  describe('the record following into the periods (FR-27 as amended 30 Sep 2026, task 180.2)', () => {
+    it('asks, once a save is written, for the entity it wrote at the moment it wrote it', async () => {
+      const { store, snapshots, useCase } = build();
+
+      await useCase.update({ entityId: store.all[0].id, patch: { name: 'Brutăria Lina SRL' } });
+
+      expect(snapshots.calls).toEqual([{ reportingEntityId: store.all[0].id, at }]);
+    });
+
+    it('asks nothing when the save is refused, since nothing was written', async () => {
+      const { store, snapshots, useCase } = build([anEntity({ status: ENTITY_STATUS.ARCHIVED })]);
+
+      await expect(
+        useCase.update({ entityId: store.all[0].id, patch: { name: 'Nou' } }),
+      ).rejects.toBeInstanceOf(EntityArchivedError);
+      expect(snapshots.calls).toEqual([]);
+    });
+
+    it('asks nothing on a creation, which has no period yet', async () => {
+      const { snapshots, useCase } = build();
+
+      await useCase.create({ entity: NEW });
+
+      expect(snapshots.calls).toEqual([]);
+    });
+  });
 
   describe('activity codes (FR-17)', () => {
     it('admits codes the country’s classifier registers', async () => {
@@ -83,6 +113,7 @@ describe('ManageReportingEntity', () => {
         store,
         new FakeOrganizationStore(anOrganization({ countryCode: 'FR' })),
         new FakeOrganizationVocabulary(),
+        new FakeEntitySnapshotRefresh(),
         () => at,
       );
 
