@@ -167,6 +167,41 @@ test('a filtered-to-nothing list offers the filter back, not the teaching state'
   await expect(page.getByRole('row').filter({ hasText: `${RUN_PREFIX}-Lina` })).toHaveCount(1);
 });
 
+test('S-06 takes S-13’s conventions — *new report* in the filter row, and a trail and an arrow up from the creation flow', async ({
+  page,
+}) => {
+  // 30 Sep 2026, project owner: the action stands where S-13's and S-14's do, and the creation flow had no way back
+  // but *cancel* at the foot of its last decision and the workspace tier.
+  const organizationId = await signedIn(page, 'wayup');
+  await seedReport({ organizationId, name: `${RUN_PREFIX}-Tipografia` });
+
+  await page.goto('/reports');
+
+  // One *new report*, at the end of the filter row on the facets' baseline — the heading no longer carries it, so a
+  // button left there would stand above the facets and fail the first measure.
+  const add = page.getByRole('link', { name: 'Raport nou' });
+  await expect(add).toHaveCount(1);
+  const addBox = await add.boundingBox();
+  const lastFacet = await page.getByLabel('Starea', { exact: true }).boundingBox();
+  expect(addBox && lastFacet && Math.abs(addBox.y + addBox.height - (lastFacet.y + lastFacet.height))).toBeLessThanOrEqual(1);
+  expect(addBox && lastFacet && addBox.x > lastFacet.x + lastFacet.width).toBe(true);
+
+  await add.click();
+  await page.waitForURL('**/reports/new');
+
+  // The trail names S-06 as S-06 names itself, and this page is current.
+  const trail = page.getByRole('navigation', { name: 'Firimituri' });
+  await expect(trail.getByRole('link', { name: 'Rapoarte' })).toHaveAttribute('href', /\/reports$/u);
+  await expect(trail.locator('[aria-current="page"]')).toHaveText('Raport nou');
+
+  // The arrow leads up to S-06, from a half-made choice as well — the owner's choice over following the origin.
+  await page.getByRole('link', { name: `${RUN_PREFIX}-Tipografia` }).click();
+  await page.waitForURL(/\/reports\/new\?entity=/u);
+  await page.getByRole('link', { name: 'Înapoi la rapoarte' }).click();
+  await page.waitForURL('**/reports');
+  await expect(page.getByRole('heading', { level: 1, name: 'Rapoarte' })).toBeVisible();
+});
+
 test('the screen is live in all three locales', async ({ page }) => {
   const organizationId = await signedIn(page, 'locales');
   await seedReport({ organizationId, name: `${RUN_PREFIX}-Locale` });

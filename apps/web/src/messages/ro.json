@@ -1106,6 +1106,7 @@
       "create": {
         "title": "Raport nou",
         "lede": "Un raport acoperă o singură entitate și o singură perioadă de raportare.",
+        "back": "Înapoi la rapoarte",
         "permission": {
           "title": "Nu puteți crea rapoarte în această organizație",
           "body": "Contul dumneavoastră nu este membru activ al organizației selectate, deci nu putem afișa entitățile pentru care s-ar putea crea un raport.",

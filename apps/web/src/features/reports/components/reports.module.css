@@ -3,18 +3,49 @@
 
 .screen { display: flex; flex-direction: column; gap: var(--space-6); }
 
-.header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-5);
-  flex-wrap: wrap;
-}
-
 .title { margin: 0; }
 .lede { margin: var(--space-2) 0 0; color: var(--text-body); max-width: var(--measure-text); }
 
-.filters { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+/* The filter row (30 Sep 2026, project owner): S-13's, rule for rule, as S-14 took it — the facets at the start and
+   *new report* at the end, on their baseline. **Below `wide` one column**, each facet and then the button the row's
+   full width; **from `wide` one row**. `wide` because it is the one boundary with a stated value (§3.3's 1024px), and
+   because a middle state — facets beside each other with the button wrapping beneath — is what read as broken on
+   S-16. */
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* One field per row: a grid with no columns declared is one track, S-16's reason for not using `auto-fit`. */
+.filters {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* The button's edges meet the selects' rather than sitting a few pixels short on the shared baseline. */
+.toolbar .toolbarButton {
+  min-block-size: var(--field-block-size);
+}
+
+@media (min-width: 64rem) {
+  .toolbar {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  /* The three facets side by side, equal, each at S-13's width for its one, so they read as filters rather than a
+     form; they give way before the button does. */
+  .filters {
+    flex: 0 1 51rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .toolbar .toolbarButton {
+    flex-shrink: 0;
+  }
+}
 
 /* The entity cell carries the scope beneath the name, as the artboard draws it. */
 .subject { display: flex; flex-direction: column; gap: var(--space-1); }

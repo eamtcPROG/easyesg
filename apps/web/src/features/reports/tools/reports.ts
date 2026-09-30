@@ -196,14 +196,15 @@ export const toReportRows = (reports: readonly Report[]): ReportRow[] =>
     updatedAt: report.updatedAt,
   }));
 
-/** The distinct entities and years present, for the filter selects — derived from the rows rather
- *  than fetched, so a filter can never offer a value that matches nothing. */
-export const reportFilterOptions = (
-  rows: readonly ReportRow[],
-): {
+/** What the entity and year facets offer, entities by name and years newest first. */
+export interface ReportFilterOptions {
   readonly entities: readonly { readonly id: string; readonly name: string }[];
   readonly years: readonly number[];
-} => {
+}
+
+/** The distinct entities and years present, for the filter selects — derived from the rows rather
+ *  than fetched, so a filter can never offer a value that matches nothing. */
+export const reportFilterOptions = (rows: readonly ReportRow[]): ReportFilterOptions => {
   const entities = new Map<string, string>();
   for (const row of rows) entities.set(row.entityId, row.entityName);
 

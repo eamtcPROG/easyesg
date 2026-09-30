@@ -7,6 +7,7 @@ import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { creationChoice } from '../tools/report-creation';
 import { NewReportDecisions } from './new-report-decisions';
+import { NewReportHeading } from './new-report-heading';
 import { REPORT_CREATION_MESSAGES } from './reports-messages';
 import styles from './reports.module.css';
 
@@ -18,7 +19,8 @@ import styles from './reports.module.css';
  * make the read and choose the arm — and `NewReportDecisions` takes the narrowed read. The
  * permission and unreachable arms are two callouts, each with §11.5's three parts: the first draft
  * of this screen folded two of them into a title and passed `null` for the body, which compiles and
- * leaves the reader the "so what" to infer.
+ * leaves the reader the "so what" to infer. **The heading and its way back stand over every arm**,
+ * since they name nothing the read answers (`NewReportHeading` says why).
  */
 export async function NewReportSection({
   searchParams,
@@ -36,12 +38,7 @@ export async function NewReportSection({
 
   return (
     <div className={styles.screen}>
-      {/* No `styles.header`: that class is the two-column row for a screen with an action beside
-          its title, and this screen has none. `hgroup` admits only a heading and `p`s. */}
-      <hgroup>
-        <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
-        <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
-      </hgroup>
+      <NewReportHeading />
 
       {read.status === TENANT_READ.FORBIDDEN ? (
         <Callout

@@ -1106,6 +1106,7 @@
       "create": {
         "title": "New report",
         "lede": "A report covers one entity and one reporting period.",
+        "back": "Back to reports",
         "permission": {
           "title": "You cannot create reports in this organization",
           "body": "Your account is not an active member of the selected organization, so we cannot show the entities a report could be created for.",

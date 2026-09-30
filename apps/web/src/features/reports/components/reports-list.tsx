@@ -4,7 +4,6 @@ import {
   BUTTON_VARIANT,
   Button,
   EmptyState,
-  Select,
   StatusChip,
   TextLink,
   VersionPinIndicator,
@@ -20,14 +19,15 @@ import { ROUTES, reportRoute, withQuery } from '@/lib/routes';
 import {
   REPORT_FILTER_ANY,
   REPORT_SORT,
-  REPORT_STATUS_FILTERS,
   reportViewQuery,
+  type ReportFilterOptions,
   type ReportPage,
   type ReportRow,
   type ReportSort,
   type ReportView,
 } from '../tools/reports';
 import { REPORTS_MESSAGES } from './reports-messages';
+import { ReportsToolbar } from './reports-toolbar';
 import styles from './reports.module.css';
 
 /**
@@ -78,17 +78,17 @@ const STATUS_TONE: Record<ReportStatus, StatusTone> = {
 export interface ReportsListProps {
   readonly page: ReportPage;
   readonly view: ReportView;
-  readonly entities: readonly { readonly id: string; readonly name: string }[];
-  readonly years: readonly number[];
+  /** What the entity and year facets offer, read off the rows by the section. */
+  readonly options: ReportFilterOptions;
   /**
    * FR-25's view-only clause: *"a view-only member sees the same entries and no edit affordances"*.
-   * The rows are unchanged; the teaching empty state loses its action, because creating a report is
-   * the one write this screen offers and a viewer's would be refused.
+   * The rows are unchanged; the filter row's *new report* and the teaching empty state's action both
+   * go, because creating a report is the one write this screen offers and a viewer's would be refused.
    */
   readonly canCreate: boolean;
 }
 
-export function ReportsList({ page, view, entities, years, canCreate }: ReportsListProps) {
+export function ReportsList({ page, view, options, canCreate }: ReportsListProps) {
   const t = useTranslations(REPORTS_MESSAGES);
   const format = useFormatter();
   const router = useRouter();
@@ -185,35 +185,7 @@ export function ReportsList({ page, view, entities, years, canCreate }: ReportsL
 
   return (
     <>
-      <div className={styles.filters}>
-        <Select
-          label={t('filter.entity')}
-          value={view.entity}
-          onValueChange={(next) => setView({ entity: next })}
-          options={[
-            { value: REPORT_FILTER_ANY, label: t('filter.options.anyEntity') },
-            ...entities.map((entity) => ({ value: entity.id, label: entity.name })),
-          ]}
-        />
-        <Select
-          label={t('filter.year')}
-          value={view.year}
-          onValueChange={(next) => setView({ year: next })}
-          options={[
-            { value: REPORT_FILTER_ANY, label: t('filter.options.anyYear') },
-            ...years.map((year) => ({ value: String(year), label: String(year) })),
-          ]}
-        />
-        <Select
-          label={t('filter.status')}
-          value={view.status}
-          onValueChange={(next) => setView({ status: next as ReportView['status'] })}
-          options={REPORT_STATUS_FILTERS.map((option) => ({
-            value: option,
-            label: t(`filter.options.${option}`),
-          }))}
-        />
-      </div>
+      <ReportsToolbar view={view} options={options} canCreate={canCreate} onViewChangeAction={setView} />
 
       <IndexView<ReportRow, ReportColumnKey>
         page={page}

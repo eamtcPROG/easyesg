@@ -537,9 +537,10 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Controls and actions:** filter; sort; open a report.
 - **States:** empty — first use (teaching empty state, per Index note in §4.6); empty — filtered (distinguishes "nothing matches" from "nothing exists" and offers to clear the filter); loading — initial; loading — refresh; error — recoverable; **error — permission** (added 5 Sep 2026 with task 32.2.2: the read is open to every member, so this is the state a request whose organization did not resolve arrives in — the same state S-13 and S-15 carry, and distinct from the one below); read-only (view-only membership — the two writes disappear and the entries do not, which is FR-25's clause read literally).
 - **Validation behaviour:** none of its own.
-- **Exits:** S-07; the report creation flow (see OQ-21), which returns here on cancel.
+- **Exits:** S-07; the report creation flow (see OQ-21), which returns here on cancel — **and by its arrow and its trail** (30 Sep 2026, below).
 - **Use cases:** UC-17, and UC-18 through the creation flow.
 - **FRs:** FR-25, and FR-26 through the creation flow.
+- **Amended 30 Sep 2026 (project owner): S-06 takes the conventions S-13 set, as S-14 did.** **The Index's *new report* stands at the end of the filter row**, after the three facets and on their baseline — S-13's row, below `wide` one control to a row with the action last — where it stood at the heading's end; a view-only member sees the facets without it (FR-25). The Index itself carries no trail and no arrow, being a section's own address. **The creation flow carries S-13's way back** — a breadcrumb above its title, *Reports / New report*, and an arrow before the title leading up to this Index. **The arrow leads up, not back to where the reader came from** (S-05's filing list is the flow's other way in): the owner's choice, so that the arrow, the trail's one step and *cancel* all lead to the same place. Neither the trail nor the arrow waits on a read, so both stand over every state of the flow, its loading state included; nothing is asked before leaving, since both choices live in the address.
 
 ### S-07 — Report wizard — module step
 
