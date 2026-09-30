@@ -26229,3 +26229,54 @@ condition the second fails the other way round.
 on a refusal; not on a creation); `pnpm e2e` 1,462 of 1,462 across 61 suites, the entrypoint's HTTP boot among them;
 typecheck; `pnpm lint`; `docs:check`. No controller, DTO or migration changed, so neither `openapi:check` nor
 `migrations:check` was reached. Reviews and `gates:clean` did not run (owner, 13 Sep 2026): a sub-step.
+
+## Task 180.3 — B1 says what came from the company record · 2026-09-30
+
+The owner's third answer on task 180: a value the record gave is marked, and a site row is called what the company calls
+it. `architecture.md` §12.5.6's task-180.3 row carries the decision, and **it amends task 36.6's**, which had named a
+site row by *"the report's own answer, never the snapshot's"*.
+
+**`fromRecord` is computed on the step read, against the record's own defaults** — `defaultsFor` now hands back the
+record's defaults before the template's are merged under them, and the snapshot, so neither the report's scope (the
+basis for preparation) nor EFRAG's template answer is ever called the company's. True for a default shown and for a
+stored answer still equal to it, false once changed or cleared, and false for a field the record gives nothing for — a
+site with no postal code marks nothing. On the screen it is the field's marker, after *calculated* and *carried
+forward*: *From the company record*, in place of *To answer* on a default not yet stored.
+
+**The name, and how far the amendment goes**: a site's name is not a B1 element, so no answer of the report's could
+carry it, and naming a row by it reads the copy directly. It names a row only while that row still holds every site
+element the record gave; a row the reporter re-addressed or cleared may no longer be that site and is named as before.
+Filling in what the record did not give is not a change of site — a postal code typed where the record had none keeps
+the name. Both rules are pure, in `record-provenance.ts` with its spec, rather than more of the step read task 133.2 is
+to split.
+
+**What changed in the proofs, and why each change is the rule and not a loosening**: three api cases and one browser
+journey named rows by address and now name them by the company's names — each keeps what it tests. The first-text-element
+precedence case moved to the reporter's own row, beyond the fixture's one site, since that is the row the rule still
+names; the cleared-answer case now starts from the site's name and still hands on to the town. The browser journey
+asserts exactly two markers a site, the town and the country the fixture gives, so a marker on a field the record said
+nothing about fails.
+
+**Verified**: api unit 1,450 (the provenance spec's nine among them); `openapi:check` — the regenerated contract adds the
+one field, and regenerating from the staged contract changes nothing; `pnpm e2e` 1,462 of 1,462; web unit 1,279; admin
+unit 296; typecheck in api, web, admin and contracts; `pnpm lint`; `routes:check`; `docs:check`; `e2e:web` `identity`,
+`expansion` and `admin` 288 of 289, the one a B5 journey pinned to the town, which passed 22 of 22 with its file after.
+
+## Task 180 — B1 knows what the company record knows · 2026-09-30
+
+The group closes with its three sub-steps, each committed on its own: S-13 captures a whole site and stops wiping it
+(180.1), the copy follows the company until B1 is opened (180.2), and B1 says what came from the record and calls a site
+what the company calls it (180.3). What the owner reported — *the reader already filled the company in, and the report
+should already hold it* — was not a missing pre-fill: B1 had pre-filled sites since task 91.2. It was an order (the copy
+taken before the company was filled in), a form that could not hold most of a site, and a save that cleared what the
+form could not show.
+
+**The parent close**, over the whole group: every sub-step's gates above, then `image:check`, `facade:check`,
+`events:check`, `e2e:worker` 9 of 9 — the worker entrypoint's boot, the HTTP one having booted in `pnpm e2e` — and lint
+**without its cache**, per workspace, since a contract type changed and a warm lint does not re-read an unchanged file's
+type-aware verdict (the whole-repo uncached run exhausts this host's memory, as task 177 found). **`pnpm boundaries` is
+red, and not by this task**: a type-only import cycle between `console-nav.tsx` and `console-nav-sections.tsx`, neither
+file touched since task 170 (25 Sep); flagged as a task of its own rather than widened into this one. The three review
+agents and `gates:clean` did not run (owner, 13 Sep 2026): the risk they exist for — a type other workspaces read, a moved
+declaration — was met by the cross-workspace typecheck, all three browser projects and the uncached lint above; named
+here so the judgement can be checked.

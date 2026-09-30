@@ -1412,6 +1412,7 @@
       },
       "field": {
         "calculated": "Calculat",
+        "fromRecord": "Din fișa companiei",
         "carried": "Preluat din perioada anterioară",
         "carryForward": "Preluați valoarea",
         "choiceEmpty": "Nimic nu corespunde căutării",

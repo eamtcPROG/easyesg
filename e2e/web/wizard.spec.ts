@@ -208,6 +208,14 @@ test('opens B1 pre-filled, stores what the reporter accepts, and groups the site
   await expect(first.getByRole('textbox', { name: 'Localitatea amplasamentului' })).toHaveValue('Chișinău');
   await expect(second.getByRole('textbox', { name: 'Localitatea amplasamentului' })).toHaveValue('Bălți');
 
+  // Task 180.3: each site is called what the company calls it, and what the record gave says so. **Exactly two markers
+  // a site** — its town and its country, all the fixture's snapshot gives — so a marker on a field the record said
+  // nothing about, or one missing, fails here.
+  await expect(page.getByRole('group', { name: 'Amplasament 1 — Hala' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Amplasament 2 — Depozit' })).toBeVisible();
+  await expect(first.getByText('Din fișa companiei', { exact: true })).toHaveCount(2);
+  await expect(second.getByText('Din fișa companiei', { exact: true })).toHaveCount(2);
+
   // FR-27's other half: the defaults the reporter did not touch are stored on arrival, so a B1
   // nobody edited is still a B1 that was filed. The indicator is the screen's own claim; the store
   // is the fact (NFR-56) — **and only the second of those is asserted here** (convention review,
@@ -936,12 +944,13 @@ test('B5 asks about each site the report knows, and names it (UC-23)', async ({ 
 
   await page.goto(`/reports/${reportId}/B5`);
 
-  // Each group's legend carries the position AND what the report calls the row. The position is
-  // what §7.3 actually keys on — two sites in one city would both read *Bălți* — and the name is
-  // what lets a reader tell one row from another at all. Before this task both read *Amplasament 1*
-  // and there was only one of them.
-  const balti = page.getByRole('group', { name: 'Amplasament 1 — Bălți' });
-  const orhei = page.getByRole('group', { name: 'Amplasament 2 — Orhei' });
+  // Each group's legend carries the position AND what the row is called. The position is what §7.3
+  // actually keys on — two sites of one name would both read it — and the name is what lets a reader
+  // tell one row from another at all. Before task 36.6 both read *Amplasament 1* and there was only
+  // one of them; **since task 180.3 the name is the company's for the site**, the rows still holding
+  // what the record gave, where it had been the site's town.
+  const balti = page.getByRole('group', { name: 'Amplasament 1 — Depozit' });
+  const orhei = page.getByRole('group', { name: 'Amplasament 2 — Atelier' });
   await expect(balti).toBeVisible();
   await expect(orhei).toBeVisible();
   // Exactly two, so a third site nobody entered — or a group per element — fails here.
@@ -956,6 +965,7 @@ test('B5 asks about each site the report knows, and names it (UC-23)', async ({ 
   const near = balti.getByRole('combobox', {
     name: 'Amplasament situat în apropierea unei zone sensibile din punctul de vedere al biodiversității',
   });
+  await untilHydrated(near);
   await near.click();
   await page.getByRole('option', { name: 'Nu', exact: true }).click();
   await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {

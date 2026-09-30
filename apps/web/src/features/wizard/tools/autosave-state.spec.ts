@@ -39,6 +39,7 @@ const committed = (elementKey: string, valueNumeric: string) => ({
   state: DISCLOSURE_STATE.OK,
   notAvailableReason: null,
   carriedForward: false,
+  fromRecord: false,
   updatedAt: 1,
 });
 

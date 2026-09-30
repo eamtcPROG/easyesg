@@ -65,6 +65,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     label: string | null; labelStanding: string | null; repeating: boolean; axes: string[];
     dimensionKey: string; dimensionLabel: string | null; origin: string;
     valueText: string | null; valueNumeric: string | null; state: string; carriedForward: boolean;
+    /** The company record's value, shown or still stored as given (task 180.3). */
+    fromRecord: boolean;
     unitCode: string | null; unitCodes: string[];
     /** The filing's currency on a monetary element; null on every other kind (task 36.12). */
     currency: string | null;
@@ -428,6 +430,25 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     expect(defaultOf(step, 'UndertakingsLegalForm')).toBe('vsme:CooperativeMember');
     expect(defaultOf(step, 'CityOfSite')).toBe('Soroca');
     expect(defaultOf(step, 'CountryOfSite')).toBe('country:MD');
+
+    // Task 180.3: the row is named by the company's name for the site — not a B1 element, so only the record says it —
+    // and every value the record gave says it came from there. The report's own scope is not the company's.
+    expect(rowsOf(step, 'CityOfSite')[0]).toMatchObject({ dimensionLabel: 'Moara', fromRecord: true });
+    expect(rowsOf(step, 'UndertakingsLegalForm')[0]?.fromRecord).toBe(true);
+    expect(rowsOf(step, 'BasisForPreparation')[0]?.fromRecord).toBe(false);
+    // A field the record gives nothing for is not marked: this site has no postal code.
+    expect(rowsOf(step, 'PostalCodeOfSite')[0]?.fromRecord).toBe(false);
+
+    // Committed as given, it is still the record's; re-addressed, it is the reporter's, and the row keeps its own name.
+    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+      values: [
+        { elementKey: 'CityOfSite', ordinal: 0, valueText: 'Soroca', state: DISCLOSURE_STATE.OK },
+        { elementKey: 'AddressOfSite', ordinal: 0, valueText: 'str. Nouă 9', state: DISCLOSURE_STATE.OK },
+      ],
+    }).expect(200);
+    const edited = await readStep(reportId);
+    expect(rowsOf(edited, 'CityOfSite')[0]).toMatchObject({ fromRecord: true, dimensionLabel: 'str. Nouă 9' });
+    expect(rowsOf(edited, 'AddressOfSite')[0]?.fromRecord).toBe(false);
   });
 
   it('keeps the report’s answers once B1 is opened, and a stored answer replaces the default without touching the entity (FR-18, FR-27, D-2)', async () => {
@@ -452,9 +473,10 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     }).expect(200);
     const answered = await readStep(reportId);
     expect(rowsOf(answered, 'UndertakingsLegalForm')[0]).toMatchObject({
-      valueText: 'vsme:SoleProprietorshipMember', defaultValue: null,
+      valueText: 'vsme:SoleProprietorshipMember', defaultValue: null, fromRecord: false,
     });
     expect(defaultOf(answered, 'NaceSectorClassificationCodes')).toBe('nace:NACE_C1061');
+    expect(rowsOf(answered, 'NaceSectorClassificationCodes')[0]?.fromRecord).toBe(true);
 
     // … and a row cleared back to missing is a decision, not an invitation to re-fill.
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
@@ -548,23 +570,21 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
 
     // **The site reaches B5, which shares the axis** — `design_spec.md` §6.1's *site-driven from
     // the B1 site geolocations*, and UC-23's *using the B1 site geolocations*. Three sites, three
-    // rows, each named by the report's own answer rather than by its position alone.
+    // rows, each named rather than left to its position alone: **the two the record gave by the
+    // company's name for them** (task 180.3), the reporter's own by its answer.
     const b5 = await readStep(reportId, 'B5');
     expect(
       rowsOf(b5, 'SiteLocatedInABiodiversitySensitiveArea').map((f) => [f.ordinal, f.dimensionLabel]),
     ).toEqual([
-      // **The first *text* element on the axis with a value, in the standard's own presentation
-      // order** — `AddressOfSite` (1), `PostalCodeOfSite` (4), `CityOfSite` (5),
-      // `GPSLocationOfSite` (7). `CountryOfSite` is an `enumeration` and is excluded: it stores a
-      // member key, and a key may not reach a reader.
-      //
-      // So the Orhei site — which the entity gave a GPS fix and no street address — is named by its
-      // **city** rather than by a coordinate pair, because the order reaches `CityOfSite` first.
-      // That is presentation order doing something useful rather than merely being deterministic,
-      // and it is why no per-axis naming vocabulary had to be invented.
-      [0, 'Orhei'],
-      [1, 'str. Decebal 1'],
-      // The third site is the reporter's own, added by answering its city alone.
+      // The record's sites, in the snapshot's order, by the company's own names for them (task 180.3):
+      // a site's name is no B1 element, so only the record can give it, and the rows still hold what
+      // the record gave.
+      [0, 'Atelier'],
+      [1, 'Depozit'],
+      // **The reporter's own site, by the first *text* element on the axis with a value, in the
+      // standard's own presentation order** — `AddressOfSite` (1), `PostalCodeOfSite` (4),
+      // `CityOfSite` (5), `GPSLocationOfSite` (7) — which `names a site by the first text element`
+      // below holds on its own. Added by answering its city alone.
       [2, 'Cahul'],
     ]);
     const modules = objectsOf<ModuleSummary>((await http()
@@ -584,7 +604,10 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
    */
   it('names a site by the first text element that has something, not the last', async () => {
     const reportId = await createReport(await openPeriod(2026));
-    // Deliberately written in reverse presentation order, so a reader cannot mistake insertion
+    // **The reporter's own site, the second row** (task 180.3): the fixture's entity gives one site,
+    // named by the company's name for it while its row holds what the record gave, so the rule this
+    // case is about — what names a row from the report's own answers — is the one that names the
+    // next. Deliberately written in reverse presentation order, so a reader cannot mistake insertion
     // order for the rule: GPS (7), city (5), postal code (4), address (1).
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
       values: [
@@ -593,12 +616,12 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
         ['PostalCodeOfSite', 'MD-2001'],
         ['AddressOfSite', 'str. Bănulescu-Bodoni 57'],
       ].map(([elementKey, valueText]) => ({
-        elementKey, ordinal: 0, valueText, state: DISCLOSURE_STATE.OK, carriedForward: false,
+        elementKey, ordinal: 1, valueText, state: DISCLOSURE_STATE.OK, carriedForward: false,
       })),
     }).expect(200);
 
     const named = (step: Step, elementKey: string): string | null =>
-      step.fields.find((f) => f.elementKey === elementKey)?.dimensionLabel ?? null;
+      step.fields.find((f) => f.elementKey === elementKey && f.ordinal === 1)?.dimensionLabel ?? null;
 
     // `AddressOfSite` is order 1 in its section, so it names the row on both steps that share the
     // axis — B1, where the answers live, and B5, which is asking about the same site.
@@ -608,7 +631,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
 
     // Clearing the winner hands the name on to the next element in order — the postal code.
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
-      values: [{ elementKey: 'AddressOfSite', ordinal: 0, state: DISCLOSURE_STATE.MISSING, carriedForward: false }],
+      values: [{ elementKey: 'AddressOfSite', ordinal: 1, state: DISCLOSURE_STATE.MISSING, carriedForward: false }],
     }).expect(200);
     expect(named(await readStep(reportId, 'B5'), 'SiteLocatedInABiodiversitySensitiveArea')).toBe('MD-2001');
   });
@@ -641,12 +664,13 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
         (f) => f.elementKey === 'SiteLocatedInABiodiversitySensitiveArea',
       )?.dimensionLabel ?? null;
 
-    // The snapshot names it, because nothing is stored yet — which is what §7.2 means by the
-    // snapshot being the *default*, and what this row's first record wrongly denied.
-    expect(await siteName()).toBe('str. Păcii 3');
+    // The snapshot names it, because nothing is stored yet — by the company's name for the site
+    // since task 180.3, which only the record can give.
+    expect(await siteName()).toBe('Sediu');
 
-    // The reporter clears the address. The default it was offered is gone with it, so the name
-    // hands on to the next element in presentation order — the city, also from the snapshot.
+    // The reporter clears the address. The row may no longer be the record's site, so it gives up
+    // the company's name; the default it was offered is gone with the address, so the name hands on
+    // to the next element in presentation order — the city, from the snapshot.
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
       values: [{ elementKey: 'AddressOfSite', ordinal: 0, state: DISCLOSURE_STATE.MISSING, carriedForward: false }],
     }).expect(200);

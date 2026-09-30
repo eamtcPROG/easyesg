@@ -390,6 +390,14 @@ export class DisclosureFieldDto {
 
   @ApiProperty({
     description:
+      'Whether the value shown is what the company record gives — the record’s default not yet stored, or a stored ' +
+      'answer still equal to it. False once the reporter changes it, and for what the record does not answer: the ' +
+      'report’s own scope and the template’s answers are not the company’s.',
+  })
+  readonly fromRecord: boolean;
+
+  @ApiProperty({
+    description:
       'Whether this field applies to this reporter (FR-28). False does not mean empty: a value ' +
       'entered before the condition turned is retained and served as stored (UX-28), so a ' +
       'retained answer is applicable false beside a state that is not missing.',
@@ -429,6 +437,7 @@ export class DisclosureFieldDto {
     this.state = field.state;
     this.notAvailableReason = field.notAvailableReason;
     this.carriedForward = field.carriedForward;
+    this.fromRecord = field.fromRecord;
     this.applicable = field.applicable;
     this.applicabilityCause =
       field.applicabilityCause === null ? null : new ApplicabilityCauseDto(field.applicabilityCause);

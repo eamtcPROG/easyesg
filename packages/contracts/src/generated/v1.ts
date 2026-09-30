@@ -3441,6 +3441,8 @@ export interface components {
             notAvailableReason: string | null;
             /** @description Carried forward from the prior period, and marked for review. */
             carriedForward: boolean;
+            /** @description Whether the value shown is what the company record gives — the record’s default not yet stored, or a stored answer still equal to it. False once the reporter changes it, and for what the record does not answer: the report’s own scope and the template’s answers are not the company’s. */
+            fromRecord: boolean;
             /** @description Whether this field applies to this reporter (FR-28). False does not mean empty: a value entered before the condition turned is retained and served as stored (UX-28), so a retained answer is applicable false beside a state that is not missing. */
             applicable: boolean;
             /** @description Why, for the fields a rule governs; null for the ones no rule names. */

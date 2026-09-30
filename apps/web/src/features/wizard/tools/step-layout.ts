@@ -272,6 +272,7 @@ export function blankRow(template: StepGroupEntry, ordinal: number): StepGroupEn
       state: DISCLOSURE_STATE.MISSING,
       notAvailableReason: null,
       carriedForward: false,
+      fromRecord: false,
       // A new row is the reporter's, so it carries no pre-fill: the snapshot's sites are the rows
       // the api already served, and offering one here would put the same site on the screen twice.
       defaultValue: null,
@@ -359,6 +360,7 @@ const blankCell = (field: DisclosureField): DisclosureField => ({
   state: DISCLOSURE_STATE.MISSING,
   notAvailableReason: null,
   carriedForward: false,
+  fromRecord: false,
   defaultValue: null,
 });
 

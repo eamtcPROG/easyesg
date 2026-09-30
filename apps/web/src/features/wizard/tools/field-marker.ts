@@ -16,6 +16,11 @@ import { TONE_OF_STATE, hasMarker } from './field-tone';
  * decision and the cost. `overridden` is deliberately NOT marked here — UX-43 requires an override
  * to display the superseded value beside the substituted one and to carry a reason, which is a
  * component and not a word, and it belongs to task 38.5 that produces it.
+ *
+ * **Then the company record, since task 180.3**: a value the api says still is what the record gives — its default
+ * shown, or an answer still equal to it — reads *From the company record* in place of its state, which for a default
+ * not yet stored would say *To answer* about a field the reader has nothing to type into. After calculated and carried
+ * forward, because each of those says more about where the figure came from.
  */
 export function markerFor(
   field: DisclosureFieldShape,
@@ -23,12 +28,13 @@ export function markerFor(
   // Named rather than two adjacent `string`s, per the root CLAUDE.md: swapped, the call compiles
   // and every calculated figure reads *carried forward* — a plausible wrong answer, which is the
   // whole of what that rule is about.
-  provenance: { readonly carried: string; readonly calculated: string },
+  provenance: { readonly carried: string; readonly calculated: string; readonly record: string },
 ): { readonly label: string; readonly tone: FieldTone } | undefined {
   if (field.origin === DISCLOSURE_ORIGIN.CALCULATED) {
     return { label: provenance.calculated, tone: FIELD_TONE.NEUTRAL };
   }
   if (field.carriedForward) return { label: provenance.carried, tone: FIELD_TONE.NEUTRAL };
+  if (field.fromRecord) return { label: provenance.record, tone: FIELD_TONE.NEUTRAL };
   if (!hasMarker(field.state)) return undefined;
   return { label: labels[field.state], tone: TONE_OF_STATE[field.state] };
 }

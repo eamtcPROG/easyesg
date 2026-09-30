@@ -1412,6 +1412,7 @@
       },
       "field": {
         "calculated": "Calculated",
+        "fromRecord": "From the company record",
         "carried": "Carried from the prior period",
         "carryForward": "Carry forward",
         "choiceEmpty": "Nothing matches that search",

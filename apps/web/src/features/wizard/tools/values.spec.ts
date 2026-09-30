@@ -100,6 +100,7 @@ const shaped = (over: Partial<DisclosureField> & { elementKey: string }): Disclo
   state: DISCLOSURE_STATE.MISSING,
   notAvailableReason: null,
   carriedForward: false,
+  fromRecord: false,
   applicable: true,
   applicabilityCause: null,
   ...over,

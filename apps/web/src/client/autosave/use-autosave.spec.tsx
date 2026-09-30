@@ -33,6 +33,7 @@ const committedRow = (w: DisclosureValueWrite) => ({
   state: w.state,
   notAvailableReason: null,
   carriedForward: false,
+  fromRecord: false,
   updatedAt: 1,
 });
 

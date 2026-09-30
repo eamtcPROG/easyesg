@@ -109,7 +109,11 @@ export function StepField({
   };
   const marker =
     sync === SAVE_STATE.SAVED
-      ? markerFor(field, markerLabels, { carried: tField('carried'), calculated: tField('calculated') })
+      ? markerFor(field, markerLabels, {
+          carried: tField('carried'),
+          calculated: tField('calculated'),
+          record: tField('fromRecord'),
+        })
       : { label: syncLabels[sync], tone: SYNC_TONE[sync] };
   // Last year's answer in this field's own value column, or '' where it holds none there.
   const priorDraft = prior === null ? '' : priorDraftOf({ field, prior });

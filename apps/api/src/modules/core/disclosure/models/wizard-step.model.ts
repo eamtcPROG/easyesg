@@ -268,6 +268,12 @@ export interface DisclosureField {
   /** FR-47: this value was carried forward from the prior period and is marked for review. */
   readonly carriedForward: boolean;
   /**
+   * Whether the value shown is what the company record gives — its default not yet stored, or a stored answer still
+   * equal to it (task 180.3; FR-27, UX-109). Off once the reporter changes it, and for everything the record does not
+   * answer: the report's own scope and the template's answers are not the company's.
+   */
+  readonly fromRecord: boolean;
+  /**
    * Whether this field applies to this reporter (task 91.3; FR-28, BR-APP-5).
    *
    * **`false` does not mean empty.** UX-28 requires a value entered before the condition turned to

@@ -40,6 +40,7 @@ const field = (over: Partial<DisclosureField>): DisclosureField => ({
   state: DISCLOSURE_STATE.MISSING,
   notAvailableReason: null,
   carriedForward: false,
+  fromRecord: false,
   applicable: true,
   applicabilityCause: null,
   ...over,
@@ -55,7 +56,7 @@ const labels: Readonly<Record<DisclosureState, string>> = {
   [DISCLOSURE_STATE.NOT_MATERIAL]: 'Nesemnificativ',
   [DISCLOSURE_STATE.NIL_RETURN]: 'Zero',
 };
-const provenance = { carried: 'Preluat', calculated: 'Calculat' };
+const provenance = { carried: 'Preluat', calculated: 'Calculat', record: 'Din fișa companiei' };
 
 describe('markerFor', () => {
   it('names a calculated figure by its origin, before its state', () => {
@@ -83,6 +84,18 @@ describe('markerFor', () => {
       provenance,
     );
     expect(marker).toEqual({ label: 'Preluat', tone: FIELD_TONE.NEUTRAL });
+  });
+
+  it('names a value the company record gave, in place of its state, after carry-forward (task 180.3)', () => {
+    expect(markerFor(field({ fromRecord: true, state: DISCLOSURE_STATE.MISSING }), labels, provenance)).toEqual({
+      label: 'Din fișa companiei',
+      tone: FIELD_TONE.NEUTRAL,
+    });
+    expect(markerFor(field({ fromRecord: true, state: DISCLOSURE_STATE.OK }), labels, provenance)).toEqual({
+      label: 'Din fișa companiei',
+      tone: FIELD_TONE.NEUTRAL,
+    });
+    expect(markerFor(field({ fromRecord: true, carriedForward: true }), labels, provenance)?.label).toBe('Preluat');
   });
 
   it('reads the state where it carries a marker, in §6.4’s tone', () => {

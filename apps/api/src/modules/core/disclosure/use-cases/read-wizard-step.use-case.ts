@@ -49,6 +49,8 @@ import type { ApplicabilityRules } from '../interfaces/applicability-rules.inter
 import type { AxisShapes } from '../interfaces/axis-shape.interface';
 import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
 import { MEMBER_SEPARATOR } from '@easyesg/vsme';
+import { B1_ELEMENT } from '../models/b1-element.model';
+import type { EntitySnapshot } from '../models/entity-snapshot.model';
 import { OPERAND_SOURCE, type Derivation } from '../models/derivation.model';
 import { answerableMembers } from '../models/axis-leaves';
 import { OMITTED_DISCLOSURES_ELEMENT, omittedModules } from '../models/omission.model';
@@ -80,6 +82,7 @@ import type {
 } from '../models/wizard-step.model';
 import { evaluateApplicability, soleCause, type MemberAncestry } from './applicability';
 import { entityDefaults, type EntityDefaults } from './entity-defaults';
+import { recordSiteNames, showsRecordValue } from './record-provenance';
 
 export interface ReadModulesQuery {
   readonly reportId: string;
@@ -262,7 +265,7 @@ export class ReadWizardStep {
         input.valueNumeric,
       ]),
     );
-    const defaults = await this.defaultsFor(report, registered);
+    const { defaults, record, snapshot } = await this.defaultsFor(report, registered);
     const applicability = this.applicabilityOf({ registered, byElement });
     const at = { version: registered.version, locale: query.locale };
     const catalogue = this.labels.labels(at);
@@ -310,11 +313,16 @@ export class ReadWizardStep {
     });
     // The ordinals each typed axis is answered at, and what names them (task 36.6). Built over
     // EVERY element of the version, not the step's — a B5 row exists because B1 named a site.
-    const rowsByAxis = answeredRows({
-      elements: registered.elements,
-      typedAxisOf: (element) => element.axes.find(isTyped) ?? null,
-      byElement,
-      defaults,
+    const rowsByAxis = withRecordSiteNames({
+      rows: answeredRows({
+        elements: registered.elements,
+        typedAxisOf: (element) => element.axes.find(isTyped) ?? null,
+        byElement,
+        defaults,
+      }),
+      // The site axis as B1's address names it, rather than a key written here (task 180.3).
+      siteAxis: registered.elements.find((element) => element.key === B1_ELEMENT.SITE_ADDRESS)?.axes.find(isTyped),
+      names: recordSiteNames({ snapshot, record, stored: byElement }),
     });
     const fields = registered.elements
       // Membership, not equality: eight of B3's seventeen are presented in C3 as well (task 36.4).
@@ -364,12 +372,20 @@ export class ReadWizardStep {
             value === undefined && row.dimensionKey === NO_DIMENSION
               ? (perOrdinal[row.ordinal] ?? null)
               : null;
+          // Whether the row shows what the company record gives — its default, or an answer still equal to it
+          // (task 180.3). Against the record's own defaults, so neither the scope's nor the template's count.
+          const fromRecord = showsRecordValue({
+            elementKey: element.key,
+            value,
+            given: row.dimensionKey === NO_DIMENSION ? (record.get(element.key)?.[row.ordinal] ?? null) : null,
+          });
           return toField(
             element,
             {
               ...row,
               value,
               defaultValue,
+              fromRecord,
               repeating,
               // A member-keyed row is named by its member; a typed one by the report's own answer
               // for that ordinal (task 36.6). Both answer *what to call this row*, which is the one
@@ -422,7 +438,16 @@ export class ReadWizardStep {
    * configuration — three sources this tier joins, none of which the screen holds. A code the pinned
    * NACE domain has no member for is logged rather than refused (the owner's decision, §12.5.6).
    */
-  private async defaultsFor(report: Report, registered: RegisteredTaxonomy): Promise<EntityDefaults> {
+  private async defaultsFor(
+    report: Report,
+    registered: RegisteredTaxonomy,
+  ): Promise<{
+    /** Every default the step offers — the record's, the scope's and the template's. */
+    readonly defaults: EntityDefaults;
+    /** The record's and the scope's alone, before the template's are merged under them (task 180.3). */
+    readonly record: EntityDefaults;
+    readonly snapshot: EntitySnapshot | null;
+  }> {
     const snapshot = await this.reports.entitySnapshotOf({ reportId: report.id });
     const legalFormMember =
       snapshot?.legalForm === undefined || snapshot.legalForm === null
@@ -451,7 +476,7 @@ export class ReadWizardStep {
           `${registered.standard} ${registered.version}'s NACE domain and were not pre-filled`,
       );
     }
-    return merged;
+    return { defaults: merged, record: defaults, snapshot };
   }
 
   /**
@@ -627,6 +652,23 @@ interface AxisRows {
   readonly ordinals: ReadonlySet<number>;
   /** What names each, where anything does. */
   readonly names: ReadonlyMap<number, string>;
+}
+
+/**
+ * The site axis's rows named by the company's name for each site the record gave and the reporter has not
+ * re-addressed (task 180.3; `record-provenance.ts` says which). Every other axis, and every other row, keeps the name
+ * `answeredRows` gave it.
+ */
+function withRecordSiteNames(input: {
+  readonly rows: ReadonlyMap<string, AxisRows>;
+  readonly siteAxis: string | undefined;
+  readonly names: ReadonlyMap<number, string>;
+}): ReadonlyMap<string, AxisRows> {
+  const site = input.siteAxis === undefined ? undefined : input.rows.get(input.siteAxis);
+  if (input.siteAxis === undefined || site === undefined || input.names.size === 0) return input.rows;
+  const rows = new Map(input.rows);
+  rows.set(input.siteAxis, { ordinals: site.ordinals, names: new Map([...site.names, ...input.names]) });
+  return rows;
 }
 
 /**
@@ -830,6 +872,7 @@ function toField(
     readonly ordinal: number;
     readonly value: DisclosureValue | undefined;
     readonly defaultValue: DisclosureDefault | null;
+    readonly fromRecord: boolean;
     readonly repeating: boolean;
     readonly dimensionLabel: string | null;
   },
@@ -882,6 +925,7 @@ function toField(
     state: value?.state ?? DISCLOSURE_STATE.MISSING,
     notAvailableReason: value?.notAvailableReason ?? null,
     carriedForward: value?.carriedForward ?? false,
+    fromRecord: row.fromRecord,
     // Every row of an element shares its verdict: FR-28's drivers are the report's answers, not
     // this row's, so a second site is as applicable as the first.
     applicable: resolved.applicable,
