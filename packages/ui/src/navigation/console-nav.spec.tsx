@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ConsoleNav, type ConsoleNavItemState } from './console-nav';
+import { ConsoleNav } from './console-nav';
+import type { ConsoleNavItemState } from './console-nav-types';
 import type { NavLinkComponent } from './nav-link';
 
 /**

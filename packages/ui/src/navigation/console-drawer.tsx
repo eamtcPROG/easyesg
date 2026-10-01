@@ -3,7 +3,7 @@
 import { Menu, X } from 'lucide-react';
 import { Dialog } from 'radix-ui';
 import { useState, type ReactNode } from 'react';
-import type { ConsoleNavItem, ConsoleNavProps } from './console-nav';
+import type { ConsoleNavItem, ConsoleNavProps } from './console-nav-types';
 import { ConsoleNavSections } from './console-nav-sections';
 import styles from './console-drawer.module.css';
 

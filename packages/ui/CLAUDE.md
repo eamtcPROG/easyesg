@@ -58,7 +58,7 @@ something quiet, and a stale `dist/` is one failure mode this package cannot hav
 
 ```
 src/
-├─ index.ts        The barrel — 76 exports. `@easyesg/ui`
+├─ index.ts        The barrel — 77 exports. `@easyesg/ui`
 ├─ forms/index.ts  The react-hook-form binding. `@easyesg/ui/forms`, NOT in the barrel
 ├─ styles/         tokens.css — reached as `@easyesg/ui/src/styles/tokens.css`
 ├─ archetypes/     The nine §4.6 page templates. README.md is the map

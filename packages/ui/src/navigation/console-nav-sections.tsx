@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { Anchor } from './nav-link';
 import { ARIA_CURRENT } from './nav-link-vocabulary';
-import type { ConsoleNavItem, ConsoleNavItemState, ConsoleNavProps } from './console-nav';
+import type { ConsoleNavItem, ConsoleNavItemState, ConsoleNavProps } from './console-nav-types';
 import styles from './console-nav.module.css';
 
 /**

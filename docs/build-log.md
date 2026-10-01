@@ -26280,3 +26280,40 @@ file touched since task 170 (25 Sep); flagged as a task of its own rather than w
 agents and `gates:clean` did not run (owner, 13 Sep 2026): the risk they exist for — a type other workspaces read, a moved
 declaration — was met by the cross-workspace typecheck, all three browser projects and the uncached lint above; named
 here so the judgement can be checked.
+
+## The console navigation's types get a module of their own, and `boundaries` is green again · 2026-10-01
+
+Not a numbered task: task 180's close found it and left it rather than widen itself, and no row was appended for a
+one-module move with no behaviour, closed the day it was taken up. `pnpm boundaries` had refused one cycle since task 170
+(`1b1c19eb`, 25 Sep): `console-nav.tsx` imported its part `ConsoleNavSections`, and the part imported `ConsoleNavItem`,
+`ConsoleNavItemState` and `ConsoleNavProps` back from it. Type-only, so nothing failed at runtime — the cruiser saw it
+because `.dependency-cruiser.cjs` sets `tsPreCompilationDeps: true`, and the rule's own comment names the remedy: *"the
+shared concept belongs in a third"*.
+
+**The change.** The four interfaces — `ConsoleNavSection` too, since `ConsoleNavProps` is built from it — move verbatim
+into `navigation/console-nav-types.ts`, directive-free and types-only. The column, the part, the drawer and the column's
+spec read them from there, and the barrel re-exports them from their new home, so `@easyesg/ui`'s surface is unchanged
+and neither app's imports moved. `ConsoleDrawer` no longer depends on `console-nav.tsx` at all.
+
+**Two choices the diff shows only in part.** *A `-types.ts`, not a `-vocabulary.ts`*: that suffix is this package's
+name for an `as const` value set, which `docs:check` counts against *"eleven vocabularies"*, and interfaces with no
+runtime value are not one. *The props moved whole* rather than a `ConsoleNavSectionsProps` being cut for the part with
+`ConsoleNavProps` extending it: the drawer extends the same props, so they are one declaration three files read, and
+re-shaping them was not this fix. Splitting the barrel statement moved `packages/ui/CLAUDE.md`'s *"76 exports"* to 77,
+which `docs:check` caught.
+
+**Why it stood red for six days.** Task 170 closed as a childless row on the gates its change reached, and `boundaries`
+is in no row of that lookup — by the 8 Sep decision it runs at a parent close and in CI. CI did catch it, on the first
+push after the commit: run `36712964644` (30 Sep, `075fefbc`), the hermetic job, this cycle and nothing else. The commit
+had sat unpushed for five days in between. It cost minutes to unpick, so it does not meet the falsifier that decision
+names; recorded so a second case is recognisable as one.
+
+**Searched for the shape**: the cruise is the search — after the change `boundaries` finds no violation in the 2,254
+modules across the five roots it walks, so no other part imports back from its whole there.
+
+**Verification**: `pnpm boundaries` reproduced red locally with CI's single error, then green; `boundaries:prove` — every
+rule rejects its violation, `no-circular` among them; `@easyesg/ui` test 423 in 50 files; `typecheck` in ui, admin and
+web; admin unit 296; `pnpm lint` warm over the repo, and uncached over `packages/ui/src` and the console chrome that reads
+these types through the barrel, since a moved type is the warm-lint caveat's case; `docs:check` 46 of 46. **`e2e:web`
+skipped**: `ConsoleNav` is exported as before and everything else that moved is an erased type, so no browser journey
+can differ. No review agents and no `gates:clean` — not a parent close (owner, 13 Sep 2026).

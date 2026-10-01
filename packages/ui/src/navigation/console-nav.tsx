@@ -1,7 +1,5 @@
-import type { ReactNode } from 'react';
 import { ConsoleNavSections } from './console-nav-sections';
-import type { NavLinkComponent } from './nav-link';
-import type { AriaCurrent } from './nav-link-vocabulary';
+import type { ConsoleNavItem, ConsoleNavProps } from './console-nav-types';
 import styles from './console-nav.module.css';
 
 /**
@@ -27,41 +25,10 @@ import styles from './console-nav.module.css';
  * no destinations is not drawn, and a navigation with none renders nothing — the console's state until
  * its first screen ships (`design_spec.md` §5.2: the chrome carries what renders). There is no
  * disabled state: a destination an operator may not enter is absent, as `WorkspaceNav`'s are (UX-1).
+ *
+ * Its props and data are `console-nav-types.ts`'s, which the part and the drawer read too — so the
+ * part never imports back from the component that draws it.
  */
-export interface ConsoleNavItem {
-  /** Stable across renders — the route, not the label. */
-  readonly key: string;
-  readonly href: string;
-  /** Localized by the caller: this package owns no text (UX-79). */
-  readonly label: string;
-}
-
-export interface ConsoleNavSection<TItem extends ConsoleNavItem = ConsoleNavItem> {
-  readonly key: string;
-  /** Localized by the caller, and the accessible name of the section's list. */
-  readonly heading: string;
-  readonly items: readonly TItem[];
-}
-
-/** What `renderItem` is told, so a custom rendering — a badge beside the label — keeps the semantics. */
-export interface ConsoleNavItemState {
-  readonly isActive: boolean;
-  /** Spread onto the interactive element: `aria-current="page"` on the active item, nothing otherwise. */
-  readonly linkProps: { readonly 'aria-current'?: AriaCurrent };
-}
-
-export interface ConsoleNavProps<TItem extends ConsoleNavItem = ConsoleNavItem> {
-  /** Accessible name for the navigation region, localized by the caller. */
-  readonly label: string;
-  readonly sections: readonly ConsoleNavSection<TItem>[];
-  /** Which destination the operator is on — the consumer's rule, since only it knows its routes. */
-  readonly isActive: (item: TItem) => boolean;
-  /** Full control of an item's interior — the count slot the artboard draws. Replaces the anchor. */
-  readonly renderItem?: (item: TItem, state: ConsoleNavItemState) => ReactNode;
-  /** The app's own link. Optional: a consumer with no router gets a plain anchor. */
-  readonly linkComponent?: NavLinkComponent;
-}
-
 export function ConsoleNav<TItem extends ConsoleNavItem = ConsoleNavItem>({
   label,
   sections,

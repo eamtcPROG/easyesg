@@ -144,13 +144,13 @@ export { NotificationBell, type NotificationBellProps } from './navigation/notif
 // 28 Sep 2026: the way back from a record to the section it lies beneath — S-13's record first.
 export { Breadcrumb, type BreadcrumbProps, type BreadcrumbStep } from './navigation/breadcrumb';
 // Task 67.1: the console's side navigation, and the Global bar's tone that draws the console's band.
+export { ConsoleNav } from './navigation/console-nav';
 export {
-  ConsoleNav,
   type ConsoleNavItem,
   type ConsoleNavItemState,
   type ConsoleNavProps,
   type ConsoleNavSection,
-} from './navigation/console-nav';
+} from './navigation/console-nav-types';
 // Task 170: the console navigation below `wide`, and a row's own actions behind ⋯.
 export { ConsoleDrawer, type ConsoleDrawerProps } from './navigation/console-drawer';
 export {
