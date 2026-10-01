@@ -26523,3 +26523,54 @@ table (measured 11 Sep, enforced since by the folder-shape specs) was cut outrig
 **Verified.** `pnpm docs:check` — 46 claims, each re-pointed one proven by the gate's own mutation pass to notice a
 changed number — and `pnpm lint`. The change reaches documentation and one tool and no application, so the unit,
 api and browser suites were not run, and no review agents: a documentation move closes on the gates it reaches.
+
+## Stage 1 has no row left, and a group follows its open tail · 2026-10-01
+
+Not a numbered task: a re-cut of `task.md`, on the owner's question of what still stopped Stage 1 closing after the
+refactoring and UI work of tasks 175 … 181. **The answer was bookkeeping, not work.** Every row the Stage's table held
+was `DONE`; what kept it open was three groups, each listed there because its *earliest* sub-step had been — `51` with
+51.2 waiting on 41.3, `67` with A-03, A-04 and A-05 (67.5 … 67.8) in Stage 5, `133` with 133.2 deferred to Stage 2 on
+purpose. The placement rule tied a Stage's close to the last tail of every group it ever started. That is the shape
+task 49.1's decisions had already refused once, taking FR-166 back out of 51.2 because it *"would have held Stage 1
+open until Stage 5"*, and here it had happened anyway, through the rule, not through any row.
+
+### Decisions (project owner, one batch of four)
+
+- **A group sits in the Stage of its earliest *open* sub-step**, its closed rows travelling with it. `51` moved to
+  Stage 2 immediately after task 41, `133` to the end of Stage 2 beside 133.2 — the owner's existing placement for
+  that row, kept rather than re-argued — and `67` to Stage 5 in numeric order around 67.5 … 67.8. No identifier moved,
+  so 51.2's citations in §12.5.6 (the worker's first producer, S-26's category-filter rule) still resolve. Re-scoping
+  51.2 so group 51 could archive at once was the rejected option, because those citations would then name the wrong row.
+- **Stage 1's test is met, with its tail named rather than absorbed.** Five rows complete something about identity
+  or security and stay where they are, each for its own reason: 71.1's edge limits (the only bound on registration's
+  enumeration oracle, OQ-53), 154's OpenBao (FR-82's rotation), 54.2's entitlement replacing task 142's seat ceiling,
+  163's notification retention, 73.3's data-subject runbook. The alternatives were to pull 163 forward, which needs
+  no infrastructure, or to keep the Stage open until Stage 6.
+- **Stage numbers stay.** Stage 1 keeps its heading as a closing statement, so the build-log entries that name a Stage
+  by number — *"41.3, which is Stage 2's"* and its kind — still read true.
+- **67.6 no longer names 78.2.** A Stage 5 row built *"over 33.1 and 78.2"*, a Stage 8 row. The dependency was
+  incidental: both registered taxonomy versions already list C1 … C9 among their twenty modules, from task 33's
+  extraction, so A-04 has every module to register and map without 78.2.
+
+**Also corrected in passing**: the preamble still told a parent close to run `pnpm gates:clean`, which the 12 Sep
+decision replaced with a judgement from the diff, and Stage 4's intro cited *"Stage 1's"* seat ceiling where task 142
+is the identifier. The Stage 1 intro's batch narrative (Batches A, B and C, and the 12 Sep re-ordering) was dropped
+rather than kept current. Every row it ordered is archived, and the text is at `807ed03d` for anyone who needs it.
+
+**What was searched.** Every identity use case in `use_cases.md`'s register — UC-01 … UC-16, UC-49, UC-50,
+UC-59 … UC-64, UC-68 … UC-70, UC-85 … UC-88, UC-193 … UC-195, UC-212 — against both plan files: none sits in an open
+row. Six (UC-04, UC-05, UC-08, UC-09, UC-68, UC-212) appeared in neither file by number before this edit, their tasks
+having cited FRs or screens instead; each is a route in the contract (`/auth/session`, `/auth/social/{provider}/session`,
+`/auth/password-reset-email`, `/auth/password-reset`, `/auth/admin/session`) or, for UC-212, task 144's self-service. Every Batch B and C group, and 175 … 181, is in the archive. The six gaps the 11 Sep audit
+named each map to an archived row (51.1, 139/140, 143, 144, 83, 142). `git grep "Stage 1"` outside this log found the
+root `CLAUDE.md`'s row, updated here, and `archived_tasks.md`'s Phase 6 note, which is history and left alone.
+
+**Found, and raised rather than re-cut.** Task 78's own row says it *"lands with task 31 and must precede task 36"*.
+Both are archived, and 78 sits in Stage 8. The flag 78.1 asks for already exists — `REPORT_SCOPE` with its `CHECK` in
+the report migration and on `CreateReportRequestDto` — and 78.2's nine disclosures are in the registry as data. So
+Stage 8's first group may be partly delivered and partly a retrofit its own row warned against. Where it belongs, and
+how much of it is left, is the owner's call. It is not a by-product of this edit.
+
+**Verified.** The re-cut was scripted: it lifted the rows by number, re-inserted them, and refused to write unless
+the set of row identifiers came out unchanged (253 rows, each once). `pnpm docs:check` — the *zero fully closed
+groups* claim reads the moved rows, and the *181 tasks* claim the union. No code changed, so no suite ran.
