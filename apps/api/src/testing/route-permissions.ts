@@ -398,6 +398,13 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'GET /reports/:id/modules/:module': ALL_MEMBERS,
   'PUT /reports/:id/derivation-inputs': WRITING_MEMBERS,
   'PUT /reports/:id/values': WRITING_MEMBERS,
+  // S-09's invoice lines and the runs that retain them (task 38.1; UC-32, UC-33). The wizard's split, for its reason:
+  // the lines are read by every member (FR-25) and written on edit rights (FR-26), and recording a run is the same
+  // authoring act as entering the figure it computes.
+  'GET /reports/:id/calculator/sources': ALL_MEMBERS,
+  'PUT /reports/:id/calculator/sources/:sourceId': WRITING_MEMBERS,
+  'DELETE /reports/:id/calculator/sources/:sourceId': WRITING_MEMBERS,
+  'POST /reports/:id/calculator/runs': WRITING_MEMBERS,
 };
 
 type Constructor = new (...args: never[]) => object;

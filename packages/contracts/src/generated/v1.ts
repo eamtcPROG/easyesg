@@ -1307,6 +1307,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/{id}/calculator/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The report's invoice lines
+         * @description Every line by source and site, in invoice units (FR-33), oldest first. They stay after a calculation.
+         */
+        get: operations["CalculatorController_sources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/calculator/sources/{sourceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Create or replace one invoice line
+         * @description By source and by one of the report's B1 sites, as a figure in an invoice unit or a reason there is none. The source and unit are checked against the factor set the report's period resolves. Refused while the report's period is locked (FR-22), by the database as well as by the use case.
+         */
+        put: operations["CalculatorController_write"];
+        post?: never;
+        /**
+         * Remove one invoice line
+         * @description A run that already read it keeps its copy (P-11). Removing a line that is not there is not an error.
+         */
+        delete: operations["CalculatorController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/calculator/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record a calculation run
+         * @description Retains every line as it stands and pins the factor set in force for the report's period start (FR-35, P-11, NFR-19). Its results arrive with the calculation itself.
+         */
+        post: operations["CalculatorController_run"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/{id}/prior-period": {
         parameters: {
             query?: never;
@@ -3652,6 +3716,96 @@ export interface components {
         UnsubscribeTokenRequestDto: {
             /** @description The signed token from the unsubscribe link. In the body, as the invitation’s is, so the api’s own logs never carry it; the link that holds it is a page on the tenant application. */
             token: string;
+        };
+        CalcSourceDto: {
+            /**
+             * Format: uuid
+             * @description The id its client chose.
+             */
+            id: string;
+            siteOrdinal: number;
+            /** @example natural_gas */
+            sourceKey: string;
+            description: string | null;
+            /** @description A decimal string, never a number. */
+            quantity: string | null;
+            unitCode: string | null;
+            notAvailableReason: string | null;
+            /** @description Unix epoch milliseconds, UTC. */
+            updatedAt: number;
+        };
+        WriteCalcSourceRequestDto: {
+            /**
+             * @description The report's B1 site row the line belongs to.
+             * @example 0
+             */
+            siteOrdinal: number;
+            /**
+             * @description A source of the factor set the report's period resolves; its name is a catalogue key.
+             * @example natural_gas
+             */
+            sourceKey: string;
+            /**
+             * @description The reporter’s own name.
+             * @example Oven and boiler
+             */
+            description?: string | null;
+            /**
+             * @description The figure on the invoice, as a decimal string — `500`, `1700.5` — in `unitCode`. Omit it, and the unit, where `notAvailableReason` says why there is none.
+             * @example 500
+             */
+            quantity?: string | null;
+            /**
+             * @description One of the source's units.
+             * @example m3
+             */
+            unitCode?: string | null;
+            /**
+             * @description Why there is no figure. Sent instead of a quantity and its unit, never with them.
+             * @example Billed by the landlord
+             */
+            notAvailableReason?: string | null;
+        };
+        PinnedFactorSetDto: {
+            /**
+             * @description The country whose set it is.
+             * @example md
+             */
+            country: string;
+            /**
+             * @description The immutable revision — what the run is pinned to.
+             * @example 1
+             */
+            revision: number;
+            /**
+             * @description The name its publisher gave it — what a reader is shown.
+             * @example 2026.1
+             */
+            label: string;
+        };
+        CalcInputDto: {
+            /**
+             * Format: uuid
+             * @description The line it was copied from.
+             */
+            sourceId: string;
+            siteOrdinal: number;
+            /** @example natural_gas */
+            sourceKey: string;
+            description: string | null;
+            /** @description A decimal string, never a number. */
+            quantity: string | null;
+            unitCode: string | null;
+            notAvailableReason: string | null;
+        };
+        CalcRunDto: {
+            /** Format: uuid */
+            id: string;
+            factorSet: components["schemas"]["PinnedFactorSetDto"];
+            /** @description Unix epoch milliseconds, UTC. */
+            recordedAt: number;
+            /** @description Every line the report held when the run was recorded. */
+            inputs: components["schemas"]["CalcInputDto"][];
         };
         PriorReportPinDto: {
             /** Format: uuid */
@@ -7119,6 +7273,168 @@ export interface operations {
                 content: {
                     "application/problem+json": unknown;
                 };
+            };
+        };
+    };
+    CalculatorController_sources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The lines, possibly none. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["CalcSourceDto"][];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalculatorController_write: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                /** @description Chosen by the client, so a retried write is the same line. */
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WriteCalcSourceRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The line as stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["CalcSourceDto"];
+                    };
+                };
+            };
+            /** @description A source, unit or site the report does not admit, or a malformed line. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The reporting period is locked (FR-22). Or no factor set serves the period, or the id is another report's. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalculatorController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The line is not in the report. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The reporting period is locked (FR-22). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalculatorController_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run, with every input it retained. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["CalcRunDto"];
+                    };
+                };
+            };
+            /** @description A line the pinned factor set does not cover. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The reporting period is locked (FR-22). Or no factor set serves the period, or there are no lines. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

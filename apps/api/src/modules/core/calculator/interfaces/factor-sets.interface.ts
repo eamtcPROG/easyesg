@@ -22,7 +22,11 @@ export interface FactorSets {
    * March 2027 uses the factors for FY2026. A **calendar date** (NFR-34), the period's own, already stored with the
    * timezone that settles it.
    */
-  inForce(query: { readonly country: string; readonly periodStart: string }): FactorSet | null;
+  inForce(query: {
+    /** ISO 3166 alpha-2 in either case — the organization's `MD` or the scope's `md`; the pin carries the scope. */
+    readonly country: string;
+    readonly periodStart: string;
+  }): FactorSet | null;
 
   /**
    * The set a run is pinned to, whether or not it is still in force — after a correction superseded it inside its

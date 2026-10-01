@@ -3647,6 +3647,221 @@
         ]
       }
     },
+    "/api/v1/reports/{id}/calculator/sources": {
+      "get": {
+        "description": "Every line by source and site, in invoice units (FR-33), oldest first. They stay after a calculation.",
+        "operationId": "CalculatorController_sources",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The lines, possibly none.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/CalcSourceDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          }
+        },
+        "summary": "The report's invoice lines",
+        "tags": [
+          "calculator"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/calculator/sources/{sourceId}": {
+      "put": {
+        "description": "By source and by one of the report's B1 sites, as a figure in an invoice unit or a reason there is none. The source and unit are checked against the factor set the report's period resolves. Refused while the report's period is locked (FR-22), by the database as well as by the use case.",
+        "operationId": "CalculatorController_write",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sourceId",
+            "required": true,
+            "in": "path",
+            "description": "Chosen by the client, so a retried write is the same line.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteCalcSourceRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The line as stored.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/CalcSourceDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A source, unit or site the report does not admit, or a malformed line."
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          },
+          "409": {
+            "description": "The reporting period is locked (FR-22). Or no factor set serves the period, or the id is another report's."
+          }
+        },
+        "summary": "Create or replace one invoice line",
+        "tags": [
+          "calculator"
+        ]
+      },
+      "delete": {
+        "description": "A run that already read it keeps its copy (P-11). Removing a line that is not there is not an error.",
+        "operationId": "CalculatorController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The line is not in the report."
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          },
+          "409": {
+            "description": "The reporting period is locked (FR-22)."
+          }
+        },
+        "summary": "Remove one invoice line",
+        "tags": [
+          "calculator"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/calculator/runs": {
+      "post": {
+        "description": "Retains every line as it stands and pins the factor set in force for the report's period start (FR-35, P-11, NFR-19). Its results arrive with the calculation itself.",
+        "operationId": "CalculatorController_run",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The run, with every input it retained.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/CalcRunDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A line the pinned factor set does not cover."
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          },
+          "409": {
+            "description": "The reporting period is locked (FR-22). Or no factor set serves the period, or there are no lines."
+          }
+        },
+        "summary": "Record a calculation run",
+        "tags": [
+          "calculator"
+        ]
+      }
+    },
     "/api/v1/reports/{id}/prior-period": {
       "get": {
         "description": "Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.",
@@ -9964,6 +10179,197 @@
         },
         "required": [
           "token"
+        ]
+      },
+      "CalcSourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The id its client chose."
+          },
+          "siteOrdinal": {
+            "type": "number",
+            "minimum": 0
+          },
+          "sourceKey": {
+            "type": "string",
+            "example": "natural_gas"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "string",
+            "nullable": true,
+            "description": "A decimal string, never a number."
+          },
+          "unitCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "notAvailableReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "updatedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds, UTC."
+          }
+        },
+        "required": [
+          "id",
+          "siteOrdinal",
+          "sourceKey",
+          "description",
+          "quantity",
+          "unitCode",
+          "notAvailableReason",
+          "updatedAt"
+        ]
+      },
+      "WriteCalcSourceRequestDto": {
+        "type": "object",
+        "properties": {
+          "siteOrdinal": {
+            "type": "number",
+            "minimum": 0,
+            "example": 0,
+            "description": "The report's B1 site row the line belongs to."
+          },
+          "sourceKey": {
+            "type": "string",
+            "example": "natural_gas",
+            "description": "A source of the factor set the report's period resolves; its name is a catalogue key."
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Oven and boiler",
+            "description": "The reporter’s own name."
+          },
+          "quantity": {
+            "type": "string",
+            "nullable": true,
+            "example": "500",
+            "description": "The figure on the invoice, as a decimal string — `500`, `1700.5` — in `unitCode`. Omit it, and the unit, where `notAvailableReason` says why there is none."
+          },
+          "unitCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "m3",
+            "description": "One of the source's units."
+          },
+          "notAvailableReason": {
+            "type": "string",
+            "nullable": true,
+            "example": "Billed by the landlord",
+            "description": "Why there is no figure. Sent instead of a quantity and its unit, never with them."
+          }
+        },
+        "required": [
+          "siteOrdinal",
+          "sourceKey"
+        ]
+      },
+      "PinnedFactorSetDto": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "example": "md",
+            "description": "The country whose set it is."
+          },
+          "revision": {
+            "type": "number",
+            "example": 1,
+            "description": "The immutable revision — what the run is pinned to."
+          },
+          "label": {
+            "type": "string",
+            "example": "2026.1",
+            "description": "The name its publisher gave it — what a reader is shown."
+          }
+        },
+        "required": [
+          "country",
+          "revision",
+          "label"
+        ]
+      },
+      "CalcInputDto": {
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The line it was copied from."
+          },
+          "siteOrdinal": {
+            "type": "number",
+            "minimum": 0
+          },
+          "sourceKey": {
+            "type": "string",
+            "example": "natural_gas"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "string",
+            "nullable": true,
+            "description": "A decimal string, never a number."
+          },
+          "unitCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "notAvailableReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "sourceId",
+          "siteOrdinal",
+          "sourceKey",
+          "description",
+          "quantity",
+          "unitCode",
+          "notAvailableReason"
+        ]
+      },
+      "CalcRunDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "factorSet": {
+            "$ref": "#/components/schemas/PinnedFactorSetDto"
+          },
+          "recordedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds, UTC."
+          },
+          "inputs": {
+            "description": "Every line the report held when the run was recorded.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalcInputDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "factorSet",
+          "recordedAt",
+          "inputs"
         ]
       },
       "PriorReportPinDto": {

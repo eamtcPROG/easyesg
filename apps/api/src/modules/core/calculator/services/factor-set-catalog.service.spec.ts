@@ -65,6 +65,10 @@ describe('FactorSetCatalog', () => {
       expect(catalog.inForce({ country: 'md', periodStart: '2026-07-01' })?.pin).toEqual({ country: 'md', revision: 3 });
     });
 
+    it('takes the organization’s upper-case country, and pins the scope’s lower case', () => {
+      expect(catalog.inForce({ country: 'MD', periodStart: '2026-07-01' })?.pin).toEqual({ country: 'md', revision: 3 });
+    });
+
     it('answers nothing for a period no window serves, or a country with no set', () => {
       expect(catalog.inForce({ country: 'md', periodStart: '2025-12-31' })).toBeNull();
       expect(catalog.inForce({ country: 'ro', periodStart: '2026-01-01' })).toBeNull();

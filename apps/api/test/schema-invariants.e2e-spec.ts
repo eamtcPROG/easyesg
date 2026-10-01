@@ -298,6 +298,9 @@ const FIELD_AUDITED_TABLES = [
   // filing carries needs FR-54's trail as much as the figure does — more, arguably, since the
   // figure itself is `origin = 'calculated'` and says nothing about who changed what.
   'core.report_derivation_input',
+  // The carbon calculator's invoice lines (task 38.1). A figure a person copied off a bill that moves B3, so FR-54's
+  // trail for the derivation inputs' reason — and UX-43's override shows both figures, attributed, from it.
+  'core.calc_source',
   'identity.membership',
   'identity.invitation',
 ];
@@ -336,6 +339,13 @@ const UNAUDITED_TABLES = [
    * record of an amendment that could be amended is not a record.
    */
   'core.period_reopening',
+  /**
+   * `core.calc_run` and `core.calc_input` (task 38.1) are the argument once more: immutable by grant — the request tier
+   * holds `SELECT` and `INSERT` and nothing else, and neither carries an `UPDATE` or `DELETE` policy — so a trail of
+   * them would record the writing of a record. They are what P-11 retains, and the lines they copy are audited.
+   */
+  'core.calc_input',
+  'core.calc_run',
   /**
    * `notification.notification` (task 50.1.1) is written by the worker from a raised event, never by a person: no
    * member changes a notice, so there is no value whose author FR-54 could ask after. The raise itself is the
@@ -478,6 +488,38 @@ const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
    * is the dispatcher's record of what it did, and a recipient who could edit it could rewrite whether a notice
    * reached them. The two granted markers are write-once besides, by `notification.keep_read_state`.
    */
+  /**
+   * An invoice line's identity (task 38.1): the report it belongs to and the tenant, which RLS enforces whatever the
+   * column says. A line never moves between reports — the store's upsert refuses to — and this is the grant behind it.
+   */
+  'core.calc_source': ['created_at', 'id', 'organization_id', 'report_id'],
+  /**
+   * A run and the inputs it retains (task 38.1; P-11, NFR-19), **withheld whole**: no column of either is the request
+   * tier's to rewrite, which is what makes a recorded run the record of what one calculation read. Listed in full so a
+   * later `UPDATE` grant on any one column fails here rather than quietly reopening a filed figure's inputs.
+   */
+  'core.calc_input': [
+    'description',
+    'id',
+    'not_available_reason',
+    'organization_id',
+    'quantity',
+    'report_id',
+    'run_id',
+    'site_ordinal',
+    'source_id',
+    'source_key',
+    'unit_code',
+  ],
+  'core.calc_run': [
+    'factor_set_country',
+    'factor_set_revision',
+    'id',
+    'organization_id',
+    'recorded_at',
+    'recorded_by',
+    'report_id',
+  ],
   'notification.delivery': [
     'channel',
     'dispatched_at',

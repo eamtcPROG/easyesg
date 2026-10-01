@@ -33,13 +33,16 @@ export class FactorSetCatalog implements FactorSets {
   ) {}
 
   inForce(query: { readonly country: string; readonly periodStart: string }): FactorSet | null {
+    // The scope is the country in lower case, as every country-scoped artefact's is (`OrganizationVocabularyService`),
+    // while the organization stores ISO 3166's upper case — so the caller passes either and the pin carries the scope.
+    const country = query.country.toLowerCase();
     const entry = this.configurationStore.get({
       kind: EMISSION_FACTOR_SET_CONFIG_KIND,
-      scope: query.country,
+      scope: country,
       on: query.periodStart,
     });
     if (!entry) return null;
-    return this.read({ country: query.country, revision: entry.revision }, entry.payload);
+    return this.read({ country, revision: entry.revision }, entry.payload);
   }
 
   async pinned(pin: FactorSetPin): Promise<FactorSet | null> {

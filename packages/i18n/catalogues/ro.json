@@ -265,6 +265,15 @@
       "reminder_not_outstanding": "Raportul nu mai este deschis — perioada lui a fost blocată sau raportul este gata de depunere —, așa că mementoul nu a fost trimis. Reîmprospătați pagina pentru a vedea rapoartele încă deschise.",
       "reminder_to_self": "Nu vă puteți trimite un memento dumneavoastră, așa că nu a fost trimis. Alegeți colegul căruia doriți să-i amintiți de raport.",
       "reminder_recipient_not_found": "Persoana aleasă nu mai face parte din această organizație, așa că mementoul nu a fost trimis. Reîmprospătați pagina pentru a vedea membrii actuali."
+    },
+    "calculator": {
+      "unknown_source": "Sursa de energie trimisă nu se numără printre cele acoperite de factorii de emisie ai acestui raport, așa că linia nu a putut fi salvată. Reîmprospătați pagina pentru a încărca sursele din care puteți alege.",
+      "unit_not_admitted": "Unitatea trimisă nu este una în care poate fi introdusă această sursă de energie, așa că linia nu a putut fi salvată. Alegeți din listă unitatea tipărită pe factură.",
+      "unknown_site": "Amplasamentul trimis nu se află printre amplasamentele enumerate în acest raport, așa că linia nu a putut fi salvată. Adăugați mai întâi amplasamentul în raport sau alegeți unul dintre amplasamentele deja enumerate.",
+      "contents_invalid": "O linie are nevoie fie de cifra de pe factură împreună cu unitatea ei, fie de motivul pentru care cifra lipsește, așa că aceasta nu a putut fi salvată. Introduceți una dintre ele.",
+      "source_elsewhere": "Linia aparține unui alt raport al acestei organizații, așa că nu a putut fi salvată aici. Reîmprospătați pagina și adăugați linia din nou.",
+      "no_factor_set": "Pentru perioada de raportare a acestui raport nu au fost încă publicați factori de emisie, așa că liniile facturilor dvs. nu pot fi calculate. Introduceți direct cifrele emisiilor, dacă le aveți deja, sau încercați din nou după publicarea factorilor.",
+      "no_sources": "Nu există linii de factură din care să se calculeze, așa că nu s-a calculat nimic. Adăugați mai întâi cel puțin o linie de pe facturile dvs."
     }
   },
   "notification": {

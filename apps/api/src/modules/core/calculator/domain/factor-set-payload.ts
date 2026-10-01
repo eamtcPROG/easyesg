@@ -1,4 +1,5 @@
 import { isGhgScope, type FactorSource } from '../models/factor-set.model';
+import { isDecimalString, isPositiveDecimalString } from './decimal-string';
 
 /**
  * What a published `emission_factor_set` payload says, read and validated (task 37.1).
@@ -31,16 +32,8 @@ const SOURCE_KEY = /^[a-z][a-z0-9_]*$/;
 /** An invoice unit's code — `m3`, `kWh`, `l`, `t` — resolved to a name by the catalogue. */
 const UNIT_CODE = /^[A-Za-z][A-Za-z0-9]*$/;
 
-/** A non-negative decimal written as a string, with no exponent and no sign. */
-const DECIMAL = /^(0|[1-9]\d*)(\.\d+)?$/;
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const isDecimal = (value: unknown): value is string => typeof value === 'string' && DECIMAL.test(value);
-
-/** Greater than zero: a unit that converts to no energy at all is a mistyped factor, never a real one. */
-const isPositiveDecimal = (value: unknown): value is string => isDecimal(value) && /[1-9]/.test(value);
 
 const isNonEmptyText = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
 
@@ -73,13 +66,13 @@ function readSource(candidate: unknown): FactorSource | null {
   const { key, ghgScope, emissionFactor, units, reference } = candidate;
   if (typeof key !== 'string' || !SOURCE_KEY.test(key)) return null;
   if (!isGhgScope(ghgScope)) return null;
-  if (!isDecimal(emissionFactor)) return null;
+  if (!isDecimalString(emissionFactor)) return null;
   if (!isNonEmptyText(reference)) return null;
   if (!isRecord(units)) return null;
 
   const read = new Map<string, string>();
   for (const [unit, megawattHours] of Object.entries(units)) {
-    if (!UNIT_CODE.test(unit) || !isPositiveDecimal(megawattHours)) return null;
+    if (!UNIT_CODE.test(unit) || !isPositiveDecimalString(megawattHours)) return null;
     read.set(unit, megawattHours);
   }
   if (read.size === 0) return null;

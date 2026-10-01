@@ -26709,3 +26709,101 @@ idempotence on the new artefact.
 journey). **No review agents**: a sub-step closes on the gates its change reaches, and the three run when parent 37
 closes, which waits for 37.3 and so for task 38. The dev stack is migrated (`migrations:check` applies there), but its
 store carries the new artefact only once `pnpm --filter @easyesg/api config:seed` runs against it.
+
+## Task 38.1 — A report's invoice lines, and the runs that retain them · 2026-10-01
+
+A report's carbon-calculator lines as their own working set, `core.calc_source`, and runs that copy them,
+`core.calc_run` plus `core.calc_input`, each pinned to task 37's factor set. Four routes under
+`/reports/{id}/calculator`. The decisions are `architecture.md` §12.5.6's task-38.1 row; §7.2's diagram, its component
+table and §7.10's inventory gain `CALC_SOURCE`.
+
+### Decisions (project owner, one batch of three)
+
+The specs disagreed on all three, and each one fixes the shape of a table P-11 calls expensive to retrofit.
+
+- **Lines per report, and runs that copy them.**
+  - UX-41 keeps the lines editable after a calculation and UX-34 saves them on blur, while P-11 retains inputs *at the
+    run*. One row cannot be both an editable line and the record of what a filed figure rests on.
+  - §7.2's diagram read literally was the option set aside: lines owned by a draft run that commit freezes. Under it,
+    a line's field history would restart at every commit.
+- **A line's site is the report's B1 site row**, its ordinal on `IdentifierOfSiteTypedAxis`.
+  - This is the boundary the report discloses, a consolidated subsidiary's sites included.
+  - `core.site` holds none of a subsidiary's sites, and it moves after the period opens.
+- **One figure per line for now.** The artboard's monthly form is deferred to 39.1. Its shape is stated in §12.5.6,
+  and 39.1's row and scope (now `api+web`) carry it.
+
+### The calls taken in the build, and why each is the one that holds
+
+- **The client chooses a line's id, keyed `(organization_id, id)`.**
+  - A line has no natural key: two gas meters at one site are two lines. The artboard also draws offline entry, so
+    FR-38's replayed autosave must write the same line rather than a second one.
+  - Keying the id with the tenant means the conflict target can only ever be the tenant's own row, so a chosen id
+    reveals nothing about anyone else's.
+  - The upsert's `DO UPDATE … WHERE calc_source.report_id = EXCLUDED.report_id` is what stops a line moving between
+    two of a tenant's reports.
+- **The run copies in the database, then the use case checks what was copied.**
+  - The copy is an `INSERT ... SELECT` from the lines in the run's own transaction. The checks — the source and unit
+    against the pinned set, and that there is at least one line — then run over the copied rows, and a refusal rolls
+    the run back with the request.
+  - A list read first and checked before the insert would let a concurrent edit slip an unchecked line in between.
+- **Immutable by grant, permanent by key.**
+  - The run tables give `esg_app` `SELECT` and `INSERT` only, and have no `UPDATE` or `DELETE` policy.
+  - Their foreign keys into `core.report` take no `ON DELETE` action. OQ-20 already retains `CALC_INPUT`
+    permanently, and this is that decision applied to a report.
+  - Found by the suite's own cleanup: under forced row security the owner's `DELETE` matched nothing and failed in
+    silence. The cleanup lifts `FORCE` inside its transaction, and `apps/api/CLAUDE.md` records the trap.
+- **The country is the organization's.** A site's own grid country is a later concern, and the §12.5.6 row says
+  what changes if a non-Moldovan site comes into scope.
+  - `FactorSetCatalog.inForce` now lower-cases the country itself, as `OrganizationVocabularyService` does, so the
+    organization's `MD` resolves the scope's `md`. A spec covers it.
+- **The site-removal guard holds without code for now.** The option the owner chose said a B1 site holding lines
+  cannot be removed. Nothing removes a site row today: `DisclosureValueStore.remove` has no product caller, and a
+  cleared value keeps its row. So the refusal belongs to whichever task first adds row removal, and the row says so.
+- **One decimal rule for two readers.** `domain/decimal-string.ts` moved out of task 37's payload reader when the
+  line's quantity became its second reader. Two copies of one regex is the drift the vocabulary rule exists to
+  prevent.
+
+### Skills, read against the diff
+
+`one-idea-per-file`:
+- `file-one-behaviour-api`: the four use cases, three repositories, the controller and the service are a file each.
+  `calculator.errors.ts` and each DTO file stay whole, as vocabularies do.
+- `pure-logic-leaves-the-component`: the line rules and the site-row rule are in `domain/`, each with a spec.
+- `reason-docblock-carries-the-why`: the module's first draft said *"behind four routes"*, a count of another file's
+  contents. It now names the controller instead.
+
+`nestjs-best-practices`:
+- Applied: `di-use-interfaces-tokens` (three new symbols), `security-validate-all-input` (class-validator and
+  `ParseUUIDPipe`), `db-use-transactions` (the run's two inserts share the request transaction) and
+  `api-use-dto-serialization`.
+- Measured, not reasoned: the line and run reads were `EXPLAIN`ed with `enable_seqscan = off`. Both use their new
+  index, with the row-security predicate inside its condition.
+- Declined: `error-throw-http-exceptions`, for the standing reason.
+
+### Proven to bite, each restored
+
+- **The use cases:** removing the site check, the empty-run refusal or the post-copy check turned 1, 1 and 2 unit
+  cases red.
+- **The store:** removing the upsert's report guard turned the e2e's *will not move a line to another report* red.
+- **The schema:** granting `UPDATE (quantity)` on `core.calc_input` on the test stack turned the invariants' withheld
+  columns red. The three tables are declared there: the lines as field-audited with their identity withheld, the two
+  run tables as unaudited and withheld whole.
+
+**Verified**, on the gates the change reaches. It reaches `apps/api`: a migration, a controller and DTOs, and a
+module whose providers are split by mode. It also reaches `packages/i18n` (seven message keys in three locales) and
+`packages/contracts` (the regenerated spec).
+- **Api unit**: 1,527 of 1,527.
+- **E2e**: `pnpm e2e`, 1,512 of 1,512 across 63 suites. It includes the new suite's 17 cases and the route matrix,
+  which derives the four new routes' expected answers for every actor from `route-permissions.ts`.
+- **Worker boot**: `pnpm e2e:worker`, 9 of 9.
+- **Contract and schema**: `pnpm openapi:check` (110 paths, the root file's count moved with it) and
+  `pnpm migrations:check` (61 invariants on both stacks).
+- **Packages and dependents**: the `i18n` package's 130 cases, web unit 1,295 and admin unit 296.
+- **Static**: typecheck in `api`, `web`, `admin` and `contracts`, `pnpm lint`, `pnpm docs:check`.
+- **Read beyond the totals**: neither boot printed an `ERROR`, an unhandled rejection or a dependency warning.
+
+**Not run, and why**:
+- `e2e:web`: the catalogue gained keys with no new markup, which is the case the close procedure names for skipping
+  the browser suite.
+- `routes:check`: no admin route changed.
+- **No review agents**: 38.1 is a sub-step, and the three run over the whole parent diff when task 38 closes.

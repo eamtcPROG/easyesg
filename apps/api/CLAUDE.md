@@ -84,7 +84,13 @@ traps each one left — grouped by area rather than by the task that built it.
 - **Calculator** (`core/calculator`; task 37): emission factor sets as configuration — `emission_factor_set`, one
   effective-dated artefact per country, seeded for `md` — and `FACTOR_SETS`, which answers the set in force for a
   reporting period's **start** and, by its pin `(country, revision)`, the set a run used after it has moved on
-  (§12.5.6's task-37 row). No route: task 38's run is the first caller.
+  (§12.5.6's task-37 row). Since task 38.1, a report's invoice lines (`GET /reports/{id}/calculator/sources`,
+  `PUT`/`DELETE …/sources/{sourceId}`, under an id the client chooses) and the runs that retain them
+  (`POST /reports/{id}/calculator/runs`): `core.calc_source` is the editable working set, and `core.calc_run` with
+  `core.calc_input` is each run's own copy of every line plus its factor-set pin, immutable by grant (§12.5.6's
+  task-38.1 row). A run has no results until 38.4. **The run tables carry no `UPDATE` or `DELETE` policy, so under
+  forced row security even their owner's `DELETE` matches nothing and says nothing** — a suite's cleanup lifts `FORCE`
+  inside its transaction (`test/calculator.e2e-spec.ts`), and a report a run rests on cannot be deleted at all (OQ-20).
 - **Not live**: the calculator's runs and validation (38 … 42), preview and export (43 … 47),
   the outstanding-report and deadline notices (51.2), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
