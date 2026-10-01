@@ -216,6 +216,24 @@ test('opens B1 pre-filled, stores what the reporter accepts, and groups the site
   await expect(first.getByText('Din fișa companiei', { exact: true })).toHaveCount(2);
   await expect(second.getByText('Din fișa companiei', { exact: true })).toHaveCount(2);
 
+  // Task 179.2: B1 opens with what the report is — its basis, as option cards — and the sites come after the single
+  // questions, though the standard orders them first. Measured on the page, because the order is the claim.
+  const basis = page.getByRole('radiogroup', {
+    name: 'Baza de întocmire (numai Modulul de bază sau Modulul de bază și cel cuprinzător)',
+  });
+  await expect(basis.getByRole('radio')).toHaveCount(2);
+  const basisTop = (await basis.boundingBox())?.y ?? Number.POSITIVE_INFINITY;
+  const firstSiteTop = (await first.boundingBox())?.y ?? Number.NEGATIVE_INFINITY;
+  expect(basisTop).toBeLessThan(firstSiteTop);
+  // *Add a site*, once, at the foot of the last site's card — below its last question, where until then it sat on the
+  // legend's line over the first question's marker.
+  const addSite = page.getByRole('button', { name: 'Adăugați un amplasament' });
+  await expect(addSite).toHaveCount(1);
+  await expect(second.getByRole('button', { name: 'Adăugați un amplasament' })).toHaveCount(1);
+  const lastQuestion = second.getByRole('textbox', { name: 'Coordonatele GPS ale amplasamentului' });
+  const lastQuestionBottom = await lastQuestion.evaluate((input) => input.getBoundingClientRect().bottom);
+  expect((await addSite.boundingBox())?.y ?? 0).toBeGreaterThan(lastQuestionBottom);
+
   // FR-27's other half: the defaults the reporter did not touch are stored on arrival, so a B1
   // nobody edited is still a B1 that was filed. The indicator is the screen's own claim; the store
   // is the fact (NFR-56) — **and only the second of those is asserted here** (convention review,
@@ -265,9 +283,9 @@ test('counts a narrative field’s length, and imposes no limit on it (UX-19)', 
   await expect(narrative).not.toHaveAttribute('maxlength', /.+/u);
 });
 
-/** The three control words this case reads, from `organization.wizard.field` — the catalogue owns
- *  them, and naming them here keeps the assertions about behaviour rather than about wording. */
-const FIELD_WORDS = { choose: 'Alegeți', yes: 'Da' } as const;
+/** The control word this case reads, from `organization.wizard.field` — the catalogue owns it, and naming it here
+ *  keeps the assertions about behaviour rather than about wording. */
+const FIELD_WORDS = { yes: 'Da' } as const;
 
 /**
  * B2 end to end (UC-20, FR-24; task 36.3) — **the module that tests whether task 36.2 built B1 or
@@ -319,31 +337,29 @@ test('B2 renders and stores each of its kinds, with no code of its own (UC-20)',
   await investment.blur();
 
   /*
-   * 3 — the structured yes/no anchor UC-20 names, rendered as **a Select that starts empty**, which
-   *     is `architecture.md` §12.5.6's task-35.2 decision — *boolean as a two-option `Select`* —
-   *     and the property rather than the widget is what this asserts. A disclosure has three
-   *     answers: unanswered, yes, no. A checkbox holds two, so it would make *not answered yet*
-   *     indistinguishable from *no*.
+   * 3 — the structured yes/no anchor UC-20 names, rendered since task 179.2 as **two option cards with neither
+   *     chosen** — `architecture.md` §12.5.6's task-35.2 decision as amended — and the property rather than the
+   *     widget is what this asserts. A disclosure has three answers: unanswered, yes, no. A checkbox holds two, so it
+   *     would make *not answered yet* indistinguishable from *no*.
    *
-   *     **The emptiness is the assertion, and the first draft did not have it** (found by review):
-   *     it asserted a combobox and the absence of a checkbox, and the second of those can never be
-   *     the failing one — Playwright throws on the first failed expect, so a boolean that regressed
-   *     to a checkbox fails the line above it and the count never runs. A trigger pre-set to a
-   *     value is the defect that assertion pair could not see.
+   *     **The emptiness is the assertion** (found by review on the select this replaced): a group pre-set to an
+   *     answer is the defect a count of radios alone could not see.
    */
-  const target = page.getByRole('combobox', {
+  const target = page.getByRole('radiogroup', {
     name: 'Întreprinderea a stabilit o țintă legată de o politică',
   });
-  await expect(target).toHaveText(FIELD_WORDS.choose);
-  await target.click();
-  await page.getByRole('option', { name: FIELD_WORDS.yes, exact: true }).click();
-  await expect(target).toHaveText(FIELD_WORDS.yes);
+  await expect(target.getByRole('radio')).toHaveCount(2);
+  for (const answer of await target.getByRole('radio').all()) await expect(answer).not.toBeChecked();
+  const yes = target.getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  await untilHydrated(yes);
+  await yes.check();
+  await expect(yes).toBeChecked();
 
   /*
    * 4 — `enumeration_set`, and **the assertion is that it is searchable, not that it is a
    *     combobox** (found by review). `Select` and `Combobox` both expose `role="combobox"`, so a
    *     visibility check cannot tell a multi-select over the taxonomy's members from the
-   *     two-option Select the boolean above renders — an `ENUMERATION_SET` mis-dispatched to a
+   *     Select a long single choice renders — an `ENUMERATION_SET` mis-dispatched to a
    *     `Select` would satisfy it exactly as well as correct code. Typing is what distinguishes
    *     them: only `Combobox` filters, and a `Select` trigger takes no text at all.
    */
@@ -962,12 +978,12 @@ test('B5 asks about each site the report knows, and names it (UC-23)', async ({ 
 
   // UC-23's alternate flow is a **negative determination, not an empty section**: the reporter says
   // no rather than leaving the field blank, and the two are different answers in the store.
-  const near = balti.getByRole('combobox', {
+  const near = balti.getByRole('radiogroup', {
     name: 'Amplasament situat în apropierea unei zone sensibile din punctul de vedere al biodiversității',
   });
-  await untilHydrated(near);
-  await near.click();
-  await page.getByRole('option', { name: 'Nu', exact: true }).click();
+  const no = near.getByRole('radio', { name: 'Nu', exact: true });
+  await untilHydrated(no);
+  await no.check();
   await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
     timeout: 15_000,
   });

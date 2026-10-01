@@ -204,7 +204,15 @@ export function StepField({
           </Button>
         )
       }
-      message={field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? field.notAvailableReason : undefined}
+      message={
+        field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? (
+          // The artboard's line over the reason (task 179.2): it is not a note to self, a reader of the export sees it.
+          <>
+            <span className={styles.recorded}>{tField('notAvailable.recorded')}</span>
+            {field.notAvailableReason}
+          </>
+        ) : undefined
+      }
       messageTone={FIELD_TONE.REASONED}
       // **UX-15's declaration, live since task 36.5.** This slot carried `null` from task 35.2 with
       // task 36.13 named as its owner — the field-level half is built here for every module, and

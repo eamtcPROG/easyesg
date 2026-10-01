@@ -91,6 +91,7 @@ export { WIZARD_STEP_STATE, type WizardStepState } from './archetypes/wizard-ste
 
 export { PasswordField, type PasswordFieldProps } from './form/password-field';
 export { Select, type SelectOption, type SelectProps } from './form/select';
+export { RadioGroup, type RadioGroupProps, type RadioOption } from './form/radio-group';
 export { RequirementList, type RequirementItem, type RequirementListProps } from './form/requirement-list';
 export { TextField, type TextFieldProps } from './form/text-field';
 export { Fieldset, type FieldsetProps } from './form/fieldset';

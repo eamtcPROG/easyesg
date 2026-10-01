@@ -26317,3 +26317,54 @@ web; admin unit 296; `pnpm lint` warm over the repo, and uncached over `packages
 these types through the barrel, since a moved type is the warm-lint caveat's case; `docs:check` 46 of 46. **`e2e:web`
 skipped**: `ConsoleNav` is exported as before and everything else that moved is an erased type, so no browser journey
 can differ. No review agents and no `gates:clean` — not a parent close (owner, 13 Sep 2026).
+
+## Task 179.2 — The fields, as the artboard draws them · 2026-10-01
+
+The step's second slice. The owner chose three things before any code (1 Oct 2026): a site as **a card per row** rather
+than the artboard's table, whose editing the artboard never draws; **single questions before repeating groups**, over
+keeping the standard's order or authoring an order per module as configuration; and, after a mockup of the select, the
+Components sheet's bare radio list and the B1 artboard's cards side by side, **option cards** for short choices. The
+decisions are `design_spec.md` S-07's amendment of 1 Oct 2026, §11.5's Radio group paragraph, and `architecture.md`
+§12.5.6's two task-179.2 rows — one of which amends task 36.2's *a group takes the position of its first field*, and
+the task-35.2 row's *boolean as a two-option `Select`* is amended to point at it.
+
+**The card is `DisclosureField`'s, restyled, with no new prop.** Its edge takes the marker's tone, read from the marker
+rather than passed again, and only a finding's or a declaration's — warning, error, reasoned. A field still to answer is
+`attention`, and outlining every unanswered card in amber would have made a first visit a wall of it; the artboard's
+*Not answered* card has the plain edge, which settled it. **Inside a group the field is a row, said by the stylesheet
+from the `fieldset` around it** (`:where(fieldset) .field`) rather than by a prop every group's caller would have had to
+remember — the only contextual selector the package carries, and the cost is stated in the component's docblock.
+
+**`Fieldset` is untouched**, because S-13, S-27 and the console's A-17 use it. The wizard gives its groups the card's
+surface through `className`, at two classes' specificity so the order the stylesheets load in cannot decide it, floats
+the legend inside the card, and draws *Add a site* as the group's last child — which is what fixes the overlap: the
+`action` slot is absolutely positioned on the legend's line and lay over the first field's *To answer*. The
+classification rows took the same foot for the same reason. *Add a site*, *Add a subsidiary* and *Add a material* are
+words per typed axis, by literal key, with the neutral *add another row* where an axis has none.
+
+**The Radio group is real radios under one name in a `radiogroup`**, `appearance: none` and drawn from tokens —
+`Checkbox`'s method — so the single tab stop and the arrow keys are the platform's, and its spec asserts both. Which
+choices become cards is `tools/option-cards.ts`: every boolean, and an enumeration of two to four answers, a count read
+off the wire. At `2026-05-01` that is B1's four two-answer choices and the Basic Module's eight yes/no questions; legal
+form's five answers stay in the select. **An answer is changed, never cleared**, as with the select it replaced — Radix
+reserves the select's `''` and a radio group has no third state — so nothing a reporter could do before is lost.
+
+**The order rule is a few lines in `reorderRows`**: questions keep their place, the typed axes' rows follow, axis by
+axis in the order each first appears. A breakdown and a classification stay among the questions, being one question
+answered several ways. Two layout cases that pinned the old position were rewritten to pin the new one, and a third
+states B1's own shape — sites first in the standard, then the basis — and asserts the basis now leads.
+
+**What was not drawn, and why**: the artboard's *Required* tag (nothing on the wire says which fields are required until
+validation exists), the second line on each option card (EFRAG words its answers and gives them no such sentence), *Why
+this is asked*, the field's history and the reporting-period card (no source yet). The declared gap's reason now carries
+the artboard's line over it — *Reason recorded · a reader of the report will see it* — since that is UX-30's point.
+
+**Verified**: `packages/ui` 431 (the Radio group's six, the contrast record's new pairing — the chosen card's second
+line on the accent's tint, 9.07:1 light and 10.54:1 dark); web unit 1,284; admin unit 296; typecheck in `ui`, `web` and
+`admin`; `pnpm lint`; `routes:check`; `docs:check`, its six `packages/ui` counts moved by the one component;
+`e2e:web` `identity`, `expansion` and `admin` 289 of 289. The B1 journey now measures the order and where *Add a site*
+sits — the basis above the first site's card, the button below the last site's GPS field — and the B2 and B5 journeys
+drive their yes/no questions as radios, still asserting that neither starts chosen. The thirteen *destination stream
+closed early* lines the run logged all carry digest `2667547900`, the abandoned prefetch `apps/web/CLAUDE.md`
+describes. Searched for the shape (the root file's *a rule is applied where it holds*): every `Fieldset` the wizard
+draws — groups, breakdowns, classification rows — takes the card and the foot; the other three callers keep theirs.

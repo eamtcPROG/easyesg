@@ -1,29 +1,55 @@
+/* Values from `EasyESG Reporting Core.dc.html`'s field (task 179.2): a card 20 × 24 inside on the card radius, the
+   marker a bordered pill, the message a tinted box with its mark. Tier 2/3 tokens only (UX-78). */
+
 .field {
   display: grid;
-  gap: var(--space-2);
-  padding-block: var(--space-4);
+  gap: var(--space-3);
+  padding: calc(var(--space-5) + var(--space-2)) var(--space-6);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+/* The edge takes a finding's or a declaration's tone, and nothing else's: a field still to answer (attention) keeps the
+   plain edge, as the artboard's *Not answered* card does. One selector per tone, as the marker's below. */
+.field[data-tone='warning'] { border-color: var(--state-warning); }
+.field[data-tone='error'] { border-color: var(--state-error); }
+.field[data-tone='reasoned'] { border-color: var(--state-reasoned); }
+
+/* Inside a group — a site's card — a field is a row of it, divided by a hairline, so cards never nest. The group is a
+   `fieldset` (`Fieldset`, or any native one), which is what the stylesheet can see without a prop. */
+:where(fieldset) .field {
+  padding: var(--space-5) 0;
+  border: 0;
   border-block-end: 1px solid var(--border-default);
+  border-radius: 0;
+  background: transparent;
+}
+
+:where(fieldset) .field:last-child {
+  border-block-end: 0;
 }
 
 .head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .label {
-  font-weight: 600;
+  font: 600 16px/22px var(--font-text);
   color: var(--text-default);
 }
 
 /* One selector per tone rather than an inline style: a colour computed in a component is a colour
-   task 82's dark scheme cannot reach. */
+   task 82's dark scheme cannot reach. The edge is the tone's own colour, so the pill reads as its words framed. */
 .marker {
   flex: none;
-  font-size: 0.8125rem;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-pill);
+  padding: 0 10px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-1);
+  font: 500 12.5px/22px var(--font-text);
 }
 
 .marker[data-tone='ok'] { color: var(--state-ok); background: var(--state-ok-tint); }
@@ -36,15 +62,15 @@
 
 .help {
   margin: 0;
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  color: var(--text-body);
+  font: 400 14px/22px var(--font-text);
   max-width: var(--measure-text);
 }
 
 .entry {
   display: flex;
   align-items: flex-end;
-  gap: var(--space-3);
+  gap: var(--space-4);
   flex-wrap: wrap;
 }
 
@@ -57,36 +83,51 @@
   flex: none;
   background: var(--field-unit-surface);
   border-radius: var(--radius-1);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-4);
 }
 
 .prior {
   margin: 0;
   display: flex;
   align-items: baseline;
-  gap: var(--space-3);
+  gap: var(--space-4);
   flex-wrap: wrap;
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  color: var(--text-body);
+  font: 400 13.5px/20px var(--font-text);
 }
 
 .carry {
   flex: none;
 }
 
+/* The field's message: a tinted box in its tone, the mark beside the words — the callout's pairings, measured in
+   `tokens.spec.ts` as each state's text on its own tint. */
 .message {
-  margin: 0;
-  font-size: 0.875rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: var(--space-4) 14px;
+  border-radius: var(--radius-1);
+  font: 400 13.5px/21px var(--font-text);
   max-width: var(--measure-text);
 }
 
-.message[data-tone='ok'] { color: var(--state-ok); }
-.message[data-tone='attention'] { color: var(--state-attention); }
-.message[data-tone='warning'] { color: var(--state-warning); }
-.message[data-tone='error'] { color: var(--state-error); }
-.message[data-tone='reasoned'] { color: var(--state-reasoned); }
-.message[data-tone='pending'] { color: var(--state-pending); }
-.message[data-tone='neutral'] { color: var(--text-muted); }
+.messageMark {
+  flex: none;
+  margin-block-start: 2px;
+}
+
+.messageWords {
+  min-width: 0;
+}
+
+.message[data-tone='ok'] { color: var(--state-ok); background: var(--state-ok-tint); }
+.message[data-tone='attention'] { color: var(--state-attention); background: var(--state-attention-tint); }
+.message[data-tone='warning'] { color: var(--state-warning); background: var(--state-warning-tint); }
+.message[data-tone='error'] { color: var(--state-error); background: var(--state-error-tint); }
+.message[data-tone='reasoned'] { color: var(--state-reasoned); background: var(--state-reasoned-tint); }
+.message[data-tone='pending'] { color: var(--state-pending); background: var(--state-pending-tint); }
+.message[data-tone='neutral'] { color: var(--text-body); background: var(--state-neutral-tint); }
 
 .declare {
   justify-self: start;

@@ -84,8 +84,34 @@ describe('layOutStep (task 36.2)', () => {
       ['AddressOfSite', 'CityOfSite'],
       ['AddressOfSite', 'CityOfSite'],
     ]);
-    // The group takes the position of its first field, so the questions around it stay put.
-    expect(entries.map((e) => e.kind)).toEqual([STEP_ENTRY.GROUP, STEP_ENTRY.GROUP, STEP_ENTRY.FIELD]);
+    // The single question comes first, though the sites arrived before it (task 179.2).
+    expect(entries.map((e) => e.kind)).toEqual([STEP_ENTRY.FIELD, STEP_ENTRY.GROUP, STEP_ENTRY.GROUP]);
+  });
+
+  it('puts every single question before the repeating groups, and keeps a breakdown where the standard puts it', () => {
+    // B1's shape at `2026-05-01`: the sites open the module in the standard's order, the basis for preparation follows
+    // them, the subsidiaries sit between questions. Task 179.2 reads the questions first — B1 then opens with what the
+    // report is — and a breakdown, one question answered several ways, keeps its place among them.
+    const SUBS = 'IdentifierOfSubsidiaryTypedAxis';
+    const entries = layOutStep([
+      site('AddressOfSite', 0, 1),
+      field({ elementKey: 'BasisForPreparation', order: 2 }),
+      field({ elementKey: 'NameOfTheSubsidiary', ordinal: 0, order: 3, axes: [SUBS], repeating: true }),
+      field({ elementKey: 'EnergyFromFuels', dimensionKey: 'vsme:RenewableMember', dimensionLabel: 'Renewable', order: 4, axes: ['BreakdownAxis'] }),
+      field({ elementKey: 'NumberOfEmployees', order: 5 }),
+    ]);
+
+    expect(
+      entries.map((e) =>
+        e.kind === STEP_ENTRY.FIELD
+          ? e.field.elementKey
+          : e.kind === STEP_ENTRY.GROUP
+            ? e.axis
+            : e.kind === STEP_ENTRY.BREAKDOWN
+              ? e.elementKey
+              : e.axis,
+      ),
+    ).toEqual(['BasisForPreparation', 'EnergyFromFuels', 'NumberOfEmployees', SITES, SUBS]);
   });
 
   it('brings an axis’s rows together in ordinal order, wherever they arrive', () => {
@@ -103,7 +129,7 @@ describe('layOutStep (task 36.2)', () => {
     ]);
 
     const groups = entries.filter((e): e is StepGroupEntry => e.kind === STEP_ENTRY.GROUP);
-    // Contiguous by axis, ascending by ordinal, and the axis keeps the position of its first row —
+    // Contiguous by axis, ascending by ordinal, and the axes in the order each first appears —
     // sites opened the list, so sites stay first even though the subsidiary arrived second.
     expect(groups.map((g) => [g.axis, g.ordinal])).toEqual([
       [SITES, 0],
@@ -279,15 +305,21 @@ describe('withAddedRows and isLastRow', () => {
     expect(groups.map((g) => g.ordinal)).toEqual([0, 2, 3]);
   });
 
-  it('keeps the group contiguous, so the questions after it stay where the standard puts them', () => {
+  it('keeps the group contiguous, so the axis after it stays where it was', () => {
+    // Since task 179.2 the groups close the step, so what follows a site's card is the next axis's — B1's subsidiaries.
+    const SUBS = 'IdentifierOfSubsidiaryTypedAxis';
     const entries = layOutStep([
       site('CityOfSite', 0, 3),
-      field({ elementKey: 'NumberOfEmployees', order: 4 }),
+      field({ elementKey: 'NameOfTheSubsidiary', ordinal: 0, order: 4, axes: [SUBS], repeating: true }),
     ]);
 
     const grown = withAddedRows(entries, { [SITES]: 1 });
-    // Row, added row, then the question that followed the group — not appended after it.
-    expect(grown.map((e) => e.kind)).toEqual([STEP_ENTRY.GROUP, STEP_ENTRY.GROUP, STEP_ENTRY.FIELD]);
+    // Site, added site, then the subsidiary that followed them — not appended after it.
+    expect(grown.map((e) => (e.kind === STEP_ENTRY.GROUP ? [e.axis, e.ordinal] : e.kind))).toEqual([
+      [SITES, 0],
+      [SITES, 1],
+      [SUBS, 0],
+    ]);
   });
 
   it('adds nothing for an axis the step has no row of, since there is no row to copy', () => {

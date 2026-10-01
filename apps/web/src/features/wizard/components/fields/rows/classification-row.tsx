@@ -11,6 +11,7 @@ import { useState, type ReactNode } from 'react';
 import type { StepClassificationEntry } from '../../../tools/step-layout';
 import { MemberPicker, memberName } from '../controls/member-picker';
 import { FIELD_MESSAGES, GROUP_MESSAGES } from '../shared/step-messages';
+import styles from '../styles/step.module.css';
 
 /**
  * One row of a classification: the member it reports, and every element reported for it (task 36.5).
@@ -86,7 +87,7 @@ export function ClassificationRow({
         )
       }
       readOnly={readOnly}
-      action={action}
+      className={styles.group}
     >
       {/* The picker only where the row has no member yet: once a value is stored under one, moving
           it would leave the old key's answers behind under a pollutant nobody reports. Changing an
@@ -122,6 +123,9 @@ export function ClassificationRow({
       {member === ''
         ? null
         : entry.fields.map((field) => renderField({ ...field, dimensionKey: member }))}
+      {/* At the card's foot, as a site's *Add a site* is (task 179.2) — `Fieldset`'s own `action` sat on the legend's
+          line, over the first field's marker. */}
+      {action !== undefined && !readOnly ? <div className={styles.groupFoot}>{action}</div> : null}
     </Fieldset>
   );
 }

@@ -147,6 +147,8 @@ const TEXT: Pairing[] = [
   // The Wizard step list's current row (task 179.1): its name and its line on the accent's tint.
   { what: 'current wizard step name', fg: '--text-default', bg: '--accent-tint', floor: 4.5 },
   { what: 'current wizard step line', fg: '--state-ok', bg: '--accent-tint', floor: 4.5 },
+  // The Radio group's chosen card (task 179.2): its answer is the step name's pairing above, its second line this one.
+  { what: 'chosen option card description', fg: '--text-body', bg: '--accent-tint', floor: 4.5 },
   { what: 'Focus header text', fg: '--focus-header-text', bg: '--focus-header-surface', floor: 4.5 },
   { what: 'Focus header muted text', fg: '--focus-header-text-muted', bg: '--focus-header-surface', floor: 4.5 },
   { what: 'global bar text', fg: '--globalbar-text', bg: '--globalbar-surface', floor: 4.5 },

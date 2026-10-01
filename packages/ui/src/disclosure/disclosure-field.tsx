@@ -1,3 +1,4 @@
+import { CircleAlert, Info } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useId } from 'react';
 import styles from './disclosure-field.module.css';
@@ -35,6 +36,14 @@ import styles from './disclosure-field.module.css';
  * a node and every colour comes from a semantic token, which is what makes the dark scheme task 82
  * adds reach this component without it being touched — that is the whole of what a "dark map" means
  * for a component whose cascade has not gained one yet.
+ *
+ * **Drawn as `EasyESG Reporting Core.dc.html`'s card since task 179.2** (`design_spec.md` S-07's amendment of
+ * 1 Oct 2026): each question a card, its edge in the marker's tone **when that tone is a finding's or a
+ * declaration's** — warning, error, reasoned — and plain otherwise, so a field still to answer does not outline itself
+ * in amber and a first visit is not a wall of it. The tone is the marker's, read rather than passed again: a second
+ * prop for the card's tone would be one more place for the two to disagree. **Inside a group it is a row, not a
+ * card** — a site's five questions inside the site's card — and that is the stylesheet's to say, from the `fieldset`
+ * around it, because a prop for it would be a boolean every group's caller had to remember.
  */
 
 /**
@@ -118,7 +127,12 @@ export function DisclosureField({
     // `group` with an accessible name, so a screen reader announces which disclosure it is inside
     // when the input, the unit and the carry-forward control are three separate stops. Without it a
     // reporter tabbing through forty fields hears three unattached controls per question.
-    <section className={styles.field} role="group" aria-labelledby={labelElementId}>
+    <section
+      className={styles.field}
+      role="group"
+      aria-labelledby={labelElementId}
+      data-tone={marker ? markerTone : undefined}
+    >
       <div className={styles.head}>
         <span className={styles.label} id={labelElementId}>
           {label}
@@ -149,9 +163,15 @@ export function DisclosureField({
       {message ? (
         // `role="status"` rather than `alert`: a field-level verdict is not an interruption, and
         // forty alerts on one step would make the step unusable with a screen reader.
-        <p className={styles.message} id={messageId} data-tone={messageTone} role="status">
-          {message}
-        </p>
+        <div className={styles.message} id={messageId} data-tone={messageTone} role="status">
+          {/* The tone's mark, beside the words rather than instead of them — no state by colour alone (UX-101). */}
+          {ALERTING_TONES.has(messageTone) ? (
+            <CircleAlert className={styles.messageMark} size={16} aria-hidden="true" />
+          ) : (
+            <Info className={styles.messageMark} size={16} aria-hidden="true" />
+          )}
+          <div className={styles.messageWords}>{message}</div>
+        </div>
       ) : null}
 
       {/* UX-13: read-only keeps the layout and removes the affordance, rather than rendering a
@@ -167,3 +187,6 @@ export function DisclosureField({
     </section>
   );
 }
+
+/** The tones a message warns in — drawn with the alert mark; every other tone informs, and takes the information mark. */
+const ALERTING_TONES: ReadonlySet<FieldTone> = new Set([FIELD_TONE.ATTENTION, FIELD_TONE.WARNING, FIELD_TONE.ERROR]);

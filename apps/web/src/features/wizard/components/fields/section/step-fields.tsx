@@ -115,6 +115,14 @@ export function StepFields({
     [CLASSIFICATION_AXIS.COUNTRY]: tGroup('names.CountryOfEmploymentContractAxis'),
   };
 
+  // *Add a site* rather than *add another row* (task 179.2), for the typed axes this app words; literal keys, as
+  // `rowNames` above, so a missing word is a compile error rather than a blank button.
+  const addWords: Readonly<Record<string, string>> = {
+    [TYPED_AXIS.SITE]: tGroup('addNamed.IdentifierOfSiteTypedAxis'),
+    [TYPED_AXIS.SUBSIDIARY]: tGroup('addNamed.IdentifierOfSubsidiaryTypedAxis'),
+    [TYPED_AXIS.MATERIAL]: tGroup('addNamed.IdentifierOfMaterialTypedAxis'),
+  };
+
   // How many rows the reporter has added to each axis beyond the ones the api served. One value
   // nothing else moves with, which is the case the reducer rule leaves to a single `useState`.
   const [added, setAdded] = useState<Readonly<Record<string, number>>>({});
@@ -240,6 +248,7 @@ export function StepFields({
         entry.kind === STEP_ENTRY.GROUP ? (
           <Fieldset
             key={`${entry.axis} ${entry.ordinal}`}
+            className={styles.group}
             legend={groupLegend(tGroup, {
               name: rowNames[entry.axis] ?? tGroup('fallbackName'),
               position: entry.ordinal + 1,
@@ -250,21 +259,27 @@ export function StepFields({
               given: entry.fields[0]?.dimensionLabel ?? null,
             })}
             readOnly={readOnly}
-            action={
-              isLastRow(entries, entry) ? (
+          >
+            {entry.fields.map((field) => renderField(field))}
+            {/*
+              **At the foot of the axis's last card, not beside its legend** (task 179.2): the artboard draws *Add a site*
+              under the sites, and `Fieldset`'s own `action` sits on the legend's line, where it lay over the first
+              field's marker. Named for what it adds where this app words the axis, and the neutral *add another row*
+              otherwise.
+            */}
+            {isLastRow(entries, entry) && !readOnly ? (
+              <div className={styles.groupFoot}>
                 <Button
-                  variant={BUTTON_VARIANT.SUBTLE}
+                  variant={BUTTON_VARIANT.SECONDARY}
                   type="button"
                   onClick={() =>
                     setAdded((rows) => ({ ...rows, [entry.axis]: (rows[entry.axis] ?? 0) + 1 }))
                   }
                 >
-                  {tGroup('add')}
+                  {addWords[entry.axis] ?? tGroup('add')}
                 </Button>
-              ) : undefined
-            }
-          >
-            {entry.fields.map((field) => renderField(field))}
+              </div>
+            ) : null}
           </Fieldset>
         ) : entry.kind === STEP_ENTRY.BREAKDOWN ? (
           /*
@@ -276,6 +291,7 @@ export function StepFields({
            */
           <Fieldset
             key={entry.elementKey}
+            className={styles.group}
             legend={entry.fields[0]?.label ?? tField('unnamed')}
             readOnly={readOnly}
           >
@@ -299,7 +315,7 @@ export function StepFields({
             action={
               isLastClassificationRow(entries, entry) && !readOnly ? (
                 <Button
-                  variant={BUTTON_VARIANT.SUBTLE}
+                  variant={BUTTON_VARIANT.SECONDARY}
                   type="button"
                   onClick={() =>
                     setAdded((rows) => ({ ...rows, [entry.axis]: (rows[entry.axis] ?? 0) + 1 }))

@@ -1,6 +1,45 @@
 .fields {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-5);
+}
+
+/*
+ * A repeating group, a breakdown or a classification row as the artboard's card (task 179.2): the card's surface and
+ * inset in place of `Fieldset`'s sunken ground, its questions inside as rows (`DisclosureField` drops its own card
+ * inside a `fieldset`). Two classes, so it outranks `Fieldset`'s own one whatever order the stylesheets load in.
+ */
+.fields > .group {
+  padding: var(--space-4) var(--space-6) var(--space-5);
+  background: var(--surface-default);
+}
+
+/* The card's title inside it, as the artboard draws *Sites you operate from*, rather than straddling its edge as a
+   native legend does: a floated legend is laid out as an ordinary block, and the next block clears it. */
+.fields > .group > legend {
+  float: inline-start;
+  inline-size: 100%;
+  margin: 0;
+  padding: var(--space-3) 0 0;
+  font-size: 16px;
+}
+
+.fields > .group > legend + * {
+  clear: both;
+}
+
+/* The group's own control — *Add a site* — under its last question rather than on its legend's line. */
+.groupFoot {
+  padding-block-start: var(--space-4);
+}
+
+/* The declared gap's reason, with the artboard's line over it: a third party reads it in the export (UX-30's point,
+   said where the reason is shown). */
+.recorded {
+  display: block;
+  margin-block-end: var(--space-2);
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /* UX-13: read-only keeps the anatomy and shows the answer as text, not as a disabled box that reads

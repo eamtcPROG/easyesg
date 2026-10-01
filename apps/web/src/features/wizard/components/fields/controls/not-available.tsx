@@ -59,7 +59,7 @@ export function NotAvailableDeclaration({
   if (state.kind === DECLARING.CLOSED) {
     return (
       <Button
-        variant={BUTTON_VARIANT.SUBTLE}
+        variant={BUTTON_VARIANT.SECONDARY}
         type="button"
         onClick={() => setState({ kind: DECLARING.DRAFTING, reason: '' })}
       >

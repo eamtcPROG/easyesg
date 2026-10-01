@@ -1439,7 +1439,8 @@
           "reasonHelp": "Acest text apare în raportul exportat, unde îl va citi un terț.",
           "confirm": "Confirmați",
           "cancel": "Renunțați",
-          "resume": "Reveniți la completare"
+          "resume": "Reveniți la completare",
+          "recorded": "Motiv înregistrat · cititorul raportului îl va vedea"
         },
         "omissionNotice": "Această declarație intră în raport: cine îl citește vede care informații au fost omise ca fiind clasificate sau sensibile — nu și motivul, pe care standardul nu îl cere.",
         "prior": "Perioada precedentă: {value}",
@@ -1480,6 +1481,11 @@
         "legend": "{name} {position}",
         "legendNamed": "{name} {position} — {given}",
         "add": "Adăugați încă un rând",
+        "addNamed": {
+          "IdentifierOfSiteTypedAxis": "Adăugați un amplasament",
+          "IdentifierOfSubsidiaryTypedAxis": "Adăugați o filială",
+          "IdentifierOfMaterialTypedAxis": "Adăugați un material"
+        },
         "names": {
           "IdentifierOfSiteTypedAxis": "Amplasament",
           "IdentifierOfSubsidiaryTypedAxis": "Filială",

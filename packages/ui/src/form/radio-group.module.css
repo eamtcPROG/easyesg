@@ -1,0 +1,135 @@
+/* Values from `EasyESG Reporting Core.dc.html`'s option cards (task 179.2): a 1px card on the card's hairline, 14 × 16
+   inside, 12 apart; the chosen card on the accent's tint with the accent's edge. Tier 2/3 tokens only (UX-78). */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.label {
+  color: var(--text-default);
+}
+
+/* Present for assistive technology, absent for the eye — `Select`'s clip, never `display: none`. */
+.labelHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Beside one another while they fit, stacked when they do not: at 390 two cards of 11rem do not fit a field's width,
+   so the grid falls to one column on its own, with no breakpoint to keep in step with the frame. */
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: var(--space-4);
+}
+
+/* The card is the label, so the whole card is the hit target (NFR-75). */
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px var(--space-5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  cursor: pointer;
+  transition: background-color var(--motion-instant) var(--motion-ease),
+    border-color var(--motion-instant) var(--motion-ease);
+}
+
+.option:hover:has(.radio:not(:disabled)) {
+  border-color: var(--border-strong);
+}
+
+.option:has(.radio:checked) {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+}
+
+.option:has(.radio:disabled) {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* The radio itself: a real one, `appearance: none` and drawn from tokens — `Checkbox`'s method. The ring is what a
+   reader must perceive to operate it, on `--field-border-rest` like every enterable thing (WCAG 1.4.11). */
+.radio {
+  appearance: none;
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+  inline-size: 18px;
+  block-size: 18px;
+  margin: 1px 0 0;
+  border: 1px solid var(--field-border-rest);
+  border-radius: 50%;
+  background: var(--surface-default);
+  cursor: inherit;
+}
+
+/* The dot is drawn rather than typed, and its colour is a token, so a second theme moves it with the accent. */
+.radio::before {
+  content: '';
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: scale(0);
+  transition: transform var(--motion-instant) var(--motion-ease);
+}
+
+.radio:checked {
+  border-color: var(--accent);
+}
+
+.radio:checked::before {
+  transform: scale(1);
+}
+
+/* Replaced, never removed — the global two-layer ring, matching the text field's — and drawn on the card, which is
+   what a reader sees as the thing in focus. */
+.option:has(.radio:focus-visible) {
+  outline: 2px solid var(--field-border-focus);
+  outline-offset: 2px;
+}
+
+.options[aria-invalid='true'] .option:not(:has(.radio:checked)) {
+  border-color: var(--field-border-invalid);
+}
+
+.words {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.optionLabel {
+  font: 600 14.5px/20px var(--font-text);
+  color: var(--text-default);
+  overflow-wrap: anywhere;
+}
+
+.description {
+  font: 400 13.5px/20px var(--font-text);
+  color: var(--text-body);
+}
+
+.help {
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+}
+
+.error {
+  font: 400 13px/19px var(--font-text);
+  color: var(--state-error);
+}

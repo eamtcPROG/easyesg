@@ -1439,7 +1439,8 @@
           "reasonHelp": "Этот текст попадёт в экспортированный отчёт, где его прочитает третья сторона.",
           "confirm": "Подтвердить",
           "cancel": "Отмена",
-          "resume": "Вернуться к заполнению"
+          "resume": "Вернуться к заполнению",
+          "recorded": "Причина записана · её увидит читатель отчёта"
         },
         "omissionNotice": "Это заявление войдёт в отчёт: тот, кто его читает, увидит, какие сведения опущены как секретные или чувствительные, — но не причину, которую стандарт не запрашивает.",
         "prior": "Предыдущий период: {value}",
@@ -1480,6 +1481,11 @@
         "legend": "{name} {position}",
         "legendNamed": "{name} {position} — {given}",
         "add": "Добавить ещё одну строку",
+        "addNamed": {
+          "IdentifierOfSiteTypedAxis": "Добавить площадку",
+          "IdentifierOfSubsidiaryTypedAxis": "Добавить дочернюю компанию",
+          "IdentifierOfMaterialTypedAxis": "Добавить материал"
+        },
         "names": {
           "IdentifierOfSiteTypedAxis": "Площадка",
           "IdentifierOfSubsidiaryTypedAxis": "Дочерняя компания",

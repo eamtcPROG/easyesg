@@ -97,11 +97,14 @@ interface Collecting {
 }
 
 /**
- * The step's entries in the standard's presentation order.
+ * The step's entries: its single questions in the standard's presentation order, then its repeating groups.
  *
- * **A group takes the position of its first field**, so the questions around it stay where EFRAG
- * puts them: B1's sites are contiguous in the taxonomy's order, but nothing guarantees that for
- * every module, and a group that jumped to the end would silently reorder the questionnaire.
+ * **Repeating groups come last** (task 179.2, the owner's choice; `architecture.md` §12.5.6's row of that task). Until
+ * then a group took the position of its first field, on the argument that one jumping to the end would silently
+ * reorder the questionnaire — and in the standard's order B1 opened with a site's street before it said what the
+ * report is. Reordering is now the intent, stated in `design_spec.md` S-07's amendment of 1 Oct 2026. **A breakdown
+ * and a classification row stay where the standard puts them**: each is one question answered several ways, not a
+ * list of objects the reporter extends.
  *
  * **Ordinals order within the axis, not within the step.** Row 2's fields may sort before row 1's
  * in raw presentation order (they share the same `order`), so grouping is by `(axis, ordinal)` and
@@ -194,26 +197,27 @@ export function layOutStep(
     standing.fields.push(field);
   }
 
-  // Rows of one axis are contiguous and in ordinal order, wherever the first of them landed: a
-  // reporter reads *site 1, site 2*, not the standard's field-by-field interleaving.
+  // The single questions first, then each axis's rows, contiguous and in ordinal order: a reporter reads *site 1,
+  // site 2*, not the standard's field-by-field interleaving.
   return reorderRows(entries);
 }
 
 function reorderRows(entries: readonly StepEntry[]): readonly StepEntry[] {
   const seen = new Set<string>();
-  const ordered: StepEntry[] = [];
+  const questions: StepEntry[] = [];
+  const groups: StepGroupEntry[] = [];
   for (const entry of entries) {
-    // **Anything that is not a repeating group passes through where it stands.** This reordering
-    // exists because one axis's ordinals interleave in the standard's presentation order; a
-    // breakdown's rows are one element's and arrive contiguous already, so gathering them here
-    // would move a question the standard placed deliberately.
+    // **Anything that is not a repeating group keeps its place among the questions.** A breakdown's rows are one
+    // element's and arrive contiguous already, so gathering them here would move a question the standard placed
+    // deliberately.
     if (entry.kind !== STEP_ENTRY.GROUP) {
-      ordered.push(entry);
+      questions.push(entry);
       continue;
     }
+    // Axis by axis in the order each first appears, so B1's sites still precede its subsidiaries.
     if (seen.has(entry.axis)) continue;
     seen.add(entry.axis);
-    ordered.push(
+    groups.push(
       ...entries
         .filter((candidate): candidate is StepGroupEntry =>
           candidate.kind === STEP_ENTRY.GROUP && candidate.axis === entry.axis,
@@ -221,7 +225,7 @@ function reorderRows(entries: readonly StepEntry[]): readonly StepEntry[] {
         .sort((a, b) => a.ordinal - b.ordinal),
     );
   }
-  return ordered;
+  return [...questions, ...groups];
 }
 
 /**
@@ -305,8 +309,7 @@ export function withAddedRows(
     if (template === undefined) return withAddedClassificationRows(standing, axis, count);
     const start = nextOrdinal(standing, axis);
     const extra = Array.from({ length: count }, (_unused, index) => blankRow(template, start + index));
-    // After the axis's own last row, so the group stays contiguous and the questions after it keep
-    // the position EFRAG gives them.
+    // After the axis's own last row, so the group stays contiguous and any axis after it keeps its place.
     const at = standing.lastIndexOf(template) + 1;
     return [...standing.slice(0, at), ...extra, ...standing.slice(at)];
   }, entries);

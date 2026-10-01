@@ -1439,7 +1439,8 @@
           "reasonHelp": "This text appears in the exported report, where a third party will read it.",
           "confirm": "Confirm",
           "cancel": "Cancel",
-          "resume": "Answer this field after all"
+          "resume": "Answer this field after all",
+          "recorded": "Reason recorded · a reader of the report will see it"
         },
         "omissionNotice": "This declaration goes into the report: whoever reads it sees which disclosures were omitted as classified or sensitive — not why, which the standard does not ask for.",
         "prior": "Prior period: {value}",
@@ -1480,6 +1481,11 @@
         "legend": "{name} {position}",
         "legendNamed": "{name} {position} — {given}",
         "add": "Add another row",
+        "addNamed": {
+          "IdentifierOfSiteTypedAxis": "Add a site",
+          "IdentifierOfSubsidiaryTypedAxis": "Add a subsidiary",
+          "IdentifierOfMaterialTypedAxis": "Add a material"
+        },
         "names": {
           "IdentifierOfSiteTypedAxis": "Site",
           "IdentifierOfSubsidiaryTypedAxis": "Subsidiary",
