@@ -26807,3 +26807,56 @@ module whose providers are split by mode. It also reaches `packages/i18n` (seven
   the browser suite.
 - `routes:check`: no admin route changed.
 - **No review agents**: 38.1 is a sub-step, and the three run over the whole parent diff when task 38 closes.
+
+## Task 38.2 — Scope 1, computed exactly · 2026-10-01
+
+Gross Scope 1 as domain code: `domain/scope-1.ts`, over a generic `scope-total.ts` and `line-emission.ts`. Each line
+is converted to MWh, its factor is applied, and the lines are summed — no NestJS, no TypeORM, no HTTP. Its spec
+computes against the factor set the platform ships, with no database and no broker. The decisions are
+`architecture.md` §12.5.6's task-38.2 row, all three taken in the build; no source was silent on anything it needed.
+
+**Exact, because nothing divides.** The derivation rates (`derivation.model.ts`) are floats, which was the obvious
+precedent, and here the wrong one.
+- A Scope 1 figure is `quantity × MWh per unit × factor`, summed over lines. Products and sums of finite decimals are
+  finite decimals, so a `bigint` scaled by a power of ten loses nothing, and no dependency is needed.
+- As floats, `500 × 0.0095773` is `4.7886500000000005`, and a filed figure would carry that noise in its last places.
+- The rates divide, so exactness is not available to them. The GHG intensity in 38.4 will meet the same limit, and the
+  row says it will need a rule of its own.
+
+**A scope with no measured line has no total, not zero.** FR-30's nil-return distinction, applied before 38.4 writes
+anything into B3. A scope with every line explained is the same case. One with some lines explained totals the
+measured ones and names the rest, which is the artboard's *"one site of two"*.
+
+**A line the factor set does not cover throws** rather than dropping out of a total. Task 38.1 checks every copied
+line before a run is recorded, so meeting one here means that check was bypassed. A total quietly missing a source
+is the worse failure.
+
+**Found for 38.3, and recorded rather than re-cut.** 38.3's row keeps it apart from 38.2 *"because the factor source
+and its effective dating differ"*. Task 37 put the grid factor in the same set and the same window as the fuels, so
+38.3 is the location-based scope over `scope-total.ts`, with its own specs, rather than a second factor path.
+
+**Skills**:
+- `one-idea-per-file`: the arithmetic, one line's emission, a scope's total, and Scope 1 are a file and a spec each.
+  The generic total is split from Scope 1 because 38.3 is its second reader.
+- `nestjs-best-practices`: nothing applies. There is no module, provider or I/O, and the dependency rule is the one
+  that binds.
+
+**Verified.** The expected figures were computed outside the code, with Python's `decimal` at fifty digits from the
+shipped factors, so the spec is a second calculation agreeing with the first:
+- 500 m³ of gas is 4.78865 MWh and 0.9699123256 t;
+- 332 l of vehicle diesel is 3.3310556 MWh and 0.9026227980432 t;
+- 2.5 t of wood is 10.833325 MWh and 0.35848772424 t;
+- together, 2.2310228478832 t.
+
+One of my own hand-computed expectations was wrong on the first run (0.9699123356); the arithmetic was right, and the
+spec was corrected to the independent figure.
+
+Proven to bite:
+- answering `0` instead of `null` for an unmeasured scope turns one case red;
+- dropping the scope filter turns two red.
+
+Runs: `pnpm --filter @easyesg/api test` 1,539 of 1,539, `typecheck`, `pnpm lint` (a guard-narrowed `never` in a
+template literal, fixed with `JSON.stringify`), and `pnpm docs:check`. `pnpm e2e` is run per the lookup table, though
+nothing at runtime imports these files yet; its result is the next paragraph.
+`pnpm e2e`: 1,512 of 1,512 across 63 suites, no `ERROR` line in the run. **No review agents**: a sub-step closes on
+the gates its change reaches, and the three run when task 38 closes.
