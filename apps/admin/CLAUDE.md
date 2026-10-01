@@ -23,7 +23,9 @@ invisible because nothing in this directory said the rules applied.
 **A-01, the chrome, A-02, A-07, A-08, A-17, A-18, A-19 and A-20.** Route files cover the eighteen scaffolded screens
 (`A-01` … `A-18`), A-19 and A-20. **A-02's organization register is live since task 67.3** —
 `features/platform/admin/organization-register/`, reading `GET /admin/organizations` through
-`AdminRealmGuard` — and **A-08's accounts and system audit log since task 67.4**, in
+`AdminRealmGuard` — its record listing the organization's people since task 167, each phone shown one person at
+a time and logged, and its entities with their IDNOs since task 175 — and **A-08's accounts and system audit log since
+task 67.4**, in
 `features/platform/admin/admin-accounts/`, with **A-20**, the invitation acceptance, in
 `realm/components/invitation/`. **A-19, the operator's own credentials, since task 151**, in
 `realm/components/credentials/` — both privilege levels, from the account menu — with A-01's

@@ -16,8 +16,22 @@ fourteen addresses `AddressNotice` answers for (fifteen until task 52.3 built S-
 8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (ten built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
-browser (`pnpm e2e:web`). The root `CLAUDE.md`'s table names the live screens; `docs/archived_tasks.md`
-says what each closed task shipped and `docs/task.md` what each remaining one must. What follows is what a reader needs in hand for each live slice, grouped by
+browser (`pnpm e2e:web`).
+
+**Live screens** (tasks 20 … 36; 97 … 131 for the chrome and the refactors): S-01 register and sign-in with its factor
+step and provider buttons, S-02 verify, reset and set-password, S-03 the invitation landing, S-04 create organization,
+S-05 home, S-06 reports, S-07 the wizard shell with autosave and the B1–B11 disclosure forms, S-13 entities, S-14
+periods, S-15 organization profile, S-16 users with, since task 50.3, its reminder panel, S-26 notification centre,
+S-27 profile, languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
+layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
+complete your account, S-37 choose organization, S-38 unsubscribe from an email; §4.2's global tier with, since task
+83.2, the organization switcher, and the workspace tier with its drawer, and since task 67.9 UX-124's support-access
+banner across every signed-in screen, and since task 50.2.1 the band's notification bell with the unread count, polled
+every minute, and its row in the compact drawer, the bell opening the panel of the latest notices since 50.2.2. **Not
+live** beyond those fourteen addresses: the wizard's three deferred steps (S-09, S-10, S-11), which still return
+`null` under UX-5's exit control.
+
+`docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must. What follows is what a reader needs in hand for each live slice, grouped by
 the seam it sits on rather than by the task that built it.
 
 ### The seam to the API

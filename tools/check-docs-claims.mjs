@@ -220,16 +220,19 @@ const CLAIMS = [
     pattern: /— (\w+) artefacts since task [\d.]+/,
     actual: () => readdirSync('config/seed').filter((f) => f.endsWith('.json')).length,
   },
+  // The module, page-route, route-group and §7 counts below lived in the root's per-workspace table until task 181
+  // handed each row to the workspace's own `CLAUDE.md`, which loads only when work reaches it. The claims followed
+  // their sentences rather than retiring.
   {
     what: 'api modules under src/modules',
-    file: 'CLAUDE.md',
-    pattern: /Module tree \((\d+) modules under `src\/modules\/`/,
+    file: 'apps/api/CLAUDE.md',
+    pattern: /plus the four context modules: (\d+) `\*\.module\.ts`/,
     actual: () => walk('apps/api/src/modules').filter((f) => f.endsWith('.module.ts')).length,
   },
   {
     what: 'apps/web page.tsx routes',
-    file: 'CLAUDE.md',
-    pattern: /\| `apps\/web` \| (\d+) `page\.tsx` routes/,
+    file: 'apps/web/CLAUDE.md',
+    pattern: /What exists: (\d+) page routes across/,
     actual: () => walk('apps/web/src/app').filter((f) => f.endsWith('/page.tsx')).length,
   },
   {
@@ -239,9 +242,9 @@ const CLAIMS = [
     // is added from, and where a missing `(session-issuing)` row means a screen that issues a
     // session and is never gated. Counting directories rather than table rows is deliberate: the
     // filesystem is the thing the guard actually reads.
-    what: 'apps/web route groups',
-    file: 'CLAUDE.md',
-    pattern: /\| `apps\/web` \| \d+ `page\.tsx` routes across (\w+) route groups/,
+    what: 'apps/web route groups, in its current state',
+    file: 'apps/web/CLAUDE.md',
+    pattern: /What exists: \d+ page routes across (\w+) route groups/,
     actual: () =>
       walk('apps/web/src/app')
         .map((f) => f.split('/').slice(0, -1))
@@ -262,14 +265,14 @@ const CLAIMS = [
   },
   {
     what: '§7 schema invariants',
-    file: 'CLAUDE.md',
+    file: 'apps/api/CLAUDE.md',
     pattern: /(\w+) §7 invariants each proving its own rule bites \(\d+ cases\)/,
     // One outer `describe('schema invariants (§7)')` wraps one inner block per rule.
     actual: () => countIn('apps/api/test/schema-invariants.e2e-spec.ts', /^\s*describe\(/gm) - 1,
   },
   {
     what: '§7 invariant cases',
-    file: 'CLAUDE.md',
+    file: 'apps/api/CLAUDE.md',
     pattern: /\w+ §7 invariants each proving its own rule bites \((\d+) cases\)/,
     actual: () => countIn('apps/api/test/schema-invariants.e2e-spec.ts', /^\s*it\(/gm),
   },

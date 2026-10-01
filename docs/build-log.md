@@ -26473,3 +26473,53 @@ needed the heap raised** (`NODE_OPTIONS=--max-old-space-size=4096`): uncached, `
 on this 8 GB host, as it had on task 180 — an environment's limit, not a finding, and CI's runners are larger. The first
 cold attempt died there and the second was stopped to fold the reviews' fixes in, so the run recorded is the third, over
 the tree as committed.
+
+## Task 181 — The root `CLAUDE.md` loads only what every session needs · 2026-10-01
+
+Found by a Claude Code `/doctor` run, which measured the root `CLAUDE.md` at 116,095 characters — about 29,000 tokens
+in every session in this repository, nearly three times the size at which Claude Code warns that a memory file is
+large. Two parts of it were needed only some of the time. The root now holds 95,089.
+
+**The close procedure is a skill, and the root keeps what binds outside a close.** `.agents/skills/closing-a-task/`
+(symlinked from `.claude/skills/`, like the other five) carries, verbatim, why a sub-step has no separate build line,
+what running less per sub-step gives up, `gates:scoped` as the middle setting, and the three review agents with their
+`opus` pin and routing table. The root keeps the "Closing a task" heading, because all four workspace files send the
+reader to it by that name; the two lookup tables, because those are what each workspace's "Before you call it done"
+consults at every sub-step; the `gates`/`gates:clean` sentence `docs:check` guards; and the boot proof, a gate's
+independence from prior state, the index check and the red-pipeline rule, because each binds whenever a script, a
+`.gitignore` rule or a CI failure is in hand rather than only at a close. Where the moved text says *this file*, the
+skill's preamble says it means the root.
+
+**The per-workspace inventory went to the workspaces — the owner's choice of three.** Keeping the table, or cutting it
+to a pointer at the task files and retiring its claims, were the others. The `apps/api`, `apps/web`, `apps/admin` and
+`packages/ui` rows restated, row by row, the "Current state" each of those files already keeps — and the root copy was
+the one loaded in every session. Each row was checked for what only it said before it went, by listing every task
+number and screen identifier in it that its workspace's file lacks: `apps/web`'s live-screen list (that file's own
+"Current state" said *"The root `CLAUDE.md`'s table names the live screens"*) and the wizard's three deferred steps,
+`apps/admin`'s A-02 record since tasks 167 and 175, and `apps/api`'s §7 invariant count. Those moved into the
+workspace's file. *"The ten §11.6 type roles"* was dropped rather than moved: the design spec owns it and
+`tokens.css` shows it. The package rows with no `CLAUDE.md` of their own, the infrastructure and CI paragraph and the
+commands list stay in the root.
+
+**The claims followed their sentences rather than retiring.** Five `docs:check` entries now read the workspace's
+file: the module count against `apps/api`'s tree line, which stated 41 unguarded beside the 37 its neighbour guards;
+the page routes and route groups against `apps/web`'s *"What exists:"* sentence; and both §7 counts against the
+migration-runner bullet, rewritten to carry them. The gate's count stays at 46.
+
+**Kept, and why.** `apps/api`'s *Adding a …* sections (~28,000 characters) were the other candidate. The owner kept
+them: they already load only in api sessions, and they carry RLS, secret-handling and identity rules that are
+expensive exactly when the skill holding them is not loaded. **Found while measuring them, and not fixed here:**
+the section headed *"Adding a configuration artefact"* runs to line 1334, but from about line 1200 it is identity
+traps — the TOTP throttle keys, `admitAuthAttempt`'s window, the user-facing-text gate and the route-permissions table
+— filed under a configuration heading. A reader looking for the identity traps would not find them there.
+
+**What was searched.** References to every moved heading across the repository: "Closing a task" from the four
+workspace files, `docs/` and `tools/check-docs-claims.mjs` — the reason the heading stayed; nothing outside the root
+named "Where each workspace stands" or "Planned stack"; the front-end conventions were left in the root because
+`eslint.config.mjs`, a source comment and `tools/reviewer-fixtures/EXPECTED.md` cite them there, and
+`convention-review` reads only `CLAUDE.md` files and its named skills. The stale *"Where each workspace stands"*
+table (measured 11 Sep, enforced since by the folder-shape specs) was cut outright.
+
+**Verified.** `pnpm docs:check` — 46 claims, each re-pointed one proven by the gate's own mutation pass to notice a
+changed number — and `pnpm lint`. The change reaches documentation and one tool and no application, so the unit,
+api and browser suites were not run, and no review agents: a documentation move closes on the gates it reaches.

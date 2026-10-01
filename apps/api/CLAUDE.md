@@ -32,8 +32,8 @@ traps each one left — grouped by area rather than by the task that built it.
   committed catalogues (OQ-43); the api resolves wording because the worker has no client.
 - **The migration runner**: §7.1's schemas — five from the baseline, `notification` since task
   50.1.1 — plus `btree_gist`, `core.organization` as the tenant root, applying and reverting
-  cleanly from an empty database, with §7's schema invariants asserted by `migrations:check` —
-  each proving its own rule bites.
+  cleanly from an empty database, with fifteen §7 invariants each proving its own rule bites (51 cases),
+  asserted by `migrations:check`.
 - **RLS `ENABLED` and `FORCED`** from `core.organization` down, proven isolated as both `esg_app`
   and the owning role, with a test that drops `FORCE` in a rolled-back transaction and watches
   isolation collapse.

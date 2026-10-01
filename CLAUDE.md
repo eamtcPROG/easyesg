@@ -18,17 +18,14 @@ Peak season is April–May (statutory filing window).
 end, and notification dispatch since task 49, each notice recorded with a delivery per recipient and channel since
 50.1.1 and each recipient's centre on screen since 50.2.1, with its unread count in the band, and its first
 producer since 50.3 — an administrator's reminder about an open report; billing, export and the public tier are
-structure without behaviour.** The rows
-below are each workspace's shipped state by task; `docs/task.md` is what is left, in Stage order,
-`docs/archived_tasks.md` is what has closed, and `docs/build-log.md` is why each landed as it did.
+structure without behaviour.** `apps/api`, `apps/web`, `apps/admin` and `packages/ui` each keep their shipped state
+in their own `CLAUDE.md`'s "Current state", which loads when you work there; the rows below are the packages with no
+`CLAUDE.md` of their own. `docs/task.md` is what is left, in Stage order, `docs/archived_tasks.md` is what has closed,
+and `docs/build-log.md` is why each landed as it did.
 
 | Workspace | What is live, and what is not |
 | --- | --- |
-| `apps/api` | Module tree (41 modules under `src/modules/` — `core/` 9, `identity/` 6, `billing/` 13, `platform/` 9, plus the four context roots) on a foundation that is complete: the response envelope and problem+json filter, the port surface in `contracts/`, OpenAPI emission, one image with two entrypoints (AD-1), the migration runner with fifteen §7 invariants each proving its own rule bites (51 cases), the tenant transaction with **RLS enabled and forced** from the tenant root down (AD-2), the append-only substrate and per-field audit capture (DR-6), the transactional outbox onto BullMQ (AD-10), and the versioned configuration store (AD-4). **Live, by area.** *Identity* (tasks 19 … 28): accounts and verification; sessions, sign-in, refresh, throttle and lockout; password reset; the admin realm with mandatory TOTP and its sealed cookie, since task 67.4 its accounts by invitation, their lifecycle and the system audit log's `AuditInterceptor`, and since task 144 each operator's own password, second factor and recovery codes, with a recovery sign-in that reaches a locked account; social sign-in; opt-in TOTP and password change; since task 52.3 the profile — both name parts, an optional job title and phone, and the interface, email and export languages chosen independently, the email one what every message is written in; memberships and roles, and since task 83.1 the session's choice among them; invitations and acceptance; the closed-by-default `AuthGuard` chain; encryption at rest for recoverable secrets. *Organization* (29): organizations and reporting entities — since task 175 the IDNO and LEI each entity's, and an organization founded with its first. *Reporting core* (31, 33, 34, 89, 91): the taxonomy registry, reporting periods and the lock, the report with its pinned taxonomy, the disclosure store, and the wizard's server half with B1's. *S-16's union read model* (131), and the interim seat ceiling over it (142). *Support access by the organization's consent* (67.9): a Platform Administrator asks, an Organization Administrator grants 60 minutes of read-only access from a banner in the tenant app, and every read under it is logged before it runs. *Identity providers from the console* (67.11): A-18 publishes a provider's behaviour into the configuration store against the revision it read, reports where its secret is set without reading it, and a password reset gives a social-only account its first password. *Notification categories from the console* (67.10): A-17 publishes a category's channels and classification against the revision it read, after a preview that names whose switch-offs stop counting, reverts in one step, and refuses what code declares no operator may change. *AD-15's socket* (147): the api serves it itself — a single-use, thirty-second ticket minted through the web tier's pass-through and held in Redis, the upgrade refused as an HTTP status before any socket exists, and ten connections per account across every replica, counted in Redis; since task 148 it frames the worker's hints — `access.changed` to an organization's members, `notification.unread_changed` to the accounts concerned — as `{event, organizationId, since}` and nothing else. *Account setup* (155): a provider registration is held in `awaiting_setup` — refused every route but its setup routes by `AuthGuard` — until it holds a password and both name parts; the first password rests on a provider sign-in or a confirmation link no older than fifteen minutes, and a setup abandoned there lapses seven days after registration. *Notification core* (49): categories as configuration with the system categories mandatory in code, one mail path behind the notification module, and `raise()` onto the outbox with delivery by category on the worker; since task 50.1.1 the `notification` schema records each notice once — a repeated raise of an open notice folded into it — with a delivery row per recipient and channel, in-app and email; since task 50.1.2 each recipient's centre — `/notifications`, its unread count, read and dismiss — answers only that recipient's rows, by the schema's policies, and since task 50.2.1 marks all of them read at once; and since task 50.1.3 a producer's `cancel()` withdraws a notice when its condition clears, with a raise made before the cancellation opening nothing whichever the workers take first; and since task 50.1.4 the four notices sent to an address — verification, reset and both invitations — are recorded too, each with its link sealed, so every notice the platform sends carries delivery evidence; and since task 165 each notice records which application its link opens, so a reader of the record needs no mapping from its category (NFR-109); and since task 52.1 each person's preferences, per category and channel at `/account/notification-preferences`, follow them across organizations with the mandatory categories locked on (FR-163), honoured at dispatch since 52.2.1 — a switched-off channel records `opted_out` and sends nothing — and since 52.2.2 every optional-category email carries FR-169's one-click unsubscribe, S-38's page and RFC 8058's headers, the manual reminder's email with it. **Not live:** the calculator and validation (37 … 42), preview and export (43 … 47), the outstanding-report and deadline notices (51.2), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81) and the advisor domain (116 … 121). Each task's row in `docs/task.md` says what shipped; its `docs/build-log.md` entry says what it cost and why it landed as it did |
-| `apps/web` | 47 `page.tsx` routes across seven route groups, 8 layouts, 8 route handlers, a localized 404, next-intl wiring with three separately-authored catalogues. **Live screens** (tasks 20 … 36; 97 … 131 for the chrome and the refactors): S-01 register and sign-in with its factor step and provider buttons, S-02 verify, reset and set-password, S-03 the invitation landing, S-04 create organization, S-05 home, S-06 reports, S-07 the wizard shell with autosave and the B1–B11 disclosure forms, S-13 entities, S-14 periods, S-15 organization profile, S-16 users with, since task 50.3, its reminder panel, S-26 notification centre, S-27 profile, languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36 complete your account, S-37 choose organization, S-38 unsubscribe from an email; §4.2's global tier with, since task 83.2, the organization switcher, and the workspace tier with its drawer, and since task 67.9 UX-124's support-access banner across every signed-in screen, and since task 50.2.1 the band's notification bell with the unread count, polled every minute, and its row in the compact drawer, the bell opening the panel of the latest notices since 50.2.2. **AD-15's client since task 149** (`client/push/`): one socket per tab to `PUBLIC_API_URL`'s origin, open while the tab is visible and a surface subscribes, reconnecting full-jitter from 30 s to five minutes and parked after a `4001`; a frame triggers the surface's own refetch and paints nothing — the unread count's query and S-16's, which since then polls its server render every 30 s — and `src/test/poll-floor.spec.tsx` holds every catalogued event's surface to its poll with the socket forced off. **Since task 150 each driver is proven twice in a real browser** (`e2e/web/accelerated-surfaces.spec.ts`), on the page's own clock: connected, a person's write elsewhere arrives within NFR-110's 3 s with no poll able to fire; refused, it arrives on the poll and not before — the browser suite running the worker since then, so the hint travels the real path. The open panel's floor is the count's poll: a count that moved re-reads it. **Since task 153 a credential form fails explicitly without scripting**: its submit is disabled until hydration (`shared/credential-submit.tsx`), so Enter before then sends nothing, and a `<noscript>` notice says the page needs JavaScript; the console's `index.html` says the same. **The session tier:** one sealed httpOnly cookie (`src/server/session/`), the `/api/[...path]` pass-through with same-origin proof and bearer attach, page-load rotation in `proxy.ts`, §4.3's post-sign-in branch, and since task 92 S-07's re-authentication in place — a dialogue over the step, through three Route Handlers under `/auth/session`, when a write or a step change finds the session gone. **Not live:** the fourteen addresses `AddressNotice` answers with §8.1's *not yet available* — calculator, validation, preview and export, checkout and billing, the public tier — and the wizard's three deferred steps (S-09, S-10, S-11), which still return `null` under UX-5's exit control |
-| `apps/admin` | 28 route files covering the 18 scaffolded admin screens (`A-01`…`A-18`), A-19 and A-20, two pathless layouts, TanStack Router + Query, 15 feature folders split platform/billing, no `features/core/` (that absence is D-5) — and, from task 23, **A-01 live end to end**: `src/realm/` (api client with `credentials: 'include'` over the shared `@easyesg/contracts` outcome readers and the session query under `realm/queries/`; the two-step sign-in screen per the A-01 artboard and, since task 67.1, the console chrome with each privilege level's home under `realm/components/`), `_realm`'s closed-by-default guard with sanitized `?redirect=`, and a third Playwright project driving the journey cross-origin against the built bundle. A-02's organization register is live since task 67.3, through the api's `AdminRealmGuard` — its record listing the organization's people since task 167, each phone shown one person at a time and logged, and its entities with their IDNOs since task 175 — and A-08's accounts and system audit log with A-20's invitation acceptance since task 67.4, and A-19 — the operator's own password, second factor and recovery codes, from the account menu — with A-01's recovery sign-in as its third step since task 151, and A-07's support access — its requests, the organization's reports read under a grant, and the log — since task 67.9, and A-18's identity providers — each provider's configuration, where its secret is set, and who a disable reaches — since task 67.11, and A-17's notification categories — each category's channels and classification published past UX-123's disclosure, its words read-only in every language, and a one-step revert — since task 67.10; every other screen behind the realm still returns `null` |
 | `packages/contracts` | The wire contract. `openapi/v1.json` carries 107 paths, 18 under `/auth`, emitted from the controllers by `pnpm openapi:emit`; since task 20 `src/generated/v1.ts` (openapi-typescript) plus hand-curated aliases and the RFC 9457 `ProblemDocument` are the exported surface, regenerated and diffed by the same `openapi:check` gate as the spec. Since task 23 it also carries the first **runtime** exports shared by both front ends: `PROBLEM_TYPE`, the `API_OUTCOME` outcome container and the validated envelope readers (`outcome.ts`); task 24 adds the three `/auth/social` routes plus the `SOCIAL_PROVIDER` and `SOCIAL_SIGN_IN_INTENT` vocabularies (`social.ts`); task 67.1 adds `ADMIN_ROLE` (`admin.ts`), held to the generated enum at compile time; task 67.4 adds A-08's roster and log vocabularies beside it, held the same way, and task 144 the log's six credential actions and A-19's aliases; task 67.9 adds support access's four vocabularies (`support-access.ts`), the log's two actions and their aliases, and moves `SameSet` into its own module for its second reader; task 67.11 adds A-18's enablement-blocker vocabulary beside the log's three provider actions, and `PROBLEM_TYPE` gains `IdentityProviderChanged`; task 155 adds `awaiting_setup` to `ACCOUNT_STATUS` with its `isAccountStatus` narrowing, and `PROBLEM_TYPE` gains the two setup refusals; task 67.10 adds A-17's four notification vocabularies (`notification.ts`) — the categories with their `isNotificationCategoryKey` narrowing, the channels, the classification and a publication's consequences — the log's two category actions, and `PROBLEM_TYPE` gains `NotificationCategoryChanged`; task 147 adds the `SocketTicket` alias; task 146 adds AD-15's event catalogue (`events/catalogue.ts`), empty, with its emitted artefact `events/v1.json` and `pnpm events:check`, which diffs it and requires every event's authority to be a path in the contract that answers a GET; task 148 adds its first two events and `EventFrame`, the browser frame, whose three fields `event-frame.proof.ts` holds at compile time; task 149 adds `EVENT_NAME` with `isEventName`, and the socket's path, ticket parameter and close codes (`events/socket.ts`) for the browser's client, which `events:check` holds equal to the api's |
-| `packages/ui` | The tier 1/2/3 token cascade — moved from `design/`, not copied, so no later phase can invent a second one — the ten §11.6 type roles, and §11.5's inventory as built so far, in nine folders: primitives, the presentational form controls and their react-hook-form binding behind its own entry point (**`@easyesg/ui/forms`**, the one place a form library may be imported), feedback, the global bar and workspace navigation, data display, the disclosure field every B1–B11 module reuses, five domain components and the archetype shells. Presentational by rule — no text, no router. `packages/ui/CLAUDE.md` carries the counts (guarded by `docs:check`), the entry points and the traps |
 | `packages/i18n` | Locale registry, message-loader port, fallback reporter, expansion harness (now wired) |
 | `packages/validation` | The password policy (OQ-51) and the entity-identifier rules, shared by `api` and `web` — architecture.md §9.8 records the placement. The rule interpreter (task 40) is still to come |
 | `packages/vsme` | The taxonomy model and the generated typed facade (AD-3, task 34.2): the typing the element-keyed disclosure store gave up, generated per registered taxonomy version from `config/seed`'s artefact and kept in step by `pnpm facade:check` — the taxonomy itself stays configuration (AD-4) and its wording stays committed catalogues (OQ-43) |
@@ -118,129 +115,17 @@ so a parent left at `TODO` with every child `DONE` does not merely misreport, it
 | `packages/*` | `pnpm --filter <pkg> test`, **and then every dependent's row above** — a shared package has no narrow run, which is task 31.3's lesson and does not stop applying because the run got cheaper |
 | Anything | `pnpm lint` and `pnpm --filter <ws> typecheck` |
 
-**No separate build line, because `e2e:web` already pays for one.** `pree2e:web` builds `api…`,
-`web…` and `admin…` and assembles the standalone bundle *before Playwright starts, whatever
-`--project` says* — so narrowing the browser suite saves the run and not the build, and a `build` of
-the affected app on top of it would be a third copy. **It first stops this repository's dev servers**
-(task 102): the suite uses their ports and adopts no server, so what it tests is the build that
-ships; start them again afterwards. A process on those ports that is not this repository's is
-refused, never ended, and the run says which. The consequence worth stating plainly: the
-browser suite is the expensive half of a front-end sub-step even at one project. Skip it where the
-change cannot reach a browser journey — a message-catalogue key with no new markup, a server-only
-helper — and **say in the response that you skipped it**, which is the difference between a
-judgement and an omission.
-
-**What this gives up, and what stands behind the gap.** `boundaries`, `image:check`, `facade:check`,
-the two `*:prove` gates and the cross-workspace half of `typecheck` now run once per parent rather
-than once per sub-step. Two things cover it: **CI runs the full set on every push to `dev`**, so a
-sub-step pushed alone is still checked — a couple of minutes later, and not by this machine; and the
-parent close runs the full set, cold where the cases above call for it — and `gates:clean` is the only run that
-sees stale build state at all. What is
-assumed meanwhile is that a defect CI finds shortly after a push costs less than the local minutes
-spent finding it first. What falsifies it is a sub-step's break surviving to the parent close and
-costing more to unpick there than the skipped run would have cost — record that in `build-log.md`
-and raise it, rather than quietly going back to running everything.
-
-**`pnpm gates:scoped` keeps a role: it is the middle setting.** Reach for it when a sub-step's blast
-radius is not obvious, because it computes the answer from the dependency graph rather than from the
-table above. It runs everything `pnpm gates` proves *about the code you actually changed* — measured
-31 Aug 2026 at **3.5 minutes for an api-only task against 10 minutes for the full set**, and 6.6
-minutes when the change reaches shared packages, which is the point: it is fast because the change
-is narrow, not because it is lenient.
-
-**Its scoping is by the dependency graph, never by "which app did I edit".** That distinction is the
-whole safety argument, and task 31.3 is the worked example: an api task regenerated
-`packages/contracts` and edited `packages/i18n`, both of which `apps/web` and `apps/admin` consume,
-so an api-scoped run would have skipped exactly the gates that could have caught a break — the
-`packages/i18n/dist` incident's shape, one layer up. `pnpm --filter "...[<base>]"` selects changed
-packages **and their dependents**, verified against that commit, where it pulls in web and admin.
-Five gates always run whole-repo whatever the selection, because they are cheap and they are
-precisely what catches a cross-workspace break: `typecheck`, `boundaries`, `lint`, `image:check`
-and `docs:check`. (This sentence said *three* until task 100 and listed the first three — the two
-file-reading checks always ran too, and the count was one of the claims `docs:check` was written
-because of.)
+**The rest of the close procedure is the `closing-a-task` skill — load it before closing any row of
+`docs/task.md`.** It carries why there is no separate build line, what running less per sub-step gives
+up, `pnpm gates:scoped` as the middle setting, and the three review agents with their `opus` pin and
+routing table. Moved out of this file on 1 Oct 2026 so it loads at a close rather than in every
+session; what binds outside a close — the boot proof, a gate's independence from prior state, the
+index check, a red pipeline — stayed here.
 
 **`pnpm gates` is what CI runs, in CI's order, and `pnpm gates:clean` is the same set over a cleaned tree** — so
 the two are never both worth running, and choosing between them is the judgement recorded below. The gate
 set is fourteen root scripts plus three e2e suites; writing this rule surfaced that its first draft
 stopped at the hermetic ones and would have missed the very defect that prompted it.
-
-**Three review agents run at parent-task close, before the build-log entry** (`.claude/agents/`,
-added 31 Aug 2026; moved from every task close to the parent's on 8 Sep 2026, with the gate split
-above). The diff they read is the whole parent — every sub-step's commits together — which is wider
-than any one of them used to carry, and is the shape the routing table below was written for. Note
-that neither `gates` nor `gates:clean` prints the routing line `gates:scoped` does, so at parent close the model
-is read off that table from the diff itself, before any agent runs.
-
-They exist because the gate set proves code *runs* and says nothing about whether it
-*belongs* — this file already records that every finding a review has raised on the front ends was
-invisible to every gate. The rule surface is ~3,200 lines of convention plus ~10,600 of
-normative specification, and the observed failure is not ignorance but **recall**: the author
-remembers a rule approximately, applies the approximate version, and is satisfied. An agent arrives
-with no rationalisation for the diff, which is the whole of its advantage.
-
-| Agent | Asks |
-| --- | --- |
-| `convention-review` | Does the diff violate a rule this repository has **written down**? |
-| `spec-review` | Was an open question closed in passing, a decision left unrecorded, an identifier re-derived instead of cited, a deliverable claimed but unmet? |
-| `gate-integrity-review` | Would every check the diff adds **fail** if the thing it guards were broken? |
-
-Three rather than one because they read different sources and rot differently; one agent with three
-jobs does the first well. Run them on the diff, not the whole tree.
-
-**Two rules keep them worth their cost.**
-
-- **A finding names and quotes the rule it invokes, or it is not a finding.** Anything else is
-  opinion, and this repository has enough prose. An agent may still say "this looks wrong and no
-  rule covers it" — separately, at the end, never mixed in.
-- **A finding that recurs graduates into a mechanical gate** — an ESLint selector, a boundary rule,
-  a schema invariant. The agent is a *discovery* mechanism, not a permanent tax, and this is
-  "fix the sites first, then turn the gate on" with the agent as the thing that finds the sites.
-
-**All three run on `opus`. The frontmatter pins it, and there is no routing decision to make.**
-
-**The 3 Sep 2026 override is withdrawn (8 Sep 2026, owner).** It had moved the pin to `sonnet` for
-these three agents, and its stated reason was usage rather than a re-reading of the measurement:
-the reviews were worth their cost and *"not worth **that** cost, three opus runs over a whole task
-diff at every close."* The 8 Sep gate policy removed that cost by moving the reviews from every
-sub-step close to the parent's — for task 36, **three opus runs instead of forty-two**, since its
-fourteen sub-steps each used to close with all three agents. The premise is gone, so the exception
-goes with it. An exception that outlives its condition is an unexamined default.
-
-**There is no downgrade path, and that is the point.** A parent-task diff is large by construction —
-every sub-step's commits together — so a rule for the cheap case would describe almost nothing, and
-the one thing the 31 Aug measurement established is that Sonnet's miss is *silent*. The routing
-table below is dormant in **both** directions now, kept as the description of where a review earns
-the most rather than as a router. `pnpm gates:scoped` still prints what a diff touches, as a signal
-about where to look hardest, not as a model choice.
-
-**Say in each build-log review section which model the reviews ran on**, so the record never has to
-be inferred. That rule survived the override and survives its withdrawal — and it is what made this
-reversal checkable, because the entries say `sonnet` for the five days it held.
-
-**There is no "escalate if it turns out to be needed", and the measurement is why** (31 Aug 2026).
-On the convention fixture Sonnet found every seeded defect, quoted the rules accurately and declined
-the planted trap — and missed half of one hunk, including the most expensive finding in it. Its
-report was clean, confident and closed with *"Not rules — None"*. **Nothing in the output
-distinguished "found everything" from "found half"**, so there is no signal to escalate on; a
-cascade would read a confident report, stop, and lose the expensive findings while feeling thorough.
-Route in advance or not at all.
-
-`opus` when the diff touches a **migration**, a **grant, policy or trigger**, the **contract
-surface** (`apps/api/src/contracts/**` or `packages/contracts/**`), **`identity`** or the admin
-realm, or **three or more workspaces** — those stand in for what Sonnet measurably misses,
-findings that connect a rule in one file to a convention in another, since breadth and the tenancy
-surface are where those live. Nothing routes on it while the pin is `opus`; it is kept because it
-describes where a review is worth the most, and because a table deleted is a measurement thrown
-away.
-
-**And they are proven to bite, like every other check here.** A review agent has **no failing
-state**: it returns prose whether it is working or not, so one that has quietly stopped checking is
-indistinguishable from one reporting a clean diff — the same shape as `domain-free-of-frameworks`
-shipping inert. `tools/reviewer-fixtures/` holds a seeded diff per agent, each hunk violating
-exactly one rule **no gate enforces**, with the answer key in `EXPECTED.md` that must never reach an
-agent's context. Re-run them when an agent's instructions change, or when a clean report starts
-feeling too easy.
 
 **When `gates:clean` is the required run — a judgement, with the cases stated.** Standing decision by the owner,
 12 Sep 2026. It replaces *"run `pnpm gates:clean` at parent-task close, and before pushing that parent"*, which
@@ -370,8 +255,8 @@ what is wrong.
 
 | File | Owns | Use it |
 | --- | --- | --- |
-| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1 is Identity and closes when accounts, authentication, authorisation, admin user management and security are *fully functional*; **180 tasks across the two plan files**, of which 54 groups are here and 126 have closed — Stage 1 holding sixteen existing groups plus the twenty-nine appended as 139–151, 155, 159, 160, 161, 164, 165, 166, 167, 168, 170, 171, 172, 175, 176, 177 and 178 | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
-| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 126 numbers, 234 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
+| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1 is Identity and closes when accounts, authentication, authorisation, admin user management and security are *fully functional*; **181 tasks across the two plan files**, of which 54 groups are here and 127 have closed — Stage 1 holding sixteen existing groups plus the twenty-nine appended as 139–151, 155, 159, 160, 161, 164, 165, 166, 167, 168, 170, 171, 172, 175, 176, 177 and 178 | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
+| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 127 numbers, 235 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
 | [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
 
 **Closing a task is a three-part edit: set the Status, move the row into `archived_tasks.md`, write the
@@ -809,9 +694,10 @@ database, not application discipline, enforces them.
 
 ## Project skills
 
-The first three are shared with the other NestJS/Next.js projects; the last two were written here
-(task 132). Real files live in `.agents/skills/`; `.claude/skills/` symlinks to them, so both Claude
-Code and other agent tooling see them.
+The first three are shared with the other NestJS/Next.js projects; the next two were written here
+(task 132), and the last was moved out of this file's "Closing a task" (1 Oct 2026). Real files live
+in `.agents/skills/`; `.claude/skills/` symlinks to them, so both Claude Code and other agent tooling
+see them.
 
 - **nestjs-best-practices** — modules, DI, security, performance. Apply when writing or
   reviewing anything in `apps/api`.
@@ -828,6 +714,9 @@ Code and other agent tooling see them.
 - **one-kind-per-folder** — how a feature tree is shaped: files or folders never both, per-screen
   split with three kinds, `components/` mirrors the route's `return`, `shared/` on one admission
   test. Apply in `apps/web` and `apps/admin`, every directory under `src/`; **not** `apps/api`.
+- **closing-a-task** — the close procedure: why there is no separate build line, `pnpm gates:scoped`
+  as the middle setting, and the three review agents with their `opus` pin and routing table. Load it
+  before closing any row of `docs/task.md`, and before running the review agents.
 
 **A skill is loaded and read against the diff, not recalled.** Every finding a review has raised on
 the front ends was invisible to every gate — the wrong data-fetching idiom, a screen that did
@@ -1358,14 +1247,6 @@ structure is good; when I was talking about folders I was referring to web and a
 consequence, stated rather than left implicit: *"a domain serving one screen stays flat"* keeps its
 per-screen half and loses its folder half — a single-screen root holds `components/ · tools/ ·
 actions/` directly.
-
-**Where each workspace stands** — measured 11 Sep 2026; the sweeps are tasks 133 … 135:
-
-| | Directories that mix | Largest file, and what it holds |
-| --- | --- | --- |
-| `apps/web` (task 134) | none since task 134: `identity/` per journey, `wizard/` and the four single-screen roots holding their kinds, `server/` foldered by what its files are, the seven scaffolds one file each; `src/test/folder-shape.spec.ts` walks every directory under `src/` with `app/` and the root exempt | `wizard/components/fields/section/step-fields.tsx` — 470 lines, one component (was 1,016 and five); the largest form shell is `entities/components/form/entity-record-form.tsx` (was 426 holding four `useState`s) |
-| `apps/admin` (task 135) | none since task 135: `realm/` holds `api/ · components/ · queries/ · tools/`, `app/` holds `entry/ · providers/ · routes/ · styles/` beside the router's generated tree, the root holds only folders, the fifteen scaffolds one `index.ts` each; `src/test/folder-shape.spec.ts` walks every directory under `src/` with `app/routes/` and `route-tree.gen.ts` exempt | nothing over 270 lines; A-01's reducer is `realm/tools/sign-in-state.ts` with its spec since task 135 — this row said *"already one reducer"*, which answered the `useReducer` rule and not `pure-logic-leaves-the-component` |
-| `apps/api` (task 133) | the folder rules are not in scope | `core/disclosure/use-cases/read-wizard-step.use-case.ts` — 1,222 lines: one use case, two private resolver classes, nine helpers (task 133.2); `identity/account/use-cases/manage-totp.use-case.ts` held two exported use cases until task 133.1 split them |
 
 `features/organization/` is the one tree that meets both skills, and it is the worked example
 `apps/web/CLAUDE.md` keeps with its numbers. Each app's "Before you call it done" says which skill
