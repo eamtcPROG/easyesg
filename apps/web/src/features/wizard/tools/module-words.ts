@@ -22,6 +22,14 @@ export function moduleName(t: WizardTranslator, reference: string): string | nul
   return isNamedModule(reference) ? t(`modules.${reference}`) : null;
 }
 
+/**
+ * What the module covers, in one sentence under its heading (task 179.3) — platform-authored in three locales and
+ * shipped with the release, like the name — or `null` for a module this release has no sentence for.
+ */
+export function moduleSummary(t: WizardTranslator, reference: string): string | null {
+  return isNamedModule(reference) ? t(`summaries.${reference}`) : null;
+}
+
 /** *B1 — Basis for preparation*, or the reference alone where there is no name. */
 export function moduleLabel(t: WizardTranslator, reference: string): string {
   const name = moduleName(t, reference);
@@ -47,6 +55,22 @@ export function moduleStatus(
     case WIZARD_STEP_STATE.INAPPLICABLE:
       return t('rail.state.inapplicable');
   }
+}
+
+/**
+ * The line under the heading's state, where the state's words leave UX-11's count unsaid (task 179.3), or `null`.
+ *
+ * The heading's state is the list's own words, and *In progress · 3 outstanding* already carries the count UX-11 asks
+ * the step header for. *Not started* does not, so the count is said beneath it — every field of the module, since none
+ * is answered. Complete, omitted, waiting and ruled out leave nothing outstanding to count.
+ */
+export function stepStatusNote(
+  t: WizardTranslator,
+  input: { readonly summary: DisclosureModuleSummary; readonly state: WizardStepState },
+): string | null {
+  return input.state === WIZARD_STEP_STATE.NOT_STARTED && input.summary.total > 0
+    ? t('step.outstanding', { count: input.summary.total - input.summary.answered })
+    : null;
 }
 
 /**

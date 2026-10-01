@@ -4,6 +4,7 @@ import { getFormatter, getTranslations } from 'next-intl/server';
 import { calendarDay } from '@/lib/legal-date';
 import { ROUTES } from '@/lib/routes';
 import type { ReadOnlyCause } from '@/server/data/wizard';
+import { BAR_ACTION } from '../../tools/bar-actions';
 import { initialSavedAt } from '../../tools/saved-at';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import { ExitLink } from './exit-link';
@@ -51,12 +52,8 @@ export async function ReportBar({
       saveState={readOnly === null ? <SaveState initialSavedAt={initialSavedAt(modules)} /> : null}
       actions={
         <>
-          <PendingAction label={t('bar.export')} reason={t('bar.exportUnavailable')} />
-          <PendingAction
-            label={t('bar.review')}
-            reason={t('bar.reviewUnavailable')}
-            variant={BUTTON_VARIANT.PRIMARY}
-          />
+          <PendingAction action={BAR_ACTION.EXPORT} />
+          <PendingAction action={BAR_ACTION.REVIEW} variant={BUTTON_VARIANT.PRIMARY} />
         </>
       }
       overflow={<ReportOverflow />}

@@ -1,6 +1,6 @@
-import type { DisclosureModuleSummary } from '@easyesg/contracts';
+import { REPORT_SCOPE, type DisclosureModuleSummary } from '@easyesg/contracts';
 import { describe, expect, it } from 'vitest';
-import { MODULE_GROUP, moduleGroups, moduleStateOf, rollUp } from './module-state';
+import { MODULE_GROUP, modulesInScope, moduleGroups, moduleStateOf, rollUp } from './module-state';
 
 const summary = (overrides: Partial<DisclosureModuleSummary> = {}): DisclosureModuleSummary => ({
   module: 'B1',
@@ -71,14 +71,35 @@ describe('rollUp', () => {
 
 describe('moduleGroups', () => {
   it('splits the Comprehensive Module from the Basic by the standard’s own letter, keeping the order', () => {
-    const groups = moduleGroups([summary({ module: 'B1' }), summary({ module: 'B11' }), summary({ module: 'C1' })]);
+    // The taxonomy's order, which no sort reproduces: a string sort would put B10 before B2.
+    const groups = moduleGroups(
+      ['B1', 'B2', 'B10', 'B11', 'C1', 'C2'].map((module) => summary({ module })),
+    );
 
     expect(groups.map((entry) => entry.group)).toEqual([MODULE_GROUP.BASIC, MODULE_GROUP.COMPREHENSIVE]);
-    expect(groups[0]?.modules.map((m) => m.module)).toEqual(['B1', 'B11']);
-    expect(groups[1]?.modules.map((m) => m.module)).toEqual(['C1']);
+    expect(groups[0]?.modules.map((m) => m.module)).toEqual(['B1', 'B2', 'B10', 'B11']);
+    expect(groups[1]?.modules.map((m) => m.module)).toEqual(['C1', 'C2']);
   });
 
   it('draws one group for a Basic-only report', () => {
     expect(moduleGroups([summary({ module: 'B1' })]).map((entry) => entry.group)).toEqual([MODULE_GROUP.BASIC]);
+  });
+});
+
+describe('modulesInScope', () => {
+  const served = ['B1', 'B2', 'B11', 'C1', 'C9'].map((module) => summary({ module }));
+
+  it('asks a Basic report the Basic Module alone, in the order served', () => {
+    expect(modulesInScope({ modules: served, scope: REPORT_SCOPE.BASIC }).map((m) => m.module)).toEqual([
+      'B1',
+      'B2',
+      'B11',
+    ]);
+  });
+
+  it('asks a report whose scope carries the Comprehensive Module every module', () => {
+    expect(
+      modulesInScope({ modules: served, scope: REPORT_SCOPE.BASIC_AND_COMPREHENSIVE }).map((m) => m.module),
+    ).toEqual(['B1', 'B2', 'B11', 'C1', 'C9']);
   });
 });

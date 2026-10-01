@@ -5,7 +5,9 @@ import { describe, expect, it } from 'vitest';
 import { formats } from '@/i18n/formats';
 import en from '@/messages/en.json';
 import ro from '@/messages/ro.json';
-import { moduleLabel, moduleName, moduleStatus, rollUpNote } from './module-words';
+import ru from '@/messages/ru.json';
+import { NAMED_MODULES } from './module-names';
+import { moduleLabel, moduleName, moduleStatus, moduleSummary, rollUpNote, stepStatusNote } from './module-words';
 
 const translator = (locale: 'en' | 'ro', messages: typeof ro) =>
   createTranslator({ locale, messages, namespace: 'organization.wizard' });
@@ -32,6 +34,40 @@ describe('module words', () => {
   it('shows a module this release has no name for by its reference alone, never a key', () => {
     expect(moduleName(t, 'B12')).toBeNull();
     expect(moduleLabel(t, 'B12')).toBe('B12');
+  });
+
+  it('says what each named module covers, in each locale, and nothing for a module it has no sentence for', () => {
+    // Every named module, in every catalogue: a sentence missing from one locale renders as an empty line there
+    // (`request.ts`'s fallback is `''`), which no screenshot shows — so the count of distinct sentences is the check.
+    for (const [locale, messages] of [
+      ['en', en],
+      ['ro', ro],
+      ['ru', ru],
+    ] as const) {
+      const tLocale = createTranslator({ locale, messages, namespace: 'organization.wizard' });
+      const sentences = NAMED_MODULES.map((reference) => moduleSummary(tLocale, reference));
+      expect(new Set(sentences).size).toBe(NAMED_MODULES.length);
+      for (const sentence of sentences) expect(sentence).toMatch(/\S.{20,}\.$/u);
+    }
+    expect(moduleSummary(t, 'B12')).toBeNull();
+  });
+
+  it('counts what is left beneath a state whose words do not, and only there (UX-11)', () => {
+    expect(stepStatusNote(t, { summary: summary({ answered: 0, total: 22 }), state: WIZARD_STEP_STATE.NOT_STARTED })).toBe(
+      '22 fields left',
+    );
+    // A module with nothing to ask — every field ruled out — is not started and has nothing left to count.
+    expect(stepStatusNote(t, { summary: summary({ answered: 0, total: 0 }), state: WIZARD_STEP_STATE.NOT_STARTED })).toBeNull();
+    // In progress counts in its own words; the rest leave nothing to count.
+    for (const state of [
+      WIZARD_STEP_STATE.IN_PROGRESS,
+      WIZARD_STEP_STATE.COMPLETE,
+      WIZARD_STEP_STATE.OMITTED,
+      WIZARD_STEP_STATE.WAITING,
+      WIZARD_STEP_STATE.INAPPLICABLE,
+    ]) {
+      expect(stepStatusNote(t, { summary: summary(), state })).toBeNull();
+    }
   });
 
   it('says how many questions are outstanding in the in-progress line', () => {

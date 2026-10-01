@@ -12,8 +12,8 @@ import styles from './wizard-step-mark.module.css';
  * accessible name, which is what keeps *"never colour alone"* true for sighted readers without saying it twice to a
  * screen reader.
  *
- * **Its own file because two parts draw it**, the rail's row and the strip's chip, and a state drawn two ways is the
- * drift the artboard's one vocabulary exists to prevent.
+ * **Its own file because several parts draw it** — the rail's row, the strip's chip and, since task 179.3, the step
+ * heading's state — and a state drawn more than one way is the drift the artboard's one vocabulary exists to prevent.
  */
 const GLYPHS: Record<WizardStepState, ReactNode> = {
   [WIZARD_STEP_STATE.COMPLETE]: <Check className={styles.icon} strokeWidth={2.5} />,

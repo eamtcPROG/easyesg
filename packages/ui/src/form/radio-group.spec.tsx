@@ -119,4 +119,39 @@ describe('RadioGroup (§11.5)', () => {
     expect(onValueChange).not.toHaveBeenCalled();
     for (const radio of screen.getAllByRole('radio')) expect(radio).toBeDisabled();
   });
+
+  it('shows the caller’s choice and not the click — a choice the caller does not take stays unchosen', async () => {
+    // The wizard holds the value: a refused write, or *Mark not available*, must leave no answer checked. A group that
+    // checked itself on a click would show an answer the store never received.
+    const onValueChange = vi.fn();
+    render(<RadioGroup label="Basis" options={BASIS} value={undefined} onValueChange={onValueChange} />);
+
+    await userEvent.click(screen.getByText('Option B (Basic Module and Comprehensive Module)'));
+
+    expect(onValueChange).toHaveBeenCalledExactlyOnceWith('vsme:OptionB');
+    expect(screen.getByRole('radio', { name: /Option B/u })).not.toBeChecked();
+  });
+
+  it('lets go of an answer the caller withdraws', () => {
+    const { rerender } = render(
+      <RadioGroup label="Basis" options={BASIS} value="vsme:OptionA" onValueChange={() => {}} />,
+    );
+    expect(screen.getByRole('radio', { name: /Option A/u })).toBeChecked();
+
+    rerender(<RadioGroup label="Basis" options={BASIS} value={undefined} onValueChange={() => {}} />);
+
+    for (const radio of screen.getAllByRole('radio')) expect(radio).not.toBeChecked();
+  });
+
+  it('is named by a visible label elsewhere when told to, drawing no label of its own (UX-110)', () => {
+    render(
+      <>
+        <span id="question">Which option are you reporting under?</span>
+        <RadioGroup labelledBy="question" options={BASIS} value={undefined} onValueChange={() => {}} />
+      </>,
+    );
+
+    expect(screen.getByRole('radiogroup', { name: 'Which option are you reporting under?' })).toBeInTheDocument();
+    expect(screen.getAllByText('Which option are you reporting under?')).toHaveLength(1);
+  });
 });

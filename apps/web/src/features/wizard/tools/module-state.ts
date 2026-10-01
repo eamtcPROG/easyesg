@@ -1,12 +1,12 @@
-import type { DisclosureModuleSummary } from '@easyesg/contracts';
+import { REPORT_SCOPE, type DisclosureModuleSummary, type ReportScope } from '@easyesg/contracts';
 import { WIZARD_STEP_STATE, type WizardStepState } from '@easyesg/ui';
 
 /**
  * Where each module stands, and what the rail's roll-up says about a group of them (task 179.1) — pure, so the six
  * states and the count are unit specs rather than a browser journey that has to contrive a report in each state.
  *
- * **Five of the Reporting Core rail's states are read off what the api already sends**, and the order they are read in
- * is a decision:
+ * **The Reporting Core rail's states are read off what the api already sends**, and the order they are read in is a
+ * decision (`architecture.md` §12.5.6's task-179.1 row):
  *
  * - **Omitted is read first**, before applicability (task 36.13's order, kept): a reporter who has declared a module
  *   withheld has said something, and a rule that later rules it out must not replace their statement with the
@@ -16,7 +16,7 @@ import { WIZARD_STEP_STATE, type WizardStepState } from '@easyesg/ui';
  *   ruled out; with an answer to quote, B1 has ruled it out (FR-28).
  * - **Complete, in progress and not started** follow the counts, which count the applicable fields only.
  *
- * The artboard's sixth, *In progress · n findings*, is a validation verdict (task 42) and is not derived here.
+ * The artboard's *In progress · n findings* is a validation verdict (task 42) and is not derived here.
  */
 export function moduleStateOf(summary: DisclosureModuleSummary): WizardStepState {
   if (summary.omitted) return WIZARD_STEP_STATE.OMITTED;
@@ -35,15 +35,38 @@ export const MODULE_GROUP = { BASIC: 'basic', COMPREHENSIVE: 'comprehensive' } a
 export type ModuleGroup = (typeof MODULE_GROUP)[keyof typeof MODULE_GROUP];
 
 /**
- * The modules by group, each in the order the api sent them — the taxonomy's own. **By the reference's letter**, the
- * standard's own naming: B for the Basic Module, C for the Comprehensive. A group with no modules is not returned, so a
- * Basic-only report draws one group.
+ * The letter a Comprehensive Module reference begins with — the standard's own naming, B for the Basic Module and C for
+ * the Comprehensive. Declared once, for the two rules below that read it.
+ */
+const COMPREHENSIVE_LETTER = 'C';
+
+const isComprehensive = (summary: DisclosureModuleSummary): boolean =>
+  summary.module.startsWith(COMPREHENSIVE_LETTER);
+
+/**
+ * The modules a report of this scope asks (task 179.3; FR-177, UX-9, `design_spec.md` S-07): a Basic report the
+ * eleven, one whose scope carries the Comprehensive Module all twenty. **The wizard's one list**: the rail, the
+ * stepper, the heading's position and the foot's way on all read it, so none can count a module the scope does not
+ * ask. The api serves every module of the pinned taxonomy whatever the scope, which is why the cut is here.
+ */
+export function modulesInScope(input: {
+  readonly modules: readonly DisclosureModuleSummary[];
+  readonly scope: ReportScope;
+}): readonly DisclosureModuleSummary[] {
+  return input.scope === REPORT_SCOPE.BASIC_AND_COMPREHENSIVE
+    ? input.modules
+    : input.modules.filter((summary) => !isComprehensive(summary));
+}
+
+/**
+ * The modules by group, each in the order the api sent them — the taxonomy's own — split by the reference's letter.
+ * A group with no modules is not returned, so a Basic-only report draws one group.
  */
 export function moduleGroups(
   modules: readonly DisclosureModuleSummary[],
 ): readonly { readonly group: ModuleGroup; readonly modules: readonly DisclosureModuleSummary[] }[] {
-  const basic = modules.filter((summary) => !summary.module.startsWith('C'));
-  const comprehensive = modules.filter((summary) => summary.module.startsWith('C'));
+  const basic = modules.filter((summary) => !isComprehensive(summary));
+  const comprehensive = modules.filter(isComprehensive);
   return [
     { group: MODULE_GROUP.BASIC, modules: basic },
     { group: MODULE_GROUP.COMPREHENSIVE, modules: comprehensive },
@@ -62,8 +85,11 @@ export interface ModuleRollUp {
 }
 
 /**
- * The rail's *5 of 10 done* and its sentence. **A legitimate exclusion never lowers the figure** (UX-21): an omitted
- * module and one B1 has ruled out leave the count altogether, where a waiting module stays in it — it will be asked.
+ * The rail's *5 of 10 done* and its sentence. **A legitimate exclusion never lowers the figure**: an omitted module
+ * leaves the count (UX-21), and so does one B1 has ruled out (`architecture.md` §12.5.6's task-91.3 row — a company
+ * that can never fill B6 is not shown a denominator it cannot reach), where a waiting module stays in it — it will be
+ * asked. Counted in the browser meanwhile, until task 41.3's server-side status replaces it (§12.5.6's task-179.1
+ * row).
  */
 export function rollUp(modules: readonly DisclosureModuleSummary[]): ModuleRollUp {
   const states = modules.map((summary) => ({ reference: summary.module, state: moduleStateOf(summary) }));

@@ -7,6 +7,7 @@ import {
   type MembershipRole,
   type PriorPeriodComparatives,
   type Report,
+  type ReportScope,
 } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '../api/api-client';
@@ -118,15 +119,29 @@ export function readOnlyCauseOf(input: {
 }
 
 export type WizardModulesRead =
-  | { readonly status: typeof TENANT_READ.READY; readonly modules: readonly DisclosureModuleSummary[] }
+  | {
+      readonly status: typeof TENANT_READ.READY;
+      readonly modules: readonly DisclosureModuleSummary[];
+      /** The report's scope, which decides which of `modules` it asks (task 179.3; FR-177). */
+      readonly scope: ReportScope;
+    }
   | TenantReadRefusal;
 
-/** The list alone — what the entry segment needs to choose a step (UX-10). */
+/**
+ * The list and the report's scope — what the entry segment needs to choose a step (UX-10). The scope since task 179.3:
+ * the api serves every module of the pinned taxonomy, and a Basic report must not be sent to a C module it does not
+ * ask. Independent reads, so they do not queue (`async-parallel`).
+ */
 export async function readWizardModules(reportId: string): Promise<WizardModulesRead> {
-  const modules = await api.getList<DisclosureModuleSummary>(`/reports/${reportId}/modules`);
-  if (isPermissionRefusal(modules)) return { status: TENANT_READ.FORBIDDEN };
-  if (modules.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
-  return { status: TENANT_READ.READY, modules: modules.value.items };
+  const [modules, report] = await Promise.all([
+    api.getList<DisclosureModuleSummary>(`/reports/${reportId}/modules`),
+    api.get<Report>(`/reports/${reportId}`),
+  ]);
+  if (isPermissionRefusal(modules) || isPermissionRefusal(report)) return { status: TENANT_READ.FORBIDDEN };
+  if (modules.status !== API_OUTCOME.Ok || report.status !== API_OUTCOME.Ok) {
+    return { status: TENANT_READ.UNREACHABLE };
+  }
+  return { status: TENANT_READ.READY, modules: modules.value.items, scope: report.value.scope };
 }
 
 /**

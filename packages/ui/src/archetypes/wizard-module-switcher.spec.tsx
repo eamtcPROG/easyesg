@@ -29,7 +29,7 @@ const switcher = (currentKey = 'B1') =>
       listLabel="Report sections"
       allLabel="All modules"
       moreLabel={(hidden) => `${hidden} more modules`}
-      position="B1 · 1 of 4"
+      position={`${currentKey} · ${STEPS.findIndex((s) => s.key === currentKey) + 1} of 4`}
       closeLabel="Close the module list"
       stripSize={3}
     >
@@ -63,10 +63,12 @@ describe('WizardModuleSwitcher', () => {
   });
 
   it('names the current step and its place for the stepper', () => {
-    switcher();
+    // Not the first step, so a stepper that named `steps[0]` whatever is current fails here (task 179's review).
+    switcher('B2');
 
-    expect(screen.getByText('B1 · 1 of 4')).toBeInTheDocument();
-    expect(screen.getByText('Basis for preparation')).toBeInTheDocument();
+    expect(screen.getByText('B2 · 2 of 4')).toBeInTheDocument();
+    expect(screen.getByText('Practices and policies')).toBeInTheDocument();
+    expect(screen.queryByText('Basis for preparation')).toBeNull();
   });
 
   it('opens the whole list from the +n, and closes it when a step is chosen', async () => {

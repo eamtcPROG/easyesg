@@ -83,7 +83,9 @@ test('opens at a step, moves between modules, and every step restores from its U
   const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
   // Each module by its reference and its name (task 179.1) — exact, so B1 cannot also match B10 and B11.
   await expect(rail.getByRole('link', { name: 'B1 — Baza de întocmire', exact: true })).toBeVisible();
-  await expect(rail.getByRole('link', { name: 'C9 — Echilibrul de gen în conducere', exact: true })).toBeVisible();
+  // A Basic report asks the Basic Module alone (task 179.3; FR-177, UX-9): its list ends at B11, and no C module is in it.
+  await expect(rail.getByRole('link', { name: 'B11 — Condamnări și amenzi', exact: true })).toBeVisible();
+  await expect(rail.getByRole('link', { name: /^C\d — /u })).toHaveCount(0);
 
   // The current step is announced, not merely coloured — a rail that showed position visually only
   // would leave a screen-reader user unable to tell which of twenty modules they are in (NFR-75).
@@ -156,7 +158,7 @@ test('the bar names the report, and at 390 the modules open as a drawer (S-07, t
 
   await page.setViewportSize({ width: 390, height: 844 });
   // The docked list leaves the page at this width; the stepper names where the reader is.
-  await expect(page.getByText('B1 · 1 din 20', { exact: true })).toBeVisible();
+  await expect(page.getByText('B1 · 1 din 11', { exact: true })).toBeVisible();
   const allModules = page.getByRole('button', { name: 'Toate modulele', exact: true });
   await untilHydrated(allModules);
   await allModules.click();
@@ -165,8 +167,39 @@ test('the bar names the report, and at 390 the modules open as a drawer (S-07, t
   await drawer.getByRole('link', { name: 'B3 — Energie și emisii', exact: true }).click();
   await page.waitForURL(`**/reports/${reportId}/B3`);
   await expect(drawer).toHaveCount(0);
-  await expect(page.getByText('B3 · 3 din 20', { exact: true })).toBeVisible();
+  await expect(page.getByText('B3 · 3 din 11', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('B3 — Energie și emisii');
+});
+
+/**
+ * The step's heading and foot (task 179.3; `design_spec.md` S-07's amendment of 1 Oct 2026) — where the step stands,
+ * what it covers, and the way on. Scoped to the step's `main` throughout: the list beside it words every module's state
+ * too, and a heading that lost its state would still find the rail's.
+ */
+test('the step says where it stands and what it covers, and its foot leads on (S-07, task 179.3)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'foot');
+  await page.goto(`/reports/${reportId}/B1`);
+  const main = page.getByRole('main');
+
+  await expect(main.getByText('Modulul 1 din 11', { exact: true })).toBeVisible();
+  await expect(main.getByText(/^Ce acoperă raportul: /u)).toBeVisible();
+  // The first module offers no way back, and the way on names where it leads.
+  await expect(main.getByRole('link', { name: /^Înapoi: /u })).toHaveCount(0);
+  const next = main.getByRole('link', { name: 'Următorul: B2 — Practici și politici', exact: true });
+  await untilHydrated(next);
+  await next.click();
+
+  await page.waitForURL(`**/reports/${reportId}/B2`);
+  await expect(main.getByRole('heading', { level: 1 })).toHaveText('B2 — Practici și politici');
+  // UX-11 on a module nobody has touched: the list's word for its state, and beneath it what is left — the count the
+  // in-progress words carry and *not started* does not.
+  await expect(main.getByText('Neînceput', { exact: true })).toBeVisible();
+  await expect(main.getByText(/^\d+ (de )?câmpuri rămase$/u)).toBeVisible();
+  await expect(main.getByRole('link', { name: 'Înapoi: B1', exact: true })).toBeVisible();
+
+  // On a phone *Next* names the module by its reference alone, as the 390 frame draws it.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(main.getByRole('link', { name: 'Următorul: B3', exact: true })).toBeVisible();
 });
 
 test('answers a module the pinned taxonomy does not carry with a 404, not an empty shell', async ({
@@ -176,6 +209,10 @@ test('answers a module the pinned taxonomy does not carry with a 404, not an emp
 
   const response = await page.goto(`/reports/${reportId}/B99`);
   expect(response?.status()).toBe(404);
+  // …and neither is a module the report's scope does not ask: C1 is in the pinned taxonomy, and a Basic report does
+  // not carry it (task 179.3).
+  const outOfScope = await page.goto(`/reports/${reportId}/C1`);
+  expect(outOfScope?.status()).toBe(404);
 });
 
 /**

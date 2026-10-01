@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { WizardShell } from './wizard-shell';
+import { WIZARD_STEP_STATE } from './wizard-step-vocabulary';
 
 /**
  * The Wizard archetype's landmark structure (§4.6: S-07 … S-12; UX-99, NFR-75).
@@ -23,7 +24,10 @@ describe('WizardShell', () => {
         modulesLabel="Report sections"
         compactModules={<button type="button">All modules</button>}
         title="B2 — Practices and policies"
-        progress="One field left"
+        position="Module 2 of 11"
+        summary="The practices and policies your company uses."
+        status={{ state: WIZARD_STEP_STATE.IN_PROGRESS, words: 'In progress · 1 outstanding' }}
+        foot={<a href="/reports/r/B3">Next: B3</a>}
       >
         <p>step content</p>
       </WizardShell>,
@@ -56,12 +60,29 @@ describe('WizardShell', () => {
   });
 
   it('draws no compact slot when the caller has no list for the narrower frames', () => {
-    render(
+    const { container } = render(
       <WizardShell bar={<span>bar</span>} modules={null} modulesLabel="Report sections" title="B1">
         <p>step content</p>
       </WizardShell>,
     );
 
-    expect(screen.queryByRole('button', { name: 'All modules' })).toBeNull();
+    // The bar, then the frame — no empty strip between them. Asserting the absence of the caller's button could not
+    // fail: only the caller can supply it (task 179's gate-integrity review).
+    const shell = container.firstElementChild;
+    expect(shell?.children).toHaveLength(2);
+    expect(shell?.firstElementChild).toHaveTextContent('bar');
+  });
+
+  it('heads the step with its position, its name, what it covers and its state, and ends it with the way on', () => {
+    shell();
+
+    const main = screen.getByRole('main');
+    // The heading is the name alone: the position and the state sit beside it, not inside the page's one `h1`.
+    expect(within(main).getByRole('heading', { level: 1 })).toHaveTextContent(/^B2 — Practices and policies$/u);
+    expect(within(main).getByText('Module 2 of 11')).toBeInTheDocument();
+    expect(within(main).getByText('The practices and policies your company uses.')).toBeInTheDocument();
+    expect(within(main).getByText('In progress · 1 outstanding')).toBeInTheDocument();
+    // The way on is the step's, inside the landmark a reader skips to.
+    expect(within(main).getByRole('link', { name: 'Next: B3' })).toBeInTheDocument();
   });
 });

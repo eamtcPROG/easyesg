@@ -1,9 +1,22 @@
 import { createFormatter } from 'next-intl';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { formats } from '@/i18n/formats';
 import { calendarDay } from './legal-date';
 
 describe('calendarDay', () => {
+  // **The host's zone, set east of UTC for this file** (task 179's gate-integrity review): CI's runners are on UTC,
+  // where a parse that forgot its `Z` reads midnight as midnight UTC and every case below agrees with it. Tokyo is the
+  // day ahead, so a local parse lands on the 30th's afternoon in UTC and fails here on any host. Node reads `TZ` at
+  // the moment a date is made, so the change applies to this file alone and is put back after it.
+  const hostZone = process.env.TZ;
+  beforeAll(() => {
+    process.env.TZ = 'Asia/Tokyo';
+  });
+  afterAll(() => {
+    if (hostZone === undefined) delete process.env.TZ;
+    else process.env.TZ = hostZone;
+  });
+
   it('is midnight UTC of the date, whatever zone the date was determined in', () => {
     expect(calendarDay({ date: '2025-12-31', timezone: 'America/Los_Angeles' }).toISOString()).toBe(
       '2025-12-31T00:00:00.000Z',

@@ -15,7 +15,10 @@ import { ReadOnlyBanner } from '../banner/read-only-banner';
 import { StepFields } from '../fields/section/step-fields';
 import { AutosaveProvider } from '../providers/autosave-context';
 import { WizardReauthentication } from '../session/wizard-reauthentication';
-import { moduleLabel } from '../../tools/module-words';
+import { modulesInScope, moduleStateOf } from '../../tools/module-state';
+import { placeOf } from '../../tools/step-place';
+import { moduleLabel, moduleStatus, moduleSummary, stepStatusNote } from '../../tools/module-words';
+import { StepFoot } from '../foot/step-foot';
 import { ReportBar } from '../bar/report-bar';
 import { ModuleRail } from '../rail/module-rail';
 import { ModuleSwitcher } from '../rail/module-switcher';
@@ -35,7 +38,8 @@ import { WIZARD_MESSAGES } from '../shared/wizard-messages';
  * state of their own.
  *
  * A module the pinned taxonomy does not carry is not a step: 404 rather than an empty shell, so a
- * stale deep link says so instead of rendering a wizard with nothing in it.
+ * stale deep link says so instead of rendering a wizard with nothing in it — and since task 179.3 neither is a module
+ * the report's scope does not ask, a C module on a Basic report.
  *
  * **Since task 92 it also reads what re-authentication needs, from the session the page was rendered
  * under**: the account the queue belongs to, S-01's keep-me-signed-in choice, the organization to restore
@@ -75,28 +79,42 @@ export async function WizardStep({
       </Callout>
     );
   }
-  if (!read.modules.some((summary) => summary.module === module)) notFound();
+  // **The modules the report's scope asks, and nothing else** (task 179.3; FR-177, UX-9): a Basic report's list stops
+  // at B11, and a C module's address on one is a module this report does not carry — the same 404 as one the pinned
+  // taxonomy does not. Every part below reads this one list.
+  const modules = modulesInScope({ modules: read.modules, scope: read.report.scope });
+  const summary = modules.find((m) => m.module === module);
+  if (summary === undefined) notFound();
 
-  const summary = read.modules.find((m) => m.module === module);
-  const outstanding = summary === undefined ? 0 : summary.total - summary.answered;
+  // The heading's state is the list's own (task 179.3): one `moduleStateOf`, so the step and its row cannot disagree.
+  const state = moduleStateOf(summary);
+  // Where the step stands, computed once for the heading, the stepper and the foot (`section-compute-once`).
+  const place = placeOf({ modules, current: module });
   const readOnly = read.readOnly !== null;
   const fields = labelledOptions(read.step.fields, messages.organization.countries);
   // One list, drawn twice: docked at `wide`, and in the drawer below it (task 179.1).
-  const rail = <ModuleRail reportId={reportId} modules={read.modules} current={module} />;
+  const rail = <ModuleRail reportId={reportId} modules={modules} current={module} />;
 
   return (
     <AutosaveProvider reportId={reportId} accountId={session.account.id}>
       <WizardShell
-        bar={<ReportBar report={read.report} modules={read.modules} readOnly={read.readOnly} />}
+        bar={<ReportBar report={read.report} modules={modules} readOnly={read.readOnly} />}
         modulesLabel={t('rail.label')}
         modules={rail}
         compactModules={
-          <ModuleSwitcher reportId={reportId} modules={read.modules} current={module}>
+          <ModuleSwitcher reportId={reportId} modules={modules} current={module} position={place.position}>
             {rail}
           </ModuleSwitcher>
         }
         title={moduleLabel(t, module)}
-        progress={t('step.outstanding', { count: outstanding })}
+        position={t('step.position', { position: place.position, total: place.total })}
+        summary={moduleSummary(t, module)}
+        status={{
+          state,
+          words: moduleStatus(t, { summary, state }),
+          note: stepStatusNote(t, { summary, state }),
+        }}
+        foot={<StepFoot reportId={reportId} place={place} />}
       >
         {read.readOnly === null ? null : (
           <ReadOnlyBanner

@@ -6,7 +6,7 @@ import { moduleGroups, moduleStateOf, rollUp } from '../../tools/module-state';
 import { moduleLabel, moduleStatus, rollUpNote } from '../../tools/module-words';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import styles from './module-rail.module.css';
-import { StepLink } from './step-link';
+import { StepLink } from '../shared/step-link';
 
 /**
  * S-07's module list (UX-5), as `EasyESG Reporting Core.dc.html`'s rail draws it (task 179.1): a group per module
@@ -57,7 +57,7 @@ export async function ModuleRail({
                   status={moduleStatus(t, { summary, state })}
                   current={summary.module === current}
                   // The locale-aware link, injected: `packages/ui` holds no router. Since task 92 it asks whether the
-                  // session is still held before a step change (`step-link.tsx`).
+                  // session is still held before a step change (`shared/step-link.tsx`).
                   linkComponent={StepLink}
                 />
               );

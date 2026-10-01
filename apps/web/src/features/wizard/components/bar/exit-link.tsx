@@ -7,6 +7,7 @@ import { Link, useRouter } from '@/i18n/navigation';
 import { isPlainClick } from '../../tools/plain-click';
 import { useAutosaveContext } from '../providers/autosave-context';
 import { useWhenSessionHeld } from '../providers/use-when-session-held';
+import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 
 /**
  * UX-5's single, always-visible way out — and UX-37's second half (task 35.2): *"warned again — with a chance to
@@ -29,7 +30,7 @@ import { useWhenSessionHeld } from '../providers/use-when-session-held';
  * live with their owners (`architecture.md` §12.5.6).
  */
 export function ExitLink({ href, children, className }: ComponentProps<NavLinkComponent>) {
-  const t = useTranslations('organization.wizard');
+  const t = useTranslations(WIZARD_MESSAGES);
   const router = useRouter();
   const { hasUnsynced, unsynced } = useAutosaveContext();
   const whenSessionHeld = useWhenSessionHeld();

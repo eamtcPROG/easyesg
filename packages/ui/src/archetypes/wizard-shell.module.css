@@ -68,8 +68,29 @@
   padding: var(--page-block) var(--page-gutter);
 }
 
+/* The heading beside its state while both fit the step's column, the state beneath it when they do not — a wrap rather
+   than a breakpoint, so the 834 and 390 frames need nothing of their own. */
 .header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+  max-width: var(--measure-text);
   margin-block-end: var(--space-6);
+}
+
+.heading {
+  flex: 1 1 22rem;
+  min-width: 0;
+}
+
+.position {
+  margin: 0 0 var(--space-3);
+  color: var(--text-muted);
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .title {
@@ -79,10 +100,64 @@
   letter-spacing: -0.015em;
 }
 
-.progress {
+.summary {
   margin: var(--space-3) 0 0;
+  color: var(--text-body);
+  font: 400 15.5px/24px var(--font-text);
+}
+
+.status {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+/* The state as the artboard's chip: the list's mark and words in a bordered box, toned by the state it names. */
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-1) var(--space-4) var(--space-1) var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+  color: var(--text-body);
+  font: 500 13px/22px var(--font-text);
+}
+
+.state[data-state='in_progress'] {
+  border-color: var(--state-attention);
+  background: var(--state-attention-tint);
+  color: var(--state-attention);
+}
+
+.state[data-state='complete'] {
+  border-color: var(--state-ok);
+  background: var(--state-ok-tint);
+  color: var(--state-ok);
+}
+
+.state[data-state='omitted'] {
+  border-color: var(--state-reasoned);
+  background: var(--state-reasoned-tint);
+  color: var(--state-reasoned);
+}
+
+.note {
+  margin: 0;
   color: var(--text-muted);
-  font: 400 14px/20px var(--font-text);
+  font: 400 13px/18px var(--font-text);
+}
+
+/* Under the fields, across the step's column: the way to the module before and after. */
+.foot {
+  max-width: var(--measure-text);
+  margin-block-start: var(--space-7);
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--border-default);
 }
 
 .body {

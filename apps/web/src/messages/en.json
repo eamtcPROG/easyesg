@@ -1362,6 +1362,28 @@
         "C8": "Revenue from certain sectors",
         "C9": "Gender balance in governance"
       },
+      "summaries": {
+        "B1": "What your report covers: the option you report under, the period, and the company facts the later questions depend on.",
+        "B2": "The practices, policies and future initiatives your company uses to manage sustainability matters, and whether they are public.",
+        "B3": "The energy your company uses, and the greenhouse gas emissions that come from it and from the fuels you burn.",
+        "B4": "The pollutants your company releases to air, water and soil, where the law already asks you to report them.",
+        "B5": "Sites in or near areas sensitive for biodiversity, and the land your company uses.",
+        "B6": "The water your company withdraws and consumes, especially where water is scarce.",
+        "B7": "How you use materials and resources, whether you apply circular-economy principles, and the waste you produce.",
+        "B8": "Who works for the company: employees by contract type, gender and country, and how often people leave.",
+        "B9": "Work-related accidents, and deaths from work-related injuries or ill health, in the year you report on.",
+        "B10": "The minimum wage, the pay gap between women and men, collective agreements and hours of training.",
+        "B11": "Convictions and fines for breaking anti-corruption and anti-bribery laws, including when there were none.",
+        "C1": "What you make and sell, for whom, and how your company’s strategy relates to sustainability.",
+        "C2": "More on the practices and policies in B2: who is responsible for them and the targets you have set.",
+        "C3": "Your emission-reduction targets and your company’s plan for moving to a low-emission economy.",
+        "C4": "The climate risks that could affect your business, and how you are adapting to them.",
+        "C5": "More on the workforce: the ratio of women to men in management, and the people who work for your company without being its employees.",
+        "C6": "The policies and processes through which your company respects human rights in its own operations.",
+        "C7": "Severe human rights incidents involving your own workforce, and confirmed ones involving workers in your value chain, communities or consumers.",
+        "C8": "Revenue from certain sectors, such as weapons or fossil fuels, and exclusion from EU reference benchmarks.",
+        "C9": "The ratio of women to men on your company’s governance body."
+      },
       "moduleLabel": "{module} — {name}",
       "bar": {
         "title": "VSME {year} — {scope, select, basic {Basic Module} other {Basic and Comprehensive Modules}}",
@@ -1374,7 +1396,13 @@
         "more": "More actions for this report"
       },
       "step": {
-        "outstanding": "{count, plural, =0 {Nothing left to answer} one {One field left} other {# fields left}}"
+        "outstanding": "{count, plural, =0 {Nothing left to answer} one {One field left} other {# fields left}}",
+        "position": "Module {position} of {total}",
+        "foot": {
+          "next": "Next: {label}",
+          "nextShort": "Next: {module}",
+          "back": "Back: {module}"
+        }
       },
       "forbidden": {
         "title": "You do not have access to this report",

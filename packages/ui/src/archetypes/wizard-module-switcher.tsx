@@ -28,8 +28,8 @@ import styles from './wizard-module-switcher.module.css';
  * beneath it and nothing unmounts, so the drawer would stay open over the step the reader asked for. Delegated rather
  * than per-link, since the list is the caller's node.
  *
- * States (§8.1, the applicable subset): rest · hover · focus · current · drawer closed and open, and the six step
- * states on the chips.
+ * States (§8.1, the applicable subset): rest · hover · focus · current · drawer closed and open, and each step state
+ * of `WIZARD_STEP_STATE` on the chips.
  */
 export interface WizardSwitcherStep {
   readonly key: string;

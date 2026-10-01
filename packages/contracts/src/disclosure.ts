@@ -102,6 +102,17 @@ export const REPORT_STATUS = {
 export type ReportStatus = (typeof REPORT_STATUS)[keyof typeof REPORT_STATUS];
 
 /**
+ * D-A's report-level scope (FR-177, OQ-12) — the `report_scope_known` CHECK's vocabulary, mirrored here like the objects
+ * above since task 179.3, when the wizard first branched on it: a Basic report's module list stops at B11.
+ */
+export const REPORT_SCOPE = {
+  BASIC: 'basic',
+  BASIC_AND_COMPREHENSIVE: 'basic_and_comprehensive',
+} as const;
+
+export type ReportScope = (typeof REPORT_SCOPE)[keyof typeof REPORT_SCOPE];
+
+/**
  * Where a stored value came from (task 36.4) — the `report_disclosure_value_origin_known` CHECK's
  * vocabulary, mirrored here like the objects above.
  *
@@ -129,12 +140,14 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 type GeneratedState = components['schemas']['DisclosureFieldDto']['state'];
 type GeneratedKind = components['schemas']['DisclosureFieldDto']['kind'];
 type GeneratedReportStatus = components['schemas']['ReportResponseDto']['status'];
+type GeneratedReportScope = components['schemas']['ReportResponseDto']['scope'];
 type GeneratedOrigin = components['schemas']['DisclosureFieldDto']['origin'];
 type GeneratedComparability = components['schemas']['PriorPeriodValueDto']['comparability'];
 
 const disclosureStateMirrorsTheApi: Same<DisclosureState, GeneratedState> = true;
 const disclosureKindMirrorsTheApi: Same<DisclosureKind, GeneratedKind> = true;
 const reportStatusMirrorsTheApi: Same<ReportStatus, GeneratedReportStatus> = true;
+const reportScopeMirrorsTheApi: Same<ReportScope, GeneratedReportScope> = true;
 const disclosureOriginMirrorsTheApi: Same<DisclosureOrigin, GeneratedOrigin> = true;
 const comparabilityMirrorsTheApi: Same<Comparability, GeneratedComparability> = true;
 
@@ -142,6 +155,7 @@ const comparabilityMirrorsTheApi: Same<Comparability, GeneratedComparability> = 
 void disclosureStateMirrorsTheApi;
 void disclosureKindMirrorsTheApi;
 void reportStatusMirrorsTheApi;
+void reportScopeMirrorsTheApi;
 void disclosureOriginMirrorsTheApi;
 void comparabilityMirrorsTheApi;
 

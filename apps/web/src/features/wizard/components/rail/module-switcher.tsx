@@ -8,7 +8,7 @@ import { reportStepRoute } from '@/lib/routes';
 import { moduleStateOf } from '../../tools/module-state';
 import { moduleLabel, moduleName, moduleStatus } from '../../tools/module-words';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
-import { StepLink } from './step-link';
+import { StepLink } from '../shared/step-link';
 
 /**
  * S-07's module list below `wide` — the strip at 834 and the stepper at 390, each opening the whole list as a drawer
@@ -25,11 +25,14 @@ export function ModuleSwitcher({
   reportId,
   modules,
   current,
+  position,
   children,
 }: {
   readonly reportId: string;
   readonly modules: readonly DisclosureModuleSummary[];
   readonly current: string;
+  /** Where the step stands in `modules`, 1-based — the section's `placeOf`, computed once with the heading's. */
+  readonly position: number;
   /** The docked rail's list, for the drawer. */
   readonly children: ReactNode;
 }) {
@@ -46,7 +49,6 @@ export function ModuleSwitcher({
       status: moduleStatus(t, { summary, state }),
     };
   });
-  const position = modules.findIndex((summary) => summary.module === current) + 1;
 
   return (
     <WizardModuleSwitcher

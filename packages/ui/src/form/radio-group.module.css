@@ -1,5 +1,6 @@
 /* Values from `EasyESG Reporting Core.dc.html`'s option cards (task 179.2): a 1px card on the card's hairline, 14 × 16
-   inside, 12 apart; the chosen card on the accent's tint with the accent's edge. Tier 2/3 tokens only (UX-78). */
+   inside, 12 apart; the chosen card on the accent's tint with the accent's edge. Colour and spacing from tier 2/3
+   tokens (UX-78); type sizes in px, as the package's other controls set them. */
 
 .field {
   display: flex;
@@ -36,8 +37,8 @@
 .option {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 14px var(--space-5);
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-1);
   background: var(--surface-default);

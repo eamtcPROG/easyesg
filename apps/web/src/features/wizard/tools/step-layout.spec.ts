@@ -88,6 +88,28 @@ describe('layOutStep (task 36.2)', () => {
     expect(entries.map((e) => e.kind)).toEqual([STEP_ENTRY.FIELD, STEP_ENTRY.GROUP, STEP_ENTRY.GROUP]);
   });
 
+  it('keeps a classification row among the questions too — it is one question answered several ways', () => {
+    // B4's shape: a question, a pollutant row the reporter picks, a question, then a site group. The row stays where
+    // the standard puts it; only the site's card moves to the end (task 179.2).
+    const POLLUTANTS = 'PollutantAxis';
+    const entries = layOutStep(
+      [
+        site('AddressOfSite', 0, 1),
+        field({ elementKey: 'PollutionDisclosedPublicly', order: 2 }),
+        field({ elementKey: 'EmissionToAir', dimensionKey: 'vsme:AmmoniaMember', order: 3, axes: [POLLUTANTS] }),
+        field({ elementKey: 'PollutionLink', order: 4 }),
+      ],
+      new Set([POLLUTANTS]),
+    );
+
+    expect(entries.map((e) => e.kind)).toEqual([
+      STEP_ENTRY.FIELD,
+      STEP_ENTRY.CLASSIFICATION,
+      STEP_ENTRY.FIELD,
+      STEP_ENTRY.GROUP,
+    ]);
+  });
+
   it('puts every single question before the repeating groups, and keeps a breakdown where the standard puts it', () => {
     // B1's shape at `2026-05-01`: the sites open the module in the standard's order, the basis for preparation follows
     // them, the subsidiaries sit between questions. Task 179.2 reads the questions first — B1 then opens with what the

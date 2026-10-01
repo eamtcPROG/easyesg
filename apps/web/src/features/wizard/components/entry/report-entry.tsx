@@ -5,6 +5,7 @@ import { reportStepRoute } from '@/lib/routes';
 import { readWizardModules, resumeModule } from '@/server/data/wizard';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
+import { modulesInScope } from '../../tools/module-state';
 
 /**
  * S-07's entry (UC-36, UX-10; task 35.3's rule in `resumeModule`) — reads the report's modules and **redirects to
@@ -27,7 +28,8 @@ export async function ReportEntry({ reportId, locale }: { readonly reportId: str
 
   // Not named `module`: Next reserves that identifier, and the rule exists because assigning it
   // breaks the bundler's own module scope rather than merely reading oddly.
-  const step = resumeModule(read.modules);
+  // Among the modules the report's scope asks (task 179.3): a Basic report is never sent to a C module.
+  const step = resumeModule(modulesInScope({ modules: read.modules, scope: read.scope }));
   if (step === undefined) notFound();
 
   redirect({ href: reportStepRoute({ reportId, module: step }), locale });

@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { WizardStepMark } from './wizard-step-mark';
+import type { WizardStepState } from './wizard-step-vocabulary';
 import styles from './wizard-shell.module.css';
 
 /**
@@ -35,12 +37,21 @@ export interface WizardShellProps {
   compactModules?: ReactNode;
   /** The step header's own heading — the module in plain language beside its reference (UX-11). */
   title: ReactNode;
-  /** How much of this step remains outstanding (UX-11). Rendered under the title. */
-  progress?: ReactNode;
+  /** Where the step stands in the report — *Module 1 of 11* — above the heading (task 179.3). */
+  position?: ReactNode;
+  /** What the module covers, one sentence under the heading (task 179.3). */
+  summary?: ReactNode;
+  /**
+   * The step's state beside its heading (UX-11; task 179.3): the list's own state, its mark drawn from it, and its
+   * words — *In progress · 3 outstanding* — with a line under them where the words leave something unsaid.
+   */
+  status?: { readonly state: WizardStepState; readonly words: ReactNode; readonly note?: ReactNode };
   /** S-08 beside the step content, simultaneously visible at `wide` (§3.3). */
   panel?: ReactNode;
   /** The step's fields. */
   children: ReactNode;
+  /** Under the fields: the way to the module before and after (task 179.3). */
+  foot?: ReactNode;
 }
 
 export function WizardShell({
@@ -49,9 +60,12 @@ export function WizardShell({
   modulesLabel,
   compactModules,
   title,
-  progress,
+  position,
+  summary,
+  status,
   panel,
   children,
+  foot,
 }: WizardShellProps) {
   return (
     <div className={styles.shell}>
@@ -77,15 +91,31 @@ export function WizardShell({
             have none.
           */}
           <main className={styles.main}>
+            {/* The Reporting Core frame's heading (task 179.3): the position, the name and what the module covers on one
+                side, the state on the other — beside them while they fit, beneath them when they do not. */}
             <header className={styles.header}>
-              <h1 className={styles.title}>{title}</h1>
-              {progress ? <p className={styles.progress}>{progress}</p> : null}
+              <div className={styles.heading}>
+                {position ? <p className={styles.position}>{position}</p> : null}
+                <h1 className={styles.title}>{title}</h1>
+                {summary ? <p className={styles.summary}>{summary}</p> : null}
+              </div>
+              {status ? (
+                <div className={styles.status}>
+                  <p className={styles.state} data-state={status.state}>
+                    <WizardStepMark state={status.state} />
+                    <span>{status.words}</span>
+                  </p>
+                  {status.note ? <p className={styles.note}>{status.note}</p> : null}
+                </div>
+              ) : null}
             </header>
 
             <div className={styles.body}>
               <div className={styles.step}>{children}</div>
               {panel ? <aside className={styles.panel}>{panel}</aside> : null}
             </div>
+
+            {foot ? <div className={styles.foot}>{foot}</div> : null}
           </main>
         </div>
       </div>

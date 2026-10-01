@@ -17,7 +17,7 @@ import {
   storedDraftOf,
   writeFor,
 } from '../../../tools/values';
-import { drawnAsOptionCards } from '../../../tools/option-cards';
+import { CHOICE_CONTROL, choiceOf } from '../../../tools/option-cards';
 import { FIELD_MESSAGES } from '../shared/step-messages';
 import { ChoiceSet } from './choice-set';
 import styles from '../styles/step.module.css';
@@ -35,9 +35,9 @@ import styles from '../styles/step.module.css';
  * input carries `aria-labelledby` pointing at `DisclosureField`'s visible label (the association
  * that outranks a `<label for>` in name computation), and its own `<label>` is visually hidden
  * rather than rendered as a second copy of the words; it stays for click-to-focus. `labelHidden` is
- * `Select`'s existing answer, extended to the text controls for this caller. A choice — the `Select`, or since task
- * 179.2 the option cards — keeps the hidden label as its name: neither takes `aria-labelledby` through its API, and
- * the words are the same.
+ * `Select`'s existing answer, extended to the text controls for this caller. The long choice's `Select` keeps the
+ * hidden label as its name: Radix's trigger takes no `aria-labelledby` through this API. The option cards do not need
+ * that exception — their group is named by the visible question itself (task 179.2's review).
  *
  * **Three of those controls arrived with B1** (task 36.2), which is where the plan said they would.
  * `enumeration` is a `Select` over the members task 91.1 put on the read; `enumeration_set` is
@@ -164,49 +164,30 @@ export function DisclosureControl({
     );
   }
 
-  // **A short choice is cards, a long one a select** (task 179.2): every yes/no and a single choice of two to four
-  // answers is §11.5's Radio group, drawn as the B1 artboard's option cards — the rule and its line are
-  // `tools/option-cards.ts`'. The two controls take the same answers and commit the same way, on the choice, and neither
-  // has a way back to *unanswered*: a radio group has none, and Radix reserves the select's `''` for its placeholder.
-  const choices =
-    field.kind === DISCLOSURE_KIND.ENUMERATION
-      ? (field.options ?? []).map((option) => ({
-          value: option.value,
-          // A member with no wording of its own falls back to its published code, never to the
-          // element key: a taxonomy name is an internal identifier and may not reach a reader.
-          // The published code where the wording is missing — a reference someone can cite — and
-          // never `option.value`, which is the member's taxonomy-qualified name.
-          label: option.label ?? option.code ?? t('unnamed'),
-          ...(option.label !== null && option.code !== null ? { description: option.code } : {}),
-        }))
-      : column === VALUE_COLUMN.BOOLEAN
-        ? [
-            { value: BOOLEAN_CHOICE.YES, label: t('yes') },
-            { value: BOOLEAN_CHOICE.NO, label: t('no') },
-          ]
-        : null;
-
-  if (choices !== null && drawnAsOptionCards(field)) {
+  // **A short choice is cards, a long one a select** (task 179.2): which, and what each answer is called, are
+  // `tools/option-cards.ts`' — the two controls take the same answers and commit the same way, on the choice, and
+  // neither has a way back to *unanswered*: a radio group has none, and Radix reserves the select's `''` for its
+  // placeholder. The cards are named by the field's visible question (UX-110), as the text controls are.
+  const choice = choiceOf({ field, words: { unnamed: t('unnamed'), yes: t('yes'), no: t('no') } });
+  if (choice !== null && choice.control === CHOICE_CONTROL.CARDS) {
     return (
       <RadioGroup
-        label={label}
-        labelHidden
-        options={choices}
+        labelledBy={labelledBy}
+        options={choice.answers}
         value={draft === '' ? undefined : draft}
-        onValueChange={(choice) => commit(choice)}
+        onValueChange={(next) => commit(next)}
       />
     );
   }
-
-  if (choices !== null) {
+  if (choice !== null) {
     return (
       <Select
         label={label}
         labelHidden
         placeholder={t('choose')}
         value={draft === '' ? undefined : draft}
-        onValueChange={(choice) => commit(choice)}
-        options={choices}
+        onValueChange={(next) => commit(next)}
+        options={choice.answers}
       />
     );
   }

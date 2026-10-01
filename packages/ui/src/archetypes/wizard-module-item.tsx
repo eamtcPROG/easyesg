@@ -23,8 +23,8 @@ import styles from './wizard-module-item.module.css';
  * **The whole row is the target**: the anchor's `::after` covers it, so the mark and the line are clickable too, as the
  * padded box has been since task 106 made the anchor the styled element.
  *
- * States (§8.1, the applicable subset): rest · hover · focus · current, and the six step states of
- * `WIZARD_STEP_STATE`, each drawn by its mark and named by its line.
+ * States (§8.1, the applicable subset): rest · hover · focus · current, and each step state of `WIZARD_STEP_STATE`,
+ * drawn by its mark and named by its line.
  */
 export interface WizardModuleItemProps {
   /** The step's address. */

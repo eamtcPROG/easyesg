@@ -26368,3 +26368,108 @@ drive their yes/no questions as radios, still asserting that neither starts chos
 closed early* lines the run logged all carry digest `2667547900`, the abandoned prefetch `apps/web/CLAUDE.md`
 describes. Searched for the shape (the root file's *a rule is applied where it holds*): every `Fieldset` the wizard
 draws — groups, breakdowns, classification rows — takes the card and the foot; the other three callers keep theirs.
+
+## Task 179.3 — The step's heading and its foot · 2026-10-01
+
+The last slice of task 179, as S-07's amendment of 1 Oct 2026 describes it: *Module 1 of 11* above the module's name, a
+sentence saying what the module covers, the module's state beside them, and *Back* and *Next* at the foot. Three things
+in it were settled by the owner at task 179's review rather than at the design (the parent entry below has the review):
+the list follows the report's scope, the foot carries no sentence about saving, and the module names stay ours.
+
+**The heading's state is the list's own** — `moduleStateOf` and `moduleStatus`, the rail's — so the step and its row
+cannot disagree, drawn as the artboard's chip with the list's mark. **UX-11 asks the step header for how many fields
+remain**, and the list's words carry that count only while a module is in progress; so a module not started says
+*22 fields left* beneath its chip, and a module with nothing to ask, or one complete, omitted, waiting or ruled out, has
+nothing to count (`stepStatusNote`, with its spec). *1 finding in this module* waits on validation (task 42). The shell
+takes the parts as slots — `position`, `summary`, `status`, `foot` — in place of the one `progress` line; the heading
+still holds the module's name alone, the page's one `h1`.
+
+**The list is the report's scope's** (the owner's answer at the review): the api serves every module of the pinned
+taxonomy whatever the scope, so a Basic report's rail, stepper, *Module 1 of 20* and *Next* from B11 had all been
+counting C1–C9 since task 179.1 — whose entry deferred hiding them to task 79, which is the C forms' task and not the
+list's. `modulesInScope` keeps the eleven, the section reads it once, and a C module's address on a Basic report answers
+404 like a module the taxonomy does not carry. The entry segment reads the report's scope beside the module list, in
+parallel, so a Basic report is never resumed into a C module. The scope reached the browser as `REPORT_SCOPE` in
+`@easyesg/contracts`, mirrored like `REPORT_STATUS` and held to the generated enum at compile time.
+
+**Where the step stands is computed once** (`placeOf`, the convention review's `section-compute-once` finding): the
+heading's position, the stepper's and the foot's two ways read one answer, where the first draft had the heading and the
+stepper each find the module and a third rule find its neighbours.
+
+**The twenty sentences are platform-authored in three locales**, written for each language rather than carried across
+— the module names' standing. The spec review found two that understated their modules (C5 left out the management
+gender ratio, C7 the value-chain incidents), now corrected; **NFR-23's editorial sign-off is outstanding for these
+sentences and for task 179.1's twenty names, per locale**, as it was for task 33.2's and task 91.1's platform-authored
+text. A spec reads every named module in every catalogue and requires twenty distinct sentences, because a missing one
+renders as an empty line (`request.ts`'s fallback is `''`) that no screenshot shows — proven by deleting `summaries.B5`
+from `ru.json`.
+
+**The foot never gates** — the next module is the next one in the list's order, whatever its state — and a step change
+through it is a step change through the list: the same `StepLink`, moved to `components/shared/` now that `rail/` and
+`foot/` both read it. *Next* has two whole messages, the module's name at `wide` and its reference below it, as the 834
+and 390 frames draw it; the hidden one is `display: none`, so the link's name is what the reader sees. *Back* names its
+module at every width (WCAG 2.4.4). **The artboard's *nothing to save* sentence is not drawn**: it stood on a locked
+report and beside a failed save, and UX-35 gives save state one place, the bar's indicator. **The foot is not a `nav`
+landmark** — the shell's spec asserts the step's `main` holds no navigation, which is the rail's.
+
+**Verified** with the parent's close, below: the gate set cold, the heading and foot in a browser at 1440, 834 and 390,
+and the new journey — *Modulul 1 din 11*, B1's sentence, no way back from the first module, *Next* to B2, B2's *Neînceput*
+with its count, *Înapoi: B1*, and *Următorul: B3* at a phone's width.
+
+
+## Task 179 — S-07 drawn as its artboards · 2026-10-01
+
+Three slices — the bar and the list (179.1), the fields (179.2), the heading and the foot (179.3) — closed together.
+The middle slice of the original plan, what B1 knows from the company's record, became task 180 and closed on its own.
+
+**The reviews ran on `opus`**, over the whole parent diff — `9247ccf3`, `b89d489c` and 179.3 — and between them raised
+seven convention findings, fourteen specification findings and nine checks that could not fail. All were fixed or
+recorded before the close; three were the owner's to decide, and were asked in one batch:
+
+- **C1–C9 on a Basic report** (spec, the most visible): the list, the stepper, the heading's count and *Next* all
+  counted them, against S-07's purpose, UX-9 and FR-177, with the deferral recorded only in 179.1's entry. The owner
+  chose to filter by scope now — 179.3's entry says how.
+- **The foot's *nothing to save*** (spec): untrue on a locked report and beside a failed save, and a second save state
+  beside UX-35's one. Dropped.
+- **Our module names against NFR-24** (spec): EFRAG titles every module, in English with standing. The owner kept the
+  short names as navigation shorthand and NFR-24 now carries the reading — it governs what a report shows and exports.
+
+**What the reviews found that needed recording, not deciding**: the list's states and its *5 of 10 done* had lived only
+in 179.1's entry, and the count is the browser counting what task 41.3 says the server must — now `architecture.md`
+§12.5.6's task-179.1 row, an interim for 41.3 with its assumption and what replaces it, cross-logged in 41.3's row and
+the task-32.4 row. Task 36.2's *no size threshold* row and task 35.2's hidden-label exception are amended to point at
+179.2's; two rows' citations were wrong (UX-14 on the option cards, UX-9 on the order) and UX-21 had been cited for
+ruled-out modules, which is task 91.3's row. The option cards are now named by the field's visible question —
+`RadioGroup` takes `labelledBy` — so the exception the select needed does not extend to them.
+
+**What the convention review found, all fixed**: `StepLink` moved to `components/shared/` once `foot/` read it; the
+bar's two pending actions are a vocabulary, `BAR_ACTION`, and `PendingAction` reads its own words (task 158's rule);
+the `bar` namespace has one spelling; the step's place is computed once; the Comprehensive letter is declared once; the
+wire-to-control conversion of a choice's answers left the component for `tools/option-cards.ts`'s `choiceOf`, with a
+spec pinning the *never the taxonomy name* fallback; and four docblocks counted things outside their file, two of them
+already wrong. **Two it raised under *not rules* are recorded, not changed**: an `aria-disabled` pending action still
+takes `Button`'s hover colour, and the shell's and the mark's stylesheets restate `WIZARD_STEP_STATE`'s values, which
+CSS cannot import — a renamed state would lose its tone with nothing failing.
+
+**What the gate-integrity review found, all fixed and each proven to bite** by the mutation that had survived: the
+Radio group's controlled contract (a group that checked itself on a click passed all six cases — two now fail on it);
+`calendarDay`'s UTC parse, which on CI's UTC runners no case could fail on (the spec now sets the host's zone east of
+UTC for its own file); a classification row's place among the questions; the shell's empty compact strip; the stepper
+naming the first step whatever was current; a waiting module in the foot's *never gates* case; a module not started
+with nothing to count; the module order's spec, which a string sort passed; and a jsdom `toBeVisible` that could not
+see a stylesheet, now asserting presence and saying so. One unmeasured pairing it noticed — the rail's omitted row on
+the current step's tint — is measured, 6.14:1 and 6.16:1.
+
+**Verified**: the frames — 1440 and 834 and 375 in the dev app, the cards side by side and stacking, the strip's *+5* on
+a Basic report, *Module 11 of 11* with only *Back: B10* at B11, and C1 answering 404 — and the gate set, cold, recorded
+below. `aria-description`, which 179.1 hangs each step's state on, is ARIA 1.3's draft; NFR-75's manual screen-reader
+audit is where its support is checked.
+
+**The gate set, cold** (`pnpm gates:clean` — required here, since the diff reaches `packages/ui` and `packages/contracts`
+and changes a type the apps consume: `WizardShell` lost its `progress` slot and gained four): all seventeen green —
+`ui` 437, web 1,295, admin 296, api 1,450; `pnpm e2e` 1,462 of 1,462 and `pnpm e2e:worker` 9 of 9, the boot proof in
+both modes; `e2e:web` 290 of 290, its eleven *destination stream closed early* lines all digest `2667547900`. **The run
+needed the heap raised** (`NODE_OPTIONS=--max-old-space-size=4096`): uncached, `pnpm lint` exhausted Node's default 2 GB
+on this 8 GB host, as it had on task 180 — an environment's limit, not a finding, and CI's runners are larger. The first
+cold attempt died there and the second was stopped to fold the reviews' fixes in, so the run recorded is the third, over
+the tree as committed.

@@ -1,5 +1,6 @@
 /* Values from `EasyESG Reporting Core.dc.html`'s field (task 179.2): a card 20 × 24 inside on the card radius, the
-   marker a bordered pill, the message a tinted box with its mark. Tier 2/3 tokens only (UX-78). */
+   marker a bordered pill, the message a tinted box with its mark. Colour and spacing from tier 2/3 tokens (UX-78);
+   type sizes in px, as the package's other controls set them. */
 
 .field {
   display: grid;
@@ -46,7 +47,7 @@
    task 82's dark scheme cannot reach. The edge is the tone's own colour, so the pill reads as its words framed. */
 .marker {
   flex: none;
-  padding: 0 10px;
+  padding: 0 var(--space-3);
   border: 1px solid currentColor;
   border-radius: var(--radius-1);
   font: 500 12.5px/22px var(--font-text);
@@ -105,8 +106,8 @@
 .message {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: var(--space-4) 14px;
+  gap: var(--space-3);
+  padding: var(--space-4);
   border-radius: var(--radius-1);
   font: 400 13.5px/21px var(--font-text);
   max-width: var(--measure-text);

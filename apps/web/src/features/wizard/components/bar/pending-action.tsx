@@ -1,8 +1,11 @@
 'use client';
 
 import { BUTTON_VARIANT, Button, type ButtonVariant } from '@easyesg/ui';
+import { useTranslations } from 'next-intl';
 import { Popover } from 'radix-ui';
 import { useId } from 'react';
+import { BAR_ACTION, type BarAction } from '../../tools/bar-actions';
+import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import styles from './unavailable.module.css';
 
 /**
@@ -16,18 +19,26 @@ import styles from './unavailable.module.css';
  *
  * **This app's, not the inventory's** (UX-89 as amended): only S-07 draws an action ahead of its screen, and each goes
  * the day its screen ships, replaced by the real control.
+ *
+ * **It reads its own words** (task 158's rule, applied at task 179's convention review): the action is named by its
+ * member of `BAR_ACTION`, and its label and reason are this component's catalogue keys, by literal key so a missing
+ * one fails `typecheck` rather than rendering blank.
  */
 export function PendingAction({
-  label,
-  reason,
+  action,
   variant = BUTTON_VARIANT.SECONDARY,
 }: {
-  readonly label: string;
-  /** Why it cannot be used yet, and what holds meanwhile. */
-  readonly reason: string;
+  readonly action: BarAction;
   readonly variant?: ButtonVariant;
 }) {
+  const t = useTranslations(WIZARD_MESSAGES);
   const reasonId = useId();
+  // The label, and why it cannot be used yet and what holds meanwhile.
+  const words: Readonly<Record<BarAction, { readonly label: string; readonly reason: string }>> = {
+    [BAR_ACTION.EXPORT]: { label: t('bar.export'), reason: t('bar.exportUnavailable') },
+    [BAR_ACTION.REVIEW]: { label: t('bar.review'), reason: t('bar.reviewUnavailable') },
+  };
+  const { label, reason } = words[action];
 
   return (
     <Popover.Root>

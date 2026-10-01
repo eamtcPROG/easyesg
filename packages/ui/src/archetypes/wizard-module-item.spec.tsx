@@ -32,11 +32,13 @@ describe('WizardModuleItem', () => {
     expect(link).toHaveAccessibleDescription('In progress · 3 outstanding');
   });
 
-  it('draws the state in view and hides that copy, so a screen reader does not hear it twice', () => {
+  it('draws the state as a line and hides that copy, so a screen reader does not hear it twice', () => {
     item();
 
+    // Present in the row; whether it is *in view* is a stylesheet's, which jsdom does not load (task 179's review) —
+    // the rail's browser journeys read the line's words where the stylesheet applies.
     const line = screen.getByText('In progress · 3 outstanding');
-    expect(line).toBeVisible();
+    expect(line).toBeInTheDocument();
     expect(line).toHaveAttribute('aria-hidden', 'true');
   });
 

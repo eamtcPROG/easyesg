@@ -41,9 +41,16 @@ export interface RadioOption {
   readonly disabled?: boolean;
 }
 
-export interface RadioGroupProps {
-  /** The question. Rendered above the cards, or kept for assistive technology alone with `labelHidden`. */
-  label: ReactNode;
+/**
+ * How the group is named — **one of two, never neither** (UX-110). Its own `label`, shown above the cards or kept for
+ * assistive technology with `labelHidden`; or `labelledBy`, the id of a visible label the caller already draws — the
+ * disclosure field's question — so the words a reader sees are the group's name, said once.
+ */
+type RadioGroupNaming =
+  | { label: ReactNode; labelHidden?: boolean; labelledBy?: never }
+  | { labelledBy: string; label?: never; labelHidden?: never };
+
+export type RadioGroupProps = RadioGroupNaming & {
   options: readonly RadioOption[];
   /** Uncontrolled — the initial choice, and what a `<form>` submits untouched. */
   defaultValue?: string;
@@ -58,15 +65,10 @@ export interface RadioGroupProps {
   error?: ReactNode;
   /** Stable id of the group; also the anchor a FormErrorSummary link targets. Auto-generated if omitted. */
   id?: string;
-  /**
-   * Hides the label visually while keeping it for assistive technology — for a group whose question is already shown
-   * above it, as in the disclosure field. The label is never simply omitted.
-   */
-  labelHidden?: boolean;
   disabled?: boolean;
   required?: boolean;
   className?: string;
-}
+};
 
 export function RadioGroup({
   label,
@@ -79,6 +81,7 @@ export function RadioGroup({
   error,
   id,
   labelHidden = false,
+  labelledBy,
   disabled,
   required,
   className,
@@ -95,15 +98,17 @@ export function RadioGroup({
 
   return (
     <div className={[styles.field, className].filter(Boolean).join(' ')}>
-      <span id={labelId} className={labelHidden ? styles.labelHidden : `t-label ${styles.label}`}>
-        {label}
-      </span>
+      {labelledBy === undefined ? (
+        <span id={labelId} className={labelHidden ? styles.labelHidden : `t-label ${styles.label}`}>
+          {label}
+        </span>
+      ) : null}
 
       <div
         id={groupId}
         role="radiogroup"
         className={styles.options}
-        aria-labelledby={labelId}
+        aria-labelledby={labelledBy ?? labelId}
         aria-describedby={description}
         aria-invalid={error ? true : undefined}
         aria-required={required ? true : undefined}

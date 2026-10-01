@@ -188,6 +188,7 @@ export {
   DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
   MEMBER_SEPARATOR,
+  REPORT_SCOPE,
   REPORT_STATUS,
   VALUE_COLUMN,
   membersOf,
@@ -195,6 +196,7 @@ export {
   type DisclosureKind,
   type DisclosureOrigin,
   type DisclosureState,
+  type ReportScope,
   type ReportStatus,
   type ValueColumn,
 } from './disclosure';

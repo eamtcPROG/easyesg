@@ -1362,6 +1362,28 @@
         "C8": "Venituri din anumite sectoare",
         "C9": "Echilibrul de gen în conducere"
       },
+      "summaries": {
+        "B1": "Ce acoperă raportul: opțiunea după care raportați, perioada și datele companiei de care depind întrebările următoare.",
+        "B2": "Practicile, politicile și inițiativele viitoare prin care compania gestionează aspectele de sustenabilitate și dacă sunt făcute publice.",
+        "B3": "Energia pe care o consumă compania și emisiile de gaze cu efect de seră care provin din ea și din combustibilii pe care îi ardeți.",
+        "B4": "Poluanții pe care compania îi eliberează în aer, apă și sol, acolo unde legea vă cere deja să-i raportați.",
+        "B5": "Amplasamentele aflate în zone sensibile pentru biodiversitate sau lângă ele și terenul pe care îl folosește compania.",
+        "B6": "Apa pe care compania o captează și o consumă, mai ales acolo unde apa este puțină.",
+        "B7": "Cum folosiți materialele și resursele, dacă aplicați principiile economiei circulare și ce deșeuri produceți.",
+        "B8": "Cine lucrează în companie: angajații după tipul contractului, gen și țară și cât de des pleacă oamenii.",
+        "B9": "Accidentele de muncă și decesele cauzate de leziuni sau boli profesionale în anul pentru care raportați.",
+        "B10": "Salariul minim, diferența de remunerare dintre femei și bărbați, contractele colective și orele de formare.",
+        "B11": "Condamnările și amenzile pentru încălcarea legislației anticorupție și antimită, inclusiv atunci când nu au existat.",
+        "C1": "Ce produceți și vindeți, pentru cine și cum se leagă strategia companiei de sustenabilitate.",
+        "C2": "Mai multe despre practicile și politicile din B2: cine răspunde de ele și ce ținte v-ați stabilit.",
+        "C3": "Țintele de reducere a emisiilor și planul companiei pentru trecerea la o economie cu emisii scăzute.",
+        "C4": "Riscurile climatice care vă pot afecta activitatea și cum vă adaptați la ele.",
+        "C5": "Mai multe despre personal: raportul dintre femei și bărbați în conducere și oamenii care lucrează pentru companie fără să fie angajații ei.",
+        "C6": "Politicile și procesele prin care compania respectă drepturile omului în propria activitate.",
+        "C7": "Incidentele grave privind drepturile omului legate de propriul personal și cele confirmate privind lucrătorii din lanțul valoric, comunitățile sau consumatorii.",
+        "C8": "Veniturile din anumite sectoare, cum ar fi armele sau combustibilii fosili, și excluderea din indicii de referință ai UE.",
+        "C9": "Raportul dintre femei și bărbați în organul de conducere al companiei."
+      },
       "moduleLabel": "{module} — {name}",
       "bar": {
         "title": "VSME {year} — {scope, select, basic {Modulul de bază} other {Modulul de bază și cel cuprinzător}}",
@@ -1374,7 +1396,13 @@
         "more": "Mai multe acțiuni pentru acest raport"
       },
       "step": {
-        "outstanding": "{count, plural, =0 {Nimic de completat} one {Un câmp rămas} few {# câmpuri rămase} other {# de câmpuri rămase}}"
+        "outstanding": "{count, plural, =0 {Nimic de completat} one {Un câmp rămas} few {# câmpuri rămase} other {# de câmpuri rămase}}",
+        "position": "Modulul {position} din {total}",
+        "foot": {
+          "next": "Următorul: {label}",
+          "nextShort": "Următorul: {module}",
+          "back": "Înapoi: {module}"
+        }
       },
       "forbidden": {
         "title": "Nu aveți acces la acest raport",

@@ -1,0 +1,29 @@
+/* The step's foot (task 179.3): *Back* and *Next* at the step's end, as the Reporting Core frames draw them. Spacing
+   from tokens (UX-127). */
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-4);
+}
+
+/* Below `wide` *Next* names the module by reference, as the 834 and 390 frames draw it, and on a phone takes the room
+   *Back* leaves. */
+@media (max-width: 63.999rem) {
+  .wide {
+    display: none;
+  }
+}
+
+@media (min-width: 64rem) {
+  .narrow {
+    display: none;
+  }
+}
+
+@media (max-width: 39.999rem) {
+  .next {
+    flex: 1;
+  }
+}
