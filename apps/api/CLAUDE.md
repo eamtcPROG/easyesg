@@ -14,9 +14,9 @@ notification core (49) — categories, one mail path, `raise()` and delivery by 
 50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre
 since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, and its first
 producer through `raise()` since 50.3, UC-175's reminder, and each person's preferences, honoured at dispatch, with FR-169's
-one-click unsubscribe since task 52; the calculator, validation, export, billing, the console's screens, edge and
-deploy, the
-public tier and the Comprehensive Module are not (37 onward). `docs/archived_tasks.md` says what each closed task
+one-click unsubscribe since task 52, and the calculator's emission factor sets since task 37; the calculator's runs,
+validation, export, billing, the console's screens, edge and deploy, the
+public tier and the Comprehensive Module are not (38 onward). `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
 traps each one left — grouped by area rather than by the task that built it.
@@ -81,7 +81,11 @@ traps each one left — grouped by area rather than by the task that built it.
   (`GET/POST /reports`, `GET/PATCH /reports/{id}`) carrying its pinned taxonomy; the disclosure
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
-- **Not live**: the calculator and validation (37 … 42), preview and export (43 … 47),
+- **Calculator** (`core/calculator`; task 37): emission factor sets as configuration — `emission_factor_set`, one
+  effective-dated artefact per country, seeded for `md` — and `FACTOR_SETS`, which answers the set in force for a
+  reporting period's **start** and, by its pin `(country, revision)`, the set a run used after it has moved on
+  (§12.5.6's task-37 row). No route: task 38's run is the first caller.
+- **Not live**: the calculator's runs and validation (38 … 42), preview and export (43 … 47),
   the outstanding-report and deadline notices (51.2), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
@@ -1189,6 +1193,16 @@ positional form let a swap compile and answer "nothing registered".)
   necessarily overlap.
 - **Publish flips `version_id` on the slot; revert flips it back.** Neither deletes anything, which
   is why revert is safe under pressure and why the schedule needs no DELETE grant.
+- **Revert moves one window — the one its target was published for** (task 37.2). It moved every slot
+  of the scope holding a later revision, which was right while every reverted artefact held one
+  unbounded slot and put 2026's factors in force for 2027 the first time a scope held two windows.
+  `config.entry_version.validity` records the window at publish, immutable like the payload; a version
+  superseded before it was kept, in a scope of several windows, has none and a revert to it is refused.
+- **What is in force is `ConfigurationStore`; a version by its revision is `ConfigurationHistory`**
+  (task 37.2). A pin — a run's factor set — must read its version after a correction superseded it,
+  and a superseded version is in no slot, so no cache of the schedule holds it. Cache the *validated*
+  answer per revision in the consumer: a published revision cannot change, so the cache needs no
+  invalidation (`FactorSetCatalog` is the worked example).
 - **The store version is bumped by a trigger on the schedule**, not by the publishing code. A
   publish that forgot to bump it is a change no replica ever notices.
 - **A statement-level trigger fires even for a zero-row statement.** An UPDATE that matches nothing

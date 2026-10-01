@@ -1,0 +1,114 @@
+{
+  "schedule": [
+    {
+      "validTo": "2027-01-01",
+      "payload": {
+        "label": "2026.1",
+        "sources": [
+          {
+            "key": "natural_gas",
+            "ghgScope": "scope_1",
+            "emissionFactor": "0.202544",
+            "units": {
+              "m3": "0.0095773"
+            },
+            "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Table 1.4, Ch. 2 Table 2.4 (commercial/institutional), natural gas; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); m³ at 8 235 kcal/m³ net calorific value, Moldovatransgaz gas quality passport of 1 December 2021"
+          },
+          {
+            "key": "diesel",
+            "ghgScope": "scope_1",
+            "emissionFactor": "0.268322",
+            "units": {
+              "l": "0.0100333"
+            },
+            "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Tables 1.2 and 1.4, Ch. 2 Table 2.4 (commercial/institutional), gas/diesel oil; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.84 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+          },
+          {
+            "key": "heating_oil",
+            "ghgScope": "scope_1",
+            "emissionFactor": "0.268322",
+            "units": {
+              "l": "0.0100333"
+            },
+            "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Tables 1.2 and 1.4, Ch. 2 Table 2.4 (commercial/institutional), gas/diesel oil — light heating oil per Ch. 1 Table 1.1; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.84 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+          },
+          {
+            "key": "residual_fuel_oil",
+            "ghgScope": "scope_1",
+            "emissionFactor": "0.280202",
+            "units": {
+              "t": "11.2222",
+              "l": "0.0105489"
+            },
+            "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Tables 1.2 and 1.4, Ch. 2 Table 2.4 (commercial/institutional), residual fuel oil; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.94 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+          },
+          {
+            "key": "lpg",
+            "ghgScope": "scope_1",
+            "emissionFactor": "0.227744",
+            "units": {
+              "kg": "0.0131389",
+              "l": "0.007095"
+            },
+            "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Tables 1.2 and 1.4, Ch. 2 Table 2.4 (commercial/institutional), liquefied petroleum gases; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.54 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+          },
+          {
+            "key": "coal",
+            "ghgScope": "scope_1",
+            "emissionFactor": "0.343006",
+            "units": {
+              "t": "7.16667"
+            },
+            "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Tables 1.2 and 1.4, Ch. 2 Table 2.4 (commercial/institutional), other bituminous coal; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273)"
+          },
+          {
+            "key": "wood",
+            "ghgScope": "scope_1",
+            "emissionFactor": "0.0330912",
+            "units": {
+              "t": "4.33333"
+            },
+            "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Tables 1.2 and 1.4, Ch. 2 Table 2.4 (commercial/institutional), wood/wood waste; CH₄ and N₂O only — biogenic CO₂ (0.4032 t/MWh) is reported outside the scopes; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273)"
+          },
+          {
+            "key": "diesel_road",
+            "ghgScope": "scope_1",
+            "emissionFactor": "0.270972",
+            "units": {
+              "l": "0.0100333"
+            },
+            "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Table 1.2, Ch. 3 Tables 3.2.1 and 3.2.2, gas/diesel oil; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.84 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+          },
+          {
+            "key": "petrol_road",
+            "ghgScope": "scope_1",
+            "emissionFactor": "0.259772",
+            "units": {
+              "l": "0.00910611"
+            },
+            "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Table 1.2, Ch. 3 Tables 3.2.1 and 3.2.2, motor gasoline with oxidation catalyst; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.74 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+          },
+          {
+            "key": "lpg_road",
+            "ghgScope": "scope_1",
+            "emissionFactor": "0.233383",
+            "units": {
+              "l": "0.007095"
+            },
+            "reference": "IPCC 2006 Guidelines, Vol. 2, Ch. 1 Table 1.2, Ch. 3 Tables 3.2.1 and 3.2.2, liquefied petroleum gases; GWP100 IPCC AR6 (CH₄ 27.0, N₂O 273); litre at 0.54 kg/l, CDP technical note on converting fuel data to MWh, Table 3"
+          },
+          {
+            "key": "electricity_grid",
+            "ghgScope": "scope_2_location_based",
+            "emissionFactor": "0.594645",
+            "units": {
+              "kWh": "0.001",
+              "MWh": "1"
+            },
+            "reference": "European Commission JRC, Covenant of Mayors default emission factors for national electricity, 2024 edition — Republic of Moldova, 2020: national generation emissions over final consumption, grid losses attributed to consumers, IPCC AR6"
+          }
+        ]
+      }
+    }
+  ]
+}

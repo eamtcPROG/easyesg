@@ -26574,3 +26574,138 @@ how much of it is left, is the owner's call. It is not a by-product of this edit
 **Verified.** The re-cut was scripted: it lifted the rows by number, re-inserted them, and refused to write unless
 the set of row identifiers came out unchanged (253 rows, each once). `pnpm docs:check` — the *zero fully closed
 groups* claim reads the moved rows, and the *181 tasks* claim the union. No code changed, so no suite ran.
+
+## Task 37.1 — The factor-set artefact and its schedule · 2026-10-01
+
+Emission factor sets as configuration: `emission_factor_set`, scope the country, one schedule window per set, read
+through `core/calculator`'s `FACTOR_SETS`. The decisions are `architecture.md` §12.5.6's task-37 row, (1)–(7); §9.9
+and `problem_overview.md` OQ-3 carry the two amendments they make.
+
+### Decisions (project owner, two batches)
+
+- **First batch, before any code.** Where the values come from: no document names a source, OQ-3 was open, and the
+  A-05 artboard's numbers are illustrations. The owner chose **IPCC 2006 defaults for the fuels and Moldova's national
+  grid factor**, researched, cited, and shown to them before shipping. Which date picks a set: the **reporting period's
+  start**, over the task row's literal *"the calculation's date"*, which A-05's artboard contradicts. And the revert
+  defect task 37.2's entry describes.
+- **Second batch, over the researched table.** The JRC grid factor; Moldovatransgaz's passport for gas; AR6 with
+  combustion CH₄ at 27.0; and the rest approved as proposed. Each answer was the recommended option. The table is the
+  seed, source by source.
+
+**The research was a subagent's, and every number in it was recomputed here before it was shown.** Every tCO₂e/MWh
+value is IPCC Table 1.4's CO₂ plus Table 2.4's (or 3.2.2's) CH₄ and N₂O at the chosen GWPs, divided by 277.7778, and
+every litre conversion is a Table 1.2 NCV times a density. All agreed to six significant figures. It could not open
+`ipcc.ch`, `unfccc.int` or `data.jrc.ec.europa.eu` (403) and could not read Moldova's BTR1 (over the 10 MB fetch
+limit). So the AR6 GWPs are confirmed through the GHG Protocol's August 2024 compilation, VSME ¶106 and IPCC-WG1's
+data files rather than the report itself. A national grid average from Moldova's own inventory remains unread, and
+§12.5.6 names it as where a better figure would come from.
+
+**Two conflicts the research found are recorded rather than resolved silently.**
+- VSME's worked example (¶106) uses the *fossil* CH₄ GWP for combustion. The GHG Protocol, which VSME ¶30 names,
+  says non-fossil. The owner chose the latter; the difference is under 0.05%.
+- The JRC factor attributes grid losses to consumers, which the GHG Protocol puts in Scope 3 category 3. The only
+  recent national figure, the USAID/MESA study for the Ministry of Environment, is an operating margin, a
+  project-appraisal concept. The owner took the JRC figure with its caveats written into its reference.
+
+### The shape, and the one alternative considered
+
+**The taxonomy's two-artefact pattern was the obvious copy and was not taken.** That pattern is immutable versions
+scoped by label, plus an effective-dated pointer saying which applies. There every version is scheduled unbounded, so
+in the store's sense all of them are in force at once, and only the pointer carries the `WITHOUT OVERLAPS` key. The
+task row asks for *"the constraint, not a convention"*. Here the sets themselves are the dated rows, so two sets over
+one period is a refused write. What that costs is that a set superseded inside its window sits in no slot, which is why
+task 37.2 needed `ConfigurationHistory`.
+
+**Per MWh, not per invoice unit**, although A-05's artboard prints *t CO₂e / m³*. FR-34 says *"convert entered
+consumption to MWh, apply the active emission factor set"*, and B3's energy figures are MWh anyway. So a source
+carries each unit's MWh and one factor per MWh, and the artboard's per-unit figure is their product.
+
+**Keys and units are data, and their names are catalogue keys** (OQ-43). Adding a source needs no code; its label
+ships with the release and is task 39.1's to write. `heating_oil` carries `diesel`'s factor: IPCC classes light
+heating oil as gas/diesel oil, and the reporter looks for what the bill says.
+
+**The window is bounded at periods starting before 1 Jan 2027.** The store has no operation that narrows an
+open-ended slot, and the seed loader refuses to. An open-ended set would have made the 2027 set a reshape; bounded,
+it is an adjacent window. A FY2027 period is therefore refused until someone publishes, rather than served 2026's
+factors, and the shipped-set spec says so.
+
+### Skills, read against the diff
+
+`one-idea-per-file`:
+- `file-one-behaviour-api`: the payload rules (`domain/factor-set-payload.ts`, pure, with its spec), the catalog
+  (`services/`), the port (`interfaces/`) and the vocabulary with its narrowing (`models/`) are a file each.
+- `pure-logic-leaves-the-component`: the reader is in `domain/`, beside its spec.
+- `reason-docblock-carries-the-why`: no docblock states a count of anything outside its file. The shipped set's
+  eleven keys are in the spec, not in prose.
+
+`nestjs-best-practices`:
+- `di-use-interfaces-tokens`: `FACTOR_SETS` beside `FactorSets`.
+- `arch-single-responsibility`: the catalog validates and caches; the history reads.
+- `perf-use-caching`: per revision, which immutability makes invalidation-free.
+- `error-throw-http-exceptions` **declined**: there is no HTTP surface, and an unreadable set is a logged `null`, as
+  in every configuration reader here.
+
+**Verified** with 37.2, below.
+
+## Task 37.2 — Factor resolution at a date, and a revert that stays in its window · 2026-10-01
+
+`FACTOR_SETS.inForce({ country, periodStart })` answers the set in force for the period's start, cached like every
+store read. `pinned({ country, revision })` answers the set a run used through `ConfigurationHistory`, a new read of
+one immutable version by revision. A correction reaches a replica on its next poll (no redeploy); a revert is one
+call.
+
+**The revert crossed windows, found by reading it before the task's first batch.** Designing *"reverts in one
+step"* for a scope with a 2026 and a 2027 window meant reading `ConfigurationPublisher.revert`. It moved **every**
+slot of the scope holding a later revision back to the target. So reverting a 2026 correction (revision 3, back to 1)
+would also have flipped the 2027 window (revision 2) to revision 1's payload, putting 2026's factors in force for
+2027 with nothing failing. The version table held no validity at all (task 16), so which slot a revision belonged to
+was not a fact the store kept.
+
+The owner chose the remedy over naming the window in the request, which cannot stop a cross-window revert:
+- Migration `1791504000000` adds `config.entry_version.validity`, written at publish.
+- `config.reject_published_edit()` holds it immutable within the one transition it permits.
+- Revert flips only the slot the target was published for, after checking that slot holds a later revision, so a
+  revert that changes nothing no longer moves the store version.
+- The backfill is an exported data step with its case, task 164's rule. It records a window wherever the schedule can
+  say it; a superseded version of a scope of several windows stays `NULL`, and a revert to it is refused by name.
+
+**Searched for the shape.** `\.revert(` across `apps/api`: only two e2e suites call the publisher's revert. A-17's
+category reversion republishes the previous payload as a new revision, and A-18 never reverts. So no product path was
+exposed, but **`reporting_taxonomy/vsme`, two windows since task 33.3, was**: a revert there would have collapsed both
+adoptions onto one version.
+
+**Proven to bite, five mutations, each restored:**
+- The old scope-wide `UPDATE` put back turned two cases red: the store suite's *moves only the window* and the factor
+  suite's *moves no other window*.
+- The new condition dropped from the trigger, on the test stack, turned *refuses moving a version's window* red, **but
+  only after that case was rewritten**. Its first form updated `validity` on a still-`published` row, which the
+  trigger refuses whatever changes. It passed with the guard removed; it now attempts the one transition the trigger
+  permits, retiring to `superseded`.
+- The backfill's single-slot statement removed turned its data-step case red.
+- `on: periodStart` removed from the catalog turned two unit cases red.
+- A seed factor written as a number turned the shipped-set case red.
+
+**Not built, and why**: no route (task 38's run is the first caller), and no window on `inForce`'s answer (nothing
+reads it yet). The A-05 artboard's two lines that read *"the run's date"* are recorded as superseded in §12.5.6 rather
+than edited in the artboard, which is governed design.
+
+**Verified**, on the gates the change reaches. It reaches `apps/api` (a migration, two infrastructure services, a
+module) and `config/seed`:
+- **Unit**: `pnpm --filter @easyesg/api test`, 1,477 of 1,477.
+- **E2e**: `pnpm e2e`, 1,471 of 1,471 across 62 suites, including the new `factor-sets.e2e-spec.ts` and the store's
+  four new cases. This is the HTTP boot proof.
+- **Worker**: `pnpm e2e:worker`, 9 of 9. It is run although no consumer changed, because `CalculatorModule` and
+  `ConfigurationStoreModule` gained providers registered in both modes.
+- **Migrations**: `pnpm migrations:check`, 61 invariants on both stacks, the new migration reverted and re-applied in
+  between.
+- **Static**: `pnpm --filter @easyesg/api typecheck`, `pnpm lint`, `pnpm boundaries` and `pnpm docs:check` (46
+  claims; the seed count moved to 24).
+
+Read beyond their totals: neither run printed an `ERROR`, an unhandled rejection or a dependency warning. The test
+stack's pre-hook published `emission_factor_set/md` revision 1 and the second reported it `unchanged`, the loader's
+idempotence on the new artefact.
+
+**Not run, and why**: `openapi:check` (no controller or DTO changed) and `e2e:web` (nothing reaches a browser
+journey). **No review agents**: a sub-step closes on the gates its change reaches, and the three run when parent 37
+closes, which waits for 37.3 and so for task 38. The dev stack is migrated (`migrations:check` applies there), but its
+store carries the new artefact only once `pnpm --filter @easyesg/api config:seed` runs against it.

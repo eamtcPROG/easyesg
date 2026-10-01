@@ -31,7 +31,10 @@ export interface PublishedVersion {
 export interface RevertRequest {
   kind: string;
   scope: string;
-  /** The revision to move back to. Every slot holding a later one flips to it. */
+  /**
+   * The revision to move back to. The slot it was published for flips to it, if that slot holds a later one; no
+   * other window of the scope moves (task 37.2).
+   */
   toRevision: number;
 }
 
@@ -97,9 +100,11 @@ export class ConfigurationPublisher {
 
       const nextRevision = await this.nextRevision(runner, request);
 
+      // The window is recorded on the version as well as on the slot (task 37.2): it is what lets a revert find the
+      // one slot this version was published for, in a scope that holds several.
       const inserted = (await runner.query(
-        `INSERT INTO config.entry_version (kind, scope, revision, state, payload, created_by, published_at)
-         VALUES ($1, $2, $3, 'published', $4::jsonb, $5, now())
+        `INSERT INTO config.entry_version (kind, scope, revision, state, payload, created_by, published_at, validity)
+         VALUES ($1, $2, $3, 'published', $4::jsonb, $5, now(), $6::daterange)
          RETURNING id`,
         [
           request.kind,
@@ -107,6 +112,7 @@ export class ConfigurationPublisher {
           nextRevision,
           JSON.stringify(request.payload),
           request.actorId ?? null,
+          validity,
         ],
       )) as { id: string }[];
 
@@ -145,30 +151,51 @@ export class ConfigurationPublisher {
    * NFR-85's one step. The pointer moves back to a version that already exists and was never
    * altered — which is why revert is safe to run under pressure and why AD-4 rejected
    * effective-dating without immutability: an edited "published" version has nothing to revert to.
+   *
+   * **One slot, the one the target was published for** (task 37.2). This moved every slot of the
+   * scope holding a later revision, which was right while every reverted artefact held a single
+   * unbounded slot and wrong for an effective-dated one: reverting a correction to a 2026 factor set
+   * would have put it in force for 2027 too. The version's own recorded window names the slot; a
+   * version with none recorded — one superseded before windows were kept, in a scope holding several
+   * — is refused rather than guessed.
    */
   async revert(request: RevertRequest): Promise<void> {
     await this.inTransaction(async (runner) => {
       const target = (await runner.query(
-        `SELECT id FROM config.entry_version WHERE kind = $1 AND scope = $2 AND revision = $3`,
+        `SELECT id, validity::text AS validity FROM config.entry_version
+          WHERE kind = $1 AND scope = $2 AND revision = $3`,
         [request.kind, request.scope, request.toRevision],
-      )) as { id: string }[];
+      )) as { id: string; validity: string | null }[];
 
       if (target.length === 0) {
         throw new Error(
           `No revision ${request.toRevision} of ${request.kind}/${request.scope} to revert to`,
         );
       }
+      if (target[0].validity === null) {
+        throw new Error(
+          `Revision ${request.toRevision} of ${request.kind}/${request.scope} records no window, so the slot it ` +
+            `was published for is not known; publish its payload again instead of reverting to it`,
+        );
+      }
 
-      // Every slot currently holding a later revision moves back to this one. The later versions
-      // stay in the table, published-then-superseded and untouched, so a forward flip is available
-      // again without republishing anything.
+      // The existence check comes first for `publish`'s reason: `bump_store_version` fires per
+      // statement, so an UPDATE matching nothing would still move the store version and invalidate
+      // every replica's cache for a revert that changed nothing.
+      const slot = (await runner.query(
+        `SELECT 1 FROM config.entry_schedule s
+           JOIN config.entry_version v ON v.id = s.version_id
+          WHERE s.kind = $1 AND s.scope = $2 AND s.validity = $3::daterange AND v.revision > $4`,
+        [request.kind, request.scope, target[0].validity, request.toRevision],
+      )) as unknown[];
+      if (slot.length === 0) return;
+
+      // The later versions stay in the table, published-then-superseded and untouched, so a forward
+      // flip is available again without republishing anything.
       await runner.query(
-        `UPDATE config.entry_schedule s
-            SET version_id = $4
-          FROM config.entry_version v
-         WHERE v.id = s.version_id
-           AND s.kind = $1 AND s.scope = $2 AND v.revision > $3`,
-        [request.kind, request.scope, request.toRevision, target[0].id],
+        `UPDATE config.entry_schedule SET version_id = $4
+          WHERE kind = $1 AND scope = $2 AND validity = $3::daterange`,
+        [request.kind, request.scope, target[0].validity, target[0].id],
       );
     });
   }

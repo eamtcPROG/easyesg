@@ -13,6 +13,7 @@ import {
   moveProfileToEntities,
   moveProfileToOrganizations,
 } from '../src/infrastructure/persistence/migrations/1791417600000-profile-on-entity';
+import { backfillVersionWindows } from '../src/infrastructure/persistence/migrations/1791504000000-configuration-version-window';
 import { connectAs } from './support/database';
 
 /**
@@ -476,6 +477,54 @@ describe('the migrations’ data steps, against rows (task 164)', () => {
         )) as Record<string, string | null>[];
         expect(rows).toEqual([{ legal_form: 'srl', registered_locality: 'Chișinău', report_contact_name: 'Ana Rusu' }]);
       });
+    });
+  });
+
+  /**
+   * Task 37.2's backfill: a version records the window it was published for where the schedule can say so, and stays
+   * unrecorded where it cannot — a superseded version of a scope holding two windows, which a revert must refuse.
+   */
+  it('task 37.2’s backfill records each version’s window where the schedule can say it', async () => {
+    await inRolledBack(async (runner) => {
+      const seedVersion = async (scope: string, revision: number, state: string): Promise<string> => {
+        const [row] = (await runner.query(
+          `INSERT INTO config.entry_version (kind, scope, revision, state, payload, validity)
+           VALUES ('data_steps', $1, $2, $3::config.entry_state, '{}'::jsonb, NULL) RETURNING id`,
+          [scope, revision, state],
+        )) as { id: string }[];
+        return row.id;
+      };
+      const slot = (scope: string, validity: string, versionId: string) =>
+        runner.query(
+          `INSERT INTO config.entry_schedule (kind, scope, validity, version_id) VALUES ('data_steps', $1, $2::daterange, $3)`,
+          [scope, validity, versionId],
+        );
+
+      // One window: its superseded revision and its revision in force were both published into it.
+      await seedVersion('single', 1, 'superseded');
+      await slot('single', '[,)', await seedVersion('single', 2, 'published'));
+      // Two windows: each in-force version has its slot, and the superseded one could have been either's.
+      await slot('dated', '[2026-01-01,2027-01-01)', await seedVersion('dated', 1, 'superseded'));
+      await slot('dated', '[2027-01-01,)', await seedVersion('dated', 2, 'published'));
+      await seedVersion('dated', 3, 'superseded');
+
+      await backfillVersionWindows(runner);
+
+      const rows = (await runner.query(
+        `SELECT scope, revision, validity::text AS validity FROM config.entry_version
+          WHERE kind = 'data_steps' ORDER BY scope, revision`,
+      )) as { scope: string; revision: number; validity: string | null }[];
+      expect(rows).toEqual([
+        { scope: 'dated', revision: 1, validity: '[2026-01-01,2027-01-01)' },
+        { scope: 'dated', revision: 2, validity: '[2027-01-01,)' },
+        { scope: 'dated', revision: 3, validity: null },
+        { scope: 'single', revision: 1, validity: '(,)' },
+        { scope: 'single', revision: 2, validity: '(,)' },
+      ]);
+      // And the guarantee it lifted is back in place.
+      await expect(
+        runner.query(`UPDATE config.entry_version SET validity = NULL WHERE kind = 'data_steps' AND revision = 2`),
+      ).rejects.toThrow(/immutable/);
     });
   });
 });

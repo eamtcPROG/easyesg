@@ -229,6 +229,55 @@ describe('configuration store (DR-3, AD-4)', () => {
       expect(replica.get({ kind: KIND, scope: SCOPE })).toMatchObject({ revision: 1, payload: { turnover: 50 } });
     });
 
+    /**
+     * Task 37.2: revert moved every slot of the scope holding a later revision, which crossed windows the moment a scope
+     * held two. A factor set's 2026 window and 2027 window are that case, so the target's own recorded window decides.
+     */
+    it('moves only the window the target was published for', async () => {
+      const window2026 = { validFrom: '2026-01-01', validTo: '2027-01-01' };
+      const window2027 = { validFrom: '2027-01-01', validTo: '2028-01-01' };
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 }, ...window2026 });
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 60 }, ...window2027 });
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 55 }, ...window2026 });
+
+      await publisher.revert({ kind: KIND, scope: SCOPE, toRevision: 1 });
+
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+      expect(replica.get({ kind: KIND, scope: SCOPE, on: '2026-06-01' })).toMatchObject({ revision: 1 });
+      expect(replica.get({ kind: KIND, scope: SCOPE, on: '2027-06-01' })).toMatchObject({ revision: 2 });
+    });
+
+    it('records on each version the window it was published for', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 }, validFrom: '2026-01-01', validTo: '2027-01-01' });
+      await publisher.publish({ kind: KIND, scope: 'undated', payload: { turnover: 75 } });
+
+      const rows = await owner.query<{ scope: string; validity: string }[]>(
+        `SELECT scope, validity::text AS validity FROM config.entry_version WHERE kind = $1 ORDER BY scope`,
+        [KIND],
+      );
+      // An unbounded lower bound is stored exclusive — PostgreSQL's canonical form, not the publisher's spelling.
+      expect(rows).toEqual([
+        { scope: SCOPE, validity: '[2026-01-01,2027-01-01)' },
+        { scope: 'undated', validity: '(,)' },
+      ]);
+    });
+
+    it('refuses a revert to a version whose window was never recorded, and moves nothing', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 75 } });
+      // A version superseded before windows were kept, in a scope the backfill could not settle.
+      await owner.query(`ALTER TABLE config.entry_version DISABLE TRIGGER reject_published_edit`);
+      await owner.query(`UPDATE config.entry_version SET validity = NULL WHERE kind = $1 AND revision = 1`, [KIND]);
+      await owner.query(`ALTER TABLE config.entry_version ENABLE TRIGGER reject_published_edit`);
+
+      await expect(publisher.revert({ kind: KIND, scope: SCOPE, toRevision: 1 })).rejects.toThrow(/records no window/);
+
+      const replica = new ConfigurationStore(app);
+      await replica.refreshIfStale();
+      expect(replica.get({ kind: KIND, scope: SCOPE })).toMatchObject({ revision: 2 });
+    });
+
     it('supersedes the previous version rather than deleting it', async () => {
       await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 } });
       await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 75 } });
@@ -251,6 +300,20 @@ describe('configuration store (DR-3, AD-4)', () => {
         app.query(`UPDATE config.entry_version SET payload = '{"turnover":1}'::jsonb WHERE kind = $1`, [
           KIND,
         ]),
+      ).rejects.toThrow(/published and immutable/i);
+    });
+
+    // Task 37.2: a version whose window could be edited could be reverted into a slot it never held. Asked inside the
+    // one transition the trigger permits — retiring to `superseded` — since any other edit of a published row is
+    // refused whatever it changes, and a case that moved the window alone would pass with the window unguarded.
+    it('refuses moving a version’s window as it is retired', async () => {
+      await publisher.publish({ kind: KIND, scope: SCOPE, payload: { turnover: 50 }, validFrom: '2026-01-01', validTo: '2027-01-01' });
+      await expect(
+        app.query(
+          `UPDATE config.entry_version SET state = 'superseded', validity = '[2027-01-01,2028-01-01)'::daterange
+            WHERE kind = $1`,
+          [KIND],
+        ),
       ).rejects.toThrow(/published and immutable/i);
     });
 
