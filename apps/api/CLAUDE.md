@@ -88,7 +88,8 @@ traps each one left — grouped by area rather than by the task that built it.
   `PUT`/`DELETE …/sources/{sourceId}`, under an id the client chooses) and the runs that retain them
   (`POST /reports/{id}/calculator/runs`): `core.calc_source` is the editable working set, and `core.calc_run` with
   `core.calc_input` is each run's own copy of every line plus its factor-set pin, immutable by grant (§12.5.6's
-  task-38.1 row). A run has no results until 38.4; Scope 1 is computed since 38.2 by `domain/scope-1.ts`, exactly —
+  task-38.1 row). A run has no results until 38.4; Scope 1 is computed since 38.2 by `domain/scope-1.ts` and location-based Scope 2
+  since 38.3 by `domain/scope-2-location-based.ts`, both over `scope-total.ts`, exactly —
   decimal strings as scaled `bigint`s, never floats — and `null` rather than zero where no line of the scope was
   measured (§12.5.6's task-38.2 row). **The run tables carry no `UPDATE` or `DELETE` policy, so under
   forced row security even their owner's `DELETE` matches nothing and says nothing** — a suite's cleanup lifts `FORCE`

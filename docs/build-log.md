@@ -26860,3 +26860,34 @@ template literal, fixed with `JSON.stringify`), and `pnpm docs:check`. `pnpm e2e
 nothing at runtime imports these files yet; its result is the next paragraph.
 `pnpm e2e`: 1,512 of 1,512 across 63 suites, no `ERROR` line in the run. **No review agents**: a sub-step closes on
 the gates its change reaches, and the three run when task 38 closes.
+
+## Task 38.3 — Location-based Scope 2 · 2026-10-01
+
+Gross location-based Scope 2 as domain code, `domain/scope-2-location-based.ts`: purchased electricity at the grid
+factor, over 38.2's `scope-total.ts`. No decision was open, so there is no new §12.5.6 row; the two facts it rests on
+are recorded already.
+
+**One factor path, not two.** The row keeps 38.3 apart from 38.2 *"because the factor source and its effective dating
+differ"*. Task 37 put the grid factor in the same set and the same window as the fuels, so a run's single pin covers
+both scopes, and what makes this figure location-based is the factor the set's Scope 2 source carries. 38.2's entry
+and its §12.5.6 row recorded that before this task opened. The row itself is left as written, as a description of
+what was planned. A market-based figure would be a new `ghgScope` member over a different factor and a different B3
+element; FR-34 asks for this one alone.
+
+**The figure reads slightly high, and the module says why.** The JRC factor attributes grid losses to consumers, which
+the GHG Protocol counts in Scope 3. §12.5.6's task-37 row records it as a property of the published factor, corrected
+by publishing a better one, and nothing here adjusts it.
+
+**Verified.** The expected figures come from Python's `decimal` and the shipped 0.594645:
+- 17 000 kWh is 17 MWh and 10.108965 t;
+- 12.5 MWh is 7.4330625 t;
+- together, 17.5420275 t.
+
+The spec holds that the two scopes partition a run's lines between them, nothing counted twice and nothing dropped,
+and that a site billed by the landlord is named rather than counted as zero. Running it with the Scope 1 member in
+place of the Scope 2 member turned four of its five cases red.
+
+Runs:
+- `pnpm --filter @easyesg/api test` 1,544 of 1,544, `typecheck`, `pnpm lint`, `pnpm docs:check`.
+- `pnpm e2e`, per the lookup table: 1,512 of 1,512 across 63 suites, no `ERROR` line in the run.
+- **No review agents**: they run when task 38 closes.
