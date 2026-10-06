@@ -3,9 +3,9 @@
  *
  * Romanian is the SOURCE locale. English and Russian are each separately authored and never
  * machine-translated (problem_overview C9). NFR-4 imposes no architectural limit on locale
- * count and NFR-25 requires a fourth to be addable through content and configuration alone —
- * no code change, no schema change, no redeploy. That is why this file holds identifiers and
- * nothing else: adding a locale must never mean editing a component.
+ * count and NFR-25 requires a fourth to be addable by authoring its catalogue — no schema
+ * change, no route change and no per-locale branch in code; a build and deploy are expected
+ * (NFR-25 as amended 19 Aug 2026). That is why this file holds identifiers and nothing else: adding a locale must never mean editing a component.
  */
 export const LOCALES = ['ro', 'en', 'ru'] as const;
 

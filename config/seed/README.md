@@ -135,5 +135,5 @@ schedule is an operator action with a revert path (NFR-85). A fresh database nev
 ## Arriving later
 
 Taxonomy mappings (tasks 67.6, 67.7), unit lists (91.4), validation rules (40),
-notification category behaviour (49), plans and entitlements (53), VAT rules (61). Each is a file here and rows
+notification category behaviour (49), VAT rules (61). Plans and entitlements are not among them: they are `billing` tables (`architecture.md` §12.5.6's task-182 billing-catalogue row, 182/59). Each is a file here and rows
 in `config.entry_version` / `config.entry_schedule` — no table, and no code, per artefact.

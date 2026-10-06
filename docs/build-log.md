@@ -26953,3 +26953,96 @@ in the build.
 - Every web fixture building a `DisclosureField`: five, found by the typecheck, each given `derived` and
   `explanation`.
 - Every other derivation: B8 … B10 are fed by inputs, so their read-only state was already right under both rules.
+
+## Task 182 — The functional requirements, restated in detail · 2026-10-05
+
+`functional_requirements.md` is now an **index and eleven parts** (§1.4, §2.7). One table row per requirement had stopped carrying what a builder or a tester needs. Twenty-five rows held dated `Amended` and `Note` paragraphs inside the cell, so the current text of FR-27, FR-29 or FR-31 had to be reconstructed from history. The acceptance criteria could only restate their requirement (old §2.5.1), so none named a refusal, a boundary or a configured value. The inputs, refusals and state machines lived in `architecture.md` §12.5.6 with no way back to the requirement.
+
+The index keeps one row per requirement: the current obligation, its priority, its source use case and a link to its block. Each block holds a status word (§2.8), actors, traces and surfaces, behaviour, refusals with their wire outcome, effects, configured values, boundaries, acceptance criteria that each cite where they were decided (§2.5.1 as amended), and a History line per amendment. Business rules and entities moved into the part that holds their requirements. §4 and §5 stay as mapping stubs, so section-number citations still resolve.
+
+**How it was done.** Part 3 (authoring and the calculator) was written by hand from two evidence digests and reviewed with the owner as the standard. Ten parallel agents then drafted the other parts. They were told to write only what a source decides and to mark everything else `⟨Q-…⟩`. That produced **173 markers**, which merged into a register of **169 decisions**, 70 of them structural. The owner answered them in one pass (*accept all except* thirteen overrides and two explanations), and seven starting values followed in chat. Eight agents turned the answers into edit patches, which were applied serially: **1,054 of 1,076 edits applied mechanically**, and 22 collided with an earlier patch and were applied by hand. Every decision is recorded in one of twelve §12.5.6 rows titled *"… — task 182"* and cited as **182/n**. The owner's answer file and the register are kept in the session scratchpad, not the repository; the §12.5.6 rows are their permanent form.
+
+**What the restatement found.** The finding is about the documents, not the code.
+
+- **Identity and organization:** a PA lockout release written in §12.5.6 that nothing built; a blank name part accepted at registration (185); two second-factor prompts never built (190).
+- **Platform content:** no api owner for the taxonomy migration chain (67.21 … 67.24).
+- **Billing:** 26 of the 70 structural decisions, because nothing there had yet met a question at build time.
+- **Advisor:** an organization type that the schema cannot hold (116.4).
+- **Retention:** no retention row for data-subject request records.
+- **Validation:** an IDNO check digit never evaluated (188). The 7-3-1 / mod 10 rule was found in StephenAbbott/opencheck PR #269, verified against two real IDNOs, and validated there over all 265,814 in the State Register's 14 Sep 2026 export.
+- **Tracking:** last activity shipped with no row (199, archived as done).
+
+**Added requirements and use cases:** FR-204 … FR-206 (public tier; closes G-9 for UC-177 … UC-179, while UC-182 waits on 77.1); FR-207 (data-subject requests; closes OQ-5 and NFR OQ-12); FR-208 (the opt-in second factor); FR-209 with UC-214 (PA lockout release); FR-210 with UC-213 (report deletion: OA only, open period, never exported, soft delete). Totals: **195 MVP and 15 deferred requirements, 214 use cases.** The index's §9.1 and §9.2 were regenerated from the Source UC column and the use-case register. Before, they stopped at UC-176.
+
+**Reversals and amendments of earlier decisions, each dated where it lands:**
+- The OA may fill the report (D-2, `actors.md`).
+- One reporting period per fiscal year, reversing the task-31.1 row.
+- Plans are `billing` tables, not store artefacts (DR-3, §4.5 and the root `CLAUDE.md` invariant).
+- A retired plan's subscribers move to its named successor (BR-SUB-6).
+- UC-06's provider-session notice was struck.
+- UC-183 … UC-192's §5 specifications are written by their own slices.
+- Task 78 was re-cut, and 78.2 closes as delivered by 33.1 and 33.3.
+
+**New tasks:**
+- **Top-level:** 183 … 202. 184 is the tracking refactor (FR and Docs columns, checked by `docs:check`), done after this one.
+- **Sub-steps:** 37.4, 39.4, 44.6, 44.7, 46.5, 47.4, 47.5, 53.4, 54.4 … 54.6, 55.4, 58.4, 58.5, 59.4, 60.5 … 60.7, 61.6, 61.7, 62.4, 63.11 … 63.13, 65.5, 66.4, 67.12 … 67.24, 70.5, 73.7, 73.8, 76.6, 78.4, 116.4 … 116.8, 117.3 and 119.3 … 119.5.
+- Stage 1 holds two rows again (185 and 190), and its intro says so.
+
+**What went wrong, and is worth knowing next time:**
+
+- **Numbering assigned in advance collided with the register.** `ANSWERS.md` gave UC-212 to the lockout release, but task 144 had used UC-212 on 12 Sep 2026. The identity agent found it and used UC-214. *Check an identifier is free with a grep before assigning it,* even when the range "looks" ended.
+- **One agent wrote guessed task numbers instead of the agreed `NEW-…` keys**, and abbreviated runs as "NEW-tracking-11, -12, -13". The renumbering caught only each run's first key, which left "-12 (…)" in four §12.5.6 decisions until review. *A placeholder scheme is only as good as its least careful writer; grep for the residue afterwards.*
+- **Placement "after X" for several rows reversed their order** and interleaved sub-steps. The file's convention, held until today, is numeric order within a parent, with dependencies stated in the text. The rows were re-sorted.
+- **The seven starting values were appended beside sentences saying the owner had not given them.** The spec review caught each block contradicting itself. The fix was to replace those sentences, not add beside them.
+- **A follow-up question was framed against an accepted decision.** D-55 had per-metric thresholds; the question asked for "one value for every metric". It was reconciled by seeding every metric's threshold at 10 contributing organizations, and recorded as such in `ANSWERS.md`.
+
+**Review.** `spec-review` ran on `sonnet` at the owner's instruction for this task, overriding the agent's `opus` pin. It found 20 issues. It confirmed that every 182/n resolves, every cited identifier and problem type exists, and every Status agrees with its tasks. Fixed:
+- the contradictions above;
+- two decision mechanics left unrecorded (route permissions, and the permission to assign roles, now in 182/3);
+- a matrix change with no decision behind it, reverted (PA and BO in the notification centre);
+- a migration docblock naming 67.7 for the grant that is 67.18;
+- a wrong 182/n in FR-97;
+- FR-11's criteria naming four 410 statuses the code does not use (the same shape in all four criteria);
+- NFR-24's statement out of step with its trace;
+- totals carried in eight places;
+- §1.1 still claiming the document introduces nothing;
+- D-59's leftovers in `config/seed/README.md`.
+
+Its finding on task 53's scope was half right: 53.3 is plan *presentation copy*, which OQ-43 keeps in the store, so the parent stays `api+config`.
+
+**Searched for the same shape** after each fix: the 410 statuses across part 1; residual `⟨Q-` markers and `NEW-` keys across the parts and documents (none); out-of-order and orphaned sub-rows across `task.md`; and broken anchors across the index and parts (none, after section numbers were derived from each part's own headings instead of assumed to be 4 and 5).
+
+**Left open on purpose, each recorded with what changes if wrong:**
+- Legal and provider facts held as assumptions: controller versus processor, implied acceptance at the pilot, the e-Factura transport, the acquirer's dispute formats, the VAT treatment selection (pending a tax adviser in 55.4), and the VAT code's shape-only check.
+- The billing numbers 194 seeds beyond the three set today: the contract-expiry lead time, the write-off treatments and each provider's settlement tolerance.
+- UC-182's requirement, which waits on 77.1.
+
+**Gates.**
+- `docs:check` — green after the counts below.
+- Contract — `openapi:emit` and the contracts' `generate` were run for one added 429 and three corrected descriptions. `openapi:check` diffs against the commit, so it passes once these land together.
+- `typecheck` (api, i18n, contracts) — passes.
+- `eslint` on the six touched source files — passes. The whole-tree `pnpm lint` ran out of heap on this host.
+- `@easyesg/api` unit tests — 198 suites, 1,600 tests, pass.
+- `pnpm e2e` — the first attempt could not start because the Docker daemon was down. Rerun after starting Docker: 63 suites, 1,547 tests, pass. That is the HTTP boot proof for the one api change (an added 429 response). `e2e:worker` and `e2e:web` were not run, because the change reaches neither the worker nor a front end.
+
+**Parent close, warm or cold.** This is a docs task with six comment or decorator edits and a regenerated contract. No file was moved or renamed, and no type changed. The regenerated contract is a generated artefact, which CLAUDE.md puts on the cold list, but its diff is one added response and three descriptions, checked by `openapi:check` once it is committed. So the targeted runs above stand in for `gates`, and neither `gates` nor `gates:clean` was run.
+
+## Task 184 — One row per task, with related documents and covered requirements · 2026-10-06
+
+`task.md` is now **one row per task**: 71 rows, down from 337 table rows across 72 parents and 247 sub-steps. The owner asked for the compression. Each task's Description opens with its own text and then lists every sub-step it covers, as `**N.M** *Name* — description → expected result`. The 14 done sub-steps carry **✓**. 74.3 … 74.6 say *scheduled in Stage 7*, because they were rows in Stage 7 under a parent in Stage 3. The Scope cell is the union of the task's and its sub-steps' scopes.
+
+**The decisions, the owner's, in one batch:**
+- Sub-step numbers are **kept as labels**, never dropped. They are cited in the requirement parts' Status lines, in §12.5.6, in migrations and in build-log entries, and all 247 still resolve. This was checked by a script against the file as it stood before.
+- Done sub-steps are marked inside the list, so an open task shows which of its parts are finished.
+- **Related documents** holds the specification identifiers the row cites, read from its own text.
+- Only `task.md` changes. The archive keeps its history in the old shape. Tasks closed from now on go under a new header in the new shape, beginning with this one.
+
+**Covered FR is derived, not written by hand.** It is the inverse of the parts' Status lines (`functional_requirements.md` §2.8). The first draft also counted every FR the row's prose mentions. That was noisy: task 192, report deletion, listed FR-164 and FR-207 as covered because it names them as constraints. So that part was dropped. A requirement a row only mentions is not one it covers.
+
+**The gate.** `docs:check` gains a 47th claim: the number of rows whose Covered FR differs from the derivation, stated in the preamble as zero. It was proven by hand-editing one cell, which made the gate fail as expected, and then restoring the cell. `CLAUDE.md`'s claim count, its close rule ("the row travels with its group") and its task counts were updated to match. The `closing-a-task` skill needed no edit, because its sub-step language still holds: a sub-step is still the unit that closes, now by gaining its ✓.
+
+**What this replaces.** The 5 Oct plan for 184 added the two columns to both files and also checked each FR's status word against its rows. The owner re-cut it to the compression. The status-word check was not built. The Covered FR claim checks the same relation from the task side.
+
+**Cost.** Rows are long: task 67 is about 20,000 characters, with 24 sub-steps. That is the shape the owner chose. A reader looking for one sub-step searches for its number.
+
+**Gates.** `docs:check` passes all 47 claims. Nothing else is reached, since the change touches only the docs and the `docs:check` tool.

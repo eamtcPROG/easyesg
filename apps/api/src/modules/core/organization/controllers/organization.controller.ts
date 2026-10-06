@@ -31,9 +31,10 @@ export class OrganizationController {
   @ApiOperation({
     summary: 'The active organization’s profile',
     description:
-      'FR-15’s legal identity, which propagates into every report the organization produces. ' +
-      'Distinct from the billing account (FR-106): the invoiced legal person is not always the ' +
-      'reporting entity, particularly in a group structure.',
+      'The account: the organization’s name, country and the contact the platform writes to. Its ' +
+      'values do not reach a report — the reporting entity’s do (FR-15, FR-17). Distinct from the ' +
+      'billing account (FR-106): the invoiced legal person is not always the reporting entity, ' +
+      'particularly in a group structure.',
   })
   @ApiObjectResponse(OrganizationResponseDto, {
     status: 200,

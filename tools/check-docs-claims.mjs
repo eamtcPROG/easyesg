@@ -368,6 +368,39 @@ const CLAIMS = [
     },
   },
 
+  {
+    // **Covered FR is the inverse of the requirements' Status lines** (task 184, 6 Oct 2026). Each
+    // block in a `functional_requirements/` part opens with a Status line naming the tasks that
+    // realise it (§2.8); a task row's Covered FR cell is that relation read the other way. Two
+    // copies of one relation drift unless something holds them equal, and the parts are the
+    // authority — so a row whose cell differs from the derivation is the row's error. Counting
+    // disagreeing rows rather than asserting per row keeps it a claim the prose states.
+    what: 'task rows whose Covered FR disagrees with the requirement parts',
+    file: 'docs/task.md',
+    pattern: /\*\*(\w+) rows disagree with that inverse\*\*/,
+    actual: () => {
+      const covers = new Map();
+      for (const f of readdirSync('docs/functional_requirements').filter((n) => n.endsWith('.md'))) {
+        const text = read(join('docs/functional_requirements', f));
+        for (const m of text.matchAll(/^### (FR-\d+) — .*?\n\n\*\*Status\.\*\* ([^\n]*)/gm)) {
+          for (const n of m[2].matchAll(/(?<![\w./-])(\d{1,3})(?:\.\d{1,2})?(?!\d)/g)) {
+            (covers.get(n[1]) ?? covers.set(n[1], new Set()).get(n[1])).add(m[1]);
+          }
+        }
+      }
+      let wrong = 0;
+      for (const line of read('docs/task.md').split('\n')) {
+        const m = /^\|\s*\*\*(\d+)\*\*\s*\|/.exec(line);
+        if (!m) continue;
+        const cells = line.split(' | ');
+        const stated = cells[cells.length - 2].trim();
+        const derived = [...(covers.get(m[1]) ?? [])].sort((a, b) => a.slice(3) - b.slice(3)).join(', ') || '—';
+        if (stated !== derived) wrong += 1;
+      }
+      return wrong;
+    },
+  },
+
   // ── The archive's own size, claimed twice and guarded neither time until task 165 ──
   //
   // `archived_tasks.md`'s preamble and `task.md`'s opening sentence each state how much has closed,

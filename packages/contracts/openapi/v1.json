@@ -1866,6 +1866,12 @@
               "application/problem+json": {}
             }
           },
+          "429": {
+            "description": "Too many acceptance attempts for this account in the window (problem type rate-limited, task 26.2). Try again later.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
           "503": {
             "description": "The seat ceiling cannot be read right now (problem type seat-allowance-unavailable), so nobody is added until it can. Nothing changed; try again shortly.",
             "content": {
@@ -2084,7 +2090,7 @@
     },
     "/api/v1/organization": {
       "get": {
-        "description": "FR-15’s legal identity, which propagates into every report the organization produces. Distinct from the billing account (FR-106): the invoiced legal person is not always the reporting entity, particularly in a group structure.",
+        "description": "The account: the organization’s name, country and the contact the platform writes to. Its values do not reach a report — the reporting entity’s do (FR-15, FR-17). Distinct from the billing account (FR-106): the invoiced legal person is not always the reporting entity, particularly in a group structure.",
         "operationId": "OrganizationController_view",
         "parameters": [],
         "responses": {
@@ -8489,7 +8495,7 @@
           "name": {
             "type": "string",
             "maxLength": 200,
-            "description": "The registered legal name (FR-15). Propagates into every report the organization produces."
+            "description": "The organization’s name — the account’s, shown to the team. It does not reach a report; the reporting entity’s name does (FR-17)."
           },
           "countryCode": {
             "type": "string",

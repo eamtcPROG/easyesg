@@ -74,10 +74,9 @@ export class ChangePassword {
     if (!admitted) throw new AuthRateLimitedError();
 
     const credential = await this.store.run((tx) => tx.findCredential(command.accountId));
-    // A provider-only account (FR-2) holds no credential row and so has no current password to
-    // supply. It is refused rather than allowed to set one: FR-7 is a *change*, and creating a
-    // first password for a provider account is FR-8's territory — task 27.6 — where the rule that
-    // makes it safe (never remove the last credential) actually lives.
+    // No credential row means there is no current password to verify against, and FR-7 is a
+    // *change*: the caller is refused, uniformly. Every active account holds a password (FR-2 as
+    // amended 14 Sep 2026, task 155), so this guard is defence in depth, not a case.
     if (credential === null) throw new ReauthenticationFailedError();
 
     // Hashed outside the transaction, and verified outside it, for `RegisterAccount`'s stated

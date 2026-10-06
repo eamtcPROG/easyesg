@@ -22,7 +22,7 @@ import { Trim } from '@api/app/decorators/trim.decorator';
 export class CreateOrganizationRequestDto {
   @ApiProperty({
     maxLength: 200,
-    description: 'The registered legal name (FR-15). Propagates into every report the organization produces.',
+    description: 'The organization’s name — the account’s, shown to the team. It does not reach a report; the reporting entity’s name does (FR-17).',
   })
   @Trim()
   @IsString()

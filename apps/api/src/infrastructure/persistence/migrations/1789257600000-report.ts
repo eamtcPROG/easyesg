@@ -9,8 +9,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * anything in the request tier — not by a repository, not by a route somebody adds in task 34, not
  * by a `psql` session holding the application's credentials. That is DR-6's own mechanism
  * (*append-only enforced by DB privileges*, §7.7) narrowed from a table to two columns, and it
- * costs nothing on the write path. FR-69's migration run grants itself the privilege in task 76's
- * own migration, which is exactly what *"nothing but an explicit migration moves them"* means.
+ * costs nothing on the write path. FR-69's migration run grants itself the privilege in its own
+ * migration (task 67.18, the worker's right to move a pin), which is exactly what *"nothing but an explicit migration moves them"* means.
  *
  * **The values are copied from the period, never resolved a second time.** `TAXONOMY_REGISTRY`'s
  * `pinFor()` is asked once, at period open, for the period's own start date (task 31.1). Asking it

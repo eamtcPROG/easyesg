@@ -114,6 +114,13 @@ export class InvitationAcceptanceController {
       'nobody is added until it can. Nothing changed; try again shortly.',
     content: { 'application/problem+json': {} },
   })
+  @ApiResponse({
+    status: 429,
+    description:
+      'Too many acceptance attempts for this account in the window (problem type rate-limited, ' +
+      'task 26.2). Try again later.',
+    content: { 'application/problem+json': {} },
+  })
   async accept(
     @Body() body: InvitationTokenRequestDto,
   ): Promise<AcceptedInvitationResponseDto> {

@@ -793,7 +793,7 @@ export interface paths {
         };
         /**
          * The active organization’s profile
-         * @description FR-15’s legal identity, which propagates into every report the organization produces. Distinct from the billing account (FR-106): the invoiced legal person is not always the reporting entity, particularly in a group structure.
+         * @description The account: the organization’s name, country and the contact the platform writes to. Its values do not reach a report — the reporting entity’s do (FR-15, FR-17). Distinct from the billing account (FR-106): the invoiced legal person is not always the reporting entity, particularly in a group structure.
          */
         get: operations["OrganizationController_view"];
         put?: never;
@@ -3035,7 +3035,7 @@ export interface components {
             updatedAt: number;
         };
         CreateOrganizationRequestDto: {
-            /** @description The registered legal name (FR-15). Propagates into every report the organization produces. */
+            /** @description The organization’s name — the account’s, shown to the team. It does not reach a report; the reporting entity’s name does (FR-17). */
             name: string;
             /**
              * @description ISO 3166-1 alpha-2, case-insensitive and stored upper case. It is not merely an address line: it selects the legal-form vocabulary, so a country the platform does not yet register one for is refused with problem type country-not-supported. GET /organizations/legal-forms is the list of countries this accepts.
@@ -6175,6 +6175,15 @@ export interface operations {
             };
             /** @description The link cannot be used (problem type invitation-not-acceptable). The document carries a standing member saying which: expired, consumed, revoked, or unknown. None is retryable — ask an administrator for a new invitation. */
             410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description Too many acceptance attempts for this account in the window (problem type rate-limited, task 26.2). Try again later. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

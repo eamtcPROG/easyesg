@@ -49,7 +49,7 @@ Working commands: `pnpm gates:scoped` (the dependency-graph run — see "Closing
 for which run applies when),
 `pnpm lint`, `pnpm eslint:prove` (15 `no-restricted-syntax` selectors, each with a fixture
 proving it rejects a real violation, plus the four config blocks' spread matrix),
-`pnpm typecheck`, `pnpm image:check`, `pnpm docs:check` (46 countable claims these
+`pnpm typecheck`, `pnpm image:check`, `pnpm docs:check` (47 countable claims these
 files make, each checked against the repository and each proven to notice a changed number),
 `pnpm test`, `pnpm boundaries`,
 `pnpm boundaries:prove` (24 rules, each with a fixture proving it rejects a real violation),
@@ -240,8 +240,8 @@ changing anything — `gh run view <id> --log-failed` — and fix the cause rath
 | --- | --- | --- |
 | [problem_overview.md](docs/problem_overview.md) | Problem framing, scope boundary, closed decisions | — |
 | [actors.md](docs/actors.md) | Actors and permissions | CA, RC, OA, PA, BO, SYS |
-| [use_cases.md](docs/use_cases.md) | Behaviour, design constraints | UC-01…212, D-1…16 |
-| [functional_requirements.md](docs/functional_requirements.md) | What it does | FR-1…203 |
+| [use_cases.md](docs/use_cases.md) | Behaviour, design constraints | UC-01…214, D-1…16 |
+| [functional_requirements.md](docs/functional_requirements.md) and its eleven parts in [functional_requirements/](docs/functional_requirements/) | What it does — an index row per requirement, and a block per requirement in its part: status, actors, refusals, effects, sourced acceptance criteria (task 182) | FR-1…210 |
 | [non_functional_requirements.md](docs/non_functional_requirements.md) | How well | NFR-1…93, 106…110 (+94…105 deferred) |
 | [architecture.md](docs/architecture.md) | How it's built | AD-1…15, DR-1…11 |
 | [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…138, S-01…38, A-01…20 |
@@ -255,12 +255,13 @@ what is wrong.
 
 | File | Owns | Use it |
 | --- | --- | --- |
-| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, holds no row: its test — accounts, authentication, authorisation, admin user management and security *fully functional* — is met, and the five identity rows that wait on infrastructure or billing are named there with the Stage each sits in. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026), which is what let Stage 1 empty while `51`, `67` and `133` kept later tails; **181 tasks across the two plan files**, of which 53 groups are here and 128 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
-| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 128 numbers, 241 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
+| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, holds no row: its test — accounts, authentication, authorisation, admin user management and security *fully functional* — is met, and the five identity rows that wait on infrastructure or billing are named there with the Stage each sits in. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026), which is what let Stage 1 empty while `51`, `67` and `133` kept later tails; **202 tasks across the two plan files**, of which 71 tasks are here and 131 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
+| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 131 numbers, 244 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
 | [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
 
 **Closing a task is a three-part edit: set the Status, move the row into `archived_tasks.md`, write the
-build-log entry.** The row travels with its group — parent included — under the phase heading it was
+build-log entry.** Since 6 Oct 2026 (task 184) a task is **one row** in `task.md`, its sub-steps listed
+inside its Description by their own numbers and closed by marking them ✓; the row moves whole, under the phase heading it was
 sliced under, and `docs:check` fails on a `DONE` row left in `task.md`, because the split's whole
 value is that the active file is only remaining work.
 
@@ -324,7 +325,8 @@ How to do it:
   becomes *Closed — < decision >*, with the authority and the date; the normative text it changes
   is amended in the same edit; every place it is cross-logged is updated. A decision with no
   obvious owner goes in the closest section of `architecture.md` — not a new file and not a new
-  folder; the specification set is seven files and stays seven, and the three tracking files beside
+  folder; the specification set is seven documents and stays seven — `functional_requirements.md` is one
+  document in twelve files, an index and its eleven parts (task 182, 5 Oct 2026) — and the three tracking files beside
   it hold no decisions. Only then is the code written — a decision that exists only in a chat
   transcript has not been made.
 - **A deferral is recorded too**, with what was assumed meanwhile and what has to change if the
@@ -383,8 +385,10 @@ a regression.
   FKs, no shared transaction. With `BILLING_ENABLED=false`, UC-17…48 must still pass. (DR-1, AD-1)
 - **Tenancy is enforced by PostgreSQL RLS**, not by filters at call sites. (DR-5, AD-2)
 - **The standard is data, not code** — taxonomy, thresholds, factor sets, validation rule
-  definitions, effective dates, notification behaviour and plans are versioned config changed
-  without redeploy. (DR-3, AD-4) **Narrowed 19 Aug 2026 (architecture.md OQ-43):** this covers
+  definitions, effective dates and notification behaviour are versioned config changed
+  without redeploy. (DR-3, AD-4) **Plans left this list on 5 Oct 2026** (project owner, task 182,
+  `architecture.md` §12.5.6's billing-catalogue row, 182/59): plan versions, entitlements, prices and
+  discounts are tables in the `billing` schema, published and retired there, not store artefacts. **Narrowed 19 Aug 2026 (architecture.md OQ-43):** this covers
   behaviour, not wording. The *text* of labels, help, validation messages and notification
   templates ships in the release as committed message catalogues; only help-centre articles and
   plan presentation copy — the text edited by people who cannot deploy — stay in the store.
@@ -674,7 +678,7 @@ Layer inward: **domain → application (use cases) → interface adapters → fr
 - **The dependency rule is absolute: dependencies point inward only.** Domain and use-case
   code must not import NestJS, TypeORM, Express, Redis, BullMQ or any HTTP/ORM type. If a
   domain file needs a decorator or a repository class to compile, the layering is wrong.
-- **Use cases are first-class.** UC-01…192 are named in `use_cases.md`; application services
+- **Use cases are first-class.** UC-01…214 are named in `use_cases.md`; application services
   should read as those use cases, orchestrating domain objects and ports — not as thin
   pass-throughs from controller to repository.
 - **Frameworks live at the edge and are replaceable details.** Controllers, TypeORM
