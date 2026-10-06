@@ -93,3 +93,43 @@ export class NoCalcSourcesError extends DomainError {
     super('core.calculator.no_sources');
   }
 }
+
+/** What a `404` from the run read means, as its OpenAPI surface states it — `NO_SUCH_REPORT`'s pattern. */
+export const NO_SUCH_RUN = 'No such run of this report in the active organization.';
+
+/**
+ * No such run of this report (task 38.4). Another tenant's run, or another report's, reaches this too — RLS and the
+ * report in the path make "not yours" and "not there" one answer, `ReportNotFoundError`'s reasoning.
+ */
+export class CalcRunNotFoundError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.NotFound;
+  readonly status = 404;
+
+  constructor() {
+    super('core.calculator.run_not_found');
+  }
+}
+
+/**
+ * A replacement figure — a line's or a B3 scope's — that is not tonnes written as a number, carries no reason, or
+ * replaces a line with no computed figure (task 38.4; UC-34). UX-43: an unexplained substituted figure is never
+ * presentable, so the reason is part of what makes the figure acceptable at all.
+ */
+export class CalcOverrideInvalidError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.calculator.override_invalid');
+  }
+}
+
+/** A figure route named an element the calculator does not produce — only B3's Scope 1 and Scope 2 (task 38.4). */
+export class UnknownCalcFigureError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.calculator.unknown_figure');
+  }
+}

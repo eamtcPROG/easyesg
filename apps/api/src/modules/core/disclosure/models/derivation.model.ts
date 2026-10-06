@@ -1,3 +1,5 @@
+import { divideDecimals, isDecimalString, sumDecimals } from '@api/contracts/types/decimal';
+
 /**
  * The Basic-module figures EFRAG computes rather than asks for (task 36.10; FR-29, §7.3).
  *
@@ -58,7 +60,32 @@ export const DERIVATION_FORMULA = {
    * together would need a flag, and a flag on a formula is a second formula wearing one name.
    */
   SHARE_OF_HEADCOUNT: 'share_of_headcount',
+  /**
+   * B3's location-based Scope 1 and 2 total — every operand summed (task 38.4; §12.5.6's task-38.4 row).
+   *
+   * **Exact**, unlike the four above: a sum of finite decimals is finite, so it is added as decimal strings
+   * (`contracts/types/decimal.ts`) and never as floats — the total sits beside the two figures it is the sum of, and
+   * a reader adding them must get the same number. **Every operand is required**: a scope nobody answered is not a
+   * scope of zero (FR-30), so a total over one of two is no total.
+   */
+  SUM: 'sum',
+  /**
+   * B3's GHG intensity — the sum of every operand but `turnover`, divided by `turnover` — in tCO₂e per unit of the report's
+   * currency, EFRAG's `ghgEmissionsPerMonetaryItemType` (task 38.4).
+   *
+   * **The emissions are summed from the scopes, not read off the derived total**, because a derivation is recomputed
+   * from stored operands in one pass and a derived figure feeding another would be read before it was written. Named
+   * by role rather than by position, so the market-based intensity later is the same formula over its own scopes.
+   *
+   * **Division cannot be exact, so it rounds once**: ten significant figures, half-up (the project owner, 1 Oct
+   * 2026) — scale-free, since an intensity per leu is ~0.0000004 and decimal places would keep noise or lose it all.
+   * No turnover, or a turnover of zero, is no intensity.
+   */
+  INTENSITY: 'intensity',
 } as const;
+
+/** The precision an intensity is stored at (§12.5.6's task-38.4 row). Display rounds further. */
+export const INTENSITY_SIGNIFICANT_FIGURES = 10;
 
 export type DerivationFormula = (typeof DERIVATION_FORMULA)[keyof typeof DERIVATION_FORMULA];
 
@@ -161,6 +188,21 @@ export function computeDerivation(input: {
     // can produce both: `WriteDerivationInputs` accepts a `0` for the hours figure.
     if (totalHours === 0) return null;
     return String((accidents / totalHours) * ACCIDENT_RATE_BASE);
+  }
+
+  if (input.formula === DERIVATION_FORMULA.SUM) {
+    // Decimal strings throughout, never `number()`: the sum is exact, and a negative or malformed operand is not a
+    // figure this formula sums but a question with no answer yet.
+    const parts = Object.values(input.operands);
+    if (parts.length === 0 || !parts.every(isDecimalString)) return null;
+    return sumDecimals(parts);
+  }
+
+  if (input.formula === DERIVATION_FORMULA.INTENSITY) {
+    const { turnover, ...emissions } = input.operands;
+    const parts = Object.values(emissions);
+    if (!isDecimalString(turnover) || parts.length === 0 || !parts.every(isDecimalString)) return null;
+    return divideDecimals(sumDecimals(parts), turnover, { significantFigures: INTENSITY_SIGNIFICANT_FIGURES });
   }
 
   // **Named rather than fallen through to** (gate-integrity review, 9 Sep 2026). As an implicit

@@ -24,6 +24,7 @@ describe('scope1', () => {
     sourceKey,
     description: null,
     contents: { quantity, unitCode, notAvailableReason: quantity === null ? 'Not billed separately' : null },
+    override: null,
   });
 
   it('converts each line to MWh, applies its factor, and sums them exactly', () => {
@@ -83,5 +84,23 @@ describe('scope1', () => {
   it('refuses a line the set does not cover, rather than leaving it out of the total', () => {
     expect(() => scope1({ factorSet: shipped, inputs: [line('heat', 'district_heating', '12', 'Gcal')] })).toThrow(RangeError);
     expect(() => scope1({ factorSet: shipped, inputs: [line('gas', 'natural_gas', '12', 'Gcal')] })).toThrow(RangeError);
+  });
+
+  it('counts a line’s replacement figure, and keeps the computed one beside it (UC-34)', () => {
+    const van = { ...line('van', 'diesel_road', '332', 'l'), override: { tonnesCo2e: '0.84', explanation: 'One van was sub-leased' } };
+    const total = scope1({ factorSet: shipped, inputs: [line('gas', 'natural_gas', '500', 'm3'), van] });
+
+    expect(total.lines[1]).toEqual({
+      outcome: LINE_OUTCOME.OVERRIDDEN,
+      sourceId: 'van',
+      ghgScope: 'scope_1',
+      megawattHours: '3.3310556',
+      computedTonnesCo2e: '0.9026227980432',
+      tonnesCo2e: '0.84',
+      explanation: 'One van was sub-leased',
+    });
+    // 0.9699123256 + 0.84, the artboard's "gas 0,95 · diesel 0,84, your figure".
+    expect(total.tonnesCo2e).toBe('1.8099123256');
+    expect(total.unmeasured).toEqual([]);
   });
 });

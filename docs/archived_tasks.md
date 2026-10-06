@@ -1,6 +1,6 @@
 # Archived tasks
 
-The closed half of the execution plan: **127 task numbers, 235 rows**, filed under the phase
+The closed half of the execution plan: **128 task numbers, 241 rows**, filed under the phase
 headings they were sliced and closed under. [task.md](task.md) holds what is left; this file holds
 what is done, so that neither has to be read through to answer the other's question.
 
@@ -17,9 +17,9 @@ who meets *task 27.1* in a migration written a year ago finds it here, with the 
 
 **The phase headings are `architecture.md` §15.4's build order as the plan was first sliced, and
 §15.4 is unamended.** They are not the order the remaining work will be delivered in — [task.md](task.md)
-carries that, as an independent Stage sequence — which is why §15.4's steps 4 through 9 have no
+carries that, as an independent Stage sequence — which is why §15.4's steps 5 and 7 through 9 have no
 section here: nothing under them has closed yet. A heading with no rows would claim otherwise, so
-the empty ones are omitted rather than carried.
+the empty ones are omitted rather than carried. *(Step 4's section opened 1 Oct 2026, with task 38.)*
 
 **Why a row ended up as it did is in [build-log.md](build-log.md)**, whose entries are headed
 `## Task N — …`; search for `## Task N`. A sub-step's reasons sit in its parent's entry unless it
@@ -155,6 +155,21 @@ file, which is what finally makes *(continued)* accurate: 85–115 first, 122–
 | 36.12 | B11 — corruption and bribery | **api+web** | UC-29 (FR-24, FR-30) — Convictions and fines, where **absence is a positive statement** rather than an empty field — the distinction 36.13 exists to keep. **Scope corrected 9 Sep 2026** (`architecture.md` §12.5.6): FR-30's nil return shipped with 36.10, so B11's stated deliverable was already met — what this row could not predict is that B11's fine is the **fourth Basic-module monetary disclosure** and the one that made the deferred reporting-currency question unavoidable, since XBRL admits no monetary fact without an ISO 4217 unit. A migration, and task 30.2's deferral superseded | B11 complete; a nil return is distinguishable from an unanswered one | DONE |
 | 36.13 | A section omitted as classified or sensitive | **api+web** | UC-30 (FR-31): a reasoned **section** exclusion. **Narrowed 8 Sep 2026** (`architecture.md` §12.5.6): UC-31 and FR-32's *field*-level explained gap shipped with task 36.5, which is 36.13's own *"every module above needs both"* argument applied to the half that could be built — its storage has existed since task 34.1, while FR-31's section rationale has no column at all and `§7.1`'s `core.section_declaration` is unbuilt. What remains here is UX-29 and UX-30. **Rewritten 9 Sep 2026** (`architecture.md` §12.5.6): reading the VSME text found FR-31 specified an omission ground the standard does not have — ¶19 permits only *classified or sensitive information*, ¶21 requires B1–B11 reported, and there is no materiality assessment — so `core.section_declaration` was **withdrawn unbuilt** rather than left unbuilt, the mechanism being an ordinary B1 field that already shipped. What this delivers is a declaration that is reversible, carries **no rationale** (¶24(b) asks which disclosure, never why), and shows the module a **distinct third state** on the rail — neither complete nor incomplete | A section declared omitted satisfies validation and reads as its own state on the module list | DONE |
 | 36.14 | Prior-period values and carry-forward | web | UC-45 and UC-46 (FR-46, FR-47) over 34.3: last year's value beside this year's input, and one action to carry an unchanged one forward | Prior-period values visible in the wizard; carry-forward writes through the store | DONE |
+
+---
+
+## Phase 4 — Calculator and validation (§15.4 #4)
+
+**Filed here because 38 was sliced under it**; the rest of the phase — 37, whose 37.3 waited on this, and 39 … 42 — is still in `task.md`. **38.5 closed inside 38.4** (`architecture.md` §12.5.6's task-38.4 row): the build met UC-34's override before 38.5 opened, and the project owner took it in rather than ship an unexplained substitution.
+
+| # | Name | Scope | Description | Expected result (deliverables) | Status |
+| --- | --- | --- | --- | --- | --- |
+| **38** | **Calculation runs** | api | Scope 1 + location-based Scope 2 calc runs with retained inputs (P-11), results feeding B3 | A calc run reproducible from its retained inputs | DONE |
+| 38.1 | The run record and its retained inputs | api | P-11: inputs retained **at the run**, not recomputed later, under RLS and with 37.2's factor-set version pinned. This is the table reproducibility rests on, and retrofitting it is what P-11 exists to prevent | A run records every input and the factor version it used | DONE |
+| 38.2 | Scope 1 | api | The direct-emissions calculation as domain code — no NestJS, no TypeORM, no HTTP (the dependency rule), so its test runs with no database and no broker | Scope 1 computed and unit-tested with no infrastructure | DONE |
+| 38.3 | Location-based Scope 2 | api | FR-34, FR-35: purchased energy at the location-based grid factor, kept separate from 38.2 because the factor source and its effective dating differ | Scope 2 computed and unit-tested with no infrastructure | DONE |
+| 38.4 | Results into B3, and reproducibility | api | The write into task 34's store, and the proof that matters: re-running from 38.1's retained inputs yields the same number **after the factor set has moved on** | A run reproducible from its retained inputs across a factor change | DONE |
+| 38.5 | Override and annotation | api | UC-34 (FR-36): accept, explain or replace a computed figure. An override is a recorded disclosure, so it carries its reason and its audit row rather than overwriting silently | An overridden figure keeps both values and the reason | DONE |
 
 ---
 

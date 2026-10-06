@@ -79,6 +79,8 @@ const shaped = (over: Partial<DisclosureField> & { elementKey: string }): Disclo
   dimensionKey: '',
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,
+  derived: false,
+  explanation: null,
   ordinal: 0,
   currency: null,
   kind: DISCLOSURE_KIND.TEXT,

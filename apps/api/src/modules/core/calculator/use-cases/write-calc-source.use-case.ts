@@ -4,7 +4,7 @@ import {
   TaxonomyVersionUnavailableError,
 } from '@api/modules/core/disclosure/errors/report.errors';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
-import { contentsRefusal, factorRefusal } from '../domain/calc-source-check';
+import { contentsRefusal, factorRefusal, overrideRefusal } from '../domain/calc-source-check';
 import { siteAxisElements, siteRows } from '../domain/site-rows';
 import { CalcSourceElsewhereError, NoFactorSetError, UnknownCalcSiteError } from '../errors/calculator.errors';
 import type { CalcReports } from '../interfaces/calc-report.interface';
@@ -36,7 +36,7 @@ export class WriteCalcSource {
   ) {}
 
   async execute(command: WriteCalcSourceCommand): Promise<CalcSource> {
-    const contents = contentsRefusal(command.contents);
+    const contents = contentsRefusal(command.contents) ?? overrideRefusal(command);
     if (contents !== null) throw calcSourceRefusalError(contents);
 
     const report = await this.reports.find({ reportId: command.reportId });

@@ -1,5 +1,5 @@
 import { isGhgScope, type FactorSource } from '../models/factor-set.model';
-import { isDecimalString, isPositiveDecimalString } from './decimal-string';
+import { isDecimalString, isPositiveDecimalString } from '@api/contracts/types/decimal';
 
 /**
  * What a published `emission_factor_set` payload says, read and validated (task 37.1).

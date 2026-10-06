@@ -21,6 +21,8 @@ const field = (options: DisclosureOption[] | null): DisclosureField => ({
   dimensionKey: '',
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,
+  derived: false,
+  explanation: null,
   ordinal: 0,
   currency: null,
   kind: DISCLOSURE_KIND.TEXT,

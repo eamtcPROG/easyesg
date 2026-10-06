@@ -264,7 +264,9 @@
       "unknown_disclosure_element": "Câmpul trimis nu face parte din versiunea standardului sub care a fost creat acest raport, așa că nu a putut fi salvat. Reîmprospătați pagina pentru a încărca întrebările curente.",
       "reminder_not_outstanding": "Raportul nu mai este deschis — perioada lui a fost blocată sau raportul este gata de depunere —, așa că mementoul nu a fost trimis. Reîmprospătați pagina pentru a vedea rapoartele încă deschise.",
       "reminder_to_self": "Nu vă puteți trimite un memento dumneavoastră, așa că nu a fost trimis. Alegeți colegul căruia doriți să-i amintiți de raport.",
-      "reminder_recipient_not_found": "Persoana aleasă nu mai face parte din această organizație, așa că mementoul nu a fost trimis. Reîmprospătați pagina pentru a vedea membrii actuali."
+      "reminder_recipient_not_found": "Persoana aleasă nu mai face parte din această organizație, așa că mementoul nu a fost trimis. Reîmprospătați pagina pentru a vedea membrii actuali.",
+      "computed_figure_not_writable": "Această cifră a fost calculată din liniile facturilor dvs., așa că nu poate fi înlocuită prin scriere aici. Înlocuiți-o cu propria cifră și motivul ei sau modificați liniile de factură din care a fost calculată.",
+      "no_computed_figure": "Aici nu există o cifră calculată de explicat sau de înlocuit, așa că nu s-a modificat nimic. Calculați mai întâi cifra din liniile facturilor dvs. sau introduceți cifra direct."
     },
     "calculator": {
       "unknown_source": "Sursa de energie trimisă nu se numără printre cele acoperite de factorii de emisie ai acestui raport, așa că linia nu a putut fi salvată. Reîmprospătați pagina pentru a încărca sursele din care puteți alege.",
@@ -273,7 +275,10 @@
       "contents_invalid": "O linie are nevoie fie de cifra de pe factură împreună cu unitatea ei, fie de motivul pentru care cifra lipsește, așa că aceasta nu a putut fi salvată. Introduceți una dintre ele.",
       "source_elsewhere": "Linia aparține unui alt raport al acestei organizații, așa că nu a putut fi salvată aici. Reîmprospătați pagina și adăugați linia din nou.",
       "no_factor_set": "Pentru perioada de raportare a acestui raport nu au fost încă publicați factori de emisie, așa că liniile facturilor dvs. nu pot fi calculate. Introduceți direct cifrele emisiilor, dacă le aveți deja, sau încercați din nou după publicarea factorilor.",
-      "no_sources": "Nu există linii de factură din care să se calculeze, așa că nu s-a calculat nimic. Adăugați mai întâi cel puțin o linie de pe facturile dvs."
+      "no_sources": "Nu există linii de factură din care să se calculeze, așa că nu s-a calculat nimic. Adăugați mai întâi cel puțin o linie de pe facturile dvs.",
+      "run_not_found": "Calculul indicat nu există în acest raport, așa că nu a putut fi afișat. Reîmprospătați pagina pentru a încărca cel mai recent calcul al raportului.",
+      "override_invalid": "O cifră de înlocuire are nevoie de tonele de CO₂e scrise ca număr și de motivul pentru care înlocuiți cifra calculată, așa că nu a putut fi salvată. Introduceți-le pe amândouă sau păstrați cifra calculată.",
+      "unknown_figure": "Cifra indicată nu este una pe care o produce calculatorul de carbon, așa că nu poate fi explicată sau înlocuită aici. Reîmprospătați pagina și alegeți domeniul de aplicare 1 sau 2."
     }
   },
   "notification": {

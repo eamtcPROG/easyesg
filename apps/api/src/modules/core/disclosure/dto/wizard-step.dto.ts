@@ -263,11 +263,27 @@ export class DisclosureFieldDto {
   @ApiProperty({
     enum: ORIGINS,
     description:
-      'Where the stored value came from. `reported` on every row today — the calculator that ' +
-      'writes `calculated` is task 39.2 and the override that writes `overridden` is task 38.5, ' +
-      'so a client may render the other two but will not meet them yet.',
+      'Where the stored value came from: `reported` for what a reporter typed, `calculated` for a ' +
+      'figure the platform computed — a derivation, or the carbon calculator’s Scope 1 and 2 — and ' +
+      '`overridden` for a computed figure the reporter replaced, with a reason (UC-34).',
   })
   readonly origin: DisclosureOrigin;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'The note on a calculated figure, or the reason an overridden one replaced it (UC-34, UX-43); null on what a ' +
+      'reporter typed.',
+  })
+  readonly explanation: string | null;
+
+  @ApiProperty({
+    description:
+      'Whether the platform derives this figure rather than asking for it (FR-29): render it read-only, ' +
+      'since a write to it is refused. From the same artefact the refusal reads.',
+  })
+  readonly derived: boolean;
 
   @ApiProperty({ description: 'Position within a repeating group; 0 where there is none.' })
   readonly ordinal: number;
@@ -419,6 +435,8 @@ export class DisclosureFieldDto {
     this.periodType = field.periodType;
     this.dimensionLabel = field.dimensionLabel;
     this.origin = field.origin;
+    this.derived = field.derived;
+    this.explanation = field.explanation;
     this.axes = [...field.axes];
     this.repeating = field.repeating;
     this.order = field.order;

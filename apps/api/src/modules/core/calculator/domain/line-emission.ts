@@ -1,6 +1,6 @@
 import type { CalcInput } from '../models/calc-run.model';
 import type { FactorSet, GhgScope } from '../models/factor-set.model';
-import { multiplyDecimals } from './decimal-arithmetic';
+import { multiplyDecimals } from '@api/contracts/types/decimal';
 
 /**
  * One retained input's emissions — FR-34's two steps for one invoice line (task 38.2; UX-42).
@@ -21,6 +21,12 @@ export const LINE_OUTCOME = {
   COMPUTED: 'computed',
   /** Explained: no figure, and the reason why. */
   NOT_AVAILABLE: 'not_available',
+  /**
+   * Measured, and its computed tonnes replaced by the reporter's own with a reason (task 38.4; UC-34). **Both figures
+   * travel**: UX-43 shows the superseded computed value beside the substituted one, and the computed one is this
+   * line's own arithmetic, so it is computed here every time rather than stored.
+   */
+  OVERRIDDEN: 'overridden',
 } as const;
 export type LineOutcome = (typeof LINE_OUTCOME)[keyof typeof LINE_OUTCOME];
 
@@ -38,6 +44,17 @@ export type LineEmission =
       readonly outcome: typeof LINE_OUTCOME.NOT_AVAILABLE;
       readonly sourceId: string;
       readonly ghgScope: GhgScope;
+    }
+  | {
+      readonly outcome: typeof LINE_OUTCOME.OVERRIDDEN;
+      readonly sourceId: string;
+      readonly ghgScope: GhgScope;
+      readonly megawattHours: string;
+      /** What the factors give — superseded, and kept. */
+      readonly computedTonnesCo2e: string;
+      /** The reporter's figure, which the scope's total counts. */
+      readonly tonnesCo2e: string;
+      readonly explanation: string;
     };
 
 export function lineEmission(input: { readonly line: CalcInput; readonly factorSet: FactorSet }): LineEmission {
@@ -58,11 +75,23 @@ export function lineEmission(input: { readonly line: CalcInput; readonly factorS
   }
 
   const megawattHours = multiplyDecimals(quantity, perUnit);
+  const computed = multiplyDecimals(megawattHours, source.emissionFactor);
+  if (line.override !== null) {
+    return {
+      outcome: LINE_OUTCOME.OVERRIDDEN,
+      sourceId: line.sourceId,
+      ghgScope: source.ghgScope,
+      megawattHours,
+      computedTonnesCo2e: computed,
+      tonnesCo2e: line.override.tonnesCo2e,
+      explanation: line.override.explanation,
+    };
+  }
   return {
     outcome: LINE_OUTCOME.COMPUTED,
     sourceId: line.sourceId,
     ghgScope: source.ghgScope,
     megawattHours,
-    tonnesCo2e: multiplyDecimals(megawattHours, source.emissionFactor),
+    tonnesCo2e: computed,
   };
 }

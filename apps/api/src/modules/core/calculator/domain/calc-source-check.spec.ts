@@ -1,5 +1,5 @@
 import type { FactorSet, FactorSource } from '../models/factor-set.model';
-import { contentsRefusal, factorRefusal } from './calc-source-check';
+import { contentsRefusal, factorRefusal, overrideRefusal } from './calc-source-check';
 
 describe('an invoice line', () => {
   const measured = { quantity: '500', unitCode: 'm3', notAvailableReason: null };
@@ -51,6 +51,23 @@ describe('an invoice line', () => {
       expect(factorRefusal({ sourceKey: 'natural_gas', contents: { ...measured, unitCode: 'Gcal' }, factorSet })).toBe(
         'unit',
       );
+    });
+  });
+
+  describe('overrideRefusal', () => {
+    const replacement = { tonnesCo2e: '0.84', explanation: 'Sub-leased from March' };
+
+    it('accepts no override, and a measured line’s replacement with its reason', () => {
+      expect(overrideRefusal({ contents: measured, override: null })).toBeNull();
+      expect(overrideRefusal({ contents: measured, override: replacement })).toBeNull();
+    });
+
+    it.each([
+      ['a replacement with no reason', { contents: measured, override: { ...replacement, explanation: '  ' } }],
+      ['a replacement written with a comma', { contents: measured, override: { ...replacement, tonnesCo2e: '0,84' } }],
+      ['a replacement on an explained line, which has nothing computed', { contents: explained, override: replacement }],
+    ])('refuses %s', (_case, input) => {
+      expect(overrideRefusal(input)).toBe('override');
     });
   });
 });

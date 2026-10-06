@@ -59,6 +59,30 @@ export class WriteCalcSourceRequestDto {
   @IsString()
   @MaxLength(MAX_LINE_TEXT)
   notAvailableReason?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: '0.84',
+    description:
+      'The reporter’s own tonnes of CO₂e in place of the computed figure (UC-34), as a decimal string — sent with ' +
+      '`overrideExplanation`, and only on a line with a quantity. Omit both to let the computed figure stand.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  overrideTonnes?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: 'One van on the fleet card was sub-leased from March.',
+    description: 'Why the computed figure is replaced. Required with `overrideTonnes` (UX-43), never without it.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(MAX_LINE_TEXT)
+  overrideExplanation?: string | null;
 }
 
 /** One invoice line, as the report holds it. */
@@ -84,6 +108,12 @@ export class CalcSourceDto {
   @ApiProperty({ type: String, nullable: true })
   readonly notAvailableReason: string | null;
 
+  @ApiProperty({ type: String, nullable: true, description: 'The reporter’s tonnes in place of the computed ones.' })
+  readonly overrideTonnes: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Why they replace them.' })
+  readonly overrideExplanation: string | null;
+
   @ApiProperty({ type: Number, description: 'Unix epoch milliseconds, UTC.' })
   readonly updatedAt: EpochMillis;
 
@@ -95,6 +125,8 @@ export class CalcSourceDto {
     this.quantity = source.contents.quantity;
     this.unitCode = source.contents.unitCode;
     this.notAvailableReason = source.contents.notAvailableReason;
+    this.overrideTonnes = source.override?.tonnesCo2e ?? null;
+    this.overrideExplanation = source.override?.explanation ?? null;
     this.updatedAt = source.updatedAt.getTime();
   }
 }

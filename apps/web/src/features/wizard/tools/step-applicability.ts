@@ -18,14 +18,17 @@ export const askedFields = (fields: readonly DisclosureField[]): DisclosureField
   fields.filter((field) => field.applicable);
 
 /**
- * The elements the step *derives*, which the reporter does not type (FR-29; task 36.10). **Read off
- * the inputs rather than off a flag on the field**, so the two cannot disagree: a figure is derived
- * exactly when something is registered as feeding it, and that is the same fact the api refuses a
- * write against. A field marked derived with nothing feeding it would render permanently read-only
- * and permanently empty.
+ * The elements the step *derives*, which the reporter does not type (FR-29; tasks 36.10, 38.4). **Read off the
+ * field's own `derived`**, which the api answers from the derivation artefact — the same artefact its write path
+ * refuses a derived element against, so the screen and the refusal cannot disagree.
+ *
+ * **It was read off the derivation inputs until task 38.4**, on the reasoning that a figure is derived exactly when
+ * something feeds it. True of B8's, B9's and B10's figures, which are fed by inputs; false of B3's total and GHG
+ * intensity, whose operands are all disclosures and list no input — so read that way they rendered as fields to type,
+ * and every write to them was refused.
  */
-export const derivedElements = (inputs: readonly DerivationInput[]): ReadonlySet<string> =>
-  new Set(inputs.map((input) => input.derives));
+export const derivedElements = (fields: readonly DisclosureField[]): ReadonlySet<string> =>
+  new Set(fields.filter((field) => field.derived).map((field) => field.elementKey));
 
 /**
  * The inputs actually worth asking — those feeding a figure this reporter is asked for (FR-28,

@@ -3811,7 +3811,7 @@
     },
     "/api/v1/reports/{id}/calculator/runs": {
       "post": {
-        "description": "Retains every line as it stands and pins the factor set in force for the report's period start (FR-35, P-11, NFR-19). Its results arrive with the calculation itself.",
+        "description": "Retains every line as it stands, pins the factor set in force for the report's period start (FR-35, P-11, NFR-19), computes Scope 1 and location-based Scope 2, and writes them into B3 — where the total and the GHG intensity are derived from them. A scope with nothing measured clears only a figure an earlier run wrote.",
         "operationId": "CalculatorController_run",
         "parameters": [
           {
@@ -3857,6 +3857,212 @@
           }
         },
         "summary": "Record a calculation run",
+        "tags": [
+          "calculator"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/calculator/runs/{runId}": {
+      "get": {
+        "description": "What the run read, the factor set it is pinned to, and each line's derivation — input, MWh, factor applied, tonnes (UX-42) — recomputed from the retained inputs against the pinned set, never the one now in force, with whether that reproduces what the run stored (NFR-19).",
+        "operationId": "CalculatorController_replay",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "runId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The run, replayed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/CalcRunReplayDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such run of this report in the active organization."
+          }
+        },
+        "summary": "One recorded run, computed again against its own factor set",
+        "tags": [
+          "calculator"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/calculator/figures/{elementKey}/override": {
+      "put": {
+        "description": "UC-34 (FR-36): Scope 1 or location-based Scope 2 as a whole, superseded by the reporter’s tonnes with a required reason (UX-43). The computed figure stays — the latest run’s stored result — and the next run replaces the override. Refused where nothing computed the figure.",
+        "operationId": "CalculatorController_override",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "elementKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "GrossScope1GreenhouseGasEmissions",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OverrideFigureRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Overridden, and the total and intensity recomputed over it."
+          },
+          "400": {
+            "description": "Not a figure the calculator produces, or no tonnes or no reason."
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          },
+          "409": {
+            "description": "The reporting period is locked (FR-22). Or nothing computed the figure."
+          }
+        },
+        "summary": "Replace a computed B3 figure with your own, and say why",
+        "tags": [
+          "calculator"
+        ]
+      },
+      "delete": {
+        "description": "One action, nothing re-entered: the latest run’s stored result returns as the figure. No override, no change.",
+        "operationId": "CalculatorController_restore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "elementKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "GrossScope1GreenhouseGasEmissions",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The computed figure is in force."
+          },
+          "400": {
+            "description": "Not a figure the calculator produces."
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          },
+          "409": {
+            "description": "The reporting period is locked (FR-22)."
+          }
+        },
+        "summary": "Remove an override, putting the computed figure back",
+        "tags": [
+          "calculator"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/calculator/figures/{elementKey}/explanation": {
+      "put": {
+        "description": "UC-34 (FR-36): a note that stays beside a figure the calculator computed and that still stands.",
+        "operationId": "CalculatorController_explain",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "elementKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "GrossScope1GreenhouseGasEmissions",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplainFigureRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "The note is stored, or removed."
+          },
+          "400": {
+            "description": "Not a figure the calculator produces."
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          },
+          "409": {
+            "description": "The reporting period is locked (FR-22). Or the figure is not a computed one that stands."
+          }
+        },
+        "summary": "Explain a computed B3 figure, or remove its note",
         "tags": [
           "calculator"
         ]
@@ -9460,7 +9666,16 @@
               "calculated",
               "overridden"
             ],
-            "description": "Where the stored value came from. `reported` on every row today — the calculator that writes `calculated` is task 39.2 and the override that writes `overridden` is task 38.5, so a client may render the other two but will not meet them yet."
+            "description": "Where the stored value came from: `reported` for what a reporter typed, `calculated` for a figure the platform computed — a derivation, or the carbon calculator’s Scope 1 and 2 — and `overridden` for a computed figure the reporter replaced, with a reason (UC-34)."
+          },
+          "explanation": {
+            "type": "string",
+            "nullable": true,
+            "description": "The note on a calculated figure, or the reason an overridden one replaced it (UC-34, UX-43); null on what a reporter typed."
+          },
+          "derived": {
+            "type": "boolean",
+            "description": "Whether the platform derives this figure rather than asking for it (FR-29): render it read-only, since a write to it is refused. From the same artefact the refusal reads."
           },
           "ordinal": {
             "type": "number",
@@ -9622,6 +9837,8 @@
           "dimensionKey",
           "dimensionLabel",
           "origin",
+          "explanation",
+          "derived",
           "ordinal",
           "kind",
           "periodType",
@@ -10214,6 +10431,16 @@
             "type": "string",
             "nullable": true
           },
+          "overrideTonnes": {
+            "type": "string",
+            "nullable": true,
+            "description": "The reporter’s tonnes in place of the computed ones."
+          },
+          "overrideExplanation": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why they replace them."
+          },
           "updatedAt": {
             "type": "number",
             "description": "Unix epoch milliseconds, UTC."
@@ -10227,6 +10454,8 @@
           "quantity",
           "unitCode",
           "notAvailableReason",
+          "overrideTonnes",
+          "overrideExplanation",
           "updatedAt"
         ]
       },
@@ -10267,6 +10496,18 @@
             "nullable": true,
             "example": "Billed by the landlord",
             "description": "Why there is no figure. Sent instead of a quantity and its unit, never with them."
+          },
+          "overrideTonnes": {
+            "type": "string",
+            "nullable": true,
+            "example": "0.84",
+            "description": "The reporter’s own tonnes of CO₂e in place of the computed figure (UC-34), as a decimal string — sent with `overrideExplanation`, and only on a line with a quantity. Omit both to let the computed figure stand."
+          },
+          "overrideExplanation": {
+            "type": "string",
+            "nullable": true,
+            "example": "One van on the fleet card was sub-leased from March.",
+            "description": "Why the computed figure is replaced. Required with `overrideTonnes` (UX-43), never without it."
           }
         },
         "required": [
@@ -10331,6 +10572,15 @@
           "notAvailableReason": {
             "type": "string",
             "nullable": true
+          },
+          "overrideTonnes": {
+            "type": "string",
+            "nullable": true,
+            "description": "The reporter’s tonnes in place of the computed ones."
+          },
+          "overrideExplanation": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -10340,7 +10590,98 @@
           "description",
           "quantity",
           "unitCode",
-          "notAvailableReason"
+          "notAvailableReason",
+          "overrideTonnes",
+          "overrideExplanation"
+        ]
+      },
+      "ScopeLineDto": {
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The line, as the run retained it."
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "computed",
+              "not_available",
+              "overridden"
+            ],
+            "description": "Measured, explained with no figure, or measured and replaced."
+          },
+          "megawattHours": {
+            "type": "string",
+            "nullable": true,
+            "description": "The energy it stands for, in MWh; null where explained."
+          },
+          "tonnesCo2e": {
+            "type": "string",
+            "nullable": true,
+            "description": "Its emissions in tCO₂e as the scope counts them, unrounded — the reporter’s where overridden."
+          },
+          "computedTonnesCo2e": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where overridden, what the factors give — superseded and kept beside the substitute (UX-43)."
+          },
+          "explanation": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where overridden, why."
+          }
+        },
+        "required": [
+          "sourceId",
+          "outcome",
+          "megawattHours",
+          "tonnesCo2e",
+          "computedTonnesCo2e",
+          "explanation"
+        ]
+      },
+      "ScopeResultDto": {
+        "type": "object",
+        "properties": {
+          "ghgScope": {
+            "type": "string",
+            "enum": [
+              "scope_1",
+              "scope_2_location_based"
+            ]
+          },
+          "elementKey": {
+            "type": "string",
+            "example": "GrossScope1GreenhouseGasEmissions",
+            "description": "The B3 element it answers."
+          },
+          "tonnesCo2e": {
+            "type": "string",
+            "nullable": true,
+            "description": "Tonnes of CO₂e, unrounded and exact; null where no line of the scope was measured — never zero."
+          },
+          "unmeasured": {
+            "description": "The lines of the scope with no figure — what the total leaves out.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScopeLineDto"
+            }
+          }
+        },
+        "required": [
+          "ghgScope",
+          "elementKey",
+          "tonnesCo2e",
+          "unmeasured",
+          "lines"
         ]
       },
       "CalcRunDto": {
@@ -10363,14 +10704,94 @@
             "items": {
               "$ref": "#/components/schemas/CalcInputDto"
             }
+          },
+          "scopes": {
+            "description": "Scope 1, then location-based Scope 2 — the figures the run wrote into B3, with their derivation.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScopeResultDto"
+            }
           }
         },
         "required": [
           "id",
           "factorSet",
           "recordedAt",
-          "inputs"
+          "inputs",
+          "scopes"
         ]
+      },
+      "CalcRunReplayDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "factorSet": {
+            "$ref": "#/components/schemas/PinnedFactorSetDto"
+          },
+          "recordedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds, UTC."
+          },
+          "inputs": {
+            "description": "Every line the report held when the run was recorded.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalcInputDto"
+            }
+          },
+          "scopes": {
+            "description": "Scope 1, then location-based Scope 2 — the figures the run wrote into B3, with their derivation.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScopeResultDto"
+            }
+          },
+          "reproduces": {
+            "type": "boolean",
+            "description": "Whether computing the retained inputs again against the pinned factor set gives exactly the figures the run stored. False means the arithmetic or the record changed, never that the factors moved on."
+          }
+        },
+        "required": [
+          "id",
+          "factorSet",
+          "recordedAt",
+          "inputs",
+          "scopes",
+          "reproduces"
+        ]
+      },
+      "OverrideFigureRequestDto": {
+        "type": "object",
+        "properties": {
+          "valueNumeric": {
+            "type": "string",
+            "example": "1.75",
+            "description": "Tonnes of CO₂e in place of the computed figure, as a decimal string."
+          },
+          "explanation": {
+            "type": "string",
+            "example": "Our accountant’s figure, from metered readings.",
+            "description": "Why it replaces the computed figure. Required, and printed beside both (UX-43)."
+          }
+        },
+        "required": [
+          "valueNumeric",
+          "explanation"
+        ]
+      },
+      "ExplainFigureRequestDto": {
+        "type": "object",
+        "properties": {
+          "explanation": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Cahul shop is billed by its landlord and is not included.",
+            "description": "A note that stays beside the computed figure. Omit, send null or send blank to remove it."
+          }
+        }
       },
       "PriorReportPinDto": {
         "type": "object",

@@ -48,6 +48,7 @@ import {
   TEMPLATE_DEFAULTS,
   type TemplateDefaults,
 } from './interfaces/template-default.interface';
+import { CALCULATED_FIGURES } from './interfaces/calculated-figures.interface';
 import { REMINDER_PARTIES, type ReminderParties } from './interfaces/reminder-parties.interface';
 import { REPORT_STORE, type ReportStore } from './interfaces/report-store.interface';
 import { ApplicabilityRulesService } from './services/applicability-rules.service';
@@ -57,6 +58,11 @@ import { WizardService } from './services/wizard.service';
 import { CreateReport } from './use-cases/create-report.use-case';
 import { SendReportReminder } from './use-cases/send-report-reminder.use-case';
 import { ReadWizardStep, type WizardVocabulary } from './use-cases/read-wizard-step.use-case';
+import { CalculatedFiguresService } from './services/calculated-figures.service';
+import { ExplainCalculatedFigure } from './use-cases/explain-calculated-figure.use-case';
+import { OverrideCalculatedFigure } from './use-cases/override-calculated-figure.use-case';
+import { RestoreCalculatedFigure } from './use-cases/restore-calculated-figure.use-case';
+import { WriteCalculatedFigures } from './use-cases/write-calculated-figures.use-case';
 import { WriteDerivationInputs } from './use-cases/write-derivation-inputs.use-case';
 import { WriteDisclosureValues } from './use-cases/write-disclosure-values.use-case';
 
@@ -179,6 +185,32 @@ const httpProviders: Provider[] = [
       calculator: DerivationRecalculator,
     ) => new WriteDisclosureValues(reports, values, taxonomy, derivations, calculator),
   },
+  // Task 38.4: the carbon calculator's figures arrive through this module's own rules, not through its store — a run's
+  // write, and UC-34's override, its removal and an explanation, one use case each behind one service.
+  {
+    provide: WriteCalculatedFigures,
+    inject: [DISCLOSURE_VALUE_STORE, DERIVATION_RECALCULATOR],
+    useFactory: (values: DisclosureValueStore, recalculator: DerivationRecalculator) =>
+      new WriteCalculatedFigures(values, recalculator),
+  },
+  {
+    provide: OverrideCalculatedFigure,
+    inject: [DISCLOSURE_VALUE_STORE, DERIVATION_RECALCULATOR],
+    useFactory: (values: DisclosureValueStore, recalculator: DerivationRecalculator) =>
+      new OverrideCalculatedFigure(values, recalculator),
+  },
+  {
+    provide: RestoreCalculatedFigure,
+    inject: [DISCLOSURE_VALUE_STORE, DERIVATION_RECALCULATOR],
+    useFactory: (values: DisclosureValueStore, recalculator: DerivationRecalculator) =>
+      new RestoreCalculatedFigure(values, recalculator),
+  },
+  {
+    provide: ExplainCalculatedFigure,
+    inject: [DISCLOSURE_VALUE_STORE],
+    useFactory: (values: DisclosureValueStore) => new ExplainCalculatedFigure(values),
+  },
+  { provide: CALCULATED_FIGURES, useClass: CalculatedFiguresService },
   {
     provide: WriteDerivationInputs,
     inject: [REPORT_STORE, DERIVATION_INPUT_STORE, DERIVATIONS, DERIVATION_RECALCULATOR],
@@ -218,7 +250,10 @@ const httpProviders: Provider[] = [
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
   // `ReportService` and `WizardService` since task 67.9: a read under a support-access grant runs exactly the
   // reads a member's S-06 and S-07 run, inside the grant's binding, so it borrows them rather than restating.
+  // `CALCULATED_FIGURES` since task 38.4, for the carbon calculator's run.
   exports:
-    mode === APP_MODE.WORKER ? [] : [DISCLOSURE_VALUE_STORE, DisclosureFacade, ReportService, WizardService],
+    mode === APP_MODE.WORKER
+      ? []
+      : [DISCLOSURE_VALUE_STORE, DisclosureFacade, ReportService, WizardService, CALCULATED_FIGURES],
 })
 export class DisclosureModule {}

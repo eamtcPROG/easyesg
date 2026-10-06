@@ -6,7 +6,10 @@ import {
   type DisclosureOrigin,
 } from '@api/modules/core/disclosure/models/disclosure-value.model';
 import type { DisclosureValueStore } from '@api/modules/core/disclosure/interfaces/disclosure-value-store.interface';
-import { ReportNotEditableError } from '@api/modules/core/disclosure/errors/report.errors';
+import {
+  ComputedFigureNotWritableError,
+  ReportNotEditableError,
+} from '@api/modules/core/disclosure/errors/report.errors';
 import type {
   DisclosureState,
   DisclosureValue,
@@ -38,13 +41,14 @@ interface DisclosureValueRow {
   not_available_reason: string | null;
   carried_forward: boolean;
   origin: DisclosureOrigin;
+  explanation: string | null;
   created_at: Date;
   updated_at: Date;
 }
 
 const VALUE_COLUMNS = `id, report_id, element_key, dimension_key, ordinal,
         value_numeric, value_text, value_boolean, value_date::text AS value_date,
-        unit_code, state, not_available_reason, carried_forward, origin, created_at, updated_at`;
+        unit_code, state, not_available_reason, carried_forward, origin, explanation, created_at, updated_at`;
 
 const toValue = (row: DisclosureValueRow): DisclosureValue => ({
   id: row.id,
@@ -61,6 +65,7 @@ const toValue = (row: DisclosureValueRow): DisclosureValue => ({
   notAvailableReason: row.not_available_reason,
   carriedForward: row.carried_forward,
   origin: row.origin,
+  explanation: row.explanation,
   createdAt: row.created_at.getTime(),
   updatedAt: row.updated_at.getTime(),
 });
@@ -148,7 +153,14 @@ export class DisclosureValueStoreRepository
                   state                = EXCLUDED.state,
                   not_available_reason = EXCLUDED.not_available_reason,
                   carried_forward      = EXCLUDED.carried_forward,
+                  origin               = 'reported',
+                  explanation          = NULL,
                   updated_at           = now()
+            -- A figure the calculator computed or a reporter overrode is not typed over here (task 38.4): it is
+            -- replaced through the calculator's override, with a reason. A computed figure a run cleared is an
+            -- empty field again, and typing into it makes it the reporter's.
+            WHERE report_disclosure_value.origin = 'reported'
+               OR (report_disclosure_value.origin = 'calculated' AND report_disclosure_value.value_numeric IS NULL)
         RETURNING id`,
           [
             key.reportId,
@@ -166,7 +178,13 @@ export class DisclosureValueStoreRepository
           ],
         ),
       );
-      const written = rows[0] ? await this.find(key) : null;
+      if (rows[0] === undefined) {
+        // The guard above refused it, or the report is not the tenant's: the row that stands says which.
+        const standing = await this.find(key);
+        if (standing !== null && standing.origin !== DISCLOSURE_ORIGIN.REPORTED) throw new ComputedFigureNotWritableError();
+        throw new ReportNotEditableError();
+      }
+      const written = await this.find(key);
       if (written === null) throw new ReportNotEditableError();
       return written;
     } catch (error) {
@@ -199,6 +217,54 @@ export class DisclosureValueStoreRepository
       return translate(error);
     }
   }
+  /**
+   * A figure the carbon calculator stands behind (task 38.4) — `writeDerived`'s statement with the explanation beside
+   * the origin. The state is FR-30's, as everywhere: a figure of zero is a nil return, and no figure is `missing`.
+   */
+  async writeFigure(value: {
+    key: DisclosureValueKey;
+    valueNumeric: string | null;
+    origin: DisclosureOrigin;
+    explanation: string | null;
+  }): Promise<DisclosureValue> {
+    const state =
+      value.valueNumeric === null
+        ? DISCLOSURE_STATE.MISSING
+        : answeredState({ valueNumeric: value.valueNumeric, state: DISCLOSURE_STATE.OK });
+    try {
+      const rows = returnedRows<DisclosureValueRow>(
+        await this.manager.query(
+          `INSERT INTO core.report_disclosure_value (
+               organization_id, report_id, element_key, dimension_key, ordinal,
+               value_numeric, state, origin, explanation)
+           SELECT r.organization_id, r.id, $2, $3, $4, $5, $6, $7, $8
+             FROM core.report r
+            WHERE r.id = $1
+      ON CONFLICT (report_id, element_key, dimension_key, ordinal) DO UPDATE
+              SET value_numeric = EXCLUDED.value_numeric,
+                  state         = EXCLUDED.state,
+                  origin        = EXCLUDED.origin,
+                  explanation   = EXCLUDED.explanation,
+                  updated_at    = now()
+        RETURNING ${VALUE_COLUMNS}`,
+          [
+            value.key.reportId,
+            value.key.elementKey,
+            value.key.dimensionKey,
+            value.key.ordinal,
+            value.valueNumeric,
+            state,
+            value.origin,
+            value.explanation,
+          ],
+        ),
+      );
+      return toValue(rows[0]);
+    } catch (error) {
+      return translate(error);
+    }
+  }
+
   /**
    * A computed figure, with its provenance (task 36.10).
    *

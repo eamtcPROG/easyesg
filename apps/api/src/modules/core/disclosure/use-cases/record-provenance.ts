@@ -1,5 +1,5 @@
 import { B1_ELEMENT } from '../models/b1-element.model';
-import { DISCLOSURE_STATE, type DisclosureValue } from '../models/disclosure-value.model';
+import { DISCLOSURE_STATE, NO_DIMENSION, type DisclosureValue } from '../models/disclosure-value.model';
 import type { EntitySnapshot } from '../models/entity-snapshot.model';
 import type { DisclosureDefault } from '../models/wizard-step.model';
 import type { EntityDefaults } from './entity-defaults';
@@ -30,8 +30,6 @@ const SITE_ELEMENTS: readonly string[] = [
   B1_ELEMENT.SITE_COUNTRY,
   B1_ELEMENT.SITE_GPS,
 ];
-
-const NO_DIMENSION = '';
 
 /** A default that gives something — a site the record holds no postal code for gives none, and marks nothing. */
 const givesSomething = (given: DisclosureDefault): boolean =>

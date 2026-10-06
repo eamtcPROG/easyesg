@@ -179,14 +179,28 @@ export interface DisclosureField {
    */
   readonly dimensionLabel: string | null;
   /**
-   * Where the stored value came from (task 36.4) — `reported` for an unanswered field and for every
-   * row today, because nothing writes anything else until task 39.2's calculator return.
+   * Where the stored value came from (task 36.4) — `reported` for an unanswered field and for whatever a
+   * reporter typed, `calculated` for a figure the platform computed: a derivation since task 36.10, and the
+   * carbon calculator's Scope 1 and 2 since task 38.4.
    *
    * On the field rather than left to the screen because UC-21's alternate flow makes it a fact
    * about the *value*: B3's figures are *"normally produced by the carbon calculator rather than
    * typed directly"*, and the reporter cannot tell which by looking.
    */
   readonly origin: DisclosureOrigin;
+  /**
+   * Whether the platform derives this figure rather than asking for it (FR-29; tasks 36.10, 38.4) — so the screen
+   * renders it read-only and the write path refuses it. **From the derivation artefact, the same one the refusal
+   * reads**, so the two cannot disagree. Off the field since task 38.4, because a derivation whose operands are all
+   * disclosures — B3's total and intensity — lists no derivation input a screen could infer it from.
+   */
+  readonly derived: boolean;
+  /**
+   * UC-34's words on a computed figure (task 38.4): the note on a `calculated` one, or the reason an `overridden` one
+   * replaced it — UX-43's *"the superseded computed value alongside the substituted one"* needs the reason beside them.
+   * `null` on everything a reporter typed.
+   */
+  readonly explanation: string | null;
   readonly ordinal: number;
   readonly kind: DisclosureKind;
   readonly periodType: PeriodType;

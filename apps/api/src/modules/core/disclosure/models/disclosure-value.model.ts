@@ -16,15 +16,16 @@
  * field cannot otherwise tell which happened. UX-12's provenance and UX-43's override marker both
  * rest on the distinction — a trace can only be offered for a figure the system computed.
  *
- * **Three members and one reachable**, stated rather than left to be discovered, exactly as
- * `REPORT_STATUS` states its four. `CALCULATED` arrives with task 39.2's return from the
- * calculator and `OVERRIDDEN` with task 38.5's UC-34; the migration's own header carries why the
- * `CHECK` declares all three now.
+ * **Three members and two reachable**, stated rather than left to be discovered, exactly as
+ * `REPORT_STATUS` states its four. `CALCULATED` is written by the derivations (task 36.10) and by
+ * the carbon calculator's run (task 38.4); `OVERRIDDEN` arrives with task 38.5's UC-34. The
+ * migration's own header carries why the `CHECK` declares all three. *(This said `CALCULATED`
+ * arrived with task 39.2 until task 38.4 — wrong since 36.10, whose derivations write it.)*
  */
 export const DISCLOSURE_ORIGIN = {
-  /** The reporter entered it. Every row today, and the column's default. */
+  /** The reporter entered it. The column's default. */
   REPORTED: 'reported',
-  /** The carbon calculator produced it (UC-33; task 39.2 writes it). */
+  /** The platform computed it — a derivation (task 36.10), or the carbon calculator's run (UC-33; task 38.4). */
   CALCULATED: 'calculated',
   /** A reporter replaced a computed figure, with a reason (UC-34; task 38.5 writes it). */
   OVERRIDDEN: 'overridden',
@@ -148,6 +149,13 @@ export const answeredState = (contents: {
  * compiles and reads a dimension member as an element. It would answer `null` rather than throw,
  * which every caller reads as "not answered yet".
  */
+/**
+ * No axis member: the `dimension_key` every undimensioned field holds, and every row of a typed axis (§7.3). Never
+ * null, which is the column's own rule. **Beside the key it is a part of** since task 38.4, which met it as the third
+ * reader — the step read and the provenance record each declared their own copy until then.
+ */
+export const NO_DIMENSION = '';
+
 export interface DisclosureValueKey {
   readonly reportId: string;
   /** A VSME XBRL element local name, e.g. `EnergyConsumptionFromFuels`. */
@@ -201,13 +209,19 @@ export interface DisclosureValue extends DisclosureValueKey, DisclosureValueCont
    * Where this value came from (task 36.4) — **on the read shape and deliberately not on
    * `DisclosureValueContents`**, which is what a caller writes.
    *
-   * Nothing in the application can decide it yet: the column defaults to `reported`, and the two
-   * members that are not the default arrive with the tasks that produce them — 39.2's calculator
-   * return and 38.5's override. Putting it on the write shape would oblige every caller to supply
-   * a value only those tasks can know, and `wizard.controller.ts` would be sending `'reported'` on
-   * every keystroke as though it had chosen. **The read tells; the write cannot.**
+   * The ordinary write cannot decide it: the column defaults to `reported`, and the two members that are not the
+   * default are written by the code that produces them — a derivation (36.10) and the carbon calculator's run and
+   * override (38.4). Putting it on the write shape would oblige every caller to supply a value only those can know,
+   * and `wizard.controller.ts` would be sending `'reported'` on every keystroke as though it had chosen. **The read
+   * tells; the write cannot.**
    */
   readonly origin: DisclosureOrigin;
+  /**
+   * UC-34's words on a computed figure (task 38.4): an annotation on a `calculated` one, which still stands, or the
+   * reason an `overridden` one replaced it — required there by the table's own `CHECK` (UX-43). `null` on everything a
+   * reporter typed. On the read shape for `origin`'s reason: only the calculator's figure routes write it.
+   */
+  readonly explanation: string | null;
   readonly createdAt: number;
   readonly updatedAt: number;
 }

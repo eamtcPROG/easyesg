@@ -226,3 +226,34 @@ export class ReminderRecipientNotFoundError extends DomainError {
     super('core.report.reminder_recipient_not_found');
   }
 }
+
+/**
+ * An ordinary write reached a figure the carbon calculator computed, or one a reporter replaced with a reason (task
+ * 38.4; UC-34, UX-43). **Refused rather than written**, because typing over a computed figure is an override, and an
+ * override carries its reason: written here, the figure would be a substitution nobody explained, wearing the mark
+ * that says the platform computed it. The calculator's figure route is the way to replace it.
+ *
+ * **Under the generic conflict slug**: the field's state, not the value sent, is what refuses it.
+ */
+export class ComputedFigureNotWritableError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.computed_figure_not_writable');
+  }
+}
+
+/**
+ * An override or an explanation was asked of a figure nothing computed (task 38.4; UC-34): the field holds what a
+ * reporter typed, or is empty. **Refused rather than written**, because UC-34 replaces or explains a *computed* figure —
+ * a typed one is simply typed again, and an "override" of it would claim a computed figure that never existed.
+ */
+export class NoComputedFigureError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.no_computed_figure');
+  }
+}

@@ -345,6 +345,8 @@ const UNAUDITED_TABLES = [
    * them would record the writing of a record. They are what P-11 retains, and the lines they copy are audited.
    */
   'core.calc_input',
+  // And what a run computed (task 38.4), on the same grant and for the same reason.
+  'core.calc_result',
   'core.calc_run',
   /**
    * `notification.notification` (task 50.1.1) is written by the worker from a raised event, never by a person: no
@@ -503,6 +505,9 @@ const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
     'id',
     'not_available_reason',
     'organization_id',
+    // A line's substituted figure as the run read it (task 38.4) — retained like every other input.
+    'override_explanation',
+    'override_tonnes',
     'quantity',
     'report_id',
     'run_id',
@@ -511,6 +516,7 @@ const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
     'source_key',
     'unit_code',
   ],
+  'core.calc_result': ['element_key', 'id', 'organization_id', 'report_id', 'run_id', 'value_numeric'],
   'core.calc_run': [
     'factor_set_country',
     'factor_set_revision',

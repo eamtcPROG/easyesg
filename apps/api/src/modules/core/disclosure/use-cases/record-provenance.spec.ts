@@ -27,6 +27,7 @@ const stored = (
   notAvailableReason: null,
   carriedForward: false,
   origin: DISCLOSURE_ORIGIN.REPORTED,
+  explanation: null,
   createdAt: 0,
   updatedAt: 0,
   ...over,

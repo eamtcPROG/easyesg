@@ -155,7 +155,7 @@ export function StepFields({
   // because this component re-renders on every autosave transition while `fields` and
   // `derivationInputs` move only when the server re-renders.
   const asked = useMemo(() => askedFields(fields), [fields]);
-  const derived = useMemo(() => derivedElements(derivationInputs), [derivationInputs]);
+  const derived = useMemo(() => derivedElements(fields), [fields]);
   const askedInputs = useMemo(
     () => askedInputsOf({ inputs: derivationInputs, asked }),
     [derivationInputs, asked],

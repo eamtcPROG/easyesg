@@ -1362,9 +1362,73 @@ export interface paths {
         put?: never;
         /**
          * Record a calculation run
-         * @description Retains every line as it stands and pins the factor set in force for the report's period start (FR-35, P-11, NFR-19). Its results arrive with the calculation itself.
+         * @description Retains every line as it stands, pins the factor set in force for the report's period start (FR-35, P-11, NFR-19), computes Scope 1 and location-based Scope 2, and writes them into B3 — where the total and the GHG intensity are derived from them. A scope with nothing measured clears only a figure an earlier run wrote.
          */
         post: operations["CalculatorController_run"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/calculator/runs/{runId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One recorded run, computed again against its own factor set
+         * @description What the run read, the factor set it is pinned to, and each line's derivation — input, MWh, factor applied, tonnes (UX-42) — recomputed from the retained inputs against the pinned set, never the one now in force, with whether that reproduces what the run stored (NFR-19).
+         */
+        get: operations["CalculatorController_replay"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/calculator/figures/{elementKey}/override": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace a computed B3 figure with your own, and say why
+         * @description UC-34 (FR-36): Scope 1 or location-based Scope 2 as a whole, superseded by the reporter’s tonnes with a required reason (UX-43). The computed figure stays — the latest run’s stored result — and the next run replaces the override. Refused where nothing computed the figure.
+         */
+        put: operations["CalculatorController_override"];
+        post?: never;
+        /**
+         * Remove an override, putting the computed figure back
+         * @description One action, nothing re-entered: the latest run’s stored result returns as the figure. No override, no change.
+         */
+        delete: operations["CalculatorController_restore"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/calculator/figures/{elementKey}/explanation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Explain a computed B3 figure, or remove its note
+         * @description UC-34 (FR-36): a note that stays beside a figure the calculator computed and that still stands.
+         */
+        put: operations["CalculatorController_explain"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3448,10 +3512,14 @@ export interface components {
             /** @description What to call this row. A member-keyed row is named by its member (“Renewable energy”, “Ammonia (NH3)”); a typed-axis row by what the report shows for that ordinal — B1’s address for the site B5 is asking about, which is the stored answer where there is one and the entity snapshot’s default otherwise. Null where neither answers, and null where the pinned version names the member nothing; the key is never a fallback, because it is an internal identifier, and the screen keeps the position, so an unnamed row is still “site 2”. */
             dimensionLabel: string | null;
             /**
-             * @description Where the stored value came from. `reported` on every row today — the calculator that writes `calculated` is task 39.2 and the override that writes `overridden` is task 38.5, so a client may render the other two but will not meet them yet.
+             * @description Where the stored value came from: `reported` for what a reporter typed, `calculated` for a figure the platform computed — a derivation, or the carbon calculator’s Scope 1 and 2 — and `overridden` for a computed figure the reporter replaced, with a reason (UC-34).
              * @enum {string}
              */
             origin: "reported" | "calculated" | "overridden";
+            /** @description The note on a calculated figure, or the reason an overridden one replaced it (UC-34, UX-43); null on what a reporter typed. */
+            explanation: string | null;
+            /** @description Whether the platform derives this figure rather than asking for it (FR-29): render it read-only, since a write to it is refused. From the same artefact the refusal reads. */
+            derived: boolean;
             /** @description Position within a repeating group; 0 where there is none. */
             ordinal: number;
             /**
@@ -3731,6 +3799,10 @@ export interface components {
             quantity: string | null;
             unitCode: string | null;
             notAvailableReason: string | null;
+            /** @description The reporter’s tonnes in place of the computed ones. */
+            overrideTonnes: string | null;
+            /** @description Why they replace them. */
+            overrideExplanation: string | null;
             /** @description Unix epoch milliseconds, UTC. */
             updatedAt: number;
         };
@@ -3765,6 +3837,16 @@ export interface components {
              * @example Billed by the landlord
              */
             notAvailableReason?: string | null;
+            /**
+             * @description The reporter’s own tonnes of CO₂e in place of the computed figure (UC-34), as a decimal string — sent with `overrideExplanation`, and only on a line with a quantity. Omit both to let the computed figure stand.
+             * @example 0.84
+             */
+            overrideTonnes?: string | null;
+            /**
+             * @description Why the computed figure is replaced. Required with `overrideTonnes` (UX-43), never without it.
+             * @example One van on the fleet card was sub-leased from March.
+             */
+            overrideExplanation?: string | null;
         };
         PinnedFactorSetDto: {
             /**
@@ -3797,6 +3879,43 @@ export interface components {
             quantity: string | null;
             unitCode: string | null;
             notAvailableReason: string | null;
+            /** @description The reporter’s tonnes in place of the computed ones. */
+            overrideTonnes: string | null;
+            overrideExplanation: string | null;
+        };
+        ScopeLineDto: {
+            /**
+             * Format: uuid
+             * @description The line, as the run retained it.
+             */
+            sourceId: string;
+            /**
+             * @description Measured, explained with no figure, or measured and replaced.
+             * @enum {string}
+             */
+            outcome: "computed" | "not_available" | "overridden";
+            /** @description The energy it stands for, in MWh; null where explained. */
+            megawattHours: string | null;
+            /** @description Its emissions in tCO₂e as the scope counts them, unrounded — the reporter’s where overridden. */
+            tonnesCo2e: string | null;
+            /** @description Where overridden, what the factors give — superseded and kept beside the substitute (UX-43). */
+            computedTonnesCo2e: string | null;
+            /** @description Where overridden, why. */
+            explanation: string | null;
+        };
+        ScopeResultDto: {
+            /** @enum {string} */
+            ghgScope: "scope_1" | "scope_2_location_based";
+            /**
+             * @description The B3 element it answers.
+             * @example GrossScope1GreenhouseGasEmissions
+             */
+            elementKey: string;
+            /** @description Tonnes of CO₂e, unrounded and exact; null where no line of the scope was measured — never zero. */
+            tonnesCo2e: string | null;
+            /** @description The lines of the scope with no figure — what the total leaves out. */
+            unmeasured: string[];
+            lines: components["schemas"]["ScopeLineDto"][];
         };
         CalcRunDto: {
             /** Format: uuid */
@@ -3806,6 +3925,40 @@ export interface components {
             recordedAt: number;
             /** @description Every line the report held when the run was recorded. */
             inputs: components["schemas"]["CalcInputDto"][];
+            /** @description Scope 1, then location-based Scope 2 — the figures the run wrote into B3, with their derivation. */
+            scopes: components["schemas"]["ScopeResultDto"][];
+        };
+        CalcRunReplayDto: {
+            /** Format: uuid */
+            id: string;
+            factorSet: components["schemas"]["PinnedFactorSetDto"];
+            /** @description Unix epoch milliseconds, UTC. */
+            recordedAt: number;
+            /** @description Every line the report held when the run was recorded. */
+            inputs: components["schemas"]["CalcInputDto"][];
+            /** @description Scope 1, then location-based Scope 2 — the figures the run wrote into B3, with their derivation. */
+            scopes: components["schemas"]["ScopeResultDto"][];
+            /** @description Whether computing the retained inputs again against the pinned factor set gives exactly the figures the run stored. False means the arithmetic or the record changed, never that the factors moved on. */
+            reproduces: boolean;
+        };
+        OverrideFigureRequestDto: {
+            /**
+             * @description Tonnes of CO₂e in place of the computed figure, as a decimal string.
+             * @example 1.75
+             */
+            valueNumeric: string;
+            /**
+             * @description Why it replaces the computed figure. Required, and printed beside both (UX-43).
+             * @example Our accountant’s figure, from metered readings.
+             */
+            explanation: string;
+        };
+        ExplainFigureRequestDto: {
+            /**
+             * @description A note that stays beside the computed figure. Omit, send null or send blank to remove it.
+             * @example The Cahul shop is billed by its landlord and is not included.
+             */
+            explanation?: string | null;
         };
         PriorReportPinDto: {
             /** Format: uuid */
@@ -7430,6 +7583,172 @@ export interface operations {
                 content?: never;
             };
             /** @description The reporting period is locked (FR-22). Or no factor set serves the period, or there are no lines. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalculatorController_replay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run, replayed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["CalcRunReplayDto"];
+                    };
+                };
+            };
+            /** @description No such run of this report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalculatorController_override: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                elementKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OverrideFigureRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Overridden, and the total and intensity recomputed over it. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a figure the calculator produces, or no tonnes or no reason. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The reporting period is locked (FR-22). Or nothing computed the figure. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalculatorController_restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                elementKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The computed figure is in force. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a figure the calculator produces. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The reporting period is locked (FR-22). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalculatorController_explain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                elementKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExplainFigureRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The note is stored, or removed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a figure the calculator produces. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The reporting period is locked (FR-22). Or the figure is not a computed one that stands. */
             409: {
                 headers: {
                     [name: string]: unknown;

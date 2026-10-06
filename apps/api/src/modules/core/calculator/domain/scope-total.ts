@@ -1,13 +1,13 @@
 import type { CalcInput } from '../models/calc-run.model';
 import type { FactorSet, GhgScope } from '../models/factor-set.model';
-import { sumDecimals } from './decimal-arithmetic';
+import { sumDecimals } from '@api/contracts/types/decimal';
 import { LINE_OUTCOME, lineEmission, type LineEmission } from './line-emission';
 
 /**
  * One GHG scope's total over a run's inputs (task 38.2; FR-34, UC-33).
  *
  * **Summed unrounded, rounded never here** — S-09's *"totals are summed unrounded and rounded once, at the end"*, and
- * the end is presentation. The sum is exact (`decimal-arithmetic.ts`), so a total is the same number however its
+ * the end is presentation. The sum is exact (`contracts/types/decimal.ts`), so a total is the same number however its
  * lines are ordered.
  *
  * **`null`, not zero, where no line of the scope was measured.** FR-30 turns on the difference: zero is a nil return,
@@ -38,8 +38,9 @@ export function scopeTotal(input: {
   const measured: string[] = [];
   const unmeasured: string[] = [];
   for (const line of lines) {
-    if (line.outcome === LINE_OUTCOME.COMPUTED) measured.push(line.tonnesCo2e);
-    else unmeasured.push(line.sourceId);
+    // An overridden line was measured: its total counts the reporter's figure, which is the one the report states.
+    if (line.outcome === LINE_OUTCOME.NOT_AVAILABLE) unmeasured.push(line.sourceId);
+    else measured.push(line.tonnesCo2e);
   }
 
   return {

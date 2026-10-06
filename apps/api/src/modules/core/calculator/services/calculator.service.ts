@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import type { CalcRun } from '../models/calc-run.model';
+import type { ScopeTotal } from '../domain/scope-total';
+import type { CalcRun, StoredCalcRun } from '../models/calc-run.model';
 import type { CalcSource, CalcSourceKey } from '../models/calc-source.model';
 import type { FactorSet } from '../models/factor-set.model';
+import { ExplainFigure } from '../use-cases/explain-figure.use-case';
+import { OverrideFigure } from '../use-cases/override-figure.use-case';
+import { ReadCalcRun } from '../use-cases/read-calc-run.use-case';
 import { ReadCalcSources } from '../use-cases/read-calc-sources.use-case';
 import { RecordCalcRun } from '../use-cases/record-calc-run.use-case';
 import { RemoveCalcSource } from '../use-cases/remove-calc-source.use-case';
+import { RestoreFigure } from '../use-cases/restore-figure.use-case';
 import { WriteCalcSource, type WriteCalcSourceCommand } from '../use-cases/write-calc-source.use-case';
 
 /**
@@ -19,6 +24,10 @@ export class CalculatorService {
     private readonly writeSource: WriteCalcSource,
     private readonly removeSource: RemoveCalcSource,
     private readonly recordRun: RecordCalcRun,
+    private readonly readRun: ReadCalcRun,
+    private readonly overrideFigure: OverrideFigure,
+    private readonly restoreFigure: RestoreFigure,
+    private readonly explainFigure: ExplainFigure,
   ) {}
 
   sources(query: { readonly reportId: string }): Promise<CalcSource[]> {
@@ -33,7 +42,32 @@ export class CalculatorService {
     return this.removeSource.execute(command);
   }
 
-  run(command: { readonly reportId: string }): Promise<{ readonly run: CalcRun; readonly factorSet: FactorSet }> {
+  run(command: { readonly reportId: string }): Promise<{
+    readonly run: CalcRun;
+    readonly factorSet: FactorSet;
+    readonly scopes: readonly ScopeTotal[];
+  }> {
     return this.recordRun.execute(command);
+  }
+
+  replay(query: { readonly reportId: string; readonly runId: string }): Promise<{
+    readonly run: StoredCalcRun;
+    readonly factorSet: FactorSet;
+    readonly scopes: readonly ScopeTotal[];
+    readonly reproduces: boolean;
+  }> {
+    return this.readRun.execute(query);
+  }
+
+  override(command: Parameters<OverrideFigure['execute']>[0]): Promise<void> {
+    return this.overrideFigure.execute(command);
+  }
+
+  restore(command: Parameters<RestoreFigure['execute']>[0]): Promise<void> {
+    return this.restoreFigure.execute(command);
+  }
+
+  explain(command: Parameters<ExplainFigure['execute']>[0]): Promise<void> {
+    return this.explainFigure.execute(command);
   }
 }

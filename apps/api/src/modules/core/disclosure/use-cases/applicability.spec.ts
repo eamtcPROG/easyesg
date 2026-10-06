@@ -27,6 +27,7 @@ const value = (over: Partial<DisclosureValue> & { elementKey: string }): Disclos
   dimensionKey: '',
   ordinal: 0,
   origin: DISCLOSURE_ORIGIN.REPORTED,
+  explanation: null,
   valueNumeric: null,
   valueText: null,
   valueBoolean: null,

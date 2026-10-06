@@ -22,6 +22,18 @@ export interface CalcSourceContents {
   readonly notAvailableReason: string | null;
 }
 
+/**
+ * A line's computed tonnes replaced with the reporter's own, and why (task 38.4; UC-34, UX-43) — S-09's *"diesel for
+ * the van, your figure"*. Only a measured line has a computed figure to replace, which the table's `CHECK` holds; the
+ * computed figure is never discarded, because it is the line's own arithmetic, recomputed whenever it is shown.
+ */
+export interface CalcLineOverride {
+  /** The substituted figure, in tonnes of CO₂-equivalent, as a decimal string. */
+  readonly tonnesCo2e: string;
+  /** Why it replaces the computed one — printed beside both in the report. */
+  readonly explanation: string;
+}
+
 /** A line's identity: the report it belongs to and the id the client chose for it. */
 export interface CalcSourceKey {
   readonly reportId: string;
@@ -37,6 +49,8 @@ export interface CalcSourceWrite extends CalcSourceKey {
   /** The reporter's own name for it — "the van". */
   readonly description: string | null;
   readonly contents: CalcSourceContents;
+  /** The reporter's figure in place of the computed one, or `null` where the computed one stands. */
+  readonly override: CalcLineOverride | null;
 }
 
 export interface CalcSource extends CalcSourceWrite {

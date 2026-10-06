@@ -26891,3 +26891,65 @@ Runs:
 - `pnpm --filter @easyesg/api test` 1,544 of 1,544, `typecheck`, `pnpm lint`, `pnpm docs:check`.
 - `pnpm e2e`, per the lookup table: 1,512 of 1,512 across 63 suites, no `ERROR` line in the run.
 - **No review agents**: they run when task 38 closes.
+
+## Task 38.4 — A run's results in B3, replayed, and UC-34's override; task 38 closes · 2026-10-01
+
+A run now stores Scope 1 and location-based Scope 2 (`core.calc_result`) and writes them into B3, where the total
+and the GHG intensity are derivations over them. `GET …/calculator/runs/{id}` replays a run against its own pinned
+set. UC-34 — explain a computed figure, or replace one with a reason — is built here, which closes 38.5 inside 38.4.
+Closing both closes task 38. The decisions are `architecture.md` §12.5.6's task-38.4 row, (1)–(5) and the calls taken
+in the build.
+
+### Decisions (project owner, three batches)
+
+- **First batch, before code.**
+  - The total and the intensity are **derivations**, over writing all four at the run: an edited turnover would
+    leave a run-time intensity stale.
+  - The intensity is stored to **ten significant figures, half-up**.
+  - An empty scope **clears only a figure an earlier run wrote**.
+- **Second, met in the build.** The e2e for *"a typed figure is left alone"* failed. The ordinary write's upsert never
+  touched `origin`, so a figure typed into a field a run had cleared stayed `calculated`, and the next run erased it.
+  The real question behind it was UC-34's: a run now puts computed figures on fields a reporter can type into, and
+  S-09 says typing over one is an override, which UX-43 says carries a reason. The owner **pulled 38.5's override
+  into 38.4** rather than refuse the write until 38.5, or let it become `reported` with no reason.
+- **Third, the override's shape.**
+  - **Both granularities**: a whole B3 scope, and one invoice line's tonnes.
+  - **A later run replaces a B3 override**: pressing *use these figures* is the reporter's own act, and the field's
+    trail keeps the override.
+  - **One `explanation` column** holds both of UC-34's verbs.
+
+### The shape, and the calls taken in it
+
+- **`core/disclosure` stays the one writer of `origin`.**
+  - The calculator writes B3 through `CALCULATED_FIGURES`: four use cases behind one service, exported by the
+    disclosure module, and imported by the calculator.
+  - The figure routes live in `core/calculator`, which owns FR-36.
+  - Reaching the disclosure store directly would have been a second copy of what a computed figure does on arrival.
+- **The ordinary write is guarded in the upsert's `WHERE`**, not by a read beforehand:
+  - it updates only a `reported` row, or a computed one a run cleared;
+  - it sets `origin = 'reported'` and `explanation = NULL`;
+  - the row left standing tells a refusal (`ComputedFigureNotWritableError`, 409) from a lock.
+- **An override's reason is a `CHECK`** (`report_disclosure_value_override_explained`), so no path can write an
+  unexplained substitution. The superseded computed figure is the run's stored result, so nothing is copied to keep
+  it.
+- **A line override is an input**: copied into `core.calc_input`, so a replay reproduces it. Its computed tonnes are
+  recomputed beside the substitute every time it is shown (`LINE_OUTCOME.OVERRIDDEN`).
+- **The step's field gained `derived`.** `apps/web` inferred derived figures from derivation inputs, and B3's total
+  and intensity have none, so they would have rendered as typeable fields whose every write is refused. The flag
+  comes from the artefact the refusal reads. `derivedElements` reads it now, and its docblock says why the old rule
+  held for B8 … B10 and not here.
+- **Two moves for second and third readers.**
+  - `decimal-string.ts` and `decimal-arithmetic.ts` became `contracts/types/decimal.ts`, beside `time.ts`'s
+    `isIanaTimeZone`, by that file's own rule, and gained a rounded `divideDecimals`.
+  - `NO_DIMENSION`, declared privately in two disclosure files, moved into `disclosure-value.model.ts` when the
+    third arrived.
+- **Corrected where the rule held.** Four docblocks and a DTO said `calculated` arrived *"with task 39.2"*, wrong
+  since 36.10's derivations wrote it. `DISCLOSURE_ORIGIN`'s header said *"one reachable"*.
+
+### Searched for the shape
+
+- `NO_DIMENSION =` across `apps/api`: two private copies, both now the model's.
+- `task 39.2` in `apps/api/src`: four sentences corrected; the migration header left alone as frozen history.
+- Every web fixture building a `DisclosureField`: five, found by the typecheck, each given `derived` and
+  `explanation`.
+- Every other derivation: B8 … B10 are fed by inputs, so their read-only state was already right under both rules.

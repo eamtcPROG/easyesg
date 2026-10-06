@@ -226,3 +226,44 @@ describe('an answered zero is a nil return (FR-30)', () => {
     );
   });
 });
+
+/**
+ * B3's total and intensity (task 38.4), the two derivations whose operands are all disclosures. **Exact where they
+ * can be**: the expected figures were computed outside this code, with Python's `decimal` and `ROUND_HALF_UP`, from a
+ * Scope 1 of 0.9699123256 t and a location-based Scope 2 of 10.108965 t over a 5 000 000-leu turnover.
+ */
+describe('B3 — the emissions total and the GHG intensity (task 38.4)', () => {
+  const total = (scope1: string | null, scope2: string | null) =>
+    computeDerivation({ formula: DERIVATION_FORMULA.SUM, operands: { scope1, scope2 } });
+  const intensity = (scope1: string | null, scope2: string | null, turnover: string | null) =>
+    computeDerivation({ formula: DERIVATION_FORMULA.INTENSITY, operands: { scope1, scope2, turnover } });
+
+  it('sums the two scopes exactly — no binary noise in a figure beside its parts', () => {
+    expect(total('0.9699123256', '10.108965')).toBe('11.0788773256');
+    expect(total('0.1', '0.2')).toBe('0.3');
+  });
+
+  it('is no total while either scope is unanswered, rather than counting it as zero', () => {
+    expect(total('0.9699123256', null)).toBeNull();
+    expect(total(null, null)).toBeNull();
+  });
+
+  it('counts a scope answered as zero, which is a nil return', () => {
+    expect(total('0', '10.108965')).toBe('10.108965');
+  });
+
+  it('divides the scopes’ sum by the turnover, to ten significant figures half-up', () => {
+    expect(intensity('0.9699123256', '10.108965', '5000000')).toBe('0.000002215775465');
+  });
+
+  it('is no intensity without a turnover, or with a turnover of zero', () => {
+    expect(intensity('0.9699123256', '10.108965', null)).toBeNull();
+    expect(intensity('0.9699123256', '10.108965', '0')).toBeNull();
+    expect(intensity(null, '10.108965', '5000000')).toBeNull();
+  });
+
+  it('is no figure from an operand that is not a non-negative decimal', () => {
+    expect(total('-1', '2')).toBeNull();
+    expect(intensity('1', '2', '-5000000')).toBeNull();
+  });
+});

@@ -405,6 +405,12 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'PUT /reports/:id/calculator/sources/:sourceId': WRITING_MEMBERS,
   'DELETE /reports/:id/calculator/sources/:sourceId': WRITING_MEMBERS,
   'POST /reports/:id/calculator/runs': WRITING_MEMBERS,
+  // A recorded run computed again against its own factor set (task 38.4; UX-42, NFR-19) — a read, so every member's.
+  'GET /reports/:id/calculator/runs/:runId': ALL_MEMBERS,
+  // UC-34 over a computed B3 figure (task 38.4; FR-36): replacing, restoring or explaining it is authoring the figure.
+  'PUT /reports/:id/calculator/figures/:elementKey/override': WRITING_MEMBERS,
+  'DELETE /reports/:id/calculator/figures/:elementKey/override': WRITING_MEMBERS,
+  'PUT /reports/:id/calculator/figures/:elementKey/explanation': WRITING_MEMBERS,
 };
 
 type Constructor = new (...args: never[]) => object;

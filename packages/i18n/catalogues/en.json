@@ -264,16 +264,21 @@
       "unknown_disclosure_element": "The field submitted is not part of the version of the standard this report was created under, so it could not be saved. Refresh the page to load the current questions.",
       "reminder_not_outstanding": "The report is no longer open — its period has been locked or it is ready to file — so the reminder was not sent. Refresh the page to see the reports still open.",
       "reminder_to_self": "You cannot send a reminder to yourself, so it was not sent. Choose the colleague you want to remind about the report.",
-      "reminder_recipient_not_found": "The person you chose is no longer part of this organization, so the reminder was not sent. Refresh the page to see the current members."
+      "reminder_recipient_not_found": "The person you chose is no longer part of this organization, so the reminder was not sent. Refresh the page to see the current members.",
+      "computed_figure_not_writable": "This figure was calculated from your invoice lines, so it cannot be typed over here. Replace it with your own figure and the reason for it, or change the invoice lines it was calculated from.",
+      "no_computed_figure": "There is no calculated figure here to explain or replace, so nothing was changed. Calculate the figure from your invoice lines first, or type the figure directly."
     },
     "calculator": {
-      "unknown_source": "The energy source sent is not one this report's emission factors cover, so the line could not be saved. Refresh the page to load the sources you can choose from.",
+      "unknown_source": "The energy source sent is not one this report’s emission factors cover, so the line could not be saved. Refresh the page to load the sources you can choose from.",
       "unit_not_admitted": "The unit sent is not one this energy source can be entered in, so the line could not be saved. Choose the unit printed on the invoice from the list.",
       "unknown_site": "The site sent is not one of the sites this report lists, so the line could not be saved. Add the site to the report first, or choose one of the sites already listed.",
       "contents_invalid": "A line needs either the figure from the invoice with its unit, or the reason there is no figure, so this one could not be saved. Enter one or the other.",
-      "source_elsewhere": "That line belongs to another of this organization's reports, so it could not be saved here. Refresh the page and add the line again.",
-      "no_factor_set": "No emission factors have been published yet for this report's reporting period, so your invoice lines cannot be calculated. Enter the emission figures directly if you already have them, or try again once the factors are published.",
-      "no_sources": "There are no invoice lines to calculate from, so nothing was calculated. Add at least one line from your invoices first."
+      "source_elsewhere": "That line belongs to another of this organization’s reports, so it could not be saved here. Refresh the page and add the line again.",
+      "no_factor_set": "No emission factors have been published yet for this report’s reporting period, so your invoice lines cannot be calculated. Enter the emission figures directly if you already have them, or try again once the factors are published.",
+      "no_sources": "There are no invoice lines to calculate from, so nothing was calculated. Add at least one line from your invoices first.",
+      "run_not_found": "That calculation does not exist in this report, so it could not be shown. Refresh the page to load the report’s latest calculation.",
+      "override_invalid": "A replacement figure needs the tonnes of CO₂e written as a number and the reason you are replacing the calculated one, so it could not be saved. Enter both, or keep the calculated figure.",
+      "unknown_figure": "That figure is not one the carbon calculator produces, so it cannot be explained or replaced here. Refresh the page and choose Scope 1 or Scope 2."
     }
   },
   "notification": {

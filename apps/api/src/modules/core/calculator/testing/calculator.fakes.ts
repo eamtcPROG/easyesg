@@ -1,8 +1,9 @@
+import type { CalculatedFigures } from '@api/modules/core/disclosure/interfaces/calculated-figures.interface';
 import type { CalcReport, CalcReports } from '../interfaces/calc-report.interface';
 import type { CalcRunStore } from '../interfaces/calc-run-store.interface';
 import type { CalcSourceStore } from '../interfaces/calc-source-store.interface';
 import type { FactorSets } from '../interfaces/factor-sets.interface';
-import type { CalcRun } from '../models/calc-run.model';
+import type { CalcResult, CalcRun, StoredCalcRun } from '../models/calc-run.model';
 import type { CalcSource, CalcSourceKey, CalcSourceWrite } from '../models/calc-source.model';
 import type { FactorSet, FactorSetPin } from '../models/factor-set.model';
 
@@ -107,6 +108,7 @@ export class FakeCalcSourceStore implements CalcSourceStore {
 
 export class FakeCalcRunStore implements CalcRunStore {
   readonly runs: CalcRun[] = [];
+  readonly results = new Map<string, readonly CalcResult[]>();
 
   constructor(
     private readonly lines: FakeCalcSourceStore,
@@ -129,9 +131,52 @@ export class FakeCalcRunStore implements CalcRunStore {
           sourceKey: line.sourceKey,
           description: line.description,
           contents: { ...line.contents },
+          override: line.override,
         })),
     };
     this.runs.push(run);
     return Promise.resolve(run);
+  }
+
+  recordResults(command: { readonly runId: string; readonly results: readonly CalcResult[] }): Promise<void> {
+    this.results.set(command.runId, command.results);
+    return Promise.resolve();
+  }
+
+  find(query: { readonly reportId: string; readonly runId: string }): Promise<StoredCalcRun | null> {
+    const run = this.runs.find((each) => each.id === query.runId && each.reportId === query.reportId);
+    return Promise.resolve(run === undefined ? null : { ...run, results: this.results.get(run.id) ?? [] });
+  }
+
+  latestResult(query: { readonly reportId: string; readonly elementKey: string }): Promise<string | null | undefined> {
+    const latest = [...this.runs].reverse().find((run) => run.reportId === query.reportId && this.results.has(run.id));
+    const result = latest === undefined ? undefined : this.results.get(latest.id)?.find((each) => each.elementKey === query.elementKey);
+    return Promise.resolve(result === undefined ? undefined : result.tonnesCo2e);
+  }
+}
+
+/** `CALCULATED_FIGURES` as a record of every call handed to it — what the calculator sent into B3. */
+export class FakeCalculatedFigures implements CalculatedFigures {
+  readonly written: { reportId: string; figures: readonly { elementKey: string; valueNumeric: string | null }[] }[] = [];
+  readonly calls: { readonly operation: string; readonly command: unknown }[] = [];
+
+  write(command: Parameters<CalculatedFigures['write']>[0]): Promise<void> {
+    this.written.push({ reportId: command.reportId, figures: command.figures });
+    return Promise.resolve();
+  }
+
+  override(command: Parameters<CalculatedFigures['override']>[0]): Promise<void> {
+    this.calls.push({ operation: 'override', command });
+    return Promise.resolve();
+  }
+
+  restore(command: Parameters<CalculatedFigures['restore']>[0]): Promise<void> {
+    this.calls.push({ operation: 'restore', command });
+    return Promise.resolve();
+  }
+
+  explain(command: Parameters<CalculatedFigures['explain']>[0]): Promise<void> {
+    this.calls.push({ operation: 'explain', command });
+    return Promise.resolve();
   }
 }

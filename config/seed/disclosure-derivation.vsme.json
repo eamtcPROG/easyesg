@@ -64,6 +64,38 @@
           "key": "NumberOfEmployees"
         }
       }
+    },
+    {
+      "element": "TotalGrossLocationBasedScope1AndScope2GHGEmissions",
+      "formula": "sum",
+      "operands": {
+        "scope1": {
+          "from": "disclosure",
+          "key": "GrossScope1GreenhouseGasEmissions"
+        },
+        "scope2": {
+          "from": "disclosure",
+          "key": "GrossLocationBasedScope2GreenhouseGasEmissions"
+        }
+      }
+    },
+    {
+      "element": "Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased",
+      "formula": "intensity",
+      "operands": {
+        "scope1": {
+          "from": "disclosure",
+          "key": "GrossScope1GreenhouseGasEmissions"
+        },
+        "scope2": {
+          "from": "disclosure",
+          "key": "GrossLocationBasedScope2GreenhouseGasEmissions"
+        },
+        "turnover": {
+          "from": "disclosure",
+          "key": "Turnover"
+        }
+      }
     }
   ]
 }

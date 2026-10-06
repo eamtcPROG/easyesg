@@ -15,12 +15,15 @@ interface CalcSourceRow {
   quantity: string | null;
   unit_code: string | null;
   not_available_reason: string | null;
+  override_tonnes: string | null;
+  override_explanation: string | null;
   created_at: Date;
   updated_at: Date;
 }
 
 const COLUMNS = `id, report_id, site_ordinal, source_key, description, quantity::text AS quantity, unit_code,
-                 not_available_reason, created_at, updated_at`;
+                 not_available_reason, override_tonnes::text AS override_tonnes, override_explanation,
+                 created_at, updated_at`;
 
 const toSource = (row: CalcSourceRow): CalcSource => ({
   reportId: row.report_id,
@@ -29,6 +32,10 @@ const toSource = (row: CalcSourceRow): CalcSource => ({
   sourceKey: row.source_key,
   description: row.description,
   contents: { quantity: row.quantity, unitCode: row.unit_code, notAvailableReason: row.not_available_reason },
+  override:
+    row.override_tonnes === null || row.override_explanation === null
+      ? null
+      : { tonnesCo2e: row.override_tonnes, explanation: row.override_explanation },
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -70,8 +77,9 @@ export class CalcSourceStoreRepository extends TenantRepository<never> implement
         await this.manager.query(
           `INSERT INTO core.calc_source
                   (id, organization_id, report_id, site_ordinal, source_key, description,
-                   quantity, unit_code, not_available_reason)
-           SELECT $2, r.organization_id, r.id, $3, $4, $5, $6::numeric, $7, $8 FROM core.report r WHERE r.id = $1
+                   quantity, unit_code, not_available_reason, override_tonnes, override_explanation)
+           SELECT $2, r.organization_id, r.id, $3, $4, $5, $6::numeric, $7, $8, $9::numeric, $10
+             FROM core.report r WHERE r.id = $1
       ON CONFLICT (organization_id, id) DO UPDATE
               SET site_ordinal = EXCLUDED.site_ordinal,
                   source_key = EXCLUDED.source_key,
@@ -79,6 +87,8 @@ export class CalcSourceStoreRepository extends TenantRepository<never> implement
                   quantity = EXCLUDED.quantity,
                   unit_code = EXCLUDED.unit_code,
                   not_available_reason = EXCLUDED.not_available_reason,
+                  override_tonnes = EXCLUDED.override_tonnes,
+                  override_explanation = EXCLUDED.override_explanation,
                   updated_at = now()
             WHERE calc_source.report_id = EXCLUDED.report_id
         RETURNING ${COLUMNS}`,
@@ -91,6 +101,8 @@ export class CalcSourceStoreRepository extends TenantRepository<never> implement
             line.contents.quantity,
             line.contents.unitCode,
             line.contents.notAvailableReason,
+            line.override?.tonnesCo2e ?? null,
+            line.override?.explanation ?? null,
           ],
         ),
       );

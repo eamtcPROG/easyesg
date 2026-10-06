@@ -12,6 +12,8 @@ const field = (over: Partial<DisclosureField> & { elementKey: string }): Disclos
   dimensionKey: '',
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,
+  derived: false,
+  explanation: null,
   ordinal: 0,
   currency: null,
   kind: DISCLOSURE_KIND.TEXT,
@@ -58,10 +60,16 @@ describe('askedFields', () => {
 });
 
 describe('derivedElements', () => {
-  it('names an element derived exactly when an input feeds it', () => {
-    const derived = derivedElements([left, hours]);
+  it('names an element derived exactly when the api marks it so', () => {
+    const derived = derivedElements([field({ elementKey: 'EmployeeTurnoverRate', derived: true }), headcount]);
     expect(derived.has('EmployeeTurnoverRate')).toBe(true);
     expect(derived.has('NumberOfEmployees')).toBe(false);
+  });
+
+  it('names a figure derived from disclosures alone, which no input feeds (task 38.4)', () => {
+    // B3's total is Scope 1 plus Scope 2: two fields, no derivation input — read off the inputs it was missed.
+    const total = field({ elementKey: 'TotalGrossLocationBasedScope1AndScope2GHGEmissions', derived: true });
+    expect(derivedElements([total]).has(total.elementKey)).toBe(true);
   });
 });
 

@@ -1,6 +1,6 @@
-import type { CalcSourceContents } from '../models/calc-source.model';
+import type { CalcLineOverride, CalcSourceContents } from '../models/calc-source.model';
 import type { FactorSet } from '../models/factor-set.model';
-import { isDecimalString } from './decimal-string';
+import { isDecimalString } from '@api/contracts/types/decimal';
 
 /**
  * Whether an invoice line can be calculated, and if not, why (task 38.1; FR-33, UX-14, UX-40).
@@ -19,6 +19,8 @@ export const CALC_SOURCE_REFUSAL = {
   SOURCE: 'source',
   /** A unit the source cannot be entered in. */
   UNIT: 'unit',
+  /** A replacement figure that is not a decimal, carries no reason, or replaces nothing computed (task 38.4). */
+  OVERRIDE: 'override',
 } as const;
 export type CalcSourceRefusal = (typeof CALC_SOURCE_REFUSAL)[keyof typeof CALC_SOURCE_REFUSAL];
 
@@ -48,5 +50,22 @@ export function factorRefusal(input: {
   if (source === undefined) return CALC_SOURCE_REFUSAL.SOURCE;
   const { unitCode } = input.contents;
   if (unitCode !== null && !source.units.has(unitCode)) return CALC_SOURCE_REFUSAL.UNIT;
+  return null;
+}
+
+/**
+ * A line's replacement figure (task 38.4; UC-34, UX-43): tonnes written as a decimal, a reason with words in it, and a
+ * measured line under it — an explained line has no computed figure, so there is nothing for it to replace. The
+ * table's `CHECK` holds the same three; this refuses before the constraint is met.
+ */
+export function overrideRefusal(input: {
+  readonly contents: CalcSourceContents;
+  readonly override: CalcLineOverride | null;
+}): CalcSourceRefusal | null {
+  if (input.override === null) return null;
+  const { tonnesCo2e, explanation } = input.override;
+  if (!isDecimalString(tonnesCo2e) || explanation.trim() === '' || input.contents.quantity === null) {
+    return CALC_SOURCE_REFUSAL.OVERRIDE;
+  }
   return null;
 }

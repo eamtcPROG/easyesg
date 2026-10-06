@@ -88,10 +88,16 @@ traps each one left — grouped by area rather than by the task that built it.
   `PUT`/`DELETE …/sources/{sourceId}`, under an id the client chooses) and the runs that retain them
   (`POST /reports/{id}/calculator/runs`): `core.calc_source` is the editable working set, and `core.calc_run` with
   `core.calc_input` is each run's own copy of every line plus its factor-set pin, immutable by grant (§12.5.6's
-  task-38.1 row). A run has no results until 38.4; Scope 1 is computed since 38.2 by `domain/scope-1.ts` and location-based Scope 2
-  since 38.3 by `domain/scope-2-location-based.ts`, both over `scope-total.ts`, exactly —
-  decimal strings as scaled `bigint`s, never floats — and `null` rather than zero where no line of the scope was
-  measured (§12.5.6's task-38.2 row). **The run tables carry no `UPDATE` or `DELETE` policy, so under
+  task-38.1 row). Scope 1 (`domain/scope-1.ts`, 38.2) and location-based Scope 2 (`domain/scope-2-location-based.ts`,
+  38.3) are computed over `scope-total.ts` exactly — decimal strings as scaled `bigint`s (`contracts/types/decimal.ts`),
+  never floats — and `null` rather than zero where no line of the scope was measured (§12.5.6's task-38.2 row). **Since
+  38.4 a run stores its results (`core.calc_result`) and writes them into B3** through `core/disclosure`'s
+  `CALCULATED_FIGURES` port, where B3's total and GHG intensity are derivations over them; `GET …/calculator/runs/{id}`
+  replays a run against its own pinned set and answers `reproduces` (NFR-19). **UC-34 is built**: a B3 scope replaced
+  with a reason or explained (`…/calculator/figures/{element}/override`, `…/explanation`), and one line's tonnes
+  replaced with a reason (the line's `overrideTonnes`). **The ordinary disclosure write refuses a computed or overridden
+  figure** — an upsert guarded in its `WHERE` — so typing over one is the override route or nothing (§12.5.6's
+  task-38.4 row). **The run tables carry no `UPDATE` or `DELETE` policy, so under
   forced row security even their owner's `DELETE` matches nothing and says nothing** — a suite's cleanup lifts `FORCE`
   inside its transaction (`test/calculator.e2e-spec.ts`), and a report a run rests on cannot be deleted at all (OQ-20).
 - **Not live**: the calculator's runs and validation (38 … 42), preview and export (43 … 47),

@@ -1,3 +1,4 @@
+import type { DISCLOSURE_ORIGIN } from '../models/disclosure-value.model';
 import type {
   DisclosureValue,
   DisclosureValueKey,
@@ -51,6 +52,20 @@ export interface DisclosureValueStore {
   writeDerived(value: {
     readonly key: DisclosureValueKey;
     readonly valueNumeric: string | null;
+  }): Promise<DisclosureValue>;
+
+  /**
+   * Write a figure the carbon calculator stands behind — computed, or computed and replaced (task 38.4; UC-34).
+   *
+   * **Origin and explanation together, in one statement**, because they are one fact: a `calculated` figure may carry
+   * an annotation, an `overridden` one must carry its reason (the table's `CHECK`). `writeDerived` stays the
+   * derivations' — they never carry an explanation, and a separate method keeps one from being sent.
+   */
+  writeFigure(value: {
+    readonly key: DisclosureValueKey;
+    readonly valueNumeric: string | null;
+    readonly origin: typeof DISCLOSURE_ORIGIN.CALCULATED | typeof DISCLOSURE_ORIGIN.OVERRIDDEN;
+    readonly explanation: string | null;
   }): Promise<DisclosureValue>;
 
   /**

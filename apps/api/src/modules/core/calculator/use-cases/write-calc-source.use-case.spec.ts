@@ -22,6 +22,7 @@ describe('WriteCalcSource', () => {
     sourceKey: 'natural_gas',
     description: 'Oven',
     contents: { quantity: '500', unitCode: 'm3', notAvailableReason: null },
+    override: null,
   };
 
   const build = (options: { answered?: readonly number[]; factorSets?: FakeFactorSets } = {}) => {

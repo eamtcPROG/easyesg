@@ -66,6 +66,7 @@ import {
 import {
   DEFAULT_DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
+  NO_DIMENSION,
   isAnsweredState,
   type DisclosureValue,
 } from '../models/disclosure-value.model';
@@ -105,9 +106,6 @@ const keyOf = (v: {
   readonly dimensionKey: string;
   readonly ordinal: number;
 }): string => `${v.elementKey}\u0000${v.dimensionKey}\u0000${v.ordinal}`;
-
-/** No axis member: the key every undimensioned field holds, and every row of a typed axis (§7.3). */
-const NO_DIMENSION = '';
 
 /** The stored values, indexed both ways the reads need them. */
 interface StoredValues {
@@ -324,6 +322,8 @@ export class ReadWizardStep {
       siteAxis: registered.elements.find((element) => element.key === B1_ELEMENT.SITE_ADDRESS)?.axes.find(isTyped),
       names: recordSiteNames({ snapshot, record, stored: byElement }),
     });
+    // Read once for the step: which elements are derived (task 38.4) and, below, the inputs they read.
+    const derivations = this.derivations.all({ standard: registered.standard });
     const fields = registered.elements
       // Membership, not equality: eight of B3's seventeen are presented in C3 as well (task 36.4).
       .filter((element) => element.modules.includes(query.module))
@@ -340,6 +340,7 @@ export class ReadWizardStep {
           // Off the report rather than off the element: it is the filing's answer, one per workbook
           // as EFRAG's template carries it, and `toField` gives it only to the monetary kinds.
           currency: report.reportingCurrency,
+          derived: derivations.has(element.key),
         };
         const perOrdinal = defaults.get(element.key) ?? [];
         // Asked once per element and answered to the screen as well as used here: a typed axis is
@@ -408,7 +409,7 @@ export class ReadWizardStep {
       // B9 and nowhere else — a report has one of each, but a step is a screen.
       derivationInputs: derivationInputsFor({
         elements: fields.map((field) => field.elementKey),
-        derivations: this.derivations.all({ standard: registered.standard }),
+        derivations,
         stored: storedInputs,
       }),
       // Sorted, so two reads of one step agree — a `Set` preserves insertion order and the walk's
@@ -885,6 +886,8 @@ function toField(
     readonly applicabilityCause: DisclosureApplicabilityCause | null;
     /** The filing's own currency (task 36.12) — read by monetary elements and by no other kind. */
     readonly currency: string;
+    /** Whether the derivation artefact computes this element (task 38.4). */
+    readonly derived: boolean;
   },
 ): DisclosureField {
   const { catalogue, standing: fallbackStanding } = resolved;
@@ -897,6 +900,8 @@ function toField(
     // An unanswered field is `reported`: the reporter is the one who would answer it, and a
     // nullable origin would make every reader branch on a third case that means the default.
     origin: value?.origin ?? DEFAULT_DISCLOSURE_ORIGIN,
+    derived: resolved.derived,
+    explanation: value?.explanation ?? null,
     ordinal: row.ordinal,
     kind: element.kind,
     periodType: element.periodType,

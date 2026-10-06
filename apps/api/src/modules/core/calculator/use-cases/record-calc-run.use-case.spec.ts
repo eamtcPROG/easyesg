@@ -11,6 +11,7 @@ import {
   FakeCalcReports,
   FakeCalcRunStore,
   FakeCalcSourceStore,
+  FakeCalculatedFigures,
   FakeFactorSets,
   SHIPPED_LIKE_SET,
 } from '../testing/calculator.fakes';
@@ -24,6 +25,7 @@ describe('RecordCalcRun', () => {
     sourceKey: 'natural_gas',
     description: null,
     contents: { quantity: '500', unitCode: 'm3', notAvailableReason: null },
+    override: null,
     createdAt: new Date(0),
     updatedAt: new Date(0),
     ...overrides,
@@ -32,7 +34,8 @@ describe('RecordCalcRun', () => {
   const build = (factorSets = new FakeFactorSets()) => {
     const sources = new FakeCalcSourceStore();
     const runs = new FakeCalcRunStore(sources);
-    return { sources, runs, record: new RecordCalcRun(new FakeCalcReports(), runs, factorSets) };
+    const figures = new FakeCalculatedFigures();
+    return { sources, runs, figures, record: new RecordCalcRun(new FakeCalcReports(), runs, factorSets, figures) };
   };
 
   it('retains every line and pins the set the period resolves', async () => {
@@ -82,5 +85,48 @@ describe('RecordCalcRun', () => {
     const { sources, record } = build();
     sources.lines.push(line('gas'), line('stale', overrides));
     await expect(record.execute({ reportId: FY2026_REPORT.reportId })).rejects.toBeInstanceOf(error);
+  });
+
+  describe('its results (task 38.4)', () => {
+    // 500 m³ × 0.0095773 × 0.202544 and 17 000 kWh × 0.001 × 0.594645, as Python's decimal computes them.
+    const lines = () => [
+      line('gas'),
+      line('grid', { sourceKey: 'electricity_grid', contents: { quantity: '17000', unitCode: 'kWh', notAvailableReason: null } }),
+    ];
+
+    it('computes both scopes from what it copied, stores them with the run, and writes them into B3', async () => {
+      const { sources, runs, figures, record } = build();
+      sources.lines.push(...lines());
+
+      const { run, scopes } = await record.execute({ reportId: FY2026_REPORT.reportId });
+
+      const expected = [
+        { elementKey: 'GrossScope1GreenhouseGasEmissions', valueNumeric: '0.9699123256' },
+        { elementKey: 'GrossLocationBasedScope2GreenhouseGasEmissions', valueNumeric: '10.108965' },
+      ];
+      expect(scopes.map((scope) => scope.tonnesCo2e)).toEqual(['0.9699123256', '10.108965']);
+      expect(runs.results.get(run.id)).toEqual(
+        expected.map((figure) => ({ elementKey: figure.elementKey, tonnesCo2e: figure.valueNumeric })),
+      );
+      expect(figures.written).toEqual([{ reportId: FY2026_REPORT.reportId, figures: expected }]);
+    });
+
+    it('hands a scope nothing measured to B3 as no figure, never as zero', async () => {
+      const { sources, figures, record } = build();
+      sources.lines.push(line('gas'));
+
+      await record.execute({ reportId: FY2026_REPORT.reportId });
+
+      expect(figures.written[0].figures).toEqual([
+        { elementKey: 'GrossScope1GreenhouseGasEmissions', valueNumeric: '0.9699123256' },
+        { elementKey: 'GrossLocationBasedScope2GreenhouseGasEmissions', valueNumeric: null },
+      ]);
+    });
+
+    it('writes nothing into B3 when the run is refused', async () => {
+      const { figures, record } = build();
+      await expect(record.execute({ reportId: FY2026_REPORT.reportId })).rejects.toBeInstanceOf(NoCalcSourcesError);
+      expect(figures.written).toEqual([]);
+    });
   });
 });

@@ -1,5 +1,10 @@
 import { CALC_SOURCE_REFUSAL, type CalcSourceRefusal } from '../domain/calc-source-check';
-import { CalcSourceContentsError, CalcUnitNotAdmittedError, UnknownCalcSourceError } from '../errors/calculator.errors';
+import {
+  CalcOverrideInvalidError,
+  CalcSourceContentsError,
+  CalcUnitNotAdmittedError,
+  UnknownCalcSourceError,
+} from '../errors/calculator.errors';
 
 /**
  * A line's refusal as the error the caller meets — one mapping for the two use cases that check a line, writing it
@@ -13,5 +18,7 @@ export function calcSourceRefusalError(refusal: CalcSourceRefusal): Error {
       return new UnknownCalcSourceError();
     case CALC_SOURCE_REFUSAL.UNIT:
       return new CalcUnitNotAdmittedError();
+    case CALC_SOURCE_REFUSAL.OVERRIDE:
+      return new CalcOverrideInvalidError();
   }
 }
