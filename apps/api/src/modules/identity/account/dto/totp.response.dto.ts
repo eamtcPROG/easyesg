@@ -15,9 +15,17 @@ export class TotpStateResponseDto {
   })
   recoveryCodesRemaining: number;
 
+  @ApiProperty({
+    description:
+      'Whether this account said *not now* to the recommendation to add a second factor, which an ' +
+      'Organization Administrator without one is shown. Cleared when the factor is turned off.',
+  })
+  enrolmentPromptDismissed: boolean;
+
   constructor(state: TotpState) {
     this.enrolled = state.enrolled;
     this.recoveryCodesRemaining = state.recoveryCodesRemaining;
+    this.enrolmentPromptDismissed = state.enrolmentPromptDismissed;
   }
 }
 

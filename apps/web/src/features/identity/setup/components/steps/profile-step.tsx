@@ -2,6 +2,7 @@
 
 import type { AccountSetup } from '@easyesg/contracts';
 import { LOCALES, type Locale } from '@easyesg/i18n';
+import { namePartIsPresent } from '@easyesg/validation';
 import { Button, CALLOUT_INTENT, ExpiringCallout, Panel, useDismissible } from '@easyesg/ui';
 import { FormSelect, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
@@ -25,8 +26,8 @@ import { SignOut } from '../shared/sign-out';
  * own, negotiated when it registered.
  *
  * Both names required, as S-01's registration requires them; a part that is only spaces is refused
- * here as it would be by the API, since a length rule alone would let it through. Signing out is on
- * offer below the form (S-36's controls).
+ * here by `namePartIsPresent`, the rule the API judges by (182/6), since a length rule alone would let
+ * it through. Signing out is on offer below the form (S-36's controls).
  *
  * States (§8.1 subset): rest · submitting · invalid · error — recoverable (the API's refusal as
  * received) · unreachable. Success never renders: the action redirects.
@@ -73,7 +74,7 @@ export function ProfileStep({
   const nameRules = (missing: string) => ({
     required: missing,
     maxLength: { value: 100, message: tNames('nameTooLong') },
-    validate: (value: string) => value.trim().length > 0 || t('nameBlank'),
+    validate: (value: string) => namePartIsPresent(value) || tNames('nameBlank'),
   });
 
   const submit = handleSubmit((input) => {

@@ -1,3 +1,5 @@
+import type { SecondFactorAnswer } from '../models/totp.model';
+
 /**
  * What the sign-in path needs to know about an account's second factor, and nothing else
  * (NFR-95, UC-194, UC-195; task 27.3).
@@ -30,8 +32,12 @@ export interface SecondFactor {
    *
    * A recovery code is **spent** by a successful verification (UC-195), so this is not a pure
    * predicate and is named for the answer rather than the check.
+   *
+   * **It answers which kind matched, or `null`** (task 190): the caller tells the reader how many
+   * recovery codes remain after one is spent (UC-195 step 3), and the kind is a fact only this
+   * port can state — the formats are told apart here, not by whoever sent the code.
    */
-  verify(answer: { readonly accountId: string; readonly code: string }): Promise<boolean>;
+  verify(answer: { readonly accountId: string; readonly code: string }): Promise<SecondFactorAnswer | null>;
 }
 
 export const SECOND_FACTOR = Symbol('SECOND_FACTOR');

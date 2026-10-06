@@ -270,6 +270,7 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /account/totp/confirmation': PERMISSION.ACCOUNT,
   'POST /account/totp/removal': PERMISSION.ACCOUNT,
   'POST /account/totp/recovery-codes': PERMISSION.ACCOUNT,
+  'POST /account/totp/prompt-dismissal': PERMISSION.ACCOUNT,
   'GET /account/providers': PERMISSION.ACCOUNT,
   'POST /account/providers/:provider': PERMISSION.ACCOUNT,
   'POST /account/providers/:provider/removal': PERMISSION.ACCOUNT,

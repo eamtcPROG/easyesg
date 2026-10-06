@@ -25,16 +25,16 @@ export interface AccountName {
   readonly familyName: string | null;
 }
 
+import { presentNamePart } from '@easyesg/validation';
+
 /**
  * A name part as it counts: trimmed, and absent when only whitespace — a name-shaped hole is not a name.
- * **Exported because setup judges a part the same way** (task 155): whether an account's name is
- * complete, and whether the name its setup saves is one, so the chrome and the gate cannot disagree
- * about whether a name was given.
+ * **Implemented in `@easyesg/validation` since task 185 and re-exported here**, as the password policy is, so the
+ * domain keeps one import path and no call site moved: registration, setup and S-27 refuse a part by it, the chrome and
+ * the setup gate judge an account's name by it, and the three screens judge a field by it before the request leaves
+ * (182/6; architecture.md §9.8). One verdict, so none of them can disagree about whether a name was given.
  */
-export const presentNamePart = (part: string | null | undefined): string | null => {
-  const trimmed = part?.trim();
-  return trimmed ? trimmed : null;
-};
+export { presentNamePart };
 
 /**
  * The name a surface shows. Falls back through UX-137's order: both parts, then whichever one is

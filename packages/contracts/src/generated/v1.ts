@@ -204,6 +204,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/totp/prompt-dismissal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop recommending a second factor to this account
+         * @description An Organization Administrator without a second factor is recommended one on the home screen. This is the person’s *not now*: remembered on the account, on every device and in every organization, until the factor is turned off, which brings the recommendation back. Idempotent — the first answer’s time stands. It needs no password and no role, being a preference the person holds about themselves; nothing about the factor changes.
+         */
+        post: operations["TotpController_dismissPrompt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/account/password": {
         parameters: {
             query?: never;
@@ -2455,6 +2475,8 @@ export interface components {
             enrolled: boolean;
             /** @description Unspent recovery codes. Zero with an enrolled factor is a real state, not an error — the user has spent them all and should re-issue before they need one. */
             recoveryCodesRemaining: number;
+            /** @description Whether this account said *not now* to the recommendation to add a second factor, which an Organization Administrator without one is shown. Cleared when the factor is turned off. */
+            enrolmentPromptDismissed: boolean;
         };
         TotpEnrolmentResponseDto: {
             /** @description The base32 secret, for an authenticator that is being configured by hand rather than by scanning. Shown once and never returned again. */
@@ -2633,6 +2655,33 @@ export interface components {
             password: string;
             /** @description Whether the session persists on this device. Absent or false grants the shorter lifetime. */
             remember?: boolean;
+        };
+        FactorSessionResponseDto: {
+            /**
+             * @description The discriminator sign-in answers with. `challenged` is the other member, and carries a factor challenge instead of a session (UC-194).
+             * @enum {string}
+             */
+            kind: "signed_in";
+            /** @description Bearer token for the Authorization header. Signed, short-lived; carries the session identity and no authorization data. */
+            accessToken: string;
+            /**
+             * @description Unix epoch milliseconds, UTC. At most 15 minutes after issuance.
+             * @example 1787444100000
+             */
+            accessTokenExpiresAt: number;
+            /** @description Opaque, single-use. Present it to the refresh endpoint to obtain a successor pair; it is invalidated by that refresh, by sign-out, and by a consumed password reset. */
+            refreshToken: string;
+            /**
+             * @description Unix epoch milliseconds, UTC. When this session dies if never refreshed again — the earlier of its idle and absolute bounds.
+             * @example 1788048000000
+             */
+            refreshTokenExpiresAt: number;
+            account: components["schemas"]["SessionAccountDto"];
+            /**
+             * @description Which kind of code answered the challenge: a current code from the authenticator, or one of the account’s recovery codes, which is now spent. A client tells the person how many recovery codes remain after the second — the count is GET /account/totp’s.
+             * @enum {string}
+             */
+            answeredWith: "authenticator" | "recovery_code";
         };
         CompleteFactorRequestDto: {
             /** @description The opaque challenge returned by the first step. Sealed; the API is the only thing that can read it. */
@@ -5049,6 +5098,24 @@ export interface operations {
             };
         };
     };
+    TotpController_dismissPrompt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recommendation is no longer shown to this account. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     PasswordController_state: {
         parameters: {
             query?: never;
@@ -5269,14 +5336,14 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The factor was answered and the session issued. */
+            /** @description The factor was answered and the session issued, with which kind of code answered it. */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ResultObjectDto"] & {
-                        object?: components["schemas"]["SessionResponseDto"];
+                        object?: components["schemas"]["FactorSessionResponseDto"];
                     };
                 };
             };

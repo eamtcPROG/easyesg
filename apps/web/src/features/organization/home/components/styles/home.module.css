@@ -163,3 +163,12 @@
   max-inline-size: 100%;
   margin-block-start: var(--space-3);
 }
+
+/* The second-factor prompt's two ways on (task 190): a link to S-28 and *not now*, on one baseline, wrapping at
+   compact rather than overflowing the callout. */
+.promptActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+}

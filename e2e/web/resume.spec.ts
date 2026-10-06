@@ -214,6 +214,15 @@ test('an account with a second factor answers it inside the dialogue, a recovery
   await dialogue.getByRole('button', { name: /Folosiți un cod de recuperare/u }).click();
   await dialogue.getByLabel('Cod de recuperare').fill(recoveryCode);
   await dialogue.getByRole('button', { name: CONTINUE, exact: true }).click();
+
+  // Task 190 (UC-195 step 3): a recovery code holds the dialogue on a last stage saying how many remain — the count
+  // from the account's own state — with S-28 offered in a new tab, so the step is not left (UX-38).
+  await expect(dialogue.getByText(/Coduri de recuperare rămase: 9\./u)).toHaveCount(1);
+  await expect(dialogue.getByRole('link', { name: /Gestionați codurile de recuperare/u })).toHaveAttribute(
+    'target',
+    '_blank',
+  );
+  await dialogue.getByRole('button', { name: 'Continuați de unde ați rămas', exact: true }).click();
   await expect(dialogue).toBeHidden();
 
   await expect

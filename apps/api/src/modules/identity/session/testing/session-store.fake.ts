@@ -15,6 +15,10 @@ import {
   readFactorChallenge,
   type FactorChallengePayload,
 } from '../domain/factor-challenge';
+import {
+  SECOND_FACTOR_ANSWER,
+  type SecondFactorAnswer,
+} from '@api/modules/identity/account/models/totp.model';
 
 /**
  * An in-memory `SessionStore` for the use-case specs — `FakeAccountStore`'s design, including
@@ -254,14 +258,21 @@ export class FakeSecondFactor {
     return Promise.resolve(this.enrolled.has(accountId));
   }
 
-  verify(answer: { readonly accountId: string; readonly code: string }): Promise<boolean> {
+  verify(answer: {
+    readonly accountId: string;
+    readonly code: string;
+  }): Promise<SecondFactorAnswer | null> {
     const remaining = this.answers.get(answer.accountId) ?? [];
     const index = remaining.indexOf(answer.code);
-    if (index === -1) return Promise.resolve(false);
+    if (index === -1) return Promise.resolve(null);
     // Modelled as spent, because the real one spends a recovery code on success and a spec that
     // could replay an answer would prove the opposite of UC-195.
     remaining.splice(index, 1);
-    return Promise.resolve(true);
+    // The kind by the formats' own disjointness, as the real one tells them apart: six digits are
+    // the authenticator's, anything else accepted is a recovery code (task 190).
+    return Promise.resolve(
+      /^\d{6}$/.test(answer.code) ? SECOND_FACTOR_ANSWER.AUTHENTICATOR : SECOND_FACTOR_ANSWER.RECOVERY_CODE,
+    );
   }
 }
 

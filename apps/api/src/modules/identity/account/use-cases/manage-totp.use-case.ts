@@ -206,6 +206,9 @@ export class ManageTotp {
       // gone and its recovery codes are live, and a recovery code is a credential.
       await tx.replaceRecoveryCodes(command.accountId, []);
       await tx.deleteTotpEnrolment(command.accountId);
+      // The person is back in the state S-05's prompt is about, so it may ask again (task 190; §12.5.6's task-190
+      // row (6)). In the same transaction, so a removal never stands with a stale answer beside it.
+      await tx.clearEnrolmentPromptDismissal(command.accountId, this.now());
     });
   }
 
@@ -232,6 +235,7 @@ export class ManageTotp {
       return {
         enrolled,
         recoveryCodesRemaining: enrolled ? await tx.countUnspentRecoveryCodes(accountId) : 0,
+        enrolmentPromptDismissed: await tx.isEnrolmentPromptDismissed(accountId),
       };
     });
   }

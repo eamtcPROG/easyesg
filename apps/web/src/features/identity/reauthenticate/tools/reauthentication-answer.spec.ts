@@ -33,11 +33,23 @@ describe('readReauthenticationAnswer', () => {
 
   it('reads back each answer a success may name, the lapse included', () => {
     for (const status of [...Object.values(REAUTHENTICATION), FACTOR_LAPSED]) {
+      if (status === REAUTHENTICATION.RECOVERED) continue;
       expect(readReauthenticationAnswer({ ok: true, httpStatus: 200, body: { status } })).toEqual({ status });
     }
     expect(readReauthenticationAnswer({ ok: true, httpStatus: 200, body: { status: 'resumed' } })).toEqual({
       status: 'resumed',
     });
+  });
+
+  // Task 190: the one answer that carries a value, validated like the status beside it.
+  it('reads a recovery with the codes left, and no count from anything that is not a whole one', () => {
+    const read = (remaining: unknown) =>
+      readReauthenticationAnswer({ ok: true, httpStatus: 200, body: { status: 'recovered', remaining } });
+    expect(read(3)).toEqual({ status: 'recovered', remaining: 3 });
+    expect(read(0)).toEqual({ status: 'recovered', remaining: 0 });
+    for (const odd of [null, undefined, -1, 2.5, '3']) {
+      expect(read(odd)).toEqual({ status: 'recovered', remaining: null });
+    }
   });
 
   it('treats a success it cannot read as unreachable, never as an answer', () => {

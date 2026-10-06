@@ -3,7 +3,11 @@ import { displayName, monogram } from '@api/modules/identity/account/domain/disp
 import { LOCALES, type Locale } from '@easyesg/i18n';
 import type { EpochMillis } from '@api/contracts/types/time';
 import { ACCOUNT_STATUS, type AccountStatus } from '@api/modules/identity/account/models/account.model';
-import { SIGN_IN_OUTCOME, type IssuedSession } from '../models/session.model';
+import {
+  SECOND_FACTOR_ANSWER,
+  type SecondFactorAnswer,
+} from '@api/modules/identity/account/models/totp.model';
+import { SIGN_IN_OUTCOME, type CompletedFactorChallenge, type IssuedSession } from '../models/session.model';
 
 /**
  * The identity block a session response carries — deliberately three fields, each with a caller
@@ -185,5 +189,27 @@ export class FactorChallengeResponseDto {
   constructor(challenged: { readonly challenge: string; readonly expiresAt: Date }) {
     this.challenge = challenged.challenge;
     this.expiresAt = challenged.expiresAt.getTime();
+  }
+}
+
+/**
+ * `POST /auth/session/factor`'s answer (task 190): the session, as sign-in answers it, and which kind of code earned
+ * it. The web says how many recovery codes remain after a recovery (UC-195 step 3), and this is how it learns there
+ * was one — from the only party that can tell the two formats apart, rather than from the shape of what it sent
+ * (§12.5.6's task-190 row (2)).
+ */
+export class FactorSessionResponseDto extends SessionResponseDto {
+  @ApiProperty({
+    enum: Object.values(SECOND_FACTOR_ANSWER),
+    description:
+      'Which kind of code answered the challenge: a current code from the authenticator, or one of the ' +
+      'account’s recovery codes, which is now spent. A client tells the person how many recovery codes ' +
+      'remain after the second — the count is GET /account/totp’s.',
+  })
+  readonly answeredWith: SecondFactorAnswer;
+
+  constructor(completed: CompletedFactorChallenge) {
+    super(completed.session);
+    this.answeredWith = completed.answeredWith;
   }
 }

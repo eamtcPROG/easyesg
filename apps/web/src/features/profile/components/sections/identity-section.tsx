@@ -3,6 +3,7 @@
 import type { AccountProfile } from '@easyesg/contracts';
 import { RecordSection, TextField } from '@easyesg/ui';
 import { FormTextField } from '@easyesg/ui/forms';
+import { namePartIsPresent } from '@easyesg/validation';
 import { useTranslations } from 'next-intl';
 import type { Control } from 'react-hook-form';
 import type { ProfileFields } from '../../tools/profile-fields';
@@ -20,7 +21,8 @@ import styles from '../styles/profile.module.css';
  * **The address is shown and not a field** (§12.5.6's task-52.3 row (2)): it is how the person signs in, and a second
  * editable address would be one the platform writes to unconfirmed. **The phone's shape is the api's to judge** — a
  * number in international form is a rule, and a rule restated as a pattern here would be a second source of truth
- * (`apps/web/CLAUDE.md`); the refusal arrives as the api's own sentence.
+ * (`apps/web/CLAUDE.md`); the refusal arrives as the api's own sentence. **A name part of spaces is refused inline**,
+ * because that rule is shared rather than restated: `namePartIsPresent` is the one the api's save judges by (182/6).
  */
 export function IdentitySection({
   control,
@@ -41,6 +43,7 @@ export function IdentitySection({
         rules={{
           required: t('identity.givenNameRequired'),
           maxLength: { value: 100, message: t('identity.nameTooLong') },
+          validate: (value: string) => namePartIsPresent(value) || t('identity.nameBlank'),
         }}
       />
       <FormTextField
@@ -51,6 +54,7 @@ export function IdentitySection({
         rules={{
           required: t('identity.familyNameRequired'),
           maxLength: { value: 100, message: t('identity.nameTooLong') },
+          validate: (value: string) => namePartIsPresent(value) || t('identity.nameBlank'),
         }}
       />
       <p className={`t-caption ${styles.derived}`}>{t('identity.shownAs', { name: profile.displayName })}</p>

@@ -26,6 +26,13 @@ export const REAUTHENTICATION = {
    * was replaced, because a queue filled under one account is never sent as another (task 35.2).
    */
   ACCOUNT_CHANGED: 'account-changed',
+  /**
+   * A session is held, as for `RESUMED`, and a **recovery code** answered the factor (task 190; §12.5.6's task-190
+   * row (3)): the dialogue says how many codes remain before the step resumes (UC-195 step 3). The count travels
+   * beside it, read by the handler from the account's own state once the session existed; `null` where that read
+   * failed, so the dialogue says the code was spent without guessing a number.
+   */
+  RECOVERED: 'recovered',
 } as const;
 
 export type ReauthenticationStatus = (typeof REAUTHENTICATION)[keyof typeof REAUTHENTICATION];
@@ -34,6 +41,7 @@ export type ReauthenticationAnswer =
   | { readonly status: typeof REAUTHENTICATION.RESUMED }
   | { readonly status: typeof REAUTHENTICATION.FACTOR_REQUIRED }
   | { readonly status: typeof REAUTHENTICATION.ACCOUNT_CHANGED }
+  | { readonly status: typeof REAUTHENTICATION.RECOVERED; readonly remaining: number | null }
   | { readonly status: typeof FACTOR_LAPSED }
   | ApiFailure;
 
@@ -56,5 +64,15 @@ export function readReauthenticationAnswer(response: {
   }
   const { body } = response;
   const status = typeof body === 'object' && body !== null && 'status' in body ? body.status : undefined;
-  return isAnswerStatus(status) ? { status } : { status: API_OUTCOME.Unreachable };
+  if (!isAnswerStatus(status)) return { status: API_OUTCOME.Unreachable };
+  if (status === REAUTHENTICATION.RECOVERED) {
+    // The count is validated like the status: a value that is not a whole count is no count, and the dialogue then
+    // says the code was spent without a number rather than showing one it cannot vouch for.
+    const remaining = typeof body === 'object' && body !== null && 'remaining' in body ? body.remaining : null;
+    return {
+      status,
+      remaining: typeof remaining === 'number' && Number.isInteger(remaining) && remaining >= 0 ? remaining : null,
+    };
+  }
+  return { status };
 }

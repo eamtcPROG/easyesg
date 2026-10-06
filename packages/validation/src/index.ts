@@ -41,3 +41,8 @@ export {
   type IdentifierVerdict,
 } from './entity-identifier.js';
 
+/**
+ * And FR-9's name parts (task 185, 182/6): registration, setup and S-27 refuse a part with no visible character in the
+ * api, and the three screens say so inline — one verdict, for the same reason again.
+ */
+export { namePartIsPresent, presentNamePart } from './name-part.js';

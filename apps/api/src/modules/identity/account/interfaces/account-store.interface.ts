@@ -247,6 +247,18 @@ export interface AccountTransaction {
   countUnspentRecoveryCodes(accountId: string): Promise<number>;
 
   /**
+   * Whether the person said *not now* to S-05's prompt to enrol (task 190; §12.5.6's task-190 rows (5), (6)). The
+   * account's own answer, for good, until the factor is turned off.
+   */
+  isEnrolmentPromptDismissed(accountId: string): Promise<boolean>;
+
+  /** Records *not now*. The first time stands — a second press moves nothing — so the answer has one date. */
+  dismissEnrolmentPrompt(accountId: string, at: Date): Promise<void>;
+
+  /** Turning the factor off brings the prompt back: the person is again in the state it is about (row (6)). */
+  clearEnrolmentPromptDismissal(accountId: string, at: Date): Promise<void>;
+
+  /**
    * Spends one code, atomically — single-use is this method's responsibility and cannot be the
    * caller's, for the reason `claimVerificationToken` states.
    *

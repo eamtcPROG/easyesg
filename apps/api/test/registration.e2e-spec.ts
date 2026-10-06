@@ -287,6 +287,46 @@ describe('registration and verification (UC-01, UC-03, FR-1, FR-3)', () => {
     });
   });
 
+  describe('a name part with no visible character (FR-1 AC-9, FR-9 AC-3; 182/6)', () => {
+    // The DTO's `@MinLength(1)` admits both of these — a space is a character — so what refuses
+    // them is the use case's rule, which is the one setup and S-27 apply.
+    it.each([
+      ['given', { givenName: '   ', familyName: 'Popescu' }],
+      ['family', { givenName: 'Ana', familyName: ' \t ' }],
+    ])('refuses a %s name of white space with validation-failed, and creates nothing', async (part, names) => {
+      const email = addressFor(`blank-${part}`);
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/auth/register')
+        .send({ email, password: PASSWORD, ...names })
+        .expect(400);
+
+      expect(response.headers['content-type']).toContain('application/problem+json');
+      expect(problem(response).type).toContain('validation-failed');
+      expect(problem(response).detail).toBeTruthy();
+      expect(problem(response).detail).not.toContain('identity.registration');
+      const rows = await owner.query<{ count: string }[]>(
+        `SELECT count(*)::text AS count FROM identity.account WHERE email = $1`,
+        [email],
+      );
+      expect(rows[0].count).toBe('0');
+      expect(await queuedVerification(email)).toHaveLength(0);
+    });
+
+    it('stores each part trimmed when it has one', async () => {
+      const email = addressFor('trimmed');
+      await request(app.getHttpServer())
+        .post('/api/v1/auth/register')
+        .send({ email, password: PASSWORD, givenName: '  Ana ', familyName: ' Popescu  ' })
+        .expect(201);
+
+      const rows = await owner.query<{ given_name: string; family_name: string }[]>(
+        `SELECT given_name, family_name FROM identity.account WHERE email = $1`,
+        [email],
+      );
+      expect(rows).toEqual([{ given_name: 'Ana', family_name: 'Popescu' }]);
+    });
+  });
+
   describe('requesting a new link (OQ-55)', () => {
     it('issues one for an unverified account and retires the previous one', async () => {
       const email = addressFor('resend');

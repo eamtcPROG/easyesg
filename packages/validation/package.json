@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "UNLICENSED",
-  "description": "Rule interpreter over versioned rule definitions (AD-4). One interpreter, two execution sites: apps/api re-validates authoritatively, apps/web shows findings inline (§9.8). Also the password policy (OQ-51), shared for the same reason.",
+  "description": "Rule interpreter over versioned rule definitions (AD-4). One interpreter, two execution sites: apps/api re-validates authoritatively, apps/web shows findings inline (§9.8). Also the password policy (OQ-51), the entity identifiers and the name-part rule, shared for the same reason.",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "types": "./dist/esm/index.d.ts",

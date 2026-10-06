@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { ArrivalNotice } from '@/features/organization/home/components/arrival/arrival-notice';
 import { HeadingLoading } from '@/features/organization/home/components/heading/heading-loading';
 import { OrganizationHeading } from '@/features/organization/home/components/heading/organization-heading';
+import { EnrolmentPrompt } from '@/features/organization/home/components/enrolment-prompt/section/enrolment-prompt';
 import { OverviewLoading } from '@/features/organization/home/components/overview/section/overview-loading';
 import { OverviewSection } from '@/features/organization/home/components/overview/section/overview-section';
 import { MembershipsLoading } from '@/features/organization/home/components/memberships/section/memberships-loading';
@@ -79,7 +80,9 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  *
  * States (§8.1): ready · read-only (view-only membership) · loading (the overview's boundary) ·
  * empty — first use · partial (the two reads fail independently, each with its own message) ·
- * error — permission · error — recoverable.
+ * error — permission · error — recoverable. **And since task 190, the second-factor prompt** above the regions, for an
+ * administrator with no factor who has not said *not now* — behind a boundary with no fallback, since its ordinary state
+ * is absent.
  */
 const MESSAGES = 'organization.home';
 
@@ -103,6 +106,11 @@ export default async function HomePage({ params, searchParams }: Props) {
       <ArrivalNotice searchParams={searchParams} />
       <Suspense fallback={<HeadingLoading />}>
         <OrganizationHeading />
+      </Suspense>
+      {/* No fallback, deliberately: its ordinary state is absent, so a skeleton would reserve and then collapse a
+          band on nearly every render — the support-access banner's reason (task 190). */}
+      <Suspense fallback={null}>
+        <EnrolmentPrompt />
       </Suspense>
       <Suspense fallback={<OverviewLoading />}>
         <OverviewSection />

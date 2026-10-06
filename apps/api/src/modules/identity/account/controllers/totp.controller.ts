@@ -32,6 +32,11 @@ import { TotpService } from '../services/totp.service';
  * is bound, which is also why it lives in `identity/account` — the module that owns credentials —
  * rather than anywhere tenant-scoped.
  *
+ * **No `@RequiresEntitlement`, on any of them** (`apps/api/CLAUDE.md`, "Before you add a route"; recorded with task
+ * 190's sixth route, where it had never been written for the first five). A second factor is a person's own security
+ * setting, offered to every tenant user whatever their organization's plan (NFR-95): no plan decides it, and the
+ * routes run before any organization is bound, so there is no tenant to hold one.
+ *
  * The **challenge** is deliberately absent. Answering a factor happens during sign-in and belongs
  * to `identity/session` (UC-194, UC-195; task 27.3); this controller is where the factor is
  * *managed*, which is the split `design_spec.md` draws between S-28 and S-01.
@@ -165,5 +170,21 @@ export class TotpController {
   })
   async reissue(@Body() body: TotpReauthenticationRequestDto): Promise<RecoveryCodesResponseDto> {
     return new RecoveryCodesResponseDto(await this.totpService.reissueRecoveryCodes(body));
+  }
+
+  @Post('prompt-dismissal')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Stop recommending a second factor to this account',
+    description:
+      'An Organization Administrator without a second factor is recommended one on the home screen. ' +
+      'This is the person’s *not now*: remembered on the account, on every device and in every ' +
+      'organization, until the factor is turned off, which brings the recommendation back. ' +
+      'Idempotent — the first answer’s time stands. It needs no password and no role, being a ' +
+      'preference the person holds about themselves; nothing about the factor changes.',
+  })
+  @ApiResponse({ status: 204, description: 'The recommendation is no longer shown to this account.' })
+  async dismissPrompt(): Promise<void> {
+    await this.totpService.dismissEnrolmentPrompt();
   }
 }

@@ -10,7 +10,7 @@ import { factorChallengeHasExpired } from '../domain/factor-challenge';
 import { AccountLockedError, FactorInvalidError } from '../errors/session.errors';
 import type { FactorChallengeSealer } from '../interfaces/factor-challenge.interface';
 import type { SessionStore } from '../interfaces/session-store.interface';
-import type { IssuedSession } from '../models/session.model';
+import type { CompletedFactorChallenge } from '../models/session.model';
 import type { SignIn } from './sign-in.use-case';
 
 export interface CompleteFactorChallengeCommand {
@@ -66,7 +66,7 @@ export class CompleteFactorChallenge {
     private readonly now: Clock,
   ) {}
 
-  async execute(command: CompleteFactorChallengeCommand): Promise<IssuedSession> {
+  async execute(command: CompleteFactorChallengeCommand): Promise<CompletedFactorChallenge> {
     const now = this.now();
 
     // Opened before the throttle is touched, because the throttle key needs the account — and a
@@ -95,7 +95,11 @@ export class CompleteFactorChallenge {
 
     // Every refusal below commits its counter before throwing — `SignIn`'s stated shape, and for
     // its stated reason: a throw inside `run` would roll back the very tally FR-4 rests on.
-    if (!(await this.secondFactor.verify({ accountId: challenge.accountId, code: command.code }))) {
+    const answeredWith = await this.secondFactor.verify({
+      accountId: challenge.accountId,
+      code: command.code,
+    });
+    if (answeredWith === null) {
       await this.store.run((tx) =>
         tx.registerFailedSignIn(challenge.accountId, LOCKOUT_THRESHOLD, now),
       );
@@ -114,6 +118,9 @@ export class CompleteFactorChallenge {
     if (account === null) throw new FactorInvalidError();
 
     // The answer given at the password step, carried by the sealed challenge — never re-asked.
-    return this.signIn.issue({ account, now, remembered: challenge.remembered });
+    return {
+      session: await this.signIn.issue({ account, now, remembered: challenge.remembered }),
+      answeredWith,
+    };
   }
 }

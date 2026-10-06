@@ -3,10 +3,12 @@
 import type {
   CompleteFactorRequest,
   FactorChallengeResponse,
+  FactorSessionResponse,
   SessionResponse,
   SignInRequest,
 } from '@easyesg/contracts';
-import { SIGN_IN_OUTCOME } from '@easyesg/contracts';
+import { SECOND_FACTOR_ANSWER, SIGN_IN_OUTCOME } from '@easyesg/contracts';
+import { CREDENTIALS_ARRIVAL, credentialsArrivalHref } from '@/features/credentials/tools/credentials-arrival';
 import { getLocale } from 'next-intl/server';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { ROUTES } from '@/lib/routes';
@@ -36,7 +38,7 @@ export async function completeFactorAction(command: {
   // sentence for a step that cannot be tried again (`factor.ts`).
   if (!held) return { status: FACTOR_LAPSED };
 
-  const outcome = await api.post<CompleteFactorRequest, SessionResponse>(
+  const outcome = await api.post<CompleteFactorRequest, FactorSessionResponse>(
     '/auth/session/factor',
     { challenge: held.challenge, code: command.code },
   );
@@ -51,7 +53,22 @@ export async function completeFactorAction(command: {
   // The answer given at the password step. The API applied its own sealed copy to the session's
   // lifetime; this applies ours to the cookie's persistence.
   const session = await establishSession({ session: outcome.value, remembered: held.remember });
+
   const target = await resolvePostSignIn(held.returnTo ?? undefined);
+
+  // **A recovery lands on S-28 first** (task 190; §12.5.6's task-190 row (1)), as A-01 sends an operator's to A-19:
+  // S-28 says how many codes remain (UC-195 step 3), and it is where the factor is turned off or the codes re-issued.
+  // **§4.3's destination travels with it** (owner, 6 Oct 2026) and S-28 offers it, so an invitee keeps their way back
+  // to the invitation and a reader whose session ended keeps theirs (FR-11, FR-5). The api says which kind answered;
+  // this tier never judges the code's shape.
+  if (outcome.value.answeredWith === SECOND_FACTOR_ANSWER.RECOVERY_CODE) {
+    const onward = target.locale ? `/${target.locale}${target.href}` : target.href;
+    redirect({
+      href: credentialsArrivalHref({ arrival: CREDENTIALS_ARRIVAL.RECOVERED, onward }),
+      locale: session.account.locale,
+    });
+  }
+
   redirect({ href: target.href, locale: targetLocale(target, session.account.locale) });
 }
 

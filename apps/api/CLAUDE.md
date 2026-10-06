@@ -64,6 +64,9 @@ traps each one left — grouped by area rather than by the task that built it.
   social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`), and the
   setup a provider registration completes (`GET /account/setup`, `POST /account/setup/{password,profile}`,
   `POST /auth/account-setup/password`) (155);
+  the factor step's answer saying which kind of code earned the session, and S-05's *not now* on the prompt to enrol
+  (`POST /account/totp/prompt-dismissal`, `identity.account.enrolment_prompt_dismissed_at`, cleared by turning the
+  factor off) (190);
   AD-15's socket ticket (`POST /session/socket-ticket`, 147);
   opt-in TOTP and password change (27); the profile (`GET/PUT /account/profile`, 52.3); memberships and roles (`GET/PATCH/DELETE /members`,
   `GET /memberships`), and choosing among them (`PUT /session/organization`, 83.1); invitations and acceptance (`GET/POST /invitations`,

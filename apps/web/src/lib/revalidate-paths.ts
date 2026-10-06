@@ -32,6 +32,9 @@
  */
 export const APP_LAYOUT_PATH = '/[locale]/(app)';
 
+/** S-05, home — its second-factor prompt goes once *not now* is answered (task 190). */
+export const HOME_PATH = '/[locale]/(app)/(workspace)/home';
+
 /** S-06's index. Creating a report changes what it shows. */
 export const REPORTS_PATH = '/[locale]/(app)/(workspace)/reports';
 

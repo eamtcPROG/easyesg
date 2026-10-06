@@ -18,7 +18,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 ### FR-1 — Registration with email and password
 
-**Status.** Partial — delivered 19, 20, 21, 26.2, 112, 139, 153 · remaining 185 (a name part with no visible character), 71.1 (the edge's budget, AC-8)
+**Status.** Partial — delivered 19, 20, 21, 26.2, 112, 139, 153, 185 · remaining 71.1 (the edge's budget, AC-8)
 
 **Obligation.** The system shall allow an account to be registered from an email address and a password, creating an unverified account record and issuing a verification challenge, and shall make no application data reachable until verification completes. A registration presenting a live organization invitation for that same address creates an already-verified account and issues no challenge.
 
@@ -60,7 +60,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 - **AC-6** Given a spent, revoked, lapsed or other-address invitation token, then registration proceeds as an ordinary unverified one. *(source: §12.5.6 task-26.2 row)*
 - **AC-7** Given a missing given name or family name, then registration is refused with 400. *(source: FR-9; UX-137; §12.5.6 task-139 row)*
 - **AC-8** Given more than 60 requests in a minute from one IP, then the edge answers 429. *(source: §12.5.6 limits table; OQ-53)* Unmet until 71.1.
-- **AC-9** Given a given name or family name with no visible character, then registration is refused with 400 `validation-failed` and no account is created. *(source: §12.5.6 task-182 identity and organization row, 182/6; FR-9)* Unmet until 185.
+- **AC-9** Given a given name or family name with no visible character, then registration is refused with 400 `validation-failed` and no account is created. *(source: §12.5.6 task-182 identity and organization row, 182/6; FR-9)*
 
 **History.**
 - 20 Aug 2026 · platform owner · the password policy, and a registration naming a registered address answers 409 · `architecture.md` OQ-51, OQ-53
@@ -206,7 +206,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 7. 10 consecutive failures lock the account: 403 `account-locked`, a durable state and not a pressure valve. The lock is released by consuming a password-reset link (FR-6). A Platform Administrator may also release it, stating a reason (FR-209). Failed attempts on an unverified account count, so the unverified window is not a free guessing lane (OQ-57).
 8. A wrong second-factor code leaves the user on the step to retype it and counts toward the same lockout (UC-194). The challenge is a sealed five-minute value, deliberately not single-use. Enrolling, answering and recovering with a second factor are FR-208's (UC-193 … UC-195).
 9. A refresh token is consumed on use. Presenting a consumed one past the race grace reads as theft and revokes the session (§12.5.6, the page-load rotation paragraph of task 26.4). A session past its idle or absolute bound is 401 `session-expired`; one that never existed or was revoked is 401 `authentication-required` (`architecture.md` §6.2).
-10. Sign-in exits per §4.3 (FR-12). A caller already holding a session is never served the sign-in form again: the destination is the branch (UX-136; task-112 row).
+10. Sign-in exits per §4.3 (FR-12) — **except a factor step answered with a recovery code, which lands on S-28 carrying §4.3's destination and offering it** (§12.5.6 task-190 row (1); UC-195 step 3). A caller already holding a session is never served the sign-in form again: the destination is the branch (UX-136; task-112 row).
 
 **Refusals.**
 - Wrong credential, in any of its forms → 401 `credential-invalid`
@@ -249,7 +249,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 **Status.** Built — delivered 21, 22, 35.3, 92, 93, 160, 161
 
-**Obligation.** The system shall terminate a session server-side on logout rather than only clearing it client-side, and on re-authentication after expiry shall return the user to the exact screen and record they were on, submitting any locally queued draft changes.
+**Obligation.** The system shall terminate a session server-side on logout rather than only clearing it client-side, and on re-authentication after expiry shall return the user to the exact screen and record they were on, submitting any locally queued draft changes. *(Amended 6 Oct 2026, task 190: a sign-in answered with a recovery code passes through S-28 first, which states the codes left and offers that screen as its way on — §12.5.6 task-190 row (1).)*
 
 | | |
 |---|---|
@@ -427,15 +427,15 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 ### FR-208 — The opt-in second factor
 
-**Status.** Partial — delivered 27.1, 27.2, 27.3, 27.4, 27.5, 27.7, 27.8, 92, 97, 143 · remaining 190 (the Organization Administrator's prompt to enrol, and the count of recovery codes left after a recovery sign-in)
+**Status.** Built — delivered 27.1, 27.2, 27.3, 27.4, 27.5, 27.7, 27.8, 92, 97, 143, 190
 
 **Obligation.** The system shall let any signed-in user add a time-based one-time code (TOTP) as a second factor to their own account, take effect only once a current code from it has been returned, and be given ten single-use recovery codes, shown once; shall challenge an account that holds the factor for a current code, or for a recovery code, after the correct password and before any session exists, and never challenge an account that does not hold it; and shall let the user turn the factor off or replace the whole set of recovery codes. The factor is opt-in, is not enforced at MVP, and is recommended to Organization Administrators.
 
 | | |
 |---|---|
 | **Actors** | Any authenticated user, on their own account, whatever role they hold (Common Access). An Organization Administrator is additionally prompted to enrol. The operators' own factor is FR-75 and FR-80's, not this one. |
-| **Traces** | UC-193, UC-194, UC-195 · NFR-95 (the quality), NFR-64, NFR-65 · FR-4, FR-5, FR-7, FR-8 · UX-108 · `architecture.md` §12.5.6's task-27.1, task-27.2, task-27.3 (both rows), task-27.5, recovery-code, enrolment-confirmation, task-97 and task-143 rows · `design_spec.md` S-28, S-01 · entity *Account* |
-| **Surfaces** | S-28 (enrol, turn off, re-issue; the state) · S-01's second-factor step at `/sign-in/factor` · S-07's inline re-authentication dialogue, as its second stage (FR-5) · `GET /account/totp` (200) · `POST /account/totp/enrolment` (201 · 403 · 409 · 429) · `POST /account/totp/confirmation` (201 · 403 · 409 · 429) · `POST /account/totp/removal` (204 · 403 · 409 · 429) · `POST /account/totp/recovery-codes` (201 · 403 · 409 · 429) · `POST /auth/session/factor` (201 · 403 · 429) |
+| **Traces** | UC-193, UC-194, UC-195 · NFR-95 (the quality), NFR-64, NFR-65 · FR-4, FR-5, FR-7, FR-8 · UX-108 · `architecture.md` §12.5.6's task-27.1, task-27.2, task-27.3 (both rows), task-27.5, recovery-code, enrolment-confirmation, task-97, task-143 and task-190 rows · `design_spec.md` S-28, S-01, S-05, S-07 · entity *Account* |
+| **Surfaces** | S-28 (enrol, turn off, re-issue; the state) · S-01's second-factor step at `/sign-in/factor` · S-07's inline re-authentication dialogue, as its second stage (FR-5) · `GET /account/totp` (200) · `POST /account/totp/enrolment` (201 · 403 · 409 · 429) · `POST /account/totp/confirmation` (201 · 403 · 409 · 429) · `POST /account/totp/removal` (204 · 403 · 409 · 429) · `POST /account/totp/recovery-codes` (201 · 403 · 409 · 429) · `POST /auth/session/factor` (201 · 403 · 429) · `POST /account/totp/prompt-dismissal` (204) · S-05's second-factor prompt |
 
 **Preconditions.** To enrol: the user is authenticated and holds no confirmed factor (UC-193). To be challenged: the account holds a confirmed factor and the correct password has just been presented (UC-194). To recover: the account holds a confirmed factor and an unspent recovery code (UC-195).
 
@@ -451,7 +451,8 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 7. **The second step takes the challenge and one code.** A current code and a recovery code are told apart by their shape. A wrong, spent or unrecognised code, an expired challenge and a challenge this api did not issue are one answer, 403 `factor-invalid`. The account's lock is read before the code is judged, a wrong code counts toward FR-4's lockout, and the step is bounded by the auth-path window (FR-4 behaviour 8; §12.5.6 task-27.3 rows, amended 27 Aug 2026).
 8. **A recovery code grants one session and removes nothing.** The factor stays in force; the user may then turn it off or re-issue the codes (UC-195 business rules).
 9. **The state read carries a yes or no and a count, never the secret or a code.** An enrolled account with zero codes left is a designed state: S-28 says what it means for the day the authenticator is lost (`GET /account/totp` description; UC-195 exception flows).
-10. **Two parts of the use cases are not built**: a recovery sign-in does not tell the user how many codes remain (UC-195 step 3), and an Organization Administrator without the factor is not prompted to enrol (UC-193 trigger; NFR-95). 190 owns both.
+10. **A recovery sign-in says how many codes remain** (UC-195 step 3). The second step answers which kind of code was given (`answeredWith`: `authenticator` or `recovery_code`). On S-01 a recovery lands on S-28, ahead of `?return=`, whose arrival notice gives the count from its own state read; in S-07's re-authentication dialogue a last stage gives it before the step resumes (§12.5.6 task-190 rows (1) … (3)).
+11. **An Organization Administrator without the factor is prompted to enrol** (UC-193 trigger; NFR-95), on S-05, while the active membership is that role and the prompt has not been dismissed. It blocks nothing. Dismissing it is the account's, for good, and turning the factor off undoes the dismissal (§12.5.6 task-190 rows (4) … (6)).
 
 **Refusals.**
 - The current password is wrong or absent on enrolment, turning off or re-issue → 403 `credential-invalid` (`identity.totp.reauthentication_failed`)
@@ -462,7 +463,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 - The challenge on a locked account → 403 `account-locked`
 - No usable session on a management route → 401 `authentication-required`
 
-**Effects.** An encrypted secret, inert until confirmed. Ten recovery-code digests per issue. The failure counter of FR-4 moves only on the challenge.
+**Effects.** An encrypted secret, inert until confirmed. Ten recovery-code digests per issue. The failure counter of FR-4 moves only on the challenge. The time the enrolment prompt was dismissed, on the account, cleared when the factor is turned off.
 
 **Configuration-held values.** None. The algorithm parameters, the ten codes, the windows and the five-minute challenge are §12.5.6 values held in code. The issuer name EasyESG is a constant.
 
@@ -484,8 +485,8 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 - **AC-13** Given a sixth confirmation, or a sixth password-gated attempt, in 15 minutes, then the answer is 429 and the account is not locked. *(source: §12.5.6 task-27.5 and enrolment-confirmation rows)*
 - **AC-14** Given the state read, then it carries whether the factor is in force and the codes remaining, and never the secret or a code. *(source: `GET /account/totp` description)*
 - **AC-15** Given an enrolled account with no recovery code left, then S-28 says so and what it means. *(source: UC-195 exception flows; `design_spec.md` S-28)*
-- **AC-16** Given a recovery sign-in, then the user is told how many codes remain. *(source: UC-195 step 3)* Unmet until 190.
-- **AC-17** Given an Organization Administrator who holds no factor, then they are prompted to enrol. *(source: NFR-95 verification; UC-193 trigger)* Unmet until 190.
+- **AC-16** Given a recovery sign-in, then the user is told how many codes remain. *(source: UC-195 step 3; §12.5.6 task-190 rows (1) … (3))*
+- **AC-17** Given an Organization Administrator who holds no factor, then they are prompted to enrol. *(source: NFR-95 verification; UC-193 trigger; §12.5.6 task-190 rows (4) … (6))*
 
 **History.**
 - 26 Aug 2026 · project owner · opt-in tenant TOTP is MVP scope (NFR-95, 18 Aug); UC-193 … UC-195 appended; enrolment is two steps; enrolling and turning off need the password; ten recovery codes · §12.5.6 task-27.2 and recovery-codes rows
@@ -494,6 +495,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 - 4 Sep 2026 · project owner · the remembered choice rides the sealed challenge · §12.5.6 task-97 row
 - 12 Sep 2026 · project owner · the authenticator is shown a scannable symbol and a name of its own · task 143
 - 5 Oct 2026 · project owner · the second factor is a requirement of its own, FR-208, with UC-193 … UC-195 as its source, and no longer left to NFR-95 alone · §12.5.6 task-182 identity and organization row (182/156)
+- 6 Oct 2026 · project owner · a recovery sign-in lands on S-28, which states the codes left; the re-authentication dialogue states them before resuming; an Organization Administrator is prompted on S-05, dismissible for good on the account and undone by turning the factor off · §12.5.6 task-190 row
 
 ### FR-209 — Release a locked tenant account
 
@@ -542,7 +544,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 ### FR-9 — The personal profile
 
-**Status.** Partial — delivered 52.1, 52.3, 139, 140, 155.2, 167 · remaining 75.3 (the privacy notice names the phone), 185 (a name part with no visible character, at registration)
+**Status.** Partial — delivered 52.1, 52.3, 139, 140, 155.2, 167, 185 · remaining 75.3 (the privacy notice names the phone)
 
 **Obligation.** The system shall maintain a personal profile — a given name and a family name, the contact email, an optional job title and an optional phone number, and the notification preferences — held independently of any organization the user belongs to, capturing the two name parts at registration and allowing them to be edited afterwards. The display name is derived from the two parts and is not stored. The contact email is the sign-in address, shown and not a second address. The per-category structure of the preferences is FR-163's.
 
@@ -556,7 +558,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 **Behaviour.**
 1. The profile is personal to the user and does not change when the active organization does (UC-13).
-2. Both name parts are required at registration, at setup and on S-27 (§12.5.6 task-52.3 row, build notes). Setup and S-27 trim each part and refuse one with no visible character, and so does registration (§12.5.6 task-182 identity and organization row, 182/6; 185 builds it). A provider sign-up seeds them from the assertion's single display name where they are empty and never overwrites; nothing splits it (task-139 row; UX-137).
+2. Both name parts are required at registration, at setup and on S-27 (§12.5.6 task-52.3 row, build notes). Setup and S-27 trim each part and refuse one with no visible character, and so does registration (§12.5.6 task-182 identity and organization row, 182/6; built by 185). All three judge by one rule, `presentNamePart` in `packages/validation`, which S-01, S-36 and S-27 also apply inline (`architecture.md` §9.8). A part with no visible character is one `String.prototype.trim` leaves empty — white space, line breaks and the no-break space; a zero-width space is not white space and counts as a character (task 185). A provider sign-up seeds them from the assertion's single display name where they are empty and never overwrites; nothing splits it (task-139 row; UX-137).
 3. The display name is `given family`, with one part standing alone when the other is absent and the email address standing in when both are. The monogram is the first character of each part present. It is derived in the session, in the account and member responses, and a second time in SQL because S-16's person column sorts on it; a test holds the two equal (UX-137; task-140 row).
 4. The job title and the phone number are optional, and an omitted, null or blank value clears them. A phone is stored as `+` and the digits (E.164), and the api strips the separators a person types. The phone is used only for support to reach the person about their account (task-52.3 row (4)).
 5. The contact email is the sign-in address. S-27 shows it and does not edit it, so no address the platform writes to is unconfirmed (task-52.3 row (2)).
@@ -578,7 +580,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 **Acceptance criteria.**
 - **AC-1** Given a profile saved in one organization, then it reads identically after the active organization is switched. *(source: FR text; UC-13)*
 - **AC-2** Given both name parts, either one alone, or neither, then the derived display name is `given family`, the part present, or the address, and the monogram follows. *(source: UX-137)*
-- **AC-3** Given a given name or family name missing on S-27, at registration or in setup, then the save is refused with 400 and nothing is stored. A part with no visible character is refused on S-27 and in setup, and at registration too (§12.5.6 task-182 identity and organization row, 182/6), which is unmet until 185. *(source: §12.5.6 task-52.3 row, build notes; task-139 row)*
+- **AC-3** Given a given name or family name missing on S-27, at registration or in setup, then the save is refused with 400 and nothing is stored. A part with no visible character is refused on S-27 and in setup, and at registration too (§12.5.6 task-182 identity and organization row, 182/6). *(source: §12.5.6 task-52.3 row, build notes; task-139 row)*
 - **AC-4** Given a provider assertion carrying one display name, then the name parts are seeded where empty and an existing value is never overwritten. *(source: §12.5.6 task-139 row)*
 - **AC-5** Given a phone typed with spaces, then it is stored as `+` and digits, and one not in international form is refused. *(source: §12.5.6 task-52.3 row)*
 - **AC-6** Given S-27, then the contact email is shown and cannot be edited. *(source: FR text; §12.5.6 task-52.3 row (2))*
@@ -646,7 +648,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 **Behaviour.**
 1. The preview reads the invitation without using it, signed in or not, and answers the inviting organization, the role and a `standing`: acceptable, expired, consumed, revoked or unknown. A bearer-read policy on the invitation row serves it (task-26.2 row). The preview carries no application throttle; the edge bounds it, as it does registration and verification (task-26.2 row).
-2. The invitation rides the URL across S-03, S-01 and back, as `?return=` plus an invitation parameter on the registration route (task-26.3 row). Acceptance is an explicit POST.
+2. The invitation rides the URL across S-03, S-01 and back, as `?return=` plus an invitation parameter on the registration route (task-26.3 row). A sign-in answered with a recovery code goes back by way of S-28, whose arrival notice offers the invitation as its way on (§12.5.6 task-190 row (1)). Acceptance is an explicit POST.
 3. Acceptance needs a session. The signed-in account's address must be the invited one; a social sign-in as any other address, and an existing session for any other address, are the same refusal (`design_spec.md` S-03; UC-15).
 4. On acceptance the membership is created at the invited role, scoped to that organization, and the session's `active_organization_id` is written to it (task-26.2 row).
 5. An address that is already an **active** member consumes the invitation, leaves the member's role untouched, and succeeds. A **removed** member's row is reactivated at the invited role (task-26.2 row; §6.5, task 25.1).
@@ -952,7 +954,7 @@ Moved from the index's §5.1 on 5 Oct 2026 (task 182). These rows list the attri
 
 | Entity | Attributes named by requirements | Requirements |
 |---|---|---|
-| Account | Credential(s) held (a password, provider identities), status (`unverified`, `awaiting_setup`, `active`), verification link (single-use, 24 h), expiry of an unverified or abandoned-in-setup account (7 days from registration; none for one moved into setup from active), lockout state (10 consecutive failures), given and family name (the display name derived, not stored) | FR-1, FR-2, FR-3, FR-4, FR-6, FR-9 |
+| Account | Credential(s) held (a password, provider identities), status (`unverified`, `awaiting_setup`, `active`), verification link (single-use, 24 h), expiry of an unverified or abandoned-in-setup account (7 days from registration; none for one moved into setup from active), lockout state (10 consecutive failures), given and family name (the display name derived, not stored), when the prompt to enrol a second factor was dismissed (task 190) | FR-1, FR-2, FR-3, FR-4, FR-6, FR-9, FR-208 |
 | Provider identity | Provider, subject identifier, asserted email, asserted-verified flag; at most one account per (provider, subject) | FR-2, FR-4, FR-8 |
 | Session | Scope over organization memberships and roles (role and organization read per request, never carried in the token), active organization, remembered or not (idle and absolute lifetimes), rotating single-use refresh token, server-side termination with a recorded reason | FR-4, FR-5, FR-6, FR-7, FR-12 |
 | Password reset token | Single-use, time-limited (60 min); for an account's first password, a grant of the same kind with a 15-minute life, claimed only by its own route | FR-6, FR-2, FR-3 |

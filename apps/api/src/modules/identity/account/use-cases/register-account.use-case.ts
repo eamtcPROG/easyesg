@@ -1,8 +1,13 @@
 import type { Locale } from '@easyesg/i18n';
 import { accountHasLapsed } from '../domain/account-expiry';
+import { presentNamePart } from '../domain/display-name';
 import { emailIdentityKey, normaliseEmail } from '../domain/email-address';
 import { passwordMeetsPolicy } from '../domain/password-policy';
-import { EmailAlreadyRegisteredError, PasswordPolicyViolationError } from '../errors/account.errors';
+import {
+  EmailAlreadyRegisteredError,
+  PasswordPolicyViolationError,
+  RegistrationNamesRequiredError,
+} from '../errors/account.errors';
 import type { AccountStore, AccountTransaction } from '../interfaces/account-store.interface';
 import type { PasswordHasher } from '../interfaces/password-hasher.interface';
 import type { Account } from '../models/account.model';
@@ -15,7 +20,8 @@ export interface RegisterAccountCommand {
   readonly password: string;
   /**
    * FR-9's two parts, required at registration since `design_spec.md` OQ-16's name half closed.
-   * The display name is derived from them at every read and never stored (UX-137).
+   * The display name is derived from them at every read and never stored (UX-137). Each is stored
+   * trimmed, and one with no visible character is refused (182/6).
    */
   readonly givenName: string;
   readonly familyName: string;
@@ -60,6 +66,14 @@ export class RegisterAccount {
   async execute(command: RegisterAccountCommand): Promise<Account> {
     const email = normaliseEmail(command.email);
 
+    // Judged with the password, before the hash and the transaction, so a refusal costs neither and
+    // creates nothing (182/6). `presentNamePart` is the rule setup and S-27 apply and S-01 shows
+    // inline, so a name of spaces is refused at every door it could come through — and what is
+    // stored is the trimmed part, as those two store it.
+    const givenName = presentNamePart(command.givenName);
+    const familyName = presentNamePart(command.familyName);
+    if (givenName === null || familyName === null) throw new RegistrationNamesRequiredError();
+
     if (!passwordMeetsPolicy(command.password)) throw new PasswordPolicyViolationError();
 
     // Hashed BEFORE the transaction opens, deliberately. Argon2id at §9.1's parameters is tens of
@@ -87,8 +101,8 @@ export class RegisterAccount {
         email,
         locale: command.locale,
         passwordHash,
-        givenName: command.givenName,
-        familyName: command.familyName,
+        givenName,
+        familyName,
       });
 
       // FR-3's third route to a verified account, added 25 Aug 2026 (§12.5.6's task-26.2 row).

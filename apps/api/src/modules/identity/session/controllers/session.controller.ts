@@ -9,6 +9,7 @@ import { CompleteFactorRequestDto } from '../dto/complete-factor.request.dto';
 import { RefreshSessionRequestDto } from '../dto/refresh-session.request.dto';
 import {
   FactorChallengeResponseDto,
+  FactorSessionResponseDto,
   SessionResponseDto,
 } from '../dto/session.response.dto';
 import { SIGN_IN_OUTCOME } from '../models/session.model';
@@ -108,9 +109,9 @@ export class SessionController {
       'be confused. The challenge lives five minutes and is deliberately **not** single-use: a ' +
       'mistyped code leaves the caller on this step to retype, rather than back at the password.',
   })
-  @ApiObjectResponse(SessionResponseDto, {
+  @ApiObjectResponse(FactorSessionResponseDto, {
     status: 201,
-    description: 'The factor was answered and the session issued.',
+    description: 'The factor was answered and the session issued, with which kind of code answered it.',
   })
   @ApiResponse({
     status: 403,
@@ -129,8 +130,8 @@ export class SessionController {
     description: 'Too many attempts for this account in the window.',
     content: { 'application/problem+json': {} },
   })
-  async completeFactor(@Body() body: CompleteFactorRequestDto): Promise<SessionResponseDto> {
-    return new SessionResponseDto(await this.sessionService.completeFactor(body));
+  async completeFactor(@Body() body: CompleteFactorRequestDto): Promise<FactorSessionResponseDto> {
+    return new FactorSessionResponseDto(await this.sessionService.completeFactor(body));
   }
 
   @Post('session/refresh')

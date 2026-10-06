@@ -97,6 +97,10 @@ describe('second factor (UC-193, UC-195, NFR-95)', () => {
     await owner.query(`DELETE FROM identity.recovery_code WHERE account_id = $1`, [
       account.accountId,
     ]);
+    // Task 190's *not now* is the account's too, so it goes with the factor between tests.
+    await owner.query(`UPDATE identity.account SET enrolment_prompt_dismissed_at = NULL WHERE id = $1`, [
+      account.accountId,
+    ]);
     await owner.query(`DELETE FROM identity.totp_credential WHERE account_id = $1`, [
       account.accountId,
     ]);
@@ -138,7 +142,7 @@ describe('second factor (UC-193, UC-195, NFR-95)', () => {
     // A row exists, and the factor does not. This is the state a failed authenticator scan leaves
     // behind, and it must not challenge anybody.
     const pending = await http().get('/api/v1/account/totp').set(auth()).expect(200);
-    expect(objectOf(pending)).toEqual({ enrolled: false, recoveryCodesRemaining: 0 });
+    expect(objectOf(pending)).toEqual({ enrolled: false, recoveryCodesRemaining: 0, enrolmentPromptDismissed: false });
 
     await http()
       .post('/api/v1/account/totp/confirmation')
@@ -150,6 +154,7 @@ describe('second factor (UC-193, UC-195, NFR-95)', () => {
     expect(objectOf(active)).toEqual({
       enrolled: true,
       recoveryCodesRemaining: RECOVERY_CODE_COUNT,
+      enrolmentPromptDismissed: false,
     });
   }, 60_000);
 
@@ -246,11 +251,47 @@ describe('second factor (UC-193, UC-195, NFR-95)', () => {
       .expect(204);
 
     const off = await http().get('/api/v1/account/totp').set(auth()).expect(200);
-    expect(objectOf(off)).toEqual({ enrolled: false, recoveryCodesRemaining: 0 });
+    expect(objectOf(off)).toEqual({ enrolled: false, recoveryCodesRemaining: 0, enrolmentPromptDismissed: false });
 
     // A code outliving its factor would be a credential against something that is gone.
     const consume = app.get(ConsumeRecoveryCode);
     expect(await consume.execute({ accountId: account.accountId, code: codes[0] })).toBe(false);
+  }, 60_000);
+
+  /**
+   * S-05's prompt to enrol (task 190; §12.5.6's task-190 rows (5), (6)): *not now* is the account's, for good, and
+   * turning the factor off brings it back — read through the state the screen reads, and the column it is kept in.
+   */
+  it('remembers the prompt dismissed on the account until the factor is turned off', async () => {
+    const dismissed = async () =>
+      objectOf<{ enrolmentPromptDismissed: boolean }>(
+        await http().get('/api/v1/account/totp').set(auth()).expect(200),
+      ).enrolmentPromptDismissed;
+    const storedAt = async () =>
+      (
+        await owner.query<{ at: Date | null }[]>(
+          `SELECT enrolment_prompt_dismissed_at AS at FROM identity.account WHERE id = $1`,
+          [account.accountId],
+        )
+      )[0].at;
+
+    expect(await dismissed()).toBe(false);
+
+    await http().post('/api/v1/account/totp/prompt-dismissal').set(auth()).expect(204);
+    const first = await storedAt();
+    await http().post('/api/v1/account/totp/prompt-dismissal').set(auth()).expect(204);
+
+    expect(await dismissed()).toBe(true);
+    // A second press is the same answer: its time does not move.
+    expect(await storedAt()).toEqual(first);
+
+    // Enrolling leaves it — only turning the factor off is the state the prompt is about.
+    await enrol();
+    expect(await dismissed()).toBe(true);
+
+    await http().post('/api/v1/account/totp/removal').set(auth()).send({ password: PASSWORD }).expect(204);
+    expect(await dismissed()).toBe(false);
+    expect(await storedAt()).toBeNull();
   }, 60_000);
 
   it('replaces the whole recovery set on re-issue, killing the old codes', async () => {

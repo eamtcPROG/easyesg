@@ -2,6 +2,7 @@ import { verifyTotp } from '@api/modules/platform/admin/domain/totp';
 import type { Clock } from '@api/contracts/clock.port';
 import type { AccountStore } from '../interfaces/account-store.interface';
 import type { SecondFactor } from '../interfaces/second-factor.interface';
+import { SECOND_FACTOR_ANSWER, type SecondFactorAnswer } from '../models/totp.model';
 import { ConsumeRecoveryCode } from './consume-recovery-code.use-case';
 
 /**
@@ -31,15 +32,21 @@ export class AccountSecondFactor implements SecondFactor {
     return enrolment !== null && enrolment.confirmedAt !== null;
   }
 
-  async verify(answer: { readonly accountId: string; readonly code: string }): Promise<boolean> {
+  async verify(answer: {
+    readonly accountId: string;
+    readonly code: string;
+  }): Promise<SecondFactorAnswer | null> {
     const enrolment = await this.store.run((tx) => tx.findTotpEnrolment(answer.accountId));
-    if (enrolment === null || enrolment.confirmedAt === null) return false;
+    if (enrolment === null || enrolment.confirmedAt === null) return null;
 
-    if (verifyTotp({ secret: enrolment.secret, code: answer.code }, this.now())) return true;
+    if (verifyTotp({ secret: enrolment.secret, code: answer.code }, this.now())) {
+      return SECOND_FACTOR_ANSWER.AUTHENTICATOR;
+    }
 
-    return this.consumeRecoveryCode.execute({
+    const spent = await this.consumeRecoveryCode.execute({
       accountId: answer.accountId,
       code: answer.code,
     });
+    return spent ? SECOND_FACTOR_ANSWER.RECOVERY_CODE : null;
   }
 }

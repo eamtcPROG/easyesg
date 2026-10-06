@@ -3,7 +3,7 @@ import { PROBLEM_TYPE, type ProblemDocument } from '@easyesg/contracts';
 import { NextResponse } from 'next/server';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
 import { SESSION_ENDED_STATUS } from '@/lib/session-standing';
-import type { ReauthenticationAnswerStatus } from '../tools/reauthentication-answer';
+import { REAUTHENTICATION, type ReauthenticationAnswerStatus } from '../tools/reauthentication-answer';
 
 /**
  * How the session tier's three handlers answer (task 92) — written in one place, so the browser's two
@@ -35,8 +35,12 @@ const problem = (document: ProblemDocument): NextResponse =>
   });
 
 /** A `200` naming what happened. */
-export const answered = (status: ReauthenticationAnswerStatus): NextResponse =>
+export const answered = (status: Exclude<ReauthenticationAnswerStatus, typeof REAUTHENTICATION.RECOVERED>): NextResponse =>
   NextResponse.json({ status }, { headers: { 'cache-control': NO_STORE } });
+
+/** A resumption a recovery code earned, with the codes left beside it (task 190) — the one answer carrying a value. */
+export const recovered = (remaining: number | null): NextResponse =>
+  NextResponse.json({ status: REAUTHENTICATION.RECOVERED, remaining }, { headers: { 'cache-control': NO_STORE } });
 
 /** What the api refused with, as it said it — or `503` where it said nothing. */
 export const relayed = (failure: ApiFailure): NextResponse =>

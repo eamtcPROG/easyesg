@@ -27046,3 +27046,166 @@ Its finding on task 53's scope was half right: 53.3 is plan *presentation copy*,
 **Cost.** Rows are long: task 67 is about 20,000 characters, with 24 sub-steps. That is the shape the owner chose. A reader looking for one sub-step searches for its number.
 
 **Gates.** `docs:check` passes all 47 claims. Nothing else is reached, since the change touches only the docs and the `docs:check` tool.
+
+## Task 185 — Registration refuses a name part with no visible character · 2026-10-06
+
+Registration now trims each name part and refuses one with no visible character: 400 `validation-failed`, keyed
+`identity.registration.names_required`, no account and no verification challenge. That is 182/6 (§12.5.6's task-182
+identity and organization row). FR-1 AC-9 and FR-9 AC-3 are met, and both requirements' Status lines list 185 as
+delivered. FR-9 stays Partial on 75.3.
+
+**One rule in one place.** `presentNamePart` moved from `apps/api`'s `display-name.ts` into `packages/validation`
+(`name-part.ts`, with `namePartIsPresent` beside it). `display-name.ts` re-exports it, so the setup use case, S-27's
+save, the setup gate and the display name did not move. §9.8 records the move, as it records the password policy's.
+The task row's "through the shared rule" was read as this package, because §9.8 gives it exactly this job: one rule
+evaluated in both runtimes. The browser had been keeping its own copy — S-36's `value.trim().length > 0`. That copy
+is gone. S-01, S-36 and S-27 now all call `namePartIsPresent`.
+
+**What "no visible character" means here is `trim()`'s reading**, the one setup and S-27 already used: ECMAScript
+white space and line terminators, the no-break space included. A zero-width space is not white space and passes.
+182/6 decided the rule as setup and S-27 applied it, so this does not widen it. If that should change, it is one
+function and its spec.
+
+**Searched for the rule's shape** (root `CLAUDE.md`, "A rule is applied where it holds"). There were three sites where
+a person types a name. S-36 judged blanks inline with its own copy. **S-27 did not judge them inline at all** — its
+fields carried `required` and a length only, and a name of spaces went to the api and came back as a callout. S-27
+now refuses inline too, under its own key `profile.identity.nameBlank`, worded for a save. S-01 and S-36 share
+`identity.register.nameBlank`, which moved from `identity.setup`: S-36 already reads its name messages from S-01's
+namespace, so one sentence now has one home. The search covered every `givenName`/`familyName` field in `apps/web`
+and `apps/admin` (the console has none) and every `presentNamePart` caller in the api.
+
+**The fake was hiding the stored value.** `FakeAccountStore.insertUnverifiedAccount` wrote `givenName: null,
+familyName: null` whatever it was given, so no unit spec could see what registration stores. It now keeps them, and
+the use-case spec asserts the trimmed parts.
+
+**Order inside the use case.** The names are judged before the password policy, the hash and the transaction. A
+refusal therefore costs no Argon2id and no connection, as the password refusal already did. The spec asserts both.
+
+**Proven to bite.** With the refusal removed from the use case (and the untrimmed values stored), the three new e2e
+cases fail: 3 of 14. With the inline `validate` removed from S-01, both new form cases fail. Each was restored after.
+
+**Rules considered and declined** (`vercel-react-best-practices`, against the three edited forms):
+`bundle-barrel-imports` — the forms import `@easyesg/validation`'s barrel, but S-01's bundle already pulls it through
+`PolicyPasswordField`, and it is three small modules with no side effects. `rerender-memo` — `nameRules(…)` returns a
+fresh object each render, as the inline literal it replaced did, and `FormTextField` is not memoised, so nothing
+observes it. `one-idea-per-file`: the new module is one rule with its spec beside it.
+
+**Gates, by the close table.** `packages/validation` changed, so every dependent's row ran. `pnpm --filter` test for
+validation (40), api (1,603), web (1,298) and admin (296); typecheck in all four; `pnpm lint`; `pnpm e2e`;
+`pnpm e2e:web --project identity --project expansion` and `--project admin`; `pnpm routes:check`; `pnpm docs:check`
+(48 claims). No controller, DTO or migration changed, so `openapi:check`, `migrations:check` and `e2e:worker` were
+not reached. **`pnpm lint` ran out of heap on this machine at the default size** and passed with
+`NODE_OPTIONS=--max-old-space-size=8192`; nothing in the diff explains it, and CI's runner is the check of record.
+
+## Task 190 — The second factor's two unbuilt prompts · 2026-10-06
+
+Two parts of UC-193 … UC-195 had no surface: telling a user how many recovery codes remain after a recovery sign-in
+(UC-195 step 3) and prompting an Organization Administrator without a factor to enrol (UC-193's trigger, NFR-95).
+FR-208 behaviour 10 named both, and `design_spec.md` gave neither a screen. FR-208 is now **Built**; AC-16 and AC-17
+are met.
+
+**The decisions, the owner's, in one batch of four questions and one batch of three** (§12.5.6's task-190 row, items
+(1) … (6)). A recovery sign-in lands on S-28 with `?notice=recovered`, ahead of `?return=`, as A-01 sends an
+operator's to A-19. The api says which kind of code answered, rather than the web judging the shape of what it sent.
+The prompt is a callout on S-05. *Not now* is remembered on the account, for good, and turning the factor off clears it.
+**The second batch exists because the first missed a case**: S-07's re-authentication dialogue also takes a recovery
+code, and UX-38 forbids leaving the wizard, so the S-28 landing could not apply there. The owner chose a last stage in
+the dialogue that states the count, offers S-28 in a new tab and resumes on *continue*. The duration and the reset of
+the dismissal were a follow-up of their own, since *remembered on the account* left both open.
+
+**What the api gained.** `SecondFactor.verify` answers the kind that matched (`SECOND_FACTOR_ANSWER`) or `null`, in
+place of a boolean, and `POST /auth/session/factor` answers `FactorSessionResponseDto`: the session plus
+`answeredWith`. `identity.account.enrolment_prompt_dismissed_at` is one nullable column, with no grant (`esg_app` has
+held table-wide `UPDATE` since task 19) and no audit trigger (an account has no organization to file the row under) —
+the account-name migration's two reasons. `POST /account/totp/prompt-dismissal` (204) writes it with `COALESCE`, so the
+first answer's time stands, and `ManageTotp.disable` clears it inside the removal's own transaction. The write is
+`DismissEnrolmentPrompt`, its own file (`file-one-behaviour-api`), and it checks no role: the role only decides whether
+the prompt appears. `GET /account/totp` gained `enrolmentPromptDismissed`. `@easyesg/contracts` mirrors the vocabulary
+in `second-factor.ts` and holds it to the generated enum with `SameSet`.
+
+**What the web gained.** S-01's factor action redirects a recovery to S-28 before §4.3's branch runs. S-28's address
+word lives in `credentials/tools/credentials-arrival.ts`, beside the function that builds the address, so the writer
+and the reader share one spelling. The arrival notice takes its count from the board's own read, and gives three
+readings: a number; zero as a warning that says what zero means; and no number when the read failed. The dialogue's
+handler reads `GET /account/totp` after the session is written, so the count is the account's own. It answers
+`recovered` with that count, the one dialogue answer that carries a value, and the reader validates it as it validates
+the status. S-05's prompt sits behind its own Suspense boundary with no fallback, the support-access banner's reason:
+its ordinary state is absent. Its rule is `promptsEnrolment`, pure, with every unknown answering no. *Not now* is a
+small client control that says so when the write fails, rather than leaving a press that did nothing.
+
+**Searched for the shape** (root `CLAUDE.md`, "A rule is applied where it holds"). Every caller of `/auth/session/factor`
+in the web — S-01's action and the dialogue's handler — and every reader of `TotpState`: S-28's board, its fixtures,
+and the api's state literals in three specs. The console has its own realm and its own recovery read (A-19), and is
+untouched.
+
+**Rules considered and declined.** `vercel-react-best-practices` `bundle-barrel-imports`: the arrival and the prompt
+import `@easyesg/ui`'s barrel as every component in the app does. `rerender-memo`: no context value or memoised child
+reads the new components' props. The dialogue reducer's count is a field meaningful in one stage, rather than a
+discriminated stage object. That keeps the state record flat as it was, and its docblock says which transition writes
+the field.
+
+**Amended by the Stage's reviews, the same day.** The spec review found that decision (1) dropped `?return=`: an
+invitee who answered S-01 with a recovery code would lose the way back to their invitation, and a reader whose session
+ended would lose theirs. Six passages still stated the unconditional return. The owner chose to carry it: S-01 resolves
+§4.3's destination as before and passes it to S-28 as `?return=`, which S-28 cleans with the same `sanitizeReturnPath`
+and offers as the arrival notice's one action. Row (1), UX-38, FR-4 b10, FR-5, FR-11 b2, §4.3 and S-01/S-28 say so.
+The convention review moved S-05's prompt to check the role before the factor read
+(`async-cheap-condition-before-await`). It also split the prompt into `section/` and `callout/`, and routed *not
+now*'s refusal through `failureNotice` and an `ExpiringCallout`, where a hand-built `role="alert"` had sat. The
+dialogue's handler now reads through the shared `readFactorState()`. The gate-integrity review proved one gap: the
+recovery branch's `account-changed` guard had no case, and dropping it left six of six green. The case now fails
+without it. Specs were added for the dialogue's recovered stage, S-27's and S-36's inline rule (each proven by removing
+the rule), and the prompt's refusal.
+
+## Stage 1 closes · 2026-10-06
+
+**Stage 1 — Identity, authorisation, and the operator's control of them — is empty again, and its test is met.** It
+emptied on 1 Oct 2026, and task 182's restatement of the requirements returned two rows on 5 Oct: 185, registration
+accepting a blank name part, and 190, the second factor's two unbuilt prompts. Both closed today.
+
+**The Stage diff** runs from `5cb618a7` (*Review agents and gates:clean run once per Stage, at its end*), the commit
+that adopted the Stage rule. The rule makes the first Stage to end under it take its base from that commit. The diff
+ends at the commit that carries tasks 185 and 190. It is uncommitted as this entry is written, so the next Stage's diff
+starts at whichever commit lands this entry.
+
+**`pnpm gates:clean`, cold, over the final tree.** Every gate through `e2e:worker` passed: lint, `eslint:prove`,
+typecheck, `image:check`, `docs:check` (48 claims), every unit suite, boundaries and their proof, build, `openapi:check`,
+`events:check`, `facade:check`, `routes:check`, `migrations:check` on both stacks, `e2e` and `e2e:worker`. The browser
+suite passed 291 of 292. The one failure was a timeout in `home.spec.ts`'s shared `signedIn` helper, waiting for
+`/home` after a password sign-in, before the journey's own assertions began. That path is unchanged by either task.
+Run alone, it and its two neighbours passed 9 of 9. `pnpm e2e:web` was then run again, whole: **292 of 292**. A
+first browser run earlier in the day had a similar single timeout in `notifications.spec.ts`'s compact-frame journey,
+which passed 3 of 3 alone. Two load-dependent timeouts in sign-in-adjacent waits in two full runs are recorded here,
+not chased: neither reproduced, neither touches either task's code, and the third full run was clean. Every `⨯` line
+in all three runs is digest `2667547900`, `apps/web/CLAUDE.md`'s abandoned stream.
+
+**The three review agents, on `opus`, over the whole Stage diff.**
+- **`convention-review`: 7 findings, all fixed.** S-05's prompt fetched the factor state before the cheap role check.
+  The provider sign-up kept its own copy of the name rule, `trim().slice() || null` in the adapter; it now goes through
+  `presentNamePart` in the use case, and the fake that dropped the name now keeps it, as task 185's had to. *Not now*'s
+  refusal was a hand-built `role="alert"` rather than the inventory's callout. The prompt's namespace was spelled twice.
+  Its section read and rendered in one file. And the totp controller had never recorded why it needs no entitlement.
+  Its *not rules* list was taken too: a docblock split by an insertion in `revalidate-paths.ts`, three stale S-05
+  examples (`apps/web/CLAUDE.md` and the `one-kind-per-folder` skill), two clocks on one row, and a model declared in a
+  use-case file.
+- **`spec-review`: 2 findings.** The first changed a decision, so it went to the owner. Recovery landing on S-28 ahead
+  of `?return=` dropped an invitee's way back to their invitation and an expired session's way back to its screen,
+  against six unamended passages. **The owner chose to carry the destination through S-28.** Row (1) records the
+  amendment and the two options declined. The second was cross-references: FR-208's traces, the Account entity row,
+  S-28's entry points, and S-07's exits and use cases. Its judgement calls were taken as well: FR-9 behaviour 2 now says
+  what "no visible character" means, and §9.8 says the name rule is not OQ-49's path.
+- **`gate-integrity-review`: 6 findings.** One was proven. Dropping the `resumed === RESUMED` guard on the dialogue's
+  recovery branch left all six handler cases green; the new case fails without it. Two were races:
+  - The editor's absence check ran before the prompt's stream could settle. It now follows a full `goto`.
+  - The streaming journey's count of two could read three for an administrator. That journey now runs as an editor,
+    whose prompt boundary is inlined once the role is checked first, and `apps/web/CLAUDE.md` records the fourth
+    boundary.
+
+  Three were missing checks, all added: the recovered stage's three readings, S-27's and S-36's inline rule (each proven
+  by removing the rule), and the prompt's refusal.
+
+**What would falsify the once-per-Stage rule** (root `CLAUDE.md`): a break that survived from a close to the Stage's
+end and cost more to unpick here than the skipped run would have. None did. Every finding above was found by the
+reviews, not by a gate a task close skipped. The cost this Stage *did* show is different: one cold run was stopped
+part-way, because review findings were certain to change the code under it. Running the reviews before `gates:clean`
+— or beside it, with fixes after — is the order that pays once.

@@ -70,6 +70,10 @@ export type ResetPasswordRequest = components['schemas']['ResetPasswordRequestDt
 // probes for `accessToken` instead has written the discriminator twice.
 export type FactorChallengeResponse = components['schemas']['FactorChallengeResponseDto'];
 export type CompleteFactorRequest = components['schemas']['CompleteFactorRequestDto'];
+// The second step's answer since task 190: the session, and which kind of code earned it — a recovery code sends S-01
+// to S-28, which states the codes left (UC-195 step 3). `SECOND_FACTOR_ANSWER` is the runtime vocabulary.
+export type FactorSessionResponse = components['schemas']['FactorSessionResponseDto'];
+export { SECOND_FACTOR_ANSWER, type SecondFactorAnswer } from './second-factor';
 
 // identity — managing the second factor and the linked providers, S-28's reads (UC-11 … UC-12,
 // UC-193; tasks 27.2, 27.6). Added 27 Aug 2026: `apps/web` was restating both of these by hand,

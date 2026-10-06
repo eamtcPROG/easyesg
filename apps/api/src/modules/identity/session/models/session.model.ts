@@ -1,4 +1,5 @@
 import type { Account } from '@api/modules/identity/account/models/account.model';
+import type { SecondFactorAnswer } from '@api/modules/identity/account/models/totp.model';
 
 /**
  * The session as it crosses the store port. Not a TypeORM entity (AD-14 constraint 1), and
@@ -92,6 +93,16 @@ export interface IssuedSession {
   readonly accessTokenExpiresAt: Date;
   readonly refreshToken: string;
   readonly refreshTokenExpiresAt: Date;
+}
+
+/**
+ * The second step's answer (task 190): the session, and which kind of code earned it. The kind is how the web knows to
+ * say how many recovery codes remain (UC-195 step 3); it is a fact about this step, so it rides beside the session
+ * rather than inside it.
+ */
+export interface CompletedFactorChallenge {
+  readonly session: IssuedSession;
+  readonly answeredWith: SecondFactorAnswer;
 }
 
 /**

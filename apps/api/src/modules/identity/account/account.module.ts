@@ -32,6 +32,7 @@ import { ChangePassword } from './use-cases/change-password.use-case';
 import { ReadPasswordState } from './use-cases/read-password-state.use-case';
 import { ConsumeRecoveryCode } from './use-cases/consume-recovery-code.use-case';
 import { ManageTotp } from './use-cases/manage-totp.use-case';
+import { DismissEnrolmentPrompt } from './use-cases/dismiss-enrolment-prompt.use-case';
 import { SECOND_FACTOR } from './interfaces/second-factor.interface';
 import { VerifyEmail } from './use-cases/verify-email.use-case';
 
@@ -131,6 +132,11 @@ const httpProviders: Provider[] = [
     inject: [ACCOUNT_STORE, PASSWORD_HASHER, CLOCK],
     useFactory: (store: AccountStore, hasher: PasswordHasher, now: Clock) =>
       new ManageTotp(store, hasher, now),
+  },
+  {
+    provide: DismissEnrolmentPrompt,
+    inject: [ACCOUNT_STORE, CLOCK],
+    useFactory: (store: AccountStore, now: Clock) => new DismissEnrolmentPrompt(store, now),
   },
   {
     /**

@@ -27,7 +27,13 @@ const MESSAGES = 'identity.credentials';
 
 export const generateMetadata = localizedPageTitle(MESSAGES);
 
-export default async function CredentialsPage({ params }: { params: LocaleParams }) {
+export default async function CredentialsPage({
+  params,
+  searchParams,
+}: {
+  params: LocaleParams;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await activateRequestLocale(params);
-  return <CredentialsSection />;
+  return <CredentialsSection searchParams={searchParams} />;
 }

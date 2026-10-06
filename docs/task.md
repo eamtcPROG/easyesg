@@ -1,7 +1,7 @@
 # Tasks
 
 **What is left, in the order it will be delivered.** The closed rows are in
-[archived_tasks.md](archived_tasks.md) — 131 numbers and 244 of them — and moving them out is what
+[archived_tasks.md](archived_tasks.md) — 133 numbers and 246 of them — and moving them out is what
 lets this file answer *what is left* without a reader filtering a third of it away first.
 
 The order is the **Stage** sequence below, authored 12 Sep 2026 and **independent of the task
@@ -111,7 +111,7 @@ reasons are not recorded is not closed, and neither is a Stage.
 
 **The stage's test is a sentence, and it is the owner's:** when it closes, everything about user
 accounts, authentication, authorisation, admin user management and security is done and **fully
-functional**. **No row was left in it on 1 Oct 2026; two returned on 5 Oct 2026** — task 182's restatement of the requirements found that registration accepts a blank name part (185) and that two prompts of the second factor were never built (190), so the test is unmet until both close. Every identity use case is built — UC-01 … UC-16, UC-49,
+functional**. **No row was left in it on 1 Oct 2026; two returned on 5 Oct 2026** — task 182's restatement of the requirements found that registration accepted a blank name part (185) and that two prompts of the second factor were never built (190). **Both closed on 6 Oct 2026, and the Stage with them**: the test is met. Every identity use case is built — UC-01 … UC-16, UC-49,
 UC-50, UC-59 … UC-64, UC-68 … UC-70, UC-85 … UC-88, UC-193 … UC-195 and UC-212 — and so is each gap the
 11 Sep 2026 audit named when it measured identity at 71% built and 48% operational: mail leaves the
 platform (51.1), a name is stored (139, 140), the `otpauth://` URI is drawn (143), an operator changes
@@ -145,8 +145,6 @@ for the reason given beside it:
 
 | # | Name | Scope | Description | Expected result | Related documents | Covered FR | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| **185** | **Registration refuses a name part with no visible character** | api+web | FR-1 and FR-9 (§12.5.6 task-182 identity and organization row, 182/6). `RegisterAccountUseCase` trims each name part with `presentNamePart`, the rule setup and S-27 already apply, and refuses one with no visible character: 400 `validation-failed`, no account created. S-01's register step shows the same refusal inline through the shared rule. An e2e case for each part | A given or family name of spaces is refused at registration as it is at setup and on S-27; FR-1 AC-9 and FR-9 AC-3 pass | S-27 · S-01 · 182/6 · arch §12.5.6 | FR-1, FR-9 | TODO |
-| **190** | **The second factor's two unbuilt prompts** | web+api | FR-208 (§12.5.6 task-182 identity and organization row, 182/156). UC-195 step 3: a recovery sign-in tells the user how many recovery codes remain, so that exhaustion is announced before it happens (`POST /auth/session/factor` answers a session and nothing else today). UC-193's trigger and NFR-95: an Organization Administrator without a second factor is prompted to enrol. Neither has a surface in `design_spec.md` (S-28 manages the factor, S-01 answers it), so the task raises where each appears in its own batch | A recovery sign-in states the codes left; an Organization Administrator with no factor is prompted; FR-208 AC-16 and AC-17 pass | UC-195 · UC-193 · S-28 · S-01 · NFR-95 · 182/156 · arch §12.5.6 | FR-208 | TODO |
 
 ## Stage 2 — Calculator and validation
 

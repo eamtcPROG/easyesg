@@ -6,6 +6,7 @@ import {
   admitAuthAttempt,
   socialSignInThrottleKey,
 } from '@api/modules/identity/account/domain/auth-throttle';
+import { presentNamePart } from '@api/modules/identity/account/domain/display-name';
 import { emailIdentityKey, normaliseEmail } from '@api/modules/identity/account/domain/email-address';
 import { AuthRateLimitedError } from '@api/modules/identity/account/errors/account.errors';
 import {
@@ -223,8 +224,9 @@ export class CompleteSocialSignIn {
       // string and a provider makes no promise about its shape; Moldovan and Russian naming makes
       // guessing a boundary unreliable, and a wrong split is confidently incorrect and invisible
       // where an absent family name is obvious and one edit away on S-27. UX-137's fallback covers
-      // exactly this account: a given name alone stands alone.
-      givenName: assertion.displayName,
+      // exactly this account: a given name alone stands alone. **Judged by `presentNamePart`** (task 185), the one
+      // rule every other path to these columns uses, so a claim of spaces is absent rather than a blank name.
+      givenName: presentNamePart(assertion.displayName),
     });
 
     if (!assertion.emailVerified) {

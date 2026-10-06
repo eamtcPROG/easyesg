@@ -69,6 +69,7 @@ interface Snapshot {
   accounts: Account[];
   credentials: [string, Credential][];
   passwordChangedAt: [string, Date][];
+  promptDismissals: [string, Date][];
   totp: [string, TotpEnrolment][];
   recoveryCodes: StoredRecoveryCode[];
   tokens: StoredToken[];
@@ -84,6 +85,8 @@ export class FakeAccountStore implements AccountStore {
   /** `identity.credential.password_changed_at`, per account — moved only where the adapter's statements move it. */
   passwordChangedAt = new Map<string, Date>();
   totp = new Map<string, TotpEnrolment>();
+  /** `identity.account.enrolment_prompt_dismissed_at`, per account, where set (task 190). */
+  promptDismissals = new Map<string, Date>();
   recoveryCodes: StoredRecoveryCode[] = [];
   tokens: StoredToken[] = [];
   resetTokens: StoredResetToken[] = [];
@@ -134,6 +137,7 @@ export class FakeAccountStore implements AccountStore {
         ([id, credential]): [string, Credential] => [id, { ...credential }],
       ),
       passwordChangedAt: [...this.passwordChangedAt.entries()],
+      promptDismissals: [...this.promptDismissals.entries()],
       tokens: this.tokens.map((token) => ({ ...token })),
       resetTokens: this.resetTokens.map((token) => ({ ...token })),
       sessions: this.sessions.map((session) => ({ ...session })),
@@ -146,6 +150,7 @@ export class FakeAccountStore implements AccountStore {
     this.accounts = snapshot.accounts;
     this.credentials = new Map(snapshot.credentials);
     this.passwordChangedAt = new Map(snapshot.passwordChangedAt);
+    this.promptDismissals = new Map(snapshot.promptDismissals);
     this.totp = new Map(snapshot.totp);
     this.recoveryCodes = snapshot.recoveryCodes;
     this.tokens = snapshot.tokens;
@@ -220,6 +225,21 @@ export class FakeAccountStore implements AccountStore {
         );
       },
 
+      isEnrolmentPromptDismissed(accountId: string): Promise<boolean> {
+        return Promise.resolve(store.promptDismissals.has(accountId));
+      },
+
+      dismissEnrolmentPrompt(accountId: string, at: Date): Promise<void> {
+        // The first answer's time stands, as the adapter's `COALESCE` keeps it.
+        if (!store.promptDismissals.has(accountId)) store.promptDismissals.set(accountId, at);
+        return Promise.resolve();
+      },
+
+      clearEnrolmentPromptDismissal(accountId: string): Promise<void> {
+        store.promptDismissals.delete(accountId);
+        return Promise.resolve();
+      },
+
       spendRecoveryCode(
         presented: { readonly accountId: string; readonly codeHash: Buffer },
         at: Date,
@@ -244,8 +264,10 @@ export class FakeAccountStore implements AccountStore {
           email: account.email,
           status: ACCOUNT_STATUS.UNVERIFIED,
           locale: account.locale,
-          givenName: null,
-          familyName: null,
+          // Kept as given, as the column keeps them — a fake that dropped them could not show what
+          // registration stores (task 185 found it holding nulls for every account).
+          givenName: account.givenName,
+          familyName: account.familyName,
           verifiedAt: null,
           setupExpiresAt: null,
           createdAt: now,

@@ -310,10 +310,11 @@ class SocialSignInTransactionAdapter implements SocialSignInTransaction {
             account.verifiedAt ? ACCOUNT_STATUS.AWAITING_SETUP : ACCOUNT_STATUS.UNVERIFIED,
             account.verifiedAt,
             account.setupExpiresAt,
-            // Trimmed to the column's bound rather than rejected: a provider's claim is not a form
+            // Cut to the column's bound rather than rejected: a provider's claim is not a form
             // field and failing a sign-up over its length would be the platform's problem made the
-            // person's. `null` where the claim is absent, which UX-137's fallback covers.
-            account.givenName?.trim().slice(0, 100) || null,
+            // person's. Already trimmed, and `null` where absent or blank, by the use case's
+            // `presentNamePart` (task 185) — so the name rule is not restated here.
+            account.givenName?.slice(0, 100) ?? null,
           ],
         ),
       );

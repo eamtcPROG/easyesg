@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
-import type { IssuedSession, SignInOutcome } from '../models/session.model';
+import type { CompletedFactorChallenge, IssuedSession, SignInOutcome } from '../models/session.model';
 import { RefreshSession, type RefreshSessionCommand } from '../use-cases/refresh-session.use-case';
 import { SignIn, type SignInCommand } from '../use-cases/sign-in.use-case';
 import {
@@ -51,7 +51,7 @@ export class SessionService {
   /** The second step. Resolves the client IP exactly as `signIn` does — both spend one window. */
   completeFactor(
     input: SessionServiceInput<CompleteFactorChallengeCommand>,
-  ): Promise<IssuedSession> {
+  ): Promise<CompletedFactorChallenge> {
     return this.completeFactorUseCase.execute({
       ...input,
       clientIp: requestContext()?.clientIp,

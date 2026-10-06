@@ -56,6 +56,7 @@ import { ConfigurationVersionWindow1791504000000 } from './1791504000000-configu
 import { CalculationRuns1791590400000 } from './1791590400000-calculation-runs';
 import { CalculationResults1791676800000 } from './1791676800000-calculation-results';
 import { CalculatorOverrides1791763200000 } from './1791763200000-calculator-overrides';
+import { EnrolmentPromptDismissal1791849600000 } from './1791849600000-enrolment-prompt-dismissal';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -132,4 +133,5 @@ export const migrations = [
   CalculationRuns1791590400000,
   CalculationResults1791676800000,
   CalculatorOverrides1791763200000,
+  EnrolmentPromptDismissal1791849600000,
 ];

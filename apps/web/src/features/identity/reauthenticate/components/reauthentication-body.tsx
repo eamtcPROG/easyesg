@@ -12,6 +12,7 @@ import {
 } from '../tools/reauthentication-state';
 import { FactorStage } from './factor-stage';
 import { PasswordStage } from './password-stage';
+import { RecoveredStage } from './recovered-stage';
 import { ReauthenticationRefusalNotice } from './reauthentication-refusal-notice';
 import { SignOutLater } from './sign-out-later';
 import styles from './reauthentication.module.css';
@@ -47,6 +48,16 @@ export function ReauthenticationBody({
       else dispatch({ type: REAUTHENTICATION_EVENT.SETTLED, answer });
     });
   };
+
+  // The session is back and a recovery code earned it (task 190): the dialogue says how many codes remain, and the
+  // step resumes on *continue* — there is nothing left to refuse or to sign out of later.
+  if (state.stage === REAUTHENTICATION_STAGE.RECOVERED) {
+    return (
+      <div className={styles.body}>
+        <RecoveredStage remaining={state.remaining} onContinue={onResumed} />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.body}>

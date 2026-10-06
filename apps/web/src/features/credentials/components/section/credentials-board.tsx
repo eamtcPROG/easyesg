@@ -5,6 +5,9 @@ import { RecordShell } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { ScriptingRequired } from '@/shared/scripting-required';
 import type { CredentialsRead } from '../../tools/credentials';
+import type { LocalizedPath } from '@/lib/locale-path';
+import type { CredentialsArrival as Arrival } from '../../tools/credentials-arrival';
+import { CredentialsArrival } from '../arrival/credentials-arrival';
 import { LastWayInNote } from '../closing/last-way-in-note';
 import { FactorRow } from '../factor/factor-row';
 import { CredentialsNotice } from '../notice/credentials-notice';
@@ -25,9 +28,13 @@ export interface CredentialsBoardProps {
   readonly read: CredentialsRead;
   /** Set when a provider round trip has just returned — the screen is born with that provider's row open. */
   readonly pendingLinkProvider: SocialProvider | null;
+  /** Set when S-01 sent a recovery sign-in here (task 190) — the screen opens saying how many codes remain. */
+  readonly arrival: Arrival | null;
+  /** Where that sign-in was going — offered by the arrival as its way on, already sanitized (task 190). */
+  readonly onward: LocalizedPath | null;
 }
 
-export function CredentialsBoard({ read, pendingLinkProvider }: CredentialsBoardProps) {
+export function CredentialsBoard({ read, pendingLinkProvider, arrival, onward }: CredentialsBoardProps) {
   const t = useTranslations(CREDENTIALS_MESSAGES);
 
   return (
@@ -37,6 +44,7 @@ export function CredentialsBoard({ read, pendingLinkProvider }: CredentialsBoard
             scripting — a trigger opens its form, and the one form drawn on the server, the link confirmation, submits
             through `CredentialSubmit` — so a reader without it is told here, above everything that would not answer. */}
         <ScriptingRequired />
+        <CredentialsArrival arrival={arrival} onward={onward} />
         <CredentialsNotice />
         <PasswordRow />
         <FactorRow />

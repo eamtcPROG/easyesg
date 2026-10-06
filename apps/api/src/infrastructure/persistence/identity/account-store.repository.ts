@@ -559,6 +559,36 @@ class AccountTransactionAdapter implements AccountTransaction {
     return Number.parseInt(rows[0].remaining, 10);
   }
 
+  async isEnrolmentPromptDismissed(accountId: string): Promise<boolean> {
+    const rows = returnedRows<{ dismissed: boolean }>(
+      await this.queryRunner.query(
+        `SELECT enrolment_prompt_dismissed_at IS NOT NULL AS dismissed FROM identity.account WHERE id = $1`,
+        [accountId],
+      ),
+    );
+    return rows[0]?.dismissed ?? false;
+  }
+
+  async dismissEnrolmentPrompt(accountId: string, at: Date): Promise<void> {
+    // `COALESCE` keeps the first answer's time: a second press is the same answer, not a new one. `updated_at` is the
+    // statement's to maintain, as every write to this row does (`markAccountVerified`).
+    await this.queryRunner.query(
+      `UPDATE identity.account
+          SET enrolment_prompt_dismissed_at = COALESCE(enrolment_prompt_dismissed_at, $2), updated_at = $2
+        WHERE id = $1`,
+      [accountId, at],
+    );
+  }
+
+  async clearEnrolmentPromptDismissal(accountId: string, at: Date): Promise<void> {
+    // The removal's clock, as the dismissal takes the use case's: one clock for the row's `updated_at`.
+    await this.queryRunner.query(
+      `UPDATE identity.account SET enrolment_prompt_dismissed_at = NULL, updated_at = $2
+        WHERE id = $1 AND enrolment_prompt_dismissed_at IS NOT NULL`,
+      [accountId, at],
+    );
+  }
+
   async spendRecoveryCode(
     presented: { readonly accountId: string; readonly codeHash: Buffer },
     at: Date,

@@ -85,6 +85,28 @@ describe('S-01 · register form', () => {
     expect(summary.querySelector(`a[href="#${passwordFieldId}"]`)).not.toBeNull();
   });
 
+  // 182/6: `required` admits a part of spaces, so this is the shared rule speaking — the one the API
+  // registers by — and nothing leaves until both parts hold a visible character.
+  it.each([
+    ['Prenume', 'Nume de familie'],
+    ['Nume de familie', 'Prenume'],
+  ])('refuses a %s of spaces inline, and sends nothing', async (blank, filled) => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText(blank), '   ');
+    await user.type(screen.getByLabelText(filled), 'Ana');
+    await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
+    await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
+    await user.click(screen.getByRole('button', { name: 'Creați contul' }));
+
+    expect(action).not.toHaveBeenCalled();
+    const summary = await screen.findByRole('alert');
+    expect(within(summary).getAllByText(ro.identity.register.nameBlank)).toHaveLength(1);
+    expect(screen.getByLabelText(blank)).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText(filled)).not.toHaveAttribute('aria-invalid', 'true');
+  });
+
   it('submits, stores the address for the S-02 challenge and exits to /verify', async () => {
     const user = userEvent.setup();
     action.mockResolvedValue({

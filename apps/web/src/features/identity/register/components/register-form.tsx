@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { ACCOUNT_STATUS } from '@easyesg/contracts';
+import { namePartIsPresent } from '@easyesg/validation';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
 import { Link, useRouter } from '@/i18n/navigation';
 import { registerAction } from '../actions/actions';
@@ -96,6 +97,12 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
     });
   });
 
+  const nameRules = (missing: string) => ({
+    required: missing,
+    maxLength: { value: 100, message: t('nameTooLong') },
+    validate: (value: string) => namePartIsPresent(value) || t('nameBlank'),
+  });
+
   const isConflict = shownFailure?.status === API_OUTCOME.Problem && shownFailure.problem.status === 409;
 
   return (
@@ -143,13 +150,15 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
           {/* FR-9's two parts, required since `design_spec.md` OQ-16's name half closed. Two fields
               rather than the artboard's one `full name`, because a monogram, a sort and a
               salutation each need to know which part is which (UX-137). `autoComplete` is the
-              standard token pair, so a password manager fills both without being taught. */}
+              standard token pair, so a password manager fills both without being taught. A part of
+              spaces passes `required` and is refused by `namePartIsPresent`, the rule the API
+              registers by (182/6), so the refusal is inline rather than a callout after a round trip. */}
           <FormTextField
             control={control}
             name="givenName"
             label={t('givenNameLabel')}
             autoComplete="given-name"
-            rules={{ required: t('givenNameMissing'), maxLength: { value: 100, message: t('nameTooLong') } }}
+            rules={nameRules(t('givenNameMissing'))}
           />
 
           <FormTextField
@@ -157,7 +166,7 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
             name="familyName"
             label={t('familyNameLabel')}
             autoComplete="family-name"
-            rules={{ required: t('familyNameMissing'), maxLength: { value: 100, message: t('nameTooLong') } }}
+            rules={nameRules(t('familyNameMissing'))}
           />
 
           <FormTextField

@@ -208,7 +208,9 @@ export class FakeSocialSignInStore implements SocialSignInStore {
           // The adapter's mapping, modelled: a proven address enters setup (task 155).
           status: account.verifiedAt ? ACCOUNT_STATUS.AWAITING_SETUP : ACCOUNT_STATUS.UNVERIFIED,
           locale: account.locale,
-          givenName: null,
+          // Kept as given, as the column keeps it — a fake that dropped it could not show what a provider sign-up
+          // stores (task 185's review found it holding `null` for every account).
+          givenName: account.givenName,
           familyName: null,
           verifiedAt: account.verifiedAt,
           setupExpiresAt: account.setupExpiresAt,

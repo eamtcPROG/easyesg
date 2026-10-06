@@ -20,7 +20,8 @@ spec. The wire half is named for how data arrives:
 - **`queries/` in `apps/admin`.** TanStack Query definitions, the only way data reaches a feature
   there.
 
-**A screen has the kinds it has.** S-05 reads and has no `actions/`; S-04 is a form with nothing pure
+**A screen has the kinds it has.** S-05 read and had no `actions/` until task 190 gave it one press, *not now*
+on its second-factor prompt — a kind arrives with its first file; S-04 is a form with nothing pure
 extracted *yet* and has no `tools/` — which is a fact about a moment, not a property of forms
 (`pure-logic-leaves-the-component`).
 

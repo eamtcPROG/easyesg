@@ -1,4 +1,5 @@
 import { AuthRateLimitedError } from '@api/modules/identity/account/errors/account.errors';
+import { SECOND_FACTOR_ANSWER } from '@api/modules/identity/account/models/totp.model';
 import { FakePasswordHasher } from '@api/modules/identity/account/testing/account-store.fake';
 import { ACCOUNT_STATUS, type Account } from '@api/modules/identity/account/models/account.model';
 import { FACTOR_CHALLENGE_TTL_MS } from '../domain/factor-challenge';
@@ -118,7 +119,7 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
       // Both halves: the row records the choice, and the reported expiry applies it. Either alone
       // passes while the other is broken.
       expect(store.sessions.at(-1)?.remembered).toBe(true);
-      expect(issued.refreshTokenExpiresAt.getTime()).toBe(now.getTime() + SESSION_IDLE_TTL_MS);
+      expect(issued.session.refreshTokenExpiresAt.getTime()).toBe(now.getTime() + SESSION_IDLE_TTL_MS);
     });
 
     /** Separate cases rather than one: the fake's code is single-use, as a real authenticator's is. */
@@ -128,7 +129,7 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
       const issued = await complete.execute({ challenge, code: CODE });
 
       expect(store.sessions.at(-1)?.remembered).toBe(false);
-      expect(issued.refreshTokenExpiresAt.getTime()).toBe(
+      expect(issued.session.refreshTokenExpiresAt.getTime()).toBe(
         now.getTime() + SESSION_SHORT_ABSOLUTE_TTL_MS,
       );
     });
@@ -138,7 +139,8 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
 
       const issued = await complete.execute({ challenge, code: CODE });
 
-      expect(issued.account.id).toBe('account-1');
+      expect(issued.session.account.id).toBe('account-1');
+      expect(issued.answeredWith).toBe(SECOND_FACTOR_ANSWER.AUTHENTICATOR);
       expect(store.sessions.filter((session) => session.accountId === 'account-1')).toHaveLength(1);
     });
 
@@ -190,14 +192,17 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
       );
       const issued = await complete.execute({ challenge, code: CODE });
 
-      expect(issued.account.id).toBe('account-1');
+      expect(issued.session.account.id).toBe('account-1');
     });
 
     // UC-195's whole point: one code, one session, and never again.
     it('spends a recovery code exactly once', async () => {
       secondFactor.answers.set('account-1', ['0123456789ABCDEF']);
       const first = await signInAndChallenge();
-      await complete.execute({ challenge: first.challenge, code: '0123456789ABCDEF' });
+      const recovered = await complete.execute({ challenge: first.challenge, code: '0123456789ABCDEF' });
+
+      // Says which kind answered, so the web can state the codes left (task 190; UC-195 step 3).
+      expect(recovered.answeredWith).toBe(SECOND_FACTOR_ANSWER.RECOVERY_CODE);
 
       const second = await signInAndChallenge();
       await expect(

@@ -206,6 +206,17 @@ describe('CompleteSocialSignIn (UC-02, UC-05; FR-2, FR-4)', () => {
       expect(store.sessions).toHaveLength(1);
     });
 
+    // Task 185's rule on the provider path: the asserted name seeds `given_name` trimmed, and a claim of spaces seeds
+    // nothing — a blank name would defeat UX-137's fallback, which an absent one does not.
+    it.each([
+      ['  Ana Popescu ', 'Ana Popescu'],
+      ['   ', null],
+      [null, null],
+    ])('seeds the given name from the claim %j as %j', async (displayName, expected) => {
+      await completeWith(assertion({ displayName })).execute(command({ intent: SOCIAL_SIGN_IN_INTENT.REGISTER }));
+      expect(store.accounts.at(-1)?.givenName).toBe(expected);
+    });
+
     it('creates an UNVERIFIED account plus a committed challenge when the address is not asserted verified', async () => {
       await expect(
         completeWith(assertion({ emailVerified: false })).execute(

@@ -45,3 +45,13 @@ export async function readCredentials(): Promise<CredentialsRead> {
     providers: section(mapOutcome(providers, (page) => page.items)),
   };
 }
+
+/**
+ * The second factor's state alone — S-05's prompt to enrol reads it (task 190), and needs neither the password nor the
+ * providers. `null` when it could not be read, which the prompt answers by not appearing: a recommendation is not
+ * worth a guess.
+ */
+export async function readFactorState(): Promise<TotpState | null> {
+  const outcome = await api.get<TotpState>('/account/totp');
+  return outcome.status === API_OUTCOME.Ok ? outcome.value : null;
+}

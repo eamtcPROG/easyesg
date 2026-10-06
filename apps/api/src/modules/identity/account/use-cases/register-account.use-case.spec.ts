@@ -1,7 +1,11 @@
 import { EMAIL_VERIFICATION_REQUESTED, type EmailVerificationRequested } from '../constants/account.constants';
 import { UNVERIFIED_ACCOUNT_TTL_MS } from '../domain/account-expiry';
 import { hashVerificationToken } from '../domain/verification-token';
-import { EmailAlreadyRegisteredError, PasswordPolicyViolationError } from '../errors/account.errors';
+import {
+  EmailAlreadyRegisteredError,
+  PasswordPolicyViolationError,
+  RegistrationNamesRequiredError,
+} from '../errors/account.errors';
 import { FakeAccountStore, FakePasswordHasher } from '../testing/account-store.fake';
 import { RegisterAccount } from './register-account.use-case';
 
@@ -22,7 +26,9 @@ describe('RegisterAccount (UC-01, FR-1)', () => {
     registerAccount = new RegisterAccount(store, hasher, () => NOW);
   });
 
-  const register = (overrides: Partial<{ email: string; password: string }> = {}) =>
+  const register = (
+    overrides: Partial<{ email: string; password: string; givenName: string; familyName: string }> = {},
+  ) =>
     registerAccount.execute({
       email: 'Ana.Popescu@example.md',
       password: 'Parola123!',
@@ -164,6 +170,25 @@ describe('RegisterAccount (UC-01, FR-1)', () => {
       expect(hasher.hashed).toEqual([]);
       expect(store.rollbacks).toBe(0);
       expect(store.accounts).toEqual([]);
+    });
+  });
+
+  describe('the name parts (FR-9, 182/6)', () => {
+    it('stores each part trimmed, as setup and S-27 store them', async () => {
+      const account = await register({ givenName: '  Ana ', familyName: ' Popescu  ' });
+      expect(account.givenName).toBe('Ana');
+      expect(account.familyName).toBe('Popescu');
+    });
+
+    it.each([
+      ['given', { givenName: '   ' }],
+      ['family', { familyName: '\t \u00a0' }],
+    ])('refuses a %s name with no visible character, before the hash and the transaction', async (_part, names) => {
+      await expect(register(names)).rejects.toBeInstanceOf(RegistrationNamesRequiredError);
+      expect(hasher.hashed).toEqual([]);
+      expect(store.rollbacks).toBe(0);
+      expect(store.accounts).toEqual([]);
+      expect(store.effects).toEqual([]);
     });
   });
 });

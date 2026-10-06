@@ -6,6 +6,8 @@ import ro from '@/messages/ro.json';
 import { formats } from '@/i18n/formats';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { SECTION_READ, type CredentialsRead } from '../../tools/credentials';
+import type { LocalizedPath } from '@/lib/locale-path';
+import { CREDENTIALS_ARRIVAL, type CredentialsArrival } from '../../tools/credentials-arrival';
 import {
   beginTotpEnrolmentAction,
   changePasswordAction,
@@ -53,17 +55,25 @@ const CHANGED_AT = Date.UTC(2026, 1, 12, 7, 30);
 
 const READY: CredentialsRead = {
   password: { status: SECTION_READ.READY, value: { set: true, changedAt: CHANGED_AT } },
-  factor: { status: SECTION_READ.READY, value: { enrolled: true, recoveryCodesRemaining: 4 } },
+  factor: {
+    status: SECTION_READ.READY,
+    value: { enrolled: true, recoveryCodesRemaining: 4, enrolmentPromptDismissed: false },
+  },
   providers: {
     status: SECTION_READ.READY,
     value: [{ provider: 'google', assertedEmail: 'ana.rusu@gmail.com' }],
   },
 };
 
-const draw = (read: CredentialsRead = READY, pendingLinkProvider: 'google' | 'microsoft' | null = null) =>
+const draw = (
+  read: CredentialsRead = READY,
+  pendingLinkProvider: 'google' | 'microsoft' | null = null,
+  arrival: CredentialsArrival | null = null,
+  onward: LocalizedPath | null = null,
+) =>
   render(
     <NextIntlClientProvider locale="ro" messages={ro} formats={formats} timeZone={TIME_ZONE}>
-      <CredentialsBoard read={read} pendingLinkProvider={pendingLinkProvider} />
+      <CredentialsBoard read={read} pendingLinkProvider={pendingLinkProvider} arrival={arrival} onward={onward} />
     </NextIntlClientProvider>,
   );
 
@@ -74,6 +84,54 @@ beforeEach(() => {
 });
 
 describe('CredentialsBoard', () => {
+  // Task 190 (UC-195 step 3): after a recovery sign-in the screen opens saying how many codes remain, from its own read.
+  describe('arriving from a recovery sign-in', () => {
+    const arrival = copy.arrival.recovered;
+    const withCodes = (remaining: number): CredentialsRead => ({
+      ...READY,
+      factor: {
+        status: SECTION_READ.READY,
+        value: { enrolled: true, recoveryCodesRemaining: remaining, enrolmentPromptDismissed: false },
+      },
+    });
+
+    it('states the codes left, from the read the factor row shows', () => {
+      draw(withCodes(9), null, CREDENTIALS_ARRIVAL.RECOVERED);
+      expect(screen.getAllByText(arrival.title)).toHaveLength(1);
+      expect(screen.getByText(arrival.body.replace('{remaining}', '9'))).toBeVisible();
+    });
+
+    it('says what zero means rather than stating a count of none', () => {
+      draw(withCodes(0), null, CREDENTIALS_ARRIVAL.RECOVERED);
+      expect(screen.getByText(arrival.bodyNone)).toBeVisible();
+      expect(screen.queryByText(arrival.body.replace('{remaining}', '0'))).toBeNull();
+    });
+
+    it('guesses no count when the factor could not be read', () => {
+      draw({ ...READY, factor: { status: SECTION_READ.UNREACHABLE } }, null, CREDENTIALS_ARRIVAL.RECOVERED);
+      expect(screen.getByText(arrival.bodyUnread)).toBeVisible();
+    });
+
+    // The owner's amendment of decision (1): the sign-in's own destination is carried and offered, so an invitee keeps
+    // the way back to their invitation.
+    it('offers the way on to where the sign-in was going, once', () => {
+      draw(withCodes(9), null, CREDENTIALS_ARRIVAL.RECOVERED, { href: '/invitation/abc', locale: undefined });
+      const onward = screen.getAllByRole('link', { name: arrival.onward });
+      expect(onward).toHaveLength(1);
+      expect(onward[0]).toHaveAttribute('href', '/invitation/abc');
+    });
+
+    it('offers no way on when none was carried', () => {
+      draw(withCodes(9), null, CREDENTIALS_ARRIVAL.RECOVERED);
+      expect(screen.queryByRole('link', { name: arrival.onward })).toBeNull();
+    });
+
+    it('announces nothing on an ordinary visit', () => {
+      draw();
+      expect(screen.queryByText(arrival.title)).toBeNull();
+    });
+  });
+
   it('rests as rows, and asks for the current password once, in the row the reader opened', async () => {
     const user = userEvent.setup();
     draw();
@@ -130,7 +188,7 @@ describe('CredentialsBoard', () => {
   });
 
   it('names what happened when the recovery codes run out, and offers the fix once', () => {
-    draw({ ...READY, factor: { status: SECTION_READ.READY, value: { enrolled: true, recoveryCodesRemaining: 0 } } });
+    draw({ ...READY, factor: { status: SECTION_READ.READY, value: { enrolled: true, recoveryCodesRemaining: 0, enrolmentPromptDismissed: false } } });
 
     const notice = screen.getByRole('status');
     expect(notice).toHaveTextContent(copy.factor.noCodesTitle);
@@ -208,7 +266,7 @@ describe('CredentialsBoard', () => {
     URL.revokeObjectURL = vi.fn();
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
-    draw({ ...READY, factor: { status: SECTION_READ.READY, value: { enrolled: false, recoveryCodesRemaining: 0 } } });
+    draw({ ...READY, factor: { status: SECTION_READ.READY, value: { enrolled: false, recoveryCodesRemaining: 0, enrolmentPromptDismissed: false } } });
     const factor = region(copy.factor.heading);
     const steps = () => within(factor).getByRole('list', { name: copy.factor.stepsEnrolment });
     const current = () => within(steps()).getByRole('listitem', { current: 'step' });

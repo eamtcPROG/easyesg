@@ -24,7 +24,25 @@ export interface TotpState {
   readonly enrolled: boolean;
   /** Unspent codes. Zero with `enrolled` true is a real, designed state (UC-195). */
   readonly recoveryCodesRemaining: number;
+  /**
+   * Whether the person said *not now* to S-05's prompt to enrol (task 190; §12.5.6's task-190 rows (5), (6)). The
+   * account's, for good, until the factor is turned off — so it is part of the factor's state rather than a
+   * membership's, and an administrator of several organizations answers it once.
+   */
+  readonly enrolmentPromptDismissed: boolean;
 }
+
+/**
+ * Which kind of code answered the second step (task 190; §12.5.6's task-190 row (2)). The two formats are disjoint,
+ * so the api tells them apart and is the only place that does: the web reads this to say how many recovery codes
+ * remain (UC-195 step 3) rather than judging the shape of what it sent.
+ */
+export const SECOND_FACTOR_ANSWER = {
+  AUTHENTICATOR: 'authenticator',
+  RECOVERY_CODE: 'recovery_code',
+} as const;
+
+export type SecondFactorAnswer = (typeof SECOND_FACTOR_ANSWER)[keyof typeof SECOND_FACTOR_ANSWER];
 
 /**
  * The answer to "was that code one of theirs?" — a closed three-value vocabulary, declared here

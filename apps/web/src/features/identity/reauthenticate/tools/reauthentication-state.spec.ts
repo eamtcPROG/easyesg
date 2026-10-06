@@ -30,6 +30,7 @@ describe('reauthenticationReducer', () => {
       stage: REAUTHENTICATION_STAGE.FACTOR,
       answer: FACTOR_ANSWER.AUTHENTICATOR,
       refusal: null,
+      remaining: null,
     });
   });
 
@@ -58,6 +59,7 @@ describe('reauthenticationReducer', () => {
       stage: REAUTHENTICATION_STAGE.PASSWORD,
       answer: FACTOR_ANSWER.AUTHENTICATOR,
       refusal: { kind: REAUTHENTICATION_REFUSAL.LAPSED },
+      remaining: null,
     });
   });
 
@@ -65,6 +67,15 @@ describe('reauthenticationReducer', () => {
     const changed = settle(INITIAL_REAUTHENTICATION_STATE, { status: REAUTHENTICATION.ACCOUNT_CHANGED });
     expect(changed.stage).toBe(REAUTHENTICATION_STAGE.PASSWORD);
     expect(changed.refusal).toEqual({ kind: REAUTHENTICATION_REFUSAL.ACCOUNT_CHANGED });
+  });
+
+  // Task 190: a recovery code holds the dialogue open on its last stage, carrying the count, until *continue*.
+  it('moves to the recovered stage with the codes left, and drops any refusal', () => {
+    const atCode = settle(INITIAL_REAUTHENTICATION_STATE, { status: REAUTHENTICATION.FACTOR_REQUIRED });
+    const recovered = settle(atCode, { status: REAUTHENTICATION.RECOVERED, remaining: 2 });
+    expect(recovered.stage).toBe(REAUTHENTICATION_STAGE.RECOVERED);
+    expect(recovered.remaining).toBe(2);
+    expect(recovered.refusal).toBeNull();
   });
 
   it('writes nothing for a resumption — the dialogue closes because the screen beneath it moved', () => {
@@ -85,7 +96,12 @@ describe('reauthenticationReducer', () => {
       type: REAUTHENTICATION_EVENT.ANSWER_CHOSEN,
       answer: FACTOR_ANSWER.RECOVERY,
     });
-    expect(recovery).toEqual({ stage: REAUTHENTICATION_STAGE.FACTOR, answer: FACTOR_ANSWER.RECOVERY, refusal: null });
+    expect(recovery).toEqual({
+      stage: REAUTHENTICATION_STAGE.FACTOR,
+      answer: FACTOR_ANSWER.RECOVERY,
+      refusal: null,
+      remaining: null,
+    });
 
     expect(reauthenticationReducer(recovery, { type: REAUTHENTICATION_EVENT.RESTARTED })).toEqual(
       INITIAL_REAUTHENTICATION_STATE,

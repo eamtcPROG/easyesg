@@ -200,6 +200,15 @@ test('a recovery code answers the same step, and is spent by doing so (UC-195)',
   await page.getByRole('button', { name: /Folosiți un cod de recuperare/ }).click();
   await page.getByLabel('Cod de recuperare').fill(recovery[0]);
   await page.getByRole('button', { name: 'Confirmați și intrați în cont' }).click();
+
+  // Task 190 (UC-195 step 3): a recovery lands on S-28, not on the home it would otherwise reach, and says how many
+  // codes remain — the count from the screen's own read, the same number the factor's row shows.
+  // **§4.3's destination travels with it** (owner, 6 Oct 2026): one membership, so home, offered as the way on.
+  await page.waitForURL('**/account/credentials?notice=recovered&return=%2Fhome');
+  const arrival = page.getByText('V-ați autentificat cu un cod de recuperare', { exact: true });
+  await expect(arrival).toHaveCount(1);
+  await expect(page.getByText(/Coduri de recuperare rămase: 9\./u)).toHaveCount(2);
+  await page.getByRole('link', { name: 'Continuați spre pagina la care mergeați', exact: true }).click();
   await page.waitForURL('**/home');
 
   // Single-use, proven by presenting it again rather than by reading the table.

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
 import { AuthenticationRequiredError } from '@api/modules/identity/membership/errors/membership.errors';
 import type { TotpState } from '../models/totp.model';
+import { DismissEnrolmentPrompt } from '../use-cases/dismiss-enrolment-prompt.use-case';
 import {
   ManageTotp,
   type TotpEnrolmentOffer,
@@ -23,7 +24,10 @@ import {
  */
 @Injectable()
 export class TotpService {
-  constructor(private readonly manageTotp: ManageTotp) {}
+  constructor(
+    private readonly manageTotp: ManageTotp,
+    private readonly dismissEnrolmentPromptUseCase: DismissEnrolmentPrompt,
+  ) {}
 
   /**
    * The signed-in account, or a refusal.
@@ -87,5 +91,10 @@ export class TotpService {
 
   state(): Promise<TotpState> {
     return this.manageTotp.state(this.actorId());
+  }
+
+  /** S-05's *not now* (task 190). The account is the session's, never the caller's to name. */
+  dismissEnrolmentPrompt(): Promise<void> {
+    return this.dismissEnrolmentPromptUseCase.execute({ accountId: this.actorId() });
   }
 }

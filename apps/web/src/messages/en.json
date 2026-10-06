@@ -144,6 +144,7 @@
       "givenNameMissing": "The first name is missing, so nothing in the application can address you by name. Fill it in before continuing.",
       "familyNameMissing": "The last name is missing, so your profile stays incomplete. Fill it in before continuing.",
       "nameTooLong": "The name is longer than 100 characters, which the field cannot hold. Shorten it.",
+      "nameBlank": "The field holds only spaces, so it is not a name. Type the name in letters.",
       "emailLabel": "Work email",
       "emailHelp": "We send the confirmation link here. Notifications will arrive here too.",
       "emailMissing": "The email address is missing, so there is nowhere to send the confirmation link. Fill in the address before continuing.",
@@ -234,6 +235,14 @@
       "lapsedAction": "Sign in again"
     },
     "reauthenticate": {
+      "recovered": {
+        "title": "You signed in with a recovery code",
+        "body": "The code you used no longer works. Recovery codes left: {remaining}. You can manage them on Credentials and linked identities; your work here is kept.",
+        "bodyNone": "That was your last recovery code, so if you cannot open your authenticator app again there is no way back into your account. Issue new codes on Credentials and linked identities; your work here is kept.",
+        "bodyUnread": "The code you used no longer works. The codes you have left are counted on Credentials and linked identities; your work here is kept.",
+        "continue": "Continue where I was",
+        "manage": "Manage recovery codes (opens in a new tab)"
+      },
       "title": "Confirm it is you to continue",
       "passwordLede": "Enter your password and you return to exactly where you left off.",
       "passwordLabel": "Password<address> for {email}</address>",
@@ -311,7 +320,6 @@
       "passwordSubmit": "Save the password",
       "profileIntro": "Tell us your name and the language you want to use the application in.",
       "languageLabel": "Interface language",
-      "nameBlank": "The field holds only spaces, so it is not a name. Type the name in letters.",
       "profileSubmit": "Save and continue",
       "problemTitle": "This step could not be saved",
       "problemBody": "Nothing was saved because of an error while processing the request.",
@@ -418,6 +426,15 @@
       }
     },
     "credentials": {
+      "arrival": {
+        "recovered": {
+          "title": "You signed in with a recovery code",
+          "body": "The code you used no longer works. Recovery codes left: {remaining}. If you have lost your authenticator app, you can turn two-step verification off or issue new codes below.",
+          "bodyNone": "That was your last recovery code, so if you cannot open your authenticator app again there is no way back into your account. Issue new codes under two-step verification below.",
+          "bodyUnread": "The code you used no longer works. The codes you have left are counted under two-step verification below.",
+          "onward": "Continue to where you were going"
+        }
+      },
       "title": "Credentials and linked identities",
       "lede": "How you sign in. These settings belong to you, not to an organization, and follow you to any organization you join.",
       "currentPassword": "Current password",
@@ -576,6 +593,14 @@
       "MD": "Republic of Moldova"
     },
     "home": {
+      "enrolmentPrompt": {
+        "title": "Protect this organization with two-step verification",
+        "body": "As an administrator you can authorise payments and export the organization's whole record. Two-step verification asks for a code from an authenticator app as well as your password, so a stolen password alone does not get in. It takes a minute to set up.",
+        "setUp": "Set up two-step verification",
+        "notNow": "Not now",
+        "notNowFailedTitle": "This recommendation could not be hidden",
+        "notNowFailedBody": "It is still shown because the change could not be saved. Try again in a moment."
+      },
       "title": "Home",
       "lede": "How your organization's reporting stands, and the organizations you can reach.",
       "greeting": "Welcome, {name}",
@@ -1677,6 +1702,7 @@
       "givenNameRequired": "Your given name is missing. Fill it in before saving.",
       "familyNameRequired": "Your family name is missing. Fill it in before saving.",
       "nameTooLong": "The name is longer than 100 characters. Shorten it before saving.",
+      "nameBlank": "The name holds only spaces, so it cannot be saved. Type the name in letters before saving.",
       "shownAs": "Shown in the application as: {name}",
       "jobTitle": "Job title",
       "optional": "Optional.",

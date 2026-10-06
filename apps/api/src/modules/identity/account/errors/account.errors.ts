@@ -51,6 +51,21 @@ export class PasswordPolicyViolationError extends DomainError {
 }
 
 /**
+ * Registration named a person with a part that has no visible character (task 185; FR-1, FR-9; §12.5.6's task-182
+ * identity and organization row, 182/6). A length rule alone admits a part of spaces, which the display name, the
+ * monogram and the member list's sort cannot fall back from — so it is refused as setup and S-27 refuse it, and no
+ * account was created. Its own key rather than S-27's: that sentence says the profile was not saved.
+ */
+export class RegistrationNamesRequiredError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('identity.registration.names_required');
+  }
+}
+
+/**
  * One error for every way a verification link can fail — never issued, already consumed, expired,
  * or belonging to an account that has itself expired (OQ-52).
  *

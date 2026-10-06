@@ -9,9 +9,11 @@ import { API_OUTCOME } from '@/lib/api-outcome';
  */
 const mocks = vi.hoisted(() => ({
   post: vi.fn(),
+  get: vi.fn(),
   put: vi.fn(),
   remove: vi.fn(),
   readSession: vi.fn(),
+  readFactorState: vi.fn(),
   establishSession: vi.fn(),
   holdFactorChallenge: vi.fn(),
   consumeFactorChallenge: vi.fn(),
@@ -19,12 +21,13 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/server/api/api-client', () => ({
-  api: { post: mocks.post, put: mocks.put, delete: mocks.remove },
+  api: { post: mocks.post, get: mocks.get, put: mocks.put, delete: mocks.remove },
 }));
 vi.mock('@/server/session/session', () => ({
   readSession: mocks.readSession,
   establishSession: mocks.establishSession,
 }));
+vi.mock('@/server/data/credentials', () => ({ readFactorState: mocks.readFactorState }));
 vi.mock('@/server/sealed/factor-challenge', () => ({
   holdFactorChallenge: mocks.holdFactorChallenge,
   consumeFactorChallenge: mocks.consumeFactorChallenge,
@@ -70,11 +73,50 @@ describe('presentFactor', () => {
       kind: 'signed_in',
       refreshToken: 'refresh',
       account: { id: 'account-1' },
+      answeredWith: 'authenticator',
     };
     mocks.post.mockResolvedValue({ status: API_OUTCOME.Ok, value: session, messages: [] });
     expect(await (await presentFactor(request(command))).json()).toEqual({ status: 'resumed' });
     expect(mocks.establishSession).toHaveBeenCalledWith({ session, remembered: false });
     expect(mocks.holdFactorChallenge).not.toHaveBeenCalled();
+    // An authenticator's code reads nothing more: there is no count to state (task 190).
+    expect(mocks.readFactorState).not.toHaveBeenCalled();
+  });
+
+  // Task 190 (UC-195 step 3): a recovery code resumes too, and says how many remain, read once the session exists.
+  describe('after a recovery code', () => {
+    const session = { kind: 'signed_in', refreshToken: 'refresh', account: { id: 'account-1' }, answeredWith: 'recovery_code' };
+
+    beforeEach(() => {
+      mocks.consumeFactorChallenge.mockResolvedValue(held);
+      mocks.post.mockResolvedValue({ status: API_OUTCOME.Ok, value: session, messages: [] });
+    });
+
+    it('answers the codes left from the account state, after the session is written', async () => {
+      mocks.readFactorState.mockResolvedValue({ enrolled: true, recoveryCodesRemaining: 7, enrolmentPromptDismissed: false });
+      expect(await (await presentFactor(request(command))).json()).toEqual({ status: 'recovered', remaining: 7 });
+      expect(mocks.establishSession.mock.invocationCallOrder[0]).toBeLessThan(
+        mocks.readFactorState.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('answers no count, rather than a guess, when that read fails', async () => {
+      mocks.readFactorState.mockResolvedValue(null);
+      expect(await (await presentFactor(request(command))).json()).toEqual({ status: 'recovered', remaining: null });
+    });
+
+    // The gate review's proven gap: a recovery that signed in someone else is refused like any other, and reads
+    // nothing under a session that was never written (task 35.2's rule — a queue is never sent as another account).
+    it('still refuses when the api answered another account, and reads no count', async () => {
+      mocks.post.mockResolvedValue({
+        status: API_OUTCOME.Ok,
+        value: { ...session, account: { id: 'someone-else' } },
+        messages: [],
+      });
+      expect(await (await presentFactor(request(command))).json()).toEqual({ status: 'account-changed' });
+      expect(mocks.establishSession).not.toHaveBeenCalled();
+      expect(mocks.readFactorState).not.toHaveBeenCalled();
+    });
   });
 
   it('refuses while another account holds the browser, before the challenge is spent', async () => {

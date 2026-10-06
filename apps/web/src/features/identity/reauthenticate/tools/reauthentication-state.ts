@@ -27,6 +27,11 @@ export const REAUTHENTICATION_STAGE = {
   PASSWORD: 'password',
   /** The authenticator's code or a recovery code, for an account with a second factor. */
   FACTOR: 'factor',
+  /**
+   * The session is back and a recovery code earned it (task 190; §12.5.6's task-190 row (3)): the dialogue says how
+   * many codes remain and resumes the step on *continue*, rather than closing at once (UC-195 step 3).
+   */
+  RECOVERED: 'recovered',
 } as const;
 
 export type ReauthenticationStage = (typeof REAUTHENTICATION_STAGE)[keyof typeof REAUTHENTICATION_STAGE];
@@ -50,12 +55,19 @@ export interface ReauthenticationState {
   /** Which control the second stage shows. Presentation — the api takes one field for both. */
   readonly answer: FactorAnswerKind;
   readonly refusal: ReauthenticationRefusal | null;
+  /**
+   * The recovery codes left, read once the session was back — written only by the move to `RECOVERED`, and `null`
+   * there when the read failed. Every other transition starts from a state whose count is `null`, or keeps one that
+   * nothing reads outside that stage.
+   */
+  readonly remaining: number | null;
 }
 
 export const INITIAL_REAUTHENTICATION_STATE: ReauthenticationState = {
   stage: REAUTHENTICATION_STAGE.PASSWORD,
   answer: FACTOR_ANSWER.AUTHENTICATOR,
   refusal: null,
+  remaining: null,
 };
 
 /** Named for what happened, never for the field written. */
@@ -102,7 +114,14 @@ function settled(state: ReauthenticationState, answer: ReauthenticationAnswer): 
     case REAUTHENTICATION.RESUMED:
       return state;
     case REAUTHENTICATION.FACTOR_REQUIRED:
-      return { stage: REAUTHENTICATION_STAGE.FACTOR, answer: FACTOR_ANSWER.AUTHENTICATOR, refusal: null };
+      return {
+        stage: REAUTHENTICATION_STAGE.FACTOR,
+        answer: FACTOR_ANSWER.AUTHENTICATOR,
+        refusal: null,
+        remaining: null,
+      };
+    case REAUTHENTICATION.RECOVERED:
+      return { ...state, stage: REAUTHENTICATION_STAGE.RECOVERED, refusal: null, remaining: answer.remaining };
     case FACTOR_LAPSED:
       return { ...INITIAL_REAUTHENTICATION_STATE, refusal: { kind: REAUTHENTICATION_REFUSAL.LAPSED } };
     case REAUTHENTICATION.ACCOUNT_CHANGED:

@@ -266,7 +266,12 @@ test('offers a viewer no way to start a report', async ({ page }) => {
 test('the overview streams behind its boundary, so the shell does not wait for it', async ({
   page,
 }) => {
-  const { organizationId } = await signedIn(page, 'streaming');
+  // **An editor, since task 190.** S-05 gained a fourth boundary, the second-factor prompt's, with no fallback. For an
+  // administrator with no factor it reads the factor's state over the network, so whether it is still pending when the
+  // shell flushes is the api's timing — the support-access banner's race again (task 159), and a count that read 2 or
+  // 3 by it would say nothing about the overview. For anyone else it resolves from the memberships `GlobalTier` has
+  // already awaited, as the heading does, and is inlined; so the count below stays the two regions it names.
+  const { organizationId } = await signedIn(page, 'streaming', { role: 'editor' });
   await seedReport({ organizationId, name: `${RUN_PREFIX}-streaming-Brutăria` });
 
   const response = await page.goto('/home');
@@ -351,4 +356,36 @@ test('the overview streams behind its boundary, so the shell does not wait for i
   expect(occurrences(html, '<hgroup'), 'S-05 draws exactly one hgroup, so it marks this region alone')
     .toBe(1);
   expect(hgroup, "the heading's own markup was inlined, not streamed").toBeLessThan(fallback);
+});
+
+/**
+ * Task 190 (UC-193's trigger, NFR-95; `design_spec.md` S-05's amendment of 6 Oct 2026): an Organization Administrator
+ * without a second factor is recommended one, *not now* is the account's answer for good, and a member who does not
+ * administer is never asked. Turning the factor off brings it back — `totp.e2e-spec.ts` holds that against the store.
+ */
+test('recommends a second factor to an administrator, and not now is kept across a reload (UC-193, NFR-95)', async ({
+  page,
+}) => {
+  await signedIn(page, 'prompt');
+  const prompt = page.getByText('Protejați organizația cu verificarea în doi pași', { exact: true });
+  await expect(prompt).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'Configurați verificarea în doi pași' })).toHaveAttribute(
+    'href',
+    '/account/credentials',
+  );
+
+  await page.getByRole('button', { name: 'Nu acum', exact: true }).click();
+  await expect(prompt).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(prompt).toHaveCount(0);
+});
+
+test('does not recommend a second factor to a member who does not administer', async ({ page }) => {
+  await signedIn(page, 'prompt-editor', { role: 'editor' });
+  // A full document load, not the sign-in's soft navigation: the prompt streams behind its own boundary, so an absence
+  // asserted before the stream settled would pass whether or not the role was checked (the gate review's finding).
+  await page.goto('/home');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.getByText('Protejați organizația cu verificarea în doi pași', { exact: true })).toHaveCount(0);
 });

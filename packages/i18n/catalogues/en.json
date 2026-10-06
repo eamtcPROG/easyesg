@@ -152,7 +152,8 @@
   "identity": {
     "registration": {
       "email_taken": "An account already exists for this address, so a second one cannot be created. Sign in with that address instead, or ask for a password reset if you no longer remember it.",
-      "password_policy": "The password you chose does not meet the requirements, so the account was not created. Use between {minimum} and {maximum} characters, with at least one lowercase letter, one uppercase letter, one digit and one further character."
+      "password_policy": "The password you chose does not meet the requirements, so the account was not created. Use between {minimum} and {maximum} characters, with at least one lowercase letter, one uppercase letter, one digit and one further character.",
+      "names_required": "Your first name or last name holds only spaces, so the account was not created. Type both names in letters and try again."
     },
     "verification": {
       "token_invalid": "This confirmation link is no longer valid, so the address has not been confirmed. Links last 24 hours and work only once — request a new one from the confirmation page."

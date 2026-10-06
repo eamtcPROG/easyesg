@@ -12,6 +12,7 @@ import { ACCOUNT_STATUS } from '../models/account.model';
 import { FakeAccountStore, FakePasswordHasher } from '../testing/account-store.fake';
 // A collaborator here, not a subject: the re-issue case observes that an old code stops spending.
 import { ConsumeRecoveryCode } from './consume-recovery-code.use-case';
+import { DismissEnrolmentPrompt } from './dismiss-enrolment-prompt.use-case';
 import { ManageTotp } from './manage-totp.use-case';
 
 /**
@@ -84,6 +85,7 @@ describe('ManageTotp (UC-193, NFR-95)', () => {
     expect(await totp.state('account-1')).toEqual({
       enrolled: true,
       recoveryCodesRemaining: RECOVERY_CODE_COUNT,
+      enrolmentPromptDismissed: false,
     });
   });
 
@@ -95,6 +97,7 @@ describe('ManageTotp (UC-193, NFR-95)', () => {
     expect(await totp.state('account-1')).toEqual({
       enrolled: false,
       recoveryCodesRemaining: 0,
+      enrolmentPromptDismissed: false,
     });
   });
 
@@ -161,6 +164,7 @@ describe('ManageTotp (UC-193, NFR-95)', () => {
       expect(await totp.state('account-1')).toEqual({
         enrolled: false,
         recoveryCodesRemaining: 0,
+        enrolmentPromptDismissed: false,
       });
       // The codes must not outlive the factor: a recovery code is a credential, and one left
       // behind would sign in against a factor that no longer exists.
@@ -171,6 +175,37 @@ describe('ManageTotp (UC-193, NFR-95)', () => {
       await expect(
         totp.disable({ accountId: 'account-1', password: PASSWORD }),
       ).rejects.toThrow(TotpNotEnrolledError);
+    });
+  });
+
+  describe('the prompt to enrol (task 190; §12.5.6 task-190 rows (5), (6))', () => {
+    const dismiss = (at: Date = now) =>
+      new DismissEnrolmentPrompt(store, () => at).execute({ accountId: 'account-1' });
+
+    it('is remembered on the account once dismissed, and the first answer stands', async () => {
+      await dismiss();
+      await dismiss(new Date(now.getTime() + 60_000));
+
+      expect((await totp.state('account-1')).enrolmentPromptDismissed).toBe(true);
+      expect(store.promptDismissals.get('account-1')).toEqual(now);
+    });
+
+    it('comes back when the factor is turned off', async () => {
+      await enrol();
+      await dismiss();
+
+      await totp.disable({ accountId: 'account-1', password: PASSWORD });
+
+      expect((await totp.state('account-1')).enrolmentPromptDismissed).toBe(false);
+    });
+
+    it('stays dismissed when a removal is refused, since nothing was removed', async () => {
+      await enrol();
+      await dismiss();
+
+      await expect(totp.disable({ accountId: 'account-1', password: 'wrong' })).rejects.toThrow();
+
+      expect((await totp.state('account-1')).enrolmentPromptDismissed).toBe(true);
     });
   });
 

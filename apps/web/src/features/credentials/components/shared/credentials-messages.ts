@@ -10,3 +10,4 @@ export const PASSWORD_MESSAGES = 'identity.credentials.password';
 export const FACTOR_MESSAGES = 'identity.credentials.factor';
 export const PROVIDERS_MESSAGES = 'identity.credentials.providers';
 export const LAST_WAY_IN_MESSAGES = 'identity.credentials.lastWayIn';
+export const ARRIVAL_MESSAGES = 'identity.credentials.arrival.recovered';

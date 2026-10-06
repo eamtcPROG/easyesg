@@ -125,7 +125,12 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
   it('completes with a current code and issues the session', async () => {
     const { challenge } = objectOf<{ challenge: string }>(await signIn(ENROLLED));
 
-    const issued = objectOf<{ kind: string; accessToken: string; account: { email: string } }>(
+    const issued = objectOf<{
+      kind: string;
+      accessToken: string;
+      account: { email: string };
+      answeredWith: string;
+    }>(
       await http()
         .post('/api/v1/auth/session/factor')
         .send({ challenge, code: totpCodeAt(secret, new Date()) })
@@ -134,6 +139,8 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
 
     expect(issued.kind).toBe(SIGN_IN_OUTCOME.SIGNED_IN);
     expect(issued.account.email).toBe(ENROLLED);
+    // The wire value, pinned as a literal on purpose (task 190).
+    expect(issued.answeredWith).toBe('authenticator');
     // The session is real: it authenticates a request the guard closes by default.
     await http()
       .get('/api/v1/memberships')
@@ -152,7 +159,15 @@ describe('the second factor at sign-in (UC-194, UC-195)', () => {
     const code = reissued.recoveryCodes[0];
 
     const first = objectOf<{ challenge: string }>(await signIn(ENROLLED));
-    await http().post('/api/v1/auth/session/factor').send({ challenge: first.challenge, code }).expect(201);
+    const recovered = objectOf<{ answeredWith: string }>(
+      await http().post('/api/v1/auth/session/factor').send({ challenge: first.challenge, code }).expect(201),
+    );
+    // Says a recovery code answered, so a client can state the codes left (task 190; UC-195 step 3).
+    expect(recovered.answeredWith).toBe('recovery_code');
+    const state = await http().get('/api/v1/account/totp').set(enrolled.authorization).expect(200);
+    expect(objectOf<{ recoveryCodesRemaining: number }>(state).recoveryCodesRemaining).toBe(
+      reissued.recoveryCodes.length - 1,
+    );
 
     await drain();
     const second = objectOf<{ challenge: string }>(await signIn(ENROLLED));

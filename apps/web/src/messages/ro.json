@@ -144,6 +144,7 @@
       "givenNameMissing": "Prenumele lipsește, deci nicăieri în aplicație nu vă putem adresa pe nume. Completați-l înainte de a continua.",
       "familyNameMissing": "Numele de familie lipsește, deci profilul dumneavoastră rămâne incomplet. Completați-l înainte de a continua.",
       "nameTooLong": "Numele depășește 100 de caractere, iar câmpul nu poate păstra mai mult. Scurtați-l.",
+      "nameBlank": "Câmpul conține doar spații, deci nu reprezintă un nume. Scrieți numele cu litere.",
       "emailLabel": "E-mail de serviciu",
       "emailHelp": "Aici trimitem linkul de confirmare. Tot aici vor ajunge și notificările.",
       "emailMissing": "Adresa de e-mail lipsește, deci nu avem unde trimite linkul de confirmare. Completați adresa înainte de a continua.",
@@ -234,6 +235,14 @@
       "lapsedAction": "Autentificați-vă din nou"
     },
     "reauthenticate": {
+      "recovered": {
+        "title": "V-ați autentificat cu un cod de recuperare",
+        "body": "Codul folosit nu mai funcționează. Coduri de recuperare rămase: {remaining}. Le puteți gestiona pe pagina Credențiale și identități asociate; ce lucrați aici rămâne păstrat.",
+        "bodyNone": "Acesta a fost ultimul cod de recuperare, așa că, dacă nu mai puteți deschide aplicația de autentificare, nu veți mai avea cum să intrați în cont. Generați coduri noi pe pagina Credențiale și identități asociate; ce lucrați aici rămâne păstrat.",
+        "bodyUnread": "Codul folosit nu mai funcționează. Codurile rămase sunt numărate pe pagina Credențiale și identități asociate; ce lucrați aici rămâne păstrat.",
+        "continue": "Continuați de unde ați rămas",
+        "manage": "Gestionați codurile de recuperare (se deschide într-o filă nouă)"
+      },
       "title": "Confirmați că sunteți dumneavoastră ca să continuați",
       "passwordLede": "Introduceți parola și reveniți exact unde ați rămas.",
       "passwordLabel": "Parola<address> pentru {email}</address>",
@@ -311,7 +320,6 @@
       "passwordSubmit": "Salvați parola",
       "profileIntro": "Spuneți-ne cum vă numiți și în ce limbă doriți să folosiți aplicația.",
       "languageLabel": "Limba interfeței",
-      "nameBlank": "Câmpul conține doar spații, deci nu reprezintă un nume. Scrieți numele cu litere.",
       "profileSubmit": "Salvați și continuați",
       "problemTitle": "Pasul nu a putut fi salvat",
       "problemBody": "Datele nu au fost salvate din cauza unei erori la procesarea cererii.",
@@ -418,6 +426,15 @@
       }
     },
     "credentials": {
+      "arrival": {
+        "recovered": {
+          "title": "V-ați autentificat cu un cod de recuperare",
+          "body": "Codul folosit nu mai funcționează. Coduri de recuperare rămase: {remaining}. Dacă ați pierdut aplicația de autentificare, puteți dezactiva verificarea în doi pași sau genera coduri noi mai jos.",
+          "bodyNone": "Acesta a fost ultimul cod de recuperare, așa că, dacă nu mai puteți deschide aplicația de autentificare, nu veți mai avea cum să intrați în cont. Generați coduri noi la verificarea în doi pași, mai jos.",
+          "bodyUnread": "Codul folosit nu mai funcționează. Codurile rămase sunt numărate la verificarea în doi pași, mai jos.",
+          "onward": "Continuați spre pagina la care mergeați"
+        }
+      },
       "title": "Credențiale și identități asociate",
       "lede": "Cum vă autentificați. Aceste setări vă aparțin dumneavoastră, nu unei organizații, și vă însoțesc în orice organizație în care intrați.",
       "currentPassword": "Parola actuală",
@@ -576,6 +593,14 @@
       "MD": "Republica Moldova"
     },
     "home": {
+      "enrolmentPrompt": {
+        "title": "Protejați organizația cu verificarea în doi pași",
+        "body": "Ca administrator, puteți autoriza plăți și exporta întregul dosar al organizației. Verificarea în doi pași cere, pe lângă parolă, un cod dintr-o aplicație de autentificare, așa că o parolă furată nu ajunge pentru a intra. Configurarea durează un minut.",
+        "setUp": "Configurați verificarea în doi pași",
+        "notNow": "Nu acum",
+        "notNowFailedTitle": "Recomandarea nu a putut fi ascunsă",
+        "notNowFailedBody": "Rămâne afișată, deoarece modificarea nu a putut fi salvată. Încercați din nou peste câteva momente."
+      },
       "title": "Prima pagină",
       "lede": "Starea raportărilor din organizație și organizațiile la care aveți acces.",
       "greeting": "Bine ați venit, {name}",
@@ -1677,6 +1702,7 @@
       "givenNameRequired": "Prenumele lipsește. Completați-l înainte de a salva.",
       "familyNameRequired": "Numele de familie lipsește. Completați-l înainte de a salva.",
       "nameTooLong": "Numele depășește 100 de caractere. Scurtați-l înainte de a salva.",
+      "nameBlank": "Numele conține doar spații, deci nu poate fi salvat. Scrieți numele cu litere înainte de a salva.",
       "shownAs": "Apare în aplicație ca: {name}",
       "jobTitle": "Funcția",
       "optional": "Opțional.",

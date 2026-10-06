@@ -542,7 +542,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   ```
   organization/
   ├─ access/     S-16   actions/ · components/ · tools/
-  ├─ home/       S-05   components/ · tools/
+  ├─ home/       S-05   actions/ · components/ · tools/
   ├─ profile/    S-15   actions/ · components/ · tools/
   └─ creation/   S-04   actions/ · components/
   ```
@@ -598,7 +598,8 @@ conditional render, which is how it ends up half-suppressed on one screen.
   its exports become callable endpoints, and the constraint bites at the **build** — `typecheck`,
   `lint` and 286 unit tests all missed it once (see `lib/revalidate-paths.ts`). Folding it into
   `tools/` would put that among modules with neither property. **A screen has the kinds it has**:
-  S-05 reads, so it has no `actions/`; S-04 is a form with nothing pure to extract, so it has no
+  S-05 read, so it had no `actions/` until task 190's *not now* gave it one — a kind arrives with its first file;
+  S-04 is a form with nothing pure to extract, so it has no
   `tools/`. That last clause named S-15 too until task 129, and the correction is the more useful
   half of the rule: *having no `tools/`* is a fact about a screen at a moment, not a property of
   forms. S-15's had a form shape, two conversions between it and the wire, and a reducer sitting
@@ -608,14 +609,16 @@ conditional render, which is how it ends up half-suppressed on one screen.
 
   ```
   home/
+  ├─ actions/          actions.ts — the prompt's *not now* (task 190)
   ├─ components/
   │  ├─ arrival/       arrival-notice
   │  ├─ heading/       organization-heading · heading-loading
+  │  ├─ enrolment-prompt/  section/ · callout/ (task 190)
   │  ├─ overview/      section/ · regions/ · states/ · shared/
   │  ├─ memberships/   section/ · list/ · states/ · shared/
   │  ├─ shared/        home-region
   │  └─ styles/        home.module.css
-  └─ tools/            home.ts · overview.ts · their two specs
+  └─ tools/            home.ts · overview.ts · enrolment-prompt.ts · their three specs
   ```
 
   **The top level is what the route renders** — one folder per child of S-05's `return`, in the same
@@ -697,7 +700,12 @@ conditional render, which is how it ends up half-suppressed on one screen.
   content exists. The inert one is kept because UX-90 wants the `loading` state defined. **A boundary
   that buys nothing is not a defect; a boundary silently claiming to buy something is.** *(Measured
   21 Sep 2026, task 159. This paragraph said exactly one streamed, with task 126's offsets, until
-  then — task 128 changed the membership list's shape and nothing reread it.)*
+  then — task 128 changed the membership list's shape and nothing reread it.)* **A fourth boundary
+  since task 190**, the second-factor prompt's, with no fallback, the support-access banner's reason. It
+  checks the role first: for anyone but an administrator it resolves from the memberships `GlobalTier`
+  already awaited and is inlined, like the heading; for an administrator with no factor it reads the
+  factor's state, so whether it streams is the api's timing. `home.spec.ts`'s streaming journey runs as
+  an editor for that reason, which keeps its count of two about the regions it names.
 
   **How to count what streamed, and why the obvious markers do not** (task 126, from the
   gate-integrity review). React SSR writes **`<!--$?-->` per boundary still pending when the shell
@@ -987,7 +995,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **162 files here are Client Components** (30 Sep 2026: three more since task 179.1 drew S-07 as its artboards — the module list below `wide`, the bar's action drawn ahead of its screen, and the bar's ⋯ at `compact`; the exit and the save state moved into the bar and are counted once; one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to
+  **165 files here are Client Components** (6 Oct 2026: three more since task 190 — S-28's arrival notice, the re-authentication dialogue's recovered stage, and S-05's *not now* on the second-factor prompt. 30 Sep 2026: three more since task 179.1 drew S-07 as its artboards — the module list below `wide`, the bar's action drawn ahead of its screen, and the bar's ⋯ at `compact`; the exit and the save state moved into the bar and are counted once; one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to
   S-13 and added the report-contact section beside it; one fewer since task 175 moved S-15's identifiers section to
   S-13's identity section; two since S-13's card — the guarded link its ways back share,
 and the side column's archive panel; 28 Sep 2026: five since S-13's review — the index's filter row and the

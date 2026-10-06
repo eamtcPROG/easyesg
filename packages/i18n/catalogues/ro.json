@@ -152,7 +152,8 @@
   "identity": {
     "registration": {
       "email_taken": "Există deja un cont pentru această adresă, așa că nu putem crea încă unul. Autentificați-vă cu adresa respectivă sau cereți resetarea parolei dacă nu v-o mai amintiți.",
-      "password_policy": "Parola aleasă nu îndeplinește cerințele, deci contul nu a fost creat. Folosiți între {minimum} și {maximum} caractere, cu cel puțin o literă mică, o literă mare, o cifră și încă un caracter."
+      "password_policy": "Parola aleasă nu îndeplinește cerințele, deci contul nu a fost creat. Folosiți între {minimum} și {maximum} caractere, cu cel puțin o literă mică, o literă mare, o cifră și încă un caracter.",
+      "names_required": "Prenumele sau numele de familie conține doar spații, deci contul nu a fost creat. Scrieți ambele nume cu litere și încercați din nou."
     },
     "verification": {
       "token_invalid": "Linkul de confirmare nu mai este valabil, așa că adresa nu a fost confirmată. Linkurile expiră după 24 de ore și pot fi folosite o singură dată — cereți unul nou de pe pagina de confirmare."

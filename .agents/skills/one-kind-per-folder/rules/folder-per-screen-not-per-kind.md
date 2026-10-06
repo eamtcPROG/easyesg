@@ -38,7 +38,7 @@ organization/
 organization/
 ├─ access/     S-16   actions/ · components/ · tools/
 ├─ creation/   S-04   actions/ · components/
-├─ home/       S-05   components/ · tools/
+├─ home/       S-05   actions/ · components/ · tools/
 ├─ profile/    S-15   actions/ · components/ · tools/
 └─ tools/      folder-shape.spec.ts
 ```
