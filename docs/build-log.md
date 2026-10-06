@@ -27165,8 +27165,7 @@ accepting a blank name part, and 190, the second factor's two unbuilt prompts. B
 
 **The Stage diff** runs from `5cb618a7` (*Review agents and gates:clean run once per Stage, at its end*), the commit
 that adopted the Stage rule. The rule makes the first Stage to end under it take its base from that commit. The diff
-ends at the commit that carries tasks 185 and 190. It is uncommitted as this entry is written, so the next Stage's diff
-starts at whichever commit lands this entry.
+ends at `a5266c33`, the commit that carries tasks 185 and 190; the next Stage's diff starts there.
 
 **`pnpm gates:clean`, cold, over the final tree.** Every gate through `e2e:worker` passed: lint, `eslint:prove`,
 typecheck, `image:check`, `docs:check` (48 claims), every unit suite, boundaries and their proof, build, `openapi:check`,
