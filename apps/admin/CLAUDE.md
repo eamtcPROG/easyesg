@@ -276,9 +276,8 @@ src/
 
 ## Before you call it done
 
-The root `CLAUDE.md`'s "Closing a task" says which run applies — a sub-step gets only the gates its
-change reaches, the parent gets the gate set, cold where the diff calls for it (the root file's
-*"When `gates:clean` is the required run"*). Everything in `apps/web/CLAUDE.md`'s "Before you call it
+The root `CLAUDE.md`'s "Closing a task" says which run applies — a sub-step and a task get only the gates their
+change reaches, and the end of a Stage gets `pnpm gates:clean` and the three review agents (owner, 6 Oct 2026). Everything in `apps/web/CLAUDE.md`'s "Before you call it
 done" applies here too — load `vercel-react-best-practices` and read the diff against it, load
 `vercel-composition-patterns` when a component API grows, load `one-idea-per-file` and
 `one-kind-per-folder` whenever a file is added, split or moved under `src/`, re-read these traps against what you

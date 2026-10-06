@@ -87,25 +87,27 @@ A task is not finished when its code works. It is finished when the gate set pas
 build-log entry is written — the two are the same obligation, since a decision recorded only in a
 chat transcript has not been made.
 
-**A sub-step closes on the gates its own change reaches; the parent closes on the full set.**
-Standing decision by the owner, 8 Sep 2026. It replaces *"run `pnpm gates:scoped` before saying a
-task is done"* as the per-task obligation, and the reason is machine time rather than a re-reading
-of what the gates prove: the measurements in this section were taken on a faster host, and on this
-one paying either the full set or the scoped run at every sub-step was the largest single cost of a
-task. So what runs is keyed to **which row of `docs/task.md` is closing**, not to the bare fact that
-something closed:
+**Every task and every sub-step closes on the gates its own change reaches; the full set runs cold, with the three review
+agents, once per Stage — when the Stage ends.** Standing decision by the owner, **6 Oct 2026**. It replaces the
+8 Sep 2026 rule (*"a sub-step closes on the gates its own change reaches; the parent closes on the full set"*) and the
+12 Sep 2026 judgement of when that parent run had to be `gates:clean`. The reason is the one both of those gave —
+machine time on this host — taken one step further: a parent close still paid the full set and three `opus` reviews, a
+task at a time, while CI runs the full set on every push to `dev` anyway. So what runs is keyed to **what is
+closing**:
 
 | Closing | Run |
 | --- | --- |
-| A sub-step — 36.4, 36.5 … | Only what the change reaches, per the table below |
-| The parent — 36, when its last sub-step goes `DONE` | The gate set, **the boot proof**, then the three review agents over the **whole parent diff**. Whether that run is `gates` or `gates:clean` is yours to judge — see *When `gates:clean` is the required run* |
+| A sub-step, or a task — 36.4, or 36 when its last sub-step goes `DONE`, or a task with no sub-steps | Only what the change reaches, per the table below. **No parent run**: a task closes the way its sub-steps do |
+| **A Stage** — when its last row leaves `docs/task.md` | **`pnpm gates:clean`** — the whole gate set over a cleaned tree, which includes the three e2e suites and so the boot proof of every entrypoint — then **the three review agents over the whole Stage diff**, then a build-log entry for the Stage |
 | Whenever asked | Either, on request |
 
-The parent trigger is the roll-up rule this file already carries — *"closing the last child closes
-the parent"*. That sentence was about keeping `task.md` honest; it now also fires the full gate set,
-so a parent left at `TODO` with every child `DONE` does not merely misreport, it skips the run.
+**A Stage ends when its last row leaves `task.md`** — the close that moves it is the Stage's close too, and runs both.
+**The Stage diff** runs from the commit that ended the previous Stage to the one that ends this, and the Stage's
+build-log entry (`## Stage N closes · <date>`) names both commits, so the next Stage's diff starts where it says.
+The first Stage to end under this rule takes its base from the commit that adopted it. A row appended to a Stage
+already closed reopens it, and the Stage ends again when that row closes.
 
-**What a sub-step runs**, as a lookup rather than a judgement each time:
+**What a close runs**, as a lookup rather than a judgement each time:
 
 | The change reaches | Run |
 | --- | --- |
@@ -116,22 +118,18 @@ so a parent left at `TODO` with every child `DONE` does not merely misreport, it
 | Anything | `pnpm lint` and `pnpm --filter <ws> typecheck` |
 
 **The rest of the close procedure is the `closing-a-task` skill — load it before closing any row of
-`docs/task.md`.** It carries why there is no separate build line, what running less per sub-step gives
-up, `pnpm gates:scoped` as the middle setting, and the three review agents with their `opus` pin and
+`docs/task.md`.** It carries why there is no separate build line, what running less per close gives
+up, `pnpm gates:scoped` as the middle setting, and the three review agents at a Stage's end with their `opus` pin and
 routing table. Moved out of this file on 1 Oct 2026 so it loads at a close rather than in every
 session; what binds outside a close — the boot proof, a gate's independence from prior state, the
 index check, a red pipeline — stayed here.
 
-**`pnpm gates` is what CI runs, in CI's order, and `pnpm gates:clean` is the same set over a cleaned tree** — so
-the two are never both worth running, and choosing between them is the judgement recorded below. The gate
-set is fourteen root scripts plus three e2e suites; writing this rule surfaced that its first draft
-stopped at the hermetic ones and would have missed the very defect that prompted it.
-
-**When `gates:clean` is the required run — a judgement, with the cases stated.** Standing decision by the owner,
-12 Sep 2026. It replaces *"run `pnpm gates:clean` at parent-task close, and before pushing that parent"*, which
-made a five-to-ten-minute cold run unconditional on every parent regardless of what the diff touched. **Decide it
-from the diff.** `gates:clean` is required when the change could make a *previously built* artefact wrong or
-absent — and a warm run cannot see either:
+**`pnpm gates` is what CI runs, in CI's order, and `pnpm gates:clean` is the same set over a cleaned tree.** The gate
+set is fourteen root scripts plus three e2e suites; writing this rule surfaced that its first draft stopped at the
+hermetic ones and would have missed the very defect that prompted it. **The Stage's end runs the cold one, always** —
+no judgement is left to make there. *(Until 6 Oct 2026 a parent close chose between them by the diff, and the cases
+that made the cold run required are still the reason a Stage ends cold:)* a warm run cannot see a *previously built*
+artefact made wrong or absent, which is what these do —
 
 - a file **moved, renamed or deleted** — the stale copy in `dist/` still satisfies an import that no longer has a
   source, which a fresh clone will not;
@@ -142,12 +140,13 @@ absent — and a warm run cannot see either:
 - a **`prex` hook, script or build input** — the thing that decides what a later command finds;
 - **anything in `packages/*`**, whose `dist/` every app resolves against.
 
-Otherwise `pnpm gates` is the parent-close run and the cold one is waste. **Say in the response which you ran and
-why**, because that sentence is the difference between a judgement and a habit — and record a case where the warm
-run passed and CI did not, since that is what would falsify this.
+**Within a Stage, CI is what sees them**, a push later. **Say in the response what a close ran and what it skipped**,
+and record in `build-log.md` any break that survived from a close to the Stage's end and cost more to unpick there
+than the skipped run would have — that is what would falsify this rule.
 
-**Before that, and not negotiable: the tests run, and the application is proven to boot and to serve without
-runtime errors.** A gate that compiles, lints and type-checks says nothing about whether the thing starts — that is
+**At every close, and not negotiable: the tests run, and the application is proven to boot and to serve without
+runtime errors** — at a task's or a sub-step's close, every entrypoint its change reaches, by that row of the table above;
+at a Stage's end, all of them, which `gates:clean`'s three e2e suites do. A gate that compiles, lints and type-checks says nothing about whether the thing starts — that is
 not a hypothetical, it is `docs/build-log.md`'s *"The worker had not booted since task 28.1, and only CI could say
 so"*: nine green gates, four tasks shipped on top, and `MODE=worker` refusing to start the whole time because
 `openapi:check` boots the graph in preview and instantiates no provider while every other suite booted HTTP. What
@@ -207,8 +206,8 @@ Two things follow, and both are cheap:
   shipped red and every warm run agreed it was green. `gates:clean` deletes the cache, and this is
   the case that puts *a type changed rather than a file* on the required-cold list above — a warm
   `pnpm lint` after changing a **type** proves less than it appears to, while after changing a
-  **file** it proves what it looks like it proves. A sub-step's `pnpm lint` is always warm by
-  construction, so the parent close is where the distinction has to be made rather than assumed.
+  **file** it proves what it looks like it proves. A close's `pnpm lint` is always warm by
+  construction, so the Stage's end, cold, is where the distinction is made rather than assumed.
 
 **`gates:clean` removes build outputs. It cannot see the index — check that separately.**
 Added 27 Aug 2026, after a review found that the S-28 commit shipped **no S-28**: `.gitignore`

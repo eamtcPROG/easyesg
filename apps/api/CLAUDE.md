@@ -1668,9 +1668,9 @@ pass baked into finishing a task since 24 Aug 2026, and `apps/api` — the works
 - **Measure the database claims, do not reason about them.** `EXPLAIN` the queries a task adds; at
   these table sizes the planner prefers a sequential scan, so confirm an index is *usable* with
   `SET enable_seqscan = off` rather than concluding it is missing.
-- **Then the run the root file's "Closing a task" calls for** — a sub-step gets only the gates its
-  change reaches; the parent gets `pnpm gates:clean` and the three review agents. Then the build-log
-  entry, which is half of what "finished" means. Never `pnpm gates` followed by `pnpm gates:clean`:
+- **Then the run the root file's "Closing a task" calls for** — a sub-step and a task get only the gates their
+  change reaches; the end of a Stage gets `pnpm gates:clean` and the three review agents (owner,
+  6 Oct 2026). Then the build-log entry, which is half of what "finished" means. Never `pnpm gates` followed by `pnpm gates:clean`:
   the second wraps the first, so that is the same set paid for twice.
 
 ## Boundary rules

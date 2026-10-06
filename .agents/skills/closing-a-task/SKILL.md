@@ -1,13 +1,13 @@
 ---
 name: closing-a-task
-description: The procedure for closing a row of docs/task.md in easyesg — why a sub-step has no separate build line, what running fewer gates per sub-step gives up, `pnpm gates:scoped` as the middle setting, and the three review agents (convention-review, spec-review, gate-integrity-review) with their opus pin, routing table and fixtures. Use before closing any task or sub-step and before running the review agents. The root CLAUDE.md's "Closing a task" keeps the two lookup tables, the boot proof and the rules that bind outside a close.
+description: The procedure for closing a row of docs/task.md in easyesg, and for closing a Stage — why a close has no separate build line, what running fewer gates per close gives up, `pnpm gates:scoped` as the middle setting, and the Stage's end with `pnpm gates:clean` and the three review agents (convention-review, spec-review, gate-integrity-review), their opus pin, routing table and fixtures. Use before closing any task or sub-step, before closing a Stage, and before running the review agents. The root CLAUDE.md's "Closing a task" keeps the two lookup tables, the boot proof and the rules that bind outside a close.
 ---
 
 # Closing a task — the procedure
 
 Moved verbatim from the root `CLAUDE.md`'s "Closing a task" on 1 Oct 2026, so it loads when a task
 closes rather than in every session. **Read it with that section open**: the root keeps what a
-sub-step and a parent run (the two lookup tables), `gates` versus `gates:clean`, the boot proof, and
+close and a Stage's end run (the two lookup tables), `gates` versus `gates:clean`, the boot proof, and
 the rules that bind outside a close. Where the text below says *this file*, it means the root
 `CLAUDE.md`.
 
@@ -24,13 +24,13 @@ helper — and **say in the response that you skipped it**, which is the differe
 judgement and an omission.
 
 **What this gives up, and what stands behind the gap.** `boundaries`, `image:check`, `facade:check`,
-the two `*:prove` gates and the cross-workspace half of `typecheck` now run once per parent rather
-than once per sub-step. Two things cover it: **CI runs the full set on every push to `dev`**, so a
-sub-step pushed alone is still checked — a couple of minutes later, and not by this machine; and the
-parent close runs the full set, cold where the cases above call for it — and `gates:clean` is the only run that
+the two `*:prove` gates and the cross-workspace half of `typecheck` now run once per **Stage**, at its end, rather
+than at any task's close (owner, 6 Oct 2026; once per parent from 8 Sep 2026 until then). Two things cover it:
+**CI runs the full set on every push to `dev`**, so a close pushed alone is still checked — a couple of minutes later,
+and not by this machine; and the Stage's end runs the full set cold — and `gates:clean` is the only run that
 sees stale build state at all. What is
 assumed meanwhile is that a defect CI finds shortly after a push costs less than the local minutes
-spent finding it first. What falsifies it is a sub-step's break surviving to the parent close and
+spent finding it first. What falsifies it is a close's break surviving to the Stage's end and
 costing more to unpick there than the skipped run would have cost — record that in `build-log.md`
 and raise it, rather than quietly going back to running everything.
 
@@ -53,12 +53,12 @@ and `docs:check`. (This sentence said *three* until task 100 and listed the firs
 file-reading checks always ran too, and the count was one of the claims `docs:check` was written
 because of.)
 
-**Three review agents run at parent-task close, before the build-log entry** (`.claude/agents/`,
-added 31 Aug 2026; moved from every task close to the parent's on 8 Sep 2026, with the gate split
-above). The diff they read is the whole parent — every sub-step's commits together — which is wider
-than any one of them used to carry, and is the shape the routing table below was written for. Note
-that neither `gates` nor `gates:clean` prints the routing line `gates:scoped` does, so at parent close the model
-is read off that table from the diff itself, before any agent runs.
+**Three review agents run at a Stage's end, after `pnpm gates:clean` and before the Stage's build-log entry**
+(`.claude/agents/`, added 31 Aug 2026; moved from every task close to the parent's on 8 Sep 2026, and from the parent's
+to the Stage's on 6 Oct 2026, owner). The diff they read is the whole Stage — every task closed in it, from the commit
+that ended the previous Stage (the root `CLAUDE.md` says how that base is found). A finding is fixed, or recorded with
+its reason, before the Stage's entry is written. Note that `gates:clean` does not print the routing line
+`gates:scoped` does, so the model is read off the table below from the diff itself, before any agent runs.
 
 They exist because the gate set proves code *runs* and says nothing about whether it
 *belongs* — this file already records that every finding a review has raised on the front ends was
@@ -92,11 +92,12 @@ these three agents, and its stated reason was usage rather than a re-reading of 
 the reviews were worth their cost and *"not worth **that** cost, three opus runs over a whole task
 diff at every close."* The 8 Sep gate policy removed that cost by moving the reviews from every
 sub-step close to the parent's — for task 36, **three opus runs instead of forty-two**, since its
-fourteen sub-steps each used to close with all three agents. The premise is gone, so the exception
+fourteen sub-steps each used to close with all three agents — and the 6 Oct 2026 policy moved them again, to a
+Stage's end, three runs for a whole Stage. The premise is gone, so the exception
 goes with it. An exception that outlives its condition is an unexamined default.
 
-**There is no downgrade path, and that is the point.** A parent-task diff is large by construction —
-every sub-step's commits together — so a rule for the cheap case would describe almost nothing, and
+**There is no downgrade path, and that is the point.** A Stage's diff is large by construction —
+every task's commits together — so a rule for the cheap case would describe almost nothing, and
 the one thing the 31 Aug measurement established is that Sonnet's miss is *silent*. The routing
 table below is dormant in **both** directions now, kept as the description of where a review earns
 the most rather than as a router. `pnpm gates:scoped` still prints what a diff touches, as a signal

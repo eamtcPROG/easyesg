@@ -1108,7 +1108,7 @@ where the hook beside them carries no directive; one since S-02's reset request 
 
 ## Before you call it done
 
-The root `CLAUDE.md`'s "Closing a task" says which run a sub-step and a parent each get, and
+The root `CLAUDE.md`'s "Closing a task" says which run a close and the end of a Stage each get, and
 whichever applies is necessary rather than sufficient: the gates prove the code *runs*, not that it
 *belongs here*. Every finding the project owner has raised on
 this app and on `apps/admin` was invisible to all seventeen — a screen carrying the wrong idiom, a

@@ -99,10 +99,10 @@ one, and belongs merged with its other half.
 debt"). A task is not started by writing its first file; it is started by checking what it needs
 decided.
 
-**Before closing one, run the gates its change reaches; before closing its parent, the gate set,
-the boot proof and the three review agents** — `pnpm gates` or `pnpm gates:clean` by the cases the
-root CLAUDE.md states (CLAUDE.md, "Closing a task"). Then write the
-build-log entry: a task whose reasons are not recorded is not closed.
+**Before closing a sub-step or a task, run the gates its change reaches; before closing a Stage, `pnpm gates:clean`
+and the three review agents over the Stage's whole diff** (owner, 6 Oct 2026; CLAUDE.md, "Closing a task"). A Stage
+closes when its last row leaves this file. Then write the build-log entry — for a Stage, one of its own: a task whose
+reasons are not recorded is not closed, and neither is a Stage.
 
 ---
 
