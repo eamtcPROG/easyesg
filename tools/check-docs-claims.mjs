@@ -401,6 +401,53 @@ const CLAIMS = [
     },
   },
 
+  {
+    // **A screen and a requirement name each other, or neither does** (6 Oct 2026). A screen's
+    // FRs line in `design_spec.md` §5 and a requirement block's Surfaces row in a
+    // `functional_requirements/` part are one relation written twice, and an audit that day found
+    // 105 links written on one side only. A one-sided link is a screen nobody will test against a
+    // requirement, or a requirement whose screen does not know it is responsible for it.
+    what: 'one-sided links between a screen and a requirement',
+    file: 'docs/design_spec.md',
+    pattern: /\*\*(\w+) links between a screen and a requirement are one-sided\*\*/,
+    actual: () => {
+      const ds = read('docs/design_spec.md');
+      const frsIn = (text) => {
+        const out = new Set();
+        for (const m of text.matchAll(/FR-(\d+)(?:\s*…\s*FR-(\d+))?/g)) {
+          const a = Number(m[1]);
+          const z = m[2] ? Number(m[2]) : a;
+          for (let n = a; n <= z; n += 1) out.add(`FR-${n}`);
+        }
+        return out;
+      };
+      const block = (text, start) => {
+        const body = text.slice(text.indexOf('\n', start) + 1);
+        const next = /^#{2,3} /m.exec(body);
+        return next ? body.slice(0, next.index) : body;
+      };
+      const screenFrs = new Map();
+      for (const m of ds.matchAll(/^### ((?:S|A)-\d{2}) — /gm)) {
+        const line = /^- \*\*FRs[^*]*:\*\*(.*)$/m.exec(block(ds, m.index));
+        screenFrs.set(m[1], line ? frsIn(line[1]) : new Set());
+      }
+      const frScreens = new Map();
+      for (const f of readdirSync('docs/functional_requirements').filter((n) => n.endsWith('.md'))) {
+        const text = read(join('docs/functional_requirements', f));
+        for (const m of text.matchAll(/^### (FR-\d+) — /gm)) {
+          const row = /^\| \*\*Surfaces\*\* \|(.*)$/m.exec(block(text, m.index));
+          frScreens.set(m[1], new Set(row ? row[1].match(/\b(?:S|A)-\d{2}\b/g) ?? [] : []));
+        }
+      }
+      let oneSided = 0;
+      for (const [fr, screens] of frScreens)
+        for (const s of screens) if (screenFrs.has(s) && !screenFrs.get(s).has(fr)) oneSided += 1;
+      for (const [s, frs] of screenFrs)
+        for (const fr of frs) if (frScreens.has(fr) && !frScreens.get(fr).has(s)) oneSided += 1;
+      return oneSided;
+    },
+  },
+
   // ── The archive's own size, claimed twice and guarded neither time until task 165 ──
   //
   // `archived_tasks.md`'s preamble and `task.md`'s opening sentence each state how much has closed,

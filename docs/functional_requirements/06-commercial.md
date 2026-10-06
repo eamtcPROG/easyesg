@@ -399,7 +399,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 |---|---|
 | **Actors** | OA. |
 | **Traces** | UC-99 · D-8 · FR-110 · FR-118 |
-| **Surfaces** | S-24 · S-19 (entered for a cycle change) · no API path exists |
+| **Surfaces** | S-24 · S-19 (entered for a cycle change) · no API path exists · S-01 · S-28 |
 
 **Preconditions.** An active paid subscription (UC-99).
 

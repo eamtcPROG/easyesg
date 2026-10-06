@@ -143,7 +143,7 @@ Business rules held here: BR-VER-1, BR-VER-3, BR-ID-6, BR-ACC-6 (§5). Entities 
 |---|---|
 | **Actors** | The build refuses. PA works the queue (A-03). A user sees the fallback and nothing else. |
 | **Traces** | UC-74, UC-14 · UX-97 · NFR-91 · OQ-43 · entity *Fallback log entry* |
-| **Surfaces** | `pnpm test` in `packages/i18n` and `apps/web` · A-03's queue · `FallbackReporter` |
+| **Surfaces** | `pnpm test` in `packages/i18n` and `apps/web` · A-03's queue · `FallbackReporter` · S-33 |
 
 **Behaviour.**
 1. **Catalogue text.** Every locale's catalogue is present at build time. A key in the source catalogue (`ro`) and absent from another locale fails the build (OQ-43). The same comparison runs over `packages/i18n`'s shared catalogues, over each taxonomy version's disclosure catalogues and over `apps/web`'s messages.
@@ -226,7 +226,7 @@ Registering a version and authoring a mapping write configuration. A migration r
 |---|---|
 | **Actors** | Every member of the organization reads the pair. No request-tier caller writes it. |
 | **Traces** | UC-56, UC-75 · NFR-3 · DR-4, DR-6, P-4 · BR-VER-1 · entities *Report*, *Reporting period* |
-| **Surfaces** | `templateVersion`, `taxonomyVersion` on `GET /reports`, `GET /reports/{id}` and the period reads · S-06 and S-14 |
+| **Surfaces** | `templateVersion`, `taxonomyVersion` on `GET /reports`, `GET /reports/{id}` and the period reads · S-06 and S-14 · A-04 · S-39 |
 
 **Behaviour.**
 1. The period is where the version is **determined**, by the adoption schedule at the period's start. The report is where it is **stored**. The report's pair is copied from its period when the report is created and is never resolved a second time (§12.5.6 task-31.3 row).
@@ -399,7 +399,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 |---|---|
 | **Actors** | PA maintains (A-05, elevated session). RC and SYS read the set a run applies (FR-34). |
 | **Traces** | UC-80, UC-171 · FR-34, FR-35 · NFR-19, NFR-34, NFR-85, NFR-87 · DR-3, DR-4, AD-4 · BR-CALC-2 · entity *Emission factor set* |
-| **Surfaces** | A-05 · the `emission_factor_set` artefact · the calculator's `FactorSets` port |
+| **Surfaces** | A-05 · the `emission_factor_set` artefact · the calculator's `FactorSets` port · S-09 |
 
 **Inputs.** A set per country, carrying: a label a reader is shown (for example `2026.1`); a validity window of calendar dates (NFR-34); and per energy source the invoice units it may be entered in with each unit's MWh, a tCO₂e per MWh factor, a GHG scope (`scope_1` or `scope_2_location_based`) and a citation printed beside the figure it produces. Decimals are strings (§7.3). Names are catalogue keys, not wording (OQ-43). (§12.5.6 task-37 row (1).)
 
@@ -557,7 +557,7 @@ The administrative console is a separate application on a separate host, a clien
 |---|---|
 | **Actors** | PA and BO sign in. A tenant account is refused. |
 | **Traces** | UC-68, UC-212 · D-5 · NFR-64, NFR-65, NFR-69 · AD-9, AD-12 · entity *Platform administrator account* |
-| **Surfaces** | A-01 · `POST /auth/admin/session/challenge` · `POST /auth/admin/session` · `GET /auth/admin/session` · `DELETE /auth/admin/session` · `POST /auth/admin/session/recovery` |
+| **Surfaces** | A-01 · `POST /auth/admin/session/challenge` · `POST /auth/admin/session` · `GET /auth/admin/session` · `DELETE /auth/admin/session` · `POST /auth/admin/session/recovery` · A-20 |
 
 **Preconditions.** An administrator account exists with a second factor enrolled (UC-68). An account comes into existence only through an invitation whose acceptance sets a password and confirms the factor (FR-80), or through the provisioning CLI.
 
@@ -653,7 +653,7 @@ The administrative console is a separate application on a separate host, a clien
 |---|---|
 | **Actors** | PA is refused. |
 | **Traces** | UC-69, UC-85 · D-5 · NFR-66 · BR-ACC-6 · P-4 |
-| **Surfaces** | `/admin/organizations/{organizationId}/support-access/{requestId}/reports[…]` · the admin routes as a whole |
+| **Surfaces** | `/admin/organizations/{organizationId}/support-access/{requestId}/reports[…]` · the admin routes as a whole · A-02 |
 
 **Behaviour.** This requirement is verified by showing the prohibited state is unreachable (index §2.5.3).
 1. No admin-realm route returns report content except the reads under a live grant (FR-78). The register returns counts and metadata only (FR-76).
@@ -768,7 +768,7 @@ The administrative console is a separate application on a separate host, a clien
 |---|---|
 | **Actors** | PA manages accounts of both realms (A-08). PA and BO each manage their own credentials (A-19). The invitee accepts (A-20). |
 | **Traces** | UC-87, UC-212, UC-68 · NFR-64, NFR-65 · D-5 · `actors.md` OQ-6 · entity *Platform administrator account* |
-| **Surfaces** | A-08, A-19, A-20 · `/admin/accounts` · `/admin/invitations` · `/auth/admin/invitation/{preview,enrolment,acceptance}` · `/admin/credentials` |
+| **Surfaces** | A-08, A-19, A-20 · `/admin/accounts` · `/admin/invitations` · `/auth/admin/invitation/{preview,enrolment,acceptance}` · `/admin/credentials` · A-01 |
 
 **Behaviour.**
 1. **A PA manages both realms' accounts.** Managing an account is not billing authority, so separation of duties holds at the level of the actions each realm may take (`actors.md` OQ-6; task-67.4 row (1)).
@@ -867,7 +867,7 @@ The administrative console is a separate application on a separate host, a clien
 |---|---|
 | **Actors** | PA configures (A-18). A user meets the result on S-01. |
 | **Traces** | UC-70, UC-02, UC-05, UC-09 · D-6 · NFR-69 · BR-ID-6 · entity *Provider identity* |
-| **Surfaces** | A-18 · `GET /admin/identity-providers` · `POST /admin/identity-providers/{provider}/configuration`, `/enablement`, `/disablement` · `GET /auth/social/providers` |
+| **Surfaces** | A-18 · `GET /admin/identity-providers` · `POST /admin/identity-providers/{provider}/configuration`, `/enablement`, `/disablement` · `GET /auth/social/providers` · S-01 |
 
 **Inputs.** For Google or Microsoft: a client id, an issuer, redirect addresses and the revision the edit was read at. The requested scopes are shown and fixed at FR-2's three.
 

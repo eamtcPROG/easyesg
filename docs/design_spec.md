@@ -32,7 +32,7 @@ It is not a visual style guide, a page-by-page mockup set, or a component librar
 
 MVP scope is the VSME Basic Module B1–B11 **and the Comprehensive Module C1–C9** (promoted 25 Aug 2026, `problem_overview.md` OQ-12 — Comprehensive is a report-level scope flag per D-A, additive over Basic and sold as its own plan scope), self-serve billing, and three live locales — RO (source), EN, RU (§9.1, OQ-1, resolved 18 Aug 2026).
 
-Deliberately not designed for MVP: per-user density switching; user-configurable dashboards; in-product chat support; report collaboration with simultaneous multi-user editing and presence; commenting and review workflow on disclosures; notification assignment and escalation chains; right-to-left support for a fourth locale; native mobile applications; Comprehensive Module screens beyond the Basic Module; XBRL viewer surfaces (Phase 2); buyer and licensee portal surfaces (Phase 2 relationship types). Advisor screens are MVP (UC-196 … UC-211) and are specified in `task.md` tasks 118 and 119; they have no S-nn or A-nn yet.
+*(Corrected 6 Oct 2026: this list named "Comprehensive Module screens beyond the Basic Module", which stopped being true when C1–C9 were promoted on 25 Aug 2026 — they are authored inside S-07, with the scope chosen on S-39.)* Deliberately not designed for MVP: per-user density switching; user-configurable dashboards; in-product chat support; report collaboration with simultaneous multi-user editing and presence; commenting and review workflow on disclosures; notification assignment and escalation chains; right-to-left support for a fourth locale; native mobile applications; XBRL viewer surfaces (Phase 2); buyer and licensee portal surfaces (Phase 2 relationship types). Advisor screens are MVP (UC-196 … UC-211) and are specified here: S-40 (the client roster), S-41 (the request form) and S-42 (the consolidated client status board) are theirs alone, and S-04, S-16, S-17, S-22, S-26, S-37, A-09 and the organization switcher are amended to serve the rest of the group (§4.4). None has an artboard, so each is composed from the shared archetypes (`architecture.md` §12.5.6, 182/168), and a need those do not meet is added to the inventory first (UX-89).
 
 Each deferred item is an addition to the screen inventory (§4.4) and the component inventory (§11.5) when its requirement is admitted, not a redesign of this specification.
 
@@ -48,7 +48,7 @@ This document is one of seven baseline files. Each register is owned by exactly 
 | `functional_requirements.md` | `FR-1` … `FR-173` |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred) |
 | `architecture.md` | `AD-1` … `AD-14`, `DR-1` … `DR-11` — this file consolidates, and replaces, the two source titles *Architecture Overview (MVP)* and *System Architecture (MVP)* |
-| `design_spec.md` (this file) | `UX-1` … `UX-138`, `S-01` … `S-38`, `A-01` … `A-20` |
+| `design_spec.md` (this file) | `UX-1` … `UX-142`, `S-01` … `S-42`, `A-01` … `A-20` |
 
 Where this document and any of those disagree, they win on their subject and this document is amended.
 
@@ -248,6 +248,10 @@ artboards keep) and that is not a duplicate: the tier states where you are, the 
 
 **UX-5** The wizard shall suppress the workspace tier and replace it with the module list, so that the user's only navigational choice inside a report is *which module*. Exit from the wizard shall be a single, always-visible, explicitly labelled control that states that work is saved.
 
+*(The switcher has no `S-nn`. Append after UX-3's paragraph on the equivalent screen, and to §4.5's UC-16 row.)*
+
+- **Amended 6 Oct 2026 (project owner): an advisory firm's clients join the switcher (UC-205, FR-199; task 118.2).** The menu offers the organizations the account is a member of **and** the clients its firm holds an active, unexpired relationship with — within the staff member's scope, the Administrator being bound by none (182/144) — rather than a parallel menu, and the current one is marked as any is. **Choosing a client asks the server**, which verifies the relationship and sets the session's **one** tenant context to that client; an advisor session never holds two (D-15, UX-2 unchanged: the active organization is the client and is visible as such). A choice the server refuses (403 `advisor-access-refused`) leaves the session where it was and says why by the `standing` member, in three parts. **Where the switch lands** is UX-3's rule unchanged: the firm's screens (S-40, S-42) have no equivalent in a client, so the client's home (S-05); coming back, the firm's landing (OQ-26 (1): the firm's Home, under its own tier). **Inside the client the advisor holds an editor's rights over the entities the grant covers** (UC-205 step 4), so the role-locked sections of §4.2's amendment of 28 Sep 2026 — *Organization*, *Users & access* — are drawn locked as they are for an editor. What the switcher's detail line and the chrome say of an advisor inside a client, as the role line says *editor* for a member, is (OQ-26 (2): the switcher's line names the firm, and no banner).
+
 ### 4.3 Primary navigation flow
 
 ```mermaid
@@ -295,9 +299,9 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | S-01 | Sign in / register / provider choice | CA | UC-01 … 05, UC-194, UC-195 | Focus |
 | S-02 | Verify email · reset password · set password | CA | UC-03, 08, 09 | Focus |
 | S-03 | Accept invitation | CA | UC-15 | Focus |
-| S-04 | Create organization | OA | UC-49 | Focus |
+| S-04 | Create organization | OA | UC-49, UC-196 | Focus |
 | S-05 | Home / organization overview | all | UC-16, 67 | Workspace |
-| S-06 | Reports index | RC, OA | UC-17 | Index |
+| S-06 | Reports index | RC, OA | UC-17, UC-213 | Index |
 | S-07 | **Report wizard — module step** | RC | UC-18 … 31, 37, 45, 46, 183 … 192 | Wizard |
 | S-08 | Validation panel (in-wizard, persistent) | RC | UC-37 … 40 | Panel |
 | S-09 | Carbon calculator | RC | UC-32 … 34 | Wizard sub-flow |
@@ -307,29 +311,33 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | S-13 | Entities index and entity record | OA | UC-51 … 55 | Index + Record |
 | S-14 | Reporting periods | OA | UC-56 … 58 | Index + Record |
 | S-15 | Organization profile | OA | UC-50 | Record |
-| S-16 | Users & access | OA | UC-59 … 64, 175 | Index |
-| S-17 | Plan, entitlements and usage | OA | UC-65, 66 | Status |
+| S-16 | Users & access | OA | UC-59 … 64, 175, 197, 198, 201 … 204 | Index |
+| S-17 | Plan, entitlements and usage | OA | UC-65, 66, 209 | Status |
 | S-18 | Plan comparison and selection | OA | UC-96 … 98 | Comparison |
 | S-19 | Order, summary and confirmation | OA | UC-110 … 115 | Wizard |
 | S-20 | Payment hand-off and return | OA | UC-116 … 121 | Focus + Status |
 | S-21 | Payment instruments | OA | UC-118, 119 | Index |
-| S-22 | Invoices and documents | OA | UC-132, 157 | Index |
+| S-22 | Invoices and documents | OA | UC-132, 157, 209 | Index |
 | S-23 | Billing account | OA | UC-108 | Record |
 | S-24 | Subscription status and history | OA | UC-99 … 107 | Status + Index |
 | S-25 | Enterprise request | OA | UC-153 | Focus |
 | S-26 | Notification centre | CA | UC-165 … 167 | Index |
 | S-27 | Profile, language, notification preferences | CA, all | UC-13, 14, 168 | Record |
 | S-28 | Credentials and linked identities | CA | UC-10 … 12, UC-193 | Record |
-| S-29 | Marketing home | VI | UC-177 | *escalated — OQ-17* |
-| S-30 | Legal documents (terms · privacy · cookies) | VI, all | UC-178 | *escalated — OQ-17* |
+| S-29 | Marketing home | VI | UC-177 | Content |
+| S-30 | Legal documents (terms · privacy · cookies) | VI, all | UC-178 | Content |
 | S-31 | Cookie choice | VI | UC-179 | Focus |
 | S-32 | Help centre | VI, CA | UC-180 | Index |
-| S-33 | Help article | VI, CA | UC-181 | *escalated — OQ-17* |
+| S-33 | Help article | VI, CA | UC-181 | Content |
 | S-34 | Write to support | VI, CA | UC-182 | Focus |
 | S-35 | Organization unavailable | CA | UC-16 (failure path) | Focus |
 | S-36 | Complete your account | CA | UC-02, UC-03 | Focus |
-| S-37 | Choose organization | CA | UC-16 | Focus |
+| S-37 | Choose organization | CA | UC-16, UC-203 | Focus |
 | S-38 | Unsubscribe from an email | CA | UC-173, UC-168 | Focus |
+| S-39 | New report | RC, OA | UC-18, UC-192 | Focus (inside the workspace chrome) |
+| S-40 | Client roster | AD | UC-199, UC-200, UC-205 | Index |
+| S-41 | Request access to a client | AD | UC-198 | Focus (inside the workspace chrome) |
+| S-42 | Consolidated client status board | AD | UC-206, UC-207 | Index |
 | A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | Focus |
 | A-02 | Organization register | PA | UC-69, UC-214 | Index |
 | A-03 | Content and translation console | PA | UC-71 … 74 | Editor + Publish |
@@ -338,7 +346,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | A-06 | Adoption metrics | PA | UC-83, 84 | Dashboard |
 | A-07 | Support access request and audit log | PA | UC-85, 86 | Focus + Index |
 | A-08 | Admin accounts and system audit log | PA | UC-87, 88 | Index |
-| A-09 | Plan catalogue, entitlements, pricing, discounts | BO | UC-89 … 95 | Editor |
+| A-09 | Plan catalogue, entitlements, pricing, discounts | BO | UC-89 … 95, 208 | Editor |
 | A-10 | Reconciliation workspace | BO | UC-137 … 140 | Exception queue |
 | A-11 | Collections and dunning | BO | UC-141 … 144 | Exception queue |
 | A-12 | Invoicing, credit notes, numbering series | BO | UC-126 … 136 | Index + Record |
@@ -351,7 +359,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | A-19 | My credentials (operator's own password, second factor, recovery codes) | PA, BO | UC-212 | Record |
 | A-20 | Accept an administrator invitation | PA, BO | UC-87 | Focus |
 
-**Count:** 58 screens — 38 tenant (`S-01 … S-38`) and 20 administrative (`A-01 … A-20`). **S-38 was added 23 Sep 2026** with task 52.2.2, when FR-169's one-click unsubscribe needed a page: a link that switched off on `GET` would be followed by the scanners that prefetch a message's links. **S-37 was added 15 Sep 2026** with task 83, when §4.3's *Choose organization* step became a screen of its own rather than a prompt in the global tier. **S-36 was added 14 Sep 2026** with task 155, when a provider registration gained its password and name steps. **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
+**Count:** 62 screens — 42 tenant (`S-01 … S-42`) and 20 administrative (`A-01 … A-20`). **S-39 … S-42 were added 6 Oct 2026** (project owner): S-39 *New report* closes OQ-21, and S-40 … S-42 are the advisor firm's roster, request form and status board (OQ-26); the other advisor use cases are served by amendments to S-04, S-16, S-17, S-22, S-37 and A-09. **S-38 was added 23 Sep 2026** with task 52.2.2, when FR-169's one-click unsubscribe needed a page: a link that switched off on `GET` would be followed by the scanners that prefetch a message's links. **S-37 was added 15 Sep 2026** with task 83, when §4.3's *Choose organization* step became a screen of its own rather than a prompt in the global tier. **S-36 was added 14 Sep 2026** with task 155, when a provider registration gained its password and name steps. **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
 
 ### 4.5 Use cases served without a dedicated screen
 
@@ -409,6 +417,176 @@ Ten templates. Every screen is an instance of one; a screen that fits none is an
 
 **Resolved 18 Aug 2026 (OQ-7).** Two labels in the inventory are not among the nine: *Wizard sub-flow* (S-09) and *Comparison* (S-18). They are **compositions, not archetypes** — S-09 composes **Wizard**, S-18 composes **Index/Status** — and the rule is now stated rather than implied: **a composition inherits the complete state set of its base archetype and defines no states of its own.** That satisfies UX-8, which requires every archetype to define every state before an instance is designed: a composition has a full state definition, inherited. Adding two more archetypes was rejected — it would put two names on one state set, which is what OQ-4's validation-state finding shows going wrong elsewhere.
 
+### 4.7 Navigation elements per screen
+
+*Added 6 Oct 2026 (project owner).* §4.2 says which tiers exist and §4.3 how a reader moves between screens. This section says **which navigation elements each screen carries**: the breadcrumb, the way back, and, for a list, its filters, search, sort and paging. Four rules decide every row of the table below, so a new screen is filled in by applying them, not by choosing again.
+
+**UX-139 Breadcrumb.** A tenant or advisor page **below a workspace section's root address** carries the Breadcrumb (§11.5) in its Page heading: records, sub-pages, history, S-39's report creation, the calculator inside a report. The trail runs outermost first, each step named as its page names itself, and the current page is text, never a link. The following have none:
+- a section's root: S-05 Home, S-06 Reports, S-13's index, S-15, S-16, S-17, S-26 — the workspace tier already says where the reader is;
+- a Focus screen — one task, no navigation (§4.6);
+- the wizard — UX-5's module list is its only navigation;
+- the console — its records open in dialogues (§5.2), so no console page is ever below another.
+
+The one Content page placed beneath another, the help article (S-33), takes *Help centre / <article>*.
+
+**Where a prototype draws a trail it governs (OQ-10).** `EasyESG Commerce.dc.html` draws one on the order (S-19, a Wizard) and on the Enterprise request (S-25, a Focus screen), and the owner gave one to S-39's creation flow. So those three carry a trail although their archetypes otherwise would not. A **Panel** (S-08, S-11's dialogue, S-12 opened from a field) carries none: it sits beside the page it serves and closes back to it.
+
+**UX-140 The way back.** Two controls, never confused:
+- **↑ Up:** the Page heading's arrow, one level up the breadcrumb. It appears exactly where a breadcrumb does.
+- **↩ Back-to-context** (§11.5): returns to the place the reader came from. It appears on a screen entered from several places — the calculator, the preview, the export dialogue, field history, plan comparison, the cookie choice, write to support, the help article — where "one level up" would be the wrong answer.
+
+A Focus screen offers **Cancel** where there is somewhere to cancel to; a first-use screen with nowhere to return (S-03, S-37, S-38) offers neither. The wizard offers its one **Exit** (UX-5): S-07 draws it as an arrow back to the reports, and it is still an exit, stating that the work is saved, not an up-step. A Panel offers **Close**, returning focus to the field or row that opened it.
+
+**One arrow when a page has both a trail and several origins** (S-14's amendment, 30 Sep 2026, generalised): it returns to the origin when the address names one, and goes up the trail otherwise. The table writes this as *↩ to origin (↑ … if none)*. The browser's own back always works and is never the only way back.
+
+**UX-141 Lists.** Every Index, Exception-queue and Dashboard screen states four things below:
+- its **filter facets**, named from the data it shows;
+- whether it has **text search**, and over what;
+- its **default sort**;
+- its **paging**: 25, 50 or 100 rows with 25 the default, every part of it in the URL (§5.2's rule, applied to the tenant lists too), or *not paged* where the api answers whole and the list says how many rows it holds.
+
+A facet already named by a screen's spec or its amendments is copied here unchanged. One marked *(derived 6 Oct 2026)* was read from the screen's content and use cases on that date, and the task that builds the screen may challenge it. A challenge amends this table, not the task.
+
+**UX-142 What every page has and the table does not repeat.** The skip link; on an authenticated tenant page, the global tier (organization switcher, notification bell, user menu, help) and the workspace tier (§4.2); on a console page, the console bar and its side navigation (below). Only what differs from these is listed per screen.
+
+#### Tenant and public screens
+
+Key. `<report>` is the report as the wizard bar names it, e.g. *VSME 2025 — Basic Module*. `↑` is the Page heading's arrow (one level up); `↩` is Back-to-context (where the reader came from). Where a page has a trail and several origins, the one arrow returns to the origin when the address names one and leads up otherwise (S-14's amendment, applied to the rest). Every page carries the skip link; the organization switcher and notification bell are the global tier's. Trail step names follow the prototypes where they draw the page (`EasyESG Commerce.dc.html` draws *Plan & billing / Compare plans* and so on). S-39 has no `S-nn` row yet, so its row rests on OQ-21, S-06's amendment of 30 Sep 2026 and the built flow.
+
+| Screen | Breadcrumb trail | Back | Filters | Search | Default sort | Paging | Other navigation |
+|---|---|---|---|---|---|---|---|
+| S-01 Sign in / register / provider choice | — | Cancel → S-01 password step (factor step only) | — | — | — | — | Sign in and Register as two routes; reset-password link on the password label row; factor step has its own address (`/sign-in/factor`) |
+| S-02 Verify email · reset · set password | — | Cancel → S-01 (reset request only) | — | — | — | — | Request a new confirmation link; success exits to S-01, S-04 or S-03; no cancel on a link landing |
+| S-03 Accept invitation | — | — | — | — | — | — | Sign in and register are routes to S-01 carrying `?return=` back here; the unusable-link exit is the way out |
+| S-04 Create organization | — | Cancel → origin (S-05 or S-37), only where a membership exists | — | — | — | — | None on first use; create exits to S-05 |
+| S-05 Home / organization overview | — | — | None (derived 6 Oct 2026) | — | Soonest deadline first; passed due dates marked | Not paged (derived 6 Oct 2026) | Workspace tier, Home current; filing rows → S-14 / S-07; resume → S-07; links to S-06, S-13, S-15, S-16, S-17, S-26 |
+| S-06 Reports index | — | — | Entity · Fiscal year · Status (open, locked, ready to file, filed) | Yes: entity name, fiscal year (derived 6 Oct 2026) | Last activity, newest first | 25/50/100, default 25 | *New report* → S-39 at the filter row's end (hidden for view-only); row opens S-07; row ⋯ Delete (administrator, consequence dialogue) |
+| S-07 Report wizard — module step | — (module list replaces it) | Exit → S-05 or S-06 (states that work is saved) | — | — | — | — | Module list: rail at wide, strip at 834, stepper + *All modules* drawer at 390; foot *Back: Bn* / *Next: Bn*; bar *Export*, *Review*, ⋯ at 390; opens S-08, S-09, S-10, S-11, S-12 |
+| S-08 Validation panel | — | — | — | — | — | — | Dismissible panel beside S-07; each finding links to its field; *Check my report* |
+| S-09 Carbon calculator | Reports / `<report>` / B3 / Carbon calculator | ↩ to origin (B3 step in S-07; ↑ B3 if none) | — | — | — | — | Site chips (All sites, each site); one source per screen with *n of N* at 390; open derivation is an address; spreadsheet import |
+| S-10 Report preview | Reports / `<report>` / Preview | ↩ to origin (S-07 module or S-11; ↑ report if none) | — | — | — | — | Contents list; page navigation; preview language choice; *Export* → S-11 |
+| S-11 Export dialogue and history | Reports / `<report>` / Export | ↩ to origin (S-07, S-10 or the notification; ↑ report if none) | Format · Language · Taxonomy version (derived 6 Oct 2026) | None (derived 6 Oct 2026) | Newest first | 25/50/100, default 25 | Export dialogue is a panel (format, language); row *Download*; long job reports to S-26 |
+| S-12 Field change history | Panel from a field: —; record-level page: Reporting entities / `<entity>` / History | ↩ to origin (focus returns to the field) | — | — | Timeline, newest first | — | Dismissible non-modal panel; close; step through entries |
+| S-13 Entities index and entity record | Index: —; record: Reporting entities / `<entity>`; create: Reporting entities / Add an entity | Record and create: ↑ to Reporting entities (asks first if unsaved) | Standing (active, archived) | Yes: name, IDNO (prototype; derived 6 Oct 2026) | Standing, active first, then name | 25/50/100, default 25 | *Add an entity* at filter row's end; row buttons *periods* and *edit* / *view*; record side column *Periods on this entity*, *Archive* |
+| S-14 Reporting periods | Index: Reporting entities / `<entity>` / Reporting periods; record: … / `<period>`; create: … / New period | ↩ to origin (S-13 list, S-13 record, or S-39 with entity kept; ↑ entity record if none); record and create: ↑ to Reporting periods | Standing (open, locked) | None (derived 6 Oct 2026) | Fiscal year, newest first | 25/50/100, default 25 | *Open a period* at filter row's end; row button *edit* / *view*; lock and reopen via consequence dialogues; unsaved-changes ask; row → S-07 |
+| S-15 Organization profile | — | — | — | — | — | — | Save / discard; link to S-23 for billing; legal identity is S-13's |
+| S-16 Users & access | — | — | Role (administrator, editor, viewer) · Standing (active, invited, invitation expired) | Yes: name, email (derived 6 Oct 2026) | Last activity, newest first | 25/50/100, default 25 (over the loaded list) | Dialogues `?panel=invite`, `?panel=remind[&person=]` from buttons at filter row's end; row *remind* + ⋯ (change role, promote, remove, resend, revoke) (derived 6 Oct 2026) |
+| S-17 Plan, entitlements and usage | — | — | — | — | — | — | Billing sub-nav (peer strip): Plan and usage · Compare plans · Subscription history · Invoices and documents · Billing account; links to S-18, S-24, S-25 |
+| S-18 Plan comparison and selection | Plan & billing / Compare plans | ↩ to origin (S-17, entitlement gate or notification; ↑ Plan & billing if none) | — | — | — | — | Billing sub-nav; cycle choice; plan select → S-19; *Start trial*; *Request Enterprise terms* → S-25 |
+| S-19 Order, summary and confirmation | Plan & billing / Compare plans / Order | Cancel → S-18 (discards an unpaid order, consequence dialogue) | — | — | — | — | Step list: 1 Plan and term, 2 Payment (no sub-nav); confirm → S-20, S-22 or S-24; S-23 to complete the billing account |
+| S-20 Payment hand-off and return | — | Cancel → S-19 (hand-off) | — | — | — | — | Hand-off has no workspace tier; return outcomes lead to S-24, S-19, S-22 or S-21; *Retry*, copy reference, download proforma |
+| S-21 Payment instruments | Plan & billing / Payment instruments | ↩ to origin (S-20, S-24 or notification; ↑ Plan & billing if none) | None, few rows (derived 6 Oct 2026) | — | Default first, then newest added (derived 6 Oct 2026) | Not paged, few rows (derived 6 Oct 2026) | Billing sub-nav; *Add* → provider via S-20; row ⋯ (set default, replace, remove; last-instrument consequence dialogue) |
+| S-22 Invoices and documents | Plan & billing / Invoices and documents | ↑ to Plan & billing | Document type (invoice, proforma, credit note) · Status · Year (derived 6 Oct 2026) | Yes: document number, purchase-order reference (derived 6 Oct 2026) | Date, newest first | 25/50/100, default 25 | Billing sub-nav; row *Download*; purchase-order reference recorded inline; links to S-23, S-24 |
+| S-23 Billing account | Plan & billing / Billing account | ↑ to Plan & billing | — | — | — | — | Billing sub-nav; save / discard; links to S-22, S-24 |
+| S-24 Subscription status and history | Plan & billing / Subscription history | ↑ to Plan & billing | Event type (derived 6 Oct 2026) | None (derived 6 Oct 2026) | Newest first | 25/50/100, default 25 | Billing sub-nav; actions through consequence dialogues (cycle, upgrade, downgrade, units, auto-renewal, cancel, reactivate); S-18, S-19, S-21, S-22 |
+| S-25 Enterprise request | Plan & billing / Compare plans / Request a quote | ↩ to origin (S-17 or S-18; ↑ Compare plans if none); Cancel → origin | — | — | — | — | Submit; the quote arrives by notification |
+| S-26 Notification centre | — | — | Read state tabs: Unread · All (category waits for a second category) | None | Newest first (toggle: oldest first) | 25/50/100, default 25 | Tabs *Unread*, *All*; *Mark all as read*; row opens subject (marks read), dismiss; preferences → S-27; bell opens the latest-notices panel |
+| S-27 Profile, language, notification preferences | — | — | — | — | — | — | Account rail replaces the band (workspace sections, then Profile · Credentials); chrome drawer at compact; section `#notifications`; save / discard |
+| S-28 Credentials and linked identities | — | — | — | — | — | — | Same account rail; each credential row opens in place, one at a time; exits to S-27 |
+| S-29 Marketing home | — | — | — | — | — | — | Public header (Sign in, Register, language, help); footer legal links; routes to S-32, S-30 |
+| S-30 Legal documents | — | ↩ to origin (footer link from any screen) | — | — | — | — | Tabs: Terms · Privacy · Cookies (each addressable); *On this page* contents; cookie section → S-31 |
+| S-31 Cookie choice | — | ↩ to origin | — | — | — | — | A section of the cookie policy in S-30; links to the privacy notice and the rest of the set |
+| S-32 Help centre | — | ↩ to origin (a signed-in reader returns into the product) | Topic (what the reader is doing) · Module (B1 … B11, C1 … C9) (derived 6 Oct 2026) | Yes: article titles and text (derived 6 Oct 2026) | Most-read first when browsing; relevance when searching (derived 6 Oct 2026) | 25/50/100, default 25 | Browse by topic; most-read set; row opens S-33; *Write to support* → S-34 |
+| S-33 Help article | Help centre / `<article>` | ↩ to origin (↑ Help centre if none) | — | — | — | — | *On this page* contents; *Read next*; module named at the top; *Contact support* → S-34; link into the product |
+| S-34 Write to support | — | ↩ to origin (S-32 or S-33); Cancel → origin | — | — | — | — | Sent state shows the reference to quote |
+| S-35 Organization unavailable | — | Exit (sign out) → S-01 | — | — | — | — | *Retry* re-runs the post-sign-in branch |
+| S-36 Complete your account | — | Exit (sign out) → S-01 | — | — | — | — | Step list: 1 Password, 2 Name and language, position stated; continues to the branch (S-04, S-05, S-35, S-37) or S-03 |
+| S-37 Choose organization | — | — | — | — | — | — | Each organization is the choice itself; *Create another organization* → S-04; sign-out is the global tier's |
+| S-38 Unsubscribe from an email | — | — | — | — | — | — | Success and already-off states link to S-27 notification preferences |
+| S-39 New report | Reports / New report | ↑ to Reports; Cancel → Reports (same place) | — | — | — | — | Choices ride the address (`?entity=`, `?period=`): standard (fixed), entity, period (years as buttons), pins shown; *Open a period* → S-14 and back; create → S-07 |
+| S-40 Client roster | — | — | Relationship state: pending, active, revoked, expired, declined, ended (derived 6 Oct 2026) | Client name (derived 6 Oct 2026) | Client name, A to Z (derived 6 Oct 2026) | 25/50/100, default 25 | *Request access* → S-41 at the filter row's end; a row enters its client; row ⋯ End engagement or Withdraw request |
+| S-41 Request access to a client | Client roster / Request access | ↑ to Client roster; Cancel → Client roster | — | — | — | — | A choice of two ways, account email or access code, one field each (OQ-26 (3)) |
+| S-42 Consolidated client status board | — | — | Client · Validation state · Overdue (derived 6 Oct 2026) | Client and entity name (derived 6 Oct 2026) | Soonest due date first, an overdue row first of all | 25/50/100, default 25 | *Export* at the filter row's end; a row enters its client, landing on its S-05 (OQ-26 (6)) |
+
+#### The console: its navigation map
+
+**The chrome** (§5.2, task 67.1): a dark top bar (wordmark, realm chip naming the operator's realm, account menu) over a dark side navigation in two headed sections, *Platform* and *Billing*, the current destination marked by a left rule and `aria-current`. Below `wide` the side navigation is not drawn and the bar's menu control opens the same sections in a drawer. There is no organization switcher, no notification bell and no workspace tier in the console. D-5: the console has no active organization.
+
+**What each role sees (§5.2, owner 13 Sep 2026, code `consoleSectionsFor`).** An operator sees only their own realm's section. The other section is not drawn; the realm guard, not the navigation, is the boundary.
+- **Platform Administrator (PA)**: the *Platform* section only.
+- **Billing Operator (BO)**: the *Billing* section only.
+- A section with no destination that renders is omitted. The navigation carries only what renders, so a destination enters it with its screen. **As built today, PA sees five destinations; BO sees none**, so a BO has no side navigation at all until A-09/A-10 ship.
+
+**Platform section, in order** (artboard labels in quotes; the code catalogue's Romanian labels are in the Notes):
+
+| # | Screen | Artboard label | Status |
+|---|---|---|---|
+| 1 | A-02 Organization register | "Organizations" | built, first (§5.2 A-02; code; artboard) |
+| 2 | A-08 Admin accounts and system audit log | "Admin accounts" | built, second (§5.2 A-08 "second destination, after A-02"; code) |
+| 3 | A-03 Content and translation | "Content & translation" | not built; position (derived 6 Oct 2026) |
+| 4 | A-04 Taxonomy versions, mappings, migration runs | "Taxonomy versions" | not built; position (derived 6 Oct 2026) |
+| 5 | A-05 Factor sets, thresholds, validation rules | "Factor sets & rules" | not built; position (derived 6 Oct 2026) |
+| 6 | A-06 Adoption metrics | "Adoption" | not built; position (derived 6 Oct 2026) |
+| 7 | A-07 Support access request and audit log | "Support access" | built (code places it after A-08) |
+| 8 | A-18 Identity provider configuration | "Identity providers" | built (code order) |
+| 9 | A-17 Notification categories and templates | "Notification templates" | built, last (code and artboard) |
+
+Built order is exactly `CONSOLE_DESTINATIONS`: A-02, A-08, A-07, A-18, A-17. The artboard's order is A-02, A-03, A-04, A-05, A-06, A-07, A-08, A-18, A-17. The two agree except for A-08, which the spec and code put second. The unbuilt A-03 … A-06 keep their artboard order and slot between A-08 and A-07 (derived 6 Oct 2026). The owner may prefer them directly after A-02, which would push A-08 to seventh and contradict §5.2 and the code.
+
+**Billing section, in order.** This is the artboard's order, which is also the inventory's A-id order. Nothing is built; the code's `billing` list is empty.
+
+| # | Screen | Artboard label |
+|---|---|---|
+| 1 | A-09 Plan catalogue, entitlements, pricing, discounts | "Plans & pricing" |
+| 2 | A-10 Reconciliation workspace | "Reconciliation" (queue-count badge) |
+| 3 | A-11 Collections and dunning | "Collections" (badge) |
+| 4 | A-12 Invoicing, credit notes, numbering series | "Invoicing" |
+| 5 | A-13 e-Factura transmission exceptions | "e-Factura" (badge) |
+| 6 | A-14 Refunds and chargebacks | "Refunds" (badge) |
+| 7 | A-15 Enterprise quotes and contracts | "Enterprise" |
+| 8 | A-16 Revenue, VAT export, billing audit ledger | "Revenue & VAT" |
+
+The artboard's queue-count badges, environment chip, command hint and build line arrive with what they point at (§5.2); none is drawn today.
+
+**Not in the side navigation:**
+- **A-01 Admin sign-in**: Focus screen, no chrome. Reached at the administrative host, from the realm guard (`?redirect=`), after sign-out, and from A-20.
+- **A-20 Accept an administrator invitation**: Focus screen. The emailed link A-08 sends is its only entry; no navigation reaches it.
+- **A-19 My credentials**: the account menu's first item, for both roles (owner, 14 Sep 2026, task 151). It is never a navigation destination, because the navigation is drawn per realm and A-19 belongs to neither. It is also reached from A-01 after a recovery sign-in.
+- The account menu holds A-19 and *sign out* only; no language row (the console is Romanian-only). The brandmark links `/`, which resolves to the operator's home.
+
+**Console entry flow** (code `app/routes/index.tsx`, `_realm.tsx`, `console-home.ts`; §5.2 A-01 Exits):
+1. The operator opens `/` or any console address. With no session, the realm guard sends them to **A-01**. From a deep address it carries `?redirect=`; from `/` it carries none, because the privilege level is not yet proven.
+2. A-01 runs credentials, then the second factor. A same-app `?redirect=` wins; otherwise they land on the **console home**: **A-02 for a Platform Administrator, A-10 for a Billing Operator**. A-10's route exists but the screen is not built, so a BO lands on an empty address today (a consequence the spec accepts).
+3. Lost authenticator or lock: the recovery sign-in, a third step in A-01's card, lands on **A-19** whatever `?redirect=` carried, with an arrival notice.
+4. A live session arriving at A-01 is answered by its own exit (UX-136), by address as well as by control.
+5. From home the operator moves by the side navigation. PA's usual chains:
+   - A-02 record → *Request support access* → A-07's request form → a grant's read-only reports (60 minutes, countdown) → back to the A-07 log.
+   - A-08 invite → emailed link → **A-20** → **A-01** with a notice → home.
+6. BO's chains run A-10 → A-12 → A-16, with A-11, A-13 and A-14 routing to A-12 (the spec's Exits).
+7. Sign-out from the account menu returns to A-01.
+
+#### The console: each screen
+
+Conventions for the console:
+- **No breadcrumb anywhere.** Records and forms open in addressable dialogues (§5.2, task 170); the side navigation states where the operator is. This is decision 1's "not in the console".
+- **No Page-heading up-arrow**, since there is no breadcrumb.
+- **Skip link and the global bar** are not repeated per row. Dialogues close with their close control and Esc; a consequence confirmation opens over them.
+- **Console lists** (§5.2 preamble): a row that opens something has a last column with a labelled *edit* or *view* button and, where it has its own actions, a ⋯ overflow menu whose every item also exists in the record. A paged list's footer shows position, rows per page 25/50/100 (default 25) and numbered pages, all in the URL. A list the api answers whole is not paged and states its row count beneath. Filter rows are symmetric.
+- For unbuilt screens, the cell is `(derived 6 Oct 2026)` where neither spec nor artboard fixes it. For built screens, the cell is what the code does.
+
+| Screen | Breadcrumb trail | Back | Filters | Search | Default sort | Paging | Other navigation |
+|---|---|---|---|---|---|---|---|
+| A-01 Admin sign-in (MFA) | — | — | — | — | — | — | Focus card, three steps: credentials → factor → recovery code. "Use a recovery code" from the factor step; "use another account" returns to credentials. Exits to console home, or A-19 after recovery |
+| A-02 Organization register | — | — | None. "No saved filters" is the 13 Sep 2026 decision; search, sort and paging only | Name or IDNO of any entity, `?q=` | Name A–Z (`?sort`, `?direction`); sortable: registered, entities, reports, activity | 25/50/100, default 25, numbered pages | Record dialogue (`?selected=`): member list, *Show* phone, release a lock. Row: *view* + ⋯ (Request support access → A-07). Home for PA; Platform item 1 |
+| A-03 Content and translation console | — | — | — | Keys by name (artboard "Filter keys") (derived 6 Oct 2026) | — | — | Key list + editor per locale; publish flow preview → scope → confirm → progress → result → revert (UX-123). Fallback queue and EFRAG label diff are views here (derived 6 Oct 2026) |
+| A-04 Taxonomy versions, mappings, migration runs | — | — | — | — | — | — | Version list (Draft/Live/Closed) → mapping editor → dry run → migration run page with progress, result, revert (derived 6 Oct 2026) |
+| A-05 Factor sets, thresholds, validation rules | — | — | — | — | — | — | Tabs per rule family: *Factor sets*, *Thresholds*, *Validation rules* (artboard draws factor sets and rules; derived 6 Oct 2026). Publish flow per UX-123 |
+| A-06 Adoption metrics | — | — | Period (artboard: rolling 90 days default); segment: language, module (derived 6 Oct 2026) | — | Funnel by module B1 … B11 then filing (artboard); top rule firings, most first | Not paged | Export CSV (logged). Dashboard figures with confidence marks |
+| A-07 Support access request and audit log | — | Request form: Cancel → A-07 log. Opened from A-02's record (`?organization=`); grant: *Close the reports* | None in spec or code (log is page-only) | — | Log: newest request first | Log: 25/50/100, default 25, numbered. In-progress region not paged | Regions: request form, in progress (grant countdown), reports under a grant (Back to reports / Back to modules), log. Dialogue per entry (`?entry=`); row *view* |
+| A-08 Admin accounts and system audit log | — | — | Roster: none. Log: operator, action, date range (`?operator`, `?action`, `?from`, `?to`) | — | Roster: address A–Z. Log: newest first | Roster: not paged, count beneath. Log: 25/50/100, default 25 | Two tables. Dialogues: account record (`?selected=`), invitation form (`?panel=invite`). Row *view* + ⋯ (suspend, reactivate, remove, release lockout, resend, revoke). Log has no action column |
+| A-09 Plan catalogue, entitlements, pricing, discounts | — | — | — | — | — | — | Plan matrix, price-version list (draft/current/superseded), *Discount codes*, publish flow (UX-123) (derived 6 Oct 2026) |
+| A-10 Reconciliation workspace | — | — | State (unmatched/held/resolved), channel, candidate (found/none), received date range (derived 6 Oct 2026) | Payer, reference typed, amount (derived 6 Oct 2026) | Oldest received first (artboard) | 25/50/100, default 25 (derived 6 Oct 2026) | *Import bank statement*; keyboard j/k/m; saved filters (spec). Record dialogue per payment (derived 6 Oct 2026); row ⋯ (match, hold, return). BO home |
+| A-11 Collections and dunning | — | — | Stage (notice 1, notice 2, final, suspended, paused), days overdue (derived 6 Oct 2026) | Organization name (derived 6 Oct 2026) | Next act date, soonest first (derived 6 Oct 2026) | 25/50/100, default 25 (derived 6 Oct 2026) | Saved filters (spec); notices-sent log below. Record dialogue per account; row ⋯ (advance, pause, suspend, restore, write off) (derived 6 Oct 2026) |
+| A-12 Invoicing, credit notes, numbering series | — | — | Issue month, document type, payment state, e-Factura state, series (derived 6 Oct 2026) | Document number, organization, IDNO (derived 6 Oct 2026) | Newest number first (artboard) | 25/50/100, default 25 (derived 6 Oct 2026) | *Numbering series* section. Document record in a dialogue (derived 6 Oct 2026); row ⋯ (credit note, resend to e-Factura, PDF). Entered from A-10, A-11, A-13, A-14 |
+| A-13 e-Factura transmission exceptions | — | — | Fixable by (company, back office, platform), state (failed, queued), rejection reason (derived 6 Oct 2026) | Invoice number, organization (derived 6 Oct 2026) | Oldest failure first (derived 6 Oct 2026) | 25/50/100, default 25 (derived 6 Oct 2026) | Saved filters (spec); *Retry all*. Rejection record in a dialogue, then → A-12; row ⋯ (correct, reissue) (derived 6 Oct 2026) |
+| A-14 Refunds and chargebacks | — | — | Type (refund, chargeback), state (awaiting approval, evidence needed, decided), deadline (derived 6 Oct 2026) | Organization (derived 6 Oct 2026) | Deadline soonest first, no-deadline rows after (artboard) | 25/50/100, default 25 (derived 6 Oct 2026) | Saved filters (spec). Record dialogue (evidence pack); row ⋯ (approve, reject, submit evidence) (derived 6 Oct 2026). Exits to A-12, A-16 |
+| A-15 Enterprise quotes and contracts | — | — | State (in negotiation, sent, signed, declined, expired), owner (derived 6 Oct 2026) | Quote number, organization (derived 6 Oct 2026) | Quote number, newest first (artboard) | 25/50/100, default 25 (derived 6 Oct 2026) | Record per quote or contract in a dialogue (derived 6 Oct 2026); row *edit* + ⋯ (amend, download PDF). Reached from S-25's request |
+| A-16 Revenue, VAT export, billing audit ledger | — | — | Period (month to date default); ledger: event type, status current/superseded, operator (derived 6 Oct 2026) | Ledger entry, invoice number (derived 6 Oct 2026) | Ledger: newest appended first (artboard); revenue figures unsorted | Ledger: 25/50/100, default 25 (derived 6 Oct 2026); dashboard not paged | VAT export, *Download ledger*. Entry opens read-only in a dialogue, no edit (artboard); settlement reconciliation in the Index |
+| A-17 Notification categories and templates | — | — | None; the list is the catalogue | — | The api's category order (not user-sortable) | Not paged, count beneath | Category dialogue (`?category=`). Row *edit* or *view* + ⋯ (revert, only when revertible). Publish flow: preview → disclosure → confirm → result → revert |
+| A-18 Identity provider configuration | — | — | None; two providers | — | Fixed order (Google, then Microsoft) | Not paged, count beneath | Provider dialogue (`?provider=`): connection form, state, accounts reached. Row *edit* + ⋯ (enable or disable, confirms) |
+| A-19 My credentials | — | ↩ to origin (the page the account menu was opened from), console home when none | — | — | — | — | Reached from the account menu (first item) or A-01 after recovery. Sections: password, second factor (re-enrol, two steps), recovery codes. Arrival notice |
+| A-20 Accept an administrator invitation | — | — | — | — | — | — | Focus card, steps: set password → scan or type secret → confirm code. Exit → A-01 on completion. Only the emailed link reaches it |
+
 ---
 
 ## 5. Screen specifications
@@ -422,6 +600,8 @@ Three limits on what follows must be stated plainly, because the alternative is 
 1. **Layout and regions** are given as the fixed elements the screen inherits from its archetype (§4.6) plus any region the source names explicitly (for example the wizard's module list, the disclosure field anatomy, the save-state indicator). The source specifies no per-screen wireframes, no column allocations and no pixel geometry. Where nothing further is stated, this document says so rather than filling the gap.
 2. **States** are drawn from the eleven-state model in §8.1. Only the states the source makes applicable are listed. `UX-90` requires every applicable state to be designed before implementation; the enumeration here is the checklist, not a design.
 3. **Entry points and exits** are derived from the navigation flow (§4.3), the use case preconditions, and the notification deep-link obligation (UX-4, UX-63). Where a route is not evidenced in the sources it is not asserted.
+
+**A screen's FRs line and each requirement's Surfaces row name each other** (6 Oct 2026): a requirement cited here cites the screen in its block in `functional_requirements/`, and the reverse. **Zero links between a screen and a requirement are one-sided**, and `pnpm docs:check` refuses one. An audit that day found 105 such links and closed them in both directions.
 
 ### 5.1 Tenant screens
 
@@ -438,7 +618,7 @@ Three limits on what follows must be stated plainly, because the alternative is 
 - **Validation behaviour:** credential failures are rate-limited and locked out after a threshold. **UX-108** applies with force here: no cognitive function test shall be required to sign in, and password managers and paste shall work everywhere.
 - **Exits:** per §4.3 — no memberships → S-04; exactly one membership → S-05; more than one → S-05 where the session names one still held, and S-37 otherwise (added 15 Sep 2026, task 83). Registration by password exits to the verification challenge (S-02).
 - **Use cases:** UC-01, UC-02, UC-03 (provider-asserted case), UC-04, UC-05, **UC-194, UC-195**.
-- **FRs:** FR-1, FR-2, FR-4, FR-82, FR-208. **Requirements:** NFR-95.
+- **FRs:** FR-1, FR-2, FR-4, FR-82, FR-208. **Requirements:** NFR-95. **Also** FR-5, FR-9, FR-10, FR-11, FR-204, FR-205 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 **The second-factor step was added 26 Aug 2026** (task 27.2's open-question batch), with UC-194 and
 UC-195. It is the same two-step shape A-01 already stages for the admin realm and it is deliberately
@@ -474,7 +654,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Exits:** on verification, the founding-organization flow (S-04) or a pending invitation (S-03) becomes available — **or, for an account registered through a provider, S-36's password step, open for 15 minutes from the confirmation** (added 14 Sep 2026, task 155); on reset completion, S-01.
 - **Against the session this browser holds** (project owner, 16 Sep 2026, task 160). **A reset that ends this browser's own session ends it here too**, so the exit to S-01 reaches the form rather than being turned away by UX-136's gate as though the session still stood. **A success reached while a different account is signed in says so and offers both ways** — switch, or stay: it names the signed-in address, and the confirmed one where the screen knows it (a reset link carries none it may show); its primary action signs out and opens S-01, carrying a pending invitation's way back; a second link continues as the current account to its own home. The case arises because confirming and resetting stay reachable while signed in (UX-136), a reset ends only its own account's sessions, and a signed-in account is always a verified one — so a confirmation reached while signed in is always for another address.
 - **Use cases:** UC-03, UC-08, UC-09.
-- **FRs:** FR-3, FR-6.
+- **FRs:** FR-3, FR-6. **Also** FR-1, FR-2 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-03 — Accept invitation
 
@@ -488,9 +668,9 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **States:** loading — initial; error — recoverable (invitation expired, already used, revoked — and **not found**, added 25 Aug 2026: a mistyped or truncated link is its own sentence rather than a variant of "expired", and `architecture.md` §12.5.6's task-26.2 row carries the four as a closed vocabulary the API publishes); error — permission (a provider identity asserting an address other than the invited one is refused, UC-15 — **and equally an existing session signed in as any other address**, which is the same refusal reached without a provider). **The permission state carries its own resolving action (25 Aug 2026):** it names the address the invitation is bound to alongside the one currently signed in, and offers to sign out and return here as the invited person — the second way out being to ask the administrator for an invitation to the address actually in use.
 - **A signed-in reader is never told to sign in** (project owner, 16 Sep 2026, task 114; UX-136's last clause). The exit under an unusable link and the callout after a refused acceptance are **remedies**, and each offers the one that fits the reader the screen actually has: **signed in, their own home page** — wherever §4.3's branch sends this session, which is S-05 for most and S-04 or S-37 where that is what the account needs — worded as the product's other *go to the home page* exits; **signed out, sign in**, as before; and **a session that ended while accepting, sign in and come back to this invitation**, since the invitation was usable a moment ago. The already-used sentence has a signed-in wording too — *if you accepted it yourself, the organization is already one of yours* — because its signed-out wording tells the reader to sign in; the other three unusable sentences never mention signing in and have one wording each.
 - **Validation behaviour:** the invitation binds to the invited email address; a social sign-in is accepted only where the provider asserts that same address.
-- **Exits:** S-05 in the newly joined organization. **An invitee who registered through a provider completes S-36 first and returns here to accept** (added 14 Sep 2026, task 155).
+- **Exits:** S-05 in the newly joined organization; S-01, handing a live invitation to sign-in when the reader has no session. *(Exit added 6 Oct 2026, matching that screen's entry points.)* **An invitee who registered through a provider completes S-36 first and returns here to accept** (added 14 Sep 2026, task 155).
 - **Use cases:** UC-15.
-- **FRs:** FR-11.
+- **FRs:** FR-11. **Also** FR-1, FR-2 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-04 — Create organization
 
@@ -505,7 +685,8 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** required-field validation on the identity fields; the deeper fiscal and identifier validation belongs to S-13 (the identifiers are each entity's since 29 Sep 2026) and S-23.
 - **Exits:** S-05.
 - **Use cases:** UC-49.
-- **FRs:** FR-13, FR-14.
+- **FRs:** FR-13, FR-14. **Also** FR-190 — the advisor amendment of 6 Oct 2026 (OQ-26).
+- **Amended 6 Oct 2026 (project owner): S-04 also creates an advisory firm's organization (UC-196, FR-190).** The screen first asks what the organization is — **a company that reports on itself, or an advisory firm that reports for clients** — which is the organization's own type (182/8), chosen from the registered vocabulary and recorded with it; **the company is the one preselected**, as the api reads an omitted type (`POST /organizations`) (OQ-26 (10)). **For a company nothing here changes**, including that creating it creates its first reporting entity. **For a firm the screen says what the act creates, and that it creates less:** the firm's organization and its own account — **no company and no report**, the server refusing both against it (182/8, FR-190 beh. 4, 409) — and that the person creating it becomes its **Advisor Administrator**, who is the organization administrator of an organization of this type and not a role of its own (182/2). The screen says what comes next — asking clients for access — and that **nothing of any client's is readable until the client grants it** (D-15). The identity fields are the same (OQ-26 (10)). Creation from an unverified account is not available, as for a company (UC-196). **Entry points** gain S-37's *create another organization*, which is how an existing account founds a firm. **Exits:** S-05 for a company; for a firm, the firm's landing (OQ-26 (1): the firm's Home, under its own tier). **Use cases:** UC-49, UC-196. **FRs:** FR-13, FR-14, FR-190.
 
 ### S-05 — Home / organization overview
 
@@ -523,9 +704,9 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **`loading — initial` became a region's rather than the screen's** (11 Sep 2026, task 115). The four regions are sibling Server Components and only the overview waits on a read of its own (`GET /periods`); the heading and the membership list resolve from the memberships the global tier is already reading, so the shell paints and the filings stream in behind one Suspense boundary. **The skeleton matches the region's commonest shape, not its widest**, which is the judgement *"matching the final layout"* leaves once a region can resolve four ways: three filing panels is what an organization with filings gets and what every reader sees after their first visit, while the empty, permission and recoverable-error arms are each a panel too — so the shift on those is a panel's height rather than a screen's. A spinner was built first and was wrong: UX-115 reserves those for *"indeterminate waits with no known shape"*, and here the shape is known — the uncertainty is over which of four, not whether there is one.
 - **Amended 5 Oct 2026 (project owner, task 182, 182/16): rows are periods only.** An entity with no period has no row, and S-13 is where it is seen. The periods of an archived entity stay in the table and are not attention items.
 - **Validation behaviour:** none of its own; it presents roll-ups computed by the validation service (§6.4).
-- **Exits:** S-06, S-07, S-13, S-14, S-15, S-16, S-17, S-26.
+- **Exits:** S-06, S-07, S-13, S-14, S-15, S-16, S-17, S-26; S-12 for record-level history. *(Exit added 6 Oct 2026, matching that screen's entry points.)*
 - **Use cases:** UC-16, UC-67.
-- **FRs:** FR-12, FR-23.
+- **FRs:** FR-12, FR-23. **Also** FR-9, FR-41, FR-54 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-06 — Reports index
 
@@ -540,9 +721,10 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** none of its own.
 - **Exits:** S-07; the report creation flow (see OQ-21), which returns here on cancel — **and by its arrow and its trail** (30 Sep 2026, below).
 - **Use cases:** UC-17, and UC-18 through the creation flow.
-- **FRs:** FR-25, and FR-26 through the creation flow.
+- **FRs:** FR-25, and FR-26 through the creation flow. **Also** FR-41, FR-66, FR-104, FR-177, FR-210 — the requirements whose blocks name this screen (added 6 Oct 2026).
 - **Amended 30 Sep 2026 (project owner): S-06 takes the conventions S-13 set, as S-14 did.** **The Index's *new report* stands at the end of the filter row**, after the three facets and on their baseline — S-13's row, below `wide` one control to a row with the action last — where it stood at the heading's end; a view-only member sees the facets without it (FR-25). The Index itself carries no trail and no arrow, being a section's own address. **The creation flow carries S-13's way back** — a breadcrumb above its title, *Reports / New report*, and an arrow before the title leading up to this Index. **The arrow leads up, not back to where the reader came from** (S-05's filing list is the flow's other way in): the owner's choice, so that the arrow, the trail's one step and *cancel* all lead to the same place. Neither the trail nor the arrow waits on a read, so both stand over every state of the flow, its loading state included; nothing is asked before leaving, since both choices live in the address.
 - **Amended 5 Oct 2026 (project owner, task 182, 182/14): the creation flow does not offer an archived entity.** S-13's Index keeps listing archived entities; the pickers that start new work, this flow's and the one that opens a period, do not.
+- **Amended 6 Oct 2026 (project owner): the creation flow is S-39, and OQ-21 closes.** Where this spec said *the report creation flow (see OQ-21)* — Exits, Use cases, FRs and the amendments of 30 Sep and 5 Oct 2026 — it now names S-39, whose entry points are this screen's *new report* action and its first-use empty state. The way back, the archived-entity rule and the filtered pickers stand as those amendments state them and are S-39's own. **Use cases:** UC-17; UC-18 through S-39. **FRs:** FR-25; FR-26 through S-39.
 
 ### S-07 — Report wizard — module step
 
@@ -563,7 +745,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** inline at the point of entry and rolled up per module and per report (UX-20); conditional fields appear and disappear live from B1 answers with an announcement naming the cause (UX-26, UX-27); a value entered into a field that subsequently disappears is retained and the user is told so (UX-28); year-over-year movement beyond a configured threshold raises `inconsistency`, not `error`, and states both values and the change (UX-33); B1 shall be completed before any conditional module is presented (UX-9).
 - **Exits:** exit control → S-05 or S-06; S-08; S-09; S-10; S-11; S-12.
 - **Use cases:** UC-18, UC-19, UC-20, UC-21, UC-22, UC-23, UC-24, UC-25, UC-26, UC-27, UC-28, UC-29, UC-30, UC-31, UC-37, UC-45, UC-46; and, through the draft-integrity pattern, UC-35 and UC-36 (see OQ-5).
-- **FRs:** FR-24, FR-26, FR-27, FR-28, FR-29, FR-30, FR-31, FR-32, FR-37, FR-38, FR-39, FR-40, FR-46, FR-47.
+- **FRs:** FR-24, FR-26, FR-27, FR-28, FR-29, FR-30, FR-31, FR-32, FR-37, FR-38, FR-39, FR-40, FR-46, FR-47. **Also** FR-5, FR-33, FR-34, FR-41, FR-42, FR-45, FR-54, FR-104, FR-177, FR-208, FR-210 — the requirements whose blocks name this screen (added 6 Oct 2026).
 - **Amended 30 Sep 2026 (project owner, task 179.1): the chrome is drawn as the artboards draw it** — the screen had shipped with a bare list of references and the exit, the indicator and the heading in one row. **The bar is `EasyESG Reporting Screens.dc.html`'s**, drawn on every step: a white bar beneath the global tier, **in place while the step scrolls beneath it**, as the workspace band it replaces is (§4.2, amended the same day). At its start the square arrow S-13 and S-14 draw, leading to S-06; beside it the report, named by its year and scope — *VSME 2025 — Basic Module* — and beneath that the company, the period and the report's standing in S-06's words: *Brutăria Lina SRL · 1 January – 31 December 2025 · in progress*. **The company is named although the artboard omits it**: an organization holds several companies (S-13), and the band names the organization, not the company. The title is not a heading; the step's is the page's one. At its end the save-state indicator, *saved* carrying the time of the last stored answer — *All changes saved · 12:04* — then *Export* and *Review the report*. **UX-5's exit is the arrow**: its name, which a screen reader hears, is the sentence the exit already carried — *leave the report; your work is saved* — and the indicator beside it says the same in view; the question about unsent changes and the check that the session is still held are unchanged. This is the reading of UX-5 the artboard takes, recorded here rather than as an amendment of that rule. **Export and Review are drawn and not yet available** (the owner's choice over leaving them out until their screens ship): each is shown disabled, stays reachable by keyboard, is heard as unavailable with its reason, and shows the reason when pressed; at 390 the ⋯ lists both, each saying it is not available yet. The artboards' collaborators' avatars are not drawn, having no source, and neither is *Check my report*, which is S-08's.
   **The module list is `EasyESG Reporting Core.dc.html`'s rail** (its *Wizard shell* and *S-07 Report wizard wide* frames). Each group — the Basic Module, and the Comprehensive Module where the scope carries it — heads with its name, how many of its modules are done out of those that count, a bar of one segment per module in its state's colour, and a sentence naming what is discounted and what waits. Each module is its reference and plain-language name — *B1 — Basis for preparation*, the names platform-authored in three locales and shipped with the release, as navigation shorthand rather than EFRAG's module titles (*amended 1 Oct 2026, project owner, at task 179's review*: NFR-24 is read as governing the labels a report shows and exports; `architecture.md` §12.5.6's task-179.1 row) — with a mark and a line in words: *Complete*, *In progress · 3 outstanding*, *Not started*, *Omitted*, *Waits on your B1 answers* — the artboard's *Appears once B1 is complete*, worded for what the module waits on, since the list never gates — or *Does not apply*. Omitted modules are discounted from the count (UX-21), and so are those B1 has ruled out (`architecture.md` §12.5.6's task-91.3 row). **The list holds the modules the report's scope asks** (*amended 1 Oct 2026, project owner, at task 179's review*): a Basic report's eleven, the Comprehensive group only where the scope carries it (FR-177, UX-9); a C module's address on a Basic report answers *not found*. The artboard's *In progress · 2 findings* waits on validation (task 42). No state is carried by colour alone. **At 834 the list is a strip and at 390 a stepper**, as *S-07/S-08 narrow* draws them: a row of references, each with its mark, the current one marked, and a *+n* that opens the whole list; at 390 the current module's reference, position and name, and *All modules*, which opens the list as a drawer. The bar shortens with the frame — at 390 the arrow, the title, the indicator and a ⋯ menu holding both actions.
 - **Amended 30 Sep 2026 (project owner, task 180): B1 opens with what the company record knows, and says so.** The record's values follow the company into B1 until B1 is first opened (FR-27 as amended), so a company filled in after its period opened arrives in the report. A value the record gave carries *From the company record* in the field's marker for as long as it still holds what the record gave — shown before it is stored as after — and a site the record gave is named by the company's name for it, *Site 1 — Bakery and offices*, until the reporter re-addresses it.
@@ -584,7 +766,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** this screen *is* the validation surface. Validation is runnable at any completeness and is idempotent (UX-24). Every finding shall be a link that moves focus to the originating field, scrolls it into view, and displays the rule explanation (UX-22); silent scroll without focus movement is an accessibility failure (§10.4).
 - **Exits:** focus moves into the originating field in S-07; export warning path into S-11.
 - **Use cases:** UC-37, UC-38, UC-39, UC-40.
-- **FRs:** FR-40, FR-41, FR-42, FR-43.
+- **FRs:** FR-40, FR-41, FR-42, FR-43. **Also** FR-44 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-09 — Carbon calculator
 
@@ -614,7 +796,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** none of its own; unresolved findings and reasoned gaps appear visibly marked rather than omitted (UX-25, UX-119).
 - **Exits:** S-11; back to S-07.
 - **Use cases:** UC-41.
-- **FRs:** FR-48.
+- **FRs:** FR-48. **Also** FR-36, FR-44 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-11 — Export dialogue and history
 
@@ -660,9 +842,9 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Controls and actions:** create; edit; define consolidation scope; archive.
 - **States:** empty — first use (teaching empty state offering entity creation); empty — filtered; loading — initial; loading — refresh; error — recoverable; error — permission; read-only (entitlement-reduced entities, UC-151); success.
 - **Validation behaviour:** explicit save with field-level validation on the Record archetype, unlike the wizard. Entity master data is retained point-in-time so a closed period's report continues to reflect the values in force (FR-18) — a consequence the interface states before an edit that would otherwise read as retroactive. Archiving is a consequence-disclosing action (§6.14): historical reports and exports remain intact and the interface says so.
-- **Exits:** S-14 for the entity's periods — **from the Index's periods column and the record's side panel** (29 Sep 2026, below); S-05; **the Index, from the record's breadcrumb** (28 Sep 2026).
+- **Exits:** S-14 for the entity's periods — **from the Index's periods column and the record's side panel** (29 Sep 2026, below); S-05; **the Index, from the record's breadcrumb** (28 Sep 2026); S-12 for the record's history. *(Exit added 6 Oct 2026, matching that screen's entry points.)*
 - **Use cases:** UC-51, UC-52, UC-53, UC-54, UC-55.
-- **FRs:** FR-16, FR-17, FR-18, FR-19, FR-20.
+- **FRs:** FR-16, FR-17, FR-18, FR-19, FR-20. **Also** FR-27, FR-54, FR-107 — the requirements whose blocks name this screen (added 6 Oct 2026).
 - **Amended 28 Sep 2026 (project owner)**, four changes from a review of the built screen. **The Index's add action stands at the end of the filter row**, on the facet's baseline — S-16's row and §5.2's symmetric one, below `wide` one control to a row with the action last — where the artboard drew it beside the heading. **The Record carries a breadcrumb above its title**, *Reporting entities / <the entity>*, as the record artboard draws it, in its create mode too (*… / Add an entity*): the create form had no way back but the workspace tier, and the tier did not mark the section there (§4.2's amendment of the same date). **The activity picker offers the classifier's first ten classes on its first focus**, read with the page so the list is there at once, and a typed search matches its words in any order and past an inflected ending, best match first — `architecture.md` §12.5.6's row of this date records what changed in the api and why classes. **Sites and the boundary's subsidiaries are lists of rows**: each row names itself — its name as typed, its position until then — with its fields side by side where there is room and its removal on the row's header line beside its name (corrected 29 Sep 2026, below); the add control closes the list, and an empty list says so. **Removing a row the store holds collapses it to a line saying the save will remove it, with an undo**, and nothing leaves the store until the save; a row added since the last save has nothing to keep and is dropped. Focus follows the press: into a new row's name, onto a collapsed row's undo, back into a restored row's name, and to the add control when a dropped row leaves nothing where it stood. The sites heading counts the sites the save will keep, as the artboard's *Sites · 1*. **The subsidiaries are offered once the basis is consolidated, or while any are held**: an individual boundary names none, and members stored under an earlier consolidated basis stay visible because the api keeps them whatever the basis says.
 - **Amended 29 Sep 2026 (project owner)**, from the same review of the rebuilt screen. **The record is the artboard's card** — the Record archetype's card form (§4.6): the groups inside one surface, ruled from one another rather than boxed, and the commit in the surface's foot bar — *unsaved changes* when something differs, then *discard* and *save* at its end. **Beside it, the side column carries the archive**, *Archived, never deleted*, with the sentence that says what survives it, for a stored entity that is not already archived; below 64rem of card it falls beneath the surface. The name and the legal form share a row, as the basis does with an empty half, and a site's fields form one line of a table once the row has room, the name the widest. **An arrow before the title goes back to the Index**, and the breadcrumb stands midway between the workspace tier and the title rather than close under the title. **While anything is unsaved, the arrow and the breadcrumb ask first** — a consequence dialogue naming the record, what is lost and, for a stored entity, that what was saved stays — and *stay* keeps every edit; a press that opens another tab is not asked about, and the workspace tier and the browser's own Back are not covered. **A row's removal sits on its header line and takes no focus on a press**: at the row's foot, a press took focus from a blank name, which showed its message, and the row grew and moved the removal from under the pointer, so a removal took two presses. **Each Index row ends in a labelled action** (same day, project owner: *"to be clear for the user how to edit it"*) — *edit* for an active entity, *view* for an archived one, whose record is read-only — the console's row button (§5.2), named for its row; the entity's name stays a link to the same record. **The columns are sized for symmetry** (same day, project owner): the entity and its activity share the width equally, and the site count, the standing and the action take only what they hold, the first two centred under their headers.
 - **Amended 30 Sep 2026 (project owner, task 180.1): a site is captured whole.** Each site row holds, beside its name, address and town, its **postal code**, its **country** — the countries the platform registers, the one registered chosen for a new row — and its **coordinates**, typed as a map copies them (*47.0105, 28.8638*) and kept to six decimal places: B1 publishes all six, and B5's biodiversity questions are decided from the coordinates (BR-APP-3). From a row of 36rem a site is two lines of three, the name's column the widest; below it, as many to a line as fit. Saving never clears what the form does not show: a subsidiary's LEI, set elsewhere, survives a save of the record.
@@ -717,7 +899,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** email format on invite. Revocation invalidates the outstanding link immediately. Removing a member is a consequence-disclosing action naming the specific user (UX-70), and the interface shall state at the point of removal that their historical contributions remain attributed in the change history (UX-69). An invitation beyond the seat entitlement follows the quota path and states the limit, the allowance, current consumption and the upgrade path in that order (UX-50).
 - **Exits:** S-17 or S-18 from the entitlement gate; S-05; S-06 from the reminder when no report is open (task 50.3).
 - **Use cases:** UC-59, UC-60, UC-61, UC-62, UC-63, UC-64, UC-175.
-- **FRs:** FR-56, FR-57, FR-58, FR-59, FR-60; FR-173 for the reminder path.
+- **FRs:** FR-56, FR-57, FR-58, FR-59, FR-60; FR-173 for the reminder path. **Also** FR-9, FR-55, FR-101, FR-102, FR-171, FR-198 — the requirements whose blocks name this screen (added 6 Oct 2026). **Also** FR-191, FR-195, FR-196, FR-197, FR-203 — the advisor amendment of 6 Oct 2026 (OQ-26).
 - **Where the prototype exceeds this row (26 Aug 2026, project owner, from task 26.4's build).**
   `EasyESG Organization Admin.dc.html` draws five things this row does not list, and **this row
   governs** — OQ-10's standing rule, of which this is the worked example. Access is drawn **per
@@ -743,6 +925,15 @@ phone screen: the form is replaced by what happened, what it means and the way b
   the end of the filter row rather than under the seat counter, where the artboard draws it. Per-entity access in particular is a data-model
   decision — it would need an entity dimension on the membership record and a second tenancy binding
   in every RLS policy — and becomes a live question only if an `FR` is written for it.
+- **Amended 6 Oct 2026 (project owner): S-16 serves advisory access, from both sides.** It is the screen an advisory firm's Administrator manages **staff and their client scope** on (UC-197), and the screen a **client's** Organization Administrator governs **advisor access** on (UC-198's code, UC-201 … UC-204). The prototype's *Entities* column stays governed away: it is per-entity access for members, which does not exist, and neither region below is it. **No artboard exists for either half; composed from the shared archetypes (`architecture.md` §12.5.6, 182/168). Specified 6 Oct 2026 (project owner).**
+- **The firm's half — an advisor-type organization's users.** The list is the firm's staff, and **the invitation is S-16's, unchanged**: an `editor` or a `viewer` (FR-191 beh. 1; 182/2). **A *Clients* cell on each row** says which roster clients that person may enter. **It defaults to none** — a newly invited colleague, and a client that has just become active, are reachable by no staff member until the Administrator adds them (FR-191 AC-5) — and the control that sets it is a row action opening a dialogue holding the roster's clients as choices, **starting empty**, as the grant's entity picker does. Addressable in S-16's spelling (`?panel=…`, with the person chosen, UX-4). **The Administrator's own row has no control and says it enters every active client**, since the Administrator is bound by no scope (182/144). The scope is enforced by the server at the moment of entry (FR-191 beh. 3); the screen is never what keeps a colleague out. **The seat region counts the Advisor plan's staff-seat key**, members plus the invitations that hold a seat (182/149), and its upgrade path is S-17 or S-18. **No *Entities* column, no client-side regions below:** an advisor organization holds no company and is nobody's client. Reminders about an outstanding report (UC-175) concern a report the firm cannot hold; the dialogue's own *nothing to remind about* state answers it (OQ-26 (12): not offered to an advisor-type organization). (OQ-26 (5): active clients only) whether the scope may name a client whose relationship is not yet active.
+- **The client's half — an *Advisor access* region, beneath the people and never merged into them** (FR-198; UC-204: *a firm and a person are revoked by different actions*). It answers the screen's own purpose, *who can see our ESG data*, in one place: direct members and advisor organizations. **A platform support-access grant is not listed here**; it keeps its own surface and banner (182/152). The region lists **pending requests**, **active grants** and **declined requests**, each entry the firm, and for the first *who asked and when* (UC-201 step 1), for the second **the entities the grant covers, its expiry date, and the individual advisor users currently able to enter** (those within the staff scope, UC-204 step 2), for the third the **date and any stated reason** (FR-196 AC-2). **Lists** *(derived 6 Oct 2026)*: not filtered, searched or paged — the region holds the firms that asked, which is few — ordered pending first, then active, then declined, newest first within each. Revoked, expired and ended relationships are not paths with access and are not listed among them (FR-197 AC-5) (OQ-26 (7)). States of its own: empty — first use (teaches what an advisory firm is and that a firm can only ask, and offers *generate an access code*); loading; **partial** — the region could not be read while the people stand, said in the region alone; error — recoverable.
+- **Four dialogues, each addressable in the spelling of the invitation's** (`?panel=…`, UX-4 — so a notice's deep link reopens the review, UX-63), and none a panel below the list:
+  - **Review** a pending request — *grant* or *decline*. The dialogue says which firm, requested by whom, when. **The entity picker starts empty**: the Administrator selects what to open rather than what to withhold, so a careless grant is an empty one (UC-201 rule, FR-195 beh. 2), and the dialogue says plainly, from the current selection, what it opens — *no entity* included. **An optional expiry**, a calendar date in the organization's timezone, its last day included; **a date before today is refused beside the field with the form's summary linking to it** (400 `validation-failed`, 182/142; UX-111). *Decline* takes an optional reason and records the request rather than deleting it (FR-196). A decline or a grant is attributed, and the firm is told (FR-203).
+  - **Change** an active grant — the same scope and expiry, **holding the current values** (not starting empty). It states that the firm is told and that the change applies at the firm's **next request** (FR-195 beh. 7, 182/141).
+  - **Revoke** — a **consequence dialogue** (UX-70) over the active entry, an overflow-menu item whose labelled sibling is *change*, naming the firm and what follows: its access ends at its **next request**, not its next sign-in (FR-197 beh. 2); any of its sessions inside end at their next action, with the reason shown to them; it is told; **its past contributions stay attributed in the change history** (UX-69).
+  - **Generate an access code** (task 119.5, FR-192) — the Administrator gets a single-use code the firm enters on S-41. The dialogue says it **works once and until when** (a lifetime held in configuration, 182/145) (OQ-26 (7)).
+- **Error — permission is unchanged**; the region does not appear to a reader the screen's role gate refuses. **Entry points** gain the notices of FR-203's category (S-26) and **Exits** gain S-40 (for a firm's staff, where the roster is the Administrator's). **Use cases:** UC-59 … UC-64, UC-175, **UC-197, UC-198 (the code), UC-201, UC-202, UC-203, UC-204**. **FRs:** FR-56 … FR-60, FR-173, **FR-191, FR-192 (the code), FR-195, FR-196, FR-197, FR-198**.
 
 ### S-17 — Plan, entitlements and usage
 
@@ -757,7 +948,8 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** none of its own.
 - **Exits:** S-18; S-24; S-25.
 - **Use cases:** UC-65, UC-66.
-- **FRs:** FR-90, FR-105.
+- **FRs:** FR-90, FR-105. **Also** FR-85, FR-101, FR-142 — the requirements whose blocks name this screen (added 6 Oct 2026).
+- **Amended 6 Oct 2026 (project owner): S-17 is also an advisory firm's own plan screen (UC-209, FR-202).** For an advisor-type organization the plan in force is the **Advisor plan's version**, and the usage counters are its four keys — **clients on the roster against the client quota** (pending and active entries both counting, 182/149), **staff seats used against the staff-seat key** (members plus the invitations that hold a seat, as S-16 counts them), and the **board access** and **board export** entitlements stated as granted or not. **No counter for reporting entities, reports or exports by format is drawn**: the firm holds none (FR-190 beh. 4). Each counter is shown against its limit, with UX-52's approaching warning in context. **A client's plan is a client's**: inside a client an advisor sees *that* client's plan, and no key of the Advisor plan appears there (D-16). **The firm's other billing screens serve it unchanged** — comparison S-18 ((OQ-26 (9): a firm is shown the Advisor plan alone, an SME the reporting plans alone)), checkout S-19 (the Advisor plan is bought at self-serve checkout, 182/150), payment S-20 … S-21, and subscription state S-24 — *subscription lifecycle reuses UC-96 onward and nothing in the advisor domain duplicates it* (UC-209). **Use cases:** UC-65, UC-66, **UC-209**. **FRs:** FR-90, FR-105, **FR-202**.
 
 ### S-18 — Plan comparison and selection
 
@@ -772,7 +964,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** none of its own; the order it creates carries the validation (S-19).
 - **Exits:** S-19 for a self-serve plan; S-25 for Enterprise (Enterprise never passes through self-serve checkout, D-12, FR-142).
 - **Use cases:** UC-96, UC-97, UC-98.
-- **FRs:** FR-91, FR-92, FR-93.
+- **FRs:** FR-91, FR-92, FR-93. **Also** FR-84, FR-85, FR-86, FR-88, FR-89, FR-142 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-19 — Order, summary and confirmation
 
@@ -785,9 +977,9 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Controls and actions:** apply a discount code; choose a rail; confirm and accept terms; track status; cancel an unpaid order.
 - **States:** loading — initial; pending — async (awaiting payment, awaiting reconciliation); error — recoverable; success; read-only (once paid or provisioned).
 - **Validation behaviour:** a discount code is validated at entry against plan eligibility, validity window and remaining redemptions, and an invalid or exhausted code is rejected with the reason rather than silently ignored (UC-111, FR-109). Confirmation records the accepted terms version, timestamp and acting user (FR-111). Cancelling an unpaid order voids any associated proforma and is a consequence-disclosing action (UX-70).
-- **Exits:** S-20 for an external rail; S-22 for the proforma on the transfer rail; S-24 on provisioning.
+- **Exits:** S-20 for an external rail; S-22 for the proforma on the transfer rail; S-24 on provisioning; S-23 to complete the billing account the order needs. *(Exit added 6 Oct 2026, matching that screen's entry points.)*
 - **Use cases:** UC-110, UC-111, UC-112, UC-113, UC-114, UC-115.
-- **FRs:** FR-108, FR-109, FR-110, FR-111, FR-112, FR-113.
+- **FRs:** FR-108, FR-109, FR-110, FR-111, FR-112, FR-113. **Also** FR-86, FR-92, FR-94, FR-95, FR-96, FR-114, FR-118, FR-124 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-20 — Payment hand-off and return
 
@@ -802,7 +994,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** the platform shall never imitate a payment form — no card fields exist anywhere in the product (PCI SAQ-A, UX-57, FR-115). The order shall survive the round trip without duplication (UX-58). Saved-card consent is an explicit, separately recorded act, distinct from paying once, and worded as a recurring authorisation (UX-60).
 - **Exits:** S-24 on provisioning; S-19 on failure or cancellation; S-22 for the invoice; S-21 for instrument management.
 - **Use cases:** UC-116, UC-117, UC-118, UC-119, UC-120, UC-121.
-- **FRs:** FR-114, FR-115, FR-116, FR-117, FR-118, FR-119.
+- **FRs:** FR-114, FR-115, FR-116, FR-117, FR-118, FR-119. **Also** FR-112, FR-121 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-21 — Payment instruments
 
@@ -817,7 +1009,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** removing the last instrument on an auto-renewing subscription is a consequence-disclosing action that warns renewal will fail, rather than letting the organization discover it at suspension (UC-119, FR-117, UX-70).
 - **Exits:** S-24; S-20 for adding an instrument through the provider.
 - **Use cases:** UC-118, UC-119.
-- **FRs:** FR-117.
+- **FRs:** FR-117. **Also** FR-115, FR-120 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-22 — Invoices and documents
 
@@ -832,7 +1024,8 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** format validation on the purchase-order reference only; fiscal document content is not editable from the tenant surface (FR-125).
 - **Exits:** S-23; S-24.
 - **Use cases:** UC-132, UC-157.
-- **FRs:** FR-128, FR-146.
+- **FRs:** FR-128, FR-146. **Also** FR-104, FR-119, FR-121, FR-122, FR-125, FR-129, FR-136 — the requirements whose blocks name this screen (added 6 Oct 2026).
+- **Amended 6 Oct 2026 (project owner): for an advisor-type organization S-22 lists the firm's own invoices — one invoice for its own subscription, never a view into its clients' billing** (UC-209, FR-202). Filters, sort, paging and the retention behaviour that survives lapse are unchanged. **Use cases:** UC-132, UC-157, **UC-209**. **FRs:** FR-128, FR-146, **FR-202**.
 
 ### S-23 — Billing account
 
@@ -847,7 +1040,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** fiscal identifier format is validated on entry and, where a lookup is available, existence and VAT status are verified (UC-109, FR-107). The consequence is stated: an invoice carrying an invalid fiscal code is rejected by the national e-Factura platform and cannot be corrected by editing (D-10) — so the message must be a three-part message, not a bare format error.
 - **Exits:** S-22; S-24.
 - **Use cases:** UC-108.
-- **FRs:** FR-106, FR-107.
+- **FRs:** FR-106, FR-107. **Also** FR-127 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-24 — Subscription status and history
 
@@ -862,7 +1055,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** before any entitlement reduction — downgrade, cancellation, lapse — the interface shall list **by name** the entities and reports that will become read-only under the deterministic retention rule, and shall state explicitly that nothing is deleted (UX-53, UC-101, UC-151, FR-103, FR-104, NFR-80). Upgrade is immediate; downgrade takes effect at the end of the paid period; cancellation is not immediate termination. Each is a consequence-disclosing action naming the specific objects affected (UX-70).
 - **Exits:** S-18; S-19; S-21; S-22.
 - **Use cases:** UC-99, UC-100, UC-101, UC-102, UC-103, UC-104, UC-105, UC-106, UC-107.
-- **FRs:** FR-90, FR-94, FR-95, FR-96, FR-97, FR-98; consumes FR-103, FR-104.
+- **FRs:** FR-90, FR-94, FR-95, FR-96, FR-97, FR-98; consumes FR-103, FR-104. **Also** FR-87, FR-93 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-25 — Enterprise request
 
@@ -875,7 +1068,7 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Controls and actions:** submit the request.
 - **States:** loading — initial; error — recoverable; success (a tracked opportunity created, not an email sent, FR-142); pending — async while the quote is prepared.
 - **Validation behaviour:** required-field validation with three-part messages.
-- **Exits:** back to S-17 or S-18; the quote arrives by notification and is handled by BO in A-15.
+- **Exits:** back to S-17 or S-18; S-19 on the acceptance path; the quote arrives by notification and is handled by BO in A-15. *(Exit added 6 Oct 2026, matching that screen's entry points.)*
 - **Use cases:** UC-153.
 - **FRs:** FR-142.
 
@@ -892,7 +1085,8 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Validation behaviour:** none. Read state is per user: one recipient reading an organization-wide notice shall not clear it for colleagues (UX-64). A notice raised while the user was signed out is waiting on return (UX-62).
 - **Exits:** the subject of the notification — a module in S-07, a period in S-14, an invoice in S-22, and so on; S-27 for preferences.
 - **Use cases:** UC-165, UC-166, UC-167.
-- **FRs:** FR-160, FR-161, FR-162.
+- **FRs:** FR-160, FR-161, FR-162. **Also** FR-70, FR-164, FR-165, FR-166 — the requirements whose blocks name this screen (added 6 Oct 2026). **Also** FR-203 — the advisor amendment of 6 Oct 2026 (OQ-26).
+- **Amended 6 Oct 2026 (project owner): the advisor access notices are the centre's** (UC-210, UC-211; FR-203): eight, in the transactional category, which a preference cannot suppress and which S-27 shows as mandatory with the reason (UX-65). Their destinations, the UX-63 deep link: a **request** and an **ending by the firm**, to the client's S-16 *Advisor access* region, a request with its review dialogue open; a **grant, change, decline, revocation and expiry**, to the firm's S-40; **expiring and expired**, to whichever of the two the recipient holds. This is also where UC-210 and UC-211 terminate (UX-61): the notice, and the state change visible on S-40's entry and S-16's region. **Use cases:** UC-165 … UC-167, **UC-210, UC-211 as destinations**. **FRs:** FR-160 … FR-162, **FR-203**.
 
 ### S-27 — Profile, language, notification preferences
 
@@ -1075,7 +1269,8 @@ task-83 row carries the decisions.
 - **Exits:** the address that was requested, when a screen needing an organization sent the reader here
   — as S-01's `?return=` is honoured — and the chosen organization's S-05 otherwise.
 - **Use cases:** UC-16.
-- **FRs:** FR-12.
+- **FRs:** FR-12. **Also** FR-197 — the advisor amendment of 6 Oct 2026 (OQ-26).
+- **Amended 6 Oct 2026 (project owner): S-37 is also where a revoked, expired or ended advisor session lands, and says why** (UC-203 step 3; FR-197; 182/143). "Terminated at its next action" clears the session's active organization, shows the reason and leaves the user signed in here, because the same sign-in may serve other clients and the firm's own organization. The reason is a three-part Callout above the list, naming the client and saying whether access was revoked, expired or ended, what that means — the firm no longer reaches it — and what to do (choose another organization, or ask the client again from S-41). **The list offers an advisor's clients beside the memberships**, as the switcher does (OQ-26 (6): entered from the board and S-37 too, landing on the client's S-05; open periods only). **Use cases:** UC-16, **UC-203**. **FRs:** FR-12, **FR-197**.
 
 ### S-38 — Unsubscribe from an email
 
@@ -1109,6 +1304,105 @@ email, and the project owner chose a page rather than a link that switches on be
   does).
 - **Use cases:** UC-173, UC-168.
 - **FRs:** FR-169, FR-163.
+
+### S-39 — New report
+
+**Added 6 Oct 2026 (project owner), and an addition to the inventory that closes OQ-21** — UX-7 makes a new screen an amendment, and the identifier is appended after S-38. The screen has shipped since task 32.3 as *the creation flow*, with no row; `architecture.md` §12.5.6's task-32.3 rows carry what was assumed meanwhile and OQ-21 carries the question. Task 78.4 adds the scope choice (§12.5.6's task-182 report-authoring row, item (9)).
+
+- **Purpose:** choose which company, which period and how much of the standard a report covers, see the template and taxonomy versions it will be pinned to, and create it — so that the report that opens in S-07 is the one the reader meant, and its pins were on the screen before they were fixed (DR-4, FR-66).
+- **Primary actors:** RC, OA — an editor or an Organization Administrator creates a report (FR-25, FR-26; `architecture.md` §12.5.6's task-31.3 row on who writes). A view-only member is not offered the way in (S-06) and is answered here as the state below says.
+- **Archetype:** **Focus, inside the workspace chrome.** One task, one primary action, a single centred column — Focus's fixed elements — drawn with the global tier and the workspace tier standing, *Reports* current, because the screen belongs to the workspace and no report yet exists to suppress the tier around (UX-5 governs the wizard, which this screen is not). OQ-21 named exactly this fit: Focus-shaped, but rendered inside `(workspace)`. **It inherits Focus's state set** (UX-8) and defines none of its own, as a composition inherits its base's (OQ-7); the arms it uses are named under *States*. It is not S-06's Record mode (S-06 is an Index alone) and not S-07 (the wizard it exits into).
+- **Entry points:** S-06's *new report* action, at the end of its filter row, and the action of its teaching empty state; S-05's filing list; S-14, whose arrow returns here with the entity still chosen (S-14's amendment of 30 Sep 2026); an address carrying the choices already made (`?entity=`, `?period=` — UX-4). A bookmarked half-made choice reopens as it was.
+- **Layout and regions:**
+  - **The heading with its way back, over every state** (30 Sep 2026, S-06): breadcrumb *Reports / New report*, an arrow before the title leading up to S-06, and *cancel* beside the confirm, all three to S-06. None waits on a read, so all three stand over the loading state too. **No leave question**: the entity and the period live in the address, so leaving loses nothing; the scope is one value with a default.
+  - **The decisions, in order, one region each** — the standard, the entity, the period, the versions it pins, the scope — then the confirm row. `EasyESG Reporting Core.dc.html` §7.10 draws *standard · reporting year · what to bring over* (its frame is labelled `S-05` there, a prototype label and not this inventory's); OQ-10 gives the artboard precedence where it draws, and it draws neither the entity nor the pins nor the scope, which this spec adds. Its third decision, carry-forward, is **not** part of creation: carry-forward is a per-field action in the wizard (UX-32, UC-46), and `POST /reports` takes none.
+  - **Each choice that is a list is a set of links writing the address**, so the entity and the period are server-rendered and shareable; the scope and the confirm are the one interactive part.
+- **Content and data shown:**
+  - **The standard**, shown as the one option it is, and not hidden: a select with one member would ask for a choice that does not exist (the artboard's own note).
+  - **The entity**: the organization's **active** reporting entities, by name. An archived entity is not offered (amended 5 Oct 2026, 182/14; S-06's amendment), though S-13 still lists it.
+  - **The period**, once an entity is chosen: that entity's periods which can take a report — **open, and holding no report** — by fiscal year. A locked period is not offered (FR-26; the lock is not a role gate), nor one that already holds a report (FR-177: a second report for a period is refused). **A period whose report was deleted is offered again** (FR-210, beh. 6). The period's start and end dates are stated beside its year.
+  - **The versions the report will carry** — the template version and the taxonomy version, as two Version pin indicators (§11.5), **both rendered** (§12.5.6's task-32.3 row: they are separate facts, FR-69 migrates them independently). They are the **period's** and are copied to the report at creation, never re-resolved (§12.5.6's task-31.3 row); nothing on this screen can change them, and no standing is claimed for them. **They do not change with the scope**: C1 … C9 are taxonomy data in every registered version (FR-177, beh. 2).
+  - **The scope**, two answers drawn as a Radio group's option cards (§11.5, built 1 Oct 2026): **Basic** — the eleven modules B1 … B11 — and **Basic and Comprehensive** — those and C1 … C9, twenty (UX-9 as amended). **Basic is selected** (FR-177, task 78.4). The lede says the scope can be changed on a report in progress (FR-177), which is what the artboard also tells the reader.
+- **Controls and actions:** choose an entity; choose a period; choose the scope; **create report** (the one primary action, busy while it runs); **cancel** (to S-06). Choosing another entity clears the period, since a period belongs to the entity it was chosen under.
+- **States:**
+  - *Inherited from Focus and used here:* loading — initial (a skeleton matching the final layout, under the heading and trail already drawn); **pending — async** (the create, on the confirm); error — recoverable (see below); **success** — arrival in S-07, which is the confirmation, at the step where work should start (UX-10, FR-24 beh. 6).
+  - **Error — recoverable (read):** the entities or periods could not be read; three-part, the remedy being to reload.
+  - **Error — permission:** the read is open to every member, so a request whose organization did not resolve arrives here (S-06's addition of 5 Sep 2026); it names who can grant access (UX-1) and leads to S-05.
+  - **Empty — first use, twice, the two *nothing to offer* cases OQ-21 named**, each a three-part Callout and each offering the one action that ends it: (1) **no active entity** — none exists, or every one is archived — leading to S-13's add action; (2) **the chosen entity has no period that can take a report** — none open, or each already holds one — leading to S-14 for that entity, which says where it came from so its arrow returns here with the entity still chosen.
+  - **Read-only, as an error — permission arm** (OQ-26 (11): a permission error naming the cause and who can change it): for a view-only member who reaches the address, the form is not offered and the screen names the cause — a view-only membership — and what restores it, an Organization Administrator changing the role (UX-13, UX-1, FR-26).
+  - **Entitlement gate** (§6.10, UX-50) **on the Comprehensive option, not yet**: Comprehensive is sold as its own plan scope (`problem_overview.md` OQ-12), and the choice is ungated until task 81.1 (§12.5.6's task-31.3 row; FR-177, beh. 6). When it gates, the gate takes the option's place and states the limit, what the plan allows, current consumption and the way forward, in that order.
+- **Validation behaviour:** none a reader can fail by typing — every choice is a list the screen offers, filtered rather than refused, which is the point of filtering a locked or already-reported period before it can be pressed. **A refusal that still arrives** (two people racing; a period locked since the list was read) is an Expiring callout above the confirm, three-part, naming the cause: a second report for the period (409 `report-already-exists`), a locked period (409 `report-not-editable`), an archived entity (409 `entity-archived`), or a role that may not write (403 `insufficient-role`). Closed vocabulary: the scope is one of two values (`basic`, `basic_and_comprehensive`), defaulting to the first.
+- **Exits:** S-07, on create, resolved to the step where work should start; S-06, by cancel, the arrow and the trail's one step; S-13 (the add action of the first empty state); S-14 (the second).
+- **Use cases:** UC-18; UC-192 for the scope chosen at creation (FR-177: *at creation or on a report in progress*, task 78.4).
+- **FRs:** FR-25, FR-26, FR-66, FR-177.
+
+No navigation is added beyond the above: no tabs, no step list (the three decisions are one page, not a flow of pages), no overflow menu, no pagination. **Task 78.4 is what builds the scope region**; until then the screen asks for none, and the lede states that Comprehensive is added after the fact.
+
+### S-40 — Client roster
+
+**Added 6 Oct 2026 (project owner), and an addition to the inventory** — UX-7 makes a new screen an amendment, and the identifier is appended after S-39. UC-199, UC-200 and UC-205 (FR-193, FR-194, FR-199) had no screen; task 118.1 builds this one. **No artboard exists; composed from the shared archetypes (`architecture.md` §12.5.6, 182/168). Specified 6 Oct 2026 (project owner).** It is built on the Index skeleton S-05 and S-06 share, and a second skeleton here would be task 115's defect repeated (task-118.1 row).
+
+- **Purpose:** show an advisory firm every client it has asked or been granted — where each stands, what it was granted, until when — and be the place it enters a client, asks for another, or ends an engagement.
+- **Primary actors:** AD — the Advisor Administrator, who is the Organization Administrator of an advisor-type organization (182/2, 182/8). **The roster is the Administrator's alone** (182/144, FR-193 AC-5); a staff member reaches a client by entry through the organization switcher, within their scope, and is answered here as the permission state says.
+- **Archetype:** Index.
+- **Entry points:** the advisor organization's workspace navigation (OQ-26 (1): the firm's Home, under its own tier); S-41's success and its way back; S-42; the notices to the firm about a grant, change, decline, revocation or expiry (S-26, UX-63).
+- **Layout and regions:**
+  - Index fixed elements — filter, sort, empty state, row action, pagination — with S-13's and S-06's conventions: **the Index's *request access* stands at the end of the filter row**, on the facets' baseline, and the screen is a section's own address, so it carries **no trail and no arrow** (6 Oct 2026, navigation decision).
+  - **The client counter** (Usage counter, §11.5) stands beside *request access*: clients on the roster against the plan's client quota, *pending and active entries both counting* (182/149), with UX-52's approaching-limit warning in context. At the quota the action stays and the gate states what S-41 would be refused for: the limit, what the plan allows, current consumption, and the way forward — S-17, since it is the firm's plan (UX-50).
+  - **Lists** *(derived 6 Oct 2026)*: facet **relationship state** (pending, active, revoked, expired, declined, ended); text search over **client name** *(derived 6 Oct 2026)*; default sort **client name, A to Z** *(derived 6 Oct 2026)*; paging 25 / 50 / 100, 25 the default, in the URL *(derived 6 Oct 2026)*.
+  - **Each row ends in a labelled action and a ⋯ menu**, named for its row (S-13, §5.2's convention): *enter* on an `active` entry; the menu holds **end engagement** on an active entry and **withdraw request** on a pending one — one act, UC-200, which takes the relationship to `ended` either way (FR-194, beh. 4). Declined, revoked, expired and ended entries carry neither: they are records, and stay (182/146).
+- **Content and data shown:** every client the firm has requested or been granted, in all six states (FR-193; 182/140). Each entry: the client; its **state**, in words that say what it means for the firm (UX-13's lesson: *pending* and *revoked* are not the same sentence); **the entity scope the client granted**, named — an `active` entry with an empty grant says it opens nothing, which is a stored default and not an error (FR-195); **the expiry date** where one was set, a calendar date in the client's timezone with its last day included (182/142); and **the client's own plan, for an `active` entry only**, read inside that client's own scoped query, since D-15 forbids a cross-tenant read before the grant (182/151). A pending, declined, revoked, expired or ended entry shows no plan.
+- **Controls and actions:** request access (to S-41); enter a client (UC-205); end an engagement or withdraw a request; filter; search; sort; page.
+  - **Entering** selects the client and the server verifies that the relationship is active, unexpired and — for staff — within scope, then sets the session's one tenant context to that client (FR-199); the reader lands in the client's S-05 (UX-3: no screen of the firm's has an equivalent there). **The Administrator is bound by no staff scope** (182/144).
+  - **Ending is a consequence dialogue** (UX-70) naming the client and what follows: the firm's users can no longer enter it; **any of the firm's sessions inside end at their next action**; the firm's past contributions **stay attributed in the client's change history** (UX-69, FR-194, FR-54); the client's Organization Administrators are told (FR-203); and the entry stays on the roster as an ended record while releasing its place against the quota (182/149). For a pending request the dialogue says the request is withdrawn and the client is told.
+- **States:** empty — first use (teaches the object: a client is a company that lets the firm in, the firm asks and the company chooses what to open, and nothing is readable until it does; offers *request access*); empty — filtered; loading — initial; loading — refresh; error — recoverable; **error — permission, in two arms**: a staff member who reaches the address (403 `insufficient-role`; names the firm's Administrator as who can grant access, UX-1), and **an entry the server refuses** (403 `advisor-access-refused`), whose `standing` member the screen branches on and never on wording — the relationship is pending, declined, revoked, expired or ended, or the staff member is outside the relationship's scope — each saying which, what it means and what resolves it, with the switch not made (182/147); **entitlement gate** at the quota (above); success (an engagement ended or a request withdrawn: says what happened and that the client was told). Not read-only: the screen is the Administrator's alone.
+- **Validation behaviour:** none of its own; a consequence dialogue confirms before anything ends. An entry for a client whose relationship lapsed between the read and the press is refused by the server, and the refusal is the error above.
+- **Exits:** S-41; the client's S-05 (on entering); S-17 (the quota gate); S-42.
+- **Use cases:** UC-199, UC-200, UC-205.
+- **FRs:** FR-193, FR-194, FR-199; FR-202 for the quota counter.
+
+### S-41 — Request access to a client
+
+**Added 6 Oct 2026 (project owner), and an addition to the inventory** — UX-7 makes a new screen an amendment, and the identifier is appended after S-40. UC-198 (FR-192) had no screen; task 116.7 builds this one. **No artboard exists; composed from the shared archetypes (`architecture.md` §12.5.6, 182/168). Specified 6 Oct 2026 (project owner).**
+
+- **Purpose:** let an advisory firm ask a company for access to report on its behalf — and nothing more: the firm asks, the company grants, and there is no path by which a firm attaches itself (D-15).
+- **Primary actors:** AD.
+- **Archetype:** **Focus, inside the workspace chrome** — one task, one primary action, a centred column, drawn with the tiers standing as S-39 is. **It inherits Focus's state set** (UX-8) and defines none of its own.
+- **Entry points:** S-40's *request access*, and its first-use empty state. An address (UX-4); nothing links to it from elsewhere.
+- **Layout and regions:** the heading with its way back — breadcrumb *Client roster / Request access*, an arrow before the title leading up to S-40, and *cancel* to S-40 (6 Oct 2026, navigation decision); then the identification of the client, the statement of what the request does, and the one action.
+- **Content and data shown:** how the firm identifies the client — **an Organization Administrator's account email, or a code the client supplied**, single-use and expiring (182/145; the client generates it on S-16) (OQ-26 (3): two ways, one field each; the remaining signal is accepted). **What the request does, stated before it is sent**: the client's Organization Administrators are asked; **a pending request confers no access of any kind** and nothing of the client's is readable until it is granted; the client chooses which of its entities to open, and **opens none until it does** (UC-198, UC-201, FR-195). The client counter of S-40, so the quota is seen before it is met.
+- **Controls and actions:** identify the client; **send request** (the one primary action); cancel.
+- **States:** inherited from Focus and used here — loading — initial; pending — async (the send); error — recoverable; success. Beyond them:
+  - **Success says the same thing for every outcome.** **The answer is identical whether or not anything matched** (182/145, NFR-64), so the sentence states that the details were sent and that any organization they identify has been asked; it does not say that one was found, and does not promise a roster entry. Its next step is S-40 (OQ-26 (4): the name and a decline's date, never the client's reason).
+  - **Refusals, each three-part and each leaving the form as it was:** a relationship with that client is already pending or active — 409 `conflict` (182/146); a request made too soon after another to the same client — 429 `rate-limited`, saying when it can be repeated (182/146); **the roster is at its quota** — 409 `entitlement-quota-exceeded`, carrying `limit` and `used`, shown as the entitlement gate in UX-50's order and leading to S-17 (182/149). Both 409s and the 429 bear on the uniform answer (OQ-26 (3): two ways, one field each; the remaining signal is accepted).
+  - **Error — permission:** a staff member who reaches the address — 403 `insufficient-role`, naming the firm's Administrator.
+- **Validation behaviour:** required-field validation with three-part messages (UX-92, UX-111), an email's format checked on entry; **no inline message ever says an organization was not found** — that would be the oracle the uniform answer exists to deny. Paste and password-manager autofill work (UX-108).
+- **Exits:** S-40 — by cancel, the arrow, the trail and the success's next step; S-17 from the quota gate.
+- **Use cases:** UC-198.
+- **FRs:** FR-192; FR-202 for the quota refusal.
+
+### S-42 — Consolidated client status board
+
+**Added 6 Oct 2026 (project owner), and an addition to the inventory** — UX-7 makes a new screen an amendment, and the identifier is appended after S-41. UC-206 and UC-207 (FR-200, FR-201) had no screen; tasks 118.3 and 118.4 build this one. **No artboard exists; composed from the shared archetypes (`architecture.md` §12.5.6, 182/168). Specified 6 Oct 2026 (project owner).**
+
+- **Purpose:** answer, on one screen, *which of the firm's clients are behind* — the question the Advisor plan is sold on — without entering twenty-five organizations in turn (UC-206).
+- **Primary actors:** AD — the Administrator's alone (182/144, FR-200 AC-8).
+- **Archetype:** Index, with an export action. **Not Dashboard:** §4.6 reserves Dashboard for the console and says *never the tenant home*, and this is a tenant screen. The figures are the board's own and it does not draw the completeness meter, which *never* draws a single percentage (§11.5); FR-41 (item 5) names the board as the surface that derives a figure from the roll-up's counts.
+- **Entry points:** the advisor organization's workspace navigation (OQ-26 (1): the firm's Home, under its own tier); S-40.
+- **Layout and regions:**
+  - Index fixed elements — filter, sort, empty state, row action, pagination — a section's own address, so **no trail and no arrow**. *Export* stands at the end of the filter row on the facets' baseline.
+  - **One row per open period of each entity a grant covers** *(derived 6 Oct 2026, from S-05's rows being periods only, 182/16)* (OQ-26 (6): entered from the board and S-37 too, landing on the client's S-05; open periods only), grouped under or labelled by its client. **A client whose grant covers no entity appears with a note and no rows** (182/148).
+  - **Lists** *(derived 6 Oct 2026)*: facets **client**, **validation state** and **overdue**; text search over **client and entity name**; default sort **soonest due date first, an overdue row first of all**, as S-05's attention list orders (§5, S-05 task 32.4); paging 25 / 50 / 100, 25 the default, in the URL.
+- **Content and data shown:** for every **active** client (a pending, revoked, declined, expired or ended one is not on the board, FR-200 AC-5) and each entity its grant covers: the client; the entity; the period; the **due date**; **days remaining** — whole calendar days from today's date to the due date, read in the due date's own timezone, negative when overdue (FR-165's definition, 182/133), the row saying it is overdue as S-05's list does; **completion**, a percentage **derived for display** from the roll-up's counts of resolved, reasoned and outstanding (FR-41; 182/18; OQ-26 (8): resolved and reasoned over all); and the **validation state**, in the roll-up's own three words — *not started*, *in progress*, *ready* (FR-41, item 5). Each date reads in its own zone so that a row from another is not shifted (NFR-34). **Completion and validation are the same roll-up UC-38 computes, read and not recomputed** (task-118.3 row). **No disclosure value from any client appears here.**
+- **Controls and actions:** filter; search; sort; page; **export the board** (UC-207); enter the client of a row (OQ-26 (6): entered from the board and S-37 too, landing on the client's S-05; open periods only).
+  - **Export** produces an Excel workbook carrying the board's own columns — client, entity, period, due date, days remaining, completion percentage and validation state as a word — and **no counts, no element names and no finding text** (182/153, FR-201). A test asserts no disclosure value reaches it. Exporting a *client's report* stays S-11's, inside that client's context.
+- **States:** empty — first use (no active client yet: teaches that the board fills as clients grant access, and leads to S-40 and S-41); empty — filtered; loading — initial; loading — refresh; **partial** — a client's read failed while the others resolved: the screen names the client that is missing and offers retry for it alone (§8.1; the board is assembled by one scoped query per client, so one can fail alone, D-15); error — recoverable; error — permission (a staff member who reaches the address, 403 `insufficient-role`); **entitlement gate** where the plan lacks the *board access* key, and again for *board export* alone (FR-202; UX-50: limit, allowance, consumption, way forward, to S-17); **pending — async** for the export job (OQ-26 (8)); success (the export ready).
+- **Validation behaviour:** none of its own. **No query backing the board selects across organizations, and none runs under a privilege that bypasses row-level isolation** (D-15, FR-200 AC-2, AC-3) — a property of how it is read, stated here because the screen's partial state is its visible consequence.
+- **Exits:** the client's S-05, on entering (OQ-26 (6): entered from the board and S-37 too, landing on the client's S-05; open periods only); S-40; S-17 from either gate.
+- **Use cases:** UC-206, UC-207.
+- **FRs:** FR-200, FR-201; FR-202 for the two board keys.
+
+**Nothing else needs a screen of its own.** The firm's staff and their client scope are S-16's; the client's grant, decline, revoke, change and access code are S-16's; the firm's plan and invoices are S-17's and S-22's; the Advisor plan is A-09's; entering a client is the organization switcher's and S-40's. The request form is a screen rather than a dialogue because the owner listed it as one; its anatomy is S-16's invitation dialogue, and moving it into a dialogue over S-40 would be a one-line change if wanted.
 
 ### 5.1b Public tier screens
 
@@ -1145,7 +1439,7 @@ email, and the project owner chose a page rather than a link that switches on be
 - **Validation behaviour:** none of its own.
 - **Exits:** S-31; back to the entry point.
 - **Use cases:** UC-178.
-- **FRs:** FR-205. NFR-5 remains the obligation this screen discharges.
+- **FRs:** FR-205. NFR-5 remains the obligation this screen discharges. **Also** FR-204, FR-206 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-31 — Cookie choice
 
@@ -1160,7 +1454,7 @@ email, and the project owner chose a page rather than a link that switches on be
 - **Validation behaviour:** the disclosure is a factual claim about shipped code, so it is verified against the build rather than authored as copy.
 - **Exits:** back to the screen the reader was on; S-30.
 - **Use cases:** UC-179.
-- **FRs:** FR-206.
+- **FRs:** FR-206. **Also** FR-205 — the requirements whose blocks name this screen (added 6 Oct 2026).
 - **Open:** — **Closed 10 Sep 2026 by OQ-23**: neither recorded nor implied, because the platform sets no non-essential storage and strictly necessary cookies require information rather than consent. The disclosure obligation stands and this screen discharges it; it folds into the cookie policy of S-30 (5 Oct 2026, project owner, task 182, 182/117).
 
 ### S-32 — Help centre
@@ -1171,11 +1465,12 @@ email, and the project owner chose a page rather than a link that switches on be
 - **Entry points:** the help affordance, which **UX-109** requires to sit in the same place on every screen; S-29; a deep link.
 - **Layout and regions:** Index fixed elements — filter, empty state, row action. The signed-in and signed-out variants are **one screen with a session-dependent shell**, not two screens: the content is identical and only the surrounding chrome differs, which is the same relationship S-01 holds across its three artboards.
 - **Content and data shown:** articles grouped by what the reader is doing; the most-read set; the full library. Every article names the module it belongs to.
+- **Controls and actions:** open an article; narrow the library by its filter and search (§4.7); write to support (S-34); for a signed-in reader, return into the product. *(Field added 6 Oct 2026; the screen's spec had none.)*
 - **States:** loading; ready; empty — the empty state teaches, per the Index archetype; error — system.
 - **Validation behaviour:** none of its own.
 - **Exits:** S-33; S-34; back into the product for a signed-in reader.
 - **Use cases:** UC-180.
-- **FRs:** FR-61.
+- **FRs:** FR-61. **Also** FR-204 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### S-33 — Help article
 
@@ -1279,7 +1574,7 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Validation behaviour:** migration is a versioned transformation with a preserved pre-migration state, never an in-place overwrite (FR-69). A breaking change is migrated report-by-report with manual review. Blast radius — how many organizations, how many reports — is disclosed before confirmation. **Amended 5 Oct 2026** (project owner, task 182, 182/40, 182/43): the mapping records a field's kind alone; each semantically altered field goes to the review of the Organization Administrator who owns the report, who accepts or declines the migrated result, and this console shows the Platform Administrator counts and outcomes, never values.
 - **Exits:** the notification path (FR-70, FR-166) reaching tenants; A-08.
 - **Use cases:** UC-75, UC-76, UC-77, UC-78, UC-79.
-- **FRs:** FR-65, FR-66, FR-67, FR-68, FR-69, FR-70.
+- **FRs:** FR-65, FR-66, FR-67, FR-68, FR-69, FR-70. **Also** FR-51, FR-166 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### A-05 — Factor sets, thresholds, validation rules
 
@@ -1294,7 +1589,7 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Validation behaviour:** existing computed results retain the factor version they were computed under, so a factor update never silently restates a filed report (FR-35, FR-71); the interface shall state that consequence at the point of publication. Content-only and rule-only changes apply without a redeploy (FR-74). **Amended 5 Oct 2026** (project owner, task 182, 182/50, 182/51): a factor-set payload the reader could not parse is refused at publication with a stated reason, and so is a rule whose message key has no wording in some locale's catalogue; nothing is published in either case.
 - **Exits:** the notification path to affected organizations (FR-166); A-08.
 - **Use cases:** UC-80, UC-81, UC-82.
-- **FRs:** FR-71, FR-72, FR-73, FR-74.
+- **FRs:** FR-71, FR-72, FR-73, FR-74. **Also** FR-35, FR-166 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### A-06 — Adoption metrics
 
@@ -1309,14 +1604,14 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Validation behaviour:** the confidence marking is a required presentation, not an optional annotation.
 - **Exits:** the exported extract.
 - **Use cases:** UC-83, UC-84.
-- **FRs:** FR-83.
+- **FRs:** FR-83. **Also** FR-105 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### A-07 — Support access request and audit log
 
 - **Purpose:** make it possible to help a customer, and evident that the help was observed.
 - **Primary actors:** PA.
 - **Archetype:** Focus + Index.
-- **Entry points:** A-02 (an organization's record); a support ticket.
+- **Entry points:** console navigation (§4.7); A-02 (an organization's record); a support ticket.
 - **Layout and regions:** Focus for the request; Index for the log, whose entry opens in a dialogue (**amended 24 Sep 2026**, task 170; §5.2's preamble). While access is active, the console shall display **its own expiry countdown** (UX-124), beside the organization's reports, read-only.
 - **Content and data shown:** the request — organization, ticket reference, reason (which the organization reads), duration (**60 minutes, fixed**) and mode (**read-only, fixed**); requests awaiting the organization's answer; the active grant with its countdown and, under it, the organization's reports and each module's values, read-only; the log — requester, organization, ticket, reason, what the organization decided and who decided it, how the grant ended, and what was accessed (FR-79).
 - **Controls and actions:** raise a request; open the organization's reports under a live grant; end access early — **any Platform Administrator, on any grant**; review the log — **every Platform Administrator reads the whole of it** (project owner, 14 Sep 2026, task 67.9). **There is no extension**: a longer need is a new request with its own reason, which needs its own grant.
@@ -1340,7 +1635,7 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Validation behaviour:** **suspension and removal are consequence-disclosing actions** naming the account and what happens to what it holds (UX-70): its sessions end on their next request; removal also states that it cannot be undone and that every entry the account made stays attributed to it. An invitation to an address already held by an account that is not removed, or already carrying a pending invitation, is refused with its resolution. Content, operations and support functions do not require one another's rights (FR-80) — by roles composed of permissions, as above.
 - **Exits:** A-20, for the invitee, by the emailed link.
 - **Use cases:** UC-87, UC-88.
-- **FRs:** FR-80, FR-81.
+- **FRs:** FR-80, FR-81. **Also** FR-62, FR-159 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### A-09 — Plan catalogue, entitlements, pricing, discounts
 
@@ -1355,7 +1650,8 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Validation behaviour:** a plan version change discloses scope — how many subscriptions are affected, and under which grandfathering outcome — before confirmation (UX-123). Retirement closes a plan to new subscriptions without terminating anyone's service, and the interface states that, and which plan its subscribers move to at renewal and when. Retiring without a successor is refused (**amended 5 Oct 2026**, project owner, task 182, 182/80).
 - **Exits:** A-16 for the revenue consequence.
 - **Use cases:** UC-89, UC-90, UC-91, UC-92, UC-93, UC-94, UC-95.
-- **FRs:** FR-84, FR-85, FR-86, FR-87, FR-88, FR-89.
+- **FRs:** FR-84, FR-85, FR-86, FR-87, FR-88, FR-89. **Also** FR-202 — the requirements whose blocks name this screen (added 6 Oct 2026).
+- **Amended 6 Oct 2026 (project owner): A-09 holds the Advisor plan (UC-208, FR-202).** The plan is a plan version like the others, with **four advisor-scoped keys** beside the entitlements the record already lists — the maximum clients on the roster, advisor staff seats, access to the consolidated board, and its export — and a price per currency and cycle, all declarative and published through UX-123 with no release (task 120.3). **Every key is evaluated on the advisor organization and none raises a client's entitlements** (D-16), which the editor states beside the keys. The Advisor plan is a catalogue plan bought at self-serve checkout, not an Enterprise contract (182/150), so A-15 is not engaged. **Use cases:** UC-89 … UC-95, **UC-208**. **FRs:** FR-84 … FR-89, **FR-202**.
 
 ### A-10 — Reconciliation workspace
 
@@ -1407,7 +1703,7 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Purpose:** treat a failed B2B transmission as a compliance exposure rather than a delivery inconvenience.
 - **Primary actors:** BO.
 - **Archetype:** Exception queue.
-- **Entry points:** A-12; a transmission rejection event.
+- **Entry points:** console navigation (§4.7); A-12; a transmission rejection event.
 - **Layout and regions:** dense table, saved filters, bulk action, per-item resolution with mandatory rationale; keyboard-first.
 - **Content and data shown:** the rejection reason per invoice — schema failure, unknown or mismatched fiscal code, platform outage; the underlying data that must be corrected; reissue state.
 - **Controls and actions:** inspect a rejection; correct the underlying data; reissue.
@@ -1415,7 +1711,7 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Validation behaviour:** the invoice is never silently marked delivered on a failed transmission (FR-127). A rejection caused by an invalid buyer fiscal code routes back to the tenant's billing account data (S-23), which cannot be fixed by editing the invoice.
 - **Exits:** A-12.
 - **Use cases:** UC-130.
-- **FRs:** FR-127.
+- **FRs:** FR-127. **Also** FR-126 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### A-14 — Refunds and chargebacks
 
@@ -1475,7 +1771,7 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Validation behaviour:** transactional classification determines non-suppressibility on S-27, so reclassifying a category is a consequence-disclosing action naming what changes for recipients (FR-163, UX-65). **A mandatory system category cannot be reclassified at all** (amended 21 Sep 2026, task 49.3): code declares it, so the editor shows its classification as fixed rather than offering a choice the platform would refuse to obey. Email templates shall degrade to plain text and shall not depend on images or external CSS to be comprehensible (UX-66) — a template-level obligation this editor must enforce.
 - **Exits:** A-08 records the publication.
 - **Use cases:** UC-176.
-- **FRs:** FR-173.
+- **FRs:** FR-173. **Also** FR-74 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ### A-18 — Identity provider configuration
 
@@ -1490,7 +1786,7 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Validation behaviour:** disabling a provider is a consequence-disclosing action: it stops new registrations and links through that provider while leaving existing accounts able to authenticate by another credential, and the interface shall state which of the two it does (UC-70, FR-82, UX-70). Credential rotation happens here rather than through a redeploy. **Amended 14 Sep 2026** (task 67.11): the disabling confirmation names the provider, the accounts using it, and those with no other credential — who recover through a password reset, which gives them a first password (UC-09) — and states that nobody is signed out; **enabling is refused, with the reason, while the provider has no client id, no redirect address or no client secret held**; saving an enabled provider's settings is confirmed, because it changes live sign-in within seconds. **Declined from the artboard** (project owner, 14 Sep 2026): the national eID gateway and SAML (D-6 keeps enterprise SSO out of MVP); sign-in and failure counts, the degraded state and the connection test (the platform records no per-provider sign-in telemetry to draw them from); and the seven-day advance notice before disabling (the notification tasks 49 … 52 are not built, and a leaked secret cannot wait a week).
 - **Exits:** the effect is visible on S-01.
 - **Use cases:** UC-70.
-- **FRs:** FR-82.
+- **FRs:** FR-82. **Also** FR-74 — the requirements whose blocks name this screen (added 6 Oct 2026).
 
 ---
 
@@ -2385,70 +2681,74 @@ This governs A-10, A-11, A-13 and A-14.
 
 ### 13.1 Screen ↔ use case ↔ FR matrix
 
-Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations are resolved from the `Source UC` column of the FR register; all lie within `FR-1 … FR-173`.
+Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations reproduce each screen's own *FRs* line in §5, which names the same links as the requirements' Surfaces rows (§5.0); **regenerated 6 Oct 2026** from those lines, when it still read from the FR register's `Source UC` column and stopped at `FR-173`.
 
 **One row cites no FR, and the dash is a record rather than an omission.** S-34 serves UC-182, which originates no functional requirement — `functional_requirements.md` §9.4 **G-9** records that as a real gap, waiting on task 77.1's choice of channel, with the acceptance criteria living in §5.1b of this document instead. S-29, S-30 and S-31 cite FR-204, FR-205 and FR-206, written for UC-177, UC-178 and UC-179 on 5 Oct 2026 (project owner, task 182); S-30's quality obligation remains NFR-5. *(The six public-tier rows were added 25 Aug 2026: they entered §4.4 with §5.1b on 24 Aug and this table was not updated in the same edit.)*
 
 | Screen | Name | Actors | Use cases | Functional requirements |
 |---|---|---|---|---|
-| S-01 | Sign in / register / provider choice | CA | UC-01 … 05, UC-194, UC-195 | FR-1, FR-2, FR-4, FR-82, FR-208, NFR-95 |
-| S-02 | Verify email · reset password · set password | CA | UC-03, 08, 09 | FR-3, FR-6 |
-| S-03 | Accept invitation | CA | UC-15 | FR-11 |
-| S-04 | Create organization | OA | UC-49 | FR-13, FR-14 |
-| S-05 | Home / organization overview | all | UC-16, 67 | FR-12, FR-23 |
-| S-06 | Reports index | RC, OA | UC-17 | FR-25 |
-| S-07 | Report wizard — module step | RC | UC-18 … 31, 37, 45, 46 | FR-24, FR-26, FR-27, FR-28, FR-29, FR-30, FR-31, FR-32, FR-37, FR-38, FR-39, FR-40, FR-46, FR-47 |
-| S-08 | Validation panel (in-wizard, persistent) | RC | UC-37 … 40 | FR-40, FR-41, FR-42, FR-43 |
-| S-09 | Carbon calculator | RC | UC-32 … 34 | FR-33, FR-34, FR-35, FR-36 (consumes FR-71) |
-| S-10 | Report preview | RC | UC-41 | FR-48 |
+| S-01 | Sign in / register / provider choice | CA | UC-01 … 05, UC-194, UC-195 | FR-1, FR-2, FR-4, FR-5, FR-9, FR-10, FR-11, FR-82, FR-95, FR-204, FR-205, FR-208, NFR-95 |
+| S-02 | Verify email · reset password · set password | CA | UC-03, 08, 09 | FR-1, FR-2, FR-3, FR-6 |
+| S-03 | Accept invitation | CA | UC-15 | FR-1, FR-2, FR-11 |
+| S-04 | Create organization | OA | UC-49, UC-196 | FR-13, FR-14, FR-190 |
+| S-05 | Home / organization overview | all | UC-16, 67 | FR-9, FR-12, FR-23, FR-41, FR-54 |
+| S-06 | Reports index | RC, OA | UC-17, UC-213 | FR-25, FR-26, FR-41, FR-66, FR-104, FR-177, FR-210 |
+| S-07 | **Report wizard — module step** | RC | UC-18 … 31, 37, 45, 46, 183 … 192 | FR-5, FR-24, FR-26, FR-27, FR-28, FR-29, FR-30, FR-31, FR-32, FR-33, FR-34, FR-37, FR-38, FR-39, FR-40, FR-41, FR-42, FR-45, FR-46, FR-47, FR-54, FR-104, FR-177, FR-208, FR-210 |
+| S-08 | Validation panel (in-wizard, persistent) | RC | UC-37 … 40 | FR-40, FR-41, FR-42, FR-43, FR-44 |
+| S-09 | Carbon calculator | RC | UC-32 … 34 | FR-33, FR-34, FR-35, FR-36, FR-71 |
+| S-10 | Report preview | RC | UC-41 | FR-36, FR-44, FR-48 |
 | S-11 | Export dialogue and history | RC | UC-42 … 44, 48 | FR-44, FR-49, FR-50, FR-51, FR-52, FR-53 |
 | S-12 | Field change history | RC, OA | UC-47 | FR-54, FR-55 |
-| S-13 | Entities index and entity record | OA | UC-51 … 55 | FR-16, FR-17, FR-18, FR-19, FR-20 |
+| S-13 | Entities index and entity record | OA | UC-51 … 55 | FR-16, FR-17, FR-18, FR-19, FR-20, FR-27, FR-54, FR-107 |
 | S-14 | Reporting periods | OA | UC-56 … 58 | FR-21, FR-22, FR-45, FR-66 |
-| S-15 | Organization profile | OA | UC-50 | FR-15 |
-| S-16 | Users & access | OA | UC-59 … 64, 175 | FR-56, FR-57, FR-58, FR-59, FR-60, FR-173 |
-| S-17 | Plan, entitlements and usage | OA | UC-65, 66 | FR-90, FR-105 |
-| S-18 | Plan comparison and selection | OA | UC-96 … 98 | FR-91, FR-92, FR-93 |
-| S-19 | Order, summary and confirmation | OA | UC-110 … 115 | FR-108, FR-109, FR-110, FR-111, FR-112, FR-113 |
-| S-20 | Payment hand-off and return | OA | UC-116 … 121 | FR-114, FR-115, FR-116, FR-117, FR-118, FR-119 |
-| S-21 | Payment instruments | OA | UC-118, 119 | FR-117 |
-| S-22 | Invoices and documents | OA | UC-132, 157 | FR-128, FR-146 |
-| S-23 | Billing account | OA | UC-108 | FR-106, FR-107 |
-| S-24 | Subscription status and history | OA | UC-99 … 107 | FR-90, FR-94, FR-95, FR-96, FR-97, FR-98 (consumes FR-103, FR-104) |
+| S-15 | Organization profile | OA | UC-50 | FR-15, FR-16 |
+| S-16 | Users & access | OA | UC-59 … 64, 175, 197, 198, 201 … 204 | FR-9, FR-55, FR-56, FR-57, FR-58, FR-59, FR-60, FR-101, FR-102, FR-171, FR-173, FR-191, FR-195, FR-196, FR-197, FR-198, FR-203 |
+| S-17 | Plan, entitlements and usage | OA | UC-65, 66, 209 | FR-85, FR-90, FR-101, FR-105, FR-142 |
+| S-18 | Plan comparison and selection | OA | UC-96 … 98 | FR-84, FR-85, FR-86, FR-88, FR-89, FR-91, FR-92, FR-93, FR-142 |
+| S-19 | Order, summary and confirmation | OA | UC-110 … 115 | FR-86, FR-92, FR-94, FR-95, FR-96, FR-108, FR-109, FR-110, FR-111, FR-112, FR-113, FR-114, FR-118, FR-124 |
+| S-20 | Payment hand-off and return | OA | UC-116 … 121 | FR-112, FR-114, FR-115, FR-116, FR-117, FR-118, FR-119, FR-121 |
+| S-21 | Payment instruments | OA | UC-118, 119 | FR-115, FR-117, FR-120 |
+| S-22 | Invoices and documents | OA | UC-132, 157, 209 | FR-104, FR-119, FR-121, FR-122, FR-125, FR-128, FR-129, FR-136, FR-146 |
+| S-23 | Billing account | OA | UC-108 | FR-106, FR-107, FR-127 |
+| S-24 | Subscription status and history | OA | UC-99 … 107 | FR-87, FR-90, FR-93, FR-94, FR-95, FR-96, FR-97, FR-98, FR-103, FR-104 |
 | S-25 | Enterprise request | OA | UC-153 | FR-142 |
-| S-26 | Notification centre | CA | UC-165 … 167 | FR-160, FR-161, FR-162 |
+| S-26 | Notification centre | CA | UC-165 … 167 | FR-70, FR-160, FR-161, FR-162, FR-164, FR-165, FR-166, FR-203 |
 | S-27 | Profile, language, notification preferences | CA, all | UC-13, 14, 168 | FR-9, FR-10, FR-52, FR-163, FR-169 |
-| S-28 | Credentials and linked identities | CA | UC-10 … 12, UC-193 | FR-7, FR-8, FR-208, NFR-95 |
+| S-28 | Credentials and linked identities | CA | UC-10 … 12, UC-193 | FR-7, FR-8, FR-95, FR-208, NFR-95 |
 | S-29 | Marketing home | VI | UC-177 | FR-204 |
-| S-30 | Legal documents (terms · privacy · cookies) | VI, all | UC-178 | FR-205; NFR-5 is the obligation this screen discharges |
-| S-31 | Cookie choice | VI | UC-179 | FR-206 |
-| S-32 | Help centre | VI, CA | UC-180 | FR-61 |
+| S-30 | Legal documents (terms · privacy · cookies) | VI, all | UC-178 | FR-5, FR-204, FR-205, FR-206, NFR-5 |
+| S-31 | Cookie choice | VI | UC-179 | FR-205, FR-206 |
+| S-32 | Help centre | VI, CA | UC-180 | FR-61, FR-204 |
 | S-33 | Help article | VI, CA | UC-181 | FR-61, FR-64 |
-| S-34 | Write to support | VI, CA | UC-182 | — (G-9) |
+| S-34 | Write to support | VI, CA | UC-182 | — |
 | S-35 | Organization unavailable | CA | UC-16 (failure path) | FR-12 |
 | S-36 | Complete your account | CA | UC-02, UC-03 | FR-2, FR-3, FR-9 |
-| S-37 | Choose organization | CA | UC-16 | FR-12 |
-| S-38 | Unsubscribe from an email | CA | UC-173, UC-168 | FR-169, FR-163 |
-| A-01 | Admin sign-in (MFA) | PA, BO | UC-68, UC-212 | FR-75, FR-80 |
+| S-37 | Choose organization | CA | UC-16, UC-203 | FR-12, FR-197 |
+| S-38 | Unsubscribe from an email | CA | UC-173, UC-168 | FR-163, FR-169 |
+| S-39 | New report | RC, OA | UC-18, UC-192 | FR-25, FR-26, FR-66, FR-177 |
+| S-40 | Client roster | AD | UC-199, UC-200, UC-205 | FR-193, FR-194, FR-199, FR-202 |
+| S-41 | Request access to a client | AD | UC-198 | FR-192, FR-202 |
+| S-42 | Consolidated client status board | AD | UC-206, UC-207 | FR-200, FR-201, FR-202 |
+| A-01 | Admin sign-in (MFA) | PA, BO | UC-68 | FR-75, FR-80 |
 | A-02 | Organization register | PA | UC-69, UC-214 | FR-76, FR-77, FR-209 |
 | A-03 | Content and translation console | PA | UC-71 … 74 | FR-61, FR-62, FR-63, FR-64, FR-74 |
-| A-04 | Taxonomy versions, mappings, migration runs | PA | UC-75 … 79 | FR-65, FR-66, FR-67, FR-68, FR-69, FR-70 |
-| A-05 | Factor sets, thresholds, validation rules | PA | UC-80 … 82 | FR-71, FR-72, FR-73, FR-74 |
-| A-06 | Adoption metrics | PA | UC-83, 84 | FR-83 |
+| A-04 | Taxonomy versions, mappings, migration runs | PA | UC-75 … 79 | FR-51, FR-65, FR-66, FR-67, FR-68, FR-69, FR-70, FR-166 |
+| A-05 | Factor sets, thresholds, validation rules | PA | UC-80 … 82 | FR-35, FR-71, FR-72, FR-73, FR-74, FR-166 |
+| A-06 | Adoption metrics | PA | UC-83, 84 | FR-83, FR-105 |
 | A-07 | Support access request and audit log | PA | UC-85, 86 | FR-78, FR-79 |
-| A-08 | Admin accounts and system audit log | PA | UC-87, 88 | FR-80, FR-81 |
-| A-09 | Plan catalogue, entitlements, pricing, discounts | BO | UC-89 … 95 | FR-84, FR-85, FR-86, FR-87, FR-88, FR-89 |
+| A-08 | Admin accounts and system audit log | PA | UC-87, 88 | FR-62, FR-80, FR-81, FR-159 |
+| A-09 | Plan catalogue, entitlements, pricing, discounts | BO | UC-89 … 95, 208 | FR-84, FR-85, FR-86, FR-87, FR-88, FR-89, FR-202 |
 | A-10 | Reconciliation workspace | BO | UC-137 … 140 | FR-131, FR-132, FR-133, FR-134 |
 | A-11 | Collections and dunning | BO | UC-141 … 144 | FR-135, FR-136, FR-137, FR-138 |
-| A-12 | Invoicing, credit notes, numbering series | BO | UC-126 … 136 | FR-121 … FR-130 |
-| A-13 | e-Factura transmission exceptions | BO | UC-130 | FR-127 |
+| A-12 | Invoicing, credit notes, numbering series | BO | UC-126 … 136 | FR-121, FR-122, FR-123, FR-124, FR-125, FR-126, FR-127, FR-128, FR-129, FR-130 |
+| A-13 | e-Factura transmission exceptions | BO | UC-130 | FR-126, FR-127 |
 | A-14 | Refunds and chargebacks | BO | UC-145 … 147 | FR-139, FR-140, FR-141 |
 | A-15 | Enterprise quotes and contracts | BO | UC-153 … 159 | FR-142, FR-143, FR-144, FR-145, FR-146, FR-147 |
 | A-16 | Revenue, VAT export, billing audit ledger | BO | UC-160 … 164 | FR-148, FR-149, FR-150, FR-151, FR-152 |
-| A-17 | Notification categories and templates | PA | UC-176 | FR-173 |
-| A-18 | Identity provider configuration | PA | UC-70 | FR-82 |
-| A-19 | My credentials | PA, BO | UC-212 | FR-80 |
-| A-20 | Accept an administrator invitation | PA, BO | UC-87 | FR-80, FR-75 |
+| A-17 | Notification categories and templates | PA | UC-176 | FR-74, FR-173 |
+| A-18 | Identity provider configuration | PA | UC-70 | FR-74, FR-82 |
+| A-19 | My credentials (operator's own password, second factor, recovery codes) | PA, BO | UC-212 | FR-80 |
+| A-20 | Accept an administrator invitation | PA, BO | UC-87 | FR-75, FR-80 |
 | *(global tier)* | User menu — log out | CA | UC-06 | FR-5 |
 | *(inline)* | Re-authentication over preserved context | CA | UC-07 | FR-5 |
 | *(global tier)* | Organization switcher | CA | UC-16 | FR-12 |
@@ -2546,10 +2846,12 @@ Artefacts this specification governs, **with their delivered locations as of 18 
 | OQ-18 | **How many legal documents does the platform publish — three or five?** `EasyESG Public Legal.dc.html`'s tab strip carries **five**: terms of service, privacy notice, cookies, **data processing agreement** and **sub-processors**. Every other source says three — `design/HANDOFF.md` describes the file as "01 Terms of service · 02 Privacy notice · 03 Cookie policy · 04 The cookie choice", `apps/web`'s `SiteFooter` has linked to exactly three since task 20, and S-30 above is written for three | **Closed 5 Oct 2026 (project owner, task 182, 182/121): three — the terms of service, the privacy notice and the cookie policy. A data processing agreement and a sub-processor list are not published, because each would commit the platform to maintaining it.** *Surfaced 24 Aug 2026 while deriving the Content archetype from the prototypes.* Not resolved by reading the mockup: §1.5 makes a prototype a rendered reference and never a normative source (OQ-10), so five tabs are evidence that someone intended five, not a decision that there are. It matters because the two extra are not marketing pages — a **data processing agreement** is the Article 28 instrument a customer's own compliance function will ask for, and a **sub-processor list** is already named in `non_functional_requirements.md` §4.6 as a compliance artefact with a quarterly review (NFR-27). Publishing them is a commitment to maintaining them. Blocks the scope of S-30 and `task.md` task 75, and belongs with that task's batch | Requirements owner with legal |
 | OQ-19 | **S-28's resting shape: the artboard draws summary rows with one trigger each; §5's row says "grouped fields".** `EasyESG Identity.dc.html` shows, at all three widths, *"Last changed 12 February 2026 from Chișinău"* beside a **Change password** button, *"! Off"* beside **Turn on**, and a closing callout stating why the last credential cannot be unlinked. The screen built by task 27.7 renders open forms instead, with one record-level re-authentication field. | **Closed 24 Sep 2026 (project owner) — the artboard governs, and §5's S-28 entry is amended to it.** Each credential rests as a summary row with one trigger, and **a trigger opens its row in place** — the form, the enrolment code, the recovery codes or an unlink confirmation — one row open at a time. **The current password is asked inside the opened row**, so the record-level re-authentication field goes: with one row open the screen still never asks for the secret twice, which is the defect that field was built to fix. **The attribution is built as a date and not a place**: a new read, `GET /account/password`, answers whether the account holds a password and when it last changed, from a `password_changed_at` column (`identity.credential.updated_at` also moves on a failed sign-in, so it is not that date); *from Chișinău* is not drawn, because nothing records where a credential was changed and deriving a place from an address would be new personal data (NFR-30). **The closing callout is built**, naming the account's real last way in from the two reads. The row component is `apps/web`'s (UX-89 as amended 14 Sep 2026) and moves to `packages/ui` when A-19 takes the same shape | Design with the requirements owner |
 | OQ-20 | **S-04's artboard draws five fields; UC-49, §5 and the API name three between them.** `EasyESG Workspace.dc.html` shows **Legal name · IDNO · VAT code · Primary activity (CAEM-2) · Reporting currency**, each with help text asserting behaviour — *"13 digits · state identification number"*, *"Determines which sector questions appear in your report"*, *"Changeable until the first figure is entered"*. UC-49's main success scenario step 1 reads *"legal name, country, contact details"*; §5's Content row for S-04 says the same three; `CreateOrganizationRequestDto` (task 29.1) accepts `name`, `countryCode`, `contactEmail`, `contactPhone`. **Country, which all three of those carry and which selects the legal-form vocabulary, is on none of the three artboards.** | **Closed 29 Aug 2026 (project owner) — §5 governs S-04, and neither extra field is admitted.** Three decisions, taken on the escalation rather than by building: **reporting currency is deferred with its assumption recorded** — the platform serves Moldova-resident SMEs and BR-INV-5 already makes MDL the ledger currency, so a per-organization *choice* buys nothing until a second currency exists, and any monetary disclosure is denominated MDL; **what must change if that is wrong** is C8, revenues from certain sectors (UC-190), and task 79.8 is where it becomes knowable. **Primary activity stays on the reporting entity** — FR-17 governs, S-04 collects none, and S-13 owns it; modelling it on the organization as well would give conditional applicability two sources that can disagree, and for a multi-entity organization the entity's answer is the correct one. **S-04 builds §5's four fields** — legal name, country, contact email, contact phone — with country rendered even though the vocabulary holds one entry at MVP, because it is data (AD-4), it selects the legal-form set and it prints on the report. The analysis that produced those answers follows. OQ-10 already settles precedence: a prototype is authoritative over *values*, never content or scope, so the screen would follow §5. What that does not settle is whether two of the extra fields are requirements nobody wrote down. **Two of the four are traceable elsewhere and are not this question:** VAT registration code is FR-106's, on the **billing account**, which that requirement makes *"distinct from the organization profile"*; and IDNO is FR-16's, which §5's own S-04 Validation row defers to S-15 — though `architecture.md` OQ-18's rationale argues the other way in passing, calling IDNO *"the only candidate that is actually populated for every organization **at signup**"*, so the two sources lean opposite ways and the artboard follows the rationale rather than the requirement. **Two are genuinely unowned. Primary activity:** sector-driven applicability is real — `problem_overview.md` names *"water sector-driven"* — but FR-17 puts NACE on the **reporting entity**, not the organization, and task 29.3 registered CAEM Rev.2 as country-scoped configuration for entities; the artboard asserts an organization-level activity drives report content, which no FR states. **Reporting currency:** it appears in **no document in the set**. Every currency in the requirements is billing's — FR-86 prices, FR-110 order totals, FR-129 the BNM rate, FR-150 MDL equivalents — and no Basic-module disclosure carries a monetary amount (UC-28's B10 is minimum-wage *compliance*, coverage and hours, with a pay **gap** as a percentage). The Comprehensive module is where one would bite: **C8 is revenues from certain sectors** (UC-190, task 79.8), and `problem_overview.md` OQ-12 brought C1–C9 into MVP scope. So the deadline is real — P-11 puts what is expensive to retrofit on day one, and task 78.1's scope flag lands with task 31. | Requirements owner with design; the currency half also touches `architecture.md` §7 before task 78 |
-| OQ-21 | **The report creation flow is a screen with no `S-nn`, and it now ships.** §4.4 goes S-06 (Index) → S-07 (Wizard) with no record screen between them, so the flow UC-18 needs — choose an entity, choose a period, see the pins it will copy, create — belongs to no inventory row. It is not S-06's *Record* mode the way `/entities/new` is S-13's, because S-06's archetype is `Index` alone; and it is not S-07, which is the wizard the flow exits into. Two things ride on the absence: the **archetype** (it is Focus-shaped — one task, one primary action — but renders inside `(workspace)` with §4.2's tier, which Focus's fixed elements exclude), and the **state set** UX-8 requires before an instance is designed. | **Open, and deliberately not closed by task 32.3.** The screen was built because §4.6 requires S-06's teaching empty state to offer the first action and there was nothing to offer; recording the question is the part that was owed. **Assumed meanwhile:** it is S-06's creation flow rather than a screen of its own, its archetype question is real (it is the first `(workspace)` screen whose shape is Focus-like), and its states are the three the read has — ready, error — permission, error — recoverable — plus the two *nothing to offer* cases, which ship as three-part Callouts naming what to do instead. **What changes if that is wrong:** an `S-nn` row in §4.4 with a §5 entry and a states pass under UX-90, which is a documentation change and not a rebuild. The count in §4.4 moves with it. **Precedent both ways:** S-35 was added to §4.4 by task 25.4 for a failure path; `/entities/new` needed no row because S-13's own row reads *Index + Record*. | Design, with the requirements owner |
+| OQ-21 | **Closed 6 Oct 2026 — the creation flow is S-39.** **The report creation flow is a screen with no `S-nn`, and it now ships.** §4.4 goes S-06 (Index) → S-07 (Wizard) with no record screen between them, so the flow UC-18 needs — choose an entity, choose a period, see the pins it will copy, create — belongs to no inventory row. It is not S-06's *Record* mode the way `/entities/new` is S-13's, because S-06's archetype is `Index` alone; and it is not S-07, which is the wizard the flow exits into. Two things ride on the absence: the **archetype** (it is Focus-shaped — one task, one primary action — but renders inside `(workspace)` with §4.2's tier, which Focus's fixed elements exclude), and the **state set** UX-8 requires before an instance is designed. | **Resolved.** **Closed 6 Oct 2026 (project owner) — the report creation flow is S-39, a Focus screen drawn inside the workspace chrome.** It has an inventory row (§4.4), a §5 entry, and Focus's state set, with the two *nothing to offer* cases as its empty states. *Archetype:* Focus's fixed elements, with the workspace tiers standing — the one place a Focus screen is drawn under the workspace tier, because the screen belongs to the workspace and no report yet exists to suppress it (UX-5 binds the wizard). *Scope:* the screen asks Basic or Basic and Comprehensive, defaulting to Basic (FR-177, task 78.4; `architecture.md` §12.5.6's task-182 report-authoring row, item (9)), which closes task 32.3's recorded deferral. **Assumption now void:** *it is S-06's creation flow rather than a screen of its own.* The count in §4.4 moves with it. | Design, with the requirements owner — decided. |
 | OQ-22 | **40 of the 78 quantitative VSME elements state no unit, and UX-14 requires every quantitative field to carry one.** Raised 8 Sep 2026 by task 91.4's spec review, after that task built both of UX-14's branches and measured what they cover. EFRAG's `measurementGuidance` role reaches 42 elements; the rest — two of B3's three energy breakdown rows among them — have no stated unit anywhere in the published package, so FR-29's *"captured in the stated unit"* has no unit to name there. | **Open.** Three answers are visible and none is free: platform-authored units per element, which puts a figure on a filing under a unit EFRAG never stated; asking EFRAG, which is a regulatory-watch action on NFR-12's cycle rather than a task; or amending UX-14 to bind only the fields the standard states a unit for, which is honest and weakens the rule that exists because unit-less ESG data is unusable. **What holds meanwhile:** those fields render no unit and store `unit_code` null — visible as a gap rather than wrong, which is the conservative direction. | Requirements owner, with the regulatory watch (NFR-12) |
 | OQ-23 | **Raised and closed 10 Sep 2026 — neither, because the platform sets no non-essential storage.** Raised as its own row because S-31, UC-179 and `task.md` had all been citing **OQ-16** for this, and OQ-16 is a different question in this register — the Register artboard's name field and consent checkbox, still open. The cookie question had no row, and closing it under a borrowed number would have written a cookie decision onto an S-01 question. **Established from the code, not from the prototype:** eight cookies platform-wide (seven when this row was closed; task 155 added `easyesg_setup_grant` on 14 Sep 2026) and every one strictly necessary — `easyesg_session`, `NEXT_LOCALE`, `easyesg_social`, `easyesg_factor_challenge`, `easyesg_pending_link` and `easyesg_setup_grant` on the tenant surface, `easyesg_admin_session` and `easyesg_admin_challenge` on the operator console's own origin — with **no analytics, advertising or third-party code** in `apps/web`, `apps/admin` or `packages/ui`, the browser storage that is not a cookie equally functional (session storage in two stores — the address awaiting verification and the address awaiting a reset — and the autosave queue in IndexedDB, none holding a preference), and the fonts self-hosted, so the public pages make no external request at all. Law 195/2024 aligns with the ePrivacy standard, under which strictly necessary cookies require **information, not consent**. | **Resolved, and both horns were wrong.** The question offered *recorded* or *implied*; the answer is that no consent is required, so there is nothing to record and nothing to imply. **S-31 keeps the disclosure job its §5 entry already said does not depend on the answer being stored, and loses its accept/decline controls** — amended there in this edit, because a control with nothing to act on is normative text the decision falsified. **Whether S-31 then survives as a distinct screen or folds into the cookie policy is task 75.1's**, not decided here. **What was assumed, and what re-opens this:** that the product ships no non-essential storage. Analytics, an advertising pixel, an embedded third-party player or a font service re-opens it as a new row, and the consent mechanism must ship in the *same* change — UC-179's own business rule makes the policy a factual claim about the build, so it may not be false for even one release. The prototype's `esg_stats` cookie and its accept/decline banner assumed analytics that was never built. **Amended 5 Oct 2026** (project owner, task 182, 182/117, 182/122): S-31 folds into the cookie policy of S-30 with no first-arrival overlay; the population is eight cookies since task 155 (the row above is corrected in the same pass); task 75.2's enumerated inventory is the single source of the disclosure, checked by a test that fails when a cookie is added. Treating all eight as strictly necessary is the owner's assumption: if one is not, the consent mechanism ships in the same change. | Design — decided |
 | OQ-24 | **Must acceptance of the Terms of Service and Privacy Notice be *recorded* rather than implied?** Split out of OQ-16 on 12 Sep 2026 when that row's name half closed, on the precedent OQ-23 set on 10 Sep 2026: OQ-16 was one row carrying two unrelated questions, and the rows citing it could not say which they meant. `EasyESG Identity.dc.html`'s Register artboard draws a consent checkbox; §5's S-01 content list has none, and nothing in the identity schema records an acceptance | **Decided 5 Oct 2026 (project owner, task 182, 182/115): implied for the pilot, recorded with the document version and a timestamp, and a re-acceptance flow, once the documents carry a version (195).** *What follows is the question as it stood.* **Open, and deliberately not closed by the Stage 1 name work.** It is a legal and compliance question, not a screen one: recording consent means a stored acceptance with its document version and timestamp — an API and identity-schema change — and it touches the legal documents of OQ-18 and task 75, whose count is itself unsettled. What holds meanwhile is the implied acceptance the shipped screen states in its copy. What changes if it is wrong: a migration, a field on the register command, and a re-acceptance flow for accounts created before it | Legal with the requirements owner |
+| OQ-25 | **Closed 6 Oct 2026 (project owner) — every screen states its navigation elements.** The spec said which tiers exist (§4.2) and how screens connect (§4.3, each screen's entry points and exits), but not which screens carry a breadcrumb, which way back, or a list's filters, search, sort and paging; only S-06, S-13, S-14 and S-16 had them, by amendment. *Raised in: Raised by the owner's review of the spec, 6 Oct 2026.* | **Resolved.** **Resolved by §4.7**: UX-139 (a breadcrumb on every page below a workspace section's root, none on roots, Focus screens, the wizard or the console, and the prototype governs where it draws one), UX-140 (the up arrow where there is a trail, back-to-context on a screen with several origins, Cancel on Focus, the wizard's one Exit, Close on a Panel), UX-141 (every list names its facets, search, default sort and paging, 25 / 50 / 100, a facet *derived 6 Oct 2026* open to challenge by the task that builds it) and UX-142 (what every page has and the table does not repeat); the tenant and console tables and the console navigation map follow them. | Design, project owner |
+| OQ-26 | **Closed 6 Oct 2026 (project owner) — the advisor screens.** §1.4 left UC-196 … UC-211 with no screen, pointing at task rows. S-40 … S-42 were specified and S-04, S-16, S-17, S-22, S-26, S-37, A-09 and the organization switcher amended; twelve points no source decided were settled. *Raised in: §1.4; FR-190 … FR-203; `architecture.md` §12.5.6's task-182 advisor row.* | **Resolved.** **(1)** An advisor firm's workspace tier is *Home · Client roster · Status board · Organization · Users & access · Plan & billing*; *Reports* and *Entities & periods* are absent, not locked, and Home says the firm holds no reports, leading the Administrator to the roster and the board and a staff member to the switcher. **(2)** The switcher's line names the firm in place of a role, and there is no *acting for a client* banner. **(3)** S-41 identifies the client by the invitee's account email or by a code, as a choice of two ways with one field each; the answer is the same whether or not anything matched, and the signal that remains — a pending roster entry and the 409 and 429 refusals, which arise only for a match — is **accepted**: the firm is an authenticated, rate-limited, paying account. **(4)** The roster names a client it has no access to by its organization name, and of a decline shows the date, never the client's reason. **(5)** The staff-scope dialogue offers active clients only. **(6)** A client is entered from the roster, the board and S-37 alike, landing on the client's S-05; the board lists open periods only. **(7)** Revoked, expired and ended relationships are not listed on the client's S-16, and an access code is shown once and never stored for display. **(8)** The board's completion is resolved plus reasoned over all (D-4), and its export is offered on the screen when ready, with no history of its own. **(9)** S-18 shows an advisor firm the Advisor plan alone and an SME the reporting plans alone. **(10)** S-04's type choice keeps the same fields, the company preselected, its wording authored with the catalogues. **(11)** A view-only member who reaches S-39's address meets the permission error naming the cause and who can change it. **(12)** S-16's reminder control is not offered to an advisor-type organization. | Design, project owner |
 
 ---
 

@@ -31,7 +31,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 |---|---|
 | **Actors** | SYS records. A producer (any context) raises. No human acts on the record directly. |
 | **Traces** | UC-165, UC-172, UC-174 · FR-157 · AD-11 · BR-NOT-1 · entities *Notification*, *Delivery record* |
-| **Surfaces** | `NOTIFICATION_PORT.raise()` and `cancel()` (a port, not a route) · outbox event `platform.notification.raised` · no HTTP operation |
+| **Surfaces** | `NOTIFICATION_PORT.raise()` and `cancel()` (a port, not a route) · outbox event `platform.notification.raised` · no HTTP operation · S-26 |
 
 **Inputs.** A category key from the closed vocabulary (FR-173), the organization, the recipients by account id, a subject reference, an optional recipient scope, a deep link (FR-162) and the notice's parameters.
 

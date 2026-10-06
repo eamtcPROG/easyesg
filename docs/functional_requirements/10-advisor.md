@@ -30,7 +30,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | A user holding a verified account creates it and becomes its Advisor Administrator. An unverified account cannot. |
 | **Traces** | UC-196 (UC-49, UC-197, UC-198) · D-1 · D-15 · FR-13, FR-14 · NFR-9 · `actors.md` AD |
-| **Surfaces** | No advisor screen is designed (`design_spec.md` §1.4 lists advisor portal surfaces as not designed); 116.5 builds one from the shared archetypes (§12.5.6 task-182 advisor row, 182/168). `POST /organizations` exists for the direct SME and takes no organization type today; it gains an optional one (116.4). |
+| **Surfaces** | No advisor screen is designed (`design_spec.md` §1.4 lists advisor portal surfaces as not designed); 116.5 builds one from the shared archetypes (§12.5.6 task-182 advisor row, 182/168). `POST /organizations` exists for the direct SME and takes no organization type today; it gains an optional one (116.4). · S-04 |
 
 **Preconditions.** The user holds a verified account (UC-196).
 
@@ -70,7 +70,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The Advisor Administrator invites and sets scope. A staff member outside a client's scope is refused entry to it. |
 | **Traces** | UC-197 (UC-15, UC-60, UC-199, UC-205) · D-15 · FR-57 · `actors.md` AD |
-| **Surfaces** | None designed; 116.6 builds the invitation and the scope control from the shared archetypes (182/168). The check runs on the entry route of FR-199. |
+| **Surfaces** | None designed; 116.6 builds the invitation and the scope control from the shared archetypes (182/168). The check runs on the entry route of FR-199. · S-16 |
 
 **Preconditions.** An advisor organization exists (UC-197).
 
@@ -108,7 +108,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The Advisor Administrator requests. The client's Organization Administrator is notified. |
 | **Traces** | UC-198 (UC-201, UC-202, UC-211) · D-15 · FR-203 · `actors.md` AD |
-| **Surfaces** | None designed; 116.7 builds the request form (182/168). The relationship's states are task 116.2's. |
+| **Surfaces** | None designed; 116.7 builds the request form (182/168). The relationship's states are task 116.2's. · S-41 |
 
 **Preconditions.** An advisor organization exists (UC-198).
 
@@ -154,7 +154,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The Advisor Administrator reads it. |
 | **Traces** | UC-199 (UC-197, UC-205, UC-209) · FR-202 · `actors.md` AD |
-| **Surfaces** | The roster, on the Inventory archetype that task 115 rebuilt (task-118.1 row). No S-nn is assigned in `design_spec.md`. |
+| **Surfaces** | The roster, on the Inventory archetype that task 115 rebuilt (task-118.1 row). No S-nn is assigned in `design_spec.md`. · S-40 |
 
 **Preconditions.** An advisor organization exists (UC-199).
 
@@ -188,7 +188,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The Advisor Administrator. No action by the client. |
 | **Traces** | UC-200 (UC-47, UC-63, UC-203) · FR-54, FR-59 · `actors.md` AD |
-| **Surfaces** | None designed; 116.8 builds it (182/168). |
+| **Surfaces** | None designed; 116.8 builds it (182/168). · S-40 |
 
 **Preconditions.** An active or pending relationship exists with the client (UC-200).
 
@@ -221,7 +221,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The client's Organization Administrator grants. Other roles are not granted this capability (`actors.md` §5). |
 | **Traces** | UC-201 (UC-198, UC-204, UC-210) · D-15 · FR-203 · `architecture.md` OQ-26 · `actors.md` AD |
-| **Surfaces** | The client's review of a request (task 119.1). No S-nn is assigned. |
+| **Surfaces** | The client's review of a request (task 119.1). No S-nn is assigned. · S-16 |
 
 **Preconditions.** A pending advisor relationship exists against the organization (UC-201).
 
@@ -262,7 +262,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The client's Organization Administrator. |
 | **Traces** | UC-202 (UC-198, UC-211) · FR-203 · `actors.md` AD |
-| **Surfaces** | The client's review of a request (task 119.1). |
+| **Surfaces** | The client's review of a request (task 119.1). · S-16 |
 
 **Preconditions.** A pending advisor relationship exists against the organization (UC-202).
 
@@ -295,7 +295,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The client's Organization Administrator. |
 | **Traces** | UC-203 (UC-62, UC-63, UC-200, UC-204) · D-15 · FR-58, FR-59 · AD-12 · `actors.md` AD |
-| **Surfaces** | The client's access view (FR-198). Task 119's description names revoking; neither 119.1 nor 119.2 does, and 119.3 builds the control beside 119.2's view (182/168). |
+| **Surfaces** | The client's access view (FR-198). Task 119's description names revoking; neither 119.1 nor 119.2 does, and 119.3 builds the control beside 119.2's view (182/168). · S-16 · S-37 |
 
 **Preconditions.** An active advisor relationship exists (UC-203).
 
@@ -364,7 +364,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | An advisor user, Administrator or staff, with a relationship granted by the client. |
 | **Traces** | UC-205 (UC-16, UC-18, UC-47, UC-197) · D-15 · AD-2 · AD-12 · DR-5 · FR-12 · `architecture.md` OQ-26 · `actors.md` AD |
-| **Surfaces** | The organization switcher, which gains the advisor's clients (task 118.2, over 83.2). `PUT /session/organization`, the route of task 83, with the matrix line in `route-permissions.ts` unchanged (task-117.1 row). |
+| **Surfaces** | The organization switcher, which gains the advisor's clients (task 118.2, over 83.2). `PUT /session/organization`, the route of task 83, with the matrix line in `route-permissions.ts` unchanged (task-117.1 row). · S-40 |
 
 **Preconditions.** An active, unexpired relationship exists with the client, and the acting staff member is within its scope (UC-205).
 
@@ -405,7 +405,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The Advisor Administrator. |
 | **Traces** | UC-206 (UC-38, UC-56, UC-67, UC-170, UC-199) · D-15 · AD-2 · DR-5 · FR-199 · `actors.md` AD |
-| **Surfaces** | The board (task 118.3). No S-nn is assigned. |
+| **Surfaces** | The board (task 118.3). No S-nn is assigned. · S-42 |
 
 **Preconditions.** At least one active client relationship exists (UC-206).
 
@@ -442,7 +442,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The Advisor Administrator. |
 | **Traces** | UC-207 (UC-42, UC-43, UC-206) · D-15 · FR-48, FR-49, FR-200 · `actors.md` AD |
-| **Surfaces** | The export action on the board (task 118.4, web and worker). |
+| **Surfaces** | The export action on the board (task 118.4, web and worker). · S-42 |
 
 **Preconditions.** The board is available to the acting user (UC-207).
 
@@ -474,7 +474,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | The Billing Operator defines the plan (UC-208). The Advisor Administrator views plan, quota and invoices (UC-209). |
 | **Traces** | UC-208, UC-209 (UC-89 … UC-92, UC-96, UC-148, UC-65, UC-66, UC-132, UC-199) · D-16 · D-12 · AD-5 · FR-99 · FR-100 · NFR-1 · NFR-17 · `actors.md` AD |
-| **Surfaces** | A-09 gains the advisor plan and its keys (task 120.3). The firm's billing screens, over task 63's (task 120.2). |
+| **Surfaces** | A-09 gains the advisor plan and its keys (task 120.3). The firm's billing screens, over task 63's (task 120.2). · S-40 · S-41 · S-42 |
 
 **Preconditions.** The plan catalogue is available (UC-208). The advisor organization holds a subscription (UC-209).
 
@@ -516,7 +516,7 @@ Added 11 Sep 2026 with the promotion of Advisor portfolio management out of `use
 |---|---|
 | **Actors** | SYS ends the relationship and raises the notices. The client's Organization Administrator and the advisor firm receive them. |
 | **Traces** | UC-210, UC-211 (UC-168, UC-172, UC-173, UC-198, UC-201 … UC-203) · FR-157, FR-160 … FR-163, FR-166 · `actors.md` AD |
-| **Surfaces** | The notification centre and email (task 121.1). No screen of its own. |
+| **Surfaces** | The notification centre and email (task 121.1). No screen of its own. · S-16 · S-26 |
 
 **Preconditions.** For expiry, the relationship carries an expiry date set at the grant (UC-210; FR-195). For a notice, an advisor relationship changes state (UC-211).
 

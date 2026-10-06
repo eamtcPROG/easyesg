@@ -49,7 +49,7 @@ Working commands: `pnpm gates:scoped` (the dependency-graph run — see "Closing
 for which run applies when),
 `pnpm lint`, `pnpm eslint:prove` (15 `no-restricted-syntax` selectors, each with a fixture
 proving it rejects a real violation, plus the four config blocks' spread matrix),
-`pnpm typecheck`, `pnpm image:check`, `pnpm docs:check` (47 countable claims these
+`pnpm typecheck`, `pnpm image:check`, `pnpm docs:check` (48 countable claims these
 files make, each checked against the repository and each proven to notice a changed number),
 `pnpm test`, `pnpm boundaries`,
 `pnpm boundaries:prove` (24 rules, each with a fixture proving it rejects a real violation),
@@ -244,7 +244,7 @@ changing anything — `gh run view <id> --log-failed` — and fix the cause rath
 | [functional_requirements.md](docs/functional_requirements.md) and its eleven parts in [functional_requirements/](docs/functional_requirements/) | What it does — an index row per requirement, and a block per requirement in its part: status, actors, refusals, effects, sourced acceptance criteria (task 182) | FR-1…210 |
 | [non_functional_requirements.md](docs/non_functional_requirements.md) | How well | NFR-1…93, 106…110 (+94…105 deferred) |
 | [architecture.md](docs/architecture.md) | How it's built | AD-1…15, DR-1…11 |
-| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…138, S-01…38, A-01…20 |
+| [design_spec.md](docs/design_spec.md) | UX and screens | UX-1…142, S-01…42, A-01…20 |
 
 **Precedence:** `problem_overview.md` governs scope. Each other doc is authoritative in its own
 column. Cite identifiers (`FR-123`, `AD-7`) rather than re-deriving decisions — they are closed.
@@ -255,7 +255,7 @@ what is wrong.
 
 | File | Owns | Use it |
 | --- | --- | --- |
-| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, holds no row: its test — accounts, authentication, authorisation, admin user management and security *fully functional* — is met, and the five identity rows that wait on infrastructure or billing are named there with the Stage each sits in. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026), which is what let Stage 1 empty while `51`, `67` and `133` kept later tails; **202 tasks across the two plan files**, of which 71 tasks are here and 131 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
+| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, holds no row: its test — accounts, authentication, authorisation, admin user management and security *fully functional* — is met, and the five identity rows that wait on infrastructure or billing are named there with the Stage each sits in. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026), which is what let Stage 1 empty while `51`, `67` and `133` kept later tails; **203 tasks across the two plan files**, of which 72 tasks are here and 131 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
 | [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 131 numbers, 244 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
 | [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
 

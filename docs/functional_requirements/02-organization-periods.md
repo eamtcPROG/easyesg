@@ -79,7 +79,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 |---|---|
 | **Actors** | No actor writes a relationship at MVP. A type is registered as configuration data (AD-4), not by a tenant. |
 | **Traces** | UC-49 · NFR-9 · AD-4 · `architecture.md` §7.2, §7.5 · FR-190 … FR-197 · entity *Organization relationship* |
-| **Surfaces** | None. The table `core.org_relationship` and the configuration artefact `organization-relationship-type.global.json`. |
+| **Surfaces** | None. The table `core.org_relationship` and the configuration artefact `organization-relationship-type.global.json`. · S-04 |
 
 **Behaviour.**
 1. **Two typed axes, constrained differently on purpose** (§7.2, decided 28 Aug 2026). The **kind** of edge (`parent`, `child`, `peer`) is the shape of a graph and is a database `CHECK`. The **organization type** (`direct_sme` at MVP; Advisor, Buyer and Licensee later) is NFR-9's axis, so it is a configuration key, and the database guarantees only that it is a lower-case identifier.
@@ -158,7 +158,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 |---|---|
 | **Actors** | Organization Administrator enters. SYS validates. |
 | **Traces** | UC-51 · OQ-18 · NFR-64, NFR-79 · FR-17, FR-73, FR-107 · entity *Entity identifier* |
-| **Surfaces** | S-13 (the record; the Index lists each entity's IDNO) · `POST /entities` · `PATCH /entities/{entityId}` |
+| **Surfaces** | S-13 (the record; the Index lists each entity's IDNO) · `POST /entities` · `PATCH /entities/{entityId}` · S-15 |
 
 **Inputs.** IDNO: thirteen digits. LEI: twenty characters, eighteen of upper-case letters and digits then two digits. Either is null until stated, and null clears.
 

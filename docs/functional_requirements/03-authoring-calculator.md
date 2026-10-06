@@ -66,7 +66,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 |---|---|
 | **Actors** | Every member of the active organization reads. Editor or OA may create a report from the list. |
 | **Traces** | UC-17 · `architecture.md` OQ-30 · UX-68 |
-| **Surfaces** | S-06 (Index archetype) · `GET /reports` · `GET /reports/{id}` · `POST /reports` |
+| **Surfaces** | S-06 (Index archetype) · `GET /reports` · `GET /reports/{id}` · `POST /reports` · S-39 |
 
 **Behaviour.**
 1. Each row answers its subject (entity name, period year and dates), resolved server-side rather than assembled by the screen (task-32.2 row).
@@ -95,7 +95,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 |---|---|
 | **Actors** | Editor or OA. View-only refused. The lock refuses everyone. |
 | **Traces** | UC-18, UC-57 · FR-22, FR-158 · OQ-30 · UX-13 · BR-PER-1 |
-| **Surfaces** | S-07 and S-06 read-only states · every report write route |
+| **Surfaces** | S-07 and S-06 read-only states · every report write route · S-39 |
 
 **Behaviour.**
 1. There is no stored "editable session". The check runs per request: the role at the guard, and the lock as a trigger beneath the store that also refuses a DELETE (task-89 and task-34.1 rows).
@@ -318,7 +318,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 |---|---|
 | **Actors** | Editor or OA sets the scope and authors. |
 | **Traces** | UC-183 … UC-192 · D-A · `problem_overview.md` OQ-12 · FR-155 · NFR-1 |
-| **Surfaces** | S-06 (creation flow, scope column) · S-07 (the Comprehensive group) · `POST /reports` and `PATCH /reports/{id}` (`scope`) |
+| **Surfaces** | S-06 (creation flow, scope column) · S-07 (the Comprehensive group) · `POST /reports` and `PATCH /reports/{id}` (`scope`) · S-39 |
 
 **Inputs.** Scope: `basic` or `basic_and_comprehensive`, defaulting to `basic`.
 

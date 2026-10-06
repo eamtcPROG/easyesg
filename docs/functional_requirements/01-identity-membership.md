@@ -144,7 +144,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 |---|---|
 | **Actors** | CA. SYS reclaims the expired rows. |
 | **Traces** | UC-03 · BR-ID-1 · `architecture.md` OQ-52, OQ-54, OQ-55, OQ-57 · NFR-64 · FR-1, FR-2 · entity *Account* |
-| **Surfaces** | S-02 (confirm the address; request a new link) · `POST /auth/verify-email` (200 · 400) · `POST /auth/verification-email` (202 · 400) |
+| **Surfaces** | S-02 (confirm the address; request a new link) · `POST /auth/verify-email` (200 · 400) · `POST /auth/verification-email` (202 · 400) · S-36 |
 
 **Preconditions.** An unverified account exists (FR-1), or a provider has asserted the address (FR-2).
 
@@ -255,7 +255,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 |---|---|
 | **Actors** | CA. |
 | **Traces** | UC-06, UC-07 · UC-35, UC-36 · UX-37, UX-38 · `architecture.md` AD-12, OQ-33, OQ-60 and §12.5.6's task-35.3, task-92, task-93, task-160, task-161 rows · NFR-38 · entity *Session* |
-| **Surfaces** | The account menu's sign-out · S-07's inline re-authentication dialogue · S-01's `?return=` · `DELETE /auth/session` (204) · `POST /auth/session/refresh` · web Route Handlers under `/auth/session` |
+| **Surfaces** | The account menu's sign-out · S-07's inline re-authentication dialogue · S-01's `?return=` · `DELETE /auth/session` (204) · `POST /auth/session/refresh` · web Route Handlers under `/auth/session` · S-30 |
 
 **Preconditions.** A session exists (sign-out), or one has just ended (resumption).
 
