@@ -58,7 +58,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-25 — The reports list
 
-**Status.** Partial — delivered 31.3, 32.2, 32.2.1, 32.2.2 · remaining 40, 41.1, 41.3 (completion and validation summary)
+**Status.** Partial — delivered 31.3, 32.2, 32.2.1, 32.2.2, 40 (the interpreter the summary will read) · remaining 41.1, 41.3 (completion and validation summary)
 
 **Obligation.** The system shall list the reports of the active organization, each with its entity, period, scope, status and last activity and its completion and validation summary, showing a view-only member the same entries without edit affordances.
 

@@ -168,7 +168,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 3. **The IDNO is checked in full, once 188 builds the check.** Government Decision 272/2002 fixes the thirteen-digit layout and says the last digit is a check digit, without giving the algorithm. The algorithm was supplied on 5 Oct 2026: the first twelve digits are multiplied by the repeating weights 7, 3, 1 and summed, and the sum modulo 10 is the thirteenth digit. It holds for 1003600005148 and 1017600033216, and its source (StephenAbbott/opencheck PR #269, `backend/opencheck/sources/asp_moldova.py`) validated all 265,814 IDNOs in the State Register export of 14 Sep 2026. It is not the weighted-modulo-11 family that §7.2 refuted on 28 Aug 2026. Until the check is built, the validator reports the check digit as *not evaluated*, which is not the same as failed (§12.5.6 task-182 identity and organization row, 182/12; §7.2).
 4. **The LEI is checked in full**: ISO 17442 shape, then ISO 7064 MOD 97-10. Case is not normalised; a lower-case LEI is malformed.
 5. **No uniqueness constraint on the IDNO.** A platform-wide unique index would be an existence oracle over the Moldovan company register crossed with the customer list (NFR-64), and it would need a cross-tenant read no policy grants. Duplicates are permitted (§7.2). Whether one organization's entities may share an IDNO is deferred: nothing refuses it, and if the answer is to refuse, a partial unique index on (organization, IDNO) and one problem type are what change (§12.5.6 task-175 row).
-6. **Requiredness is not enforced at the record.** That B1 cannot be filed without an IDNO is a validation rule interpreted from configuration (FR-73, task 40), so the profile stays usable while half complete.
+6. **Requiredness is not enforced at the record.** That B1 cannot be filed without an IDNO is a validation rule interpreted from configuration (FR-73: the interpreter is task 40's, the rule set 41.1's), so the profile stays usable while half complete.
 
 **Refusals.**
 - IDNO not thirteen digits, or LEI not of the right shape → 400 `identifier-malformed` (`core.entity.idno_malformed`, `core.entity.lei_malformed`)
@@ -322,7 +322,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 **Refusals.** Consolidated basis with no subsidiary → 400 `consolidation-boundary-empty`.
 
-**Boundaries.** Whether a report may be filed with no basis at all is the ordinary completeness question: FR-73, task 40. The calculator's aggregation over the boundary is FR-34's.
+**Boundaries.** Whether a report may be filed with no basis at all is the ordinary completeness question: FR-73, tasks 40 and 41.1. The calculator's aggregation over the boundary is FR-34's.
 
 **Acceptance criteria.**
 - **AC-1** Given an entity, when `individual` is recorded, then it is stored and read back. *(source: FR text; UC-54 step 1)*
@@ -493,7 +493,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 ### FR-23 — The organization-wide overview
 
-**Status.** Partial — delivered 30.5, 32.4 · remaining 40, 41.3 (completion and validation status), 187 (an archived entity's periods are not attention items)
+**Status.** Partial — delivered 30.5, 32.4, 40 (the interpreter the status will read) · remaining 41.3 (completion and validation status), 187 (an archived entity's periods are not attention items)
 
 **Obligation.** The system shall present an organization-wide overview of every period of every entity, with completion and validation status, in a single view.
 

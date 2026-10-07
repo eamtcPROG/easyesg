@@ -14,9 +14,9 @@ notification core (49) — categories, one mail path, `raise()` and delivery by 
 50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre
 since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, and its first
 producer through `raise()` since 50.3, UC-175's reminder, and each person's preferences, honoured at dispatch, with FR-169's
-one-click unsubscribe since task 52, and the calculator's emission factor sets since task 37; the calculator's runs,
-validation, export, billing, the console's screens, edge and deploy, the
-public tier and the Comprehensive Module are not (38 onward). `docs/archived_tasks.md` says what each closed task
+one-click unsubscribe since task 52, and the calculator since tasks 37 … 39; validation's run and findings, export, billing,
+the console's screens, edge and deploy, the public tier and the Comprehensive Module are not — the rule interpreter
+they will run is `@easyesg/validation`'s since task 40. `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
 traps each one left — grouped by area rather than by the task that built it.
@@ -128,7 +128,8 @@ traps each one left — grouped by area rather than by the task that built it.
   used the set leaving, to its editors and administrator, and withdraws the entering set's own — **the first producer on
   the worker**, one organization at a time through `TENANT_WORK` (`contracts/tenant-work.port.ts`) (§12.5.6's
   task-37.3/37.4 row).
-- **Not live**: validation (40 … 42), preview and export (43 … 47),
+- **Not live**: validation's run, findings and screens (41, 42 — the interpreter is `@easyesg/validation`'s since task 40, and
+  `core/validation/rule-corpus.spec.ts` runs its corpus against the package's CommonJS build), preview and export (43 … 47),
   the outstanding-report and deadline notices (51.2), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).

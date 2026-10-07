@@ -475,7 +475,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 
 ### FR-73 — Validation rule definitions as configuration
 
-**Status.** Not started — remaining 40.1, 40.2, 40.3 (the interpreter), 41.1 (rule sets from the store), 201 (the version-pinned regression suite), 67.8 (A-05's editor)
+**Status.** Partial — delivered 40 (the rule definition, its reader and the interpreter, run identically in both runtimes) · remaining 41.1 (rule sets from the store), 201 (the version-pinned regression suite), 67.8 (A-05's editor)
 
 **Obligation.** The system shall maintain validation rule definitions as configuration, each naming the message it fires by a key whose wording is committed in the catalogues, separately from applicability thresholds.
 
@@ -487,7 +487,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 
 **Behaviour.**
 1. Rules are data interpreted by one interpreter in `packages/validation`, which `apps/api` and `apps/web` both run, so the server verdict and the inline verdict cannot drift (§9.8; task 40).
-2. Rule types are presence, consistency, range and format, and cross-period (§9.8). Applicability is FR-72's artefact and not a rule kind here: §9.8's list also names it, and the task-91.3 row decided against that (§12.5.6).
+2. Rule types are presence, consistency, range and format, and cross-period (§9.8), written as a closed vocabulary of eight kinds, each rule naming the verdict it fires from those its kind admits: a new rule is data, a new kind is code (§12.5.6 task-40 row). Applicability is FR-72's artefact and not a rule kind here: §9.8's list also names it, and the task-91.3 row decided against that (§12.5.6).
 3. Each rule names a message key. The wording is in the committed catalogues (AD-4's artefact table; OQ-43). A rule change is a configuration publish; a wording change is a release.
 4. Rule definitions are effective-dated: exactly one version is in force for a date (AD-4's artefact table).
 5. The rule set reaches the api as effective-dated rows, so a rule change takes effect with no redeploy and reverts in one step (task 41.1).
@@ -499,7 +499,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 **Boundaries.** The five validation states and who they roll up to are FR-40 and FR-41. The finding's shape (field, rule, plain-language explanation, link) is FR-42. The notice a rule change may owe is FR-166's (task 67.8).
 
 **Acceptance criteria.**
-- **AC-1** Given the same rule set and the same values, then `apps/api` and `apps/web` return identical verdicts. *(source: §9.8; task 40.3 Expected result)* Unmet until 40.3.
+- **AC-1** Given the same rule set and the same values, then `apps/api` and `apps/web` return identical verdicts. *(source: §9.8; task 40.3 Expected result)*
 - **AC-2** Given a rule or its message key edited in configuration, then it takes effect with no deployment, independently of the thresholds. *(source: FR text; UC-82)* Unmet until 41.1 and 67.8.
 - **AC-3** Given a rule change, then it reverts in one step. *(source: NFR-85; task 41.1 Expected result)* Unmet until 41.1.
 - **AC-4** Given a change to the wording of a finding, then it ships with a release and is not a publication. *(source: OQ-43; NFR-85 as amended)*
@@ -510,6 +510,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 **History.**
 - 19 Aug 2026 · architecture.md OQ-43 · the message a rule fires is a key whose wording is committed; the rule stays configuration · `architecture.md` OQ-43, AD-4's artefact table; NFR-85
 - 5 Oct 2026 · project owner · a rule whose message key lacks wording is refused at publication; rules are read as at today while the period is open and as at the lock once locked · §12.5.6 task-182 content row (182/44, 182/51)
+- 7 Oct 2026 · project owner · the rule definition is a closed vocabulary of eight kinds, each rule carrying its verdict; a rule set the vocabulary cannot hold is refused by one reader shared by the api and A-05 · §12.5.6 task-40 row
 
 ### FR-74 — Content-only and rule-only changes without a redeploy
 

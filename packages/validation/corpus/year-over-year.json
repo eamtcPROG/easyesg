@@ -1,0 +1,244 @@
+{
+  "about": "year_over_year: a movement strictly beyond one global proportion against the comparable prior at the same natural key (FR-46, 182/28).",
+  "cases": [
+    {
+      "name": "a rise beyond half is flagged, quoting both values and the change",
+      "rules": {
+        "rules": [
+          {
+            "id": "year-over-year",
+            "kind": "year_over_year",
+            "verdict": "inconsistency",
+            "message": "validation.year_over_year",
+            "proportion": "0.5"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "31"}],
+      "prior": [{"elementKey": "NumberOfEmployees", "valueNumeric": "20"}],
+      "findings": [
+        {
+          "rule": "year-over-year",
+          "verdict": "inconsistency",
+          "field": {"elementKey": "NumberOfEmployees", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.year_over_year",
+          "params": {"current": "31", "prior": "20", "change": "11"}
+        }
+      ]
+    },
+    {
+      "name": "a movement of exactly the proportion is not beyond it",
+      "rules": {
+        "rules": [
+          {
+            "id": "year-over-year",
+            "kind": "year_over_year",
+            "verdict": "inconsistency",
+            "message": "validation.year_over_year",
+            "proportion": "0.5"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "30"}],
+      "prior": [{"elementKey": "NumberOfEmployees", "valueNumeric": "20"}],
+      "findings": []
+    },
+    {
+      "name": "a fall beyond half is flagged with a negative change",
+      "rules": {
+        "rules": [
+          {
+            "id": "year-over-year",
+            "kind": "year_over_year",
+            "verdict": "inconsistency",
+            "message": "validation.year_over_year",
+            "proportion": "0.5"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "9"}],
+      "prior": [{"elementKey": "NumberOfEmployees", "valueNumeric": "20"}],
+      "findings": [
+        {
+          "rule": "year-over-year",
+          "verdict": "inconsistency",
+          "field": {"elementKey": "NumberOfEmployees", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.year_over_year",
+          "params": {"current": "9", "prior": "20", "change": "-11"}
+        }
+      ]
+    },
+    {
+      "name": "a prior of zero is skipped (182/28)",
+      "rules": {
+        "rules": [
+          {
+            "id": "year-over-year",
+            "kind": "year_over_year",
+            "verdict": "inconsistency",
+            "message": "validation.year_over_year",
+            "proportion": "0.5"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "5"}],
+      "prior": [{"elementKey": "NumberOfEmployees", "valueNumeric": "0", "state": "nil_return"}],
+      "findings": []
+    },
+    {
+      "name": "an answered zero against a prior is a fall like any other",
+      "rules": {
+        "rules": [
+          {
+            "id": "year-over-year",
+            "kind": "year_over_year",
+            "verdict": "inconsistency",
+            "message": "validation.year_over_year",
+            "proportion": "0.5"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "0", "state": "nil_return"}],
+      "prior": [{"elementKey": "NumberOfEmployees", "valueNumeric": "20"}],
+      "findings": [
+        {
+          "rule": "year-over-year",
+          "verdict": "inconsistency",
+          "field": {"elementKey": "NumberOfEmployees", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.year_over_year",
+          "params": {"current": "0", "prior": "20", "change": "-20"}
+        }
+      ]
+    },
+    {
+      "name": "with no prior there is nothing to compare",
+      "rules": {
+        "rules": [
+          {
+            "id": "year-over-year",
+            "kind": "year_over_year",
+            "verdict": "inconsistency",
+            "message": "validation.year_over_year",
+            "proportion": "0.5"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "31"}],
+      "findings": []
+    },
+    {
+      "name": "rows are compared at their own natural key (FR-46 item 3)",
+      "rules": {
+        "rules": [
+          {
+            "id": "year-over-year",
+            "kind": "year_over_year",
+            "verdict": "inconsistency",
+            "message": "validation.year_over_year",
+            "proportion": "0.5"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployeesForCountryOfEmploymentContract"],
+      "values": [
+        {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "MD", "valueNumeric": "10"},
+        {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "RO", "valueNumeric": "10"}
+      ],
+      "prior": [
+        {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "MD", "valueNumeric": "10"},
+        {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "RO", "valueNumeric": "4"}
+      ],
+      "findings": [
+        {
+          "rule": "year-over-year",
+          "verdict": "inconsistency",
+          "field": {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "RO", "ordinal": 0},
+          "related": [],
+          "message": "validation.year_over_year",
+          "params": {"current": "10", "prior": "4", "change": "6"}
+        }
+      ]
+    },
+    {
+      "name": "a pair in different units is not compared",
+      "rules": {
+        "rules": [
+          {
+            "id": "year-over-year",
+            "kind": "year_over_year",
+            "verdict": "inconsistency",
+            "message": "validation.year_over_year",
+            "proportion": "0.5"
+          }
+        ]
+      },
+      "scope": ["TotalWasteGeneratedMass"],
+      "values": [{"elementKey": "TotalWasteGeneratedMass", "valueNumeric": "3", "unitCode": "t"}],
+      "prior": [{"elementKey": "TotalWasteGeneratedMass", "valueNumeric": "500", "unitCode": "kg"}],
+      "findings": []
+    },
+    {
+      "name": "an element outside the scope is not compared",
+      "rules": {
+        "rules": [
+          {
+            "id": "year-over-year",
+            "kind": "year_over_year",
+            "verdict": "inconsistency",
+            "message": "validation.year_over_year",
+            "proportion": "0.5"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "Turnover", "valueNumeric": "1000"}],
+      "prior": [{"elementKey": "Turnover", "valueNumeric": "100"}],
+      "findings": []
+    },
+    {
+      "name": "a value declared not available is not compared",
+      "rules": {
+        "rules": [
+          {
+            "id": "year-over-year",
+            "kind": "year_over_year",
+            "verdict": "inconsistency",
+            "message": "validation.year_over_year",
+            "proportion": "0.5"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "state": "not_available"}],
+      "prior": [{"elementKey": "NumberOfEmployees", "valueNumeric": "20"}],
+      "findings": []
+    },
+    {
+      "name": "the comparison is exact: 0.9 against 0.6 moves by exactly half",
+      "rules": {
+        "rules": [
+          {
+            "id": "year-over-year",
+            "kind": "year_over_year",
+            "verdict": "inconsistency",
+            "message": "validation.year_over_year",
+            "proportion": "0.5"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "0.9"}],
+      "prior": [{"elementKey": "NumberOfEmployees", "valueNumeric": "0.6"}],
+      "findings": []
+    }
+  ]
+}

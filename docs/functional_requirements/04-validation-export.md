@@ -11,7 +11,7 @@ Part 4 of the eleven parts of [`functional_requirements.md`](../functional_requi
 
 Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held here: §5.
 
-**What is built and what is not.** Comparatives (FR-45 … FR-47) are built end to end. Traceability is half built: the capture of every change is the database's and has been since task 14, and nothing yet reads the trail as a screen (tasks 84.1, 84.2). Validation (tasks 40 … 42) and export (tasks 43 … 47, with the template package, 45) are not started: `core/validation`, `core/export` and `core/trace` are empty module shells, `packages/validation` holds the password and identifier rules only, `packages/xlsx-patch` does not exist, and the contract has no path for validating, previewing or exporting. The blocks for those requirements state what the sources decided and, where no source decided, what the owner settled on 5 Oct 2026 (`architecture.md` §12.5.6's task-182 rows).
+**What is built and what is not.** Comparatives (FR-45 … FR-47) are built end to end. Traceability is half built: the capture of every change is the database's and has been since task 14, and nothing yet reads the trail as a screen (tasks 84.1, 84.2). Validation has its interpreter since task 40 — `packages/validation` holds the rule definition, the reader that admits a rule set and the interpreter, proven identical in the api's runtime and the browser application's over one corpus — and its run, findings and screens (tasks 41, 42) are not started; export (tasks 43 … 47, with the template package, 45) is not started either: `core/validation`, `core/export` and `core/trace` are empty module shells, `packages/xlsx-patch` does not exist, and the contract has no path for validating, previewing or exporting. The blocks for those requirements state what the sources decided and, where no source decided, what the owner settled on 5 Oct 2026 (`architecture.md` §12.5.6's task-182 rows).
 
 **Who uses these capabilities.** Two facts are built. The prior-period read (FR-45) is open to every member of the active organization, view-only included. The change trail is captured for every write, whoever makes it. For the rest, **the rule settled on 5 Oct 2026** (project owner, task 182; `architecture.md` §12.5.6 task-182 validation row, 182/22) is this. An **editor** and the **Organization Administrator** run validation, preview and export, re-download exports and read the change trail. A **view-only** member reads validation findings and the roll-up and nothing else of these: no validation run, no preview, no export, no export history or re-download and no trail (403 `insufficient-role` where a route is asked). `actors.md` §5 had granted the Organization Administrator a roll-up read and none of the others, and said nothing of a view-only member; it is amended to match. The blocks below write *editor or OA* for these, as part 3 does for writes.
 
@@ -19,7 +19,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-40 — Per-field validation state, inline
 
-**Status.** Not started — remaining 40.1 … 40.3, 41.1, 41.2, 42.1, 42.4
+**Status.** Partial — delivered 40 (the rule definition and the interpreter, identical in both runtimes) · remaining 41.1, 41.2, 42.1, 42.4
 
 **Obligation.** The system shall expose a validation state for every field, among `OK`, `MISSING VALUE`, `VALUE INCONSISTENCY`, `ERROR` and `INVALID URL`, plus the declared-not-available state (FR-32), inline at the point of entry rather than only in a separate report.
 
@@ -32,7 +32,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Preconditions.** A report, and rule definitions in force (UC-37).
 
 **Behaviour.**
-1. A field resolves to exactly one state (BR-VAL-1). The meanings are the design vocabulary's (`design_spec.md` §6.4): `OK` answered and coherent; `MISSING VALUE` required and unanswered; `VALUE INCONSISTENCY` conflicts with another value, with a link to the conflicting field; `ERROR` violates a rule outright; `INVALID URL` an address that is not a well-formed absolute URL, the failing URL shown verbatim; the check is of the address only and never reaches it (182/25). **Which fields are *required* is the template's own call** (182/24): an element is required where EFRAG's Digital Template validation sheet flags it, held as data and written by task 41.1 from that sheet. No platform-authored list is added, so what the reporter sees agrees with what the Excel export's own checks say when the file is opened. The same set names the outstanding items FR-164's notice carries.
+1. A field resolves to exactly one state (BR-VAL-1). The meanings are the design vocabulary's (`design_spec.md` §6.4): `OK` answered and coherent; `MISSING VALUE` required and unanswered; `VALUE INCONSISTENCY` conflicts with another value, with a link to the conflicting field; `ERROR` violates a rule outright; `INVALID URL` an address that is not a well-formed absolute URL — an `http` or `https` scheme and a host, so a bare `www.` address is not one, though the template's own check accepts it (§12.5.6's task-40 row) — the failing URL shown verbatim; the check is of the address only and never reaches it (182/25). **Which fields are *required* is the template's own call** (182/24): an element is required where EFRAG's Digital Template validation sheet flags it, held as data and written by task 41.1 from that sheet. No platform-authored list is added, so what the reporter sees agrees with what the Excel export's own checks say when the file is opened. The same set names the outstanding items FR-164's notice carries.
 2. **Three of the design vocabulary's eight states are not verdicts.** `nil_return` is an answer, and a field carrying it is `OK` (design_spec.md OQ-4). `not_material` is unreachable since 9 Sep 2026 and nothing writes it. `not_available` is the declared state of FR-32, reported separately from `MISSING VALUE` (D-4).
 3. The rule types are presence, consistency (the taxonomy's calculation linkbase: headcount by gender and contract totals headcount, waste fractions total waste, GHG roll-ups reconcile), range and format (units, non-negativity, URL validity), and cross-period (FR-46). **Applicability is not one of them**: it is a shape of the form evaluated from a thresholds artefact, not a verdict (task-91.3 rows; FR-28). A field that does not apply is not validated and not counted (task-91.3 rows).
 4. One interpreter in `packages/validation`, run by the api authoritatively and by the browser inline, so the two verdicts cannot disagree. A shared fixture corpus run in both runtimes is the proof (tasks 40.2, 40.3).
@@ -54,7 +54,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-3** Given a field declared not available with a reason, then it shows that state and not `MISSING VALUE`. *(source: FR text; D-4; FR-32/AC-3)* Unmet until 41.
 - **AC-4** Given a field holding an affirmative zero, then its verdict is `OK`. *(source: design_spec.md §6.4 vocabulary note)* Unmet until 41.1.
 - **AC-5** Given a field that does not apply, then it is neither validated nor counted. *(source: §12.5.6 task-91.3 rows)* Unmet until 41.1.
-- **AC-6** Given the same answers, then the api and the browser return identical verdicts over the shared corpus. *(source: `architecture.md` §9.8; task 40.3)* Unmet until 40.3.
+- **AC-6** Given the same answers, then the api and the browser return identical verdicts over the shared corpus. *(source: `architecture.md` §9.8; task 40.3)*
 - **AC-7** Given any finding, then its text names what happened, what follows and what to do, in the reader's locale, and contains no internal identifier. *(source: NFR-79; task 42.4)* Unmet until 42.4.
 - **AC-8** Given a rule definition changed and published, then the next evaluation applies it with no deployment. *(source: FR-73; AD-4; NFR-85)* Unmet until 41.1.
 - **AC-9** Given any state, then it is distinguishable without colour. *(source: UX-23)* Unmet until 42.1.
@@ -74,6 +74,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 5 Oct 2026 · project owner · *required* means flagged by the template's validation sheet · §12.5.6 task-182 validation row (182/24)
 - 5 Oct 2026 · project owner · `INVALID URL` checks the form of an address and never reaches it; design_spec.md §6.4 amended · §12.5.6 task-182 validation row (182/25)
 - 5 Oct 2026 · project owner · every member reads findings; an editor or the OA runs validation · §12.5.6 task-182 validation row (182/22)
+- 7 Oct 2026 · project owner · rules are a closed vocabulary of eight kinds, each carrying its verdict; a field holding several findings shows the most severe; an absolute address is an `http` or `https` scheme and a host, so a bare `www.` address is `INVALID URL` · §12.5.6 task-40 row
 
 ### FR-41 — Roll-up per module and per report
 
@@ -156,7 +157,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-43 — Validation re-run at any completeness
 
-**Status.** Not started — remaining 40.2, 41.2
+**Status.** Partial — delivered 40.2 (the interpreter, whose findings depend on the answers alone and not on their order) · remaining 41.2 (the run and the findings it stores)
 
 **Obligation.** The system shall re-run validation idempotently at any level of completeness, so that it functions as a working tool during drafting and not only as a pre-export gate.
 
@@ -199,6 +200,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 5 Oct 2026 · project owner · validation runs and stores findings on a locked report; the findings table is exempt from the lock · §12.5.6 task-182 validation row (182/21)
 - 5 Oct 2026 · project owner · the api evaluates when asked, not on each write; a finding for a field that no longer applies is dropped at read · §12.5.6 task-182 validation row (182/26)
 - 5 Oct 2026 · project owner · an editor or the OA runs validation; a view-only member reads · §12.5.6 task-182 validation row (182/22)
+- 7 Oct 2026 · build · the interpreter is deterministic over its input: findings in rule order, then natural-key order, whatever order the values arrive in · §12.5.6 task-40 row; task 40.2
 
 ### FR-44 — Export with unresolved findings, after a warning
 
@@ -298,7 +300,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-46 — The prior-period value beside the input
 
-**Status.** Partial — delivered 34.3, 36.14 · remaining 40.1, 41.1, 42.1 (the year-over-year movement rule, UX-33)
+**Status.** Partial — delivered 34.3, 36.14, 40 (the year-over-year rule kind) · remaining 41.1, 42.1 (the rule seeded, and shown at the field, UX-33)
 
 **Obligation.** The system shall display the prior-period value alongside the current input at the point of entry, so that an implausible year-over-year movement is visible while it can still be checked.
 
@@ -315,7 +317,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 2. **Only `comparable` values are shown** (FR-45). `element_absent` has no field to sit beside, and `shape_changed` has one whose kind or period type moved: a duration that became an instant is not last year's figure, and showing it would invite the false comparison this requirement exists to prevent (task 36.14).
 3. **The index is the whole natural key** `(element, dimension member, ordinal)`, the function the autosave queue addresses a field with. B8's Moldova row and its Romania row are different answers to one element, and an element-keyed index would put one country's headcount beside another's (task 36.14).
 4. Shown only where last year holds a value in the column this field's kind uses. A field answered not available last year shows no comparative row.
-5. **The movement rule** (UX-33, §9.8's cross-period type): a movement beyond a configured proportional threshold raises `VALUE INCONSISTENCY`, not `ERROR`, because the movement may be real. The message states both values and the change. **One global proportion** (182/28): it applies to every numeric element alike, a prior value of zero is skipped (a proportion of zero is undefined), and it is held as data (FR-73) and not as one per unit, module or element. **Its value is ±50%** (§12.5.6 task-182 starting-values row).
+5. **The movement rule** (UX-33, §9.8's cross-period type): a movement beyond a configured proportional threshold raises `VALUE INCONSISTENCY`, not `ERROR`, because the movement may be real. The message states both values and the change. **One global proportion** (182/28): it applies to every numeric element alike, a prior value of zero is skipped (a proportion of zero is undefined), and it is held as data (FR-73) and not as one per unit, module or element. **Its value is ±50%** (§12.5.6 task-182 starting-values row). *Beyond* is strictly greater, so a movement of exactly the proportion is not flagged, and a pair in different units is not compared (§12.5.6 task-40 row).
 6. A Free-plan organization sees the prior value, as every plan does: inline comparatives are not plan-gated (182/67).
 
 **Configuration-held values.** The movement threshold is configuration (UX-33, FR-73): one proportion for every numeric element (182/28). Task 41.1 seeds it. **Starting value: ±50%** — a movement of more than half against the prior period is flagged; a prior value of zero is skipped (§12.5.6 task-182 starting-values row).
@@ -336,6 +338,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 5 Oct 2026 · project owner · a Free-plan organization sees the prior value · §12.5.6 task-182 billing-catalogue row (182/67)
 - 5 Oct 2026 · project owner · one global movement proportion, a zero prior skipped, held as data · §12.5.6 task-182 validation row (182/28)
 - 5 Oct 2026 · project owner · starting value set (182/28) · §12.5.6 task-182 starting-values row
+- 7 Oct 2026 · project owner · the movement rule is one kind of the rule vocabulary, its proportion one per set; *beyond* is strictly greater and a pair in different units is not compared · §12.5.6 task-40 row
 
 ### FR-47 — Carry a prior value forward, marked
 

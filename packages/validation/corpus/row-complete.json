@@ -1,0 +1,153 @@
+{
+  "about": "row_complete: a row of a list, once started, is finished — a row is a member of the axis or a position in the list.",
+  "cases": [
+    {
+      "name": "a started row with a cell left empty is missing at that cell",
+      "rules": {
+        "rules": [
+          {
+            "id": "b7-material-rows",
+            "kind": "row_complete",
+            "verdict": "missing",
+            "message": "validation.row_complete",
+            "elements": ["NameOfMaterialUsed", "WeightOfMaterialUsed"]
+          }
+        ]
+      },
+      "scope": ["NameOfMaterialUsed", "WeightOfMaterialUsed"],
+      "values": [
+        {"elementKey": "NameOfMaterialUsed", "ordinal": 0, "valueText": "Oțel"},
+        {"elementKey": "WeightOfMaterialUsed", "ordinal": 0, "valueNumeric": "12", "unitCode": "t"},
+        {"elementKey": "NameOfMaterialUsed", "ordinal": 1, "valueText": "Lemn"}
+      ],
+      "findings": [
+        {
+          "rule": "b7-material-rows",
+          "verdict": "missing",
+          "field": {"elementKey": "WeightOfMaterialUsed", "dimensionKey": "", "ordinal": 1},
+          "related": [],
+          "message": "validation.row_complete",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "a row started by its figure alone is missing its name",
+      "rules": {
+        "rules": [
+          {
+            "id": "b7-material-rows",
+            "kind": "row_complete",
+            "verdict": "missing",
+            "message": "validation.row_complete",
+            "elements": ["NameOfMaterialUsed", "WeightOfMaterialUsed"]
+          }
+        ]
+      },
+      "scope": ["NameOfMaterialUsed", "WeightOfMaterialUsed"],
+      "values": [{"elementKey": "WeightOfMaterialUsed", "ordinal": 0, "valueNumeric": "3", "unitCode": "t"}],
+      "findings": [
+        {
+          "rule": "b7-material-rows",
+          "verdict": "missing",
+          "field": {"elementKey": "NameOfMaterialUsed", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.row_complete",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "a list with no row started is no finding",
+      "rules": {
+        "rules": [
+          {
+            "id": "b7-material-rows",
+            "kind": "row_complete",
+            "verdict": "missing",
+            "message": "validation.row_complete",
+            "elements": ["NameOfMaterialUsed", "WeightOfMaterialUsed"]
+          }
+        ]
+      },
+      "scope": ["NameOfMaterialUsed", "WeightOfMaterialUsed"],
+      "values": [],
+      "findings": []
+    },
+    {
+      "name": "a cell declared not available finishes its row",
+      "rules": {
+        "rules": [
+          {
+            "id": "b7-material-rows",
+            "kind": "row_complete",
+            "verdict": "missing",
+            "message": "validation.row_complete",
+            "elements": ["NameOfMaterialUsed", "WeightOfMaterialUsed"]
+          }
+        ]
+      },
+      "scope": ["NameOfMaterialUsed", "WeightOfMaterialUsed"],
+      "values": [
+        {"elementKey": "NameOfMaterialUsed", "ordinal": 1, "valueText": "Lemn"},
+        {"elementKey": "WeightOfMaterialUsed", "ordinal": 1, "state": "not_available"}
+      ],
+      "findings": []
+    },
+    {
+      "name": "the rows of a classification are its members",
+      "rules": {
+        "rules": [
+          {
+            "id": "b7-waste-rows",
+            "kind": "row_complete",
+            "verdict": "missing",
+            "message": "validation.row_complete",
+            "elements": ["WasteDivertedToRecycleOrReuseMass", "WasteDirectedToDisposalMass"]
+          }
+        ]
+      },
+      "scope": ["WasteDivertedToRecycleOrReuseMass", "WasteDirectedToDisposalMass"],
+      "values": [
+        {
+          "elementKey": "WasteDivertedToRecycleOrReuseMass",
+          "dimensionKey": "W-200101-Non-Hazardous-PaperAndCardboardMember",
+          "valueNumeric": "3",
+          "unitCode": "kg"
+        },
+        {
+          "elementKey": "WasteDirectedToDisposalMass",
+          "dimensionKey": "W-200139-Non-Hazardous-PlasticsMember",
+          "valueNumeric": "1",
+          "unitCode": "kg"
+        }
+      ],
+      "findings": [
+        {
+          "rule": "b7-waste-rows",
+          "verdict": "missing",
+          "field": {
+            "elementKey": "WasteDirectedToDisposalMass",
+            "dimensionKey": "W-200101-Non-Hazardous-PaperAndCardboardMember",
+            "ordinal": 0
+          },
+          "related": [],
+          "message": "validation.row_complete",
+          "params": {}
+        },
+        {
+          "rule": "b7-waste-rows",
+          "verdict": "missing",
+          "field": {
+            "elementKey": "WasteDivertedToRecycleOrReuseMass",
+            "dimensionKey": "W-200139-Non-Hazardous-PlasticsMember",
+            "ordinal": 0
+          },
+          "related": [],
+          "message": "validation.row_complete",
+          "params": {}
+        }
+      ]
+    }
+  ]
+}

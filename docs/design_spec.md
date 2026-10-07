@@ -1588,8 +1588,8 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **Archetype:** Editor.
 - **Entry points:** console navigation; an annual factor update; a legislative change.
 - **Layout and regions:** editor per rule family, with the UX-123 publication pattern where the change has cross-tenant blast radius.
-- **Content and data shown:** versioned, effective-dated emission and conversion factor sets; conditional-applicability thresholds (the ≥ 50-employee turnover threshold, the ≥ 150-employee gender pay gap threshold, sector-driven and site-driven applicability); validation rule definitions and the message key each names.
-- **Controls and actions:** add a factor set version; edit a threshold; edit a rule and the message key it names; publish.
+- **Content and data shown:** versioned, effective-dated emission and conversion factor sets; conditional-applicability thresholds (the ≥ 50-employee turnover threshold, the ≥ 150-employee gender pay gap threshold, sector-driven and site-driven applicability); validation rule definitions, each in one of a closed vocabulary of kinds and naming the verdict it fires and the message key whose wording it shows (task 40; `architecture.md` §12.5.6's task-40 row).
+- **Controls and actions:** add a factor set version; edit a threshold; edit a rule, the verdict it fires and the message key it names; publish.
 - **States:** loading — initial; pending — async (publication); error — recoverable; success with revert.
 - **Validation behaviour:** existing computed results retain the factor version they were computed under, so a factor update never silently restates a filed report (FR-35, FR-71); the interface shall state that consequence at the point of publication. Content-only and rule-only changes apply without a redeploy (FR-74). **Amended 5 Oct 2026** (project owner, task 182, 182/50, 182/51): a factor-set payload the reader could not parse is refused at publication with a stated reason, and so is a rule whose message key has no wording in some locale's catalogue; nothing is published in either case.
 - **Exits:** the notification path to affected organizations (FR-166); A-08.
@@ -1901,7 +1901,7 @@ Marks and colour roles below are from the delivered visual layer (18 Aug 2026, �
 | `missing` | ! | Required and unanswered | Attention marker, non-alarming — nothing is wrong yet | `state.attention` | No |
 | `inconsistency` | ≠ | Conflicts with another value | Warning, with a link to the conflicting field | `state.warning` | No |
 | `error` | × | Violates a rule outright | Error, blocking within the field | `state.error` | No |
-| `invalid_url` | × | Address is not a well-formed absolute URL (*amended 5 Oct 2026, 182/25: the form of the address is checked, and the address is never reached*) | Error role, failing URL shown verbatim | `state.error` | No |
+| `invalid_url` | × | Address is not a well-formed absolute URL (*amended 5 Oct 2026, 182/25: the form of the address is checked, and the address is never reached*; *7 Oct 2026, task 40: absolute means an `http` or `https` scheme and a host, so a bare `www.` address is invalid where the template accepts it*) | Error role, failing URL shown verbatim | `state.error` | No |
 | `not_available` | — | Declared unavailable with reason | Reasoned marker, reason shown inline | `state.reasoned` | Yes — reasoned |
 | `not_material` | ⊘ | **Unreachable since 9 Sep 2026** (task 36.13): VSME permits no omission on materiality grounds, so nothing writes this state. It remains in the vocabulary and the migration's `CHECK` because a `CHECK` is frozen history. The section omission it used to describe is now a **B1 disclosure** (FR-31), not a field state | — | `state.reasoned` | Yes — reasoned |
 | `nil_return` | 0 | Affirmatively zero | Neutral, labelled as an affirmative zero — **never an empty box** | `state.neutral` | Yes |

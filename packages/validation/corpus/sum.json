@@ -1,0 +1,695 @@
+{
+  "about": "sum: weighted parts against a total — blank parts count as zero once any part is answered; a declared gap suspends it; units must agree (§12.5.6 task-40 row (3)).",
+  "cases": [
+    {
+      "name": "a gender split equal to headcount",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-gender",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [
+              {"element": "NumberOfMaleEmployees"},
+              {"element": "NumberOfFemaleEmployees"},
+              {"element": "NumberOfOtherGenderEmployees"},
+              {"element": "NumberOfNonReportedGenderEmployees"}
+            ],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": [
+        "NumberOfMaleEmployees",
+        "NumberOfFemaleEmployees",
+        "NumberOfOtherGenderEmployees",
+        "NumberOfNonReportedGenderEmployees",
+        "NumberOfEmployees"
+      ],
+      "values": [
+        {"elementKey": "NumberOfMaleEmployees", "valueNumeric": "12"},
+        {"elementKey": "NumberOfFemaleEmployees", "valueNumeric": "8"},
+        {"elementKey": "NumberOfEmployees", "valueNumeric": "20"}
+      ],
+      "findings": []
+    },
+    {
+      "name": "a split short of its total, its blank parts counting as zero, sits on the first part",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-gender",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [
+              {"element": "NumberOfMaleEmployees"},
+              {"element": "NumberOfFemaleEmployees"},
+              {"element": "NumberOfOtherGenderEmployees"},
+              {"element": "NumberOfNonReportedGenderEmployees"}
+            ],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": [
+        "NumberOfMaleEmployees",
+        "NumberOfFemaleEmployees",
+        "NumberOfOtherGenderEmployees",
+        "NumberOfNonReportedGenderEmployees",
+        "NumberOfEmployees"
+      ],
+      "values": [
+        {"elementKey": "NumberOfMaleEmployees", "valueNumeric": "12"},
+        {"elementKey": "NumberOfEmployees", "valueNumeric": "20"}
+      ],
+      "findings": [
+        {
+          "rule": "b8-gender",
+          "verdict": "missing",
+          "field": {"elementKey": "NumberOfMaleEmployees", "dimensionKey": "", "ordinal": 0},
+          "related": [
+            {"elementKey": "NumberOfFemaleEmployees", "dimensionKey": "", "ordinal": 0},
+            {"elementKey": "NumberOfOtherGenderEmployees", "dimensionKey": "", "ordinal": 0},
+            {"elementKey": "NumberOfNonReportedGenderEmployees", "dimensionKey": "", "ordinal": 0},
+            {"elementKey": "NumberOfEmployees", "dimensionKey": "", "ordinal": 0}
+          ],
+          "message": "validation.sum.short",
+          "params": {"parts": "12", "total": "20"}
+        }
+      ]
+    },
+    {
+      "name": "a split over its total under equal",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-gender",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [
+              {"element": "NumberOfMaleEmployees"},
+              {"element": "NumberOfFemaleEmployees"},
+              {"element": "NumberOfOtherGenderEmployees"},
+              {"element": "NumberOfNonReportedGenderEmployees"}
+            ],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": [
+        "NumberOfMaleEmployees",
+        "NumberOfFemaleEmployees",
+        "NumberOfOtherGenderEmployees",
+        "NumberOfNonReportedGenderEmployees",
+        "NumberOfEmployees"
+      ],
+      "values": [
+        {"elementKey": "NumberOfMaleEmployees", "valueNumeric": "12"},
+        {"elementKey": "NumberOfFemaleEmployees", "valueNumeric": "9"},
+        {"elementKey": "NumberOfEmployees", "valueNumeric": "20"}
+      ],
+      "findings": [
+        {
+          "rule": "b8-gender",
+          "verdict": "missing",
+          "field": {"elementKey": "NumberOfMaleEmployees", "dimensionKey": "", "ordinal": 0},
+          "related": [
+            {"elementKey": "NumberOfFemaleEmployees", "dimensionKey": "", "ordinal": 0},
+            {"elementKey": "NumberOfOtherGenderEmployees", "dimensionKey": "", "ordinal": 0},
+            {"elementKey": "NumberOfNonReportedGenderEmployees", "dimensionKey": "", "ordinal": 0},
+            {"elementKey": "NumberOfEmployees", "dimensionKey": "", "ordinal": 0}
+          ],
+          "message": "validation.sum.short",
+          "params": {"parts": "21", "total": "20"}
+        }
+      ]
+    },
+    {
+      "name": "it waits while no part is answered",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-gender",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [
+              {"element": "NumberOfMaleEmployees"},
+              {"element": "NumberOfFemaleEmployees"},
+              {"element": "NumberOfOtherGenderEmployees"},
+              {"element": "NumberOfNonReportedGenderEmployees"}
+            ],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": [
+        "NumberOfMaleEmployees",
+        "NumberOfFemaleEmployees",
+        "NumberOfOtherGenderEmployees",
+        "NumberOfNonReportedGenderEmployees",
+        "NumberOfEmployees"
+      ],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "20"}],
+      "findings": []
+    },
+    {
+      "name": "it waits while the total is unanswered",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-gender",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [
+              {"element": "NumberOfMaleEmployees"},
+              {"element": "NumberOfFemaleEmployees"},
+              {"element": "NumberOfOtherGenderEmployees"},
+              {"element": "NumberOfNonReportedGenderEmployees"}
+            ],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": [
+        "NumberOfMaleEmployees",
+        "NumberOfFemaleEmployees",
+        "NumberOfOtherGenderEmployees",
+        "NumberOfNonReportedGenderEmployees",
+        "NumberOfEmployees"
+      ],
+      "values": [{"elementKey": "NumberOfMaleEmployees", "valueNumeric": "12"}],
+      "findings": []
+    },
+    {
+      "name": "a part declared not available suspends it (D-4)",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-gender",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [
+              {"element": "NumberOfMaleEmployees"},
+              {"element": "NumberOfFemaleEmployees"},
+              {"element": "NumberOfOtherGenderEmployees"},
+              {"element": "NumberOfNonReportedGenderEmployees"}
+            ],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": [
+        "NumberOfMaleEmployees",
+        "NumberOfFemaleEmployees",
+        "NumberOfOtherGenderEmployees",
+        "NumberOfNonReportedGenderEmployees",
+        "NumberOfEmployees"
+      ],
+      "values": [
+        {"elementKey": "NumberOfMaleEmployees", "valueNumeric": "12"},
+        {"elementKey": "NumberOfFemaleEmployees", "state": "not_available"},
+        {"elementKey": "NumberOfEmployees", "valueNumeric": "20"}
+      ],
+      "findings": []
+    },
+    {
+      "name": "a total declared not available suspends it",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-gender",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [
+              {"element": "NumberOfMaleEmployees"},
+              {"element": "NumberOfFemaleEmployees"},
+              {"element": "NumberOfOtherGenderEmployees"},
+              {"element": "NumberOfNonReportedGenderEmployees"}
+            ],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": [
+        "NumberOfMaleEmployees",
+        "NumberOfFemaleEmployees",
+        "NumberOfOtherGenderEmployees",
+        "NumberOfNonReportedGenderEmployees",
+        "NumberOfEmployees"
+      ],
+      "values": [
+        {"elementKey": "NumberOfMaleEmployees", "valueNumeric": "12"},
+        {"elementKey": "NumberOfEmployees", "state": "not_available"}
+      ],
+      "findings": []
+    },
+    {
+      "name": "an answered zero is a part of zero",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-gender",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [
+              {"element": "NumberOfMaleEmployees"},
+              {"element": "NumberOfFemaleEmployees"},
+              {"element": "NumberOfOtherGenderEmployees"},
+              {"element": "NumberOfNonReportedGenderEmployees"}
+            ],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": [
+        "NumberOfMaleEmployees",
+        "NumberOfFemaleEmployees",
+        "NumberOfOtherGenderEmployees",
+        "NumberOfNonReportedGenderEmployees",
+        "NumberOfEmployees"
+      ],
+      "values": [
+        {"elementKey": "NumberOfMaleEmployees", "valueNumeric": "0", "state": "nil_return"},
+        {"elementKey": "NumberOfFemaleEmployees", "valueNumeric": "20"},
+        {"elementKey": "NumberOfEmployees", "valueNumeric": "20"}
+      ],
+      "findings": []
+    },
+    {
+      "name": "decimals are exact: 0.1 and 0.2 are 0.3",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-gender",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [
+              {"element": "NumberOfMaleEmployees"},
+              {"element": "NumberOfFemaleEmployees"},
+              {"element": "NumberOfOtherGenderEmployees"},
+              {"element": "NumberOfNonReportedGenderEmployees"}
+            ],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": [
+        "NumberOfMaleEmployees",
+        "NumberOfFemaleEmployees",
+        "NumberOfOtherGenderEmployees",
+        "NumberOfNonReportedGenderEmployees",
+        "NumberOfEmployees"
+      ],
+      "values": [
+        {"elementKey": "NumberOfMaleEmployees", "valueNumeric": "0.1"},
+        {"elementKey": "NumberOfFemaleEmployees", "valueNumeric": "0.2"},
+        {"elementKey": "NumberOfEmployees", "valueNumeric": "0.3"}
+      ],
+      "findings": []
+    },
+    {
+      "name": "decimals of different lengths add exactly: 12.5 and 7.25 are 19.75",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-gender",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [
+              {"element": "NumberOfMaleEmployees"},
+              {"element": "NumberOfFemaleEmployees"},
+              {"element": "NumberOfOtherGenderEmployees"},
+              {"element": "NumberOfNonReportedGenderEmployees"}
+            ],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": [
+        "NumberOfMaleEmployees",
+        "NumberOfFemaleEmployees",
+        "NumberOfOtherGenderEmployees",
+        "NumberOfNonReportedGenderEmployees",
+        "NumberOfEmployees"
+      ],
+      "values": [
+        {"elementKey": "NumberOfMaleEmployees", "valueNumeric": "12.5"},
+        {"elementKey": "NumberOfFemaleEmployees", "valueNumeric": "7.25"},
+        {"elementKey": "NumberOfEmployees", "valueNumeric": "19.75"}
+      ],
+      "findings": []
+    },
+    {
+      "name": "operands in different units give no verdict, and nothing is converted",
+      "rules": {
+        "rules": [
+          {
+            "id": "b7-waste-mass",
+            "kind": "sum",
+            "verdict": "inconsistency",
+            "message": "validation.sum.inconsistent",
+            "parts": [{"element": "TotalHazardousWasteGeneratedMass"}, {"element": "TotalNonHazardousWasteGeneratedMass"}],
+            "total": {"element": "TotalWasteGeneratedMass"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": ["TotalHazardousWasteGeneratedMass", "TotalNonHazardousWasteGeneratedMass", "TotalWasteGeneratedMass"],
+      "values": [
+        {"elementKey": "TotalHazardousWasteGeneratedMass", "valueNumeric": "500", "unitCode": "kg"},
+        {"elementKey": "TotalNonHazardousWasteGeneratedMass", "valueNumeric": "2", "unitCode": "t"},
+        {"elementKey": "TotalWasteGeneratedMass", "valueNumeric": "3", "unitCode": "t"}
+      ],
+      "findings": []
+    },
+    {
+      "name": "operands in one unit are compared",
+      "rules": {
+        "rules": [
+          {
+            "id": "b7-waste-mass",
+            "kind": "sum",
+            "verdict": "inconsistency",
+            "message": "validation.sum.inconsistent",
+            "parts": [{"element": "TotalHazardousWasteGeneratedMass"}, {"element": "TotalNonHazardousWasteGeneratedMass"}],
+            "total": {"element": "TotalWasteGeneratedMass"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": ["TotalHazardousWasteGeneratedMass", "TotalNonHazardousWasteGeneratedMass", "TotalWasteGeneratedMass"],
+      "values": [
+        {"elementKey": "TotalHazardousWasteGeneratedMass", "valueNumeric": "1", "unitCode": "t"},
+        {"elementKey": "TotalNonHazardousWasteGeneratedMass", "valueNumeric": "2", "unitCode": "t"},
+        {"elementKey": "TotalWasteGeneratedMass", "valueNumeric": "4", "unitCode": "t"}
+      ],
+      "findings": [
+        {
+          "rule": "b7-waste-mass",
+          "verdict": "inconsistency",
+          "field": {"elementKey": "TotalHazardousWasteGeneratedMass", "dimensionKey": "", "ordinal": 0},
+          "related": [
+            {"elementKey": "TotalNonHazardousWasteGeneratedMass", "dimensionKey": "", "ordinal": 0},
+            {"elementKey": "TotalWasteGeneratedMass", "dimensionKey": "", "ordinal": 0}
+          ],
+          "message": "validation.sum.inconsistent",
+          "params": {"parts": "3", "total": "4"}
+        }
+      ]
+    },
+    {
+      "name": "at most: a breakdown over its total is inconsistent",
+      "rules": {
+        "rules": [
+          {
+            "id": "b3-energy-split",
+            "kind": "sum",
+            "verdict": "inconsistency",
+            "message": "validation.sum.over",
+            "parts": [
+              {"element": "EnergyConsumptionFromFuels", "member": "RenewableEnergyMember"},
+              {"element": "EnergyConsumptionFromFuels", "member": "NonRenewableEnergyMember"}
+            ],
+            "total": {"element": "EnergyConsumptionFromFuels", "member": "TotalRenewableAndNonRenewableEnergyMember"},
+            "relation": "at_most"
+          }
+        ]
+      },
+      "scope": ["EnergyConsumptionFromFuels"],
+      "values": [
+        {
+          "elementKey": "EnergyConsumptionFromFuels",
+          "dimensionKey": "RenewableEnergyMember",
+          "valueNumeric": "60",
+          "unitCode": "MWh"
+        },
+        {
+          "elementKey": "EnergyConsumptionFromFuels",
+          "dimensionKey": "NonRenewableEnergyMember",
+          "valueNumeric": "50",
+          "unitCode": "MWh"
+        },
+        {
+          "elementKey": "EnergyConsumptionFromFuels",
+          "dimensionKey": "TotalRenewableAndNonRenewableEnergyMember",
+          "valueNumeric": "100",
+          "unitCode": "MWh"
+        }
+      ],
+      "findings": [
+        {
+          "rule": "b3-energy-split",
+          "verdict": "inconsistency",
+          "field": {"elementKey": "EnergyConsumptionFromFuels", "dimensionKey": "RenewableEnergyMember", "ordinal": 0},
+          "related": [
+            {"elementKey": "EnergyConsumptionFromFuels", "dimensionKey": "NonRenewableEnergyMember", "ordinal": 0},
+            {
+              "elementKey": "EnergyConsumptionFromFuels",
+              "dimensionKey": "TotalRenewableAndNonRenewableEnergyMember",
+              "ordinal": 0
+            }
+          ],
+          "message": "validation.sum.over",
+          "params": {"parts": "110", "total": "100"}
+        }
+      ]
+    },
+    {
+      "name": "at most: a breakdown under its total holds",
+      "rules": {
+        "rules": [
+          {
+            "id": "b3-energy-split",
+            "kind": "sum",
+            "verdict": "inconsistency",
+            "message": "validation.sum.over",
+            "parts": [
+              {"element": "EnergyConsumptionFromFuels", "member": "RenewableEnergyMember"},
+              {"element": "EnergyConsumptionFromFuels", "member": "NonRenewableEnergyMember"}
+            ],
+            "total": {"element": "EnergyConsumptionFromFuels", "member": "TotalRenewableAndNonRenewableEnergyMember"},
+            "relation": "at_most"
+          }
+        ]
+      },
+      "scope": ["EnergyConsumptionFromFuels"],
+      "values": [
+        {
+          "elementKey": "EnergyConsumptionFromFuels",
+          "dimensionKey": "RenewableEnergyMember",
+          "valueNumeric": "40",
+          "unitCode": "MWh"
+        },
+        {
+          "elementKey": "EnergyConsumptionFromFuels",
+          "dimensionKey": "NonRenewableEnergyMember",
+          "valueNumeric": "50",
+          "unitCode": "MWh"
+        },
+        {
+          "elementKey": "EnergyConsumptionFromFuels",
+          "dimensionKey": "TotalRenewableAndNonRenewableEnergyMember",
+          "valueNumeric": "100",
+          "unitCode": "MWh"
+        }
+      ],
+      "findings": []
+    },
+    {
+      "name": "at most: a breakdown equal to its total holds",
+      "rules": {
+        "rules": [
+          {
+            "id": "b3-energy-split",
+            "kind": "sum",
+            "verdict": "inconsistency",
+            "message": "validation.sum.over",
+            "parts": [
+              {"element": "EnergyConsumptionFromFuels", "member": "RenewableEnergyMember"},
+              {"element": "EnergyConsumptionFromFuels", "member": "NonRenewableEnergyMember"}
+            ],
+            "total": {"element": "EnergyConsumptionFromFuels", "member": "TotalRenewableAndNonRenewableEnergyMember"},
+            "relation": "at_most"
+          }
+        ]
+      },
+      "scope": ["EnergyConsumptionFromFuels"],
+      "values": [
+        {
+          "elementKey": "EnergyConsumptionFromFuels",
+          "dimensionKey": "RenewableEnergyMember",
+          "valueNumeric": "60",
+          "unitCode": "MWh"
+        },
+        {
+          "elementKey": "EnergyConsumptionFromFuels",
+          "dimensionKey": "NonRenewableEnergyMember",
+          "valueNumeric": "40",
+          "unitCode": "MWh"
+        },
+        {
+          "elementKey": "EnergyConsumptionFromFuels",
+          "dimensionKey": "TotalRenewableAndNonRenewableEnergyMember",
+          "valueNumeric": "100",
+          "unitCode": "MWh"
+        }
+      ],
+      "findings": []
+    },
+    {
+      "name": "at least: the rows by country must reach headcount",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-countries",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [{"element": "NumberOfEmployeesForCountryOfEmploymentContract"}],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "at_least"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployeesForCountryOfEmploymentContract", "NumberOfEmployees"],
+      "values": [
+        {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "MD", "valueNumeric": "15"},
+        {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "RO", "valueNumeric": "3"},
+        {"elementKey": "NumberOfEmployees", "valueNumeric": "20"}
+      ],
+      "findings": [
+        {
+          "rule": "b8-countries",
+          "verdict": "missing",
+          "field": {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "", "ordinal": 0},
+          "related": [{"elementKey": "NumberOfEmployees", "dimensionKey": "", "ordinal": 0}],
+          "message": "validation.sum.short",
+          "params": {"parts": "18", "total": "20"}
+        }
+      ]
+    },
+    {
+      "name": "at least: rows reaching headcount hold",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-countries",
+            "kind": "sum",
+            "verdict": "missing",
+            "message": "validation.sum.short",
+            "parts": [{"element": "NumberOfEmployeesForCountryOfEmploymentContract"}],
+            "total": {"element": "NumberOfEmployees"},
+            "relation": "at_least"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployeesForCountryOfEmploymentContract", "NumberOfEmployees"],
+      "values": [
+        {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "MD", "valueNumeric": "17"},
+        {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "RO", "valueNumeric": "3"},
+        {"elementKey": "NumberOfEmployees", "valueNumeric": "20"}
+      ],
+      "findings": []
+    },
+    {
+      "name": "a part weighted -1 is subtracted",
+      "rules": {
+        "rules": [
+          {
+            "id": "b3-scope-2",
+            "kind": "sum",
+            "verdict": "inconsistency",
+            "message": "validation.sum.inconsistent",
+            "parts": [
+              {"element": "TotalGrossLocationBasedScope1AndScope2GHGEmissions", "weight": "1"},
+              {"element": "GrossScope1GreenhouseGasEmissions", "weight": "-1"}
+            ],
+            "total": {"element": "GrossLocationBasedScope2GreenhouseGasEmissions"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": [
+        "TotalGrossLocationBasedScope1AndScope2GHGEmissions",
+        "GrossScope1GreenhouseGasEmissions",
+        "GrossLocationBasedScope2GreenhouseGasEmissions"
+      ],
+      "values": [
+        {
+          "elementKey": "TotalGrossLocationBasedScope1AndScope2GHGEmissions",
+          "valueNumeric": "30",
+          "unitCode": "tCO2e"
+        },
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "valueNumeric": "12", "unitCode": "tCO2e"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "valueNumeric": "18", "unitCode": "tCO2e"}
+      ],
+      "findings": []
+    },
+    {
+      "name": "a weighted sum that disagrees quotes the weighted parts",
+      "rules": {
+        "rules": [
+          {
+            "id": "b3-scope-2",
+            "kind": "sum",
+            "verdict": "inconsistency",
+            "message": "validation.sum.inconsistent",
+            "parts": [
+              {"element": "TotalGrossLocationBasedScope1AndScope2GHGEmissions", "weight": "1"},
+              {"element": "GrossScope1GreenhouseGasEmissions", "weight": "-1"}
+            ],
+            "total": {"element": "GrossLocationBasedScope2GreenhouseGasEmissions"},
+            "relation": "equal"
+          }
+        ]
+      },
+      "scope": [
+        "TotalGrossLocationBasedScope1AndScope2GHGEmissions",
+        "GrossScope1GreenhouseGasEmissions",
+        "GrossLocationBasedScope2GreenhouseGasEmissions"
+      ],
+      "values": [
+        {
+          "elementKey": "TotalGrossLocationBasedScope1AndScope2GHGEmissions",
+          "valueNumeric": "30",
+          "unitCode": "tCO2e"
+        },
+        {"elementKey": "GrossScope1GreenhouseGasEmissions", "valueNumeric": "12", "unitCode": "tCO2e"},
+        {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "valueNumeric": "20", "unitCode": "tCO2e"}
+      ],
+      "findings": [
+        {
+          "rule": "b3-scope-2",
+          "verdict": "inconsistency",
+          "field": {"elementKey": "TotalGrossLocationBasedScope1AndScope2GHGEmissions", "dimensionKey": "", "ordinal": 0},
+          "related": [
+            {"elementKey": "GrossScope1GreenhouseGasEmissions", "dimensionKey": "", "ordinal": 0},
+            {"elementKey": "GrossLocationBasedScope2GreenhouseGasEmissions", "dimensionKey": "", "ordinal": 0}
+          ],
+          "message": "validation.sum.inconsistent",
+          "params": {"parts": "18", "total": "20"}
+        }
+      ]
+    }
+  ]
+}

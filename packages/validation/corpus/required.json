@@ -1,0 +1,356 @@
+{
+  "about": "required: each field the rule names is answered, and optionally only when another answer holds (§12.5.6 task-40 row (1)).",
+  "cases": [
+    {
+      "name": "an applicable required field never answered is missing",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-headcount",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "NumberOfEmployees"}]
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [],
+      "findings": [
+        {
+          "rule": "b1-headcount",
+          "verdict": "missing",
+          "field": {"elementKey": "NumberOfEmployees", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "a field declared not available is an answer, never missing (FR-40 AC-3)",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-headcount",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "NumberOfEmployees"}]
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "state": "not_available"}],
+      "findings": []
+    },
+    {
+      "name": "an answered zero is an answer (FR-30)",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-headcount",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "NumberOfEmployees"}]
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "0", "state": "nil_return"}],
+      "findings": []
+    },
+    {
+      "name": "a row whose columns are all empty is no answer",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-headcount",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "NumberOfEmployees"}]
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": null, "state": "ok"}],
+      "findings": [
+        {
+          "rule": "b1-headcount",
+          "verdict": "missing",
+          "field": {"elementKey": "NumberOfEmployees", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "text of spaces is no answer",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-certificates",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "DescriptionOfSustainabilityRelatedCertificationsOrLabels"}]
+          }
+        ]
+      },
+      "scope": ["DescriptionOfSustainabilityRelatedCertificationsOrLabels"],
+      "values": [{"elementKey": "DescriptionOfSustainabilityRelatedCertificationsOrLabels", "valueText": "   "}],
+      "findings": [
+        {
+          "rule": "b1-certificates",
+          "verdict": "missing",
+          "field": {"elementKey": "DescriptionOfSustainabilityRelatedCertificationsOrLabels", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "a field that does not apply is neither validated nor counted (FR-40 AC-5)",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-headcount",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "NumberOfEmployees"}]
+          }
+        ]
+      },
+      "scope": [],
+      "values": [],
+      "findings": []
+    },
+    {
+      "name": "a required member of a breakdown is that member's row",
+      "rules": {
+        "rules": [
+          {
+            "id": "b3-fuels-total",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "EnergyConsumptionFromFuels", "member": "TotalRenewableAndNonRenewableEnergyMember"}]
+          }
+        ]
+      },
+      "scope": ["EnergyConsumptionFromFuels"],
+      "values": [
+        {
+          "elementKey": "EnergyConsumptionFromFuels",
+          "dimensionKey": "RenewableEnergyMember",
+          "valueNumeric": "40",
+          "unitCode": "MWh"
+        }
+      ],
+      "findings": [
+        {
+          "rule": "b3-fuels-total",
+          "verdict": "missing",
+          "field": {
+            "elementKey": "EnergyConsumptionFromFuels",
+            "dimensionKey": "TotalRenewableAndNonRenewableEnergyMember",
+            "ordinal": 0
+          },
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "a required list holds once any of its rows is answered",
+      "rules": {
+        "rules": [
+          {
+            "id": "b7-materials-listed",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "NameOfMaterialUsed"}]
+          }
+        ]
+      },
+      "scope": ["NameOfMaterialUsed"],
+      "values": [{"elementKey": "NameOfMaterialUsed", "ordinal": 2, "valueText": "Oțel"}],
+      "findings": []
+    },
+    {
+      "name": "an empty required list is missing at the list itself",
+      "rules": {
+        "rules": [
+          {
+            "id": "b7-materials-listed",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "NameOfMaterialUsed"}]
+          }
+        ]
+      },
+      "scope": ["NameOfMaterialUsed"],
+      "values": [],
+      "findings": [
+        {
+          "rule": "b7-materials-listed",
+          "verdict": "missing",
+          "field": {"elementKey": "NameOfMaterialUsed", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "each unanswered field is its own finding, in natural-key order",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-figures",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "Turnover"}, {"element": "Assets"}, {"element": "NumberOfEmployees"}]
+          }
+        ]
+      },
+      "scope": ["Turnover", "Assets", "NumberOfEmployees"],
+      "values": [{"elementKey": "Assets", "valueNumeric": "1000"}],
+      "findings": [
+        {
+          "rule": "b1-figures",
+          "verdict": "missing",
+          "field": {"elementKey": "NumberOfEmployees", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        },
+        {
+          "rule": "b1-figures",
+          "verdict": "missing",
+          "field": {"elementKey": "Turnover", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "a conditional requirement waits while its condition does not hold",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}],
+            "when": {"kind": "is_true", "element": "PubliclyAvailableDisclosure"}
+          }
+        ]
+      },
+      "scope": ["PubliclyAvailableDisclosure", "URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "PubliclyAvailableDisclosure", "valueBoolean": false}],
+      "findings": []
+    },
+    {
+      "name": "a conditional requirement holds once its yes/no is answered yes",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}],
+            "when": {"kind": "is_true", "element": "PubliclyAvailableDisclosure"}
+          }
+        ]
+      },
+      "scope": ["PubliclyAvailableDisclosure", "URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "PubliclyAvailableDisclosure", "valueBoolean": true}],
+      "findings": [
+        {
+          "rule": "b4-link",
+          "verdict": "missing",
+          "field": {"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "an answered condition holds on any value",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-method",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "EmployeeCountingMethodology"}],
+            "when": {"kind": "answered", "element": "NumberOfEmployees"}
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees", "EmployeeCountingMethodology"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "20"}],
+      "findings": [
+        {
+          "rule": "b1-method",
+          "verdict": "missing",
+          "field": {"elementKey": "EmployeeCountingMethodology", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "a declaration of not available does not make an answered condition hold",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-method",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "EmployeeCountingMethodology"}],
+            "when": {"kind": "answered", "element": "NumberOfEmployees"}
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees", "EmployeeCountingMethodology"],
+      "values": [{"elementKey": "NumberOfEmployees", "state": "not_available"}],
+      "findings": []
+    },
+    {
+      "name": "a rule whose condition is outside the scope is not evaluated",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-method",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "EmployeeCountingMethodology"}],
+            "when": {"kind": "answered", "element": "NumberOfEmployees"}
+          }
+        ]
+      },
+      "scope": ["EmployeeCountingMethodology"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "20"}],
+      "findings": []
+    }
+  ]
+}

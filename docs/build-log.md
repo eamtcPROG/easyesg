@@ -28102,3 +28102,125 @@ no dev server running:
   unhandled rejection.
 - **Not run:** `pnpm e2e` and `pnpm e2e:worker`, since nothing under `apps/api` changed. Nor the review agents or
   `gates:clean`, which run when Stage 2 ends — task 204 is not its last row.
+
+## Task 40 — Validation rules as data, one interpreter, the same verdicts in both runtimes; task 40 closes · 2026-10-07
+
+`packages/validation` now holds three things. The **rule definition** (40.1) is the shape task 41.1 stores and A-05
+edits, with one reader that admits a rule set or refuses it, naming each rule and each problem. The **interpreter**
+(40.2), `evaluateRules`, takes a rule set and a report's answers and returns findings; it is pure, deterministic and
+exact. The **shared corpus** (40.3) is 86 cases in nine JSON files, run by `apps/api`'s jest against the package's
+CommonJS build and by `apps/web`'s vitest against its source, both inside `pnpm test`. FR-73 AC-1 and FR-40 AC-6 are
+met. Nothing evaluates a real report yet: rule sets from the store, the run and the findings table are 41's, and the
+inline state 42's.
+
+### Decided before building
+
+One batch of four questions went to the owner, after the template's own checks had been profiled: the *Table of
+Contents & Validation* sheet and the status column beside each disclosure in `VSME-Digital-Template-1.3.0.xlsx`. The
+owner took the recommended option each time. `architecture.md` §12.5.6's task-40 row holds the decisions and §9.8
+points to it:
+
+1. **A closed vocabulary of eight kinds**, each a check the template makes: `required` (optionally *when* another
+   answer holds), `required_any`, `row_complete`, `sum`, `range`, `url`, `exclusive` and `year_over_year`. A new rule
+   is data and a new kind is code. Two options were declined. An expression language would need an expression editor
+   in A-05. §9.8's four types taken literally would leave conditional presence, row completeness and exclusion to code.
+2. **Each rule carries its verdict**, from those its kind admits, because the template varies it within one kind.
+3. **Inside a total**, blank parts count as zero once any part is answered, and a declared-unavailable part suspends
+   the rule.
+4. **An absolute address is an `http` or `https` scheme and a host.** The template also accepts `www.`, so the two
+   disagree on that one form. FR-40 item 1 and `design_spec.md` §6.4 now say so.
+
+### How it is cut
+
+`src/rules/`, one idea per file:
+- `rule-definition.ts` holds the vocabularies, the rule types and `ADMITTED_VERDICTS`. The rule types are typed from
+  `ADMITTED_VERDICTS`, so a rule's verdict and the reader's check come from one table.
+- `read-rule-set.ts` is the reader, with one small reader per kind and its own problem vocabulary.
+- `field-value.ts` is the input: the store's own row shape, so neither caller maps anything.
+- `value-index.ts`, `finding.ts`, `verdict.ts`, `decimal.ts` and `address-form.ts` each hold one idea.
+- `evaluate-rules.ts` and `kinds/` hold one evaluator per kind, with `condition.ts` shared by the presence kinds and
+  `exclusive`.
+
+The corpus sits in `packages/validation/corpus/`, outside `src/`, so neither build carries it. A case passes through
+the reader before it is evaluated, so a corpus that drifts out of the vocabulary fails in both runtimes.
+
+### The calls taken in the build, and why each holds
+
+- **Scope is the caller's, and a rule naming anything outside it is skipped.** The interpreter does not evaluate
+  applicability: that is the thresholds artefact the api evaluates (§9.8). The caller passes the elements the pinned
+  version holds, that apply, and whose module is not declared omitted. The same scope is how a browser holding one
+  step stays honest: a rule over another module's element is skipped there rather than reported missing. How the
+  browser gets the rest is 42.1's, beside OQ-49.
+- **A field's one state is the most severe of its findings, in the order §6.4's colour roles carry**: error and
+  invalid URL, then inconsistency, then missing. BR-VAL-1 needs one state and no source ordered them, but §6.4 says
+  *"colour carries severity"*. This is derived and cited rather than asked. `mostSevereVerdict` is the operation.
+- **A `sum` finding sits on its first part, once per rule.** The fix for a split that misses its total is in the
+  split, and one finding keeps the roll-up counting the disagreement once.
+- **Determinism is enforced twice.** Values are sorted on the way into the index, and each rule's findings are sorted
+  by address on the way out. The comparison uses code units, never `localeCompare`, whose answer depends on the
+  runtime's locale data. Each sort has a mutation that turns a case red.
+- **The year-over-year comparison multiplies rather than divides**: `|current − prior| > proportion × |prior|`. That
+  keeps it exact, and *beyond* is strictly greater. The case `0.9` against `0.6` sits on the boundary, where a float
+  says beyond. A pair in different units is not compared, extending (3)'s no-conversion rule; FR-46 item 5 now says
+  so.
+- **The address check is the WHATWG parser behind a scheme-and-slashes test.** The parser reads `http:example.md` as
+  `http://example.md/` and accepts any scheme, which FR-40 does not.
+- **The package's own corpus spec imports the JSON; the two runtime specs read the directory.** The package carries
+  no Node types (`"types": []`), so it follows `packages/i18n`'s parity suite and imports. The apps read the directory
+  through the package's own location, so a case file added later is in both runtimes' proof with no edit. Each app
+  spec also asserts it found a file, because an empty `describe.each` is no test.
+
+### Found in passing
+
+- **Two branches the mutations showed to be dead were removed rather than covered.**
+  - `hostname !== ''` after `URL.canParse`: the parser already refuses an `http` or `https` address with no host.
+  - The nil-return special case in `numberOf`: the api derives `nil_return` from a stored `0` (`answeredState`), so
+    the zero is always in the column.
+- **The package barrel's docblock was stale twice over.** It said the server re-validates *"in the same request that
+  persists the change (§11.1)"*, which 182/26 replaced with evaluation when asked. It also described a
+  `ValidationState` and *"the mapping declared once in `packages/contracts`"*; no source declares either. The barrel
+  now says what the package holds.
+- **`apps/api/CLAUDE.md`'s current state said the calculator's runs were not live**, which has been false since 38.
+  Corrected, alongside its line on validation.
+- **NFR-88's coverage floor cannot be measured.** No coverage provider is installed anywhere (`packages/ui` names
+  `v8` without the package) and no task row cites NFR-88, so the validation engine's 95/90 floor, like the
+  calculator's, is checked by nothing. Raised as a separate task rather than widening this one. Mutation runs stood
+  in here.
+
+### Skills, read against the diff
+
+- `one-idea-per-file`: one idea per file, and pure logic with a spec or corpus file per kind. `reason-docblock`: four
+  docblocks stated counts of things outside themselves: the barrel's "eight kinds" and "FR-40's four", field-value's
+  "other two answer states", and condition's "two presence kinds". They were reworded.
+- `one-kind-per-folder`: considered and not applied. The owner scoped it to `apps/web` and `apps/admin`, so
+  `packages/validation/src/` holding files beside `rules/`, and `rules/` holding files beside `kinds/`, is outside
+  its reach. The new spec in `apps/web/src/test/` keeps that leaf files-only, which `folder-shape.spec.ts` confirms.
+- `nestjs-best-practices` and `vercel-react-best-practices`: the diff adds one spec in each app and no production
+  code, so neither applies.
+
+### Proven to bite
+
+- **Mutations, each restored afterwards; the 30 that still apply are all red.**
+  - 25 against the corpus. The first round left five green: two exposed the dead branches above, whose removal took
+    those two mutations with them, and three exposed missing cases — *at most* on the boundary, decimals of different
+    lengths, and two rows of one element in reverse order. Those three cases were added, and the remaining 23 are red.
+  - 7 against the reader's spec. One stayed green: a field list passed through instead of rebuilt. The spec now holds
+    the list's identity too.
+- **Each runtime reaches the interpreter by its own path.** A mutation in the source turned 2 of 87 red in both the
+  web's vitest and the api's jest, the latter after `pretest` rebuilt the package. Breaking only `dist/cjs` turned the
+  api red and left the web green. So the two runs exercise the CommonJS build and the source respectively, which is
+  the claim 40.3 rests on.
+
+### Gates
+
+A change to `packages/*` has no narrow run: every dependent's row runs, one suite at a time, with no dev server
+running.
+- `pnpm lint`, plus the new files linted without the cache: 32 files, no messages. Typecheck in `validation`, `api`,
+  `web` and `admin`.
+- Unit suites: validation 160, api 1,792, web 1,578 (its 1,491 and the corpus's 87), admin 296.
+- `pnpm routes:check`; `pnpm docs:check`, 48 claims. The archive's figures are now 139 numbers and 252 rows.
+- `pnpm e2e`: 64 suites, 1,593 tests. Nothing in the log was unhandled and there were no dependency errors.
+- `pnpm e2e:web`, all three projects, because both front ends bundle the package's ESM build: 318 of 318. The server
+  printed only digest `2667547900`, the abandoned-stream line `apps/web/CLAUDE.md` records, 16 times.
+- **Not run:** `pnpm e2e:worker` (no consumer changed), `openapi:check` (no controller or DTO) and `migrations:check`
+  (no migration). The review agents and `gates:clean` wait for Stage 2's end; task 40 is not its last row.

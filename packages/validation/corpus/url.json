@@ -1,0 +1,345 @@
+{
+  "about": "url: an address is valid when it is absolute — an http or https scheme, //, and a host; never reached (182/25), quoted verbatim.",
+  "cases": [
+    {
+      "name": "https with a host is valid",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": "https://example.md/raport-2025"}],
+      "findings": []
+    },
+    {
+      "name": "http with a host is valid",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": "http://example.md"}],
+      "findings": []
+    },
+    {
+      "name": "the scheme is read in any case",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": "HTTPS://EXAMPLE.MD/Raport"}],
+      "findings": []
+    },
+    {
+      "name": "a bare www. address is not absolute (§12.5.6 task-40 row (4))",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": "www.example.md"}],
+      "findings": [
+        {
+          "rule": "b4-link-form",
+          "verdict": "invalid_url",
+          "field": {"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.url",
+          "params": {"value": "www.example.md"}
+        }
+      ]
+    },
+    {
+      "name": "a scheme without its slashes is refused, though the parser would read it",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": "http:example.md"}],
+      "findings": [
+        {
+          "rule": "b4-link-form",
+          "verdict": "invalid_url",
+          "field": {"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.url",
+          "params": {"value": "http:example.md"}
+        }
+      ]
+    },
+    {
+      "name": "a scheme with one slash is refused",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": "http:/example.md"}],
+      "findings": [
+        {
+          "rule": "b4-link-form",
+          "verdict": "invalid_url",
+          "field": {"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.url",
+          "params": {"value": "http:/example.md"}
+        }
+      ]
+    },
+    {
+      "name": "a scheme other than http or https is refused",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": "ftp://example.md"}],
+      "findings": [
+        {
+          "rule": "b4-link-form",
+          "verdict": "invalid_url",
+          "field": {"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.url",
+          "params": {"value": "ftp://example.md"}
+        }
+      ]
+    },
+    {
+      "name": "a space in the host is refused",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": "https://exa mple.md"}],
+      "findings": [
+        {
+          "rule": "b4-link-form",
+          "verdict": "invalid_url",
+          "field": {"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.url",
+          "params": {"value": "https://exa mple.md"}
+        }
+      ]
+    },
+    {
+      "name": "a scheme with no host is refused",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": "https://"}],
+      "findings": [
+        {
+          "rule": "b4-link-form",
+          "verdict": "invalid_url",
+          "field": {"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.url",
+          "params": {"value": "https://"}
+        }
+      ]
+    },
+    {
+      "name": "a port out of range is refused",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": "https://example.md:99999"}],
+      "findings": [
+        {
+          "rule": "b4-link-form",
+          "verdict": "invalid_url",
+          "field": {"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.url",
+          "params": {"value": "https://example.md:99999"}
+        }
+      ]
+    },
+    {
+      "name": "the address is quoted verbatim, spaces and all",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": " https://example.md"}],
+      "findings": [
+        {
+          "rule": "b4-link-form",
+          "verdict": "invalid_url",
+          "field": {"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.url",
+          "params": {"value": " https://example.md"}
+        }
+      ]
+    },
+    {
+      "name": "an empty field has no address to read",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": "   "}],
+      "findings": []
+    },
+    {
+      "name": "a field declared not available has no address to read",
+      "rules": {
+        "rules": [
+          {
+            "id": "b4-link-form",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [{"element": "URLOrLinkToThePubliclyAvailableDisclosure"}]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure"],
+      "values": [{"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "state": "not_available"}],
+      "findings": []
+    },
+    {
+      "name": "each field is read, in natural-key order",
+      "rules": {
+        "rules": [
+          {
+            "id": "links",
+            "kind": "url",
+            "verdict": "invalid_url",
+            "message": "validation.url",
+            "fields": [
+              {"element": "URLOrLinkToThePubliclyAvailableDisclosure"},
+              {"element": "LinkToPreviousReportContainingDisclosuresThatRemainUnchanged"}
+            ]
+          }
+        ]
+      },
+      "scope": ["URLOrLinkToThePubliclyAvailableDisclosure", "LinkToPreviousReportContainingDisclosuresThatRemainUnchanged"],
+      "values": [
+        {"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "valueText": "raport.pdf"},
+        {
+          "elementKey": "LinkToPreviousReportContainingDisclosuresThatRemainUnchanged",
+          "valueText": "www.example.md/2024"
+        }
+      ],
+      "findings": [
+        {
+          "rule": "links",
+          "verdict": "invalid_url",
+          "field": {
+            "elementKey": "LinkToPreviousReportContainingDisclosuresThatRemainUnchanged",
+            "dimensionKey": "",
+            "ordinal": 0
+          },
+          "related": [],
+          "message": "validation.url",
+          "params": {"value": "www.example.md/2024"}
+        },
+        {
+          "rule": "links",
+          "verdict": "invalid_url",
+          "field": {"elementKey": "URLOrLinkToThePubliclyAvailableDisclosure", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.url",
+          "params": {"value": "raport.pdf"}
+        }
+      ]
+    }
+  ]
+}

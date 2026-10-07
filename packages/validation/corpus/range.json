@@ -1,0 +1,207 @@
+{
+  "about": "range: a number within an inclusive minimum and maximum — non-negativity is a minimum of zero.",
+  "cases": [
+    {
+      "name": "a negative headcount is an error",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-headcount-range",
+            "kind": "range",
+            "verdict": "error",
+            "message": "validation.range",
+            "fields": [{"element": "NumberOfEmployees"}],
+            "min": "0"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "-3"}],
+      "findings": [
+        {
+          "rule": "b1-headcount-range",
+          "verdict": "error",
+          "field": {"elementKey": "NumberOfEmployees", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.range",
+          "params": {"value": "-3", "min": "0"}
+        }
+      ]
+    },
+    {
+      "name": "zero is within a minimum of zero",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-headcount-range",
+            "kind": "range",
+            "verdict": "error",
+            "message": "validation.range",
+            "fields": [{"element": "NumberOfEmployees"}],
+            "min": "0"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "0", "state": "nil_return"}],
+      "findings": []
+    },
+    {
+      "name": "the value is quoted in canonical form",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-headcount-range",
+            "kind": "range",
+            "verdict": "error",
+            "message": "validation.range",
+            "fields": [{"element": "NumberOfEmployees"}],
+            "min": "0"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "-3.50"}],
+      "findings": [
+        {
+          "rule": "b1-headcount-range",
+          "verdict": "error",
+          "field": {"elementKey": "NumberOfEmployees", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.range",
+          "params": {"value": "-3.5", "min": "0"}
+        }
+      ]
+    },
+    {
+      "name": "a field declared not available has no number to bound",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-headcount-range",
+            "kind": "range",
+            "verdict": "error",
+            "message": "validation.range",
+            "fields": [{"element": "NumberOfEmployees"}],
+            "min": "0"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployees"],
+      "values": [{"elementKey": "NumberOfEmployees", "state": "not_available"}],
+      "findings": []
+    },
+    {
+      "name": "a percentage above its maximum is an error",
+      "rules": {
+        "rules": [
+          {
+            "id": "b10-bargaining-range",
+            "kind": "range",
+            "verdict": "error",
+            "message": "validation.range",
+            "fields": [{"element": "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements"}],
+            "min": "0",
+            "max": "100"
+          }
+        ]
+      },
+      "scope": ["PercentageOfEmployeesCoveredByCollectiveBargainingAgreements"],
+      "values": [{"elementKey": "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements", "valueNumeric": "100.5"}],
+      "findings": [
+        {
+          "rule": "b10-bargaining-range",
+          "verdict": "error",
+          "field": {
+            "elementKey": "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements",
+            "dimensionKey": "",
+            "ordinal": 0
+          },
+          "related": [],
+          "message": "validation.range",
+          "params": {"value": "100.5", "min": "0", "max": "100"}
+        }
+      ]
+    },
+    {
+      "name": "the bounds are inclusive",
+      "rules": {
+        "rules": [
+          {
+            "id": "b10-bargaining-range",
+            "kind": "range",
+            "verdict": "error",
+            "message": "validation.range",
+            "fields": [{"element": "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements"}],
+            "min": "0",
+            "max": "100"
+          }
+        ]
+      },
+      "scope": ["PercentageOfEmployeesCoveredByCollectiveBargainingAgreements"],
+      "values": [{"elementKey": "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements", "valueNumeric": "100"}],
+      "findings": []
+    },
+    {
+      "name": "a rule over a list reads every row",
+      "rules": {
+        "rules": [
+          {
+            "id": "b8-country-range",
+            "kind": "range",
+            "verdict": "error",
+            "message": "validation.range",
+            "fields": [{"element": "NumberOfEmployeesForCountryOfEmploymentContract"}],
+            "min": "0"
+          }
+        ]
+      },
+      "scope": ["NumberOfEmployeesForCountryOfEmploymentContract"],
+      "values": [
+        {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "RO", "valueNumeric": "-1"},
+        {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "MD", "valueNumeric": "5"}
+      ],
+      "findings": [
+        {
+          "rule": "b8-country-range",
+          "verdict": "error",
+          "field": {"elementKey": "NumberOfEmployeesForCountryOfEmploymentContract", "dimensionKey": "RO", "ordinal": 0},
+          "related": [],
+          "message": "validation.range",
+          "params": {"value": "-1", "min": "0"}
+        }
+      ]
+    },
+    {
+      "name": "a rule with only a maximum quotes only the maximum",
+      "rules": {
+        "rules": [
+          {
+            "id": "b10-bargaining-ceiling",
+            "kind": "range",
+            "verdict": "error",
+            "message": "validation.range",
+            "fields": [{"element": "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements"}],
+            "max": "100"
+          }
+        ]
+      },
+      "scope": ["PercentageOfEmployeesCoveredByCollectiveBargainingAgreements"],
+      "values": [{"elementKey": "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements", "valueNumeric": "150"}],
+      "findings": [
+        {
+          "rule": "b10-bargaining-ceiling",
+          "verdict": "error",
+          "field": {
+            "elementKey": "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements",
+            "dimensionKey": "",
+            "ordinal": 0
+          },
+          "related": [],
+          "message": "validation.range",
+          "params": {"value": "150", "max": "100"}
+        }
+      ]
+    }
+  ]
+}
