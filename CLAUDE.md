@@ -87,6 +87,10 @@ A task is not finished when its code works. It is finished when the gate set pas
 build-log entry is written — the two are the same obligation, since a decision recorded only in a
 chat transcript has not been made.
 
+**And a finished task is committed, without asking** (project owner, 7 Oct 2026): one commit on the
+current branch once the row has moved, a sub-step's close landing in its task's commit, and a push
+still waiting to be asked. The `closing-a-task` skill says what the commit holds.
+
 **Every task and every sub-step closes on the gates its own change reaches; the full set runs cold, with the three review
 agents, once per Stage — when the Stage ends.** Standing decision by the owner, **6 Oct 2026**. It replaces the
 8 Sep 2026 rule (*"a sub-step closes on the gates its own change reaches; the parent closes on the full set"*) and the

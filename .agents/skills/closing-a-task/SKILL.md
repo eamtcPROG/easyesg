@@ -1,6 +1,6 @@
 ---
 name: closing-a-task
-description: The procedure for closing a row of docs/task.md in easyesg, and for closing a Stage — why a close has no separate build line, what running fewer gates per close gives up, `pnpm gates:scoped` as the middle setting, and the Stage's end with `pnpm gates:clean` and the three review agents (convention-review, spec-review, gate-integrity-review), their opus pin, routing table and fixtures. Use before closing any task or sub-step, before closing a Stage, and before running the review agents. The root CLAUDE.md's "Closing a task" keeps the two lookup tables, the boot proof and the rules that bind outside a close.
+description: The procedure for closing a row of docs/task.md in easyesg, and for closing a Stage — the commit a closed task ends with, why a close has no separate build line, what running fewer gates per close gives up, `pnpm gates:scoped` as the middle setting, and the Stage's end with `pnpm gates:clean` and the three review agents (convention-review, spec-review, gate-integrity-review), their opus pin, routing table and fixtures. Use before closing any task or sub-step, before closing a Stage, and before running the review agents. The root CLAUDE.md's "Closing a task" keeps the two lookup tables, the boot proof and the rules that bind outside a close.
 ---
 
 # Closing a task — the procedure
@@ -33,6 +33,24 @@ assumed meanwhile is that a defect CI finds shortly after a push costs less than
 spent finding it first. What falsifies it is a close's break surviving to the Stage's end and
 costing more to unpick there than the skipped run would have cost — record that in `build-log.md`
 and raise it, rather than quietly going back to running everything.
+
+**A closed task is committed, without asking** (project owner, 7 Oct 2026, at task 39's close). The
+last step of a task's close — after its gates pass, its build-log entry is written and its row has
+moved into `archived_tasks.md` — is a commit on the current branch. **A sub-step does not commit on
+its own**: its close lands in its task's commit, so a task's work is one commit. A Stage's close is
+the commit of the task that ends it, with the Stage's `gates:clean`, reviews and entry inside it.
+Three things hold:
+
+- **Read the tree before staging.** `git status --porcelain --untracked-files=all` against what the
+  task built — the index check in the root's "Closing a task" — and stage the task's files. A change
+  the task did not make is asked about, never swept in.
+- **The message follows the log**: a subject naming what shipped, a paragraph per sub-step, the
+  decisions cited by their §12.5.6 row rather than restated, and the attribution line.
+- **Committing is not pushing.** A push still waits for the owner to ask: it publishes the work, and
+  CI runs on it.
+
+This paragraph is the authority for the commit, so the default of committing only when asked does
+not apply at a task's close — and only there.
 
 **`pnpm gates:scoped` keeps a role: it is the middle setting.** Reach for it when a sub-step's blast
 radius is not obvious, because it computes the answer from the dependency graph rather than from the
