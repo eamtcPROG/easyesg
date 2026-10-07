@@ -1,0 +1,99 @@
+/* File upload — values from `EasyESG Components.dc.html`'s specimen (OQ-10): a dashed 1px boundary, radius 6, 20px of
+   padding, centred lines, the second muted with its *browse* in the accent. Tier 2/3 tokens only (UX-78). */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Visually hidden, still the focusable chooser — the idiom `text-field.module.css` uses for a hidden label. */
+.input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 20px;
+  border: 1px dashed var(--dropzone-border-rest);
+  border-radius: var(--radius-2);
+  background: var(--dropzone-surface);
+  text-align: center;
+  cursor: pointer;
+  transition: background-color var(--motion-instant) var(--motion-ease),
+    border-color var(--motion-instant) var(--motion-ease);
+}
+
+.zone:hover,
+.zone[data-active] {
+  border-color: var(--dropzone-border-active);
+}
+
+/* A file held over it: the boundary goes solid on the tint, so the change does not rest on colour alone (§6.4). */
+.zone[data-active] {
+  border-style: solid;
+  background: var(--dropzone-surface-active);
+}
+
+/* The chooser's own ring, drawn on the zone it is the label of — replaced, never removed. */
+.input:focus-visible + .zone {
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 1px var(--field-border-focus), 0 0 0 4px var(--border-focus-halo);
+}
+
+.label {
+  font: 600 14px/20px var(--font-text);
+  color: var(--text-default);
+}
+
+.hint {
+  font: 400 12.5px/18px var(--font-text);
+  color: var(--text-muted);
+}
+
+/* `--text-muted` on the accent's tint is the floor to two decimals (`tokens.css`), so the held state reads the body
+   colour, as a highlighted menu row does. */
+.zone[data-active] .hint {
+  color: var(--text-body);
+}
+
+/* The specimen's `· browse`. The dot is drawn, with empty alternative text, so it is not read as a word. */
+.browse {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.browse::before {
+  content: '·' / '';
+  display: inline-block;
+  margin-inline: var(--space-2);
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.zone.invalid {
+  border-color: var(--field-border-invalid);
+}
+
+.error {
+  color: var(--state-error);
+}
+
+.input:disabled + .zone {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.input:disabled + .zone:hover {
+  border-color: var(--dropzone-border-rest);
+}

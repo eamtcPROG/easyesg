@@ -3,7 +3,7 @@
 import type { Calculator } from '@easyesg/contracts';
 import { Button, BUTTON_VARIANT } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useCalculator } from '@/client/calculator/use-calculator';
 import { useAutosaveContext } from '@/features/wizard/components/providers/autosave-context';
 import { isQueuedLine } from '@/features/wizard/tools/autosave-state';
@@ -11,6 +11,8 @@ import { reportCalculatorRoute } from '@/lib/routes';
 import { computationOf } from '../../tools/computation';
 import { linesOf } from '../../tools/lines';
 import { AddSource } from '../adding/add-source';
+import { ImportDone } from '../importing/done/import-done';
+import { ImportPanel, type ImportedLines } from '../importing/section/import-panel';
 import { SiteLines } from '../lines/site-lines';
 import { FactorUpdateNotice } from '../notice/factor-update-notice';
 import { CALCULATOR_MESSAGES } from '../shared/calculator-messages';
@@ -18,6 +20,14 @@ import { NoLines } from '../states/no-lines';
 import styles from '../styles/calculator.module.css';
 import { LinePager } from './line-pager';
 import { SiteChips } from './site-chips';
+
+// What stands above the lines — see the board's docblock.
+const BOARD_PANEL = { ADDING: 'adding', IMPORTING: 'importing', IMPORTED: 'imported' } as const;
+
+type BoardPanel =
+  | { readonly kind: typeof BOARD_PANEL.ADDING; readonly site: number | null }
+  | { readonly kind: typeof BOARD_PANEL.IMPORTING }
+  | { readonly kind: typeof BOARD_PANEL.IMPORTED; readonly lines: number; readonly file: string };
 
 /**
  * S-09's working surface (tasks 39.1, 39.2; UC-32, UC-33, UX-40 … UX-42, UX-44): UX-44's notice where a newer set is in
@@ -30,7 +40,13 @@ import { SiteChips } from './site-chips';
  *
  * **An open derivation is an address** (`?line=`, §4.7), and on a phone it is also *one source per screen*: the pager
  * says where the line stands among the shown ones and leads to the next, and the stylesheet hides the rest below the
- * narrow frame. One piece of state of its own — whether the add form is open, and at which site — one `useState`.
+ * narrow frame.
+ *
+ * **One piece of state of its own, what stands above the lines**: the add form, open at a site or from the toolbar;
+ * the spreadsheet import (task 204.2; FR-211); or what an import just did. One value, because the three never stand
+ * together — opening either panel is the next attempt, which clears the last import's notice (§8.1's expiring message).
+ * **An import's lines go where a typed line goes**: each into the wizard's queue under a fresh id, as *Add a source*
+ * puts one (§12.5.6's task-204 row (1)).
  */
 export function CalculatorBoard({
   reportId,
@@ -51,8 +67,19 @@ export function CalculatorBoard({
   const t = useTranslations(CALCULATOR_MESSAGES);
   const { state, change } = useAutosaveContext();
   const calculator = useCalculator({ reportId, initial, committedLines: state.committedLines });
-  // `undefined` closed; `null` opened from the toolbar; an ordinal opened at that site.
-  const [adding, setAdding] = useState<number | null | undefined>(undefined);
+  const [panel, setPanel] = useState<BoardPanel | null>(null);
+  const adding = panel?.kind === BOARD_PANEL.ADDING ? panel : null;
+  const open = adding !== null || panel?.kind === BOARD_PANEL.IMPORTING;
+  const startAdding = (site: number | null) => setPanel({ kind: BOARD_PANEL.ADDING, site });
+  // Stable, so the memoized import panel is not re-rendered by every move of the queue: `change` and the setter are.
+  const closePanel = useCallback(() => setPanel(null), []);
+  const importLines = useCallback(
+    ({ lines: imported, file }: ImportedLines) => {
+      for (const line of imported) change({ lineId: crypto.randomUUID(), line });
+      setPanel({ kind: BOARD_PANEL.IMPORTED, lines: imported.length, file });
+    },
+    [change],
+  );
 
   const lines = useMemo(
     () =>
@@ -82,31 +109,53 @@ export function CalculatorBoard({
 
       <div className={styles.toolbar}>
         <SiteChips reportId={reportId} sites={calculator.sites} lines={lines} shown={shownSite} />
-        {readOnly || adding !== undefined || lines.length === 0 ? null : (
-          <Button variant={BUTTON_VARIANT.SECONDARY} onClick={() => setAdding(shownSite)}>
-            {t('add.open')}
-          </Button>
+        {readOnly || open ? null : (
+          <div className={styles.toolbarActions}>
+            {calculator.factorSet === null ? null : (
+              <Button variant={BUTTON_VARIANT.SECONDARY} onClick={() => setPanel({ kind: BOARD_PANEL.IMPORTING })}>
+                {t('import.open')}
+              </Button>
+            )}
+            {lines.length === 0 ? null : (
+              <Button variant={BUTTON_VARIANT.SECONDARY} onClick={() => startAdding(shownSite)}>
+                {t('add.open')}
+              </Button>
+            )}
+          </div>
         )}
       </div>
 
+      {panel?.kind === BOARD_PANEL.IMPORTED ? (
+        <ImportDone lines={panel.lines} file={panel.file} onDismiss={closePanel} />
+      ) : null}
+
       {focused ? <LinePager lines={shownLines} open={openLine} href={lineHref} /> : null}
 
-      {adding === undefined || readOnly || calculator.factorSet === null ? null : (
+      {adding === null || readOnly || calculator.factorSet === null ? null : (
         <AddSource
-          key={adding ?? 'any'}
+          key={adding.site ?? 'any'}
           sources={calculator.factorSet.sources}
           sites={calculator.sites}
-          site={adding}
+          site={adding.site}
           onAdd={(line) => {
             change(line);
-            setAdding(undefined);
+            setPanel(null);
           }}
-          onCancel={() => setAdding(undefined)}
+          onCancel={closePanel}
+        />
+      )}
+
+      {panel?.kind !== BOARD_PANEL.IMPORTING || readOnly || calculator.factorSet === null ? null : (
+        <ImportPanel
+          sources={calculator.factorSet.sources}
+          sites={calculator.sites}
+          onImport={importLines}
+          onCancel={closePanel}
         />
       )}
 
       {lines.length === 0 ? (
-        adding === undefined ? <NoLines readOnly={readOnly} onStart={() => setAdding(shownSite)} /> : null
+        open ? null : <NoLines readOnly={readOnly} onStart={() => startAdding(shownSite)} />
       ) : (
         sites.map((site) => (
           <SiteLines
@@ -116,7 +165,7 @@ export function CalculatorBoard({
             sources={sources}
             months={calculator.months}
             readOnly={readOnly}
-            onAdd={() => setAdding(site.ordinal)}
+            onAdd={() => startAdding(site.ordinal)}
             computation={computation}
             derivation={{ open: openLine, href: lineHref }}
           />

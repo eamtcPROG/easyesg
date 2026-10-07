@@ -27904,3 +27904,201 @@ one suite at a time, no dev server running, and green on its first run:
 - The server printed only digest `2667547900`, the abandoned-stream line `apps/web/CLAUDE.md` records, 34 times; no
   other `⨯`, and no `ERROR` or unhandled rejection in the api runs.
 - **Not run**: the review agents and `gates:clean`, which run when Stage 2 ends — task 39 is not its last row.
+
+## Task 204.1 — S-09's spreadsheet import, specified before it is built · 2026-10-07
+
+FR-211 and UC-215 now exist for the element `design_spec.md` §4.7 had listed on S-09 with nothing behind it. The four
+questions the task row named were raised in one batch before any document was written, and the owner took the
+recommended option for each; `architecture.md` §12.5.6's task-204 row holds them, and the FR, the UC and S-09's entry
+are written from it.
+
+### What the code said before the questions were drafted
+
+- **A refused write holds the queue.** `FLUSH_FAILURE.REFUSED` is retried only when something changes, and a flush sends
+  values, then inputs, then lines one request at a time, ending at the first refusal. Queued typed lines rarely meet it,
+  because their source, unit and site come from controls fed by the calculator read. An import has no such controls, so
+  one unreadable row the api would refuse would stall every line behind it. That fact shaped the first question, and it
+  is why FR-211's behaviour 7 says a row the api would refuse is reported, never queued.
+- **No spreadsheet reader exists in the repository**, and the export's own `.xlsx` work (task 46,
+  `packages/xlsx-patch`) is a byte-preserving writer, not a reader. 204.2 chooses and pins one.
+- **`use_cases.md` §7 defers automated ingestion from providers and accounting software** with *"Manual entry (UC-32) is
+  the MVP path."* An import of a file the reporter picks is still the reporter's own act. I took that as a reading rather
+  than a question, and UC-215 and FR-211's boundaries state it.
+
+### The four decisions (project owner, each the recommended option)
+
+(1) The file is read in the browser and every readable row becomes an ordinary queued line under a fresh id. (2) Columns
+are mapped, then each distinct source, unit and site value is matched once. (3) One row becomes one new line with one
+figure for the period; a row with no figure is reported; an import only adds. (4) `.xlsx` and `.csv` are accepted, at
+1 MB and 500 rows, with the unreadable rows listed on screen before anything is added. The declined options are in the row.
+
+### Taken in the writing, and stated
+
+- **The limits are code, not configuration**, as FR-38's retry policy is. AD-4 covers the standard's behaviour, and a
+  file-size bound is not part of it.
+- **A row with nothing in it is not a row**, so a sheet's trailing blank rows are neither imported nor reported. This is
+  FR-211's behaviour 5. Reporting them would bury the rows that matter.
+- **A description longer than a line holds makes its row unreadable.** The api refuses one over 500 characters, and per
+  the first point above that refusal would hold the queue.
+
+### Searched where the rule holds
+
+The register counts every UC and FR addition must move: `functional_requirements.md` §1, §1.4, §2.3, §3, §9.1 … §9.4;
+`use_cases.md` §1, §3's count line, §4's grouping and §8.1; and `design_spec.md`'s preamble, inventory, §4.7 row, S-09
+entry and trace row. **§8.1's actor table had drifted again**, to 211 against §3's 214: UC-212, UC-213 and UC-214 never
+reached it, the same failure its 11 Sep 2026 correction records. It now reads 215 with all four, and the note under it
+says so. G-8's present-tense counts (195 and 212) were stale too and now read 196 and 215.
+
+### Gates
+
+Documents only, so by the close table `pnpm docs:check` and nothing else: 48 claims. On its first run it named the one
+disagreement it should have — task 204's Covered FR still read `—` once FR-211's Status line named 204.2 — and the row
+now reads FR-211. **Not run**: anything over code, since none changed.
+
+## Task 204.2 — S-09 imports invoice lines from a spreadsheet; task 204 closes · 2026-10-07
+
+S-09 now has *Importați dintr-un tabel* beside *Adăugați o sursă*. A reporter chooses an `.xlsx` (choosing the sheet
+when there are several) or a `.csv`. The panel proposes which column holds what from the first row's names, and they
+match each source, unit and site value once. Before anything is added, the panel lists every row it cannot read, by
+row number, with what puts that row right. Imported rows become ordinary lines in the wizard's queue, and a notice says
+how many lines came from which file. FR-211's nine acceptance criteria are met. AC-9's locked period shares the board's
+`readOnly` with *Add a source*; the viewer half is the journey that proves it. With 204.2, task 204 closes.
+
+### How it is cut
+
+- **`client/spreadsheet/`** is the browser-only reader. `read-spreadsheet.ts` refuses a file by its name or size
+  before reading it, then reads it with the right library. `sheet-cells.ts` turns either library's cells into one
+  shape: text, or `null` for an empty cell. `number-text.ts` turns an `.xlsx` number cell's stored text into the
+  decimal it spells.
+- **`features/calculator/tools/import-*.ts`** is the pure core, one idea and one spec per file:
+  - matching text (`import-text`);
+  - the table and the proposed columns (`import-columns`);
+  - the values and their proposed options (`import-values`);
+  - the plan (`import-plan`);
+  - the panel's reducer (`import-state`);
+  - the select encoding (`import-choice`);
+  - the one view that the selects, the report and the import button all read (`import-view`).
+- **`components/importing/`** follows the region anatomy: `section/` holds the state and the read, `choosing/` and
+  `mapping/` the two arms, `done/` the notice, and `shared/` the namespace. The board's add-form flag became one union
+  of add form, import panel or the notice an import leaves. The three never stand together, and opening a panel
+  clears the last notice.
+- **§11.5's File upload** is built in `packages/ui` at this first consumer, as Radio group was. It is a real
+  `<input type="file">`, visually hidden, under a label that is the whole zone. It has four tier-3 tokens, and both of
+  its boundaries are measured in the contrast record. `design_spec.md` §11.5 records it.
+
+### The calls taken in the build, and why each holds
+
+- **A row the api would refuse is reported, never queued.** This is the decision row (1) rests on. The plan checks
+  each row against what the calculator read already serves: the factor set's sources, the units each source admits,
+  and the report's sites. It also checks the two lengths the line request admits (figure ≤ 64 characters, description
+  ≤ 500).
+- **A number cell keeps its stored text.** `read-excel-file`'s `parseNumber` hands the text over, and `number-text.ts`
+  moves the decimal point by any exponent without a float. So `1.7E+4` arrives as `17000`, and `1700.5` as typed.
+- **A reader that cannot load is its own refusal, and both readers load when the import opens.** This was found while
+  writing the offline journey. Each reader is a chunk fetched lazily, so a reporter who lost the connection before
+  opening the import would have been told their file was not a spreadsheet. Now the panel fetches both readers when
+  it opens: a file chosen after the connection drops is still read, and its lines wait in the queue (AC-8). A reader
+  that cannot load is refused with a no-connection message of its own. FR-211's refusals and history record this.
+- **The reporter's choices are stored; proposals are derived.** The reducer holds only what the reporter chose,
+  including an explicit *no column* or *none of these*. Changing a column forgets the values matched from it, and
+  changing the sheet forgets everything. Proposals are recomputed each render, so nothing has to be kept in step with
+  what was read.
+- **A value is proposed only where exactly one option fits.** `Gaz` against three gas sources proposes nothing: a
+  guess would put rows on a line nobody chose, with nothing on screen saying so. A site is never proposed by its code,
+  because the code is a position, and a cell saying `1` would land on the second site.
+- **The words a column is known by live in the catalogue**, as one comma-separated list per field per locale. The
+  three locales were written separately, each listing its own word forms, because matching is on whole words. The
+  spec found this rule working as intended: *Locația* did not match a list that held only *locație*.
+- **The panel is memoized, with the board's callbacks stable.** The board re-renders on every move of the queue, and
+  the mapping arm derives its view from every row on each render it gets. The docblock gives this reason and claims no
+  measurement.
+
+### Found in passing, and fixed where it holds
+
+- **`lib/decimal-input.ts` sent spellings the api refuses.** It accepted `0500`, `12,` and `,5` and sent them as typed,
+  but the api's `isDecimalString` refuses all three. On S-09 that refusal holds the queue until something changes.
+  This affected typed lines from task 39.1 onward, not only imports. The reader now answers the canonical spelling
+  (`500`, `12`, `0.5`, a zero with no sign), which fixes S-07's fields, S-09's lines and imported `.csv` cells
+  together. **Searched:** every caller of `parseDecimalInput` and `readFigure` — S-07's disclosure and
+  derivation-input controls, S-09's line, add form and override form, and the month total, which already assumed the
+  canonical form.
+- **`papaparse` guesses the separator with empty lines counted.** A file's final line break dragged the semicolon below
+  its threshold, the guess fell back to the comma, and `1700,5` split in two. The reader's spec found it. The guess now
+  runs with empty lines skipped, and the parse keeps them, so row numbers stay true.
+- **The spec's byte-order-mark case proved nothing at first.** `trim` removes U+FEFF and `papaparse` drops it too. The
+  strip I had written was dead code and is gone. The case now quotes the first field, where a mark left in place would
+  surface in the column's name. That keeps the guard on the behaviour if the reader is ever replaced.
+
+### Dependencies
+
+`read-excel-file` 9.3.10, `papaparse` 5.7.0 and `@types/papaparse` 5.5.2, installed through the catalog and
+recorded in §12.1 with the declined alternatives. SheetJS was declined after the registry was checked on 7 Oct 2026:
+`xlsx` stops at 0.18.5, and its two advisories (GHSA-4r6h-8v6p-xvw6, GHSA-5pgg-2g8v-p4x9) are fixed only outside npm.
+No dependency asked for a build script.
+
+### Skills, read against the diff
+
+- `one-idea-per-file`: every tool has its spec; the panel's view is computed once (`section-compute-once`); the
+  proposals are derived during render (`pure-derive-during-render`). One docblock said *"measured"* of a reason that
+  was not measured, and was reworded.
+- `one-kind-per-folder`: `client/spreadsheet/` and every `importing/` folder hold files only, which the folder-shape
+  spec confirms; `importing/` takes the region anatomy, and the namespace sits in its `shared/`.
+- `vercel-react-best-practices`: `bundle-conditional` and `bundle-preload` (the readers), `rerender-memo` (the panel),
+  `js-index-maps` (`importView`'s lookups). Two rules were declined, each with a reason: `bundle-barrel-imports`,
+  because `@easyesg/ui`'s barrel is this app's convention; and a `Map` for the plan's `sources.find`, which searches
+  about eleven entries.
+- `vercel-composition-patterns`: `FileUpload` takes data and one callback, with no boolean per screen; `disabled` is
+  the platform's.
+
+### Proven to bite
+
+- Unit specs: `number-text` (exponents, signs, zeros), `sheet-cells`, `read-spreadsheet` (both separators, decimal
+  commas in every row, a quoted comma, the mark, an open quote, each refusal including a reader that will not load),
+  and the seven import tools. Each limit is tested at the boundary and one past it, and a choice of *none* is checked
+  as overriding a proposal.
+- **Mutations run by hand, each restored afterwards.** With the byte-order-mark strip removed, the old case stayed
+  green; that is what exposed the strip as dead code. Folding the loader's `try` into the parse turned the
+  reader-refusal case red. With `??` in place of `pick`, two cases went red: the reducer's explicit-*none* column, and
+  the view's column the import does not read.
+- `FileUpload`'s spec: a picked file, a dropped file, and the same file picked twice; the hold ending only when the
+  file leaves the zone, using a native `dragleave`, because jsdom has no `DragEvent`; the error's wiring; disabled.
+- Browser journeys (`e2e/web/calculator-import.spec.ts`), with the workbook built in the test by
+  `support/workbook.ts`, five XML parts in a stored zip. A scratch read with `read-excel-file`'s Node entry confirmed
+  the builder's output before any journey used it. The journeys cover four things:
+  - a two-sheet workbook: an empty sheet refused, proposals checked, the report checked before and after a match, the
+    rows checked against `calcLinesOf`, and the seeded line left untouched;
+  - a semicolon `.csv` read, the connection cut, its line imported, queued and sent on reconnection;
+  - a `.pdf`, and a sheet one row past the limit;
+  - a viewer, who is not offered the import.
+- Expansion: the panel at +40% in all three frames, measured with `overflowWithin` and on the page.
+- Seen as well as asserted: a throwaway journey photographed the panel at 1440 and 390 — choosing, refused, mapped,
+  and done — and was deleted. On the phone the panel stacks every select and ends with the report above its buttons.
+
+### Gates
+
+The change reaches `apps/web`, `packages/ui` (so `apps/admin` as its dependent) and `e2e/`. One suite at a time, with
+no dev server running:
+- `pnpm lint`; typecheck in `ui`, `web` and `admin`.
+- Unit suites: ui 451; web 1,491; admin 296.
+- `pnpm routes:check`; `pnpm docs:check`, 48 claims. Seven of them moved with the package (component, spec, barrel and
+  `'use client'` counts, and the stylesheet's length), and so did `apps/web`'s Client Component count, now 201. The
+  archive's figures are now 138 numbers and 251 rows.
+- `pnpm e2e:web calculator --project identity --project expansion` while iterating: 21 of 21, green on its first run.
+- `pnpm e2e:web`, all three projects, because `packages/ui` reaches the console too: 316 of 318. **Two failed, and
+  neither is in the product:**
+  - **My offline journey raced the readers.** It cut the connection as soon as the panel opened, before the reader
+    chunks the panel fetches had arrived, and met the panel's no-connection refusal. That is the right answer to the
+    state the journey made. The targeted run had won the race; the full run, under load, lost it. Nothing on the page
+    says when the readers have arrived, and Turbopack's chunks are opaque hashes, with papaparse split across two of
+    them, so waiting on chunks by name would be brittle machinery. The journey now reads the file first, then cuts the
+    connection and imports. That is AC-8's claim, and it passed four of four and then three of three repeated.
+  - **`calculator.spec.ts:199` timed out at sign-up's e-mail verification**, before it reached S-09. No page snapshot
+    was captured. It passed in the targeted run of 21 and alone afterwards. Read as a timing flake in the identity
+    flow, which this task does not touch, and recorded here in case it recurs.
+- **Not proven in a browser:** that a file chosen *after* the connection goes is still read, once the readers fetched
+  on opening have arrived. It holds by the module cache's design, and FR-211 states it as design, not as AC-8.
+- The server printed only digest `2667547900`, the abandoned-stream line `apps/web/CLAUDE.md` records, 46 times, and
+  the `revision 999999` error the existing UX-44 journey provokes on purpose. There was no other `⨯`, error or
+  unhandled rejection.
+- **Not run:** `pnpm e2e` and `pnpm e2e:worker`, since nothing under `apps/api` changed. Nor the review agents or
+  `gates:clean`, which run when Stage 2 ends — task 204 is not its last row.

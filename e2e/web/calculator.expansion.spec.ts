@@ -7,7 +7,7 @@ import {
   seedReport,
   verificationTokenFor,
 } from './support/db';
-import { exactlyPadded } from './support/expansion';
+import { exactlyPadded, overflowWithin } from './support/expansion';
 
 /**
  * S-09 at +40% (UX-94, UX-73's three frames; task 39.1).
@@ -88,6 +88,43 @@ for (const frame of FRAMES) {
     await expect(page.getByRole('group', { name: /^Gaze naturale·+, lună de lună·+$/u })).toBeVisible();
     await expect(page.getByText(exactlyPadded('Electricitate din rețea'))).toBeVisible();
 
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+}
+
+/**
+ * The spreadsheet import's panel at +40% (task 204.2; FR-211): every part of it at once — the file read, the column
+ * choices with their padded labels, a value to match, and the report naming a row it cannot read — measured inside
+ * the panel as well as on the page, since a select's label is the widest thing in it.
+ */
+for (const frame of FRAMES) {
+  test(`S-09's spreadsheet import tolerates +40% at ${frame.width}`, async ({ page }) => {
+    const reportId = await signedInWithLines(page, `import${frame.width}`);
+    await page.setViewportSize(frame);
+    await page.goto(`/reports/${reportId}/calculator`);
+    await page.getByRole('button', { name: exactlyPadded('Importați dintr-un tabel') }).click();
+    const panel = page.getByRole('region', { name: exactlyPadded('Importați dintr-un tabel') });
+    await panel.locator('input[type="file"]').setInputFiles({
+      name: 'facturile-anului-2025-pentru-raportul-de-sustenabilitate.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(
+        'Sursă de energie;Locația;Cantitate;Unitatea de măsură;Descriere\n' +
+          'Gaze naturale;Brutăria;500;m3;Cuptorul de pâine și cazanul\n' +
+          'Curent;Magazinul;1700;kWh;\n' +
+          'Gaze naturale;Brutăria;;m3;\n',
+        'utf8',
+      ),
+    });
+
+    // The panel's padded words are on screen — its columns, a value to match, the report.
+    await expect(panel.getByRole('group', { name: exactlyPadded('Ce coloană conține fiecare lucru') })).toBeVisible();
+    await expect(panel.getByRole('combobox', { name: /^„Curent”·+$/u })).toBeVisible();
+    await expect(panel.getByText(/^Rândul 4·+/u)).toBeVisible();
+
+    expect(await overflowWithin(panel)).toBeLessThanOrEqual(0);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );

@@ -290,6 +290,73 @@
   gap: var(--space-3);
 }
 
+/* The toolbar's actions — *Import from a spreadsheet* and *Add a source* — kept together as the artboard draws them. */
+.toolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* *Import from a spreadsheet* (task 204.2): the add form's frame (`.adding`), with its own parts below. */
+.importingLede,
+.importingHelp {
+  margin: 0;
+  color: var(--text-body);
+  font: 400 14px/20px var(--font-text);
+}
+
+.importingReading {
+  margin: 0;
+  color: var(--text-body);
+}
+
+.importingFile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.importingFileName {
+  margin: 0;
+  font: 500 14px/20px var(--font-text);
+  overflow-wrap: anywhere;
+}
+
+/* The selects, as many to a row as fit: two or three at wide, one on a phone. */
+.importingChoices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.importingReport {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.importingReady {
+  margin: 0;
+  font: 600 15px/24px var(--font-text);
+}
+
+.importingRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.importingRowNumber {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Empty — first use: the bills to hand, numbered. */
 .empty {
   display: flex;

@@ -5,7 +5,7 @@ Part 3 of the eleven parts of [`functional_requirements.md`](../functional_requi
 | Index § | Requirements |
 |---|---|
 | 3.5 Report authoring | FR-24 … FR-32, FR-177, FR-210 |
-| 3.6 Carbon calculator | FR-33 … FR-36 |
+| 3.6 Carbon calculator | FR-33 … FR-36, FR-211 |
 | 3.7 Draft persistence | FR-37 … FR-39 |
 
 Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-1 … BR-CALC-3 (§4). Entities held here: §5.
@@ -590,6 +590,59 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - 7 Oct 2026 · build · the screens: a line override rides the line's queued write; on S-07 a B3 scope is replaced, explained or put back beside the run's stored result, read with the step (task 39.3) · §12.5.6 task-39 row (2)
 - 7 Oct 2026 · build · the person stored by the table from the binding, named at read on S-09 and S-07; a line written again keeps its override's person (task 39.4) · §12.5.6 task-39 row (3)
 
+### FR-211 — Import consumption lines from a spreadsheet
+
+**Status.** Built — delivered 204.2
+
+**Obligation.** The system shall let a reporter add consumption lines to the calculator from an `.xlsx` or `.csv` file, by mapping the file's columns and then its source, unit and site values to the calculator's own, adding one line with one figure for the period per readable row exactly as a typed line is added, and reporting before anything is added every row that could not be read.
+
+| | |
+|---|---|
+| **Actors** | Editor or OA imports. A view-only member is not offered the import, and neither is anyone on a locked period. |
+| **Traces** | UC-215, UC-32, UC-35 · FR-33, FR-38, FR-54 · NFR-79 · UX-14, UX-40 · `architecture.md` §12.5.6 task-204 row · BR-CALC-1 · entity *Energy / fuel consumption input* |
+| **Surfaces** | S-09 (*Import from a spreadsheet*, beside *Add a source*) · `GET /reports/{id}/calculator` (the sources, the units each admits and the B1 sites a row is resolved against) · `PUT /reports/{id}/calculator/sources/{sourceId}` (each imported line, through FR-38's queue). No route of its own: the file never leaves the browser |
+
+**Preconditions.** Those of *Add a source* (FR-33): an editable report, a factor set serving its period, and at least one B1 site.
+
+**Inputs.** One file, `.xlsx` or `.csv`, of at most 1 MB and 500 rows below its first. An `.xlsx` with several sheets asks which one is read. A `.csv` is UTF-8, separated by commas or semicolons, its figures written with a decimal comma or point.
+
+**Behaviour.**
+1. **The browser reads the file.** The reader is loaded only when the import opens, and nothing is uploaded (§12.5.6 task-204 row (1)).
+2. **The first row holds the column names.** The reporter says which column is the source, the figure, the unit, the site and, optionally, the description, each proposed from the header text. The site is asked only where the report holds more than one; with one, every line goes to it (row (2)).
+3. **Each distinct value in the source, unit and site columns is matched once** to one of the calculator's options, proposed where it reads as an option's name in the reporter's language or as its code. A value left unmatched makes its rows unreadable (row (2)).
+4. **One readable row becomes one new line holding one figure for the period** (FR-33's one line per invoice). The monthly form is not an import shape, and the figure is read as a typed one is (`1 700`, `1700,5`). A row whose source admits several units needs its unit; a row whose source admits one takes it (row (2), (3)).
+5. **A row is unreadable** where its source, unit or site is unmatched, its unit is not one its source admits, it has no figure or a figure that is not a non-negative number, or its description is longer than a line holds. A row with no figure is reported, never imported as an explained line: why a figure is missing is a person's to write (row (3)). A row with nothing in it is not a row.
+6. **Before anything is added, the import reports** every unreadable row by its row number in the file and what is wrong with it, in NFR-79's three parts, beside the number of lines it will add. The reporter imports the readable rows or cancels (row (4)).
+7. **An imported line is a typed line.** Each is written through FR-38's queue under a fresh id its client chooses, so it is on screen at once and sent when the network allows, and it is checked by the api as FR-33 checks any line. Because a refused write holds the queue (FR-38), a row the api would refuse is reported under 5 and never queued (row (1)).
+8. **An import only adds.** The lines already on S-09 are untouched; a file imported twice is entered twice, and S-09's removal takes a line out (row (3)).
+
+**Refusals.**
+- A file that is neither `.xlsx` nor `.csv`, larger than 1 MB, with more than 500 rows, that cannot be read as a spreadsheet, or that has no row below its first → the file is refused whole, with its reason, and nothing is added. None reaches the api.
+- The reader itself cannot be loaded — the import was opened with no connection → refused with that reason rather than as a file that is no spreadsheet; the same file chosen once connected is read. Both readers are fetched when the import opens, so a file chosen after the connection goes is still read once they have arrived.
+- Every row unreadable → nothing to import; the report says why for each.
+- A line the api refuses after all (the factor set replaced between the read and the write, for example) → FR-33's refusals, held in the queue as a typed line's are.
+
+**Effects.** One calculator line per imported row, each entering the field change trail as a typed line does (FR-54). Nothing else is stored: no import record and no report of the unreadable rows (row (4)).
+
+**Configuration-held values.** None. The limits — 1 MB and 500 rows — are code, as FR-38's retry policy is (row (4)). The sources and units a value is matched to are the factor set's (FR-33).
+
+**Boundaries.** Recording a line, and its refusals, is FR-33's; the queue is FR-38's. Connectors to energy providers and accounting software are deferred (FR-187; `use_cases.md` §7): an import is the reporter's own act on a file they choose. No other file format, no template to download, no import into the monthly form, and no merging with or replacing of existing lines (§12.5.6 task-204 row, each *declined*).
+
+**Acceptance criteria.**
+- **AC-1** Given an `.xlsx` or `.csv` file whose columns and values have been mapped, when the reporter imports it, then each readable row is a new line on S-09 in the file's unit, holding one figure for the period, and written as a typed line is. *(source: §12.5.6 task-204 row (1), (3); UC-215 steps 5, 6)*
+- **AC-2** Given the file's first row, then a column is proposed for the source, the figure, the unit, the site where the report holds more than one, and the description, and the reporter may change each. *(source: §12.5.6 task-204 row (2))*
+- **AC-3** Given a value in the source, unit or site column, then it is matched once for every row that holds it, an option proposed where the value reads as an option's name or code. *(source: §12.5.6 task-204 row (2))*
+- **AC-4** Given rows that cannot be read, then before anything is added each is listed by its row number and what is wrong with it, beside the number of lines the import will add, and none of them is queued. *(source: §12.5.6 task-204 row (1), (4); NFR-79)*
+- **AC-5** Given a row with no figure, then it is reported and no line is added for it. *(source: §12.5.6 task-204 row (3))*
+- **AC-6** Given lines already on S-09, when a file is imported, then they are unchanged and the imported lines are added beside them. *(source: §12.5.6 task-204 row (3))*
+- **AC-7** Given a file that is neither `.xlsx` nor `.csv`, larger than 1 MB or with more than 500 rows, then it is refused whole with its reason and nothing is added. *(source: §12.5.6 task-204 row (4))*
+- **AC-8** Given the network is unavailable, when a file is imported, then its lines are queued and sent on reconnection like any typed line. *(source: §12.5.6 task-204 row (1); FR-38)*
+- **AC-9** Given a view-only member or a locked period, then the import is not offered. *(source: FR-26; FR-22; the part's rule on who writes a report)*
+
+**History.**
+- 7 Oct 2026 · project owner · written for S-09's spreadsheet import (`design_spec.md` §4.7; the calculator artboard's *Still open*): read in the browser and queued as typed lines; columns then values mapped; one row one new line, an import only adding; `.xlsx` and `.csv` at 1 MB and 500 rows, the unreadable rows reported on screen first · §12.5.6 task-204 row (task 204.1)
+- 7 Oct 2026 · build · `.xlsx` read by `read-excel-file` and `.csv` by `papaparse` (§12.1), both fetched when the import opens, and a reader that cannot load refused as such; a number cell taken by its stored text, never a float; S-09's figure reader made to answer the spelling the api reads (no leading zero, no bare point), for typed and imported figures alike; §11.5's File upload built at this first consumer (task 204.2) · §12.5.6 task-204 row
+
 ## 3. Draft persistence (index §3.7)
 
 ### FR-37 — Autosave with no save action
@@ -718,7 +771,7 @@ Moved from the index's §5.2 on 5 Oct 2026 (task 182). These rows list the attri
 | Derivation input | The inputs EFRAG's derived figures need that the taxonomy does not carry | FR-29 |
 | Omitted-disclosure declaration | Section (VSME ¶24(b)), held as B1's list of omitted disclosures, with no rationale | FR-31 |
 | Not-available declaration | Field, stated reason | FR-32 |
-| Energy / fuel consumption input | Source, site, quantity and invoice unit or the reason there is none, line override with reason | FR-33, FR-36 |
+| Energy / fuel consumption input | Source, site, quantity and invoice unit or the reason there is none, line override with reason | FR-33, FR-36, FR-211 |
 | Calculation run | Pinned factor set (country, revision), retained inputs, results; immutable and permanent | FR-33, FR-34, FR-35 |
 | Computed emission result | Scope 1, location-based Scope 2, factor set version | FR-34, FR-35 |
 | Override record | Overriding value, reason, the person who overrode it, superseded computed value | FR-36 |

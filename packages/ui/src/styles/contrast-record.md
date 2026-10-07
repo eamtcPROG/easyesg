@@ -7,7 +7,7 @@ both; UX-101 sets the floors. This table is the record that deliverable asks for
 spec that generates it is the gate — so a token change that breaks a floor fails the build
 rather than silently making this file wrong.
 
-72 pairings, each measured in both schemes.
+74 pairings, each measured in both schemes.
 
 | Pairing | Tokens | Light | Dark | Floor | Verdict |
 | --- | --- | --- | --- | --- | --- |
@@ -77,6 +77,8 @@ rather than silently making this file wrong.
 | focus ring, inner, on the page ground | `--border-focus` on `--surface-sunken` | 5.89:1 | 9.21:1 | 3:1 | pass |
 | focus ring, inner, in a popover | `--border-focus` on `--surface-raised` | 6.38:1 | 6.38:1 | 3:1 | pass |
 | focus ring, halo against the ring | `--border-focus-halo` on `--border-focus` | 3.84:1 | 3.55:1 | 3:1 | pass |
+| dropzone boundary at rest | `--dropzone-border-rest` on `--dropzone-surface` | 3.11:1 | 4.52:1 | 3:1 | pass |
+| dropzone boundary, file held over it | `--dropzone-border-active` on `--dropzone-surface-active` | 5.75:1 | 7.4:1 | 3:1 | pass |
 | accent as an active marker | `--accent` on `--surface-default` | 6.38:1 | 6.08:1 | 3:1 | pass |
 | accent on its own tint | `--accent` on `--accent-tint` | 5.75:1 | 5.64:1 | 3:1 | pass |
 | enrolment code modules on their plate | `--enrolment-code-module` on `--enrolment-code-ground` | 17.33:1 | 17.33:1 | 4.5:1 | pass |

@@ -1713,6 +1713,102 @@
         "unitRequired": "Choose the unit printed on the bill, so the figure can be converted.",
         "reasonRequired": "Say why there is no figure, so the line can be added. A reader of the report sees this sentence."
       },
+      "import": {
+        "open": "Import from a spreadsheet",
+        "heading": "Import from a spreadsheet",
+        "lede": "Each row of the spreadsheet becomes a line, with the figure and the unit on the bill, just as one you type. The lines below stay as they are.",
+        "file": {
+          "label": "Drop your spreadsheet of bills here",
+          "hint": "An .xlsx or .csv file, up to 1 MB and 500 rows",
+          "browse": "choose the file",
+          "reading": "Reading {file}…",
+          "refused": {
+            "format": "This file is not an .xlsx or .csv spreadsheet, so it cannot be read. Save it as .xlsx or .csv and choose it again.",
+            "size": "The file is larger than 1 MB, so it cannot be read. Keep only the bills in it, or split it, then choose it again.",
+            "unreadable": "The file could not be read as a spreadsheet, so nothing can be imported from it. Open it, save it again as .xlsx or .csv and choose it again.",
+            "reader": "The import could not be prepared, because there is no connection. Connect to the internet and choose the file again."
+          }
+        },
+        "chosen": "File {file}",
+        "anotherFile": "Choose another file",
+        "sheet": "Sheet to read",
+        "sheetHelp": "The file has several sheets, and the import reads one.",
+        "columns": {
+          "legend": "Which column holds what",
+          "help": "The sheet’s first row names its columns. We proposed them from those names — change any that do not fit.",
+          "none": "Not in the file",
+          "unnamed": "Column {letter}",
+          "required": "Choose the column, so the rows can be read. Without it, no row becomes a line.",
+          "source": {
+            "label": "What the bill is for",
+            "words": "source, energy source, fuel, type, energy, energy carrier"
+          },
+          "figure": {
+            "label": "The figure on the bill",
+            "words": "figure, quantity, qty, amount, consumption, usage, volume, value"
+          },
+          "unit": {
+            "label": "Unit",
+            "words": "unit, units, unit of measure, uom"
+          },
+          "site": {
+            "label": "Site",
+            "words": "site, location, premises, branch, facility"
+          },
+          "description": {
+            "label": "Description, if any",
+            "words": "description, note, notes, comment, comments, details"
+          }
+        },
+        "values": {
+          "legend": {
+            "source": "Sources in the file",
+            "unit": "Units in the file",
+            "site": "Sites in the file"
+          },
+          "help": "Match each value once — it applies to every row that holds it.",
+          "value": "“{value}”",
+          "none": "None of these — these rows are not imported",
+          "choose": "Choose a match"
+        },
+        "refused": {
+          "no_rows": {
+            "title": "The sheet has no rows to import",
+            "body": "There is nothing below the row naming the columns, so nothing can be imported from this sheet.",
+            "action": "Choose another sheet or another file."
+          },
+          "too_many_rows": {
+            "title": "The sheet has more than 500 rows",
+            "body": "That many rows are not imported at once, so nothing is imported from this sheet.",
+            "action": "Split it into smaller files and import them one after another."
+          }
+        },
+        "ready": "{lines, plural, =0 {No line will be added} one {# line will be added} other {# lines will be added}}",
+        "unreadable": {
+          "title": "{rows, plural, one {# row cannot be read} other {# rows cannot be read}}",
+          "body": "These rows are not imported. Beside each is what to put right — here, above, or in the file, which you then choose again.",
+          "row": "Row {number}",
+          "problems": {
+            "source_missing": "does not say what the bill is for — fill in the source in the file",
+            "source_unmatched": "the source “{value}” is not matched to a calculator source — match it above",
+            "site_missing": "does not say the site — fill it in in the file",
+            "site_unmatched": "the site “{value}” is not matched to one of the report’s sites — match it above",
+            "no_figure": "has no figure — fill it in in the file, and if the bill has none, add the line and say why",
+            "not_a_figure": "“{value}” is not a figure from a bill — leave only the number in the cell, with no text and no minus",
+            "unit_missing": "does not say the unit, and this source is billed in more than one — fill it in in the file",
+            "unit_unmatched": "the unit “{value}” is not matched to a unit — match it above",
+            "unit_not_admitted": "this source is not billed in “{value}” — correct the unit or the source in the file",
+            "description_too_long": "the description is longer than 500 characters — shorten it in the file"
+          }
+        },
+        "submit": "{lines, plural, =0 {Import} one {Import # line} other {Import # lines}}",
+        "cancel": "Cancel",
+        "done": {
+          "title": "{lines, plural, one {# line added from {file}} other {# lines added from {file}}}",
+          "body": "They are below, at their sites, and are saved like any line you type. Check them before using the figures in B3.",
+          "dismiss": "Close the message"
+        }
+      },
       "measure": "{value} {unit}",
       "derivation": {
         "heading": "How {quantity} {unit} became {tonnes} t CO₂e",

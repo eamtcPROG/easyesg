@@ -24,10 +24,12 @@
     "@tanstack/react-query": "catalog:",
     "next": "catalog:",
     "next-intl": "catalog:",
+    "papaparse": "catalog:",
     "radix-ui": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
+    "read-excel-file": "catalog:",
     "server-only": "catalog:"
   },
   "devDependencies": {
@@ -36,6 +38,7 @@
     "@testing-library/react": "catalog:",
     "@testing-library/user-event": "catalog:",
     "@types/node": "catalog:",
+    "@types/papaparse": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",

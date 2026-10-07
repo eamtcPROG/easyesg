@@ -1713,6 +1713,102 @@
         "unitRequired": "Alegeți unitatea tipărită pe factură, ca cifra să poată fi convertită.",
         "reasonRequired": "Spuneți de ce nu există cifră, ca linia să poată fi adăugată. Cititorul raportului vede această frază."
       },
+      "import": {
+        "open": "Importați dintr-un tabel",
+        "heading": "Importați dintr-un tabel",
+        "lede": "Fiecare rând al tabelului devine o linie, cu cifra și unitatea de pe factură, la fel ca una introdusă. Liniile de mai jos rămân neschimbate.",
+        "file": {
+          "label": "Trageți aici tabelul cu facturile",
+          "hint": "Un fișier .xlsx sau .csv, de cel mult 1 MB și 500 de rânduri",
+          "browse": "alegeți fișierul",
+          "reading": "Se citește {file}…",
+          "refused": {
+            "format": "Acest fișier nu este un tabel .xlsx sau .csv, deci nu poate fi citit. Salvați-l ca .xlsx sau .csv și alegeți-l din nou.",
+            "size": "Fișierul are mai mult de 1 MB, deci nu poate fi citit. Păstrați în el doar facturile sau împărțiți-l, apoi alegeți-l din nou.",
+            "unreadable": "Fișierul nu a putut fi citit ca tabel, deci nu se poate importa nimic din el. Deschideți-l, salvați-l din nou ca .xlsx sau .csv și alegeți-l din nou.",
+            "reader": "Importul nu s-a putut pregăti, pentru că lipsește conexiunea. Conectați-vă la internet și alegeți fișierul din nou."
+          }
+        },
+        "chosen": "Fișierul {file}",
+        "anotherFile": "Alegeți alt fișier",
+        "sheet": "Foaia de citit",
+        "sheetHelp": "Fișierul are mai multe foi și se importă dintr-una.",
+        "columns": {
+          "legend": "Ce coloană conține fiecare lucru",
+          "help": "Primul rând al foii dă numele coloanelor. Le-am propus după aceste nume — schimbați-le unde nu se potrivesc.",
+          "none": "Nu este în fișier",
+          "unnamed": "Coloana {letter}",
+          "required": "Alegeți coloana, ca rândurile să poată fi citite. Fără ea, niciun rând nu devine linie.",
+          "source": {
+            "label": "Pentru ce este factura",
+            "words": "sursa, sursă, sursa de energie, sursă de energie, tip, tipul, energie, combustibil, purtător de energie, source, fuel, type"
+          },
+          "figure": {
+            "label": "Cifra de pe factură",
+            "words": "cifra, cifră, cantitate, cantitatea, consum, consumul, volum, volumul, valoare, quantity, amount, consumption, figure"
+          },
+          "unit": {
+            "label": "Unitatea",
+            "words": "unitate, unitatea, unitate de măsură, unitatea de măsură, um, u m, unit, units"
+          },
+          "site": {
+            "label": "Locația",
+            "words": "locație, locația, locatie, locatia, sediu, sediul, punct de lucru, filială, filiala, site, location"
+          },
+          "description": {
+            "label": "Descrierea, dacă există",
+            "words": "descriere, descrierea, notă, nota, observații, observatii, comentariu, comentarii, description, note"
+          }
+        },
+        "values": {
+          "legend": {
+            "source": "Sursele din fișier",
+            "unit": "Unitățile din fișier",
+            "site": "Locațiile din fișier"
+          },
+          "help": "Potriviți fiecare valoare o singură dată — se aplică tuturor rândurilor care o conțin.",
+          "value": "„{value}”",
+          "none": "Niciuna — aceste rânduri nu se importă",
+          "choose": "Alegeți potrivirea"
+        },
+        "refused": {
+          "no_rows": {
+            "title": "Foaia nu are rânduri de importat",
+            "body": "Sub rândul cu numele coloanelor nu este nimic, deci din această foaie nu se poate importa nimic.",
+            "action": "Alegeți altă foaie sau alt fișier."
+          },
+          "too_many_rows": {
+            "title": "Foaia are mai mult de 500 de rânduri",
+            "body": "Atâtea rânduri nu se importă dintr-odată, deci din această foaie nu se importă nimic.",
+            "action": "Împărțiți-o în fișiere mai mici și importați-le pe rând."
+          }
+        },
+        "ready": "{lines, plural, =0 {Nu se va adăuga nicio linie} one {Se va adăuga # linie} few {Se vor adăuga # linii} other {Se vor adăuga # de linii}}",
+        "unreadable": {
+          "title": "{rows, plural, one {# rând nu poate fi citit} few {# rânduri nu pot fi citite} other {# de rânduri nu pot fi citite}}",
+          "body": "Aceste rânduri nu se importă. Lângă fiecare scrie ce trebuie îndreptat — aici, mai sus, sau în fișier, pe care îl alegeți apoi din nou.",
+          "row": "Rândul {number}",
+          "problems": {
+            "source_missing": "nu spune pentru ce este factura — completați sursa în fișier",
+            "source_unmatched": "sursa „{value}” nu este potrivită cu o sursă a calculatorului — potriviți-o mai sus",
+            "site_missing": "nu spune locația — completați-o în fișier",
+            "site_unmatched": "locația „{value}” nu este potrivită cu o locație a raportului — potriviți-o mai sus",
+            "no_figure": "nu are cifră — completați-o în fișier, iar dacă factura nu are una, adăugați linia și spuneți de ce",
+            "not_a_figure": "„{value}” nu este o cifră de factură — lăsați în celulă doar numărul, fără text și fără minus",
+            "unit_missing": "nu spune unitatea, iar această sursă se facturează în mai multe — completați-o în fișier",
+            "unit_unmatched": "unitatea „{value}” nu este potrivită cu o unitate — potriviți-o mai sus",
+            "unit_not_admitted": "această sursă nu se facturează în „{value}” — corectați unitatea sau sursa în fișier",
+            "description_too_long": "descrierea are mai mult de 500 de caractere — scurtați-o în fișier"
+          }
+        },
+        "submit": "{lines, plural, =0 {Importați} one {Importați # linie} few {Importați # linii} other {Importați # de linii}}",
+        "cancel": "Anulați",
+        "done": {
+          "title": "{lines, plural, one {# linie adăugată din {file}} few {# linii adăugate din {file}} other {# de linii adăugate din {file}}}",
+          "body": "Sunt mai jos, la locațiile lor, și se salvează ca orice linie introdusă. Verificați-le înainte de a folosi cifrele în B3.",
+          "dismiss": "Închideți mesajul"
+        }
+      },
       "measure": "{value} {unit}",
       "derivation": {
         "heading": "Cum s-au transformat {quantity} {unit} în {tonnes} t CO₂e",

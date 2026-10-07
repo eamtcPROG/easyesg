@@ -16,7 +16,7 @@ This document is the canonical use case specification for the ESG Platform MVP. 
 
 A use case here is a single, distinct outcome an actor sets out to achieve in the platform, stated from the actor's point of view rather than the system's. Each one stands on its own: registering an account, verifying it, and logging in are three use cases, not one, because they have different preconditions, different failure modes, and can be designed, built, and tested independently. A use case is not a screen and not a feature — one screen may serve several use cases, and one use case may span several screens or run with no interface at all.
 
-**In scope.** The 214 MVP use cases covering the reporting platform (UC-01 … UC-88, UC-183 … UC-195, UC-212 … UC-214), the billing, payment and subscription domain (UC-89 … UC-164), notifications (UC-165 … UC-176), the public tier (UC-177 … UC-182) and the advisor domain (UC-196 … UC-211); the design decisions `D-1` … `D-16` that resolve contradictions and gaps between them; the external Moldovan payment and fiscal constraints the billing use cases are shaped around; traceability from use case to actor and to functional requirement.
+**In scope.** The 215 MVP use cases covering the reporting platform (UC-01 … UC-88, UC-183 … UC-195, UC-212 … UC-215), the billing, payment and subscription domain (UC-89 … UC-164), notifications (UC-165 … UC-176), the public tier (UC-177 … UC-182) and the advisor domain (UC-196 … UC-211); the design decisions `D-1` … `D-16` that resolve contradictions and gaps between them; the external Moldovan payment and fiscal constraints the billing use cases are shaped around; traceability from use case to actor and to functional requirement.
 
 **Out of scope of this document.** The functional requirement statements themselves, held in `functional_requirements.md`; non-functional requirements, held in `non_functional_requirements.md`; interface and interaction design, held in `design_spec.md`; system decomposition, held in `architecture.md`. FR definitions and the FR → UC source mapping are held in `functional_requirements.md`.
 
@@ -278,8 +278,9 @@ Priority is MVP for every entry. "Related FRs" inverts the `Source UC` column of
 | UC-212 | Manage one's own administrator credentials | PA | Keep a sole operator recoverable without shell access | MVP | FR-80 |
 | UC-213 | Delete a report | OA | Remove a report made in error that never left the platform | MVP | FR-210 |
 | UC-214 | Release a locked tenant account | PA | Return a locked person to their account without waiting on the reset link | MVP | FR-209 |
+| UC-215 | Import energy and fuel consumption from a spreadsheet | RC | Add consumption lines from a file the company already keeps | MVP | FR-211 |
 
-**Count:** 214 use cases — 23 CA, 42 RC, 54 OA, **24 PA**, 28 BO, 28 SYS, 6 VI, 9 AD, across 45 modules. **UC-213 and UC-214 added 5 Oct 2026** (task 182): report deletion (OA) and a lockout released by a Platform Administrator. **UC-196 … UC-211 added 11 Sep 2026** with the promotion of Advisor portfolio management out of section 7.1 into MVP scope, and the registration of the `AD` actor. The promotion follows the precedent of the two before it: the capability was already provided for — FR-14 models typed organization relationships precisely so the Advisor type can be activated without a schema change — and what was missing was the decomposition, not the foundation. They introduce five modules (Advisor organization, Client relationship, Advisor access, Advisor workspace, Advisor billing) and one addition to the existing Plan catalogue module. **UC-183 … UC-192 added 25 Aug 2026** with the Comprehensive Module's promotion into MVP scope (`problem_overview.md` OQ-12); they are RC use cases and sit in the reporting-platform group despite their numbers, which are appended rather than inserted. **UC-193 … UC-195 added 26 Aug 2026** (task 27.2's open-question batch), and they are the register catching up with a decision taken eight days earlier: `non_functional_requirements.md` C-3 promoted **opt-in TOTP for tenant users** into MVP as NFR-95 on 18 Aug 2026, closing `actors.md` OQ-8 — and no use case, no MVP requirement row and no screen content was written for it, so the behaviour existed as an availability statement with nothing saying what it does. They are CA use cases and belong beside UC-10 … UC-12 in the identity group despite their numbers; **their requirement column cites NFR-95 rather than an FR**, because the promotion put the obligation in the non-functional register and FR-181 remains the *deferred* enforced-MFA row. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, and UC-177 … UC-182 the public tier. The register ran to 176 across 37 modules until 24 Aug 2026, when `design_spec.md` OQ-12 closed by registering the Visitor actor rather than exempting its screens from UX-7. **UC-212 added 12 Sep 2026** with FR-80's amendment, when the Stage 1 re-cut found the admin realm had no credential self-service of any kind. **A Billing Operator performs it too since 14 Sep 2026** (project owner, task 144) — the same realm credential and no second-factor reset on A-08 — and it stays counted once, under PA.
+**Count:** 215 use cases — 23 CA, 43 RC, 54 OA, **24 PA**, 28 BO, 28 SYS, 6 VI, 9 AD, across 45 modules. **UC-215 added 7 Oct 2026** (task 204): importing consumption lines from a spreadsheet, which `design_spec.md` §4.7 had listed among S-09's elements with no use case behind it; an RC use case in the Carbon calculator module despite its number. **UC-213 and UC-214 added 5 Oct 2026** (task 182): report deletion (OA) and a lockout released by a Platform Administrator. **UC-196 … UC-211 added 11 Sep 2026** with the promotion of Advisor portfolio management out of section 7.1 into MVP scope, and the registration of the `AD` actor. The promotion follows the precedent of the two before it: the capability was already provided for — FR-14 models typed organization relationships precisely so the Advisor type can be activated without a schema change — and what was missing was the decomposition, not the foundation. They introduce five modules (Advisor organization, Client relationship, Advisor access, Advisor workspace, Advisor billing) and one addition to the existing Plan catalogue module. **UC-183 … UC-192 added 25 Aug 2026** with the Comprehensive Module's promotion into MVP scope (`problem_overview.md` OQ-12); they are RC use cases and sit in the reporting-platform group despite their numbers, which are appended rather than inserted. **UC-193 … UC-195 added 26 Aug 2026** (task 27.2's open-question batch), and they are the register catching up with a decision taken eight days earlier: `non_functional_requirements.md` C-3 promoted **opt-in TOTP for tenant users** into MVP as NFR-95 on 18 Aug 2026, closing `actors.md` OQ-8 — and no use case, no MVP requirement row and no screen content was written for it, so the behaviour existed as an availability statement with nothing saying what it does. They are CA use cases and belong beside UC-10 … UC-12 in the identity group despite their numbers; **their requirement column cites NFR-95 rather than an FR**, because the promotion put the obligation in the non-functional register and FR-181 remains the *deferred* enforced-MFA row. UC-01 … UC-88 cover the reporting platform, UC-89 … UC-164 the billing, payment and subscription domain, UC-165 … UC-176 notifications, and UC-177 … UC-182 the public tier. The register ran to 176 across 37 modules until 24 Aug 2026, when `design_spec.md` OQ-12 closed by registering the Visitor actor rather than exempting its screens from UX-7. **UC-212 added 12 Sep 2026** with FR-80's amendment, when the Stage 1 re-cut found the admin realm had no credential self-service of any kind. **A Billing Operator performs it too since 14 Sep 2026** (project owner, task 144) — the same realm credential and no second-factor reset on A-08 — and it stays counted once, under PA.
 
 ---
 
@@ -298,7 +299,7 @@ Three domains, thirty-seven modules. Modules are a reading and estimating aid, n
 | Organization membership | UC-15, UC-16 | CA |
 | Report access | UC-17, UC-18, UC-213 | RC, OA |
 | Basic Module data entry | UC-19 … UC-31 | RC |
-| Carbon calculator | UC-32 … UC-34 | RC |
+| Carbon calculator | UC-32 … UC-34, UC-215 | RC |
 | Draft management | UC-35, UC-36 | RC |
 | Validation | UC-37 … UC-40 | RC |
 | Export | UC-41 … UC-44 | RC |
@@ -998,6 +999,27 @@ their numbers put them.
 - **Business rules:** Any override is flagged, attributed, and retains the superseded computed value, so the report never presents an unexplained substitution.
 - **Related FRs:** FR-36
 - **Related UCs:** UC-33, UC-47
+
+### UC-215 — Import energy and fuel consumption from a spreadsheet
+
+- **Primary actor:** RC
+- **Module:** Carbon calculator
+- **Stakeholders and interests:** Contributor — already keeps their bills in a spreadsheet, or receives one from their accountant, and wants the lines without typing each again; a future assurance reviewer — needs every imported line to be retained and retraceable exactly as a typed one is.
+- **Preconditions:** An editable report session; a factor set serves the reporting period (UC-80); the report's B1 holds at least one site (UC-52) — the conditions under which a line can be entered at all (UC-32).
+- **Trigger:** The Contributor chooses to import consumption from a spreadsheet.
+- **Main success scenario:**
+  1. The Contributor chooses an `.xlsx` or `.csv` file, and the sheet where an `.xlsx` holds several.
+  2. The system reads the file's first row as its column names and proposes which column holds the source, the figure, the unit, the site — asked only where the report holds more than one — and the description. The Contributor confirms or changes each.
+  3. The system lists each distinct value found in the source, unit and site columns, proposing the calculator's option where the value reads as one. The Contributor matches each value once.
+  4. The system lists every row it could not read, by its row number in the file and what is wrong with it, beside the number of lines it will add.
+  5. The Contributor imports the readable rows.
+  6. Each readable row becomes a new line, at its site, in the unit of the file, holding one figure for the period. The lines are on screen at once and saved as any typed line is (UC-35).
+- **Alternate flows:** The Contributor cancels at any step and nothing is added. Offline, the lines are added and queued, and sent when the connection returns (UC-35).
+- **Exception flows:** A file that is neither `.xlsx` nor `.csv`, is larger than 1 MB, holds more than 500 rows below its first, cannot be read, or holds no rows is refused whole with its reason. Where no row can be read there is nothing to import, and step 4 says why for each.
+- **Postconditions:** The imported lines stand in the calculator exactly as typed ones do, retained as UC-32's inputs are; the lines already there are unchanged. Nothing about the import itself is stored.
+- **Business rules:** One row is one line with one figure for the period, so twelve monthly bills are twelve lines; the monthly form is entered on screen, not imported. A row with no figure is reported rather than imported, because why a figure is missing is the Contributor's to write. An import only adds: importing a file twice enters its lines twice. A row whose source, unit or site the calculator would refuse is reported and never entered. The import is the Contributor's own act on a file they choose, not the automated ingestion from energy providers and accounting software deferred in section 7. Decided 7 Oct 2026 (project owner, task 204; `architecture.md` §12.5.6's task-204 row).
+- **Related FRs:** FR-211, FR-33, FR-38
+- **Related UCs:** UC-32, UC-33, UC-35
 
 ### UC-35 — Autosave in-progress report data
 
@@ -3340,16 +3362,16 @@ There is no per-notification ownership or assignment model and no escalation cha
 | Actor code | Actor | Use cases | Count |
 |---|---|---|---|
 | CA | Common Access | UC-01 … UC-16, UC-165 … UC-168, UC-193 … UC-195 | 23 |
-| RC | Reporting Contributor | UC-17 … UC-48, UC-183 … UC-192 | 42 |
-| OA | Organization Administrator | UC-49 … UC-67, UC-96 … UC-108, UC-110 … UC-122, UC-132, UC-153, UC-157, UC-175, UC-201 … UC-204 | 53 |
-| PA | Platform Administrator | UC-68 … UC-88, UC-176 | 22 |
+| RC | Reporting Contributor | UC-17 … UC-48, UC-183 … UC-192, UC-215 | 43 |
+| OA | Organization Administrator | UC-49 … UC-67, UC-96 … UC-108, UC-110 … UC-122, UC-132, UC-153, UC-157, UC-175, UC-201 … UC-204, UC-213 | 54 |
+| PA | Platform Administrator | UC-68 … UC-88, UC-176, UC-212, UC-214 | 24 |
 | BO | Billing Operator | UC-89 … UC-95, UC-130, UC-133 … UC-135, UC-137, UC-139, UC-140, UC-144 … UC-146, UC-154 … UC-156, UC-158 … UC-164, UC-208 | 28 |
 | SYS | System (scheduled/event-driven) | UC-109, UC-123 … UC-129, UC-131, UC-136, UC-138, UC-141 … UC-143, UC-147 … UC-152, UC-169 … UC-174, UC-210, UC-211 | 28 |
 | VI | Visitor | UC-177 … UC-182 | 6 |
 | AD | Advisor Administrator | UC-196 … UC-200, UC-205 … UC-207, UC-209 | 9 |
-| | | **Total** | **211** |
+| | | **Total** | **215** |
 
-*Corrected 11 Sep 2026.* This table stood at 182 while section 3 stood at 195: UC-183 … UC-192 (RC) and UC-193 … UC-195 (CA) were appended to the register on 25 and 26 Aug 2026 without being propagated here. The counts above are reconciled against section 3's own count line, which is authoritative.
+*Corrected 11 Sep 2026.* This table stood at 182 while section 3 stood at 195: UC-183 … UC-192 (RC) and UC-193 … UC-195 (CA) were appended to the register on 25 and 26 Aug 2026 without being propagated here. The counts above are reconciled against section 3's own count line, which is authoritative. *Corrected again 7 Oct 2026 (task 204).* It had drifted the same way, to 211 against 214: UC-212 and UC-214 (PA) and UC-213 (OA) never reached it. They are added here with UC-215 (RC).
 
 Note that OA is the primary actor of UC-108 while UC-109 in the same module is SYS-initiated, and that the Invoicing module mixes SYS (issuance, transmission, delivery, exchange rate), BO (correction, numbering, archiving) and OA (viewing) initiators. The module is not an actor boundary.
 

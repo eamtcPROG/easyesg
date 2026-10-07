@@ -217,6 +217,10 @@ const NON_TEXT: Pairing[] = [
   // pairing that carries UX-80a's *"two are legible on both"* is halo against ring. The inner ring
   // carries the indicator's own contrast against the surface, asserted above on all three.
   { what: 'focus ring, halo against the ring', fg: '--border-focus-halo', bg: '--border-focus', floor: 3 },
+  // The File upload's zone (task 204.2): its dashed boundary is what says a file may be dropped or chosen there, at
+  // rest on its own ground and on the tint it takes while a file is held over it.
+  { what: 'dropzone boundary at rest', fg: '--dropzone-border-rest', bg: '--dropzone-surface', floor: 3 },
+  { what: 'dropzone boundary, file held over it', fg: '--dropzone-border-active', bg: '--dropzone-surface-active', floor: 3 },
   { what: 'accent as an active marker', fg: '--accent', bg: '--surface-default', floor: 3 },
   { what: 'accent on its own tint', fg: '--accent', bg: '--accent-tint', floor: 3 },
   // The Enrolment code's modules on their plate (task 143). Held to 4.5 rather than 1.4.11's 3:

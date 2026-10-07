@@ -24,7 +24,7 @@ It is not a visual style guide, a page-by-page mockup set, or a component librar
 
 - Design rules carry the stable identifiers `UX-n` and use *shall*. They are citable from designs, backlog items and review checklists, and are not renumbered once assigned. All `UX-n` identifiers in this document are reproduced verbatim from the source specification.
 - Screen identifiers are `S-nn` for tenant screens and `A-nn` for administrative screens, reproduced verbatim.
-- Use cases are `UC-01 … UC-214`. Functional requirements are `FR-1 … FR-173`, `FR-177` and `FR-190 … FR-210`. Non-functional requirements are `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred). Design decisions are `D-n`. Architecture decisions are `AD-1 … AD-14`.
+- Use cases are `UC-01 … UC-215`. Functional requirements are `FR-1 … FR-173`, `FR-177` and `FR-190 … FR-211`. Non-functional requirements are `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred). Design decisions are `D-n`. Architecture decisions are `AD-1 … AD-14`.
 - Actor codes are the letter codes `CA`, `RC`, `OA`, `PA`, `BO`, `SYS`. There is no `ACT-*` scheme.
 - Descriptive prose carries no obligation.
 
@@ -44,7 +44,7 @@ This document is one of seven baseline files. Each register is owned by exactly 
 |---|---|
 | `problem_overview.md` | Problem statement, scope, closed scope decisions |
 | `actors.md` | Actors `CA`, `RC`, `OA`, `PA`, `BO`, `SYS` |
-| `use_cases.md` | `UC-01` … `UC-214`, design decisions `D-1` … `D-16` |
+| `use_cases.md` | `UC-01` … `UC-215`, design decisions `D-1` … `D-16` |
 | `functional_requirements.md` | `FR-1` … `FR-173` |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred) |
 | `architecture.md` | `AD-1` … `AD-14`, `DR-1` … `DR-11` — this file consolidates, and replaces, the two source titles *Architecture Overview (MVP)* and *System Architecture (MVP)* |
@@ -306,7 +306,7 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | S-06 | Reports index | RC, OA | UC-17, UC-213 | Index |
 | S-07 | **Report wizard — module step** | RC | UC-18 … 31, 37, 45, 46, 183 … 192 | Wizard |
 | S-08 | Validation panel (in-wizard, persistent) | RC | UC-37 … 40 | Panel |
-| S-09 | Carbon calculator | RC | UC-32 … 34 | Wizard sub-flow |
+| S-09 | Carbon calculator | RC | UC-32 … 34, 215 | Wizard sub-flow |
 | S-10 | Report preview | RC | UC-41 | Document |
 | S-11 | Export dialogue and history | RC | UC-42 … 44, 48 | Panel + Index |
 | S-12 | Field change history | RC, OA | UC-47 | Panel |
@@ -465,7 +465,7 @@ Key. `<report>` is the report as the wizard bar names it, e.g. *VSME 2025 — Ba
 | S-06 Reports index | — | — | Entity · Fiscal year · Status (open, locked, ready to file, filed) | Yes: entity name, fiscal year (derived 6 Oct 2026) | Last activity, newest first | 25/50/100, default 25 | *New report* → S-39 at the filter row's end (hidden for view-only); row opens S-07; row ⋯ Delete (administrator, consequence dialogue) |
 | S-07 Report wizard — module step | — (module list replaces it) | Exit → S-06 (states that work is saved) *(amended 6 Oct 2026, project owner, task 203.5)* | — | — | — | — | Module list: rail at wide, strip at 834, stepper + *All modules* drawer at 390; foot *Back: Bn* / *Next: Bn*; bar *Export*, *Review*, ⋯ at 390; opens S-08, S-09, S-10, S-11, S-12 |
 | S-08 Validation panel | — | — | — | — | — | — | Dismissible panel beside S-07; each finding links to its field; *Check my report* |
-| S-09 Carbon calculator | Reports / `<report>` / B3 / Carbon calculator | ↩ to origin (B3 step in S-07; ↑ B3 if none) | — | — | — | — | Site chips (All sites, each site); one source per screen with *n of N* at 390; open derivation is an address; spreadsheet import — task 204, specified by its 204.1 before it is built (`architecture.md` §12.5.6's task-39 row (8)) |
+| S-09 Carbon calculator | Reports / `<report>` / B3 / Carbon calculator | ↩ to origin (B3 step in S-07; ↑ B3 if none) | — | — | — | — | Site chips (All sites, each site); one source per screen with *n of N* at 390; open derivation is an address; *Import from a spreadsheet* beside *Add a source* — columns then values mapped, the unreadable rows reported before anything is added (FR-211, UC-215; `architecture.md` §12.5.6's task-204 row) |
 | S-10 Report preview | Reports / `<report>` / Preview | ↩ to origin (S-07 module or S-11; ↑ report if none) | — | — | — | — | Contents list; page navigation; preview language choice; *Export* → S-11 |
 | S-11 Export dialogue and history | Reports / `<report>` / Export | ↩ to origin (S-07, S-10 or the notification; ↑ report if none) | Format · Language · Taxonomy version (derived 6 Oct 2026) | None (derived 6 Oct 2026) | Newest first | 25/50/100, default 25 | Export dialogue is a panel (format, language); row *Download*; long job reports to S-26 |
 | S-12 Field change history | Panel from a field: —; record-level page: Reporting entities / `<entity>` / History | ↩ to origin (focus returns to the field) | — | — | Timeline, newest first | — | Dismissible non-modal panel; close; step through entries |
@@ -781,12 +781,12 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Entry points:** S-07 from the B3 module step; a provenance route from a B3 derived field (UX-12).
 - **Layout and regions:** Wizard fixed elements — step list, step content, progress, autosave indicator, exit — scoped as a sub-flow of the report wizard. Inputs organised by energy source and by site.
 - **Content and data shown:** consumption by source (electricity, natural gas, diesel, heating fuel and so on) and by site, in the units of the user's own invoices; raw inputs, which remain visible and editable after calculation as the permanent assurance record (UX-41); results with the derivation available in one step — input → conversion → factor applied → result — naming the factor set version (UX-42); an override's superseded computed value alongside the substituted one, with attribution (UX-43); a non-blocking notice where the factor set has been updated since the result was computed, naming the pinned version and offering recalculation (UX-44).
-- **Controls and actions:** enter consumption; choose unit; calculate; annotate; override with a reason; recalculate against a newer factor set.
+- **Controls and actions:** enter consumption; choose unit; import consumption from a spreadsheet — choose the file and, in an `.xlsx` with several, the sheet; say which column is which; match each source, unit and site value once to an option; read which rows cannot be read and why; import the rest or cancel (FR-211; amended 7 Oct 2026, task 204); calculate; annotate; override with a reason; recalculate against a newer factor set.
 - **States:** empty — first use; loading — initial; pending — async (calculation, though at p95 ≤ 1 s synchronous presentation is acceptable, §8.5); error — recoverable; read-only; success.
-- **Validation behaviour:** units are fixed or chosen from a constrained list, never free text (UX-14). An override requires a reason and shall never present an unexplained substituted figure (UX-43). Results write into the B3 fields, where the standard validation rules then apply.
+- **Validation behaviour:** units are fixed or chosen from a constrained list, never free text (UX-14); an imported row is resolved into the same lists, and a row that cannot be is reported by its row number with what is wrong, in NFR-79's three parts, and never entered (FR-211). An override requires a reason and shall never present an unexplained substituted figure (UX-43). Results write into the B3 fields, where the standard validation rules then apply.
 - **Exits:** back to the B3 step in S-07.
-- **Use cases:** UC-32, UC-33, UC-34.
-- **FRs:** FR-33, FR-34, FR-35, FR-36; consumes FR-71.
+- **Use cases:** UC-32, UC-33, UC-34, UC-215.
+- **FRs:** FR-33, FR-34, FR-35, FR-36, FR-211; consumes FR-71.
 
 ### S-10 — Report preview
 
@@ -2465,6 +2465,8 @@ Six additions the delivered set makes to this inventory, each recorded because i
 
 **Radio group was built 1 Oct 2026** (task 179.2), the row catching up rather than a new one, at its first consumer: S-07's short choices. It is drawn as `EasyESG Reporting Core.dc.html`'s option cards — each answer a card holding its radio and its words, the chosen one on the accent's tint with the accent's edge — rather than as the Components sheet's bare list, the owner's choice after a mockup of both (1 Oct 2026); one look, not two variants. Real `<input type="radio">`s under one name inside a `radiogroup`, so the arrow keys, the single tab stop and every screen reader's announcement are the platform's. Its applicable §8.1 set is rest · hover · focus · checked · disabled · invalid; a read-only step draws the answer as text, which is the caller's (UX-13).
 
+**File upload was built 7 Oct 2026** (task 204.2), the row catching up as Radio group's did, at its first consumer: S-09's spreadsheet import (FR-211). It is drawn as the Components sheet's specimen — a dashed field boundary on the page ground, its line saying what to drop and a second saying which files and how large, ending in *browse* — and named as the sheet names it, a *composed dropzone*: a real `<input type="file">`, visually hidden, under a label that is the whole zone, so a click anywhere opens the system's dialogue, Enter and Space are the platform's, and the zone's words are the chooser's accessible name. A file held over it turns the boundary solid on the accent's tint, so the state does not rest on colour alone. It reports one file, chosen or dropped, and holds none; whether the file is one the screen can use is the screen's to say, through the control's error. Its applicable §8.1 set is rest · hover · focus · active · invalid · disabled; its tier-3 tokens are `--dropzone-border-rest`, `--dropzone-border-active`, `--dropzone-surface` and `--dropzone-surface-active`, and both boundaries are measured against their grounds in both schemes.
+
 **One-time code was added 26 Aug 2026** (task 27.4), and it is the first true addition to this enumeration rather than a variant of something already in it — which is what UX-89 means by *an addition to the inventory, reviewed once and reused*. The A-01 artboard draws it as six cells; S-01's second-factor step (UC-194) is its second consumer, and a one-off in either screen would be the defect UX-89 names.
 
 **It is one input painted to look like several, and that is UX-108 rather than a preference.** Accessible Authentication requires paste and password managers to work everywhere, and the platform's own autofill — the code an authenticator sheet offers, and what a browser fills from an SMS — targets a *single* field carrying `autocomplete="one-time-code"`. Six inputs, which is how this control is usually built, defeat all of it: autofill has no single target, a paste lands in one cell, and a screen reader announces six unlabelled fields where there is one question. The cells are presentation, hidden from assistive technology, painted from the value.
@@ -2700,7 +2702,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-06 | Reports index | RC, OA | UC-17, UC-213 | FR-25, FR-26, FR-41, FR-66, FR-104, FR-177, FR-210 |
 | S-07 | **Report wizard — module step** | RC | UC-18 … 31, 37, 45, 46, 183 … 192 | FR-5, FR-24, FR-26, FR-27, FR-28, FR-29, FR-30, FR-31, FR-32, FR-33, FR-34, FR-37, FR-38, FR-39, FR-40, FR-41, FR-42, FR-45, FR-46, FR-47, FR-54, FR-104, FR-177, FR-208, FR-210 |
 | S-08 | Validation panel (in-wizard, persistent) | RC | UC-37 … 40 | FR-40, FR-41, FR-42, FR-43, FR-44 |
-| S-09 | Carbon calculator | RC | UC-32 … 34 | FR-33, FR-34, FR-35, FR-36, FR-71 |
+| S-09 | Carbon calculator | RC | UC-32 … 34, 215 | FR-33, FR-34, FR-35, FR-36, FR-71, FR-211 |
 | S-10 | Report preview | RC | UC-41 | FR-36, FR-44, FR-48 |
 | S-11 | Export dialogue and history | RC | UC-42 … 44, 48 | FR-44, FR-49, FR-50, FR-51, FR-52, FR-53 |
 | S-12 | Field change history | RC, OA | UC-47 | FR-54, FR-55 |

@@ -211,6 +211,13 @@
      filter row of both was ragged; one token is what makes their parity a fact rather than a comment.
      Not a density step, and not in the compact block: a density moves the space scale and nothing else. */
   --field-block-size: 46px;
+  /* §11.5's File upload (task 204.2), the Components sheet's `dropzone.border.rest`: a dashed field boundary on the
+     page ground, enterable-looking at rest as any field is, and on the accent's tint with the focus colour while a
+     file is held over it. All tier 2, so the dark scheme moves them with nothing here. */
+  --dropzone-border-rest: var(--field-border-rest);
+  --dropzone-border-active: var(--border-focus);
+  --dropzone-surface: var(--surface-sunken);
+  --dropzone-surface-active: var(--accent-tint);
   --wizard-step-complete: var(--state-ok);
   --module-state-reasoned: var(--state-reasoned);
   --savestate-queued: var(--state-pending);
