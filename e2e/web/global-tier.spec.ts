@@ -247,3 +247,26 @@ test('the user menu carries S-28 and the language choice, and signs out (§4.2, 
   await page.goto('/home');
   await page.waitForURL('**/sign-in?**');
 });
+
+/**
+ * Task 203.3 (UX-99): the first thing a keyboard reaches on every page is the skip link, and following it puts focus
+ * in `<main>` — on a signed-out Focus screen, a workspace screen and the account rail's.
+ */
+test('every page opens on a skip link that moves focus to the main content (UX-99)', async ({ page }) => {
+  const skipToMain = async (address: string) => {
+    await page.goto(address);
+    await page.keyboard.press('Tab');
+    const link = page.getByRole('link', { name: 'Treceți la conținutul principal' });
+    await expect(link).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('main#main-content')).toBeFocused();
+  };
+
+  await skipToMain('/sign-in');
+  const email = addressFor('skip');
+  await registerAndVerify(page, email);
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX}-skip` }));
+  await signIn(page, email);
+  await skipToMain('/home');
+  await skipToMain('/account/credentials');
+});

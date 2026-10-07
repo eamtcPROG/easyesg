@@ -1,3 +1,4 @@
+import { MAIN_CONTENT_ID } from '@easyesg/ui';
 import { useTranslations } from 'use-intl';
 
 /**
@@ -20,7 +21,7 @@ export function RouteNotFound() {
   const t = useTranslations('chrome.notFound');
 
   return (
-    <main>
+    <main id={MAIN_CONTENT_ID} tabIndex={-1}>
       <h1>{t('title')}</h1>
       <p>{t('body')}</p>
       <a href="/">{t('action')}</a>

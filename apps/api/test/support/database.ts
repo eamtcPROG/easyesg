@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm';
+import { FACTOR_SET_REPLACED } from '@api/modules/core/calculator/constants/calculator.constants';
 
 /**
  * A connection as one of §7.6's roles, for e2e suites that need to see or seed what a request
@@ -92,6 +93,25 @@ export const asOrganization = async <T>(
 export const databaseNow = async (connection: DataSource): Promise<Date> => {
   const rows: { at: Date }[] = await connection.query('SELECT now() AS at');
   return rows[0].at;
+};
+
+/**
+ * Removes the factor-set replacements a suite's publications announced (task 37.3). A publication over an occupied
+ * window, or a revert, now writes a platform `calculator.factor_set_replaced` row on its own transaction, and no worker
+ * drains it in an api e2e run — so a suite publishing a factor set owes this in its `afterAll`, or `outbox.e2e-spec.ts`
+ * names its rows as strays. **Scoped by the suite's own scope and start**, never a sweep, for `deleteHintsOf`'s reason.
+ */
+export const deleteFactorSetReplacements = async (input: {
+  readonly owner: DataSource;
+  readonly scope: string;
+  /** The database's time when the suite began (`databaseNow`), so a row another suite left is not taken with it. */
+  readonly since: Date;
+}): Promise<void> => {
+  await input.owner.query(
+    `DELETE FROM audit.outbox_event
+      WHERE event_type = $1 AND organization_id IS NULL AND payload->>'scope' = $2 AND occurred_at >= $3`,
+    [FACTOR_SET_REPLACED, input.scope, input.since],
+  );
 };
 
 /**

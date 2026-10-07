@@ -282,6 +282,28 @@ describe('access — the union of members and invitations (UC-59, FR-56)', () =>
     expect(body.objects.map((row) => row.email)).toEqual([INVITED.live, EMAILS.editor]);
   });
 
+  /**
+   * Task 203.2: S-16's search, over what the person column shows — the name where there is one, and the address.
+   * *Ionescu* is the viewer's name and nowhere in her address, so a search over addresses alone would miss her.
+   */
+  it('searches the shown name and the address, case-insensitively, inside the organization', async () => {
+    const emailsFor = async (query: string) => (await list(query)).objects.map((row) => row.email);
+
+    expect(await emailsFor('?search=ionescu')).toEqual([EMAILS.viewer]);
+    expect(await emailsFor('?search=CEBOT')).toEqual([EMAILS.editor]);
+    expect(await emailsFor('?search=live%40')).toEqual([INVITED.live]);
+    // Beta's people match by address, and are not this organization's to find.
+    expect(await emailsFor('?search=beta')).toEqual([]);
+    // With a facet, both apply; and a wildcard typed is a character, not a pattern.
+    expect(await emailsFor(`?search=access.test&filters=role,${MEMBERSHIP_ROLE.VIEWER}&order=${ACCESS_SORT.PERSON},asc`)).toEqual([
+      EMAILS.viewer,
+      INVITED.expired,
+    ]);
+    const wildcard = await list('?search=%25');
+    expect(wildcard.total).toBe(0);
+    expect(wildcard.unfiltered).toBe(5);
+  });
+
   it('counts matched rows for the pager and unfiltered rows for the empty state', async () => {
     const all = await list();
     expect(all.total).toBe(5);

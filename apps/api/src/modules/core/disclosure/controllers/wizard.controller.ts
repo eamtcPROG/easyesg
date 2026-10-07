@@ -75,7 +75,10 @@ export class WizardController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiParam({ name: 'module', example: 'B8' })
   @ApiObjectResponse(DisclosureStepDto, { status: 200, description: 'The step.' })
-  @ApiResponse({ status: 404, description: NO_SUCH_REPORT })
+  @ApiResponse({
+    status: 404,
+    description: `${NO_SUCH_REPORT} Also a module the report's pinned taxonomy version does not carry.`,
+  })
   async step(
     @Param('id', ParseUUIDPipe) reportId: string,
     @Param('module') module: string,
@@ -97,7 +100,12 @@ export class WizardController {
     status: 200,
     description: 'What was durably committed — UX-36 acknowledges the commit, not local state.',
   })
-  @ApiResponse({ status: 400, description: 'A field the pinned version does not name.' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'A field the pinned version does not name; a value marked not available with no reason (or a blank one), or ' +
+      'a reason on any other state; a unit outside the element’s admitted list, where the standard states one.',
+  })
   @ApiResponse({ status: 404, description: NO_SUCH_REPORT })
   @ApiResponse({ status: 409, description: 'The reporting period is locked (FR-22).' })
   async write(

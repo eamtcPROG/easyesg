@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import styles from './focus-column.module.css';
+import { MAIN_CONTENT_ID } from '../navigation/skip-link-vocabulary';
 
 /**
  * The Focus archetype's own fixed element (§4.6): **a single centred column**, extracted from
@@ -40,7 +41,8 @@ export interface FocusColumnProps {
 
 export function FocusColumn({ measure = FOCUS_MEASURE.NARROW, children }: FocusColumnProps) {
   return (
-    <main className={styles.main}>
+    // The skip link's target (task 203.3): `tabIndex={-1}` is what lets it take focus.
+    <main id={MAIN_CONTENT_ID} tabIndex={-1} className={styles.main}>
       <div className={measure === FOCUS_MEASURE.WIDE ? styles.wide : styles.narrow}>{children}</div>
     </main>
   );

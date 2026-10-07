@@ -16,7 +16,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-24 — The guided wizard
 
-**Status.** Partial — delivered 35.1, 35.2, 35.3, 36.1 … 36.14, 89, 91.1 … 91.4, 179, 180 · remaining 94 (help for undocumented elements), 183 (unknown module)
+**Status.** Partial — delivered 35.1, 35.2, 35.3, 36.1 … 36.14, 89, 91.1 … 91.4, 179, 180, 183 · remaining 94 (help for undocumented elements)
 
 **Obligation.** The system shall provide a guided, stepped wizard over every VSME Basic Module disclosure B1 … B11, one step per module, capturing a module's structured and narrative content together, and entering a report at the module where work last happened or, where nothing is answered, at the first incomplete step.
 
@@ -38,7 +38,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 7. Help is EFRAG's documentation label where one exists. For the elements EFRAG leaves undocumented, help is task 94's (task-91.1 row).
 
 **Refusals.**
-- A step read for a module the pinned taxonomy lacks → 404 (task 183; §12.5.6's task-182 row (6))
+- A step read for a module the pinned taxonomy lacks → 404 `not-found` (`core.report.module_not_found`; task 183; §12.5.6's task-182 row (6))
 - A report pinned to a withdrawn taxonomy version → 500 `taxonomy-version-unavailable` (task-89 row)
 - Unknown report, or one outside the active organization → 404 `not-found`
 
@@ -187,7 +187,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-29 — Quantities in the standard's units, intensities derived
 
-**Status.** Partial — delivered 36.4 … 36.12, 38.4, 91.4 · remaining 183 (unit refusal), 39.2
+**Status.** Partial — delivered 36.4 … 36.12, 38.4, 91.4, 183 · remaining 39.2
 
 **Obligation.** The system shall capture each quantitative disclosure in the unit the standard states for it, or with no unit where it states none, letting the reporter choose where several are admitted and defaulting to none; and shall derive, rather than accept typed, the figures the standard computes. Those figures are B3's total and GHG intensity, B8's turnover rate, B9's accident rate and B10's collective-agreement coverage and pay gap.
 
@@ -208,7 +208,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Refusals.**
 - A derived figure written → 400 `validation-failed` (`core.report.derived_disclosure_not_writable`)
 - An unknown derivation input → 400
-- A unit outside the element's list → 400 `validation-failed` (task 183)
+- A unit outside the element's list → 400 `validation-failed` (`core.report.unit_not_admitted`; task 183). An element whose list is empty admits any unit, since empty means the standard states none; a value with no unit is not refused (§12.5.6's task-182 row (6), read on task 183)
 
 **Configuration-held values.** `disclosure-derivation.vsme.json` (formula kinds; hours default `2000`). Unit lists in the taxonomy artefact (seven codes: `MWh ha kg m3 sqkm t tCO2e`).
 
@@ -285,7 +285,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-32 — A field not available, with a reason
 
-**Status.** Partial — delivered 34.1, 36.5 · remaining 183 (refusals), 41 (reported separately by validation)
+**Status.** Partial — delivered 34.1, 36.5, 183 · remaining 41 (reported separately by validation)
 
 **Obligation.** The system shall allow any field to be declared not available with a stated reason, as a terminal state distinct from `MISSING VALUE`, refusing the declaration without a reason.
 
@@ -296,7 +296,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **Behaviour.** The declaration is a first-class action on every field, not an alternative found after failing to answer (task-36.5 row). The reason is stored exactly when the state is `not_available` (§7.3). **A later answer supersedes the declaration** with no separate withdrawal, and the declaration and its reason stay in the change trail (§12.5.6 task-182 row (13)).
 
-**Refusals.** No reason, a blank reason, or a reason with any other state → 400 `validation-failed` (task 183; today a database CHECK surfaces as 500).
+**Refusals.** No reason, or a blank one (no visible character) → 400 `validation-failed` (`core.report.not_available_reason_required`); a reason with any other state → 400 `validation-failed` (`core.report.not_available_reason_unexpected`). Judged before the write (task 183); until then the store's CHECK answered both as 500.
 
 **Acceptance criteria.**
 - **AC-1** Given a field declared not available with a reason, then it is stored in that state with the reason. *(source: FR text; §7.3)*
@@ -501,7 +501,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-35 — Pin the factor set version to every result
 
-**Status.** Partial — delivered 37.1, 37.2, 38.1, 38.4 · remaining 37.3, 39.2 (UX-44)
+**Status.** Partial — delivered 37.1, 37.2, 37.3, 38.1, 38.4 · remaining 39.2 (UX-44)
 
 **Obligation.** The system shall store against every computed result the emission factor set version it was computed under, so that a later factor update never silently restates a figure already reported.
 
@@ -524,7 +524,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **Configuration-held values.** The set's validity window: today one set (`2026.1`) serves periods starting before 1 Jan 2027, bounded so that a 2027 set can be an adjacent window.
 
-**Boundaries.** Publishing a set is FR-71's. Telling affected organizations is FR-166's (task 37.3). Recalculating is the reporter's explicit act, never automatic.
+**Boundaries.** Publishing a set is FR-71's. Telling affected organizations is FR-166's (task 37.3, built: an open report whose latest run used the set replaced). Recalculating is the reporter's explicit act, never automatic.
 
 **Acceptance criteria.**
 - **AC-1** Given a run, then its stored record names the set's country and revision, and its label is resolvable. *(source: FR text; §12.5.6 task-37 row (3))*
@@ -534,6 +534,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **History.**
 - 1 Oct 2026 · project owner · the set is resolved by the period's start and not the run date, which supersedes A-05's artboard lines · §12.5.6 task-37 row; §9.9 amended
+- 6 Oct 2026 · project owner · a replaced set tells the organizations whose open reports' latest runs used it; a revert replaces too · §12.5.6 task-37.3/37.4 row (2), (3) (task 37.3)
 
 ### FR-36 — Annotate or override a computed figure
 

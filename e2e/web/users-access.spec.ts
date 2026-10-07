@@ -403,3 +403,23 @@ test('someone who does not administer the organization is told so, not shown an 
     page.getByText('Această pagină este pentru administratorii organizației'),
   ).toBeVisible();
 });
+
+/**
+ * Task 203.2 (`design_spec.md` §4.7): S-16 searches name and address on the api, the term in the address, and a search
+ * that admits no one is the filtered empty state rather than the teaching one.
+ */
+test('searches people by name or address, through the api, and says when no one matches', async ({ page }) => {
+  const email = await administratorOf(page, 'search');
+  await openAccessScreen(page);
+  const search = page.getByRole('searchbox', { name: 'Căutați după nume sau e-mail' });
+
+  await search.fill('Popescu');
+  await page.getByRole('button', { name: 'Căutați', exact: true }).click();
+  await page.waitForURL('**/organization/users?q=Popescu');
+  await expect(page.getByRole('row').filter({ hasText: email })).toHaveCount(1);
+
+  await page.getByRole('searchbox', { name: 'Căutați după nume sau e-mail' }).fill('nimeni-nu-se-numeste-asa');
+  await page.getByRole('button', { name: 'Căutați', exact: true }).click();
+  await page.waitForURL('**/organization/users?q=nimeni-nu-se-numeste-asa');
+  await expect(page.getByRole('row').filter({ hasText: email })).toHaveCount(0);
+});

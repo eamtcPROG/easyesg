@@ -1,0 +1,17 @@
+/* A list's search row (task 203.2): the field takes the room, the buttons keep theirs and meet its edges, and below
+   `wide` the three wrap rather than squeeze. Token values only (UX-127). */
+.search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.field {
+  flex: 1 1 18rem;
+  min-inline-size: 0;
+}
+
+.button {
+  min-block-size: var(--field-block-size);
+}

@@ -34,6 +34,7 @@ export const NOTIFICATION_CATEGORY = {
   INVITATION: 'identity.invitation',
   ADMIN_INVITATION: 'platform.admin_invitation',
   MANUAL_REMINDER: 'reporting.manual_reminder',
+  REPORT_UPDATE: 'reporting.report_update',
 } as const;
 
 export type NotificationCategoryKey = (typeof NOTIFICATION_CATEGORY)[keyof typeof NOTIFICATION_CATEGORY];

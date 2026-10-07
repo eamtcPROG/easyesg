@@ -4,22 +4,33 @@ import { ROUTES } from '@/lib/routes';
 import { getTranslations } from 'next-intl/server';
 import { NoticeMarkAll } from '../../../shared/components/notice-mark-all';
 import { NOTICE_LIST_MESSAGES } from '../../../shared/components/notice-messages';
+import type { CentreCategory } from '../../tools/centre-categories';
 import type { CentreView } from '../../tools/centre-view';
 import { CENTRE_MESSAGES } from '../shared/centre-messages';
 import styles from '../styles/centre.module.css';
+import { CategoryFilter } from './category-filter';
 import { ReadStateTabs } from './read-state-tabs';
 import { ReceivedOrder } from './received-order';
 
 /**
  * S-26's heading, as the artboard draws it (task 50.2.1): the title with the unread count beside it, the lede, and
  * at the row's end the read-state tabs, the order and *Mark all as read* (§12.5.6's task-50.2 rows (2), (4), (6)) —
- * the order the one control the artboard does not draw, which §4.6's Index carries.
+ * the order the one control the artboard does not draw, which §4.6's Index carries. **The category filter joins them
+ * since task 37.3**, where two categories reach the centre (row (7)).
  *
  * **The count and the controls need the read**, so on a refused or failed one the heading is the title and lede
  * alone — a count this screen could not read is not drawn as zero, and tabs over a list it could not load would
  * offer a choice with nothing behind it. *Mark all* is offered only while something is unread.
  */
-export async function CentreHeading({ unread, view }: { readonly unread: number | null; readonly view: CentreView }) {
+export async function CentreHeading({
+  unread,
+  view,
+  categories,
+}: {
+  readonly unread: number | null;
+  readonly view: CentreView;
+  readonly categories: readonly CentreCategory[];
+}) {
   const [t, tLists] = await Promise.all([getTranslations(CENTRE_MESSAGES), getTranslations(NOTICE_LIST_MESSAGES)]);
 
   return (
@@ -41,6 +52,7 @@ export async function CentreHeading({ unread, view }: { readonly unread: number 
       {unread === null ? null : (
         <div className={styles.controls}>
           <ReadStateTabs view={view} unread={unread} />
+          {categories.length > 0 ? <CategoryFilter view={view} categories={categories} /> : null}
           <ReceivedOrder view={view} />
           {unread > 0 ? <NoticeMarkAll variant={BUTTON_VARIANT.SECONDARY} /> : null}
         </div>

@@ -3,7 +3,7 @@ import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { getPathname } from '@/i18n/navigation';
 import { readActiveMembership } from '@/server/data/memberships';
-import { readWizardStep } from '@/server/data/wizard';
+import { WIZARD_READ, readWizardStep } from '@/server/data/wizard';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { readSession } from '@/server/session/session';
@@ -72,6 +72,9 @@ export async function WizardStep({
       </Callout>
     );
   }
+  // A module the pinned taxonomy does not carry — the api's 404 since task 183 — is the same screen as one outside the
+  // report's scope, below.
+  if (read.status === WIZARD_READ.MODULE_NOT_FOUND) notFound();
   if (read.status === TENANT_READ.UNREACHABLE || session === null) {
     return (
       <Callout intent={CALLOUT_INTENT.ERROR} title={t('unreachable.title')} action={null}>

@@ -598,18 +598,21 @@ export default tseslint.config(
   },
 
   /**
-   * The files the TypeORM CLI and the seed runner load — the migration datasource, every
-   * migration, and the seed entrypoints — run under plain ts-node with NO paths registration
-   * (`db:cli` and `config:seed` in apps/api/package.json), so an `@api/*` import anywhere in
-   * their graph fails only at run time, in whichever environment migrates first. This makes it
-   * a lint failure instead. The `../../` ban is restated because a later block REPLACES the
-   * earlier rule config for matching files rather than merging with it.
+   * The files the TypeORM CLI loads — the migration datasource and every migration — run under
+   * plain ts-node with NO paths registration (`db:cli` in apps/api/package.json), so an `@api/*`
+   * import anywhere in their graph fails only at run time, in whichever environment migrates
+   * first. This makes it a lint failure instead. The `../../` ban is restated because a later
+   * block REPLACES the earlier rule config for matching files rather than merging with it.
+   *
+   * **The seed runner left this list on 6 Oct 2026** (task 37.3): `config:seed` registers
+   * `tsconfig-paths` since then, because the publisher it drives asks the calculator's payload
+   * rule, which no relative path of one level reaches. The list had named only the seed's entry
+   * files and never their graph, so the alias it banned had already crept in one import down.
    */
   {
     files: [
       'apps/api/src/infrastructure/persistence/migration.data-source.ts',
       'apps/api/src/infrastructure/persistence/migrations/**/*.ts',
-      'apps/api/src/infrastructure/configuration/seed-configuration*.ts',
     ],
     rules: {
       'no-restricted-imports': [
@@ -619,7 +622,7 @@ export default tseslint.config(
             {
               group: ['@api/*'],
               message:
-                'This file is loaded by a ts-node CLI (db:cli / config:seed) that registers no ' +
+                'This file is loaded by a ts-node CLI (db:cli) that registers no ' +
                 'path aliases — @api/* fails there at run time. Keep this graph relative.',
             },
             {

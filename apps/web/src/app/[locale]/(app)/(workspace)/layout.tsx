@@ -3,6 +3,7 @@ import { OrganizationChoiceGate } from '@/shared/organization-choice-gate';
 import { WorkspaceFooter } from '@/shared/workspace-footer';
 import { WorkspaceNavigationSection } from '@/shared/workspace-navigation-section';
 import styles from './layout.module.css';
+import { MAIN_CONTENT_ID } from '@easyesg/ui';
 
 /**
  * Screens that carry the **workspace** navigation tier (§4.2): Reports, Entities & periods,
@@ -59,7 +60,9 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
             (S-06, S-13, S-14), and they are correct: that is what `header` means. What remains
             load-bearing above is the **first** reason, which never depended on any of this.
           */}
-          <main className={styles.main}>{children}</main>
+          <main id={MAIN_CONTENT_ID} tabIndex={-1} className={styles.main}>
+            {children}
+          </main>
           {/* The artboards' footer, under every workspace screen and outside `<main>` — its own `contentinfo`. */}
           <WorkspaceFooter />
         </div>

@@ -1,4 +1,4 @@
-import { DEFAULT_PAGE_SIZE, readPageSize, type PageSize } from '~/lib/pagination';
+import { DEFAULT_PAGE_SIZE, readPageSize, type PageSize } from '@easyesg/ui';
 
 /**
  * A-07's addressable state (task 67.9; UX-4): the organization a request is being written for, the grant being

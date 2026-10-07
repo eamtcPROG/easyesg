@@ -1,4 +1,5 @@
-import type { IndexPage } from '@easyesg/ui';
+import { matchesSearch } from '@/lib/search-match';
+import { DEFAULT_PAGE_SIZE, readPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
 import { REPORT_STATUS, type Report, type ReportStatus } from '@easyesg/contracts';
 
 /**
@@ -78,6 +79,10 @@ export interface ReportView {
   readonly sort: ReportSort;
   readonly direction: ReportSortDirection;
   readonly page: number;
+  /** UX-141's rows per page — 25, 50 or 100, in the address as `onpage` and absent at the default (task 203.1). */
+  readonly pageSize: PageSize;
+  /** §4.7's text search, `?q=`, `''` for none (task 203.2). Matched in the browser, over the rows this list holds. */
+  readonly q: string;
 }
 
 /**
@@ -95,11 +100,9 @@ export const DEFAULT_REPORT_VIEW: ReportView = {
   sort: REPORT_SORT.ACTIVITY,
   direction: REPORT_SORT_DIRECTION.DESCENDING,
   page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  q: '',
 };
-
-/** An organization files once a year per entity, so a page is many years across many entities. The
- *  archetype carries pagination (§4.6); this size is what stops it being reached in practice. */
-export const REPORT_PAGE_SIZE = 25;
 
 export type ReportPage = IndexPage<ReportRow>;
 
@@ -128,6 +131,8 @@ export const readReportView = (
     direction:
       oneOf(Object.values(REPORT_SORT_DIRECTION), single('dir')) ?? DEFAULT_REPORT_VIEW.direction,
     page: Number.isFinite(page) && page > 0 ? page : DEFAULT_REPORT_VIEW.page,
+    pageSize: readPageSize(single('onpage')).onpage ?? DEFAULT_REPORT_VIEW.pageSize,
+    q: single('q')?.trim() ?? '',
   };
 };
 
@@ -141,6 +146,8 @@ export const reportViewQuery = (view: ReportView): string => {
   if (view.sort !== DEFAULT_REPORT_VIEW.sort) params.set('sort', view.sort);
   if (view.direction !== DEFAULT_REPORT_VIEW.direction) params.set('dir', view.direction);
   if (view.page !== DEFAULT_REPORT_VIEW.page) params.set('page', String(view.page));
+  if (view.pageSize !== DEFAULT_REPORT_VIEW.pageSize) params.set('onpage', String(view.pageSize));
+  if (view.q !== '') params.set('q', view.q);
   return params.toString();
 };
 
@@ -224,6 +231,8 @@ export const applyReportView = (input: {
 
   const matched = rows.filter(
     (row) =>
+      // §4.7's search over the entity's name and the fiscal year (task 203.2).
+      matchesSearch({ term: view.q, fields: [row.entityName, row.fiscalYear] }) &&
       (view.status === REPORT_FILTER_ANY || row.status === view.status) &&
       (view.entity === REPORT_FILTER_ANY || row.entityId === view.entity) &&
       (view.year === REPORT_FILTER_ANY || String(row.fiscalYear) === view.year),
@@ -237,17 +246,17 @@ export const applyReportView = (input: {
     return view.direction === REPORT_SORT_DIRECTION.DESCENDING ? -settled : settled;
   });
 
-  const pages = Math.max(1, Math.ceil(sorted.length / REPORT_PAGE_SIZE));
+  const pages = Math.max(1, Math.ceil(sorted.length / view.pageSize));
   const page = Math.min(view.page, pages);
-  const from = (page - 1) * REPORT_PAGE_SIZE;
+  const from = (page - 1) * view.pageSize;
 
   // **`matched` and `total` are both reported, and that pair IS §4.6's two empty states** — the
   // shell distinguishes them itself. `periods.ts` carries the full reasoning.
   return {
-    rows: sorted.slice(from, from + REPORT_PAGE_SIZE),
+    rows: sorted.slice(from, from + view.pageSize),
     matched: matched.length,
     total: rows.length,
     page,
-    pageSize: REPORT_PAGE_SIZE,
+    pageSize: view.pageSize,
   };
 };

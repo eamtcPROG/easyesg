@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { DataSource, QueryRunner } from 'typeorm';
+import { writeOutboxEvent } from '../outbox/outbox-writer';
 import { CORE_DATA_SOURCE } from '../persistence/data-source';
+import { ruleFor, type SlotReplaced } from './configuration-kind-rules';
+import { ConfigurationPayloadRefusedError } from './configuration-payload-refused.error';
 import { ConfigurationRevisionMismatchError } from './configuration-revision-mismatch.error';
 
 export interface PublishRequest {
@@ -48,7 +51,10 @@ export interface RevertRequest {
  * The database enforces what matters and this service does not restate it: published versions are
  * immutable by trigger, two versions cannot be in force for one date by primary key, and the store
  * version is bumped by a trigger on the schedule so a publish that forgot to bump it is not
- * possible. What is left here is sequencing.
+ * possible. What is left here is sequencing — and, since tasks 37.3 and 37.4, the two things a kind
+ * may ask of a publication (`configuration-kind-rules.ts`): a payload refused before anything is
+ * written, and an outbox event when the revision in force for a slot changes, on the same
+ * transaction as the change.
  */
 @Injectable()
 export class ConfigurationPublisher {
@@ -62,6 +68,13 @@ export class ConfigurationPublisher {
    * stored calculation can still be reproduced against the factor set it actually used.
    */
   async publish(request: PublishRequest): Promise<PublishedVersion> {
+    // Before the transaction opens: a payload no reader could use takes no lock and writes nothing (task 37.4).
+    const rule = ruleFor(request.kind);
+    const reason = rule.refusal?.(request.payload) ?? null;
+    if (reason !== null) {
+      throw new ConfigurationPayloadRefusedError({ kind: request.kind, scope: request.scope, reason });
+    }
+
     return this.inTransaction(async (runner) => {
       const validity = range(request.validFrom ?? null, request.validTo ?? null);
 
@@ -143,6 +156,15 @@ export class ConfigurationPublisher {
         );
       }
 
+      // A publication over an occupied window replaces what was in force there; one into an empty window replaces
+      // nothing (task 37.3).
+      if (slot.length > 0) {
+        await announceReplacement(runner, {
+          kind: request.kind,
+          replaced: { scope: request.scope, leavingRevision: slot[0].revision, enteringRevision: nextRevision },
+        });
+      }
+
       return { id: inserted[0].id, revision: nextRevision };
     });
   }
@@ -183,11 +205,11 @@ export class ConfigurationPublisher {
       // statement, so an UPDATE matching nothing would still move the store version and invalidate
       // every replica's cache for a revert that changed nothing.
       const slot = (await runner.query(
-        `SELECT 1 FROM config.entry_schedule s
+        `SELECT v.revision FROM config.entry_schedule s
            JOIN config.entry_version v ON v.id = s.version_id
           WHERE s.kind = $1 AND s.scope = $2 AND s.validity = $3::daterange AND v.revision > $4`,
         [request.kind, request.scope, target[0].validity, request.toRevision],
-      )) as unknown[];
+      )) as { revision: number }[];
       if (slot.length === 0) return;
 
       // The later versions stay in the table, published-then-superseded and untouched, so a forward
@@ -197,6 +219,12 @@ export class ConfigurationPublisher {
           WHERE kind = $1 AND scope = $2 AND validity = $3::daterange`,
         [request.kind, request.scope, target[0].validity, target[0].id],
       );
+
+      // A revert is a replacement too: the revision leaving is the one the slot held (task 37.3).
+      await announceReplacement(runner, {
+        kind: request.kind,
+        replaced: { scope: request.scope, leavingRevision: slot[0].revision, enteringRevision: request.toRevision },
+      });
     });
   }
 
@@ -227,6 +255,20 @@ export class ConfigurationPublisher {
       await runner.release();
     }
   }
+}
+
+/**
+ * The kind's replacement event, where it names one, as a platform outbox row on the change's own transaction (P-8): it
+ * commits with the new revision in force or not at all. It belongs to no organization — which ones a change reaches is
+ * the handler's to find.
+ */
+async function announceReplacement(
+  runner: QueryRunner,
+  change: { readonly kind: string; readonly replaced: SlotReplaced },
+): Promise<void> {
+  const eventType = ruleFor(change.kind).replaced;
+  if (eventType === undefined) return;
+  await writeOutboxEvent(runner, { eventType, payload: { ...change.replaced }, organizationId: null });
 }
 
 /** A `[from,to)` literal, with an empty bound rendering as unbounded. */

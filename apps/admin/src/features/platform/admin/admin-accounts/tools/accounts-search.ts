@@ -1,5 +1,5 @@
 import { SYSTEM_AUDIT_ACTION, type SystemAuditAction } from '@easyesg/contracts';
-import { DEFAULT_PAGE_SIZE, readPageSize, type PageSize } from '~/lib/pagination';
+import { DEFAULT_PAGE_SIZE, readPageSize, type PageSize } from '@easyesg/ui';
 
 /**
  * A-08's addressable state (task 67.4; UX-4): the open record or the invitation form, and the log's

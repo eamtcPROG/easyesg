@@ -131,6 +131,8 @@ export type AccessRow = MemberAccessRow | InvitationAccessRow;
 
 /** What the store is asked for: the window, the order and the two facets. */
 export interface AccessQuery {
+  /** S-16's search over the shown name and the address (task 203.2), or `null` for none. Narrowed by `narrowSearchTerm`. */
+  readonly search: string | null;
   readonly role: MembershipRole | typeof ACCESS_FILTER_ANY;
   readonly standing: AccessStanding | typeof ACCESS_FILTER_ANY;
   readonly sort: AccessSort;

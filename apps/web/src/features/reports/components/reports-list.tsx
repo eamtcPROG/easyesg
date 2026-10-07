@@ -1,9 +1,11 @@
 'use client';
 
 import {
-  BUTTON_VARIANT,
   Button,
+  BUTTON_VARIANT,
+  DEFAULT_PAGE_SIZE,
   EmptyState,
+  readPageSize,
   StatusChip,
   TextLink,
   VersionPinIndicator,
@@ -14,6 +16,7 @@ import { REPORT_STATUS, type ReportStatus } from '@easyesg/contracts';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useCallback, useMemo, useTransition } from 'react';
 import { IndexView } from '@/shared/index-view';
+import { ListSearch } from '@/shared/list-search';
 import { Link, useRouter } from '@/i18n/navigation';
 import { ROUTES, reportRoute, withQuery } from '@/lib/routes';
 import {
@@ -185,6 +188,7 @@ export function ReportsList({ page, view, options, canCreate }: ReportsListProps
 
   return (
     <>
+      <ListSearch value={view.q} label={t('searchLabel')} onSearchAction={(q) => setView({ q })} />
       <ReportsToolbar view={view} options={options} canCreate={canCreate} onViewChangeAction={setView} />
 
       <IndexView<ReportRow, ReportColumnKey>
@@ -197,6 +201,8 @@ export function ReportsList({ page, view, options, canCreate }: ReportsListProps
           setView({ sort: sort.column as ReportSort, direction: sort.direction })
         }
         onPageChange={(next) => setView({ page: next })}
+        // UX-141's size, which resets the page as every other change of view does (task 203.1).
+        onPageSizeChange={(size) => setView({ pageSize: readPageSize(size).onpage ?? DEFAULT_PAGE_SIZE })}
         empty={{
           firstUse: (
             // §4.6: an Index "always has an empty state that teaches", and teaching here means

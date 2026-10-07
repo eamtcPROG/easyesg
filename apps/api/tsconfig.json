@@ -41,8 +41,9 @@
     // tsc does NOT rewrite these in emitted JS — four other surfaces carry the alias:
     // `postbuild` (tsc-alias rewrites dist to relative), both jest configs (moduleNameMapper),
     // tsconfig.boundaries.json (dependency-cruiser), and @nestjs/cli's own tsconfig-paths hook
-    // for `start:dev`. The TypeORM CLI and the seed runner have NO registration, which is why
-    // the files they load are lint-banned from using the alias.
+    // for `start:dev`, and since task 37.3 `config:seed`'s `-r tsconfig-paths/register`. The
+    // TypeORM CLI has NO registration, which is why the files it loads are lint-banned from
+    // using the alias.
     "paths": { "@api/*": ["./src/*"] }
   },
   "include": ["src/**/*.ts", "test/**/*.ts"],

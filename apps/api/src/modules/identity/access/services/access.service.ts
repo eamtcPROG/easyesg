@@ -39,8 +39,8 @@ export class AccessService {
    * falls back to are the read model's decisions, not the HTTP layer's. The controller's job is to
    * hand over what the interceptor parsed.
    */
-  narrow(parsed: ListQueryInput): AccessQuery {
-    return toAccessQuery(parsed, DEFAULT_ON_PAGE);
+  narrow(input: { readonly parsed: ListQueryInput; readonly search: unknown }): AccessQuery {
+    return toAccessQuery({ list: input.parsed, search: input.search, fallbackTake: DEFAULT_ON_PAGE });
   }
 
   list(query: AccessQuery): Promise<AccessPage> {

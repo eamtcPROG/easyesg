@@ -132,6 +132,9 @@ export {
   type SwitcherLocale,
 } from './navigation/language-switcher';
 export { Pagination, type PaginationProps } from './navigation/pagination';
+export { SkipLink } from './navigation/skip-link';
+export { MAIN_CONTENT_ID } from './navigation/skip-link-vocabulary';
+export { DEFAULT_PAGE_SIZE, PAGE_SIZES, readPageSize, type PageSize } from './navigation/page-size';
 export {
   WorkspaceNav,
   type WorkspaceNavItem,

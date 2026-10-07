@@ -1,3 +1,4 @@
+import type { NotificationCategoryKey } from '@easyesg/contracts';
 import { SORT_DIRECTION, type ListQuery } from '@/lib/pagination';
 
 /**
@@ -45,18 +46,26 @@ export const isNoticeOrder = (value: unknown): value is NoticeOrder =>
 const WIRE = {
   READ_FACET: 'read',
   UNREAD: 'unread',
+  CATEGORY_FACET: 'category',
   RECEIVED: 'received',
 } as const;
 
-/** A view as the API's compact list query — newest first stated even where it is the API's default. */
+/**
+ * A view as the API's compact list query — newest first stated even where it is the API's default. **A category is
+ * S-26's alone** (task 37.3): the panel is a glance at what arrived last, whatever it is about.
+ */
 export const noticeListQuery = (input: {
   readonly show: NoticeShow;
   readonly order: NoticeOrder;
   /** 1-based. */
   readonly page: number;
   readonly onpage: number;
+  readonly category?: NotificationCategoryKey | null;
 }): ListQuery => ({
-  filters: input.show === NOTICE_SHOW.UNREAD ? [{ field: WIRE.READ_FACET, values: [WIRE.UNREAD] }] : [],
+  filters: [
+    ...(input.show === NOTICE_SHOW.UNREAD ? [{ field: WIRE.READ_FACET, values: [WIRE.UNREAD] }] : []),
+    ...(input.category ? [{ field: WIRE.CATEGORY_FACET, values: [input.category] }] : []),
+  ],
   order: [
     {
       field: WIRE.RECEIVED,

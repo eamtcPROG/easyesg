@@ -117,10 +117,10 @@ test.describe('S-26 — the notification centre', () => {
     await expect(centreList(page).getByRole('link', { name: 'Notificare' }).nth(0)).toHaveAttribute('href', '/reports');
     await expect(page.getByText('3 notificări necitite')).toBeAttached();
 
-    await page.getByRole('link', { name: 'Toate' }).click();
+    await page.getByRole('link', { name: 'Toate', exact: true }).click();
     await page.waitForURL('**/notifications?show=all');
     await expect(centreList(page).getByRole('listitem')).toHaveCount(4);
-    await expect(page.getByRole('link', { name: 'Toate' })).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('link', { name: 'Toate', exact: true })).toHaveAttribute('aria-current', 'page');
 
     // Each control is described by its notice, so a list of identical buttons still says which each one acts on.
     await expect(notice(page, '/entities').getByRole('button', { name: 'Marcați ca citită' })).toHaveAccessibleDescription(
@@ -282,6 +282,59 @@ test.describe('S-26 — the notification centre', () => {
     const inPanel = panel(page).getByRole('list', { name: 'Ultimele notificări' }).getByRole('listitem');
     await expect(inPanel.getByText(title)).toBeVisible();
     await expect(inPanel.getByRole('link', { name: 'Deschideți raportul' })).toBeVisible();
+  });
+
+  /**
+   * The category filter, which arrived with the second category to reach a centre (task 37.3; §12.5.6's task-50.2 row
+   * (7)): the report-update notice beside the reminder. Its choices are the person's in-app categories, an address like
+   * the tabs; a category with nothing in the view shown says so and clears back to every category.
+   */
+  test('the centre filters by category, and a category with nothing to show clears back to all of them', async ({
+    page,
+  }) => {
+    await memberWith(page, {
+      label: 'categories',
+      notices: [
+        {
+          deepLink: '/reports',
+          minutesAgo: 3,
+          categoryKey: 'reporting.manual_reminder',
+          params: { senderName: 'Ana Popescu', entityName: 'Brutăria Lina', fiscalYear: '2026', noteGiven: 'none', note: '' },
+        },
+        {
+          deepLink: '/reports/01930000-0000-7000-8000-000000000371/calculator',
+          minutesAgo: 2,
+          read: true,
+          categoryKey: 'reporting.report_update',
+          // The parameters `NotifyFactorSetReplaced` raises for one report (task 37.3).
+          params: { reach: 'one', setLabel: '2026.1', newSetLabel: '2026.2', entityName: 'Brutăria Lina', fiscalYear: '2026' },
+        },
+      ],
+    });
+
+    await page.goto('/notifications');
+    const categories = page.getByRole('list', { name: 'Categoria' });
+    await expect(categories.getByRole('link')).toHaveText(['Toate categoriile', 'Mementouri', 'Actualizări ale rapoartelor']);
+    await expect(categories.getByRole('link', { name: 'Toate categoriile' })).toHaveAttribute('aria-current', 'page');
+
+    // The update is read, so on the unread tab its category holds nothing — and says so, with the way back.
+    await categories.getByRole('link', { name: 'Actualizări ale rapoartelor' }).click();
+    await page.waitForURL(/category=reporting\.report_update/u);
+    await expect(page.getByText('Nimic în această categorie', { exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'Arătați toate categoriile' }).click();
+    await page.waitForURL((url) => !url.search.includes('category'));
+    await expect(centreList(page).getByRole('listitem')).toHaveCount(1);
+
+    // On *All*, the category shows its one notice, worded, and its action opens the report's calculator.
+    await page.goto('/notifications?show=all&category=reporting.report_update');
+    const item = centreList(page).getByRole('listitem');
+    await expect(item).toHaveCount(1);
+    await expect(item.getByText('Actualizări ale rapoartelor', { exact: true })).toBeVisible();
+    await expect(item.getByText('Factorii de emisie ai raportului Brutăria Lina pentru 2026 au fost înlocuiți')).toBeVisible();
+    await expect(item.getByRole('link', { name: 'Deschideți calculatorul' })).toHaveAttribute(
+      'href',
+      '/reports/01930000-0000-7000-8000-000000000371/calculator',
+    );
   });
 
   test('the bell opens the panel: the latest notices, its two views, opening one, and mark all', async ({ page }) => {

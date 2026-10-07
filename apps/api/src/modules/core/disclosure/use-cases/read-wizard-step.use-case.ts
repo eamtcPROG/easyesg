@@ -44,7 +44,11 @@ const VOCABULARY_COUNTRY = 'md';
  */
 const PUBLISHED_CLASSIFICATION_LOCALE: Locale = 'en';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
-import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/report.errors';
+import {
+  DisclosureModuleNotFoundError,
+  ReportNotFoundError,
+  TaxonomyVersionUnavailableError,
+} from '../errors/report.errors';
 import type { ApplicabilityRules } from '../interfaces/applicability-rules.interface';
 import type { AxisShapes } from '../interfaces/axis-shape.interface';
 import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
@@ -253,6 +257,10 @@ export class ReadWizardStep {
   /** One step: the module's fields, in the standard's presentation order, with their values. */
   async step(query: ReadStepQuery): Promise<DisclosureStep> {
     const { report, registered } = await this.pinned(query.reportId);
+    // **A module the pinned version does not carry is not there** (task 183; §12.5.6's task-182 authoring row (6)). It
+    // answered 200 with no fields, which a client cannot tell from a module whose every field is inapplicable — and
+    // nothing below needs to run for an address that names nothing.
+    if (!registered.modules.includes(query.module)) throw new DisclosureModuleNotFoundError();
     const { byKey, byElement } = await this.stored(query.reportId);
     // Read unconditionally rather than only for B8 and B9: the step does not yet know which of its
     // fields are derived — that is settled below, off the artefact — and this is one indexed read of

@@ -104,6 +104,8 @@ describe('the view in the address (UX-4)', () => {
       sort: ENTITY_SORT.SITES,
       direction: ENTITY_SORT_DIRECTION.DESCENDING,
       page: 2,
+      pageSize: 50,
+      q: 'Lina SRL, Chișinău',
     } as const;
     expect(readEntityView(Object.fromEntries(new URLSearchParams(entityViewQuery(view))))).toEqual(
       view,
@@ -175,5 +177,22 @@ describe('applyEntityView', () => {
     // reads as "your entities are gone".
     expect(page.page).toBe(1);
     expect(page.rows).toHaveLength(3);
+  });
+
+  // Task 203.2: §4.7's search over the name and the IDNO, ahead of the facets and the page.
+  it('searches the name and the IDNO, and counts what the search admitted', () => {
+    const rows = toEntityRows({
+      entities: [
+        entity({ id: 'a', name: 'Brutăria Lina SRL', idno: '1003600005148' }),
+        entity({ id: 'b', name: 'Moara Veche', idno: '1017600033216' }),
+      ],
+      activity: new Map(),
+      periods: new Map(),
+    });
+    const byName = applyEntityView({ rows, view: { ...DEFAULT_ENTITY_VIEW, q: 'lina' } });
+    expect(byName.rows.map((row) => row.id)).toEqual(['a']);
+    expect(byName.matched).toBe(1);
+    expect(byName.total).toBe(2);
+    expect(applyEntityView({ rows, view: { ...DEFAULT_ENTITY_VIEW, q: '101760' } }).rows.map((row) => row.id)).toEqual(['b']);
   });
 });

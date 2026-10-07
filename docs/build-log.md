@@ -27208,3 +27208,233 @@ end and cost more to unpick here than the skipped run would have. None did. Ever
 reviews, not by a gate a task close skipped. The cost this Stage *did* show is different: one cold run was stopped
 part-way, because review findings were certain to change the code under it. Running the reviews before `gates:clean`
 — or beside it, with fixes after — is the order that pays once.
+
+## Task 183 — Malformed authoring writes, refused · 2026-10-06
+
+Three authoring requests had no defined refusal. All three were decided in §12.5.6's task-182 authoring row, item (6),
+so the task raised no questions.
+- **A *not available* answer with no reason, a blank reason, or a reason on any other state** reached the store's
+  `report_disclosure_value_reason_matches_state` CHECK and came back as a **500**. It now gets 400
+  `validation-failed`, with `core.report.not_available_reason_required` or `…_unexpected`.
+- **A unit outside the element's admitted list** was checked by nothing, though the model's comment and the value
+  table's migration both said it was. It now gets 400 `validation-failed` (`core.report.unit_not_admitted`).
+- **A step read for a module the pinned taxonomy lacks** answered 200 with no fields, which a client cannot tell from
+  a module whose every field is inapplicable. It now gets 404 `not-found` (`core.report.module_not_found`).
+
+FR-24, FR-29 and FR-32 name each refusal and its key, and list 183 as delivered. FR-24 still waits on 94, FR-29 on
+39.2, and FR-32 on 41.
+
+**Two readings, recorded beside decision (6) rather than taken in passing.**
+- The registry port defines an empty `unitCodes` as *"the standard states none, never that the element takes no
+  unit"*. So an empty list admits any unit, and only a stated list binds — 25 elements state one. A value with no unit
+  is refused on no element, because a missing unit is validation's gap to name (FR-40), not a malformed write.
+- "Blank" means a reason `trim()` leaves empty — the name-part rule's reading (182/6). The CHECK only tests
+  `IS NOT NULL`, so a reason of spaces had been passing both the DTO and the database. The reason is judged, not
+  rewritten.
+
+**Where the checks sit.** Both are pure functions in `models/`, each with a spec: `notAvailableReasonVerdict`, a
+three-value vocabulary because the two refusals have different remedies, and `unitIsAdmitted`. They run in
+`WriteDisclosureValues` after the element, dimension and derived checks and before any write, so a batch stays
+all-or-nothing about what it refuses. The module check is the first thing `step()` does after resolving the pin, so
+an address that names nothing reads nothing else. That also covers the support-access read, which goes through the
+same `step()`. The repository's `translate` still lets a raw CHECK violation through. That is now unreachable from the
+route, and turning a database refusal into a domain one would put a second copy of the rule beneath the first.
+
+**Proven to bite.** With the four checks disabled, all six new cases in `wizard.e2e-spec.ts`'s *malformed authoring
+writes* fail: three for the reason's absence, one for a stray reason, one for the unit and one for the module. Each
+refusal case reads the step back to show nothing was written.
+
+**Rules considered and declined** (`nestjs-best-practices`): `security-validate-all-input` would put the pairing and
+the unit in the DTO. Both need the element's taxonomy or NFR-79's wording, which is why the element, dimension and
+derived refusals already live in the use case. `error-throw-http-exceptions` is declined by the architecture, as
+always.
+
+**Gates, by the close table.** `packages/i18n`'s catalogue changed, so its dependents' rows ran. The api's own row
+ran in full. All passed:
+- unit suites for the api (1,620), i18n (130), web (1,334) and admin (296)
+- typecheck in all five workspaces
+- `pnpm lint`
+- `pnpm e2e`: 1,563, with a clean boot log
+- `pnpm openapi:check`, after regenerating the contract: two route descriptions changed
+- `pnpm docs:check`
+
+**Skipped:** `e2e:web` and `routes:check`. The new keys are the api's problem wording, which neither front end
+renders as markup of its own, and no web or admin file changed. No migration (so no `migrations:check`) and no
+consumer (so no `e2e:worker`).
+
+**That skip was wrong, and task 203's browser run found it the same day.** "No web file changed" was true. But the
+step read's answer did change: an unknown module had been answered 200 with no fields, which S-07 turned into its 404
+screen. After this task it was answered 404, which the web's `readWizardStep` folded into *unreachable*. So
+`wizard.spec.ts`'s *answers a module the pinned taxonomy does not carry with a 404* got a 200 unreachable state. The
+fix is task 203's: `WIZARD_READ.MODULE_NOT_FOUND`, a read that answers that case so the section calls `notFound()`
+again. **The lesson is about the close table's reading.** An api route's *answer* changing is a change that reaches
+every front end reading that route, whether or not a front-end file changed. Here the row's own refusal — 404 where 200
+was — was exactly such a change. A refusal on a route a screen reads during render is a web change.
+
+## Task 203 — The built screens take §4.7's navigation elements · 2026-10-06
+
+Five sub-steps, all built in one pass and closed together. The browser suite ran once, over the result.
+
+**The decisions, the owner's, in three rounds.** The first round asked four questions. Two were settled there:
+- **203.3 reaches both apps**: `apps/web` lacked a skip link too.
+- **S-16's search joins 203.2**: §4.7 gives S-16 one and the row had omitted it.
+
+The other two were 203.5's findings, and the owner asked to see the screens first. Screenshots of S-07, S-04, S-02,
+S-36's link-path step and A-19 were captured from the built apps, by a temporary spec deleted afterwards. S-35 was
+described from its code, because a healthy session never reaches it. One question per screen followed, in two
+rounds.
+- **Rows amended to the code**: S-07's Exit → S-06; S-04 without a Cancel; S-02's *Back to sign-in*; S-36 with no exit
+  on the link-path step; S-35 without an on-page sign-out. S-35's block and S-07's Exits line were amended too.
+- **Built**: A-19's back-to-origin.
+- **A factual correction**: S-16's paging is the api's, not *"over the loaded list"*.
+
+**203.1 — page size.** `PAGE_SIZES`, `DEFAULT_PAGE_SIZE` and `readPageSize` moved from `apps/admin/src/lib/` to
+`packages/ui`, beside `Pagination`, in a directive-free module, on the day the second application needed them
+(UX-89). The web `IndexView` now requires `onPageSizeChange`, as the console's does, so the compiler named the four
+lists that owed one. Each view carries `pageSize` as `?onpage=`, absent at the default.
+- S-06, S-13 and S-14 page in the browser.
+- S-16 and S-26 pass the size to the api.
+- S-26 was a fixed 20 and is 25 by default now. Its pager draws for one page too, since the size is a choice.
+
+**203.2 — search.**
+- **S-06 and S-13 match in the browser**, over rows they already hold, through `lib/search-match.ts`: anywhere in a
+  field, ignoring case. That is what S-16's `ILIKE` does on the api, so a term finds the same rows on all three.
+- **S-16 searches on the api** with `GET /access?search=`. It is its own parameter, not a facet, for A-02's reason: a
+  name may hold the grammar's separators.
+- **Two shared pieces left the repositories that held them.** The term's narrowing became
+  `contracts/types/search-term.ts`, and the `LIKE` escape became `persistence/like-pattern.ts`. Each had been private
+  to A-02's code and gained a second reader here.
+- **The administrator count beside S-16's list is never narrowed by the search** (FR-60 needs the whole set). The web
+  api client joins a path's own query to the list grammar, where it used to write a second `?`.
+- **The field is `shared/list-search.tsx`**, submitted rather than applied per keystroke (A-02's reasoning). It is a
+  React form action, because the repository refuses a form a pre-hydration submit could send as a GET.
+
+**203.3 — skip link.**
+- **`SkipLink` and `MAIN_CONTENT_ID` live in `packages/ui`.** The link renders first in the web's `[locale]` layout and
+  in the console's root route.
+- **Every `<main>` carries the id and `tabIndex={-1}`**: the two web layouts, `FocusColumn`, `WizardShell`, the console
+  chrome and its two fallbacks. The `tabIndex` is what moves focus rather than only scrolling.
+- **The focus ring.** The global ring is a box-shadow, so the link's focused state restates it beside its elevation.
+  `#main-content` suppresses the ring on the page itself.
+
+**203.4 — A-10.** The scaffold's sibling route `billing/reconciliation/$exceptionId`, which would have replaced the
+queue rather than opened over it, is gone. The queue route reads `?exception=` as A-02 reads `?selected=`. The
+reader is one line in the route because the feature is still an unbuilt barrel; a `tools/` beside it would mix files
+and folders.
+
+**203.5 — A-19 back-to-origin.** The account menu's link carries `?from=` (the current address, or, on A-19 itself,
+the origin it already holds). A-19 draws `PageHeading`'s arrow to it, or to the operator's home when there is none,
+as S-14 draws its origin. `safeRealmPath`, the console's open-redirect check, moved to `realm/tools/` with a spec,
+since its docblock had kept it inline only while both consumers were in one file.
+
+**A slip, recorded.** A throwaway script opened the three web catalogues for writing as a "placeholder" and emptied
+them. They were restored from git at once; only this task's uncommitted page-size label had to be re-added. After
+that, every catalogue edit was a JSON round-trip, checked first to reproduce the file byte for byte.
+
+**A regression from task 183, found here.** The full browser run failed `wizard.spec.ts`'s unknown-module journey:
+task 183 made the api answer 404, and the web's step read folded it into *unreachable*. `WIZARD_READ.MODULE_NOT_FOUND`
+is the read's answer for that case — report and modules read, step 404 — and the section calls `notFound()` for it as
+before. Task 183's entry records why its close missed it.
+
+**Gates.** All of these passed:
+- unit suites: web 1,344+, admin 296, ui 441, and the api's
+- typecheck in every workspace
+- `pnpm lint` (three findings fixed on the way: a path compared as a literal, now `useMatchRoute`; an unused import;
+  and a `<form>` without a React action)
+- `pnpm openapi:check`, after regenerating for `GET /access?search=`
+- `pnpm routes:check`, after regenerating for the removed A-10 route
+- `pnpm docs:check`, with `apps/web`'s client count at 167 and `packages/ui`'s counts moved
+- `pnpm e2e`: 1,564
+- `pnpm e2e:web`, all three projects: **296 of 296** on the second run
+
+The first browser run failed three:
+- the wizard regression above;
+- S-06's new journey, which expected `?q=…&onpage=…` where the view writes `onpage` first;
+- the console's skip-link journey, which pressed Tab before the SPA had mounted A-01.
+
+Mutations proven to bite: S-16's search fails without the `LIKE` escape; S-27's and S-36's inline rules carried
+over from earlier.
+
+**Rules considered and declined.**
+- `vercel-react-best-practices` `rerender-memo`: `IndexView` and the centre's pager memoise the `sizes` object, as the
+  console's binding does. `ListSearch` passes no object to a memoised child.
+- `nestjs-best-practices` `security-validate-all-input`: `search` is narrowed in the domain, not by a DTO, for
+  A-02's recorded reason.
+
+## Task 37 — Factor sets as configuration closes: the replacement notice and validation at publication (37.3, 37.4) · 2026-10-06
+
+**What closed.** 37.3, FR-166's factor half: a factor set replaced in its window tells each organization whose open
+report's latest run used it, once, that the figure must be recalculated. 37.4: a factor set no run could read is
+refused at publication. Their decisions are `architecture.md` §12.5.6's task-37.3/37.4 row, taken in one batch of four
+questions, each answered with the recommended option:
+- the worker reads who used a revision through a policy of its own;
+- *affected* means an open report's latest run;
+- a revert replaces too, and the set restored withdraws its own notices;
+- publication refuses a set with even one malformed source.
+
+**Three things the batch did not see, found by building.**
+- **No route publishes a factor set until A-05 (67.8).** The seed loader is the one path, and it builds the publisher
+  with no container. So the rules sit in a table the publisher imports (`configuration-kind-rules.ts`) rather than in
+  providers a module registers, and the replacement is an outbox event the publisher writes on its own transaction.
+  The 400 `validation-failed` the decision named is therefore the publishing route's mapping, as A-18's store maps a
+  revision mismatch. The publisher throws `ConfigurationPayloadRefusedError`, and task 67.8's row now carries the
+  mapping. FR-71's AC-7 says which half is met.
+- **The worker had never raised.** `raise()` refuses without a request transaction, and task 51.2 was to decide where
+  a worker's notice commits. `TENANT_WORK` (`contracts/tenant-work.port.ts`) is that decision, made here: a transaction
+  as `esg_worker`, bound to one organization, held in a request context, so the notification port and the tenant
+  repositories run unchanged inside it. 51.2's row says so. `esg_worker` also lacked `SELECT` on `identity.membership`,
+  which the audience needs; the migration grants it beside the policy.
+- **S-26's category filter was owed.** Task 50.2's row (7) made the second category to travel in-app bring it, and
+  `reporting.report_update` is that category. Its choices come from the reader's preferences, so a category 51.2
+  registers is offered with no change, and it appears only once two categories travel in-app. A category with nothing
+  in the view has its own *empty — filtered* state, which clears the category. `design_spec.md` S-26 and its §4.7 row
+  are amended.
+
+**The seed runner's alias, a lint rule's blind spot.** The first e2e run failed in `pretest:e2e`: `config:seed` runs
+`src/` under ts-node with no path registration, and the publisher now reaches the calculator through `@api/*`. The lint
+block that bans the alias for those files listed only the seed's entry files, never what they import, so lint passed.
+A relative path cannot reach the calculator within one level, so `config:seed` now registers `tsconfig-paths`, as
+`@nestjs/cli` does for `start:dev`. It is dev and CI only: §12.1 gains a row, and the `tsc-alias` row's reason for
+keeping a run-time resolver out of the image is untouched. The seed files left the lint block, which now names only the
+TypeORM CLI's files, and the block's docblock records why.
+
+**The first full `pnpm e2e` failed 11 tests in three suites, and none was a defect in the change.**
+- **`outbox.e2e-spec.ts` named five `calculator.factor_set_replaced` rows as strays.** The calculator's suite and the
+  factor-sets suite publish and revert, so each now announces replacements that no worker drains in an api run.
+  Each of the three publishing suites now removes its own rows in `afterAll`, through
+  `deleteFactorSetReplacements` (`test/support/database.ts`), scoped by the slot and the suite's start on the
+  database's clock. That follows `deleteHintsOf`'s shape, never a sweep, for the reason the outbox suite gives. The
+  five rows that run had already left were removed by hand on the test stack.
+- **S-27's read and A-17's list pin the categories' wire values**, and both gained `reporting.report_update`, as they
+  should.
+
+**The notice's wording.** One report or several, selected on `reach` (`REPORT_UPDATE_REACH`), never a count: a count
+fixed when the notice opens goes stale as reports are recalculated. The row was amended to say so before the wording
+was written. With one report it names the entity and year and links to the report's calculator (S-09); with several it
+links to S-06. Authored in all three locales; `report-update.wording.spec.ts` pins the in-app arms and the renderer
+spec the email's.
+
+**Searched for the rule's shape.** Every `publish(` caller: the seed loader, A-17's and A-18's stores, and tests. Only
+`emission_factor_set` takes a rule. Every `NOTIFICATION_CATEGORY` `Record` the compiler raised: the specimen, the
+console's label and the contracts mirror. Two literal lists failed as intended and were extended: S-27's
+offered-preferences spec and the renderer's link spec. The `@api/*` alias in the seed's graph was
+searched by running the seed, since the lint block could not see it.
+
+**Gates.**
+- api: unit 1,652; `pnpm e2e` 1,568 of 1,568 on the second run (the first is above); `pnpm e2e:worker` 9 of 9, for the
+  new consumer; `pnpm migrations:check`, for the new migration; `pnpm openapi:check`, with the regenerated contract staged.
+- `pnpm e2e:web`, all three projects: 296 of 297 on the full run. The one failure was S-26's older journey: its
+  `getByRole('link', { name: 'Toate' })` matched the new *Toate categoriile* by substring. The locator is now exact; the
+  two links belong to different labelled groups and both should exist. The 16 S-26 journeys then passed, identity
+  and expansion.
+- web 1,349 and admin 296 unit tests; i18n and contracts tests.
+- typecheck in api, web and admin; `pnpm lint`; `pnpm eslint:prove`; `pnpm boundaries`; `pnpm routes:check`;
+  `pnpm docs:check` (48 claims).
+- The contract regenerated for the category enum.
+
+**Mutations proven to bite**, each restored:
+- the report-status filter dropped: a locked report's organization is told, and 1 test fails;
+- a viewer counted as an editor: 1 fails;
+- the payload refusal skipped: 3 fail;
+- `calc_run_worker_directory_select` dropped from the test stack: 2 fail — the policy's three states and the notice
+  itself.

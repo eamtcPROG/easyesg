@@ -2,6 +2,7 @@
 
 import { AccessConfirmation } from '../regions/access-confirmation';
 import { AccessFilters } from '../regions/access-filters';
+import { AccessSearch } from '../regions/access-search';
 import { AccessList } from '../list/access-list';
 import { AccessNotice } from '../regions/access-notice';
 import { InviteButton } from '../regions/invite-button';
@@ -34,6 +35,7 @@ export function AccessBoard() {
   return (
     <div className={styles.board} aria-busy={navigating}>
       <AccessNotice />
+      <AccessSearch />
       <div className={styles.toolbar}>
         <AccessFilters />
         <div className={styles.toolbarActions}>

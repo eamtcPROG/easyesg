@@ -21,7 +21,8 @@ browser (`pnpm e2e:web`).
 **Live screens** (tasks 20 … 36; 97 … 131 for the chrome and the refactors): S-01 register and sign-in with its factor
 step and provider buttons, S-02 verify, reset and set-password, S-03 the invitation landing, S-04 create organization,
 S-05 home, S-06 reports, S-07 the wizard shell with autosave and the B1–B11 disclosure forms, S-13 entities, S-14
-periods, S-15 organization profile, S-16 users with, since task 50.3, its reminder panel, S-26 notification centre,
+periods, S-15 organization profile, S-16 users with, since task 50.3, its reminder panel, S-26 notification centre
+with, since task 37.3, its category filter,
 S-27 profile, languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
 layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
 complete your account, S-37 choose organization, S-38 unsubscribe from an email; §4.2's global tier with, since task
@@ -995,7 +996,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **165 files here are Client Components** (6 Oct 2026: three more since task 190 — S-28's arrival notice, the re-authentication dialogue's recovered stage, and S-05's *not now* on the second-factor prompt. 30 Sep 2026: three more since task 179.1 drew S-07 as its artboards — the module list below `wide`, the bar's action drawn ahead of its screen, and the bar's ⋯ at `compact`; the exit and the save state moved into the bar and are counted once; one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to
+  **167 files here are Client Components** (6 Oct 2026: two more since task 203.2 — `shared/list-search.tsx`, the search S-06, S-13 and S-16 share, and S-16's search region; three more since task 190 — S-28's arrival notice, the re-authentication dialogue's recovered stage, and S-05's *not now* on the second-factor prompt. 30 Sep 2026: three more since task 179.1 drew S-07 as its artboards — the module list below `wide`, the bar's action drawn ahead of its screen, and the bar's ⋯ at `compact`; the exit and the save state moved into the bar and are counted once; one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to
   S-13 and added the report-contact section beside it; one fewer since task 175 moved S-15's identifiers section to
   S-13's identity section; two since S-13's card — the guarded link its ways back share,
 and the side column's archive panel; 28 Sep 2026: five since S-13's review — the index's filter row and the

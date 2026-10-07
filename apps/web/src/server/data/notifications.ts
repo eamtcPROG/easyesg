@@ -1,9 +1,9 @@
 import 'server-only';
-import type { NotificationItem, UnreadCount } from '@easyesg/contracts';
+import type { NotificationItem, NotificationPreferences, UnreadCount } from '@easyesg/contracts';
 import type { IndexPage } from '@easyesg/ui';
 import { API_OUTCOME } from '@/lib/api-outcome';
+import { centreCategories, type CentreCategory } from '@/features/notifications/centre/tools/centre-categories';
 import {
-  CENTRE_PAGE_SIZE,
   centreListQuery,
   type CentreView,
 } from '@/features/notifications/centre/tools/centre-view';
@@ -22,6 +22,11 @@ import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tena
  *
  * **`total` is the centre before the tab and `matched` after it** — the Index archetype's two counts, which is what
  * tells *nothing has arrived yet* from *nothing unread* (§4.6).
+ *
+ * **And since task 37.3 the person's preferences, for the category filter's choices** — a third call in the same
+ * parallel batch, since none feeds another. **Its failure is not the centre's**: the list and the count are what S-26
+ * is, and the filter is a way through them, so a preferences read that failed draws the centre without the filter
+ * rather than draw no centre at all.
  */
 export { TENANT_READ as CENTRE_READ } from './tenant-read';
 
@@ -30,13 +35,16 @@ export type CentreRead =
       readonly status: typeof TENANT_READ.READY;
       readonly page: IndexPage<NotificationItem>;
       readonly unread: number;
+      /** The category filter's choices, empty where there is nothing to choose between or the read failed. */
+      readonly categories: readonly CentreCategory[];
     }
   | TenantReadRefusal;
 
 export const readNotificationCentre = async (view: CentreView): Promise<CentreRead> => {
-  const [listed, counted] = await Promise.all([
+  const [listed, counted, preferences] = await Promise.all([
     api.getList<NotificationItem>('/notifications', centreListQuery(view)),
     api.get<UnreadCount>('/notifications/unread-count'),
+    api.get<NotificationPreferences>('/account/notification-preferences'),
   ]);
 
   // An account acting for no organization is refused both; the screen answers that as it answers any tenant screen.
@@ -53,8 +61,10 @@ export const readNotificationCentre = async (view: CentreView): Promise<CentreRe
       // The route filters, so the API answers `unfiltered`; `total` stands in only if a future answer omits it.
       total: listed.value.unfiltered ?? listed.value.total,
       page: view.page,
-      pageSize: CENTRE_PAGE_SIZE,
+      pageSize: view.pageSize,
     },
     unread: counted.value.unread,
+    categories:
+      preferences.status === API_OUTCOME.Ok && preferences.value !== null ? centreCategories(preferences.value) : [],
   };
 };

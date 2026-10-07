@@ -14,3 +14,9 @@
  * refused write rather than a convention (§7.9, §12.3).
  */
 export const EMISSION_FACTOR_SET_CONFIG_KIND = 'emission_factor_set';
+
+/**
+ * The outbox event a publication writes when the factor set in force for a window changes (task 37.3) — the job
+ * `FactorSetReplacedHandler` claims on the worker, and the start of FR-166's factor half.
+ */
+export const FACTOR_SET_REPLACED = 'calculator.factor_set_replaced';

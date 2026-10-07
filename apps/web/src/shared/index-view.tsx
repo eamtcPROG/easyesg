@@ -1,6 +1,6 @@
 'use client';
 
-import { IndexShell, type IndexShellProps } from '@easyesg/ui';
+import { IndexShell, PAGE_SIZES, type IndexShellProps } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
@@ -19,10 +19,17 @@ import { useMemo } from 'react';
  * `packages/ui` cannot do this itself — it holds no text, by the standing rule that keeps a
  * re-skin to tier 1 and keeps the package loadable by the PDF worker. So the binding lives here,
  * in `shared/`, which is where chrome owned by no single feature goes.
+ *
+ * **Every list offers a page size since task 203.1** (UX-141: *"25, 50 or 100 rows with 25 the default, every part of
+ * it in the URL"*). A screen passes where the choice goes, and this binding adds the sizes and their label — the
+ * console's `IndexView` shape — so the offer cannot differ from one list to the next, and a list cannot ship without it.
  */
-export function IndexView<TRow, TColumnKey extends string>(
-  props: Omit<IndexShellProps<TRow, TColumnKey>, 'labels'>,
-) {
+export function IndexView<TRow, TColumnKey extends string>({
+  onPageSizeChange,
+  ...props
+}: Omit<IndexShellProps<TRow, TColumnKey>, 'labels' | 'sizes'> & {
+  readonly onPageSizeChange: (pageSize: number) => void;
+}) {
   const t = useTranslations('chrome.index');
 
   // Memoised because it is a fresh object every render otherwise, and it reaches `DataTable` and
@@ -47,5 +54,10 @@ export function IndexView<TRow, TColumnKey extends string>(
     [t],
   );
 
-  return <IndexShell {...props} labels={labels} />;
+  const sizes = useMemo(
+    () => ({ options: PAGE_SIZES, onChange: onPageSizeChange, label: t('pagination.pageSize') }),
+    [onPageSizeChange, t],
+  );
+
+  return <IndexShell {...props} sizes={sizes} labels={labels} />;
 }

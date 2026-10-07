@@ -391,7 +391,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 
 ### FR-71 — Emission and conversion factor sets as data
 
-**Status.** Partial — delivered 16, 37.1, 37.2 · remaining 37.4 (validation at publication), 201 (the version-pinned regression suite), 67.8 (A-05's editor)
+**Status.** Partial — delivered 16, 37.1, 37.2, 37.3, 37.4 · remaining 201 (the version-pinned regression suite), 67.8 (A-05's editor, and its 400)
 
 **Obligation.** The system shall maintain versioned, effective-dated emission and conversion factor sets as data, one artefact per country, so that a set serves the periods that start within its window and no two sets are in force for one period.
 
@@ -410,29 +410,30 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 4. Each configuration version records the window it was published for. **Revert moves that one slot**, so reverting a 2026 correction cannot put 2026's factors in force for 2027. A superseded version of a multi-window scope with no recorded window cannot be reverted to (task-37 row (4); task 37.2).
 5. A correction supersedes the set for later runs. A run already made keeps the pin it was made under (FR-35; UC-80).
 6. A set that cannot be read whole answers no set, and a calculation is refused with that said, rather than run against a half-read payload (`FactorSetCatalog`; task 37.2).
-7. A factor update that obliges review of an existing report raises a notice (UC-80; UC-171; FR-166; task 37.3).
-8. A factor-set payload is validated at publication against the schema the reader parses with, and a payload that fails is refused and nothing is published, as A-18 refuses an incomplete provider. Without this a set could publish and then not be read, and every run for its window would be refused until someone reverted (182/50).
+7. A factor update that obliges review of an existing report raises a notice (UC-80; UC-171; FR-166; task 37.3). **A set is replaced when the revision in force for its window changes**, by a publication over it or a revert, and the publisher announces it on the change's own transaction (§12.5.6 task-37.3/37.4 row (2)).
+8. A factor-set payload is validated at publication against the schema the reader parses with, and a payload that fails is refused and nothing is published, as A-18 refuses an incomplete provider. Without this a set could publish and then not be read, and every run for its window would be refused until someone reverted (182/50). **A source the reader would drop refuses the set too** (owner, 6 Oct 2026), and the rule binds the seed loader as well as the console (§12.5.6 task-37.3/37.4 row (1); task 37.4).
 
-**Refusals.** A factor-set payload that does not parse with the reader's schema → 400 `validation-failed`.
+**Refusals.** A factor-set payload that does not parse with the reader's schema, or would parse with a source dropped → refused at the publisher (`ConfigurationPayloadRefusedError`), which A-05's route answers as 400 `validation-failed` (task 67.8).
 
 **Effects.** A factor-set update is a platform event for the system audit log (FR-81).
 
 **Configuration-held values.** `emission-factor-set.md.json`, country `md`, label `2026.1`, serving periods starting before 1 Jan 2027 so that a 2027 set can be an adjacent window (task-37 row (6)). Ten fuels at IPCC 2006 Tier-1 defaults with AR6 GWPs, natural gas at Moldovatransgaz's 8 235 kcal/m³, litres at CDP's densities, and grid electricity at 0.594645 tCO₂e/MWh, the European Commission JRC's Covenant of Mayors 2024 figure for Moldova (2020), reviewed source by source by the owner on 1 Oct 2026 (task-37 row (5)). These are the values the sources record. The testable obligation is that a run reads the set from configuration and applies it.
 
-**Boundaries.** Pinning and resolution are FR-35's. Computation is FR-34's. The notice is FR-166's (37.3 closes after task 38). 201 builds the version-pinned regression suite NFR-87 requires on every factor change (§12.5.6 task-182 tracking row, 182/160).
+**Boundaries.** Pinning and resolution are FR-35's. Computation is FR-34's. The notice is FR-166's (task 37.3). 201 builds the version-pinned regression suite NFR-87 requires on every factor change (§12.5.6 task-182 tracking row, 182/160).
 
 **Acceptance criteria.**
 - **AC-1** Given two sets whose windows overlap for one country, then the second is refused as a write by the store. *(source: §12.5.6 task-37 row (1); task 37.1 Expected result)*
 - **AC-2** Given a published set, then it cannot be edited. A correction is a successor revision. *(source: AD-4; task-37 row (3))*
 - **AC-3** Given a correction published for the 2026 window, when it is reverted, then the 2026 slot returns to the earlier revision and no other window of the scope moves. *(source: §12.5.6 task-37 row (4); task 37.2 Expected result)*
 - **AC-4** Given a new set with a version and an effective date, then the calculator applies the set in force on the period's start with no deployment. *(source: FR text; task 37.2 Expected result)* Publication by PA through the console is unmet until 67.8.
-- **AC-5** Given a factor update that supersedes a set a stored calculation used, then each affected organization receives a notice that the figure must be recalculated, and an organization no run of which used the set receives none. *(source: UC-80; UC-171; task 37.3 Expected result)* Unmet until 37.3.
+- **AC-5** Given a factor update that supersedes a set a stored calculation used, then each affected organization receives a notice that the figure must be recalculated, and an organization no run of which used the set receives none. *(source: UC-80; UC-171; task 37.3 Expected result)*
 - **AC-6** Given a set that cannot be read whole, when a run is requested, then it is refused and no figure is filed. *(source: `FactorSetCatalog`; FR-34)*
-- **AC-7** Given a factor-set payload the reader could not parse, when it is published, then it is refused with 400 and the set in force is unchanged. *(source: §12.5.6 task-182 content row, 182/50)* Unmet until 37.4.
+- **AC-7** Given a factor-set payload the reader could not parse, when it is published, then it is refused with 400 and the set in force is unchanged. *(source: §12.5.6 task-182 content row, 182/50)* The refusal and the unchanged set are met (task 37.4); the 400 is A-05's route's, unmet until 67.8.
 
 **History.**
 - 1 Oct 2026 · project owner · one effective-dated artefact per country, chosen by the period's start; the revert stays in its window; the starting values reviewed source by source · §12.5.6 task-37 row; §9.9 amended
 - 5 Oct 2026 · project owner · a factor-set payload is validated before it is published and refused with 400 · §12.5.6 task-182 content row (182/50)
+- 6 Oct 2026 · project owner · a dropped source refuses the set too; the rule binds the seed loader; the 400 is the publishing route's mapping · §12.5.6 task-37.3/37.4 row (1) (task 37.4)
 
 ### FR-72 — Applicability thresholds as configuration
 

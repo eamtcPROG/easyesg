@@ -3,9 +3,14 @@ import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxo
 import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/report.errors';
 import {
   DerivedDisclosureNotWritableError,
+  NotAvailableReasonRequiredError,
+  NotAvailableReasonUnexpectedError,
+  UnitNotAdmittedError,
   UnknownDisclosureDimensionError,
   UnknownDisclosureElementError,
 } from '../errors/report.errors';
+import { unitIsAdmitted } from '../models/admitted-unit';
+import { NOT_AVAILABLE_REASON, notAvailableReasonVerdict } from '../models/not-available-reason';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
 import { admitsMember } from '../models/axis-leaves';
@@ -113,6 +118,17 @@ export class WriteDisclosureValues {
     const derived = this.derivations.all({ standard: TAXONOMY_STANDARD.VSME });
     if (command.values.some((value) => derived.has(value.elementKey))) {
       throw new DerivedDisclosureNotWritableError();
+    }
+
+    // **And the shape of each value, since task 183** (§12.5.6's task-182 authoring row (6)) — before any write, for the
+    // batch's reason above. The reason and its state were left to the store's CHECK, which answered a mismatch with a
+    // 500; a unit was checked by nothing, though two comments said it was.
+    for (const value of command.values) {
+      const verdict = notAvailableReasonVerdict(value.contents);
+      if (verdict === NOT_AVAILABLE_REASON.MISSING) throw new NotAvailableReasonRequiredError();
+      if (verdict === NOT_AVAILABLE_REASON.UNEXPECTED) throw new NotAvailableReasonUnexpectedError();
+      const admitted = known.get(value.elementKey)?.unitCodes ?? [];
+      if (!unitIsAdmitted({ unitCode: value.contents.unitCode, admitted })) throw new UnitNotAdmittedError();
     }
 
     const written: DisclosureValue[] = [];

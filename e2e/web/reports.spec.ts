@@ -246,3 +246,34 @@ test('a view-only member is taught what a report is, and offered no button (FR-2
   await expect(page.getByText('Niciun raport deocamdată')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Creați primul raport' })).toHaveCount(0);
 });
+
+/**
+ * Task 203 (`design_spec.md` §4.7, UX-141): S-06 searches its entity names and fiscal years, and offers 25 / 50 / 100
+ * rows — both submitted into the address, so a reload and a shared link show the same list.
+ */
+test('searches the reports and offers a page size, both kept in the address (UX-141)', async ({ page }) => {
+  const organizationId = await signedIn(page, 'search');
+  await seedReport({ organizationId, name: `${RUN_PREFIX}-Brutăria` });
+  await seedReport({ organizationId, name: `${RUN_PREFIX}-Moara` });
+  await page.goto('/reports');
+  const rowOf = (name: string) => page.getByRole('row').filter({ hasText: `${RUN_PREFIX}-${name}` });
+  await expect(rowOf('Brutăria')).toHaveCount(1);
+
+  await page.getByRole('searchbox', { name: 'Căutați după entitate sau an fiscal' }).fill('moara');
+  await page.getByRole('button', { name: 'Căutați', exact: true }).click();
+  await page.waitForURL('**/reports?q=moara');
+  await expect(rowOf('Moara')).toHaveCount(1);
+  await expect(rowOf('Brutăria')).toHaveCount(0);
+
+  await page.getByRole('combobox', { name: 'Rânduri pe pagină' }).click();
+  await page.getByRole('option', { name: '50', exact: true }).click();
+  // The view writes its size before its term, so the address reads `?onpage=50&q=moara`.
+  await page.waitForURL('**/reports?onpage=50&q=moara');
+  await page.reload();
+  await expect(page.getByRole('combobox', { name: 'Rânduri pe pagină' })).toHaveText('50');
+  await expect(rowOf('Moara')).toHaveCount(1);
+
+  await page.getByRole('button', { name: 'Ștergeți căutarea', exact: true }).click();
+  await page.waitForURL('**/reports?onpage=50');
+  await expect(rowOf('Brutăria')).toHaveCount(1);
+});

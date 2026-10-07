@@ -125,8 +125,9 @@ src/
 │               bound once; row-actions.tsx, a row's labelled button and ⋯ menu; filter-bar.tsx, the
 │               symmetric filter row (task 170). A LEAF
 ├─ i18n/        use-intl wiring, the console locale, formats, the expansion harness, global.d.ts
-├─ lib/         env (build-time only) and vite-env.d.ts beside it, pagination — the three page sizes a
-│               paged list offers and how an address's `onpage` is read (task 170)
+├─ lib/         env (build-time only) and vite-env.d.ts beside it. The three page sizes a paged list
+│               offers, and how an address's `onpage` is read (task 170), moved to `@easyesg/ui` in
+│               task 203.1, when the tenant lists took the same choice
 ├─ messages/    ro.json — one catalogue, by decision
 └─ test/        the setup file, and folder-shape.spec.ts — the folder invariant's failing state
 ```

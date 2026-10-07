@@ -1,10 +1,10 @@
+import { DEFAULT_PAGE_SIZE } from '@easyesg/ui';
 import { describe, expect, it } from 'vitest';
 import { REPORT_STATUS, type Report } from '@easyesg/contracts';
 import {
   DEFAULT_REPORT_VIEW,
   REPORT_FILTER_ANY,
   REPORT_STATUS_FILTERS,
-  REPORT_PAGE_SIZE,
   REPORT_SORT,
   REPORT_SORT_DIRECTION,
   applyReportView,
@@ -181,13 +181,34 @@ describe('filtering and sorting', () => {
     expect(page.rows).toHaveLength(3);
   });
 
-  it('pages at the declared size', () => {
-    const many = Array.from({ length: REPORT_PAGE_SIZE + 4 }, (_, index) =>
-      row({ id: `r${index}`, updatedAt: index }),
-    );
+  it('pages at the view’s size — 25 by default, and the size the reader chose (UX-141, task 203.1)', () => {
+    const many = Array.from({ length: 50 + 4 }, (_, index) => row({ id: `r${index}`, updatedAt: index }));
     const first = applyReportView({ rows: many, view: DEFAULT_REPORT_VIEW });
-    expect(first.rows).toHaveLength(REPORT_PAGE_SIZE);
-    expect(applyReportView({ rows: many, view: { ...DEFAULT_REPORT_VIEW, page: 2 } }).rows).toHaveLength(4);
+    expect(first.rows).toHaveLength(DEFAULT_PAGE_SIZE);
+    expect(first.pageSize).toBe(25);
+    const fifty = applyReportView({ rows: many, view: { ...DEFAULT_REPORT_VIEW, pageSize: 50 } });
+    expect(fifty.rows).toHaveLength(50);
+    expect(applyReportView({ rows: many, view: { ...DEFAULT_REPORT_VIEW, pageSize: 50, page: 2 } }).rows).toHaveLength(4);
+  });
+
+  // Task 203.2: §4.7's search over the entity's name and the fiscal year.
+  it('searches the entity name and the fiscal year, and counts what the search admitted', () => {
+    const rows = [row({ id: 'a', entityName: 'Brutăria Lina', fiscalYear: 2025 }), row({ id: 'b', entityName: 'Moara', fiscalYear: 2026 })];
+    expect(applyReportView({ rows, view: { ...DEFAULT_REPORT_VIEW, q: 'LINA' } }).rows.map((r) => r.id)).toEqual(['a']);
+    const byYear = applyReportView({ rows, view: { ...DEFAULT_REPORT_VIEW, q: '2026' } });
+    expect(byYear.rows.map((r) => r.id)).toEqual(['b']);
+    expect(byYear.total).toBe(2);
+    expect(reportViewQuery({ ...DEFAULT_REPORT_VIEW, q: 'Lina, Chișinău' })).toBe('q=Lina%2C+Chi%C8%99in%C4%83u');
+    expect(readReportView({ q: '  Lina  ' }).q).toBe('Lina');
+  });
+
+  it('keeps a chosen page size in the address, and writes nothing for the default', () => {
+    expect(reportViewQuery({ ...DEFAULT_REPORT_VIEW, pageSize: 100 })).toBe('onpage=100');
+    expect(reportViewQuery(DEFAULT_REPORT_VIEW)).toBe('');
+    expect(readReportView({ onpage: '50' }).pageSize).toBe(50);
+    // An unoffered or hand-edited size is dropped, not refused — the default stands.
+    expect(readReportView({ onpage: '-1' }).pageSize).toBe(25);
+    expect(readReportView({ onpage: '30' }).pageSize).toBe(25);
   });
 
   /** Two rows that compare equal must not swap between renders — the tiebreak is the id. */

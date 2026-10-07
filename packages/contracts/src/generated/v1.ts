@@ -3740,7 +3740,7 @@ export interface components {
              * @description What kind of notice this is — a key for the client to act on, never text to show.
              * @enum {string}
              */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update";
             /** @description The category’s name in the negotiated language, to show beside the notice. Absent when none is written. */
             categoryName?: string;
             /** @description The notice’s title in the negotiated language. Absent when the category has no in-app wording. */
@@ -3783,7 +3783,7 @@ export interface components {
              * @description The category — a key for the client to act on, never text to show.
              * @enum {string}
              */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update";
             /** @description The category’s name in the negotiated language. Absent when none is written. */
             categoryName?: string;
             /** @description Whether the category may not be switched off — security, account, invoice delivery, payment failure and service restriction notices. A mandatory category is listed on every channel it travels on, switched on. */
@@ -3800,7 +3800,7 @@ export interface components {
              * @description The category — a key for the client to act on, never text to show.
              * @enum {string}
              */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update";
             /**
              * @description The channel it is switched off on.
              * @enum {string}
@@ -3821,7 +3821,7 @@ export interface components {
              * @description The category the link is about — a key to act on, never text to show. Absent when unusable.
              * @enum {string}
              */
-            categoryKey?: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            categoryKey?: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update";
             /** @description The category’s name in the negotiated language. Absent when unusable, or when none is written. */
             categoryName?: string;
             /**
@@ -4471,7 +4471,7 @@ export interface components {
              * @description The notification category, where the target is a category’s configuration version (task 67.10).
              * @enum {string|null}
              */
-            targetCategory: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | null;
+            targetCategory: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | null;
         };
         AdminCredentialsResponseDto: {
             /**
@@ -4651,7 +4651,7 @@ export interface components {
              * @description A key for the console to act on, never text to show.
              * @enum {string}
              */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update";
             /** @description Code declares it mandatory: its classification is fixed and it travels by email. */
             mandatory: boolean;
             /** @description A notice sent to an address with a token in its link: it never travels in-app. */
@@ -6278,6 +6278,8 @@ export interface operations {
                 page?: number;
                 /** @description One ordering: `<person|role|standing|activity>,<asc|desc>`. Defaults to `activity,desc` — an administrator opening this screen is looking at who is here now. Role and standing order by rank rather than alphabetically: widest access first, needing-attention first. */
                 order?: unknown;
+                /** @description Matched case-insensitively anywhere in the name shown for the row and in its address (task 203.2). Its own parameter rather than a filter, because a name may contain the filter grammar’s separators. Trimmed; blank means no search. */
+                search?: unknown;
                 /** @description Compact facets: `role,<role>` and `standing,<standing>`, pipe-separated. A value outside the published enum, or a field this route does not define, is ignored rather than refused. */
                 filters?: unknown;
             };
@@ -7155,7 +7157,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description No such report in the active organization. */
+            /** @description No such report in the active organization. Also a module the report's pinned taxonomy version does not carry. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7190,7 +7192,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description A field the pinned version does not name. */
+            /** @description A field the pinned version does not name; a value marked not available with no reason (or a blank one), or a reason on any other state; a unit outside the element’s admitted list, where the standard states one. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7267,7 +7269,7 @@ export interface operations {
                 page?: number;
                 /** @description One ordering, `received,<asc|desc>`. Defaults to `received,desc` — newest first. */
                 order?: unknown;
-                /** @description Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder. A value outside these, or a field this route does not define, is ignored rather than refused. */
+                /** @description Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder, reporting.report_update. A value outside these, or a field this route does not define, is ignored rather than refused. */
                 filters?: unknown;
             };
             header?: never;
@@ -9982,7 +9984,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The category. */
-                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update";
             };
             cookie?: never;
         };
@@ -10047,7 +10049,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The category. */
-                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update";
             };
             cookie?: never;
         };
@@ -10121,7 +10123,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The category. */
-                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder";
+                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update";
             };
             cookie?: never;
         };

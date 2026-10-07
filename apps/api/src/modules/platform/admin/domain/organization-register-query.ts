@@ -1,3 +1,4 @@
+import { narrowSearchTerm } from '@api/contracts/types/search-term';
 import { SORT_DIRECTION, type ListQueryInput } from '@api/contracts/types/list-query';
 import {
   ORGANIZATION_REGISTER_SORT,
@@ -39,13 +40,8 @@ export const toOrganizationRegisterQuery = (input: {
       ? { sort: ordering.field, descending: ordering.direction === SORT_DIRECTION.DESC }
       : { sort: DEFAULT_REGISTER_SORT, descending: false };
 
-  const typed =
-    typeof input.search === 'string'
-      ? input.search.trim().slice(0, REGISTER_SEARCH_MAX_LENGTH).trim()
-      : '';
-
   return {
-    search: typed === '' ? null : typed,
+    search: narrowSearchTerm({ raw: input.search, maxLength: REGISTER_SEARCH_MAX_LENGTH }),
     ...sort,
     skip: Math.max(0, input.list.skip),
     // The interceptor always supplies a page size on this route, which is not bounded; the fallback

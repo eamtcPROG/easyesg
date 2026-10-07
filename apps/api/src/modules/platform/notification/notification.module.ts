@@ -82,7 +82,8 @@ import { Unsubscribe } from './use-cases/unsubscribe.use-case';
  * credentials.
  *
  * **Raising is the HTTP side's, delivering the worker's** (task 49.3): `NOTIFICATION_PORT` writes an outbox row on
- * the producer's request transaction, and `NotificationRaisedHandler` delivers it by the category's behaviour —
+ * the producer's request transaction — or, since task 37.3, on the one `TENANT_WORK` binds for a producer on the
+ * worker — and `NotificationRaisedHandler` delivers it by the category's behaviour —
  * recording the notice and each delivery in the `notification` schema since task 50.1.1. **The recipient's centre
  * is the HTTP side's too** (task 50.1.2): `/notifications` reads that schema under the request's tenant binding and
  * writes only the recipient's own read and dismissed markers.
@@ -109,6 +110,7 @@ const unsubscribeTokens: Provider = {
  * delivers from its producer's own event, who a notice reaches, the store a notice is recorded in, the raised notice's use
  * case and handler, and since task 50.1.3 the withdrawn notice's. **All of it on the worker** — the catalogue included
  * until task 52.1, whose preferences ask it which categories a person is offered, and which provides its own below.
+ * Since task 37.3 the worker raises too, so the port is here as well as on the request tier.
  */
 const workerProviders: Provider[] = [
   unsubscribeTokens,
@@ -199,6 +201,9 @@ const workerProviders: Provider[] = [
       }),
   },
   { provide: NOTIFICATION_DELIVERY, useClass: NotificationDeliveryService },
+  // A producer on the worker raises as one on the request tier does (task 37.3): an outbox row on the transaction
+  // `TENANT_WORK` binds to its organization, which the adapter finds in the context exactly as it finds a request's.
+  { provide: NOTIFICATION_PORT, useClass: NotificationOutboxRepository },
 ];
 
 /**
@@ -310,6 +315,6 @@ const httpProviders: Provider[] = [
       ? []
       : [NotificationCentreController, NotificationPreferencesController, NotificationUnsubscribeController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
-  exports: mode === APP_MODE.WORKER ? [NOTIFICATION_DELIVERY] : [NOTIFICATION_PORT, CategoryConsoleService],
+  exports: mode === APP_MODE.WORKER ? [NOTIFICATION_DELIVERY, NOTIFICATION_PORT] : [NOTIFICATION_PORT, CategoryConsoleService],
 })
 export class NotificationModule {}

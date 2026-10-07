@@ -1,5 +1,5 @@
 import type { AdminAccount } from '@easyesg/contracts';
-import { BrandMark, ConsoleDrawer, ConsoleNav, GLOBAL_BAR_TONE, GlobalBar } from '@easyesg/ui';
+import { BrandMark, ConsoleDrawer, ConsoleNav, GLOBAL_BAR_TONE, GlobalBar, MAIN_CONTENT_ID } from '@easyesg/ui';
 import { Link, useLocation } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslations } from 'use-intl';
@@ -99,7 +99,9 @@ export function ConsoleChrome({
       />
       <div className="flex min-h-0 flex-1">
         <ConsoleNav label={t('nav')} sections={sections} isActive={isActive} linkComponent={ConsoleLink} />
-        <main className="min-w-0 flex-1 overflow-y-auto overscroll-contain">{children}</main>
+        <main id={MAIN_CONTENT_ID} tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto overscroll-contain">
+          {children}
+        </main>
       </div>
     </div>
   );

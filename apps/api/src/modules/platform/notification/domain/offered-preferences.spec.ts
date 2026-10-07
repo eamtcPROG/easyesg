@@ -29,6 +29,7 @@ describe('offeredPreferences (task 52.1)', () => {
       'identity.password_reset',
       'identity.invitation',
       'reporting.manual_reminder',
+      'reporting.report_update',
     ]);
   });
 

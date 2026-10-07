@@ -1,5 +1,10 @@
-import { SORT_DIRECTION, type SortDirection } from '@easyesg/ui';
-import { DEFAULT_PAGE_SIZE, readPageSize, type PageSize } from '~/lib/pagination';
+import {
+  DEFAULT_PAGE_SIZE,
+  SORT_DIRECTION,
+  readPageSize,
+  type PageSize,
+  type SortDirection,
+} from '@easyesg/ui';
 
 /**
  * A-02's addressable state (task 67.3; UX-4) — what the register's URL holds, what it means when a

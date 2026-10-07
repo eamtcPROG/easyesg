@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Query, Req, UseInterceptors } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { ApiListResponse, ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
@@ -76,6 +76,14 @@ export class AccessController {
       'than refused.',
   })
   @ApiQuery({
+    name: 'search',
+    required: false,
+    description:
+      'Matched case-insensitively anywhere in the name shown for the row and in its address (task 203.2). Its own ' +
+      'parameter rather than a filter, because a name may contain the filter grammar’s separators. Trimmed; blank ' +
+      'means no search.',
+  })
+  @ApiQuery({
     name: 'order',
     required: false,
     description:
@@ -106,11 +114,14 @@ export class AccessController {
       '(problem type insufficient-role).',
     content: { 'application/problem+json': {} },
   })
-  async list(@Req() request: Request): Promise<ResultListDto<AccessRowResponseDto>> {
+  async list(
+    @Req() request: Request,
+    @Query('search') search?: unknown,
+  ): Promise<ResultListDto<AccessRowResponseDto>> {
     // The interceptor always sets this on a handler it decorates; the fallback is what keeps the
     // route honest if the decorator is ever removed, rather than reading `undefined` as "no filters"
     // and silently serving an unfiltered first page.
-    const query = this.access.narrow(request.requestList ?? new RequestListDto());
+    const query = this.access.narrow({ parsed: request.requestList ?? new RequestListDto(), search });
     const page = await this.access.list(query);
 
     return new ResultListDto({

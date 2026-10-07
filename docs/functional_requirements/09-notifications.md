@@ -262,7 +262,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 ### FR-166 — The report-update notice
 
-**Status.** Not started — remaining 37.3, 67.7, 67.8
+**Status.** Partial — delivered 37.3 · remaining 67.7, 67.8
 
 **Obligation.** The system shall raise a report-update notice to affected organizations wherever a taxonomy or template version change, an applicability threshold change or an emission factor update means an existing report must be reviewed or re-exported, naming the change and what it obliges.
 
@@ -285,15 +285,16 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 **Acceptance criteria.**
 - **AC-1** Given a migration run that moves an organization's reports to another taxonomy or template version, then the organization is notified of the change and what it obliges. *(source: FR text; UC-171; task 67.7)* Unmet until 67.7.
 - **AC-2** Given an applicability threshold change is published, then each organization whose existing reports it obliges to review or re-export is notified. *(source: FR text; task 67.8)* Unmet until 67.8. A threshold change obliges the reports whose applicability outcome it changes (behaviour 5).
-- **AC-3** Given a factor set that supersedes one a stored calculation used, then one notice is raised per affected organization, naming the change and that the figure must be recalculated, and none to an organization no run of which used the set. *(source: FR text; task 37.3 expected result)* Unmet until 37.3.
-- **AC-4** Given any of the three notices, then it names the change and the obligation it creates. *(source: FR text)* Unmet until 37.3, 67.7 and 67.8.
-- **AC-5** Given an affected organization, then a member with edit access receives the notice and a view-only member does not. *(source: §12.5.6 task-182 notifications row, 182/135)* Unmet until 37.3, 67.7 and 67.8.
-- **AC-6** Given the three kinds of change, then they raise one category, which a person can switch off per channel. *(source: §12.5.6 task-182 notifications row, 182/136)* Unmet until 37.3, 67.7 and 67.8.
+- **AC-3** Given a factor set that supersedes one a stored calculation used, then one notice is raised per affected organization, naming the change and that the figure must be recalculated, and none to an organization no run of which used the set. *(source: FR text; task 37.3 expected result)*
+- **AC-4** Given any of the three notices, then it names the change and the obligation it creates. *(source: FR text)* Met for the factor half (37.3); unmet until 67.7 and 67.8.
+- **AC-5** Given an affected organization, then a member with edit access receives the notice and a view-only member does not. *(source: §12.5.6 task-182 notifications row, 182/135)* Met for the factor half (37.3); unmet until 67.7 and 67.8.
+- **AC-6** Given the three kinds of change, then they raise one category, which a person can switch off per channel. *(source: §12.5.6 task-182 notifications row, 182/136)* The category, `reporting.report_update`, is registered by 37.3 and switches off per channel on S-27; that the other two kinds raise it is unmet until 67.7 and 67.8.
 - **AC-7** Given an applicability threshold change, when old and new rule are evaluated over an organization's stored B1 answers and the outcome of a report is the same under both, then that organization is not notified. *(source: §12.5.6 task-182 notifications row, 182/137)* Unmet until 67.8.
 
 **History.**
 - 21 Sep 2026 · project owner · task 49.1 · the notice belongs to the task that makes the change it reports, in three halves · §12.5.6 task-49.1 row (6)
 - 5 Oct 2026 · project owner · members with edit access receive it; one optional category serves all three halves; a threshold change obliges the reports whose outcome it changes · §12.5.6 task-182 notifications row (182/135, 182/136, 182/137)
+- 6 Oct 2026 · project owner · task 37.3 · the factor half: an open report's latest run on the set replaced; a publication or a revert replaces; the set restored withdraws its notices; the worker reads who used a revision under a policy of its own · §12.5.6 task-37.3/37.4 row
 
 ### FR-167 — Cancel when the condition clears; deduplicate on category and subject
 

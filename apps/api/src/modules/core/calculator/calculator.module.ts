@@ -1,23 +1,33 @@
 import { Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
+import { NOTIFICATION_PORT, type NotificationPort } from '@api/contracts/notification.port';
 import { TAXONOMY_REGISTRY, type TaxonomyRegistry } from '@api/contracts/taxonomy-registry.port';
+import { TENANT_WORK, type TenantWork } from '@api/contracts/tenant-work.port';
 import { CalcReportsRepository } from '@api/infrastructure/persistence/core/calc-reports.repository';
 import { CalcRunStoreRepository } from '@api/infrastructure/persistence/core/calc-run-store.repository';
 import { CalcSourceStoreRepository } from '@api/infrastructure/persistence/core/calc-source-store.repository';
+import { FactorSetUsersRepository } from '@api/infrastructure/persistence/core/factor-set-users.repository';
+import { ReportUpdateAudienceRepository } from '@api/infrastructure/persistence/core/report-update-audience.repository';
+import { WorkerTenantWork } from '@api/infrastructure/persistence/worker-tenant-work';
 import { DisclosureModule } from '@api/modules/core/disclosure/disclosure.module';
 import {
   CALCULATED_FIGURES,
   type CalculatedFigures,
 } from '@api/modules/core/disclosure/interfaces/calculated-figures.interface';
+import { NotificationModule } from '@api/modules/platform/notification/notification.module';
 import { TaxonomyModule } from '@api/modules/platform/taxonomy/taxonomy.module';
+import { FactorSetReplacedHandler } from './consumers/factor-set-replaced.handler';
 import { CalculatorController } from './controllers/calculator.controller';
 import { CALC_REPORTS, type CalcReports } from './interfaces/calc-report.interface';
 import { CALC_RUN_STORE, type CalcRunStore } from './interfaces/calc-run-store.interface';
 import { CALC_SOURCE_STORE, type CalcSourceStore } from './interfaces/calc-source-store.interface';
+import { FACTOR_SET_USERS, type FactorSetUsers } from './interfaces/factor-set-users.interface';
 import { FACTOR_SETS, type FactorSets } from './interfaces/factor-sets.interface';
+import { REPORT_UPDATE_AUDIENCE, type ReportUpdateAudience } from './interfaces/report-update-audience.interface';
 import { CalculatorService } from './services/calculator.service';
 import { FactorSetCatalog } from './services/factor-set-catalog.service';
 import { ExplainFigure } from './use-cases/explain-figure.use-case';
+import { NotifyFactorSetReplaced } from './use-cases/notify-factor-set-replaced.use-case';
 import { OverrideFigure } from './use-cases/override-figure.use-case';
 import { ReadCalcRun } from './use-cases/read-calc-run.use-case';
 import { ReadCalcSources } from './use-cases/read-calc-sources.use-case';
@@ -45,7 +55,9 @@ import { WriteCalcSource } from './use-cases/write-calc-source.use-case';
  *
  * **`FACTOR_SETS` is registered in both modes**, like the store it reads: the worker renders exports, every export
  * names the factor-set version its figures used (NFR-22), and a catalog only the HTTP tier held would leave the worker
- * unable to read a pin. **The lines and runs are the HTTP tier's alone** — no outbox job routes here yet.
+ * unable to read a pin. **The lines and runs are the HTTP tier's alone.** **The worker's one job is FR-166's factor
+ * half** (task 37.3): a factor set replaced in its window, announced by the publisher on the outbox, tells each
+ * organization with an open report calculated on it — through `TENANT_WORK`, one organization's transaction at a time.
  */
 const { mode } = configuration();
 
@@ -99,15 +111,38 @@ const httpProviders: Provider[] = [
   },
 ];
 
+/**
+ * FR-166's factor half on the worker (task 37.3): the job, its use case, the unbound read of who used a revision, the
+ * bound read of each organization's reports and editors, and the unit of work that binds it.
+ */
+const workerProviders: Provider[] = [
+  { provide: FACTOR_SET_USERS, useClass: FactorSetUsersRepository },
+  { provide: REPORT_UPDATE_AUDIENCE, useClass: ReportUpdateAudienceRepository },
+  { provide: TENANT_WORK, useClass: WorkerTenantWork },
+  {
+    provide: NotifyFactorSetReplaced,
+    inject: [FACTOR_SET_USERS, REPORT_UPDATE_AUDIENCE, FACTOR_SETS, TENANT_WORK, NOTIFICATION_PORT],
+    useFactory: (
+      users: FactorSetUsers,
+      audience: ReportUpdateAudience,
+      factorSets: FactorSets,
+      tenantWork: TenantWork,
+      notifications: NotificationPort,
+    ) => new NotifyFactorSetReplaced(users, audience, factorSets, tenantWork, notifications),
+  },
+  FactorSetReplacedHandler,
+];
+
 @Module({
+  // `NotificationModule` for `NOTIFICATION_PORT` on the worker (task 37.3), which the factor notice raises through.
   // `DisclosureModule` for `CALCULATED_FIGURES` (task 38.4): a run's figures arrive in B3 through that module's own
   // write rule — written as calculated, an earlier run's cleared, the total and intensity recomputed — not through its
   // store, which would be a second copy of the rule.
-  imports: [TaxonomyModule, DisclosureModule],
+  imports: [TaxonomyModule, DisclosureModule, NotificationModule],
   controllers: mode === APP_MODE.WORKER ? [] : [CalculatorController],
   providers: [
     { provide: FACTOR_SETS, useClass: FactorSetCatalog },
-    ...(mode === APP_MODE.WORKER ? [] : httpProviders),
+    ...(mode === APP_MODE.WORKER ? workerProviders : httpProviders),
   ],
   exports: [FACTOR_SETS],
 })

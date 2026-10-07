@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from '@easyesg/ui';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
@@ -6,7 +7,7 @@ import ro from '@/messages/ro.json';
 import { formats } from '@/i18n/formats';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { inviteMemberAction } from '../../../actions/actions';
-import { ACCESS_PAGE_SIZE, DEFAULT_ACCESS_VIEW, type AccessPage } from '../../../tools/access';
+import { DEFAULT_ACCESS_VIEW, type AccessPage } from '../../../tools/access';
 import { seatRegion } from '../../../tools/seats';
 import { AccessNotice } from '../../board/regions/access-notice';
 import { AccessProvider } from '../../shared/access-context';
@@ -60,7 +61,7 @@ const emptyPage: AccessPage = {
   matched: 0,
   total: 0,
   page: 1,
-  pageSize: ACCESS_PAGE_SIZE,
+  pageSize: DEFAULT_PAGE_SIZE,
   administrators: 1,
 };
 

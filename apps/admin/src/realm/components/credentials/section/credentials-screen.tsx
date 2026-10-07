@@ -8,6 +8,8 @@ import { FactorSection } from '../factor/section/factor-section';
 import { PasswordSection } from '../password/password-section';
 import { RecoveryCodesSection } from '../recovery-codes/section/recovery-codes-section';
 import { CredentialsProvider } from '../shared/credentials-context';
+import { consoleHomeFor } from '../../../tools/console-home';
+import { ConsoleLink } from '../../chrome/console-link';
 
 /**
  * A-19 · My credentials · PA, BO · UC-212 · Record (task 151) — the operator's own password, second
@@ -29,15 +31,29 @@ import { CredentialsProvider } from '../shared/credentials-context';
 export function CredentialsScreen({
   account,
   arrival,
+  from,
 }: {
   readonly account: AdminAccount;
   readonly arrival: CredentialsArrival | undefined;
+  /** The page the account menu was opened from, already checked to be this console's (task 203.5). */
+  readonly from: string | undefined;
 }) {
   const t = useTranslations('realm.credentials');
+  // §4.7's *↩ to origin, console home when none* (task 203.5) — one arrow, as S-14 draws its origin. A-01's recovery
+  // lands here with no origin, so it leads to the operator's home.
+  const back = {
+    href: from ?? consoleHomeFor(account.role),
+    label: from === undefined ? t('backToHome') : t('backToOrigin'),
+  };
 
   return (
     <CredentialsProvider arrival={arrival}>
-      <RecordShell title={t('title')} summary={t('summary', { email: account.email })}>
+      <RecordShell
+        title={t('title')}
+        summary={t('summary', { email: account.email })}
+        back={back}
+        linkComponent={ConsoleLink}
+      >
         <CredentialsArrivalNotice />
         <PasswordSection />
         <FactorSection />

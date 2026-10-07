@@ -267,7 +267,11 @@
       "reminder_to_self": "You cannot send a reminder to yourself, so it was not sent. Choose the colleague you want to remind about the report.",
       "reminder_recipient_not_found": "The person you chose is no longer part of this organization, so the reminder was not sent. Refresh the page to see the current members.",
       "computed_figure_not_writable": "This figure was calculated from your invoice lines, so it cannot be typed over here. Replace it with your own figure and the reason for it, or change the invoice lines it was calculated from.",
-      "no_computed_figure": "There is no calculated figure here to explain or replace, so nothing was changed. Calculate the figure from your invoice lines first, or type the figure directly."
+      "no_computed_figure": "There is no calculated figure here to explain or replace, so nothing was changed. Calculate the figure from your invoice lines first, or type the figure directly.",
+      "not_available_reason_required": "A field marked not available needs a reason, so the value was not saved. Write why the information is not available and save again.",
+      "not_available_reason_unexpected": "A reason was sent for a field that is not marked not available, so the value was not saved. Refresh the page and enter the field again.",
+      "unit_not_admitted": "The unit chosen is not one the standard admits for this field, so the value was not saved. Refresh the page and choose a unit from the list.",
+      "module_not_found": "This report has no such section, so there is nothing to show. Open the report again from the list of reports."
     },
     "calculator": {
       "unknown_source": "The energy source sent is not one this report’s emission factors cover, so the line could not be saved. Refresh the page to load the sources you can choose from.",
@@ -319,6 +323,16 @@
           "title": "{senderName} is reminding you about the {entityName} report for {fiscalYear}",
           "body": "{noteGiven, select, given {“{note}”} other {Open the report to see what is still waiting to be filled in.}}",
           "action": "Open the report"
+        }
+      },
+      "report_update": {
+        "name": "Report updates",
+        "subject": "{reach, select, one {Recalculate the emissions of the {entityName} report for {fiscalYear}} other {Recalculate the emissions of your open reports}}",
+        "body": "Hello,\n\nThe emission factors {setLabel}, which {reach, select, one {the {entityName} report for {fiscalYear} was calculated with} other {some of your organization’s open reports were calculated with}}, have been replaced. The set now in force is {newSetLabel}.\n\nFigures already calculated do not change on their own: {reach, select, one {recalculate the report’s emissions} other {recalculate each report’s emissions}} so that they use the factors in force.\n\n{reach, select, one {Open the report’s calculator here:} other {Open your reports here:}}\n\n{link}\n\nYou are receiving this because you can edit your organization’s reports.",
+        "in_app": {
+          "title": "{reach, select, one {The emission factors of the {entityName} report for {fiscalYear} have been replaced} other {The emission factors of some open reports have been replaced}}",
+          "body": "The set {setLabel} has been replaced by {newSetLabel}. Recalculate the emissions so that the figures use the factors in force.",
+          "action": "{reach, select, one {Open the calculator} other {Open your reports}}"
         }
       }
     },

@@ -270,7 +270,9 @@ async function requestList<TObject>(
   context?: RequestContext,
 ): Promise<ApiOutcome<ListResult<TObject>>> {
   const search = buildListQuery(query);
-  const sent = await send(METHOD.Get, search ? `${path}?${search}` : path, undefined, context);
+  // A path may carry a parameter of its own beside the grammar — S-16's `search` (task 203.2) — so the grammar joins it.
+  const joined = search ? `${path}${path.includes('?') ? '&' : '?'}${search}` : path;
+  const sent = await send(METHOD.Get, joined, undefined, context);
   if (!('response' in sent)) return sent;
 
   const envelope = await readBody(sent.response, path, (body) =>

@@ -2,12 +2,12 @@ import { MEMBERSHIP_ROLE } from '@easyesg/contracts';
 import { describe, expect, it } from 'vitest';
 import {
   ACCESS_FILTER_ANY,
-  ACCESS_PAGE_SIZE,
   ACCESS_ROW_KIND,
   ACCESS_SORT,
   ACCESS_SORT_DIRECTION,
   ACCESS_STANDING,
   DEFAULT_ACCESS_VIEW,
+  accessListPath,
   accessListQuery,
   accessRowKey,
   accessViewQuery,
@@ -83,6 +83,13 @@ describe('access · row identity', () => {
   });
 });
 
+describe('access · the api address (task 203.2)', () => {
+  it('asks /access bare with no search, and with `search` beside the grammar when there is one', () => {
+    expect(accessListPath(DEFAULT_ACCESS_VIEW)).toBe('/access');
+    expect(accessListPath({ ...DEFAULT_ACCESS_VIEW, q: 'Ana, Ionescu' })).toBe('/access?search=Ana%2C+Ionescu');
+  });
+});
+
 describe('access · the URL', () => {
   it('reads a view from search params', () => {
     expect(
@@ -92,6 +99,8 @@ describe('access · the URL', () => {
         sort: ACCESS_SORT.PERSON,
         dir: ACCESS_SORT_DIRECTION.ASCENDING,
         page: '3',
+        onpage: '50',
+        q: ' popescu ',
       }),
     ).toEqual({
       role: MEMBERSHIP_ROLE.VIEWER,
@@ -99,6 +108,8 @@ describe('access · the URL', () => {
       sort: ACCESS_SORT.PERSON,
       direction: ACCESS_SORT_DIRECTION.ASCENDING,
       page: 3,
+      pageSize: 50,
+      q: 'popescu',
     });
   });
 
@@ -166,7 +177,9 @@ describe('access · the API query', () => {
 
     expect(query.order).toEqual([{ field: ACCESS_SORT.PERSON, direction: ACCESS_SORT_DIRECTION.ASCENDING }]);
     expect(query.page).toBe(4);
-    expect(query.onpage).toBe(ACCESS_PAGE_SIZE);
+    // The wire value, pinned: 25 unless the reader chose otherwise (UX-141, task 203.1).
+    expect(query.onpage).toBe(25);
+    expect(accessListQuery({ ...DEFAULT_ACCESS_VIEW, pageSize: 100 }).onpage).toBe(100);
   });
 });
 

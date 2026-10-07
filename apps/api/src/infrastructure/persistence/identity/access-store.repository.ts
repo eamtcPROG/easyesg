@@ -16,6 +16,7 @@ import {
   type AccessSort,
   type AccessStanding,
 } from '@api/modules/identity/access/models/access.model';
+import { escapeLikePattern } from '../like-pattern';
 
 /**
  * Whether this address is on FR-171's list (task 51.4; §12.5.6's task-51.4 row).
@@ -158,9 +159,16 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
      WHERE i.status = '${INVITATION_STATUS.PENDING}'
   `;
 
-  /** `$1` is the role facet and `$2` the standing facet; `'any'` means the facet is unset. */
+  /**
+   * `$1` is the role facet and `$2` the standing facet, `'any'` meaning unset; `$3` is the escaped search term or null
+   * (task 203.2), matched anywhere in the name the row shows or in its address — the two things the person column
+   * draws, so a reader finds a row by what they can see.
+   */
   private readonly matches = `($1 = '${ACCESS_FILTER_ANY}' OR role = $1)
-                          AND ($2 = '${ACCESS_FILTER_ANY}' OR standing = $2)`;
+                          AND ($2 = '${ACCESS_FILTER_ANY}' OR standing = $2)
+                          AND ($3::text IS NULL
+                               OR display_name ILIKE '%' || $3::text || '%' ESCAPE '!'
+                               OR email ILIKE '%' || $3::text || '%' ESCAPE '!')`;
 
   private static readonly ORDER_BY: Record<AccessSort, string> = {
     // The name where there is one and the address where there is not — the column the reader
@@ -175,7 +183,7 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
   };
 
   async listAccess(query: AccessQuery): Promise<AccessPage> {
-    const facets = [query.role, query.standing];
+    const facets = [query.role, query.standing, query.search === null ? null : escapeLikePattern(query.search)];
 
     // Both counts in one statement over one CTE, so they cannot describe different sets. `total` is
     // what tells an empty page whether nobody has been invited yet or the filter matched nobody —
@@ -196,7 +204,7 @@ export class AccessStoreRepository extends TenantRepository<never> implements Ac
         WHERE ${this.matches}
         ORDER BY ${AccessStoreRepository.ORDER_BY[query.sort]} ${query.descending ? 'DESC' : 'ASC'},
                  ${collated('email')} ASC
-        LIMIT $3 OFFSET $4`,
+        LIMIT $4 OFFSET $5`,
       [...facets, query.take, query.skip],
     );
 

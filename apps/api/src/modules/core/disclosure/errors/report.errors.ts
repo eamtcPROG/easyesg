@@ -257,3 +257,50 @@ export class NoComputedFigureError extends DomainError {
     super('core.report.no_computed_figure');
   }
 }
+
+/**
+ * A *not available* answer with no reason, or one with no visible character (task 183; §12.5.6's task-182 authoring
+ * row (6); FR-32). The reason is what makes the state a disclosure rather than a gap, so it is refused before the write
+ * rather than surfacing as the store's CHECK — a 500 until this task.
+ */
+export class NotAvailableReasonRequiredError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.not_available_reason_required');
+  }
+}
+
+/** A reason sent on a state other than *not available* (task 183) — the other half of the same CHECK. */
+export class NotAvailableReasonUnexpectedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.not_available_reason_unexpected');
+  }
+}
+
+/** A unit the element's admitted list does not name (task 183; `models/admitted-unit.ts` says when a list binds). */
+export class UnitNotAdmittedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.unit_not_admitted');
+  }
+}
+
+/**
+ * A step read for a module the report's pinned taxonomy does not carry (task 183). It answered 200 with no fields,
+ * which a client cannot tell from a module whose every field is inapplicable.
+ */
+export class DisclosureModuleNotFoundError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.NotFound;
+  readonly status = 404;
+
+  constructor() {
+    super('core.report.module_not_found');
+  }
+}

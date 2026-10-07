@@ -1,4 +1,11 @@
-import { STATUS_TONE, type IndexPage, type StatusTone } from '@easyesg/ui';
+import {
+  DEFAULT_PAGE_SIZE,
+  STATUS_TONE,
+  readPageSize,
+  type IndexPage,
+  type PageSize,
+  type StatusTone,
+} from '@easyesg/ui';
 import type { ReportingPeriod } from '@easyesg/contracts';
 import { PERIODS_FROM_PARAM, readPeriodsFrom, type PeriodsFrom } from '@/lib/periods-from';
 
@@ -96,6 +103,8 @@ export interface PeriodView {
   readonly sort: PeriodSort;
   readonly direction: PeriodSortDirection;
   readonly page: number;
+  /** UX-141's rows per page — 25, 50 or 100, in the address as `onpage` and absent at the default (task 203.1). */
+  readonly pageSize: PageSize;
   /**
    * Where the reader came from (`periods-from.ts`), in the view so a filter or a sort keeps it in the address — a
    * change that dropped it would send the arrow up a level from a list the reader opened from S-13's.
@@ -116,12 +125,9 @@ export const DEFAULT_PERIOD_VIEW: PeriodView = {
   sort: PERIOD_SORT.YEAR,
   direction: PERIOD_SORT_DIRECTION.DESCENDING,
   page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
   from: null,
 };
-
-/** An entity files once a year, so a page is a decade and a half. The archetype carries pagination
- *  (§4.6); this size is what stops it ever being reached in practice. */
-export const PERIOD_PAGE_SIZE = 25;
 
 export type PeriodPage = IndexPage<PeriodRow>;
 
@@ -144,6 +150,7 @@ export const readPeriodView = (
     direction:
       oneOf(Object.values(PERIOD_SORT_DIRECTION), single('dir')) ?? DEFAULT_PERIOD_VIEW.direction,
     page: Number.isFinite(page) && page > 0 ? page : DEFAULT_PERIOD_VIEW.page,
+    pageSize: readPageSize(single('onpage')).onpage ?? DEFAULT_PERIOD_VIEW.pageSize,
     from: readPeriodsFrom(params[PERIODS_FROM_PARAM]),
   };
 };
@@ -156,6 +163,7 @@ export const periodViewQuery = (view: PeriodView): string => {
   if (view.sort !== DEFAULT_PERIOD_VIEW.sort) params.set('sort', view.sort);
   if (view.direction !== DEFAULT_PERIOD_VIEW.direction) params.set('dir', view.direction);
   if (view.page !== DEFAULT_PERIOD_VIEW.page) params.set('page', String(view.page));
+  if (view.pageSize !== DEFAULT_PERIOD_VIEW.pageSize) params.set('onpage', String(view.pageSize));
   if (view.from !== null) params.set(PERIODS_FROM_PARAM, view.from);
   return params.toString();
 };
@@ -211,9 +219,9 @@ export const applyPeriodView = (input: {
     return view.direction === PERIOD_SORT_DIRECTION.DESCENDING ? -settled : settled;
   });
 
-  const pages = Math.max(1, Math.ceil(sorted.length / PERIOD_PAGE_SIZE));
+  const pages = Math.max(1, Math.ceil(sorted.length / view.pageSize));
   const page = Math.min(view.page, pages);
-  const from = (page - 1) * PERIOD_PAGE_SIZE;
+  const from = (page - 1) * view.pageSize;
 
   // **`matched` and `total` are both reported, and that pair IS §4.6's two empty states.** The
   // shell distinguishes them itself: `total === 0` is *nothing exists* and teaches, while
@@ -221,10 +229,10 @@ export const applyPeriodView = (input: {
   // page that collapsed them into one count would make the shell unable to tell them apart, which
   // is the distinction the archetype exists to draw.
   return {
-    rows: sorted.slice(from, from + PERIOD_PAGE_SIZE),
+    rows: sorted.slice(from, from + view.pageSize),
     matched: matched.length,
     total: rows.length,
     page,
-    pageSize: PERIOD_PAGE_SIZE,
+    pageSize: view.pageSize,
   };
 };

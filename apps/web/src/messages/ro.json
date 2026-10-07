@@ -79,7 +79,12 @@
         "previous": "Pagina anterioară",
         "next": "Pagina următoare",
         "position": "{from}–{to} din {total}",
-        "page": "Pagina {page}"
+        "page": "Pagina {page}",
+        "pageSize": "Rânduri pe pagină"
+      },
+      "search": {
+        "submit": "Căutați",
+        "clear": "Ștergeți căutarea"
       }
     },
     "notFound": {
@@ -104,7 +109,8 @@
     "notifications": {
       "label": "Notificări",
       "unreadLabel": "{count, plural, =0 {Notificări, nimic necitit} one {Notificări, # necitită} few {Notificări, # necitite} other {Notificări, # de necitite}}"
-    }
+    },
+    "skipLink": "Treceți la conținutul principal"
   },
   "forms": {
     "show": "Arătați",
@@ -937,7 +943,8 @@
           "emailInvalid": "Adresa nu are forma unei adrese de e-mail, așa că nu i se poate scrie. Verificați dacă ați scris corect, de exemplu contact@companie.md."
         }
       },
-      "loading": "Se încarcă lista entităților…"
+      "loading": "Se încarcă lista entităților…",
+      "searchLabel": "Căutați după denumire sau IDNO"
     },
     "periods": {
       "title": "Perioade de raportare",
@@ -1178,7 +1185,8 @@
         "cancel": "Renunțați",
         "loading": "Se încarcă entitățile și perioadele…"
       },
-      "loading": "Se încarcă lista rapoartelor…"
+      "loading": "Se încarcă lista rapoartelor…",
+      "searchLabel": "Căutați după entitate sau an fiscal"
     },
     "access": {
       "title": "Utilizatori și acces",
@@ -1337,7 +1345,8 @@
           "body": "Nu putem verifica acum câte locuri sunt ocupate în organizație, așa că nu puteți trimite invitații. Lista este corectă și puteți gestiona în continuare accesul fiecărei persoane.",
           "action": "Reîncărcați pagina peste câteva minute."
         }
-      }
+      },
+      "searchLabel": "Căutați după nume sau e-mail"
     },
     "wizard": {
       "title": "Raport",
@@ -1606,6 +1615,10 @@
         "newest": "Cele mai noi întâi",
         "oldest": "Cele mai vechi întâi"
       },
+      "category": {
+        "label": "Categoria",
+        "all": "Toate categoriile"
+      },
       "markRead": "Marcați ca citită",
       "dismiss": "Ascundeți",
       "list": "Notificările dumneavoastră",
@@ -1620,6 +1633,11 @@
           "title": "Nimic necitit",
           "body": "Ați citit tot ce a sosit. Notificările citite rămân în lista „Toate”.",
           "action": "Vedeți toate notificările"
+        },
+        "nothingInCategory": {
+          "title": "Nimic în această categorie",
+          "body": "Nicio notificare din această categorie nu se potrivește cu ce ați ales să vedeți. Celelalte notificări rămân în listă.",
+          "action": "Arătați toate categoriile"
         }
       },
       "error": {

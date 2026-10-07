@@ -57,6 +57,7 @@ import { CalculationRuns1791590400000 } from './1791590400000-calculation-runs';
 import { CalculationResults1791676800000 } from './1791676800000-calculation-results';
 import { CalculatorOverrides1791763200000 } from './1791763200000-calculator-overrides';
 import { EnrolmentPromptDismissal1791849600000 } from './1791849600000-enrolment-prompt-dismissal';
+import { FactorSetNoticeReach1791936000000 } from './1791936000000-factor-set-notice-reach';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -134,4 +135,5 @@ export const migrations = [
   CalculationResults1791676800000,
   CalculatorOverrides1791763200000,
   EnrolmentPromptDismissal1791849600000,
+  FactorSetNoticeReach1791936000000,
 ];

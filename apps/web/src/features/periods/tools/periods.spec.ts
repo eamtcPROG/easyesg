@@ -151,6 +151,7 @@ describe('the view lives in the address (UX-4)', () => {
       sort: PERIOD_SORT.DUE,
       direction: PERIOD_SORT_DIRECTION.ASCENDING,
       page: 3,
+      pageSize: 100,
       from: 'entities',
     } as const;
 

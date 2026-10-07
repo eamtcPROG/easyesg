@@ -68,7 +68,8 @@ async function signOut(page: Page, email: string) {
 async function openCredentials(page: Page, email: string) {
   await accountMenu(page, email).click();
   await page.getByRole('menuitem', { name: 'Datele de autentificare' }).click();
-  await page.waitForURL('**/credentials');
+  // The menu link carries the page it was opened from since task 203.5, so the address may hold `?from=`.
+  await page.waitForURL(/\/credentials(\?|$)/u);
   await expect(page.getByRole('heading', { level: 1, name: 'Datele de autentificare' })).toBeVisible();
 }
 
@@ -258,4 +259,35 @@ test('axe finds no violations on A-19 with a re-enrolment open, nor on A-01’s 
   await page.getByRole('button', { name: 'Folosiți un cod de recuperare' }).click();
   await expect(page.getByRole('heading', { name: 'Intrați cu un cod de recuperare' })).toBeVisible();
   expect((await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze()).violations).toEqual([]);
+});
+
+/**
+ * Task 203.5 (`design_spec.md` §4.7: *↩ to origin (the page the account menu was opened from), console home when
+ * none*), and 203.3 (UX-99): the console's pages open on the skip link, A-01's and the realm's alike.
+ */
+test('A-19 returns to the page its menu was opened from, and every console page opens on the skip link', async ({
+  page,
+}) => {
+  const email = emailFor('back');
+  provision(email);
+
+  await page.goto('/sign-in');
+  // The console renders in the browser: a Tab before the screen has mounted lands on nothing.
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', { name: 'Treceți la conținutul principal' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('main#main-content')).toBeFocused();
+
+  await signIn(page, email);
+  await page.waitForURL('**/organizations');
+  await page.goto('/accounts');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', { name: 'Treceți la conținutul principal' })).toBeFocused();
+
+  await openCredentials(page, email);
+  expect(new URL(page.url()).searchParams.get('from')).toBe('/accounts');
+  await page.getByRole('link', { name: 'Înapoi la pagina de pe care ați venit' }).click();
+  await page.waitForURL('**/accounts');
 });

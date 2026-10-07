@@ -140,6 +140,8 @@ describe('notification categories from the console (A-17; task 67.10)', () => {
       'identity.invitation',
       'platform.admin_invitation',
       REMINDER,
+      // FR-166's report-update notice (task 37.3).
+      'reporting.report_update',
     ]);
     expect(read.find((category) => category.categoryKey === 'identity.password_reset')).toMatchObject({
       mandatory: true,

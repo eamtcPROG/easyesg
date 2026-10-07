@@ -1,5 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { SkipLink } from '@easyesg/ui';
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
+import { useTranslations } from 'use-intl';
 
 /**
  * Root route. Establishes the router context and nothing else.
@@ -21,5 +23,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootRoute() {
-  return <Outlet />;
+  const t = useTranslations('chrome');
+  // UX-99's skip link (task 203.3), the first thing a keyboard reaches on every console page — the realm's and A-01's
+  // alike, since the root wraps both — to the `<main>` each one marks with `MAIN_CONTENT_ID`.
+  return (
+    <>
+      <SkipLink label={t('skipLink')} />
+      <Outlet />
+    </>
+  );
 }

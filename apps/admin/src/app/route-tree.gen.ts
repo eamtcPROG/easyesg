@@ -35,7 +35,6 @@ import { Route as RealmRulesValidationRouteImport } from './routes/_realm/rules/
 import { Route as RealmTaxonomyIndexRouteImport } from './routes/_realm/taxonomy/index';
 import { Route as RealmTaxonomyMigrationsRouteImport } from './routes/_realm/taxonomy/migrations';
 import { Route as RealmBillingReconciliationIndexRouteImport } from './routes/_realm/billing/reconciliation/index';
-import { Route as RealmBillingReconciliationExceptionIdRouteImport } from './routes/_realm/billing/reconciliation/$exceptionId';
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -167,12 +166,6 @@ const RealmBillingReconciliationIndexRoute =
     path: '/billing/reconciliation/',
     getParentRoute: () => RealmRoute,
   } as any);
-const RealmBillingReconciliationExceptionIdRoute =
-  RealmBillingReconciliationExceptionIdRouteImport.update({
-    id: '/billing/reconciliation/$exceptionId',
-    path: '/billing/reconciliation/$exceptionId',
-    getParentRoute: () => RealmRoute,
-  } as any);
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute;
@@ -198,7 +191,6 @@ export interface FileRoutesByFullPath {
   '/content/': typeof RealmContentIndexRoute;
   '/rules/': typeof RealmRulesIndexRoute;
   '/taxonomy/': typeof RealmTaxonomyIndexRoute;
-  '/billing/reconciliation/$exceptionId': typeof RealmBillingReconciliationExceptionIdRoute;
   '/billing/reconciliation/': typeof RealmBillingReconciliationIndexRoute;
 }
 export interface FileRoutesByTo {
@@ -225,7 +217,6 @@ export interface FileRoutesByTo {
   '/content': typeof RealmContentIndexRoute;
   '/rules': typeof RealmRulesIndexRoute;
   '/taxonomy': typeof RealmTaxonomyIndexRoute;
-  '/billing/reconciliation/$exceptionId': typeof RealmBillingReconciliationExceptionIdRoute;
   '/billing/reconciliation': typeof RealmBillingReconciliationIndexRoute;
 }
 export interface FileRoutesById {
@@ -255,7 +246,6 @@ export interface FileRoutesById {
   '/_realm/content/': typeof RealmContentIndexRoute;
   '/_realm/rules/': typeof RealmRulesIndexRoute;
   '/_realm/taxonomy/': typeof RealmTaxonomyIndexRoute;
-  '/_realm/billing/reconciliation/$exceptionId': typeof RealmBillingReconciliationExceptionIdRoute;
   '/_realm/billing/reconciliation/': typeof RealmBillingReconciliationIndexRoute;
 }
 export interface FileRouteTypes {
@@ -284,7 +274,6 @@ export interface FileRouteTypes {
     | '/content/'
     | '/rules/'
     | '/taxonomy/'
-    | '/billing/reconciliation/$exceptionId'
     | '/billing/reconciliation/';
   fileRoutesByTo: FileRoutesByTo;
   to:
@@ -311,7 +300,6 @@ export interface FileRouteTypes {
     | '/content'
     | '/rules'
     | '/taxonomy'
-    | '/billing/reconciliation/$exceptionId'
     | '/billing/reconciliation';
   id:
     | '__root__'
@@ -340,7 +328,6 @@ export interface FileRouteTypes {
     | '/_realm/content/'
     | '/_realm/rules/'
     | '/_realm/taxonomy/'
-    | '/_realm/billing/reconciliation/$exceptionId'
     | '/_realm/billing/reconciliation/';
   fileRoutesById: FileRoutesById;
 }
@@ -534,13 +521,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RealmBillingReconciliationIndexRouteImport;
       parentRoute: typeof RealmRoute;
     };
-    '/_realm/billing/reconciliation/$exceptionId': {
-      id: '/_realm/billing/reconciliation/$exceptionId';
-      path: '/billing/reconciliation/$exceptionId';
-      fullPath: '/billing/reconciliation/$exceptionId';
-      preLoaderRoute: typeof RealmBillingReconciliationExceptionIdRouteImport;
-      parentRoute: typeof RealmRoute;
-    };
   }
 }
 
@@ -577,7 +557,6 @@ interface RealmRouteChildren {
   RealmContentIndexRoute: typeof RealmContentIndexRoute;
   RealmRulesIndexRoute: typeof RealmRulesIndexRoute;
   RealmTaxonomyIndexRoute: typeof RealmTaxonomyIndexRoute;
-  RealmBillingReconciliationExceptionIdRoute: typeof RealmBillingReconciliationExceptionIdRoute;
   RealmBillingReconciliationIndexRoute: typeof RealmBillingReconciliationIndexRoute;
 }
 
@@ -602,8 +581,6 @@ const RealmRouteChildren: RealmRouteChildren = {
   RealmContentIndexRoute: RealmContentIndexRoute,
   RealmRulesIndexRoute: RealmRulesIndexRoute,
   RealmTaxonomyIndexRoute: RealmTaxonomyIndexRoute,
-  RealmBillingReconciliationExceptionIdRoute:
-    RealmBillingReconciliationExceptionIdRoute,
   RealmBillingReconciliationIndexRoute: RealmBillingReconciliationIndexRoute,
 };
 

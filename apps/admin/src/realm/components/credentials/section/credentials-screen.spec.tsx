@@ -35,6 +35,12 @@ vi.mock('../../../queries/credentials', () => ({
 vi.mock('@tanstack/react-router', () => ({
   Navigate: () => null,
   useLocation: () => '/credentials',
+  // The back control's link (task 203.5), drawn as the anchor the router would render.
+  Link: ({ to, children, ...rest }: { to: string; children: ReactNode }) => (
+    <a href={to} {...rest}>
+      {children}
+    </a>
+  ),
 }));
 
 const ACCOUNT = { id: 'a', email: 'operator@easyesg.md', role: 'platform_administrator' } as const;
@@ -46,7 +52,7 @@ const standing = (recoveryCodesIssuedAt: number | null, recoveryCodesRemaining: 
 });
 const CODES = Array.from({ length: 10 }, (_, index) => `AAAA-BBBB-CCCC-${String(index).padStart(4, '0')}`);
 
-const renderScreen = (arrival?: 'recovered') => {
+const renderScreen = (arrival?: 'recovered', from?: string) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -55,7 +61,7 @@ const renderScreen = (arrival?: 'recovered') => {
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </IntlProvider>
   );
-  return render(<CredentialsScreen account={ACCOUNT} arrival={arrival} />, { wrapper });
+  return render(<CredentialsScreen account={ACCOUNT} arrival={arrival} from={from} />, { wrapper });
 };
 
 const region = (name: string) => screen.getByRole('region', { name });
@@ -66,6 +72,18 @@ beforeEach(() => {
 });
 
 describe('A-19 · my credentials (task 151)', () => {
+  // Task 203.5 (`design_spec.md` §4.7): ↩ to the page the account menu was opened from, the console home when none.
+  it('returns to the page it was opened from, and to the console home when there is none', () => {
+    const { unmount } = renderScreen(undefined, '/accounts?panel=invite');
+    expect(screen.getByRole('link', { name: ro.realm.credentials.backToOrigin })).toHaveAttribute(
+      'href',
+      '/accounts?panel=invite',
+    );
+    unmount();
+    renderScreen('recovered');
+    expect(screen.getByRole('link', { name: ro.realm.credentials.backToHome })).toHaveAttribute('href', '/organizations');
+  });
+
   it('issues the first set only with the current password, shows it once, then returns to the count', async () => {
     const user = userEvent.setup();
     mocks.read.mockResolvedValueOnce(standing(null, 0)).mockResolvedValue(standing(ISSUED_AT, 10));

@@ -1,4 +1,5 @@
 import { SORT_DIRECTION, type ListQueryInput } from '@api/contracts/types/list-query';
+import { narrowSearchTerm } from '@api/contracts/types/search-term';
 import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
 import {
   ACCESS_FILTER_ANY,
@@ -35,7 +36,19 @@ export const DEFAULT_ACCESS_DESCENDING = true;
 const firstValue = (input: ListQueryInput, field: string): string | undefined =>
   input.filters.find((filter) => filter.field === field)?.values[0];
 
-export const toAccessQuery = (input: ListQueryInput, fallbackTake: number): AccessQuery => {
+/** Longer than any address (RFC 5321's 254) or shown name; a search past it is cut rather than refused. */
+export const ACCESS_SEARCH_MAX_LENGTH = 254;
+
+export const toAccessQuery = ({
+  list: input,
+  search,
+  fallbackTake,
+}: {
+  readonly list: ListQueryInput;
+  /** As received (task 203.2) — its own parameter, for `narrowSearchTerm`'s reason. */
+  readonly search: unknown;
+  readonly fallbackTake: number;
+}): AccessQuery => {
   const role = firstValue(input, ACCESS_FILTER_FIELD.ROLE);
   const standing = firstValue(input, ACCESS_FILTER_FIELD.STANDING);
   // Only the first ordering is honoured: this list has one order at a time by design (§4.6's
@@ -44,6 +57,7 @@ export const toAccessQuery = (input: ListQueryInput, fallbackTake: number): Acce
   const [ordering] = input.order;
 
   return {
+    search: narrowSearchTerm({ raw: search, maxLength: ACCESS_SEARCH_MAX_LENGTH }),
     role: role !== undefined && isMembershipRole(role) ? role : ACCESS_FILTER_ANY,
     standing: standing !== undefined && isAccessStanding(standing) ? standing : ACCESS_FILTER_ANY,
     sort: ordering !== undefined && isAccessSort(ordering.field) ? ordering.field : DEFAULT_ACCESS_SORT,

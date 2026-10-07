@@ -1,0 +1,26 @@
+/* UX-99's skip link (task 203.3): off-screen until focused, then above everything at the top-left. Token values only
+   (UX-127). */
+.skipLink {
+  position: absolute;
+  inset-block-start: var(--space-3);
+  inset-inline-start: var(--space-3);
+  z-index: 1000;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-2);
+  background: var(--surface-raised);
+  color: var(--text-default);
+  box-shadow: var(--elevation-2);
+  transform: translateY(calc(-100% - var(--space-5)));
+}
+
+.skipLink:focus-visible {
+  transform: none;
+  /* The global focus ring (`tokens.css`) is a box-shadow, which this class's elevation would otherwise replace. */
+  box-shadow: 0 0 0 2px var(--border-focus), 0 0 0 4px var(--border-focus-halo), var(--elevation-2);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skipLink {
+    transition: transform 120ms ease-out;
+  }
+}

@@ -1,4 +1,4 @@
-import type { IndexPage } from '@easyesg/ui';
+import { DEFAULT_PAGE_SIZE, readPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
 import type { ListQuery } from '@/lib/pagination';
 import {
   INVITED_ROLE,
@@ -187,15 +187,16 @@ export const ACCESS_SORT_DIRECTION = {
 export type AccessSortDirection =
   (typeof ACCESS_SORT_DIRECTION)[keyof typeof ACCESS_SORT_DIRECTION];
 
-/** Enough rows that an ordinary organization is one page, few enough that the control is real. */
-export const ACCESS_PAGE_SIZE = 25;
-
 export interface AccessView {
   readonly role: MembershipRole | typeof ACCESS_FILTER_ANY;
   readonly standing: AccessStanding | typeof ACCESS_FILTER_ANY;
   readonly sort: AccessSort;
   readonly direction: AccessSortDirection;
   readonly page: number;
+  /** UX-141's rows per page — 25, 50 or 100, sent to the api as `onpage` and in the address (task 203.1). */
+  readonly pageSize: PageSize;
+  /** §4.7's search over name and address, `?q=`, `''` for none — sent to the api as `search` (task 203.2). */
+  readonly q: string;
 }
 
 /** Recency first: an administrator opening this screen is looking at who is here now. */
@@ -205,6 +206,8 @@ export const DEFAULT_ACCESS_VIEW: AccessView = {
   sort: ACCESS_SORT.ACTIVITY,
   direction: ACCESS_SORT_DIRECTION.DESCENDING,
   page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  q: '',
 };
 
 const oneOf = <T extends string>(values: readonly T[], candidate: unknown): T | null =>
@@ -236,6 +239,8 @@ export const readAccessView = (params: Record<string, string | string[] | undefi
     direction:
       oneOf(Object.values(ACCESS_SORT_DIRECTION), single('dir')) ?? DEFAULT_ACCESS_VIEW.direction,
     page: Number.isFinite(page) && page > 0 ? page : DEFAULT_ACCESS_VIEW.page,
+    pageSize: readPageSize(single('onpage')).onpage ?? DEFAULT_ACCESS_VIEW.pageSize,
+    q: single('q')?.trim() ?? '',
   };
 };
 
@@ -248,6 +253,8 @@ export const accessViewQuery = (view: AccessView): string => {
   if (view.sort !== DEFAULT_ACCESS_VIEW.sort) params.set('sort', view.sort);
   if (view.direction !== DEFAULT_ACCESS_VIEW.direction) params.set('dir', view.direction);
   if (view.page !== DEFAULT_ACCESS_VIEW.page) params.set('page', String(view.page));
+  if (view.pageSize !== DEFAULT_ACCESS_VIEW.pageSize) params.set('onpage', String(view.pageSize));
+  if (view.q !== '') params.set('q', view.q);
   return params.toString();
 };
 
@@ -290,7 +297,7 @@ export const accessListQuery = (view: AccessView): ListQuery => ({
   ],
   order: [{ field: view.sort, direction: view.direction }],
   page: view.page,
-  onpage: ACCESS_PAGE_SIZE,
+  onpage: view.pageSize,
 });
 
 /**
@@ -313,3 +320,10 @@ export const isLastAdministrator = (input: {
 
 /** The roles an invitation may carry, in the order the form offers them. */
 export const INVITABLE_ROLES = Object.values(INVITED_ROLE);
+
+/**
+ * The address S-16's read asks — `/access`, with the search as its own parameter where there is one (task 203.2). The
+ * api takes the term beside the list grammar rather than inside it, since a name may hold the grammar's separators.
+ */
+export const accessListPath = (view: AccessView): string =>
+  view.q === '' ? '/access' : `/access?${new URLSearchParams({ search: view.q }).toString()}`;

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useMatchRoute, useNavigate, useRouterState } from '@tanstack/react-router';
 import type { AdminAccount } from '@easyesg/contracts';
 import { AccountMenu, GLOBAL_BAR_TONE } from '@easyesg/ui';
 import { useTranslations } from 'use-intl';
@@ -32,6 +32,11 @@ export function ConsoleAccount({ account }: { readonly account: AdminAccount }) 
   const t = useTranslations('realm.chrome');
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  // A-19's way back (task 203.5; `design_spec.md` §4.7: *↩ to origin (the page the account menu was opened from)*).
+  // Opened from A-19 itself it carries on the origin the page already holds, rather than pointing the arrow at itself.
+  const here = useRouterState({ select: (state) => state.location });
+  const onCredentials = useMatchRoute()({ to: '/credentials' }) !== false;
+  const from = onCredentials ? (here.search as { readonly from?: string }).from : here.href;
 
   const signOutMutation = useMutation({
     mutationFn: signOut,
@@ -52,7 +57,11 @@ export function ConsoleAccount({ account }: { readonly account: AdminAccount }) 
       items={[
         {
           key: 'credentials',
-          node: <Link to="/credentials">{t('credentials')}</Link>,
+          node: (
+            <Link to="/credentials" search={from === undefined ? {} : { from }}>
+              {t('credentials')}
+            </Link>
+          ),
         },
         {
           key: 'sign-out',

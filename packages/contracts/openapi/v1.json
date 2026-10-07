@@ -1932,6 +1932,13 @@
             "schema": {}
           },
           {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Matched case-insensitively anywhere in the name shown for the row and in its address (task 203.2). Its own parameter rather than a filter, because a name may contain the filter grammar’s separators. Trimmed; blank means no search.",
+            "schema": {}
+          },
+          {
             "name": "filters",
             "required": false,
             "in": "query",
@@ -3189,7 +3196,7 @@
             }
           },
           "404": {
-            "description": "No such report in the active organization."
+            "description": "No such report in the active organization. Also a module the report's pinned taxonomy version does not carry."
           }
         },
         "summary": "One wizard step: the module's fields, with their values",
@@ -3249,7 +3256,7 @@
             }
           },
           "400": {
-            "description": "A field the pinned version does not name."
+            "description": "A field the pinned version does not name; a value marked not available with no reason (or a blank one), or a reason on any other state; a unit outside the element’s admitted list, where the standard states one."
           },
           "404": {
             "description": "No such report in the active organization."
@@ -3343,7 +3350,7 @@
             "name": "filters",
             "required": false,
             "in": "query",
-            "description": "Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder. A value outside these, or a field this route does not define, is ignored rather than refused.",
+            "description": "Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder, reporting.report_update. A value outside these, or a field this route does not define, is ignored rather than refused.",
             "schema": {}
           }
         ],
@@ -6684,7 +6691,8 @@
                 "identity.password_reset",
                 "identity.invitation",
                 "platform.admin_invitation",
-                "reporting.manual_reminder"
+                "reporting.manual_reminder",
+                "reporting.report_update"
               ],
               "type": "string"
             }
@@ -6769,7 +6777,8 @@
                 "identity.password_reset",
                 "identity.invitation",
                 "platform.admin_invitation",
-                "reporting.manual_reminder"
+                "reporting.manual_reminder",
+                "reporting.report_update"
               ],
               "type": "string"
             }
@@ -6860,7 +6869,8 @@
                 "identity.password_reset",
                 "identity.invitation",
                 "platform.admin_invitation",
-                "reporting.manual_reminder"
+                "reporting.manual_reminder",
+                "reporting.report_update"
               ],
               "type": "string"
             }
@@ -10250,7 +10260,8 @@
               "identity.password_reset",
               "identity.invitation",
               "platform.admin_invitation",
-              "reporting.manual_reminder"
+              "reporting.manual_reminder",
+              "reporting.report_update"
             ],
             "description": "What kind of notice this is — a key for the client to act on, never text to show."
           },
@@ -10339,7 +10350,8 @@
               "identity.password_reset",
               "identity.invitation",
               "platform.admin_invitation",
-              "reporting.manual_reminder"
+              "reporting.manual_reminder",
+              "reporting.report_update"
             ],
             "description": "The category — a key for the client to act on, never text to show."
           },
@@ -10390,7 +10402,8 @@
               "identity.password_reset",
               "identity.invitation",
               "platform.admin_invitation",
-              "reporting.manual_reminder"
+              "reporting.manual_reminder",
+              "reporting.report_update"
             ],
             "description": "The category — a key for the client to act on, never text to show."
           },
@@ -10412,7 +10425,7 @@
         "type": "object",
         "properties": {
           "switchedOff": {
-            "maxItems": 10,
+            "maxItems": 12,
             "description": "Every pair the person has switched off, among those the read offers; every offered pair not named is switched on. A pair the read does not offer — a mandatory category, or a channel the category does not travel on — refuses the whole write. Empty switches everything on.",
             "type": "array",
             "items": {
@@ -10443,7 +10456,8 @@
               "identity.password_reset",
               "identity.invitation",
               "platform.admin_invitation",
-              "reporting.manual_reminder"
+              "reporting.manual_reminder",
+              "reporting.report_update"
             ],
             "description": "The category the link is about — a key to act on, never text to show. Absent when unusable."
           },
@@ -11914,7 +11928,8 @@
               "identity.password_reset",
               "identity.invitation",
               "platform.admin_invitation",
-              "reporting.manual_reminder"
+              "reporting.manual_reminder",
+              "reporting.report_update"
             ],
             "nullable": true,
             "description": "The notification category, where the target is a category’s configuration version (task 67.10)."
@@ -12395,7 +12410,8 @@
               "identity.password_reset",
               "identity.invitation",
               "platform.admin_invitation",
-              "reporting.manual_reminder"
+              "reporting.manual_reminder",
+              "reporting.report_update"
             ],
             "description": "A key for the console to act on, never text to show."
           },

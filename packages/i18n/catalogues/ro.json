@@ -267,7 +267,11 @@
       "reminder_to_self": "Nu vă puteți trimite un memento dumneavoastră, așa că nu a fost trimis. Alegeți colegul căruia doriți să-i amintiți de raport.",
       "reminder_recipient_not_found": "Persoana aleasă nu mai face parte din această organizație, așa că mementoul nu a fost trimis. Reîmprospătați pagina pentru a vedea membrii actuali.",
       "computed_figure_not_writable": "Această cifră a fost calculată din liniile facturilor dvs., așa că nu poate fi înlocuită prin scriere aici. Înlocuiți-o cu propria cifră și motivul ei sau modificați liniile de factură din care a fost calculată.",
-      "no_computed_figure": "Aici nu există o cifră calculată de explicat sau de înlocuit, așa că nu s-a modificat nimic. Calculați mai întâi cifra din liniile facturilor dvs. sau introduceți cifra direct."
+      "no_computed_figure": "Aici nu există o cifră calculată de explicat sau de înlocuit, așa că nu s-a modificat nimic. Calculați mai întâi cifra din liniile facturilor dvs. sau introduceți cifra direct.",
+      "not_available_reason_required": "Un câmp marcat ca indisponibil are nevoie de un motiv, așa că valoarea nu a fost salvată. Scrieți de ce informația nu este disponibilă și salvați din nou.",
+      "not_available_reason_unexpected": "S-a trimis un motiv pentru un câmp care nu este marcat ca indisponibil, așa că valoarea nu a fost salvată. Reîncărcați pagina și completați din nou câmpul.",
+      "unit_not_admitted": "Unitatea aleasă nu este una pe care standardul o admite pentru acest câmp, așa că valoarea nu a fost salvată. Reîncărcați pagina și alegeți o unitate din listă.",
+      "module_not_found": "Acest raport nu are o astfel de secțiune, așa că nu este nimic de afișat. Deschideți din nou raportul din lista de rapoarte."
     },
     "calculator": {
       "unknown_source": "Sursa de energie trimisă nu se numără printre cele acoperite de factorii de emisie ai acestui raport, așa că linia nu a putut fi salvată. Reîmprospătați pagina pentru a încărca sursele din care puteți alege.",
@@ -319,6 +323,16 @@
           "title": "{senderName} vă reamintește de raportul {entityName} pentru {fiscalYear}",
           "body": "{noteGiven, select, given {„{note}”} other {Deschideți raportul pentru a vedea ce a mai rămas de completat.}}",
           "action": "Deschideți raportul"
+        }
+      },
+      "report_update": {
+        "name": "Actualizări ale rapoartelor",
+        "subject": "{reach, select, one {Recalculați emisiile raportului {entityName} pentru {fiscalYear}} other {Recalculați emisiile rapoartelor deschise}}",
+        "body": "Bună ziua,\n\nFactorii de emisie {setLabel}, cu care {reach, select, one {a fost calculat raportul {entityName} pentru {fiscalYear}} other {au fost calculate unele dintre rapoartele deschise ale organizației}}, au fost înlocuiți. Setul în vigoare acum este {newSetLabel}.\n\nCifrele deja calculate nu se schimbă de la sine: {reach, select, one {recalculați emisiile raportului} other {recalculați emisiile fiecărui raport}} pentru ca ele să folosească factorii în vigoare.\n\n{reach, select, one {Deschideți calculatorul raportului de aici:} other {Deschideți rapoartele de aici:}}\n\n{link}\n\nPrimiți acest mesaj pentru că puteți edita rapoartele organizației.",
+        "in_app": {
+          "title": "{reach, select, one {Factorii de emisie ai raportului {entityName} pentru {fiscalYear} au fost înlocuiți} other {Factorii de emisie ai unor rapoarte deschise au fost înlocuiți}}",
+          "body": "Setul {setLabel} a fost înlocuit de {newSetLabel}. Recalculați emisiile pentru ca cifrele să folosească factorii în vigoare.",
+          "action": "{reach, select, one {Deschideți calculatorul} other {Deschideți rapoartele}}"
         }
       }
     },

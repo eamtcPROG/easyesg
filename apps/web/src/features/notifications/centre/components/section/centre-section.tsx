@@ -6,6 +6,7 @@ import { readCentreView } from '../../tools/centre-view';
 import { CentreHeading } from '../heading/centre-heading';
 import { CentreList } from '../list/centre-list';
 import { CentreFirstUse } from '../states/centre-first-use';
+import { CentreNothingInCategory } from '../states/centre-nothing-in-category';
 import { CentreNothingUnread } from '../states/centre-nothing-unread';
 import { CentreRefused } from '../states/centre-refused';
 import { CentreUnreachable } from '../states/centre-unreachable';
@@ -43,6 +44,9 @@ export async function CentreSection({
         <CentreList page={read.page} view={view} />
       ) : arm === NOTICE_ARM.FIRST_USE ? (
         <CentreFirstUse />
+      ) : view.category !== null ? (
+        // Task 37.3: a category chosen is the filter to clear first, whatever the read state.
+        <CentreNothingInCategory view={view} />
       ) : (
         <CentreNothingUnread view={view} />
       );
@@ -50,7 +54,11 @@ export async function CentreSection({
 
   return (
     <div className={styles.screen}>
-      <CentreHeading unread={read.status === CENTRE_READ.READY ? read.unread : null} view={view} />
+      <CentreHeading
+        unread={read.status === CENTRE_READ.READY ? read.unread : null}
+        view={view}
+        categories={read.status === CENTRE_READ.READY ? read.categories : []}
+      />
       {body}
     </div>
   );

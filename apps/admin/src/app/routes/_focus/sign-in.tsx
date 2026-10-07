@@ -44,13 +44,8 @@ import { ADMIN_SESSION_QUERY_KEY, adminSessionQuery } from '~/realm/queries/sess
 import { SignInScreen } from '~/realm/components/sign-in/sign-in-screen';
 import { consoleHomeFor } from '~/realm/tools/console-home';
 import { CREDENTIALS_ARRIVAL } from '~/realm/tools/credentials-arrival';
+import { safeRealmPath } from '~/realm/tools/safe-realm-path';
 import { readSignInNotice, type SignInNotice } from '~/realm/tools/sign-in-notice';
-
-/** Same-app paths only — a crafted link must not turn sign-in into an open redirect. */
-const safeRealmPath = (candidate: string | undefined): string | null =>
-  candidate?.startsWith('/') && !candidate.startsWith('//') && !candidate.startsWith('/\\')
-    ? candidate
-    : null;
 
 export const Route = createFileRoute('/_focus/sign-in')({
   validateSearch: (search: Record<string, unknown>): { redirect?: string; notice?: SignInNotice } => ({

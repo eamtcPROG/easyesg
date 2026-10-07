@@ -31,6 +31,12 @@ export const NOTIFICATION_CATEGORY = {
    * `raise()`, and the first that travels in-app. **Optional**, so not among the mandatory set below.
    */
   MANUAL_REMINDER: 'reporting.manual_reminder',
+  /**
+   * FR-166's report-update notice (task 37.3) — **one category for its three halves** (182/136): a replaced factor set
+   * (37.3, which registers it), a version migration (67.7) and a threshold change (67.8). **Optional**, in-app and
+   * email, so not among the mandatory set below.
+   */
+  REPORT_UPDATE: 'reporting.report_update',
 } as const;
 
 export type NotificationCategoryKey = (typeof NOTIFICATION_CATEGORY)[keyof typeof NOTIFICATION_CATEGORY];

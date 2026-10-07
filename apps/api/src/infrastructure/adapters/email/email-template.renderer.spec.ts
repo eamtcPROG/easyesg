@@ -23,6 +23,8 @@ describe('email template rendering (OQ-43)', () => {
     noteGiven: 'none',
     note: '',
   };
+  /** FR-166's report-update notice (task 37.3): the two sets it names, and how many reports it reaches. */
+  const REPORT_UPDATE = { reach: 'one', setLabel: '2026.1', newSetLabel: '2026.2' };
 
   it.each(LOCALES)('renders the verification template in %s', (locale: Locale) => {
     const { subject, body } = renderEmail({ locale, templateKey: NOTIFICATION_CATEGORY.EMAIL_VERIFICATION, params });
@@ -43,7 +45,7 @@ describe('email template rendering (OQ-43)', () => {
       const { body } = renderEmail({
         locale,
         templateKey: wording,
-        params: { ...params, organizationName: 'Brutăria', ...REMINDER },
+        params: { ...params, organizationName: 'Brutăria', ...REMINDER, ...REPORT_UPDATE },
       });
 
       expect(body).toContain(params.link);
@@ -78,6 +80,34 @@ describe('email template rendering (OQ-43)', () => {
     expect(given.body).toMatch(QUOTES);
     expect(none.body).toContain(params.link);
     expect(none.body).not.toMatch(QUOTES);
+  });
+
+  /**
+   * The report-update notice's email (task 37.3): with one report it names the report and the two sets, with several it
+   * names the sets alone — the ICU `select` on `reach`, whose spellings are `REPORT_UPDATE_REACH`'s. The in-app twin is
+   * `modules/core/calculator/models/report-update.wording.spec.ts`.
+   */
+  it.each(LOCALES)('writes the report update in %s for one report and for several, against the link', (locale) => {
+    const one = renderEmail({
+      locale,
+      templateKey: NOTIFICATION_CATEGORY.REPORT_UPDATE,
+      params: { ...params, ...REPORT_UPDATE, entityName: 'Brutăria Lina', fiscalYear: '2026' },
+    });
+    const several = renderEmail({
+      locale,
+      templateKey: NOTIFICATION_CATEGORY.REPORT_UPDATE,
+      params: { ...params, ...REPORT_UPDATE, reach: 'several', entityName: '', fiscalYear: '' },
+    });
+
+    for (const message of [one, several]) {
+      expect(message.body).toContain(params.link);
+      expect(message.body).toContain('2026.1');
+      expect(message.body).toContain('2026.2');
+    }
+    expect(one.subject).toContain('Brutăria Lina');
+    expect(one.body).toContain('Brutăria Lina');
+    expect(several.subject).not.toBe(one.subject);
+    expect(several.body).not.toContain('Brutăria Lina');
   });
 
   /**

@@ -36,7 +36,8 @@
       "edit": "Editați",
       "editNamed": "Editați {name}",
       "more": "Mai multe acțiuni pentru {name}"
-    }
+    },
+    "skipLink": "Treceți la conținutul principal"
   },
   "realm": {
     "signIn": {
@@ -228,7 +229,9 @@
         "help": "Fiecare modificare de mai sus cere parola cu care vă autentificați acum. Câmpul se golește după fiecare modificare, mai puțin cât timp configurați o aplicație nouă, a cărei confirmare o cere din nou.",
         "label": "Parola actuală",
         "missing": "Parola actuală lipsește, deci modificarea nu poate fi autorizată. Completați parola cu care vă autentificați."
-      }
+      },
+      "backToOrigin": "Înapoi la pagina de pe care ați venit",
+      "backToHome": "Înapoi la pagina principală a consolei"
     }
   },
   "platform": {
@@ -767,7 +770,8 @@
         "passwordReset": "Resetarea parolei",
         "invitation": "Invitații în organizații",
         "adminInvitation": "Invitații în consola de administrare",
-        "manualReminder": "Mementouri"
+        "manualReminder": "Mementouri",
+        "reportUpdate": "Actualizări ale rapoartelor"
       },
       "channels": {
         "in_app": "În aplicație",

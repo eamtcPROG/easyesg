@@ -119,6 +119,16 @@ describe('notification preferences (UC-168, FR-163)', () => {
           { channel: 'email', enabled: true },
         ],
       },
+      {
+        // FR-166's report-update notice, registered by task 37.3: optional, in-app and email.
+        categoryKey: 'reporting.report_update',
+        categoryName: 'Actualizări ale rapoartelor',
+        mandatory: false,
+        channels: [
+          { channel: 'in_app', enabled: true },
+          { channel: 'email', enabled: true },
+        ],
+      },
     ]);
   });
 

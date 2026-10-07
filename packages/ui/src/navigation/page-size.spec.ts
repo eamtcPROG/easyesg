@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readPageSize } from './pagination';
+import { readPageSize } from './page-size';
 
 describe('readPageSize', () => {
   it('keeps an offered size that is not the default', () => {

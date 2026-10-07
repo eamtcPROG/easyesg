@@ -476,6 +476,14 @@
   box-shadow: 0 0 0 2px var(--border-focus), 0 0 0 4px var(--border-focus-halo);
 }
 
+/* The skip link's target (task 203.3): `<main>` takes `tabIndex={-1}` so the link moves focus there, and a ring
+   around the whole page would say nothing the move itself does not. */
+#main-content:focus,
+#main-content:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: 1ms !important; animation-duration: 1ms !important; }
 }

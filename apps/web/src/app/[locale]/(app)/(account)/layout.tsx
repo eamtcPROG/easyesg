@@ -3,6 +3,7 @@ import { AccountRailSection } from '@/shared/account-rail-section';
 import { OrganizationChoiceGate } from '@/shared/organization-choice-gate';
 import { WorkspaceFooter } from '@/shared/workspace-footer';
 import styles from './layout.module.css';
+import { MAIN_CONTENT_ID } from '@easyesg/ui';
 
 /**
  * The account pages — S-27 at `/account`, S-28 at `/account/credentials` — under the rail their artboards draw.
@@ -31,7 +32,9 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
       <div className={styles.page}>
         <AccountRailSection />
         <div className={styles.scroll}>
-          <main className={styles.main}>{children}</main>
+          <main id={MAIN_CONTENT_ID} tabIndex={-1} className={styles.main}>
+            {children}
+          </main>
           <WorkspaceFooter />
         </div>
       </div>

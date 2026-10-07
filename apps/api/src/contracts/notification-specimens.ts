@@ -1,5 +1,8 @@
 import { NOTIFICATION_CATEGORY, type NotificationCategoryKey } from './notification.port';
 
+/** The organization and entity every specimen names, so the console's examples read as one business. */
+const SPECIMEN_ENTITY = 'Brutăria Lina SRL';
+
 /**
  * One set of example values per notification category — what A-17 renders each category's wording with, so an operator
  * reads a message rather than a template (task 67.10; §12.5.6's task-67.10 row (1)).
@@ -13,15 +16,24 @@ import { NOTIFICATION_CATEGORY, type NotificationCategoryKey } from './notificat
 export const NOTIFICATION_SPECIMEN: Readonly<Record<NotificationCategoryKey, Readonly<Record<string, string>>>> = {
   [NOTIFICATION_CATEGORY.EMAIL_VERIFICATION]: { link: specimenLink('verify?token=…') },
   [NOTIFICATION_CATEGORY.PASSWORD_RESET]: { link: specimenLink('reset?token=…') },
-  [NOTIFICATION_CATEGORY.INVITATION]: { link: specimenLink('invitation/…'), organizationName: 'Brutăria Lina SRL' },
+  [NOTIFICATION_CATEGORY.INVITATION]: { link: specimenLink('invitation/…'), organizationName: SPECIMEN_ENTITY },
   [NOTIFICATION_CATEGORY.ADMIN_INVITATION]: { link: 'https://console.easyesg.md/invitation/…' },
   [NOTIFICATION_CATEGORY.MANUAL_REMINDER]: {
     link: specimenLink('reports/…'),
     senderName: 'Ana Rusu',
-    entityName: 'Brutăria Lina SRL',
+    entityName: SPECIMEN_ENTITY,
     fiscalYear: '2026',
     noteGiven: 'given',
     note: 'Mai lipsesc datele despre consumul de energie.',
+  },
+  // One report reached, the wording's fuller arm: it names the entity and the year as well as the two sets.
+  [NOTIFICATION_CATEGORY.REPORT_UPDATE]: {
+    link: specimenLink('reports/…/calculator'),
+    reach: 'one',
+    setLabel: '2026.1',
+    newSetLabel: '2026.2',
+    entityName: SPECIMEN_ENTITY,
+    fiscalYear: '2026',
   },
 };
 

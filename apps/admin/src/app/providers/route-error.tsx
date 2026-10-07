@@ -1,3 +1,4 @@
+import { MAIN_CONTENT_ID } from '@easyesg/ui';
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { useTranslations } from 'use-intl';
 
@@ -15,7 +16,7 @@ export function RouteError({ reset }: ErrorComponentProps) {
   const t = useTranslations('chrome.error');
 
   return (
-    <main>
+    <main id={MAIN_CONTENT_ID} tabIndex={-1}>
       <h1>{t('title')}</h1>
       <p>{t('body')}</p>
       <button type="button" onClick={reset}>

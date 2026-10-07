@@ -103,6 +103,15 @@ traps each one left — grouped by area rather than by the task that built it.
   task-38.4 row). **The run tables carry no `UPDATE` or `DELETE` policy, so under
   forced row security even their owner's `DELETE` matches nothing and says nothing** — a suite's cleanup lifts `FORCE`
   inside its transaction (`test/calculator.e2e-spec.ts`), and a report a run rests on cannot be deleted at all (OQ-20).
+  **Since task 37.4 a factor set is validated at publication**: `ConfigurationPublisher` asks a kind's rule
+  (`infrastructure/configuration/configuration-kind-rules.ts`) before it writes, and refuses a set the reader would
+  reject or read with a source dropped (`ConfigurationPayloadRefusedError`) — the seed loader included, which registers
+  `tsconfig-paths` for it. **Since 37.3 a replaced set is announced and noticed**: a publication over an occupied window or
+  a revert writes `calculator.factor_set_replaced` on its own transaction, and the worker's `FactorSetReplacedHandler`
+  raises FR-166's report-update notice (`reporting.report_update`) in each organization whose open report's latest run
+  used the set leaving, to its editors and administrator, and withdraws the entering set's own — **the first producer on
+  the worker**, one organization at a time through `TENANT_WORK` (`contracts/tenant-work.port.ts`) (§12.5.6's
+  task-37.3/37.4 row).
 - **Not live**: the calculator's runs and validation (38 … 42), preview and export (43 … 47),
   the outstanding-report and deadline notices (51.2), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
@@ -937,9 +946,14 @@ reads downstream as "this customer has no data" and survives review, staging and
 Deliberate exceptions, each with a stated reason: `modules/identity/*` (runs before a tenant
 exists), `platform/audit` and `platform/metering` (append-only, cross-tenant by design),
 `infrastructure/persistence/admin-readonly.ts` (`esg_admin_ro`, `BYPASSRLS`, read-only, every
-acquisition logged), and `NotificationStoreRepository` (task 50.1: the worker's, holding no request
+acquisition logged), `NotificationStoreRepository` (task 50.1: the worker's, holding no request
 runner, so each statement opens its own transaction and binds `app.current_org` from the job — the
-reserved platform id for a notice that belongs to no organization).
+reserved platform id for a notice that belongs to no organization), `FactorSetUsersRepository` (task
+37.3: the worker's one unbound read, the organizations with a run on a factor-set revision, under
+`calc_run_worker_directory_select`, which holds only while nothing is bound) and `WorkerTenantWork`
+(task 37.3: `TENANT_WORK` on the worker, which opens a transaction bound to one organization and
+holds it in a request context, so the tenant repositories and the notification port inside it find
+it as they find a request's).
 
 Tenant binding is `SELECT set_config('app.current_org', $1, true)` — a bind parameter, and
 transaction-local. Never `SET LOCAL` (utility syntax, no bind parameter, forces interpolation into

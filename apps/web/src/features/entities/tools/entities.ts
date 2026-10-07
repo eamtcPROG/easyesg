@@ -1,4 +1,5 @@
-import type { IndexPage } from '@easyesg/ui';
+import { matchesSearch } from '@/lib/search-match';
+import { DEFAULT_PAGE_SIZE, readPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
 import type { ReportingEntity } from '@easyesg/contracts';
 import type { EntityPeriod } from './entity-periods';
 
@@ -97,6 +98,10 @@ export interface EntityView {
   readonly sort: EntitySort;
   readonly direction: EntitySortDirection;
   readonly page: number;
+  /** UX-141's rows per page — 25, 50 or 100, in the address as `onpage` and absent at the default (task 203.1). */
+  readonly pageSize: PageSize;
+  /** §4.7's text search, `?q=`, `''` for none (task 203.2). Matched in the browser, over the rows this list holds. */
+  readonly q: string;
 }
 
 /**
@@ -112,12 +117,9 @@ export const DEFAULT_ENTITY_VIEW: EntityView = {
   sort: ENTITY_SORT.STANDING,
   direction: ENTITY_SORT_DIRECTION.ASCENDING,
   page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+  q: '',
 };
-
-/** Small by design: §4.6's Index carries pagination, and the artboard's own caption says the list
- *  "is short and will stay short". The page exists so the archetype is complete, not because a
- *  tenant will fill it. */
-export const ENTITY_PAGE_SIZE = 25;
 
 export type EntityPage = IndexPage<EntityRow>;
 
@@ -143,6 +145,8 @@ export const readEntityView = (
     direction:
       oneOf(Object.values(ENTITY_SORT_DIRECTION), single('dir')) ?? DEFAULT_ENTITY_VIEW.direction,
     page: Number.isFinite(page) && page > 0 ? page : DEFAULT_ENTITY_VIEW.page,
+    pageSize: readPageSize(single('onpage')).onpage ?? DEFAULT_ENTITY_VIEW.pageSize,
+    q: single('q')?.trim() ?? '',
   };
 };
 
@@ -154,6 +158,8 @@ export const entityViewQuery = (view: EntityView): string => {
   if (view.sort !== DEFAULT_ENTITY_VIEW.sort) params.set('sort', view.sort);
   if (view.direction !== DEFAULT_ENTITY_VIEW.direction) params.set('dir', view.direction);
   if (view.page !== DEFAULT_ENTITY_VIEW.page) params.set('page', String(view.page));
+  if (view.pageSize !== DEFAULT_ENTITY_VIEW.pageSize) params.set('onpage', String(view.pageSize));
+  if (view.q !== '') params.set('q', view.q);
   return params.toString();
 };
 
@@ -209,7 +215,10 @@ export const applyEntityView = (input: {
   const { rows, view } = input;
 
   const matched = rows.filter(
-    (row) => view.standing === ENTITY_FILTER_ANY || row.standing === view.standing,
+    (row) =>
+      // §4.7's search over the name and the IDNO (task 203.2).
+      matchesSearch({ term: view.q, fields: [row.name, row.idno] }) &&
+      (view.standing === ENTITY_FILTER_ANY || row.standing === view.standing),
   );
 
   const ordered = matched.toSorted((left, right) => {
@@ -220,19 +229,19 @@ export const applyEntityView = (input: {
     return view.direction === ENTITY_SORT_DIRECTION.ASCENDING ? settled : -settled;
   });
 
-  const pageCount = Math.max(1, Math.ceil(ordered.length / ENTITY_PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(ordered.length / view.pageSize));
   const page = Math.min(Math.max(1, view.page), pageCount);
-  const from = (page - 1) * ENTITY_PAGE_SIZE;
+  const from = (page - 1) * view.pageSize;
 
   // `matched` and `total` are the archetype's own way of telling its two empty states apart —
   // `total === 0` is first use and `matched === 0` with rows behind it is a filter that excluded
   // everything. Computing them here rather than a boolean is what lets `IndexShell` decide, which
   // is the point of the contract being shaped this way.
   return {
-    rows: ordered.slice(from, from + ENTITY_PAGE_SIZE),
+    rows: ordered.slice(from, from + view.pageSize),
     matched: ordered.length,
     total: rows.length,
     page,
-    pageSize: ENTITY_PAGE_SIZE,
+    pageSize: view.pageSize,
   };
 };

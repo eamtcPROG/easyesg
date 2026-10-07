@@ -9,11 +9,11 @@ component that only works in one of them is a defect here, not a variant.
 `'use client'` vocabulary rule, the `Slot` rule, UX-89's "reuse or add to the inventory", the four
 homes of state — it is written at root because it holds for `apps/web` and `apps/admin` too, and
 restating it here would create the second copy that drifts. This file carries what is true of
-*these 72 components*: where things are, what has already bitten someone, and what finishing looks like.
+*these 73 components*: where things are, what has already bitten someone, and what finishing looks like.
 
 ## Current state
 
-72 components in nine folders, 46 spec files, `src/styles/tokens.css` at 481 lines — **light and
+73 components in nine folders, 47 spec files, `src/styles/tokens.css` at 489 lines — **light and
 dark since task 82**, with `styles/tokens.spec.ts` measuring every semantic pairing in both
 schemes against UX-101 and writing `styles/contrast-record.md` as it goes. That spec is a
 `.spec.ts` rather than a `.spec.tsx` and so is *not* in the 29: it renders nothing, it parses the
@@ -58,7 +58,7 @@ something quiet, and a stale `dist/` is one failure mode this package cannot hav
 
 ```
 src/
-├─ index.ts        The barrel — 78 exports. `@easyesg/ui`
+├─ index.ts        The barrel — 81 exports. `@easyesg/ui`
 ├─ forms/index.ts  The react-hook-form binding. `@easyesg/ui/forms`, NOT in the barrel
 ├─ styles/         tokens.css — reached as `@easyesg/ui/src/styles/tokens.css`
 ├─ archetypes/     The nine §4.6 page templates. README.md is the map
@@ -117,17 +117,18 @@ src/
   form read as a 32nd site. Worth knowing when reading this number: it counts *files that import the binding*, not
   forms, and splitting a form raises it without adding a form.
 
-- **The eleven vocabularies live in directive-free sibling modules and are exported from the barrel
+- **The twelve vocabularies live in directive-free sibling modules and are exported from the barrel
   *directly*.** `button-vocabulary.ts`, `data-table-vocabulary.ts`,
   `language-switcher-vocabulary.ts`, `version-pin-indicator-vocabulary.ts`,
   `nav-link-vocabulary.ts`, `skeleton-vocabulary.ts`, `usage-counter-vocabulary.ts`,
-  `global-bar-vocabulary.ts`, `badge-vocabulary.ts`, `dialog-vocabulary.ts`, `wizard-step-vocabulary.ts` — none carries
+  `global-bar-vocabulary.ts`, `badge-vocabulary.ts`, `dialog-vocabulary.ts`, `wizard-step-vocabulary.ts`,
+  `skip-link-vocabulary.ts` (task 203.3) — none carries
   `'use client'`, and a re-export routed through the component module would still be a client
   reference. The root file records what this cost when it was wrong (`BUTTON_TONE` reaching a
   Server Component as `undefined`, a button in the wrong colours, every gate green). When you add a
   vocabulary, add the sibling module — not an `as const` at the top of the component.
 
-- **34 of the 72 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
+- **34 of the 73 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
   or a handler of its own. `Button` carried it from task 20 without needing it, and the day it
   gained `asChild` that directive took two screens down with a 500 — see the root file's *"A
   component that slots may not be a client boundary"*. `TextLink` is the control: same seam, never

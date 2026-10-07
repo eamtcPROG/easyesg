@@ -142,7 +142,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-157 — One mechanism delivers every system notification
 
-**Status.** Partial — delivered 49.1, 49.2, 49.3, 50.1.1, 50.1.4, 50.3, 51.1, 51.3, 51.4, 52.2.1, 52.2.2 · remaining 51.2, 37.3, 65.1 (the producers not yet raising)
+**Status.** Partial — delivered 37.3, 49.1, 49.2, 49.3, 50.1.1, 50.1.4, 50.3, 51.1, 51.3, 51.4, 52.2.1, 52.2.2 · remaining 51.2, 65.1 (the producers not yet raising)
 
 **Obligation.** The system shall deliver every system-initiated notification — payment failure, quota approach, trial expiry, dunning, taxonomy version change, invitation, outstanding-report notice — through one channel-agnostic mechanism recording delivery timestamp and channel. FR-160 … FR-173 specify that mechanism rather than adding a second one.
 

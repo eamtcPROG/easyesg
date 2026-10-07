@@ -3,7 +3,7 @@ import { API_OUTCOME, type ApiOutcome, type ListResult } from '@/lib/api-outcome
 import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
 import {
   ACCESS_ROW_KIND,
-  ACCESS_PAGE_SIZE,
+  accessListPath,
   accessListQuery,
   type AccessPage,
   type AccessRow,
@@ -111,7 +111,8 @@ const toAccessRow = (row: AccessRowWire): AccessRow =>
  */
 export const readOrganizationAccess = async (view: AccessView): Promise<AccessRead> => {
   const [listed, administrators, seats] = await Promise.all([
-    api.getList<AccessRowWire>('/access', accessListQuery(view)),
+    // The search narrows the list and never the administrator count beside it: FR-60's rule needs the whole set.
+    api.getList<AccessRowWire>(accessListPath(view), accessListQuery(view)),
     api.getList<AccessRowWire>('/access', {
       filters: [{ field: 'role', values: [MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR] }],
       // One row, because only the count is read. `onpage: 1` rather than 0: the API's floor is 1,
@@ -164,7 +165,7 @@ const toAccessPage = (input: {
   matched: input.listed.total,
   total: input.listed.unfiltered ?? input.listed.total,
   page: input.view.page,
-  pageSize: ACCESS_PAGE_SIZE,
+  pageSize: input.view.pageSize,
   administrators: input.administrators,
 });
 

@@ -1,7 +1,6 @@
-import { IndexShell, type IndexShellProps } from '@easyesg/ui';
+import { IndexShell, PAGE_SIZES, type IndexShellProps } from '@easyesg/ui';
 import { useMemo } from 'react';
 import { useTranslations } from 'use-intl';
-import { PAGE_SIZES } from '~/lib/pagination';
 
 /**
  * `IndexShell` with the console's chrome already bound (task 67.3) — `apps/web/src/shared/index-view.tsx`'s

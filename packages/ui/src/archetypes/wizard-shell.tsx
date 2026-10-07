@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { WizardStepMark } from './wizard-step-mark';
 import type { WizardStepState } from './wizard-step-vocabulary';
 import styles from './wizard-shell.module.css';
+import { MAIN_CONTENT_ID } from '../navigation/skip-link-vocabulary';
 
 /**
  * Wizard archetype (§4.6) — *"ordered progression with completion state"*: S-07, S-09, S-19.
@@ -90,7 +91,7 @@ export function WizardShell({
             puts `<main>` around only its children, and why the sibling archetypes, which render inside that layout,
             have none.
           */}
-          <main className={styles.main}>
+          <main id={MAIN_CONTENT_ID} tabIndex={-1} className={styles.main}>
             {/* The Reporting Core frame's heading (task 179.3): the position, the name and what the module covers on one
                 side, the state on the other — beside them while they fit, beneath them when they do not. */}
             <header className={styles.header}>

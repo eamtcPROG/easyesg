@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from '@easyesg/ui';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
@@ -7,7 +8,6 @@ import ro from '@/messages/ro.json';
 import { formats } from '@/i18n/formats';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import {
-  ACCESS_PAGE_SIZE,
   ACCESS_ROW_KIND,
   ACCESS_STANDING,
   DEFAULT_ACCESS_VIEW,
@@ -119,7 +119,7 @@ const pageOf = (given: readonly AccessRow[]): AccessPage => ({
   matched: given.length,
   total: given.length,
   page: 1,
-  pageSize: ACCESS_PAGE_SIZE,
+  pageSize: DEFAULT_PAGE_SIZE,
   // The organization's count, not the page's — see `isLastAdministrator`. One administrator is what
   // this fixture holds, which is what makes the lockout cases below reachable.
   administrators: given.filter(

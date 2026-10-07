@@ -4,7 +4,7 @@ import { ConfigurationPublisher } from '../src/infrastructure/configuration/conf
 import { ConfigurationStore } from '../src/infrastructure/configuration/configuration-store.service';
 import { EMISSION_FACTOR_SET_CONFIG_KIND } from '../src/modules/core/calculator/constants/calculator.constants';
 import { FactorSetCatalog } from '../src/modules/core/calculator/services/factor-set-catalog.service';
-import { connectAs } from './support/database';
+import { connectAs, databaseNow, deleteFactorSetReplacements } from './support/database';
 
 /**
  * Emission factor sets as configuration (task 37; FR-34, FR-35, FR-71, NFR-19, NFR-85).
@@ -37,6 +37,8 @@ const set = (label: string, factor: string) => ({
 describe('emission factor sets (task 37)', () => {
   let app: DataSource;
   let owner: DataSource;
+  /** When the suite began, on the database's clock — what its publications' replacements are cleaned up from (task 37.3). */
+  let began: Date;
   let publisher: ConfigurationPublisher;
 
   /** A replica as a running process holds one: its own cache, found out about changes by polling. */
@@ -56,9 +58,14 @@ describe('emission factor sets (task 37)', () => {
     app = await connectAs('DB_USER', 'DB_PASSWORD', 'easyesg-factor-sets-app');
     owner = await connectAs('DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-factor-sets-owner');
     publisher = new ConfigurationPublisher(app);
+    began = await databaseNow(owner);
   });
 
   afterAll(async () => {
+    // A correction or a revert announces a replacement (task 37.3), which no worker drains here.
+    if (owner?.isInitialized && began !== undefined) {
+      await deleteFactorSetReplacements({ owner, scope: COUNTRY, since: began });
+    }
     if (app?.isInitialized) await app.destroy();
     if (owner?.isInitialized) await owner.destroy();
   });

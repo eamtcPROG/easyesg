@@ -79,7 +79,12 @@
         "previous": "Previous page",
         "next": "Next page",
         "position": "{from}–{to} of {total}",
-        "page": "Page {page}"
+        "page": "Page {page}",
+        "pageSize": "Rows per page"
+      },
+      "search": {
+        "submit": "Search",
+        "clear": "Clear search"
       }
     },
     "notFound": {
@@ -104,7 +109,8 @@
     "notifications": {
       "label": "Notifications",
       "unreadLabel": "{count, plural, =0 {Notifications, none unread} other {Notifications, # unread}}"
-    }
+    },
+    "skipLink": "Skip to main content"
   },
   "forms": {
     "show": "Show",
@@ -937,7 +943,8 @@
           "emailInvalid": "That is not the shape of an email address, so nobody could write to it. Check the spelling — for example contact@company.md."
         }
       },
-      "loading": "Loading the reporting entities…"
+      "loading": "Loading the reporting entities…",
+      "searchLabel": "Search by name or IDNO"
     },
     "periods": {
       "title": "Reporting periods",
@@ -1178,7 +1185,8 @@
         "cancel": "Cancel",
         "loading": "Loading the entities and periods…"
       },
-      "loading": "Loading the reports…"
+      "loading": "Loading the reports…",
+      "searchLabel": "Search by entity or fiscal year"
     },
     "access": {
       "title": "Users & access",
@@ -1337,7 +1345,8 @@
           "body": "We cannot check how many of the organisation’s seats are in use just now, so no invitation can be sent. The list is accurate, and you can still manage everyone’s access.",
           "action": "Reload the page in a few minutes."
         }
-      }
+      },
+      "searchLabel": "Search by name or email"
     },
     "wizard": {
       "title": "Report",
@@ -1606,6 +1615,10 @@
         "newest": "Newest first",
         "oldest": "Oldest first"
       },
+      "category": {
+        "label": "Category",
+        "all": "All categories"
+      },
       "markRead": "Mark as read",
       "dismiss": "Dismiss",
       "list": "Your notifications",
@@ -1620,6 +1633,11 @@
           "title": "Nothing unread",
           "body": "You have read everything that has arrived. Read notifications stay under All.",
           "action": "See all notifications"
+        },
+        "nothingInCategory": {
+          "title": "Nothing in this category",
+          "body": "No notice of this category matches what you chose to see. Your other notices are still in the list.",
+          "action": "Show all categories"
         }
       },
       "error": {

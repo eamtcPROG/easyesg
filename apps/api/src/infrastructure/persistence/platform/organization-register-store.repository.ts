@@ -16,6 +16,7 @@ import {
 import { ACQUISITION_PURPOSE } from '@api/modules/platform/support-access/models/support-access-log.model';
 import { AdminReadOnly } from '../admin-readonly';
 import { collated } from '../collation';
+import { escapeLikePattern } from '../like-pattern';
 
 interface RegisterDbRow {
   id: string;
@@ -74,8 +75,6 @@ const MATCHES = `($1::text IS NULL
                  OR EXISTS (SELECT 1 FROM core.reporting_entity e
                              WHERE e.organization_id = register.id
                                AND e.idno LIKE $1::text || '%' ESCAPE '!'))`;
-
-const escapeLikePattern = (term: string): string => term.replace(/[!%_]/gu, (c) => `!${c}`);
 
 const ORDER_BY: Record<OrganizationRegisterSort, string> = {
   [ORGANIZATION_REGISTER_SORT.NAME]: collated('name'),

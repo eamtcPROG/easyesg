@@ -368,6 +368,68 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     }).expect(400);
   });
 
+  /**
+   * Task 183 (§12.5.6's task-182 authoring row (6); FR-24, FR-29, FR-32): three malformed writes that reached no
+   * defined refusal. The first two hit the store's CHECK and answered **500**; the unit was checked by nothing. Each is
+   * now 400 `validation-failed` before anything is written — the stored step is read back to prove nothing was.
+   */
+  describe('malformed authoring writes (task 183)', () => {
+    const problemOf = (response: { body: unknown }) => response.body as { type: string; detail?: string };
+    const refused = async (reportId: string, value: Record<string, unknown>) => {
+      const response = await http()
+        .put(`/api/v1/reports/${reportId}/values`)
+        .set(editor.authorization)
+        .send({ values: [value] })
+        .expect(400);
+      expect(problemOf(response).type).toMatch(/\/validation-failed$/u);
+      expect(problemOf(response).detail).toBeTruthy();
+    };
+
+    it.each([
+      ['no reason', {}],
+      ['an empty reason', { notAvailableReason: '' }],
+      ['a reason of spaces', { notAvailableReason: '   ' }],
+    ])('refuses not available with %s', async (_case, reason) => {
+      const reportId = await createReport(await openPeriod(2026));
+      await refused(reportId, { elementKey: B1_ELEMENT, state: DISCLOSURE_STATE.NOT_AVAILABLE, ...reason });
+      expect(rowsOf(await readStep(reportId), B1_ELEMENT).every((field) => field.state !== DISCLOSURE_STATE.NOT_AVAILABLE)).toBe(true);
+    });
+
+    it('refuses a reason on a state other than not available', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await refused(reportId, {
+        elementKey: B1_ELEMENT,
+        valueText: 'Brutăria Lina',
+        state: DISCLOSURE_STATE.OK,
+        notAvailableReason: 'Left over from an earlier answer.',
+      });
+    });
+
+    it('refuses a unit outside a stated list, and accepts one on it', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const air = { elementKey: 'AmountOfEmissionToAir', dimensionKey: 'AmmoniaNH3Member', ordinal: 0, valueNumeric: '12' };
+
+      // B4's emissions state kg or t (task 91.4): MWh is not a mass.
+      await refused(reportId, { ...air, unitCode: 'MWh', state: DISCLOSURE_STATE.OK });
+      expect(rowsOf(await readStep(reportId, 'B4'), 'AmountOfEmissionToAir').filter((field) => field.valueNumeric !== null)).toHaveLength(0);
+
+      await http()
+        .put(`/api/v1/reports/${reportId}/values`)
+        .set(editor.authorization)
+        .send({ values: [{ ...air, unitCode: 't', state: DISCLOSURE_STATE.OK }] })
+        .expect(200);
+    });
+
+    it('answers 404 for a module the pinned taxonomy does not carry', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const response = await http()
+        .get(`/api/v1/reports/${reportId}/modules/Z9`)
+        .set(editor.authorization)
+        .expect(404);
+      expect(problemOf(response).type).toMatch(/\/not-found$/u);
+    });
+  });
+
   const readStep = async (reportId: string, module = 'B1'): Promise<Step> =>
     objectOf<Step>((await http()
       .get(`/api/v1/reports/${reportId}/modules/${module}`).set(editor.authorization).expect(200)).body);

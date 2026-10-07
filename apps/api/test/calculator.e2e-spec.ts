@@ -12,7 +12,7 @@ import { ConfigurationPublisher } from '../src/infrastructure/configuration/conf
 import { ConfigurationStore } from '../src/infrastructure/configuration/configuration-store.service';
 import { EMISSION_FACTOR_SET_CONFIG_KIND } from '../src/modules/core/calculator/constants/calculator.constants';
 import { DISCLOSURE_ORIGIN, DISCLOSURE_STATE } from '../src/modules/core/disclosure/models/disclosure-value.model';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, databaseNow, deleteFactorSetReplacements } from './support/database';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 const ORG = '01930000-0000-7000-8000-0000000000c8';
@@ -66,6 +66,8 @@ const B3 = {
 describe('the calculator’s lines and runs (task 38.1)', () => {
   let app: NestExpressApplication;
   let owner: DataSource;
+  /** When the suite began, on the database's clock — what its factor-set publications are cleaned up from (task 37.3). */
+  let began: Date;
   let worker: DataSource;
   let appRole: DataSource;
   let admin: SignedInAccount;
@@ -127,6 +129,7 @@ describe('the calculator’s lines and runs (task 38.1)', () => {
     worker = await connectAs('DB_WORKER_USER', 'DB_WORKER_PASSWORD', 'easyesg-calculator-worker');
     appRole = await connectAs('DB_USER', 'DB_PASSWORD', 'easyesg-calculator-app');
 
+    began = await databaseNow(owner);
     await removeFixtures();
     await asOrganization(owner, null, (run) =>
       run(`INSERT INTO core.organization (id, name, country_code) VALUES ($1, 'Brutăria Bellini SRL', 'MD')`, [ORG]));
@@ -157,6 +160,8 @@ describe('the calculator’s lines and runs (task 38.1)', () => {
   afterAll(async () => {
     await cleanupSignedInAccounts({ owner });
     await removeFixtures();
+    // The correction this suite publishes and reverts announces two replacements, which no worker drains here.
+    if (began !== undefined) await deleteFactorSetReplacements({ owner, scope: 'md', since: began });
     await app?.close();
     for (const source of [owner, worker, appRole]) if (source?.isInitialized) await source.destroy();
   });
