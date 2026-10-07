@@ -145,9 +145,11 @@ prove admin-not-to-web \
   "$ADMIN/lib/__boundary_fixture.ts" \
   "export * from '../../../web/src/lib/session-cookie';"
 
+# Any console module will do, but it must exist: the import named lib/pagination until task 203
+# moved that file into packages/ui, and from then the rule matched nothing.
 prove web-not-to-admin \
   "$WEB/lib/__boundary_fixture.ts" \
-  "export * from '../../../admin/src/lib/pagination';"
+  "export * from '../../../admin/src/lib/env';"
 
 prove admin-platform-not-to-billing \
   "$ADMIN/features/platform/taxonomy/__boundary_fixture.ts" \
