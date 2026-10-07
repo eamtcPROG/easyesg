@@ -14,6 +14,7 @@ import {
   syncStateOf,
   writeKey,
   type AutosaveState,
+  type QueuedWrite,
 } from './autosave-state';
 
 /**
@@ -45,7 +46,11 @@ const committed = (elementKey: string, valueNumeric: string) => ({
 
 const online = () => initialAutosaveState({ online: true });
 
-const changed = (state: AutosaveState, w: DisclosureValueWrite) =>
+/** A pending write's figure, where it is a write that has one — a line (task 39.1) carries its figure inside it. */
+const numericOf = (w: QueuedWrite | undefined): string | null | undefined =>
+  w !== undefined && 'valueNumeric' in w ? w.valueNumeric : undefined;
+
+const changed = (state: AutosaveState, w: QueuedWrite) =>
   autosaveReducer(state, { type: AUTOSAVE_EVENT.CHANGED, write: w });
 
 const started = (state: AutosaveState) =>
@@ -81,12 +86,11 @@ describe('autosaveReducer (UC-35)', () => {
     const acknowledged = autosaveReducer(corrected, {
       type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
       committed: [committed('NumberOfEmployees', '42')],
+      lines: [],
     });
 
     // The acknowledgement was for 42; 43 is still pending and goes in the next flush.
-    expect(acknowledged.pending[writeKey({ elementKey: 'NumberOfEmployees' })]?.write.valueNumeric).toBe(
-      '43',
-    );
+    expect(numericOf(acknowledged.pending[writeKey({ elementKey: 'NumberOfEmployees' })]?.write)).toBe('43');
     expect(acknowledged.inFlight).toBeNull();
     expect(canFlush(acknowledged)).toBe(true);
     expect(saveStateOf(acknowledged)).toBe(SAVE_STATE.SAVED);
@@ -100,6 +104,7 @@ describe('autosaveReducer (UC-35)', () => {
     const settled = autosaveReducer(started(dirty), {
       type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
       committed: [committed('A', '1'), committed('B', '2')],
+      lines: [],
     });
 
     expect(settled.pending).toEqual({});
@@ -158,8 +163,8 @@ describe('autosaveReducer (UC-35)', () => {
     });
 
     expect(restored.hydrated).toBe(true);
-    expect(restored.pending[writeKey({ elementKey: 'A' })]?.write.valueNumeric).toBe('newer');
-    expect(restored.pending[writeKey({ elementKey: 'B' })]?.write.valueNumeric).toBe('queued');
+    expect(numericOf(restored.pending[writeKey({ elementKey: 'A' })]?.write)).toBe('newer');
+    expect(numericOf(restored.pending[writeKey({ elementKey: 'B' })]?.write)).toBe('queued');
     expect(online().hydrated).toBe(false);
   });
 
@@ -167,7 +172,7 @@ describe('autosaveReducer (UC-35)', () => {
     const state = changed(changed(changed(online(), write('B', '1')), write('A', '2')), write('B', '3'));
     const { writes, sent } = flushSnapshot(state);
     // B was re-written after A, so it carries the later sequence and comes second.
-    expect(writes.map((w) => ('inputKey' in w ? w.inputKey : `${w.elementKey}:${w.valueNumeric}`))).toEqual([
+    expect(writes.map((w) => ('elementKey' in w ? `${w.elementKey}:${w.valueNumeric}` : 'other'))).toEqual([
       'A:2',
       'B:3',
     ]);
@@ -284,5 +289,79 @@ describe('flushIsBlocked', () => {
     });
     expect(flushIsBlocked(failed)).toBe(true);
     expect(flushIsBlocked(autosaveReducer(failed, { type: AUTOSAVE_EVENT.RETRY_REQUESTED }))).toBe(false);
+  });
+});
+
+/**
+ * S-09's lines in the same queue (task 39.1; §12.5.6's task-39 row (2)): coalesced on the line's id, so the latest
+ * write — or a removal after an edit — is what leaves, and acknowledged into their own overlay.
+ */
+describe('calculator lines', () => {
+  const gas = (quantity: string) => ({
+    lineId: 'line-1',
+    line: { siteOrdinal: 0, sourceKey: 'natural_gas', quantity, unitCode: 'm3' },
+  });
+
+  it('keys a line by its id, apart from every disclosure and derivation input', () => {
+    expect(writeKey({ lineId: 'line-1' })).not.toBe(writeKey({ elementKey: 'line-1' }));
+    expect(writeKey({ lineId: 'line-1' })).not.toBe(writeKey({ inputKey: 'line-1' }));
+  });
+
+  it('coalesces edits to one line, and a removal replaces the edit before it', () => {
+    const edited = changed(changed(online(), gas('500')), gas('520'));
+    expect(flushSnapshot(edited).writes).toEqual([gas('520')]);
+
+    const removed = changed(edited, { lineId: 'line-1', removed: true });
+    expect(flushSnapshot(removed).writes).toEqual([{ lineId: 'line-1', removed: true }]);
+  });
+
+  it('acknowledges a line into its own overlay — the stored line, or null for a removal', () => {
+    const stored = {
+      id: 'line-1',
+      siteOrdinal: 0,
+      sourceKey: 'natural_gas',
+      description: null,
+      quantity: '520',
+      unitCode: 'm3',
+      notAvailableReason: null,
+      monthlyQuantities: null,
+      overrideTonnes: null,
+      overrideExplanation: null,
+      overriddenBy: null,
+      updatedAt: 0,
+    };
+    const settled = autosaveReducer(started(changed(online(), gas('520'))), {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      committed: [],
+      lines: [{ lineId: 'line-1', stored }],
+    });
+    expect(settled.pending).toEqual({});
+    expect(settled.committedLines['line-1']).toEqual(stored);
+
+    const gone = autosaveReducer(started(changed(settled, { lineId: 'line-1', removed: true })), {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      committed: [],
+      lines: [{ lineId: 'line-1', stored: null }],
+    });
+    expect(gone.committedLines['line-1']).toBeNull();
+  });
+
+  it('is queued offline like any field (FR-38)', () => {
+    const offline = autosaveReducer(changed(online(), gas('500')), {
+      type: AUTOSAVE_EVENT.CONNECTION_CHANGED,
+      connection: CONNECTION.OFFLINE,
+    });
+    expect(syncStateOf(offline, writeKey({ lineId: 'line-1' }))).toBe(SAVE_STATE.QUEUED);
+  });
+
+  it('keeps the acknowledged lines the same object when a flush carried none (task 39.2)', () => {
+    // S-09 reads the calculator again when this moves, so a flush of values alone must not move it.
+    const before = online();
+    const settled = autosaveReducer(started(changed(before, write('A', '1'))), {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      committed: [committed('A', '1')],
+      lines: [],
+    });
+    expect(settled.committedLines).toBe(before.committedLines);
   });
 });

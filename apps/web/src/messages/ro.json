@@ -1523,7 +1523,8 @@
           "sqkm": "km²"
         },
         "unnamed": "Fără denumire",
-        "yes": "Da"
+        "yes": "Da",
+        "overridden": "Cifra dumneavoastră"
       },
       "session": {
         "expired": "Sesiunea a expirat în timp ce secțiunea {module} era deschisă.",
@@ -1580,6 +1581,242 @@
           "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Numărul de angajați în ultima zi a perioadei.",
           "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Câți dintre angajați intră sub un contract colectiv de muncă. Ponderea se calculează față de numărul de angajați declarat la B1.",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Câți angajați au încetat raporturile de muncă pe parcursul perioadei, indiferent de motiv."
+        }
+      }
+    },
+    "calculator": {
+      "title": "Calculator de carbon",
+      "crumb": "Calculator de carbon",
+      "crumbLabel": "Unde vă aflați",
+      "heading": "Energia dumneavoastră, în unitățile de pe facturi",
+      "lede": "Introduceți fiecare factură așa cum este scrisă. Metrii cubi rămân metri cubi, litrii rămân litri. Transformarea lor în tone de CO₂e este treaba noastră.",
+      "back": "Înapoi la {module}",
+      "forbidden": {
+        "title": "Acest calculator nu vă este deschis",
+        "body": "Aparține unui raport al unei organizații din care nu faceți parte sau în care calitatea de membru nu mai este activă. Un administrator al acelei organizații vă poate da acces."
+      },
+      "unreachable": {
+        "title": "Calculatorul nu a putut fi încărcat",
+        "body": "Nu am putut contacta serviciul, așa că nu este afișat nimic. Nimic din ce ați introdus înainte nu s-a pierdut. Încercați din nou peste câteva minute."
+      },
+      "sites": {
+        "label": "Afișați liniile pentru",
+        "all": "Toate locațiile · {count, plural, one {# linie} few {# linii} other {# de linii}}",
+        "one": "{name} · {count}",
+        "unnamed": "Locația {position}"
+      },
+      "noSites": {
+        "title": "Adăugați mai întâi locațiile în B1",
+        "body": "Fiecare factură aparține uneia dintre locațiile pe care le enumeră raportul, iar acest raport nu enumeră încă niciuna. Adăugați cel puțin o locație la baza de întocmire, apoi reveniți.",
+        "action": "Mergeți la locații"
+      },
+      "noFactorSet": {
+        "title": "Nu există încă factori de emisie pentru această perioadă",
+        "body": "Factorii se publică pentru fiecare perioadă de raportare și niciunul nu o acoperă încă pe aceasta, așa că nu se poate adăuga nicio factură. Liniile deja introduse rămân neschimbate și vor putea fi folosite după publicarea factorilor."
+      },
+      "empty": {
+        "title": "Pregătiți facturile de energie",
+        "body": "Douăsprezece luni de gaz, electricitate și combustibil. Avem nevoie de ce scrie pe factură — metri cubi, litri, kilowați-oră.",
+        "electricity": "Electricitate — situația anuală de la furnizor",
+        "gas": "Gaz — facturile de iarnă contează cel mai mult",
+        "fuel": "Combustibil pentru vehicule — extrasul cardului de flotă sau bonurile",
+        "note": "Nu aveți una dintre ele? Adăugați linia și spuneți de ce nu există cifră — și acesta este un răspuns complet."
+      },
+      "columns": {
+        "source": "Sursa",
+        "invoice": "Ce scrie pe factură",
+        "period": "Perioada",
+        "converted": "Convertit",
+        "emissions": "Emisii"
+      },
+      "scopes": {
+        "scope_1": "Domeniul 1 · combustibil ars",
+        "scope_2_location_based": "Domeniul 2 · electricitate cumpărată"
+      },
+      "groups": {
+        "scope_1": "Combustibil pe care îl ardeți",
+        "scope_2_location_based": "Electricitate pe care o cumpărați"
+      },
+      "sources": {
+        "natural_gas": "Gaze naturale",
+        "diesel": "Motorină pentru încălzire sau generatoare",
+        "heating_oil": "Combustibil lichid de încălzire",
+        "residual_fuel_oil": "Păcură",
+        "lpg": "Gaz lichefiat (GPL), în butelii sau rezervor",
+        "coal": "Cărbune",
+        "wood": "Lemne de foc",
+        "diesel_road": "Motorină pentru vehicule",
+        "petrol_road": "Benzină pentru vehicule",
+        "lpg_road": "Gaz lichefiat (GPL) pentru vehicule",
+        "electricity_grid": "Electricitate din rețea"
+      },
+      "unknownSource": "Altă sursă de energie",
+      "units": {
+        "m3": "m³",
+        "l": "litri",
+        "t": "tone",
+        "kg": "kg",
+        "kWh": "kWh",
+        "MWh": "MWh",
+        "tCO2e": "t CO₂e"
+      },
+      "line": {
+        "description": "Denumirea dumneavoastră",
+        "descriptionHelp": "Opțional — cuptorul, duba, contorul magazinului.",
+        "quantity": "Cifra de pe factură",
+        "unit": "Unitatea",
+        "chooseUnit": "Alegeți unitatea de pe factură",
+        "invalidNumber": "Aceasta nu este o cifră pe care o putem citi, așa că nu a fost salvată. Scrieți-o cum apare pe factură, de exemplu 1 700 sau 1700,5.",
+        "required": "O linie are nevoie de cifra de pe factură sau de motivul pentru care aceasta lipsește, așa că modificarea nu a fost salvată. Introduceți una dintre ele sau eliminați linia.",
+        "wholePeriod": "Întreaga perioadă",
+        "periodMonthly": "Pe luni · {entered} din {total}",
+        "monthly": "Introduceți pe luni",
+        "annual": "O singură cifră pentru perioadă",
+        "notAvailable": "Nu există cifră pentru această linie",
+        "measured": "Introduceți totuși cifra",
+        "reason": "De ce nu există cifră",
+        "reasonHelp": "Cititorul raportului vede această frază lângă linie.",
+        "noFigure": "Fără cifră",
+        "remove": "Eliminați această linie",
+        "removeLabel": "Eliminați linia {source}",
+        "waiting": "Se așteaptă conversia",
+        "uncovered": "Nu este în factorii în vigoare",
+        "how": "Cum",
+        "closeHow": "Închideți"
+      },
+      "months": {
+        "legend": "{source}, lună de lună",
+        "month": "{month}",
+        "total": "Total pe perioadă: {total} {unit}",
+        "noTotal": "Nicio lună introdusă încă. Introduceți cel puțin una sau reveniți la o singură cifră pentru perioadă.",
+        "missing": "{count, plural, one {# lună este goală} few {# luni sunt goale} other {# de luni sunt goale}}: {months}. Totalul cuprinde doar lunile introduse.",
+        "complete": "Toate cele douăsprezece luni sunt introduse."
+      },
+      "add": {
+        "open": "Adăugați o sursă",
+        "atSite": "Adăugați o sursă la această locație",
+        "heading": "Adăugați o sursă",
+        "source": "Ce este",
+        "sourceHelp": "Grupate în combustibil ars și electricitate cumpărată — cele două cifre pe care B3 le raportează separat.",
+        "chooseSource": "Alegeți sursa",
+        "site": "Care locație",
+        "chooseSite": "Alegeți locația",
+        "quantity": "Cifra de pe factura dumneavoastră",
+        "unit": "Unitatea",
+        "noFigure": "Această factură nu are cifră — voi spune de ce",
+        "reason": "De ce nu există cifră",
+        "submit": "Adăugați linia",
+        "cancel": "Anulați",
+        "sourceRequired": "Alegeți pentru ce este factura, ca linia să poată fi adăugată. De aceasta depind unitățile oferite.",
+        "siteRequired": "Alegeți locația căreia îi aparține factura, ca linia să poată fi adăugată.",
+        "quantityRequired": "Introduceți cifra de pe factură, ca linia să poată fi adăugată. Dacă factura nu are una, spuneți de ce.",
+        "unitRequired": "Alegeți unitatea tipărită pe factură, ca cifra să poată fi convertită.",
+        "reasonRequired": "Spuneți de ce nu există cifră, ca linia să poată fi adăugată. Cititorul raportului vede această frază."
+      },
+      "measure": "{value} {unit}",
+      "derivation": {
+        "heading": "Cum s-au transformat {quantity} {unit} în {tonnes} t CO₂e",
+        "entered": {
+          "title": "Ce ați introdus",
+          "detail": "De pe factură, neschimbat."
+        },
+        "converted": {
+          "title": "Convertit în energie",
+          "detail": "{rate} MWh per {unit}, așa cum îl publică setul de factori."
+        },
+        "factor": {
+          "title": "Factorul de emisie aplicat",
+          "detail": "{factor} t CO₂e per MWh."
+        },
+        "reported": {
+          "title": "Raportat în tone",
+          "detail": "{places, plural, =-1 {Afișat cu toate cifrele, așa cum a fost calculat.} one {Rotunjit la o zecimală pentru raport; valoarea nerotunjită se păstrează.} few {Rotunjit la # zecimale pentru raport; valoarea nerotunjită se păstrează.} other {Rotunjit la # de zecimale pentru raport; valoarea nerotunjită se păstrează.}}"
+        },
+        "set": "Setul de factori folosit: {label}"
+      },
+      "pager": {
+        "label": "Sursele, pe rând",
+        "position": "Sursa {position} din {total}",
+        "next": "Următoarea: {source}",
+        "all": "Înapoi la toate sursele"
+      },
+      "summary": {
+        "heading": "Ce se transmite în B3",
+        "none": "Nimic măsurat încă",
+        "unmeasured": "{count, plural, one {# linie nu are cifră și nu este inclusă.} few {# linii nu au cifră și nu sunt incluse.} other {# de linii nu au cifră și nu sunt incluse.}}",
+        "factorSet": "Setul de factori",
+        "notYet": "Încă nefolosit pentru B3.",
+        "lastUsed": "Folosit ultima dată pentru B3 la {date}.",
+        "use": "Folosiți aceste cifre în B3",
+        "note": "Ambele totaluri urmează liniile dumneavoastră. Nimic nu este scris în B3 până nu apăsați butonul.",
+        "standing": {
+          "no_factor_set": "Nu sunt publicați încă factori de emisie pentru această perioadă, așa că nu există cu ce calcula.",
+          "no_lines": "Adăugați prima factură, iar cifra ei va apărea aici.",
+          "offline": "Fără conexiune. Folosirea cifrelor are nevoie de server, care deține factorii; liniile dumneavoastră se păstrează și pot fi folosite când reveniți online.",
+          "unsent": "Unele linii încă se salvează. Cifrele pot fi folosite după ce toate liniile sunt salvate.",
+          "uncovered": "{count, plural, one {# linie folosește o sursă sau o unitate pe care factorii în vigoare nu le mai acoperă, așa că cifrele nu pot fi folosite încă. Modificați-o sau eliminați-o mai întâi.} few {# linii folosesc o sursă sau o unitate pe care factorii în vigoare nu le mai acoperă, așa că cifrele nu pot fi folosite încă. Modificați-le sau eliminați-le mai întâi.} other {# de linii folosesc o sursă sau o unitate pe care factorii în vigoare nu le mai acoperă, așa că cifrele nu pot fi folosite încă. Modificați-le sau eliminați-le mai întâi.}}"
+        }
+      },
+      "notice": {
+        "title": "Sunt în vigoare factori de emisie mai noi",
+        "body": "Cifrele din B3 au fost calculate cu {pinned}. Recalcularea cu {current} le-ar schimba ca mai jos. Nimic nu se schimbă dacă nu cereți.",
+        "unknownPinned": "un set de factori anterior",
+        "figure": "Cifra",
+        "now": "Acum",
+        "wouldBe": "Ar deveni",
+        "recalculate": "Recalculați cu {current}",
+        "pinnedSet": "setul de factori {label}"
+      },
+      "entry": {
+        "title": "Calculator de carbon",
+        "body": "Nu aveți Domeniul 1 și Domeniul 2 în tone? Aproape nimeni nu le are. Introduceți cifrele de pe facturile de energie, în unitățile lor, iar calculatorul le calculează, arătând fiecare pas. Dacă contabilul a calculat deja tonele, introduceți-le mai jos.",
+        "action": "Calculați din facturile mele"
+      },
+      "figure": {
+        "yours": "Cifra dumneavoastră: {figure}",
+        "superseded": "Calculată: {figure} — înlocuită",
+        "reason": "Motivul",
+        "from": "Calculată din facturile dumneavoastră · setul de factori {label}, la {date}",
+        "unknownSet": "un set anterior",
+        "noteLabel": "Notă",
+        "how": "Vedeți cum a fost calculată",
+        "replace": "Înlocuiți cu cifra mea",
+        "change": "Modificați cifra sau motivul",
+        "restore": "Reveniți la cifra calculată",
+        "explain": "Explicați această cifră",
+        "changeNote": "Modificați nota",
+        "cancel": "Renunțați",
+        "note": "O notă lângă cifră",
+        "noteHelp": "Cititorul raportului o vede lângă cifră. Lăsați câmpul gol pentru a o elimina.",
+        "saveNote": "Salvați nota",
+        "offline": "Fără conexiune. Înlocuirea, explicarea sau restabilirea unei cifre are nevoie de server; încercați din nou când reveniți online."
+      },
+      "override": {
+        "tonnes": "Cifra dumneavoastră, în tone de CO₂e",
+        "tonnesRequired": "Introduceți cifra dumneavoastră în tone, ca să poată înlocui cifra calculată.",
+        "reason": "De ce o înlocuiți?",
+        "reasonHelp": "Un terț va citi această frază lângă ambele cifre. Scrieți-o pentru el.",
+        "reasonRequired": "Spuneți de ce înlocuiți cifra calculată, ca cifra dumneavoastră să poată fi folosită. Un terț citește acest motiv lângă ambele cifre.",
+        "use": "Folosiți cifra mea",
+        "keep": "Păstrați cifra calculată",
+        "cancel": "Renunțați",
+        "replace": "Înlocuiți cu cifra mea",
+        "computed": "Calculată: {figure}",
+        "replaced": "Cifra calculată de {computed} a fost înlocuită. Motivul și ambele cifre vor apărea în raport.",
+        "by": "Înlocuită de {name}.",
+        "reasonLabel": "Motivul",
+        "change": "Modificați cifra sau motivul",
+        "restore": "Reveniți la cifra calculată",
+        "yoursMarker": "cifra dumneavoastră"
+      },
+      "refusal": {
+        "run": {
+          "title": "Cifrele nu au fost folosite în B3",
+          "body": "Nu am putut contacta serviciul, așa că B3 a rămas neschimbat. Liniile dumneavoastră se păstrează. Încercați din nou peste câteva minute."
+        },
+        "figure": {
+          "title": "Cifra nu a fost modificată",
+          "body": "Nu am putut contacta serviciul, așa că cifra a rămas cum era. Încercați din nou peste câteva minute."
         }
       }
     }

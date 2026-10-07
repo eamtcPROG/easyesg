@@ -825,7 +825,8 @@ test('B8 asks headcount per named country, and turnover only past fifty (UC-26)'
   // Restored as a figure rather than as an editable box, the reporter never having typed it.
   const restored = page.getByRole('group', { name: 'Rata de fluctuație a personalului' });
   await expect(restored).toBeVisible();
-  await expect(restored).toContainText('0.125');
+  // Laid out for the locale, every digit kept (§12.5.6's task-39 row (7)).
+  await expect(restored).toContainText('0,125');
   // And the inputs come back carrying what was entered, which is the same claim one layer down.
   await expect(page.getByRole('textbox', { name: 'Angajați la începutul perioadei' })).toHaveValue('100');
 });

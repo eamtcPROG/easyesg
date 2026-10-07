@@ -24,6 +24,7 @@ describe('scope2LocationBased', () => {
     description: null,
     contents: { quantity, unitCode, notAvailableReason: quantity === null ? 'Billed by the landlord' : null },
     override: null,
+    overriddenBy: null,
   });
 
   it('applies the grid factor to purchased electricity, in whichever unit the bill reads', () => {

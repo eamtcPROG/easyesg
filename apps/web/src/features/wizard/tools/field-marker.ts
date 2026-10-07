@@ -10,12 +10,13 @@ import { TONE_OF_STATE, hasMarker } from './field-tone';
  * the carbon calculator rather than typed directly"*, and UX-12 hangs a provenance mark off exactly this
  * distinction — a trace can only be offered for a figure the system computed.
  *
- * **`calculated` cannot occur yet, and that is recorded rather than hidden.** Nothing writes it
- * until task 39.2's return from the calculator, so this branch is unreachable on today's data. It
- * is here because the marker is the seam 39.2 writes into; `architecture.md` §12.5.6 carries the
- * decision and the cost. `overridden` is deliberately NOT marked here — UX-43 requires an override
+ * **`calculated` is written by a calculator run** (task 38.4) — S-09's *use these figures in B3*
+ * since task 39.2, which lands the reader on this step with the figure so marked — and by B3's two
+ * derivations over it. This docblock said the branch was unreachable until 39.2, which stopped being
+ * true when 38.4 shipped. `overridden` is marked, and the marker is not the override's whole display — UX-43 requires an override
  * to display the superseded value beside the substituted one and to carry a reason, which is a
- * component and not a word, and it belongs to task 38.5 that produces it.
+ * component and not a word, and it is task 39.3's: the marker says the figure is the reporter's, and the control
+ * beside it shows both figures and the reason.
  *
  * **Then the company record, since task 180.3**: a value the api says still is what the record gives — its default
  * shown, or an answer still equal to it — reads *From the company record* in place of its state, which for a default
@@ -28,10 +29,20 @@ export function markerFor(
   // Named rather than two adjacent `string`s, per the root CLAUDE.md: swapped, the call compiles
   // and every calculated figure reads *carried forward* — a plausible wrong answer, which is the
   // whole of what that rule is about.
-  provenance: { readonly carried: string; readonly calculated: string; readonly record: string },
+  provenance: {
+    readonly carried: string;
+    readonly calculated: string;
+    readonly overridden: string;
+    readonly record: string;
+  },
 ): { readonly label: string; readonly tone: FieldTone } | undefined {
   if (field.origin === DISCLOSURE_ORIGIN.CALCULATED) {
     return { label: provenance.calculated, tone: FIELD_TONE.NEUTRAL };
+  }
+  // A substituted figure (task 39.3): amber and resolved — the artboard's *"a decision recorded, never a problem
+  // outstanding"*. The superseded figure and the reason are the field's control, beside it (UX-43).
+  if (field.origin === DISCLOSURE_ORIGIN.OVERRIDDEN) {
+    return { label: provenance.overridden, tone: FIELD_TONE.WARNING };
   }
   if (field.carriedForward) return { label: provenance.carried, tone: FIELD_TONE.NEUTRAL };
   if (field.fromRecord) return { label: provenance.record, tone: FIELD_TONE.NEUTRAL };

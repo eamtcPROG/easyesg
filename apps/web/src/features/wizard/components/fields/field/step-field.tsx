@@ -1,7 +1,9 @@
 'use client';
 
 import {
+  DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
+  isCalculatorFigure,
   type DisclosureField as DisclosureFieldShape,
   type DisclosureState,
 } from '@easyesg/contracts';
@@ -26,6 +28,7 @@ import {
   withCommitted,
   writeFor,
 } from '../../../tools/values';
+import { CalculatedFigure } from '@/features/calculator/components/figure/calculated-figure';
 import { useAutosaveContext } from '../../providers/autosave-context';
 import { DisclosureControl } from '../controls/disclosure-control';
 import { NotAvailableDeclaration } from '../controls/not-available';
@@ -102,6 +105,10 @@ export function StepField({
   const withUnit: DisclosureFieldShape = { ...field, unitCode: unit };
 
   const sync = syncStateOf(state, key);
+  // **A figure a calculator run wrote is not typed over** (task 39.3; UC-34, UX-43): the ordinary write refuses it
+  // (§12.5.6's task-38.4 row (4)), so it takes the computed-figure control — replace with the reporter's figure and a
+  // reason, explain it, or put the computed figure back — and none of the controls whose write the api would refuse.
+  const calculatorFigure = isCalculatorFigure(field.elementKey) && field.origin !== DISCLOSURE_ORIGIN.REPORTED;
   const syncLabels: Readonly<Record<Exclude<SaveState, typeof SAVE_STATE.SAVED>, string>> = {
     [SAVE_STATE.QUEUED]: t('queued'),
     [SAVE_STATE.SAVING]: t('saving'),
@@ -112,6 +119,7 @@ export function StepField({
       ? markerFor(field, markerLabels, {
           carried: tField('carried'),
           calculated: tField('calculated'),
+          overridden: tField('overridden'),
           record: tField('fromRecord'),
         })
       : { label: syncLabels[sync], tone: SYNC_TONE[sync] };
@@ -195,7 +203,7 @@ export function StepField({
        * that a value has not changed*.
        */
       carryForward={
-        readOnly || priorDraft === '' || storedDraftOf(field) !== '' ? undefined : (
+        readOnly || calculatorFigure || priorDraft === '' || storedDraftOf(field) !== '' ? undefined : (
           <Button
             variant={BUTTON_VARIANT.SUBTLE}
             onClick={() => change({ ...writeFor(field, priorDraft), carriedForward: true })}
@@ -219,15 +227,22 @@ export function StepField({
       // UC-30's *section* exclusion remains 36.13's (a different act, with storage FR-31 has not
       // been given yet; `architecture.md` §12.5.6 records the split).
       notAvailable={
+        // A computed figure is declared nothing: its absence is a run that measured nothing, which clears it (FR-30).
+        calculatorFigure ? null : (
         <NotAvailableDeclaration
           declared={field.state === DISCLOSURE_STATE.NOT_AVAILABLE}
           onDeclare={(reason) => change(notAvailableWrite(field, reason))}
           onResume={() => change(resumeWrite(field))}
         />
+        )
       }
       readOnly={readOnly}
     >
-      <DisclosureControl field={withUnit} readOnly={readOnly} labelledBy={labelId} onCommit={change} />
+      {calculatorFigure ? (
+        <CalculatedFigure field={field} readOnly={readOnly} />
+      ) : (
+        <DisclosureControl field={withUnit} readOnly={readOnly} labelledBy={labelId} onCommit={change} />
+      )}
     </DisclosureField>
   );
 }

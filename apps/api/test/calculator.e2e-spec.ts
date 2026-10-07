@@ -43,6 +43,7 @@ interface B3Field {
   origin: string;
   derived: boolean;
   explanation: string | null;
+  overriddenBy: { accountId: string; name: string | null } | null;
 }
 
 const B3 = {
@@ -81,12 +82,15 @@ describe('the calculator’s lines and runs (task 38.1)', () => {
 
   const gas = { siteOrdinal: 0, sourceKey: 'natural_gas', description: 'Oven and boiler', quantity: '500', unitCode: 'm3' };
 
-  const openReport = async (year: number): Promise<{ periodId: string; reportId: string }> => {
+  const openReport = async (
+    year: number,
+    dates: { start: string; end: string } = { start: `${year}-01-01`, end: `${year}-12-31` },
+  ): Promise<{ periodId: string; reportId: string }> => {
     const period = await http().post('/api/v1/periods').set(admin.authorization).send({
       reportingEntityId: entityId,
       fiscalYear: year,
-      periodStart: { date: `${year}-01-01`, timezone: CHISINAU },
-      periodEnd: { date: `${year}-12-31`, timezone: CHISINAU },
+      periodStart: { date: dates.start, timezone: CHISINAU },
+      periodEnd: { date: dates.end, timezone: CHISINAU },
     }).expect(201);
     const periodId = objectOf<{ id: string }>(period.body).id;
     const report = await http().post('/api/v1/reports').set(editor.authorization)
@@ -203,6 +207,127 @@ describe('the calculator’s lines and runs (task 38.1)', () => {
       siteOrdinal: 0, sourceKey: 'electricity_grid', notAvailableReason: 'Billed by the landlord',
     }).expect(200)).body);
     expect(written).toMatchObject({ quantity: null, unitCode: null, notAvailableReason: 'Billed by the landlord' });
+  });
+
+  describe('S-09 as it opens, and the monthly form (task 39.1)', () => {
+    // Twelve gas bills, March left empty — summed by the server, and the empty month flagged on screen, not refused.
+    const months = ['40', '45', null, '38', '30', '22', '18', '17', '21', '33', '41', '48.5'];
+    const monthly = { siteOrdinal: 0, sourceKey: 'natural_gas', unitCode: 'm3', monthlyQuantities: months };
+
+    it('offers the period’s factor set, the report’s site by name, and the twelve months, beside the lines', async () => {
+      const { reportId } = await openReport(2026);
+      const lineId = randomUUID();
+      await putLine(reportId, lineId, gas).expect(200);
+
+      const view = objectOf<{
+        factorSet: { label: string; sources: { key: string; ghgScope: string; units: string[] }[] } | null;
+        sites: { ordinal: number; name: string | null }[];
+        months: string[] | null;
+        sources: Line[];
+      }>((await http().get(`/api/v1/reports/${reportId}/calculator`).set(editor.authorization).expect(200)).body);
+
+      expect(view.factorSet?.label).toBe('2026.1');
+      // Units in no promised order: the payload is stored as `jsonb`, which keeps no key order.
+      const offered = new Map(view.factorSet?.sources.map((source) => [source.key, source]));
+      expect(offered.get('natural_gas')).toMatchObject({ key: 'natural_gas', ghgScope: 'scope_1', units: ['m3'] });
+      expect(offered.get('electricity_grid')?.ghgScope).toBe('scope_2_location_based');
+      expect([...(offered.get('electricity_grid')?.units ?? [])].sort()).toEqual(['MWh', 'kWh']);
+      // The record's one site, named as the wizard names it — the company's name for it (task 180.3) — never its
+      // ordinal or an element key.
+      expect(view.sites).toEqual([{ ordinal: 0, name: 'Brutăria' }]);
+      expect(view.months).toEqual([
+        '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06',
+        '2026-07', '2026-08', '2026-09', '2026-10', '2026-11', '2026-12',
+      ]);
+      expect(view.sources.map((line) => line.id)).toEqual([lineId]);
+    });
+
+    it('serves what the lines come to before any run, then the run B3 took its figures from (task 39.2)', async () => {
+      const { reportId } = await openReport(2026);
+      await putLine(reportId, randomUUID(), gas).expect(200);
+      const read = async () =>
+        objectOf<{
+          working: { scopes: { ghgScope: string; tonnesCo2e: string | null; lines: { megawattHours: string | null }[] }[]; uncovered: string[] } | null;
+          latestRun: { id: string; factorSet: { label: string | null }; results: { elementKey: string; tonnesCo2e: string | null }[] } | null;
+          precision: Record<string, number>;
+          factorSet: { sources: { key: string; megawattHoursPerUnit: Record<string, string>; emissionFactor: string }[] } | null;
+        }>((await http().get(`/api/v1/reports/${reportId}/calculator`).set(editor.authorization).expect(200)).body);
+
+      const before = await read();
+      // The shipped set's own figures, exactly: 500 m³ is 4.78865 MWh and 0.9699123256 t (task 38.2's numbers).
+      expect(before.working?.scopes[0]).toMatchObject({ ghgScope: 'scope_1', tonnesCo2e: '0.9699123256' });
+      expect(before.working?.scopes[0]?.lines[0]?.megawattHours).toBe('4.78865');
+      expect(before.working?.uncovered).toEqual([]);
+      expect(before.latestRun).toBeNull();
+      // The configured places every surface rounds to (`presentation_precision`, seeded by `pretest:e2e`).
+      expect(before.precision).toEqual({ tCO2e: 2, MWh: 2 });
+      // The conversion and the factor exactly as the set publishes them — the derivation's middle two steps.
+      expect(before.factorSet?.sources.find((source) => source.key === 'natural_gas')).toMatchObject({
+        megawattHoursPerUnit: { m3: '0.0095773' },
+        emissionFactor: '0.202544',
+      });
+
+      const run = objectOf<Run>((await http().post(`/api/v1/reports/${reportId}/calculator/runs`)
+        .set(editor.authorization).expect(201)).body);
+      const after = await read();
+      expect(after.latestRun).toMatchObject({ id: run.id, factorSet: { label: '2026.1' } });
+      expect(after.latestRun?.results).toEqual(
+        expect.arrayContaining([{ elementKey: B3.SCOPE_1, tonnesCo2e: '0.9699123256' }]),
+      );
+    });
+
+    it('serves the lines with no factor set for a period none serves, rather than refusing the read', async () => {
+      const { reportId } = await openReport(2027);
+      const view = objectOf<{ factorSet: unknown; sources: unknown[] }>(
+        (await http().get(`/api/v1/reports/${reportId}/calculator`).set(editor.authorization).expect(200)).body,
+      );
+      expect(view).toMatchObject({ factorSet: null, sources: [] });
+    });
+
+    it('stores twelve months and their exact sum as the line’s quantity', async () => {
+      const { reportId } = await openReport(2026);
+      const written = objectOf<Line & { monthlyQuantities: (string | null)[] | null }>(
+        (await putLine(reportId, randomUUID(), monthly).expect(200)).body,
+      );
+      expect(written).toMatchObject({ quantity: '353.5', unitCode: 'm3', monthlyQuantities: months });
+    });
+
+    it('goes back to one figure when the months are dropped', async () => {
+      const { reportId } = await openReport(2026);
+      const lineId = randomUUID();
+      await putLine(reportId, lineId, monthly).expect(200);
+      const annual = objectOf<Line & { monthlyQuantities: unknown }>(
+        (await putLine(reportId, lineId, { ...gas, quantity: '353.5' }).expect(200)).body,
+      );
+      expect(annual).toMatchObject({ quantity: '353.5', monthlyQuantities: null });
+    });
+
+    it.each([
+      ['months on a period that is not twelve calendar months', { start: '2026-06-01', end: '2026-12-31' }, monthly],
+      ['a quantity sent beside the months', undefined, { ...monthly, quantity: '999' }],
+      ['eleven months', undefined, { ...monthly, monthlyQuantities: months.slice(1) }],
+      ['every month empty', undefined, { ...monthly, monthlyQuantities: months.map(() => null) }],
+    ])('refuses %s, saying what to do', async (_case, dates, body) => {
+      const { reportId } = await openReport(2026, dates);
+      const refused = await putLine(reportId, randomUUID(), body).expect(400);
+      expect(problemType(refused)).toBe(`${PROBLEM}/validation-failed`);
+      expect((refused.body as { detail?: string }).detail).toEqual(expect.any(String));
+    });
+
+    it('holds the sum in the table itself: a quantity that is not the months’ total is refused below the api', async () => {
+      const { reportId } = await openReport(2026);
+      const lineId = randomUUID();
+      await putLine(reportId, lineId, monthly).expect(200);
+      await expect(
+        asOrganization(appRole, ORG, (run) =>
+          run(`UPDATE core.calc_source SET quantity = 1 WHERE id = $1`, [lineId])),
+      ).rejects.toThrow(/calc_source_months_total/);
+      // And an all-empty form cannot stand in for a figure.
+      await expect(
+        asOrganization(appRole, ORG, (run) =>
+          run(`UPDATE core.calc_source SET monthly_quantities = array_fill(NULL::numeric, ARRAY[12]) WHERE id = $1`, [lineId])),
+      ).rejects.toThrow(/calc_source_months_total/);
+    });
   });
 
   it('admits a site the reporter added to B1 beyond the record’s', async () => {
@@ -449,6 +574,89 @@ describe('the calculator’s lines and runs (task 38.1)', () => {
       expect((await b3(reportId)).get(B3.SCOPE_1)).toMatchObject({
         valueNumeric: '0.9699123256', origin: DISCLOSURE_ORIGIN.CALCULATED, explanation: null,
       });
+    });
+
+    /**
+     * S-07's half of UX-43 (task 39.3): a replaced B3 figure is never shown alone, so the step reads the figure the
+     * override superseded — the latest run's stored result — beside the substitute, through its own read.
+     */
+    it('serves the computed figure an override supersedes, beside the step, and nothing before a run (task 39.3)', async () => {
+      const { reportId } = await openReport(2026);
+      const figures = async () =>
+        objectOf<{ latestRun: { id: string; results: { elementKey: string; tonnesCo2e: string | null }[] } | null }>(
+          (await http().get(`/api/v1/reports/${reportId}/calculator/figures`).set(editor.authorization).expect(200)).body,
+        );
+      expect((await figures()).latestRun).toBeNull();
+
+      await putLine(reportId, randomUUID(), gas).expect(200);
+      const run = await runOf(reportId);
+      await http().put(`/api/v1/reports/${reportId}/calculator/figures/${B3.SCOPE_1}/override`).set(editor.authorization)
+        .send({ valueNumeric: '1.75', explanation: 'Our accountant’s figure' }).expect(204);
+
+      // The field holds the substitute; the read still answers what the calculator computed, from the run.
+      expect((await b3(reportId)).get(B3.SCOPE_1)).toMatchObject({ valueNumeric: '1.75', origin: DISCLOSURE_ORIGIN.OVERRIDDEN });
+      const after = await figures();
+      expect(after.latestRun?.id).toBe(run.id);
+      expect(after.latestRun?.results).toEqual(
+        expect.arrayContaining([{ elementKey: B3.SCOPE_1, tonnesCo2e: '0.9699123256' }]),
+      );
+    });
+
+    /**
+     * FR-36's person on the figure (task 39.4; §12.5.6's task-39 row (3)): the account the request was bound to, written
+     * by the table's trigger and named at read — never a value a request supplies.
+     */
+    it('names who replaced a B3 figure, from the request’s binding, and clears the name with the override (task 39.4)', async () => {
+      const { reportId } = await openReport(2026);
+      await putLine(reportId, randomUUID(), gas).expect(200);
+      await runOf(reportId);
+      const overridePath = `/api/v1/reports/${reportId}/calculator/figures/${B3.SCOPE_1}/override`;
+      expect((await b3(reportId)).get(B3.SCOPE_1)?.overriddenBy).toBeNull();
+
+      await http().put(overridePath).set(editor.authorization)
+        .send({ valueNumeric: '1.75', explanation: 'Our accountant’s figure' }).expect(204);
+      expect((await b3(reportId)).get(B3.SCOPE_1)?.overriddenBy).toEqual({ accountId: editor.accountId, name: 'Ana Popescu' });
+
+      // A request cannot name someone else: the field is no part of what a caller sends.
+      expect(problemType(await http().put(overridePath).set(editor.authorization)
+        .send({ valueNumeric: '1.75', explanation: 'Our accountant’s figure', overriddenBy: admin.accountId })
+        .expect(400))).toBe(`${PROBLEM}/validation-failed`);
+      // Changed by someone else, the figure names them.
+      await http().put(overridePath).set(admin.authorization)
+        .send({ valueNumeric: '1.8', explanation: 'Our accountant’s figure' }).expect(204);
+      expect((await b3(reportId)).get(B3.SCOPE_1)?.overriddenBy?.accountId).toBe(admin.accountId);
+
+      await http().delete(overridePath).set(editor.authorization).expect(204);
+      expect((await b3(reportId)).get(B3.SCOPE_1)?.overriddenBy).toBeNull();
+    });
+
+    it('names who replaced a line’s tonnes, keeps them through an edit of anything else, and the run retains them (task 39.4)', async () => {
+      const { reportId } = await openReport(2026);
+      const lineId = randomUUID();
+      const overridden = { ...gas, overrideTonnes: '0.84', overrideExplanation: 'One van was sub-leased' };
+      const write = async (who: SignedInAccount, body: Record<string, unknown>) =>
+        objectOf<{ overriddenBy: { accountId: string; name: string | null } | null }>(
+          (await http().put(`/api/v1/reports/${reportId}/calculator/sources/${lineId}`).set(who.authorization)
+            .send(body).expect(200)).body,
+        ).overriddenBy;
+
+      expect(await write(editor, overridden)).toEqual({ accountId: editor.accountId, name: 'Ana Popescu' });
+      // The line written again by someone else, with the same override and a corrected description: still the editor's.
+      expect((await write(admin, { ...overridden, description: 'Oven only' }))?.accountId).toBe(editor.accountId);
+
+      const run = await runOf(reportId);
+      const retained = (run.inputs[0] as unknown as { overriddenBy: { accountId: string } | null }).overriddenBy;
+      expect(retained?.accountId).toBe(editor.accountId);
+
+      // The reason changed is the override changed, and it names whoever changed it — while the run keeps what it read.
+      expect((await write(admin, { ...overridden, overrideExplanation: 'Two vans were sub-leased' }))?.accountId)
+        .toBe(admin.accountId);
+      const reread = objectOf<{ inputs: { overriddenBy: { accountId: string } | null }[] }>(
+        (await http().get(`/api/v1/reports/${reportId}/calculator/runs/${run.id}`).set(editor.authorization).expect(200)).body,
+      );
+      expect(reread.inputs[0]?.overriddenBy?.accountId).toBe(editor.accountId);
+
+      expect(await write(editor, gas)).toBeNull();
     });
 
     it('holds an override without its reason unwritable, by the table itself (UX-43)', async () => {

@@ -1,8 +1,10 @@
 import type {
+  CalcLine,
   DisclosureValueResponse,
   DerivationInputWrite,
   DisclosureValueWrite,
   ProblemDocument,
+  WriteCalcLineRequest,
 } from '@easyesg/contracts';
 import { SAVE_STATE, type SaveState } from '@easyesg/ui';
 import { SESSION_STANDING, endsSession, type SessionStanding } from '@/lib/session-standing';
@@ -56,18 +58,51 @@ export type FlushFailure =
   | { readonly kind: typeof FLUSH_FAILURE.UNREACHABLE }
   | { readonly kind: typeof FLUSH_FAILURE.REFUSED; readonly problem: ProblemDocument };
 
-/** One unacknowledged change, addressed by the store's natural key. */
 /**
- * What the queue carries — a disclosure value, or a value a derived figure is computed from
- * (task 36.10).
+ * What the queue carries — a disclosure value, a value a derived figure is computed from (task 36.10), or one of
+ * S-09's invoice lines (task 39.1).
  *
- * **One queue for both, discriminated by shape rather than by a tag.** A derivation input has an
- * `inputKey` where a disclosure has an `elementKey`, and they are disjoint by construction, so no
+ * **One queue for all three, discriminated by shape rather than by a tag.** A derivation input has an
+ * `inputKey` where a disclosure has an `elementKey`, and a line a `lineId`; they are disjoint by construction, so no
  * flag has to be kept true. What this buys is that everything the queue already guarantees —
  * FR-38's durable offline retry, UX-36's acknowledgement, the coalescing on a natural key — applies
- * to both without a second copy, and a field author never chooses a mechanism.
+ * to each without a second copy, and a field author never chooses a mechanism.
  */
-export type QueuedWrite = DisclosureValueWrite | DerivationInputWrite;
+export type QueuedWrite = DisclosureValueWrite | DerivationInputWrite | QueuedLine;
+
+/**
+ * One of S-09's invoice lines, written whole under the id its client chose (task 39.1; FR-38, FR-33;
+ * `architecture.md` §12.5.6's task-39 row (2)) — **a third shape in the same queue**, because the row says a line
+ * entered offline survives and is sent on reconnection like any field, and a second queue would be a second copy of
+ * everything this one guarantees.
+ *
+ * **Coalesced on the line's id**: the api's `PUT` is idempotent on it (task 38.1), so the latest write for a line is
+ * the only one worth sending, and a removal after an edit replaces the edit.
+ */
+export interface CalcLineWrite {
+  readonly lineId: string;
+  readonly line: WriteCalcLineRequest;
+}
+
+/** A line removed — `DELETE`, which answers alike whether or not the line was there, so a replay is safe. */
+export interface CalcLineRemoval {
+  readonly lineId: string;
+  readonly removed: true;
+}
+
+export type QueuedLine = CalcLineWrite | CalcLineRemoval;
+
+/** Is this queued write one of S-09's lines? Typed on what decides it, as `isDerivationInputWrite` is. */
+export const isQueuedLine = <T extends object>(write: T): write is T & QueuedLine => 'lineId' in write;
+
+/** Is this queued line a removal rather than a write? */
+export const isLineRemoval = (line: QueuedLine): line is CalcLineRemoval => 'removed' in line;
+
+/** A line as the api answered a flush (task 39.1): stored, or `null` where it was removed. */
+export interface CommittedLine {
+  readonly lineId: string;
+  readonly stored: CalcLine | null;
+}
 
 /**
  * Is this queued write a derivation input? **The one place the two shapes are told apart**, so a
@@ -101,6 +136,12 @@ export interface AutosaveState {
   readonly budgetExceeded: boolean;
   /** What the API acknowledged since the step was read — overlays the server-rendered field. */
   readonly committed: Readonly<Record<string, DisclosureValueResponse>>;
+  /**
+   * S-09's lines the API acknowledged since the screen was read, by line id — `null` for a removal (task 39.1). Its own
+   * record because a line's answer is a line, not a disclosure; it overlays the server-rendered list as `committed`
+   * overlays a field.
+   */
+  readonly committedLines: Readonly<Record<string, CalcLine | null>>;
   /** The durable queue has been read into `pending`; until then nothing may be written back to it. */
   readonly hydrated: boolean;
   readonly nextSequence: number;
@@ -140,6 +181,8 @@ export type AutosaveEvent =
   | {
       readonly type: typeof AUTOSAVE_EVENT.FLUSH_SUCCEEDED;
       readonly committed: readonly DisclosureValueResponse[];
+      /** The lines the flush carried, as the api answered each (task 39.1). */
+      readonly lines: readonly CommittedLine[];
     }
   | { readonly type: typeof AUTOSAVE_EVENT.FLUSH_FAILED; readonly failure: FlushFailure }
   | { readonly type: typeof AUTOSAVE_EVENT.CONNECTION_CHANGED; readonly connection: Connection }
@@ -158,12 +201,16 @@ export const ACKNOWLEDGEMENT_BUDGET_MS = 250;
 export const writeKey = (
   write:
     | { readonly elementKey: string; readonly dimensionKey?: string; readonly ordinal?: number }
-    | { readonly inputKey: string },
+    | { readonly inputKey: string }
+    | { readonly lineId: string },
 ): string =>
-  // `'inputKey' in write` rather than the guard beside it, because a guard returning an intersection
-  // narrows the true branch and not the false one — and the false branch is where the three parts of
-  // the disclosure key are read.
-  'inputKey' in write
+  // A line is keyed by the id its client chose (task 39.1) — `line` and one segment, so it can meet neither space below.
+  'lineId' in write
+    ? `line\u0000${write.lineId}`
+    : // `'inputKey' in write` rather than the guard beside it, because a guard returning an intersection
+      // narrows the true branch and not the false one — and the false branch is where the three parts of
+      // the disclosure key are read.
+      'inputKey' in write
     ? // Two segments where a disclosure has three, so the two spaces cannot collide however an
       // element is named — a derivation input is keyed by report and key alone (§7.3), having no
       // dimension to vary along and no ordinal to repeat at.
@@ -178,6 +225,7 @@ export const initialAutosaveState = (input: { readonly online: boolean }): Autos
   session: SESSION_STANDING.HELD,
   budgetExceeded: false,
   committed: {},
+  committedLines: {},
   hydrated: false,
   nextSequence: 1,
 });
@@ -222,6 +270,11 @@ export function autosaveReducer(state: AutosaveState, event: AutosaveEvent): Aut
       }
       const committed = { ...state.committed };
       for (const value of event.committed) committed[writeKey(value)] = value;
+      // The same object where the flush carried no line, so a reader keyed on it hears only an acknowledgement of lines.
+      const committedLines =
+        event.lines.length === 0
+          ? state.committedLines
+          : { ...state.committedLines, ...Object.fromEntries(event.lines.map((line) => [line.lineId, line.stored])) };
       const settled = Object.keys(pending).length === 0;
       return {
         ...state,
@@ -229,6 +282,7 @@ export function autosaveReducer(state: AutosaveState, event: AutosaveEvent): Aut
         inFlight: null,
         failure: null,
         committed,
+        committedLines,
         // The budget restarts for whatever is still pending — it measures the wait for *an*
         // acknowledgement, and one just arrived.
         budgetExceeded: settled ? false : state.budgetExceeded,

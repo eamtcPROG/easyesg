@@ -213,6 +213,8 @@ export type CreateReportRequest = components['schemas']['CreateReportRequestDto'
 export type SendReportReminderRequest = components['schemas']['SendReportReminderRequestDto'];
 export type DisclosureModuleSummary = components['schemas']['DisclosureModuleSummaryDto'];
 export type DisclosureField = components['schemas']['DisclosureFieldDto'];
+/** Who replaced a computed figure — on a B3 scope's field and on an invoice line alike (task 39.4; FR-36). */
+export type OverridingPerson = components['schemas']['OverridingPersonDto'];
 /** One answer a choice field offers (task 91.1): `value` is the member's taxonomy-qualified name, what an answer stores. */
 export type DisclosureOption = components['schemas']['DisclosureOptionDto'];
 /** What a field would hold if the reporter accepted what the platform already knows (task 91.2; FR-27). Committed by the client, never by the read. */
@@ -240,6 +242,40 @@ export type DerivationInput = components['schemas']['DerivationInputDto'];
 export type DerivationInputWrite = components['schemas']['DerivationInputWriteDto'];
 export type WriteDerivationInputsRequest =
   components['schemas']['WriteDerivationInputsRequestDto'];
+// The carbon calculator — S-09's read and its lines (UC-32; tasks 38.1, 39.1).
+export {
+  CALCULATOR_FIGURE,
+  GHG_SCOPE,
+  GHG_SCOPE_MIRRORS_WIRE,
+  isCalculatorFigure,
+  LINE_OUTCOME,
+  LINE_OUTCOME_MIRRORS_WIRE,
+  type CalculatorFigure,
+  type GhgScope,
+  type LineOutcome,
+} from './calculator';
+/** S-09 as it opens: the factor set's sources and units, the report's sites, the months, and the lines (task 39.1). */
+export type Calculator = components['schemas']['CalculatorDto'];
+/** The factor set the report's period resolves, with what it lets a line say (task 39.1). */
+export type CalcFactorSet = components['schemas']['CalcFactorSetDto'];
+export type CalcFactorSource = components['schemas']['CalcFactorSourceDto'];
+/** One of the report's B1 site rows, named as the wizard names it (task 39.1). */
+export type CalcSite = components['schemas']['CalcSiteDto'];
+/** One invoice line as the report holds it (task 38.1; the monthly form since 39.1). */
+export type CalcLine = components['schemas']['CalcSourceDto'];
+/** One invoice line as a client writes it, whole, under the id it chose (task 38.1). */
+export type WriteCalcLineRequest = components['schemas']['WriteCalcSourceRequestDto'];
+/** What the lines come to now against the set in force — not a run, nothing retained (task 39.2). */
+export type CalcWorking = components['schemas']['CalcWorkingDto'];
+/** One scope's figure and the lines behind it, each line's MWh and tonnes (tasks 38.4, 39.2; UX-42). */
+export type CalcScopeResult = components['schemas']['ScopeResultDto'];
+export type CalcScopeLine = components['schemas']['ScopeLineDto'];
+/** The report's latest run: the set it pinned, when, and what it wrote into B3 (task 39.2; UX-44). */
+export type CalcLatestRun = components['schemas']['CalcLatestRunDto'];
+/** A run as recording it answers (task 38.1). */
+export type CalcRun = components['schemas']['CalcRunDto'];
+/** The figures B3 took from the calculator — the latest run, for S-07's B3 fields (task 39.3; UX-43). */
+export type CalcFigures = components['schemas']['CalcFiguresDto'];
 /** The prior-period comparative (task 34.3; UC-45, FR-46). */
 export type PriorPeriodComparatives = components['schemas']['PriorPeriodResponseDto'];
 

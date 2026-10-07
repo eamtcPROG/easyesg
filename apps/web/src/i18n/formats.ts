@@ -55,6 +55,14 @@ export const formats = {
     // Consumption and emissions figures. Two places is the reporting convention; the unit
     // label comes from the catalogue.
     decimal: { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+    /**
+     * A published figure with its every digit — an emission factor, a conversion rate, an invoice figure as typed
+     * (task 39.2; UX-42: the factor shown is the one an auditor finds in the published set). **Fifteen significant
+     * digits** is what a double carries back exactly from any decimal of that many digits, so a decimal string read into a
+     * number prints as itself, `0.0095773` and not its binary neighbour. A computed figure is not shown this way: it is
+     * rounded once to the places `presentation_precision` gives its unit (`features/calculator/tools/figure-format.ts`).
+     */
+    exact: { maximumSignificantDigits: 15 },
     // Gender pay gap (B10), turnover rate (B8), completeness.
     percent: { style: 'percent', maximumFractionDigits: 1 },
     // MDL is the ledger currency (D-14). A document issued in EUR or USD passes its own

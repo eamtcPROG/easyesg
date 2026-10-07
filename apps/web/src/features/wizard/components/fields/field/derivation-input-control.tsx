@@ -3,7 +3,7 @@
 import type { DerivationInput, DerivationInputWrite } from '@easyesg/contracts';
 import { TextField } from '@easyesg/ui';
 import { useState } from 'react';
-import { parseDecimalInput } from '../../../tools/values';
+import { parseDecimalInput } from '@/lib/decimal-input';
 import { useAutosaveContext } from '../../providers/autosave-context';
 
 /**

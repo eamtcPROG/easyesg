@@ -482,6 +482,9 @@ const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
     'id',
     'ordinal',
     'organization_id',
+    // Who replaced a computed figure (task 39.4) — written by its trigger from the request's own binding, never by the
+    // request tier, so no caller can name someone else as the person who made an override.
+    'overridden_by',
     'report_id',
   ],
   /**
@@ -494,7 +497,14 @@ const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
    * An invoice line's identity (task 38.1): the report it belongs to and the tenant, which RLS enforces whatever the
    * column says. A line never moves between reports — the store's upsert refuses to — and this is the grant behind it.
    */
-  'core.calc_source': ['created_at', 'id', 'organization_id', 'report_id'],
+  'core.calc_source': [
+    'created_at',
+    'id',
+    'organization_id',
+    // Who replaced the line's tonnes (task 39.4) — the trigger's, from the binding, as on a disclosure value.
+    'override_by',
+    'report_id',
+  ],
   /**
    * A run and the inputs it retains (task 38.1; P-11, NFR-19), **withheld whole**: no column of either is the request
    * tier's to rewrite, which is what makes a recorded run the record of what one calculation read. Listed in full so a
@@ -506,6 +516,7 @@ const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
     'not_available_reason',
     'organization_id',
     // A line's substituted figure as the run read it (task 38.4) — retained like every other input.
+    'override_by',
     'override_explanation',
     'override_tonnes',
     'quantity',

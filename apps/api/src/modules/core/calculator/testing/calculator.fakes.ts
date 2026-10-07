@@ -1,9 +1,10 @@
 import type { CalculatedFigures } from '@api/modules/core/disclosure/interfaces/calculated-figures.interface';
 import type { CalcReport, CalcReports } from '../interfaces/calc-report.interface';
 import type { CalcRunStore } from '../interfaces/calc-run-store.interface';
+import type { CalcSiteNames } from '../interfaces/calc-site-names.interface';
 import type { CalcSourceStore } from '../interfaces/calc-source-store.interface';
 import type { FactorSets } from '../interfaces/factor-sets.interface';
-import type { CalcResult, CalcRun, StoredCalcRun } from '../models/calc-run.model';
+import type { CalcResult, CalcRun, LatestCalcRun, StoredCalcRun } from '../models/calc-run.model';
 import type { CalcSource, CalcSourceKey, CalcSourceWrite } from '../models/calc-source.model';
 import type { FactorSet, FactorSetPin } from '../models/factor-set.model';
 
@@ -16,6 +17,7 @@ import type { FactorSet, FactorSetPin } from '../models/factor-set.model';
 export const FY2026_REPORT: CalcReport = {
   reportId: 'report-2026',
   periodStart: { date: '2026-01-01', timezone: 'Europe/Chisinau' },
+  periodEnd: { date: '2026-12-31', timezone: 'Europe/Chisinau' },
   taxonomyVersion: '2026-05-01',
   countryCode: 'MD',
   snapshotSites: 1,
@@ -64,6 +66,15 @@ export class FakeCalcReports implements CalcReports {
   }
 }
 
+/** `CALC_SITE_NAMES` as a fixed answer per report — the names the wizard would serve. */
+export class FakeCalcSiteNames implements CalcSiteNames {
+  constructor(private readonly byReport: ReadonlyMap<string, ReadonlyMap<number, string>> = new Map()) {}
+
+  names(query: { readonly reportId: string }): Promise<ReadonlyMap<number, string>> {
+    return Promise.resolve(this.byReport.get(query.reportId) ?? new Map());
+  }
+}
+
 export class FakeFactorSets implements FactorSets {
   /** What each call was asked, so a spec can hold the use case to the period's start and the organization's country. */
   readonly asked: { country: string; periodStart: string }[] = [];
@@ -92,7 +103,8 @@ export class FakeCalcSourceStore implements CalcSourceStore {
   write(line: CalcSourceWrite): Promise<CalcSource | null> {
     const at = this.lines.findIndex((existing) => existing.sourceId === line.sourceId);
     if (at >= 0 && this.lines[at].reportId !== line.reportId) return Promise.resolve(null);
-    const stored: CalcSource = { ...line, createdAt: new Date(0), updatedAt: new Date(0) };
+    // The person who overrode a line is the table's trigger's, taken from the request's binding no use case sees.
+    const stored: CalcSource = { ...line, overriddenBy: null, createdAt: new Date(0), updatedAt: new Date(0) };
     if (at >= 0) this.lines[at] = stored;
     else this.lines.push(stored);
     return Promise.resolve(stored);
@@ -132,6 +144,7 @@ export class FakeCalcRunStore implements CalcRunStore {
           description: line.description,
           contents: { ...line.contents },
           override: line.override,
+          overriddenBy: line.overriddenBy,
         })),
     };
     this.runs.push(run);
@@ -152,6 +165,15 @@ export class FakeCalcRunStore implements CalcRunStore {
     const latest = [...this.runs].reverse().find((run) => run.reportId === query.reportId && this.results.has(run.id));
     const result = latest === undefined ? undefined : this.results.get(latest.id)?.find((each) => each.elementKey === query.elementKey);
     return Promise.resolve(result === undefined ? undefined : result.tonnesCo2e);
+  }
+
+  latest(query: { readonly reportId: string }): Promise<LatestCalcRun | null> {
+    const run = [...this.runs].reverse().find((each) => each.reportId === query.reportId);
+    return Promise.resolve(
+      run === undefined
+        ? null
+        : { id: run.id, factorSet: run.factorSet, recordedAt: run.recordedAt, results: this.results.get(run.id) ?? [] },
+    );
   }
 }
 

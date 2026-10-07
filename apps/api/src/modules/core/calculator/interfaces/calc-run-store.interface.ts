@@ -1,4 +1,4 @@
-import type { CalcResult, CalcRun, StoredCalcRun } from '../models/calc-run.model';
+import type { CalcResult, CalcRun, LatestCalcRun, StoredCalcRun } from '../models/calc-run.model';
 import type { FactorSetPin } from '../models/factor-set.model';
 
 /**
@@ -33,6 +33,9 @@ export interface CalcRunStore {
    * has computed the figure at all.
    */
   latestResult(query: { readonly reportId: string; readonly elementKey: string }): Promise<string | null | undefined>;
+
+  /** The report's latest run with what it stored (task 39.2), or `null` where none has been recorded. */
+  latest(query: { readonly reportId: string }): Promise<LatestCalcRun | null>;
 }
 
 /** DI token beside the interface, as every port in `core/` is (P-7). */

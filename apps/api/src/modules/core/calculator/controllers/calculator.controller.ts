@@ -8,6 +8,7 @@ import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/members
 import { CalcRunDto, CalcRunReplayDto } from '../dto/calc-run.dto';
 import { ExplainFigureRequestDto, OverrideFigureRequestDto } from '../dto/calc-figure.dto';
 import { CalcSourceDto, WriteCalcSourceRequestDto } from '../dto/calc-source.dto';
+import { CalcFiguresDto, CalculatorDto } from '../dto/calculator.dto';
 import { CalculatorService } from '../services/calculator.service';
 
 const LOCKED = 'The reporting period is locked (FR-22).';
@@ -27,6 +28,22 @@ const LOCKED = 'The reporting period is locked (FR-22).';
 @Controller('reports')
 export class CalculatorController {
   constructor(private readonly calculator: CalculatorService) {}
+
+  @Get(':id/calculator')
+  @RequiresRole(MEMBERSHIP_ROLE.EDITOR, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR, MEMBERSHIP_ROLE.VIEWER)
+  @ApiOperation({
+    summary: 'The carbon calculator, as it opens',
+    description:
+      'What a line may say and where — the sources and units of the factor set the report’s period resolves, the ' +
+      'report’s B1 sites as the wizard names them, and the months the monthly form stands for — beside the lines ' +
+      'themselves (S-09; FR-33, UX-40, UX-41).',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiObjectResponse(CalculatorDto, { status: 200, description: 'The calculator, possibly with nothing entered.' })
+  @ApiResponse({ status: 404, description: NO_SUCH_REPORT })
+  async view(@Param('id', ParseUUIDPipe) reportId: string): Promise<CalculatorDto> {
+    return new CalculatorDto(await this.calculator.calculator({ reportId }));
+  }
 
   @Get(':id/calculator/sources')
   @RequiresRole(MEMBERSHIP_ROLE.EDITOR, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR, MEMBERSHIP_ROLE.VIEWER)
@@ -73,6 +90,7 @@ export class CalculatorController {
         unitCode: body.unitCode ?? null,
         notAvailableReason: body.notAvailableReason ?? null,
       },
+      monthlyQuantities: body.monthlyQuantities ?? null,
       // Either half alone is an override missing its other half, which the use case refuses rather than drops.
       override:
         (body.overrideTonnes ?? null) === null && (body.overrideExplanation ?? null) === null
@@ -137,6 +155,21 @@ export class CalculatorController {
     @Param('runId', ParseUUIDPipe) runId: string,
   ): Promise<CalcRunReplayDto> {
     return new CalcRunReplayDto(await this.calculator.replay({ reportId, runId }));
+  }
+
+  @Get(':id/calculator/figures')
+  @RequiresRole(MEMBERSHIP_ROLE.EDITOR, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR, MEMBERSHIP_ROLE.VIEWER)
+  @ApiOperation({
+    summary: 'The figures B3 took from the calculator',
+    description:
+      'The latest run — what it stored for Scope 1 and location-based Scope 2, the factor set it pinned and when — so ' +
+      'B3 can show a computed figure an override superseded beside the substitute (UC-34, UX-43).',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiObjectResponse(CalcFiguresDto, { status: 200, description: 'The latest run, or none before the first.' })
+  @ApiResponse({ status: 404, description: NO_SUCH_REPORT })
+  async figures(@Param('id', ParseUUIDPipe) reportId: string): Promise<CalcFiguresDto> {
+    return new CalcFiguresDto(await this.calculator.figures({ reportId }));
   }
 
   @Put(':id/calculator/figures/:elementKey/override')

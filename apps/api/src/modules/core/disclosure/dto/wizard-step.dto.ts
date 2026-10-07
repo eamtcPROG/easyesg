@@ -20,6 +20,7 @@ import { DISCLOSURE_KIND } from '@easyesg/vsme';
 import { PERIOD_TYPE } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
 import { APPLICABILITY_CONDITION, type ApplicabilityCondition } from '../models/applicability.model';
+import { OverridingPersonDto } from './overriding-person.dto';
 import {
   DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
@@ -36,7 +37,7 @@ import type {
   DisclosureField,
   DisclosureModuleSummary,
   DisclosureOption,
-  DisclosureStep,
+  PresentedDisclosureStep,
 } from '../models/wizard-step.model';
 
 const ORIGINS = Object.values(DISCLOSURE_ORIGIN);
@@ -279,6 +280,13 @@ export class DisclosureFieldDto {
   readonly explanation: string | null;
 
   @ApiProperty({
+    type: OverridingPersonDto,
+    nullable: true,
+    description: 'Who replaced the computed figure, on an overridden field (FR-36); null on every other.',
+  })
+  readonly overriddenBy: OverridingPersonDto | null;
+
+  @ApiProperty({
     description:
       'Whether the platform derives this figure rather than asking for it (FR-29): render it read-only, ' +
       'since a write to it is refused. From the same artefact the refusal reads.',
@@ -437,6 +445,7 @@ export class DisclosureFieldDto {
     this.origin = field.origin;
     this.derived = field.derived;
     this.explanation = field.explanation;
+    this.overriddenBy = field.overriddenBy === null ? null : new OverridingPersonDto(field.overriddenBy);
     this.axes = [...field.axes];
     this.repeating = field.repeating;
     this.order = field.order;
@@ -588,12 +597,23 @@ export class DisclosureStepDto {
   })
   readonly derivationInputs: DerivationInputDto[];
 
-  constructor(step: DisclosureStep) {
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'integer' },
+    example: { tCO2e: 2, MWh: 2 },
+    description:
+      'Decimal places by unit to which a computed or derived figure on this step is shown — once, half-up, the rule ' +
+      'every surface rounds by (task 39.3). A figure the reporter typed is shown as typed; a unit absent is unrounded.',
+  })
+  readonly precision: Record<string, number>;
+
+  constructor(step: PresentedDisclosureStep) {
     this.module = step.module;
     this.taxonomyVersion = step.taxonomyVersion;
     this.fields = step.fields.map((field) => new DisclosureFieldDto(field));
     this.axes = step.axes.map((axis) => new DisclosureAxisDto(axis));
     this.derivationInputs = step.derivationInputs.map((input) => new DerivationInputDto(input));
+    this.precision = { ...step.precision };
   }
 }
 

@@ -25,6 +25,7 @@ describe('scope1', () => {
     description: null,
     contents: { quantity, unitCode, notAvailableReason: quantity === null ? 'Not billed separately' : null },
     override: null,
+    overriddenBy: null,
   });
 
   it('converts each line to MWh, applies its factor, and sums them exactly', () => {

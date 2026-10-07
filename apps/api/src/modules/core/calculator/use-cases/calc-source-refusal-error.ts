@@ -1,5 +1,6 @@
 import { CALC_SOURCE_REFUSAL, type CalcSourceRefusal } from '../domain/calc-source-check';
 import {
+  CalcMonthsInvalidError,
   CalcOverrideInvalidError,
   CalcSourceContentsError,
   CalcUnitNotAdmittedError,
@@ -20,5 +21,7 @@ export function calcSourceRefusalError(refusal: CalcSourceRefusal): Error {
       return new CalcUnitNotAdmittedError();
     case CALC_SOURCE_REFUSAL.OVERRIDE:
       return new CalcOverrideInvalidError();
+    case CALC_SOURCE_REFUSAL.MONTHS:
+      return new CalcMonthsInvalidError();
   }
 }

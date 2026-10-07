@@ -2,18 +2,21 @@
 
 import {
   DISCLOSURE_KIND,
+  DISCLOSURE_ORIGIN,
   type DisclosureField as DisclosureFieldShape,
   type DisclosureValueWrite,
 } from '@easyesg/contracts';
 import { DateField, RadioGroup, Select, TextArea, TextField } from '@easyesg/ui';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useState, type FocusEvent } from 'react';
+import { parseDecimalInput } from '@/lib/decimal-input';
+import { formatFigure } from '@/lib/figure-format';
+import { useStepFigures } from '../../providers/step-figures-context';
 import {
   BOOLEAN_CHOICE,
   COLUMN_OF_KIND,
   VALUE_COLUMN,
   draftOf,
-  parseDecimalInput,
   storedDraftOf,
   writeFor,
 } from '../../../tools/values';
@@ -70,6 +73,8 @@ export function DisclosureControl({
   readonly onCommit: (write: DisclosureValueWrite) => void;
 }) {
   const t = useTranslations(FIELD_MESSAGES);
+  const format = useFormatter();
+  const { precision } = useStepFigures();
   // One value, because its three parts move together (the reducer rule): `draft` is what the input
   // shows, `committed` is what this control last sent, `server` is what the field arrived holding.
   // A blur with `draft === committed` writes nothing.
@@ -115,12 +120,22 @@ export function DisclosureControl({
         />
       );
     }
+    // **A computed or derived figure is shown rounded** — once, half-up, to its unit's configured places (task 39.3;
+    // §12.5.6's task-39 row (7)), the rule S-09, the PDF and the Excel export round by. A figure the reporter typed is
+    // shown as typed: it is an answer, not a computation.
+    const computed = field.derived || field.origin !== DISCLOSURE_ORIGIN.REPORTED;
     const shown =
       field.kind === DISCLOSURE_KIND.ENUMERATION
         ? enumerationWord(field.options, draft, t('unnamed'))
         : column === VALUE_COLUMN.BOOLEAN
           ? booleanLabel(draft, { yes: t('yes'), no: t('no') })
-          : draft;
+          : column === VALUE_COLUMN.NUMERIC && computed && draft !== ''
+            ? formatFigure({
+                value: draft,
+                places: field.unitCode === null ? undefined : precision[field.unitCode],
+                format,
+              })
+            : draft;
     return shown === '' ? (
       <p className={styles.readOnlyEmpty}>{t('unanswered')}</p>
     ) : (

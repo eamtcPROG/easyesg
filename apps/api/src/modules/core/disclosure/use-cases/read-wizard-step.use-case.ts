@@ -910,6 +910,7 @@ function toField(
     origin: value?.origin ?? DEFAULT_DISCLOSURE_ORIGIN,
     derived: resolved.derived,
     explanation: value?.explanation ?? null,
+    overriddenBy: value?.overriddenBy ?? null,
     ordinal: row.ordinal,
     kind: element.kind,
     periodType: element.periodType,

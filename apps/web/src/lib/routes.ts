@@ -214,3 +214,30 @@ export const reportStepRoute = (input: {
   readonly reportId: string;
   readonly module: string;
 }): string => `/reports/${input.reportId}/${input.module}`;
+
+/**
+ * S-09, the carbon calculator (task 39.1) — B3's sub-flow, at its own address beside the steps. **The site shown is in
+ * the query** (`?site=<ordinal>`, §4.7's *site chips*), so a colleague can be sent the exact site in question (UX-4);
+ * no site is *all sites*.
+ */
+export const reportCalculatorRoute = (input: {
+  readonly reportId: string;
+  readonly site?: number | null;
+  /** The line whose derivation is open (task 39.2; §4.7's *open derivation is an address*). */
+  readonly line?: string | null;
+}): string =>
+  withQuery(
+    `/reports/${input.reportId}/calculator`,
+    [
+      input.site === undefined || input.site === null ? null : `${CALCULATOR_SITE_PARAM}=${input.site}`,
+      input.line === undefined || input.line === null ? null : `${CALCULATOR_LINE_PARAM}=${encodeURIComponent(input.line)}`,
+    ]
+      .filter((part) => part !== null)
+      .join('&'),
+  );
+
+/** The query parameter S-09's site chips write and its page reads — one spelling for both. */
+export const CALCULATOR_SITE_PARAM = 'site';
+
+/** The query parameter an open derivation writes (task 39.2) — the line it explains, by the id its client chose. */
+export const CALCULATOR_LINE_PARAM = 'line';

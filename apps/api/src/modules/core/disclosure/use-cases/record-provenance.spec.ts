@@ -28,6 +28,7 @@ const stored = (
   carriedForward: false,
   origin: DISCLOSURE_ORIGIN.REPORTED,
   explanation: null,
+  overriddenBy: null,
   createdAt: 0,
   updatedAt: 0,
   ...over,

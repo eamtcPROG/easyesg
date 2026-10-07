@@ -5,8 +5,14 @@ import { ReportNotEditableError } from '@api/modules/core/disclosure/errors/repo
 import { returnedRows } from '../returned-rows';
 import { SQL_STATE, hasSqlState } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
+import {
+  overridingPerson,
+  overridingPersonColumns,
+  overridingPersonJoin,
+  type OverridingPersonRow,
+} from './overriding-person';
 
-interface CalcSourceRow {
+interface CalcSourceRow extends OverridingPersonRow {
   id: string;
   report_id: string;
   site_ordinal: number;
@@ -15,15 +21,21 @@ interface CalcSourceRow {
   quantity: string | null;
   unit_code: string | null;
   not_available_reason: string | null;
+  monthly_quantities: (string | null)[] | null;
   override_tonnes: string | null;
   override_explanation: string | null;
   created_at: Date;
   updated_at: Date;
 }
 
-const COLUMNS = `id, report_id, site_ordinal, source_key, description, quantity::text AS quantity, unit_code,
-                 not_available_reason, override_tonnes::text AS override_tonnes, override_explanation,
-                 created_at, updated_at`;
+/** Read from the line aliased `figure`, joined to the person who overrode its tonnes (task 39.4). */
+const COLUMNS = `figure.id, figure.report_id, figure.site_ordinal, figure.source_key, figure.description,
+                 figure.quantity::text AS quantity, figure.unit_code, figure.not_available_reason,
+                 figure.monthly_quantities::text[] AS monthly_quantities,
+                 figure.override_tonnes::text AS override_tonnes, figure.override_explanation,
+                 figure.created_at, figure.updated_at, ${overridingPersonColumns('override_by')}`;
+
+const linesOf = (source: string): string => `${source} figure ${overridingPersonJoin('override_by')}`;
 
 const toSource = (row: CalcSourceRow): CalcSource => ({
   reportId: row.report_id,
@@ -32,10 +44,12 @@ const toSource = (row: CalcSourceRow): CalcSource => ({
   sourceKey: row.source_key,
   description: row.description,
   contents: { quantity: row.quantity, unitCode: row.unit_code, notAvailableReason: row.not_available_reason },
+  monthlyQuantities: row.monthly_quantities,
   override:
     row.override_tonnes === null || row.override_explanation === null
       ? null
       : { tonnesCo2e: row.override_tonnes, explanation: row.override_explanation },
+  overriddenBy: overridingPerson(row),
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -51,7 +65,8 @@ const translate = (error: unknown): never => {
  * `INSERT ... SELECT`, so a report the bound tenant cannot see inserts nothing.
  *
  * **The quantity crosses as text** (`quantity::text`), never through the driver's number parsing — a numeric read as a
- * double is the representation AD-14 constraint 4 keeps out of the application.
+ * double is the representation AD-14 constraint 4 keeps out of the application. The monthly form's figures do too,
+ * as `text[]` (task 39.1), the driver handing back an array whose empty months are `null`.
  */
 @Injectable()
 export class CalcSourceStoreRepository extends TenantRepository<never> implements CalcSourceStore {
@@ -59,7 +74,8 @@ export class CalcSourceStoreRepository extends TenantRepository<never> implement
 
   async forReport(query: { reportId: string }): Promise<CalcSource[]> {
     const rows = await this.manager.query<CalcSourceRow[]>(
-      `SELECT ${COLUMNS} FROM core.calc_source WHERE report_id = $1 ORDER BY created_at, id`,
+      `SELECT ${COLUMNS} FROM ${linesOf('core.calc_source')}
+        WHERE figure.report_id = $1 ORDER BY figure.created_at, figure.id`,
       [query.reportId],
     );
     return rows.map(toSource);
@@ -69,16 +85,19 @@ export class CalcSourceStoreRepository extends TenantRepository<never> implement
    * Create-or-replace on the tenant's own key. **The conflict target is `(organization_id, id)`**, so an id another
    * tenant chose can never meet this row, and **the update applies only where the existing line is this report's** —
    * a line of another of the tenant's reports matches the conflict, updates nothing, and answers `null`. The `SET` list
-   * is exactly the columns `esg_app` holds `UPDATE` on.
+   * is exactly the columns `esg_app` holds `UPDATE` on — the overrider is not among them, being the trigger's to write
+   * from the binding (task 39.4), and the answer is read from `RETURNING` so it names them.
    */
   async write(line: CalcSourceWrite): Promise<CalcSource | null> {
     try {
       const rows = returnedRows<CalcSourceRow>(
         await this.manager.query(
-          `INSERT INTO core.calc_source
+          `WITH written AS (
+           INSERT INTO core.calc_source
                   (id, organization_id, report_id, site_ordinal, source_key, description,
-                   quantity, unit_code, not_available_reason, override_tonnes, override_explanation)
-           SELECT $2, r.organization_id, r.id, $3, $4, $5, $6::numeric, $7, $8, $9::numeric, $10
+                   quantity, unit_code, not_available_reason, monthly_quantities, override_tonnes,
+                   override_explanation)
+           SELECT $2, r.organization_id, r.id, $3, $4, $5, $6::numeric, $7, $8, $11::numeric[], $9::numeric, $10
              FROM core.report r WHERE r.id = $1
       ON CONFLICT (organization_id, id) DO UPDATE
               SET site_ordinal = EXCLUDED.site_ordinal,
@@ -87,11 +106,13 @@ export class CalcSourceStoreRepository extends TenantRepository<never> implement
                   quantity = EXCLUDED.quantity,
                   unit_code = EXCLUDED.unit_code,
                   not_available_reason = EXCLUDED.not_available_reason,
+                  monthly_quantities = EXCLUDED.monthly_quantities,
                   override_tonnes = EXCLUDED.override_tonnes,
                   override_explanation = EXCLUDED.override_explanation,
                   updated_at = now()
             WHERE calc_source.report_id = EXCLUDED.report_id
-        RETURNING ${COLUMNS}`,
+        RETURNING *)
+           SELECT ${COLUMNS} FROM ${linesOf('written')}`,
           [
             line.reportId,
             line.sourceId,
@@ -103,6 +124,7 @@ export class CalcSourceStoreRepository extends TenantRepository<never> implement
             line.contents.notAvailableReason,
             line.override?.tonnesCo2e ?? null,
             line.override?.explanation ?? null,
+            line.monthlyQuantities === null ? null : [...line.monthlyQuantities],
           ],
         ),
       );

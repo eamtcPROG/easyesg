@@ -1523,7 +1523,8 @@
           "sqkm": "km²"
         },
         "unnamed": "Unnamed",
-        "yes": "Yes"
+        "yes": "Yes",
+        "overridden": "Your figure"
       },
       "session": {
         "expired": "Your session expired while {module} was open.",
@@ -1580,6 +1581,242 @@
           "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "The headcount on the last day of the period.",
           "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "How many employees fall under a collective agreement. The share is worked out against the employee count reported in B1.",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "How many employees left during the period, for any reason."
+        }
+      }
+    },
+    "calculator": {
+      "title": "Carbon calculator",
+      "crumb": "Carbon calculator",
+      "crumbLabel": "Where you are",
+      "heading": "Your energy, in the units your bills use",
+      "lede": "Enter each bill as it reads. Cubic metres stay cubic metres, litres stay litres. Converting them into tonnes of CO₂e is our job.",
+      "back": "Back to {module}",
+      "forbidden": {
+        "title": "This calculator is not open to you",
+        "body": "It belongs to a report of an organization you are not a member of, or whose membership is no longer active. An administrator of that organization can give you access."
+      },
+      "unreachable": {
+        "title": "The calculator could not be loaded",
+        "body": "We could not reach the service, so nothing is shown. Nothing you entered before is lost. Try again in a few minutes."
+      },
+      "sites": {
+        "label": "Show the lines of",
+        "all": "All sites · {count, plural, one {# line} other {# lines}}",
+        "one": "{name} · {count}",
+        "unnamed": "Site {position}"
+      },
+      "noSites": {
+        "title": "Add your sites in B1 first",
+        "body": "Every bill belongs to one of the sites the report lists, and this report lists none yet. Add at least one site under the basis for preparation, then come back.",
+        "action": "Go to the sites"
+      },
+      "noFactorSet": {
+        "title": "No emission factors for this period yet",
+        "body": "Factors are published for each reporting period, and none covers this one yet, so no bill can be added. Lines already entered stay as they are and can be used once the factors are published."
+      },
+      "empty": {
+        "title": "Have your energy bills to hand",
+        "body": "Twelve months of gas, electricity and fuel. Whatever the bill says is what we need — cubic metres, litres, kilowatt-hours.",
+        "electricity": "Electricity — your supplier's annual statement",
+        "gas": "Gas — the winter bills matter most",
+        "fuel": "Vehicle fuel — the fleet card summary or the receipts",
+        "note": "Don't have one of them? Add the line and say why there is no figure — that is a complete answer too."
+      },
+      "columns": {
+        "source": "Source",
+        "invoice": "What the invoice says",
+        "period": "Period",
+        "converted": "Converted",
+        "emissions": "Emissions"
+      },
+      "scopes": {
+        "scope_1": "Scope 1 · fuel you burn",
+        "scope_2_location_based": "Scope 2 · electricity you buy"
+      },
+      "groups": {
+        "scope_1": "Fuel you burn",
+        "scope_2_location_based": "Electricity you buy"
+      },
+      "sources": {
+        "natural_gas": "Natural gas",
+        "diesel": "Diesel for heating or generators",
+        "heating_oil": "Heating oil",
+        "residual_fuel_oil": "Heavy fuel oil",
+        "lpg": "Liquefied gas (LPG), bottled or tank",
+        "coal": "Coal",
+        "wood": "Firewood",
+        "diesel_road": "Diesel for vehicles",
+        "petrol_road": "Petrol for vehicles",
+        "lpg_road": "Liquefied gas (LPG) for vehicles",
+        "electricity_grid": "Electricity from the grid"
+      },
+      "unknownSource": "Other energy source",
+      "units": {
+        "m3": "m³",
+        "l": "litres",
+        "t": "tonnes",
+        "kg": "kg",
+        "kWh": "kWh",
+        "MWh": "MWh",
+        "tCO2e": "t CO₂e"
+      },
+      "line": {
+        "description": "Your name for it",
+        "descriptionHelp": "Optional — the oven, the van, the shop's meter.",
+        "quantity": "Figure on the bill",
+        "unit": "Unit",
+        "chooseUnit": "Choose the unit on the bill",
+        "invalidNumber": "This is not a figure we can read, so it was not saved. Type it as it reads on the bill, for example 1 700 or 1700,5.",
+        "required": "A line needs the figure from the bill, or the reason there is none, so this change was not saved. Enter one of them, or remove the line.",
+        "wholePeriod": "The whole period",
+        "periodMonthly": "By month · {entered} of {total}",
+        "monthly": "Enter by month",
+        "annual": "One figure for the period",
+        "notAvailable": "There is no figure for this line",
+        "measured": "Enter the figure instead",
+        "reason": "Why there is no figure",
+        "reasonHelp": "A reader of the report sees this sentence beside the line.",
+        "noFigure": "No figure",
+        "remove": "Remove this line",
+        "removeLabel": "Remove the line {source}",
+        "waiting": "Waiting to convert",
+        "uncovered": "Not in the factors in force",
+        "how": "How",
+        "closeHow": "Close"
+      },
+      "months": {
+        "legend": "{source}, month by month",
+        "month": "{month}",
+        "total": "Total for the period: {total} {unit}",
+        "noTotal": "No month entered yet. Enter at least one, or go back to one figure for the period.",
+        "missing": "{count, plural, one {# month is empty} other {# months are empty}}: {months}. The total counts only the months entered.",
+        "complete": "All twelve months are entered."
+      },
+      "add": {
+        "open": "Add a source",
+        "atSite": "Add a source at this site",
+        "heading": "Add a source",
+        "source": "What is it",
+        "sourceHelp": "Grouped as fuel you burn and electricity you buy — the two figures B3 reports separately.",
+        "chooseSource": "Choose the source",
+        "site": "Which site",
+        "chooseSite": "Choose the site",
+        "quantity": "The figure on your bill",
+        "unit": "Unit",
+        "noFigure": "This bill has no figure — I will say why",
+        "reason": "Why there is no figure",
+        "submit": "Add the line",
+        "cancel": "Cancel",
+        "sourceRequired": "Choose what the bill is for, so the line can be added. It decides which units are offered.",
+        "siteRequired": "Choose the site the bill belongs to, so the line can be added.",
+        "quantityRequired": "Enter the figure from the bill, so the line can be added. If the bill has none, say why instead.",
+        "unitRequired": "Choose the unit printed on the bill, so the figure can be converted.",
+        "reasonRequired": "Say why there is no figure, so the line can be added. A reader of the report sees this sentence."
+      },
+      "measure": "{value} {unit}",
+      "derivation": {
+        "heading": "How {quantity} {unit} became {tonnes} t CO₂e",
+        "entered": {
+          "title": "What you entered",
+          "detail": "Off the bill, unchanged."
+        },
+        "converted": {
+          "title": "Converted to energy",
+          "detail": "{rate} MWh per {unit}, as the factor set publishes it."
+        },
+        "factor": {
+          "title": "Emission factor applied",
+          "detail": "{factor} t CO₂e per MWh."
+        },
+        "reported": {
+          "title": "Reported in tonnes",
+          "detail": "{places, plural, =-1 {Shown with every digit, as computed.} one {Rounded to one decimal place for the report; the unrounded figure is kept.} other {Rounded to # decimal places for the report; the unrounded figure is kept.}}"
+        },
+        "set": "Factor set used: {label}"
+      },
+      "pager": {
+        "label": "Sources, one at a time",
+        "position": "Source {position} of {total}",
+        "next": "Next: {source}",
+        "all": "Back to all sources"
+      },
+      "summary": {
+        "heading": "What goes back to B3",
+        "none": "Nothing measured yet",
+        "unmeasured": "{count, plural, one {# line has no figure and is not included.} other {# lines have no figure and are not included.}}",
+        "factorSet": "Factor set",
+        "notYet": "Not yet used for B3.",
+        "lastUsed": "Last used for B3 on {date}.",
+        "use": "Use these figures in B3",
+        "note": "Both totals follow your lines. Nothing is written into B3 until you press the button.",
+        "standing": {
+          "no_factor_set": "No emission factors are published for this period yet, so there is nothing to calculate with.",
+          "no_lines": "Add the first bill, and its figure will appear here.",
+          "offline": "No connection. Using the figures needs the server, which holds the factors; your lines are kept and can be used once you are back online.",
+          "unsent": "Some lines are still being saved. The figures can be used once every line is saved.",
+          "uncovered": "{count, plural, one {# line uses a source or unit the factors in force no longer cover, so the figures cannot be used yet. Change or remove it first.} other {# lines use a source or unit the factors in force no longer cover, so the figures cannot be used yet. Change or remove them first.}}"
+        }
+      },
+      "notice": {
+        "title": "Newer emission factors are in force",
+        "body": "The figures in B3 were worked out with {pinned}. Recalculating with {current} would change them as below. Nothing changes unless you ask for it.",
+        "unknownPinned": "an earlier factor set",
+        "figure": "Figure",
+        "now": "Now",
+        "wouldBe": "Would be",
+        "recalculate": "Recalculate with {current}",
+        "pinnedSet": "the factor set {label}"
+      },
+      "entry": {
+        "title": "Carbon calculator",
+        "body": "Don't have Scope 1 and Scope 2 in tonnes? Almost nobody does. Enter the figures from your energy bills, in the units they use, and the calculator works them out, showing every step. If your accountant has already calculated the tonnes, type them below instead.",
+        "action": "Work it out from my bills"
+      },
+      "figure": {
+        "yours": "Your figure: {figure}",
+        "superseded": "Computed: {figure} — replaced",
+        "reason": "Reason",
+        "from": "Worked out from your bills · factor set {label}, on {date}",
+        "unknownSet": "an earlier set",
+        "noteLabel": "Note",
+        "how": "See how this was worked out",
+        "replace": "Replace with my own figure",
+        "change": "Change the figure or the reason",
+        "restore": "Put the computed figure back",
+        "explain": "Explain this figure",
+        "changeNote": "Change the note",
+        "cancel": "Cancel",
+        "note": "A note beside the figure",
+        "noteHelp": "A reader of the report sees it beside the figure. Leave it empty to remove it.",
+        "saveNote": "Save the note",
+        "offline": "No connection. Replacing, explaining or restoring a figure needs the server; try again once you are back online."
+      },
+      "override": {
+        "tonnes": "Your figure, in tonnes of CO₂e",
+        "tonnesRequired": "Enter your figure in tonnes, so it can replace the computed one.",
+        "reason": "Why are you replacing it?",
+        "reasonHelp": "A third party will read this sentence next to both figures. Write it for them.",
+        "reasonRequired": "Say why the computed figure is being replaced, so your figure can be used. A third party reads this reason beside both figures.",
+        "use": "Use my figure",
+        "keep": "Keep the computed figure",
+        "cancel": "Cancel",
+        "replace": "Replace with my own figure",
+        "computed": "Computed: {figure}",
+        "replaced": "The computed {computed} was replaced. The reason and both figures will appear in the report.",
+        "by": "Replaced by {name}.",
+        "reasonLabel": "Reason",
+        "change": "Change the figure or the reason",
+        "restore": "Put the computed figure back",
+        "yoursMarker": "your figure"
+      },
+      "refusal": {
+        "run": {
+          "title": "The figures were not used in B3",
+          "body": "We could not reach the service, so B3 is unchanged. Your lines are kept. Try again in a few minutes."
+        },
+        "figure": {
+          "title": "The figure was not changed",
+          "body": "We could not reach the service, so the figure is as it was. Try again in a few minutes."
         }
       }
     }

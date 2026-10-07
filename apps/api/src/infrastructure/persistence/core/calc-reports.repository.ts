@@ -6,6 +6,8 @@ interface CalcReportRow {
   id: string;
   period_start: string;
   period_start_tz: string;
+  period_end: string;
+  period_end_tz: string;
   taxonomy_version: string;
   country_code: string;
   snapshot_sites: number;
@@ -25,7 +27,8 @@ export class CalcReportsRepository extends TenantRepository<never> implements Ca
 
   async find(query: { reportId: string }): Promise<CalcReport | null> {
     const rows = await this.manager.query<CalcReportRow[]>(
-      `SELECT r.id, p.period_start::text AS period_start, p.period_start_tz, r.taxonomy_version, o.country_code,
+      `SELECT r.id, p.period_start::text AS period_start, p.period_start_tz,
+              p.period_end::text AS period_end, p.period_end_tz, r.taxonomy_version, o.country_code,
               COALESCE(jsonb_array_length(s.payload->'sites'), 0)::int AS snapshot_sites
          FROM core.report r
          JOIN core.reporting_period p ON p.id = r.reporting_period_id
@@ -39,6 +42,7 @@ export class CalcReportsRepository extends TenantRepository<never> implements Ca
     return {
       reportId: row.id,
       periodStart: { date: row.period_start, timezone: row.period_start_tz },
+      periodEnd: { date: row.period_end, timezone: row.period_end_tz },
       taxonomyVersion: row.taxonomy_version,
       countryCode: row.country_code,
       snapshotSites: row.snapshot_sites,

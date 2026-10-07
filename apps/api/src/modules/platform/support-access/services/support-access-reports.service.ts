@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Report } from '@api/modules/core/disclosure/models/report.model';
 import type {
   DisclosureModuleSummary,
-  DisclosureStep,
+  PresentedDisclosureStep,
 } from '@api/modules/core/disclosure/models/wizard-step.model';
 import { ReportService } from '@api/modules/core/disclosure/services/report.service';
 import { WizardService } from '@api/modules/core/disclosure/services/wizard.service';
@@ -54,7 +54,7 @@ export class SupportAccessReportsService {
     });
   }
 
-  step(scope: GrantScope & { readonly reportId: string; readonly module: string }): Promise<DisclosureStep> {
+  step(scope: GrantScope & { readonly reportId: string; readonly module: string }): Promise<PresentedDisclosureStep> {
     return this.underGrant.execute({
       organizationId: scope.organizationId,
       requestId: scope.requestId,

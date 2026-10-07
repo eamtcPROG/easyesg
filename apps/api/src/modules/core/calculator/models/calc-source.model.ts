@@ -1,3 +1,5 @@
+import type { OverridingPerson } from '@api/modules/core/disclosure/models/disclosure-value.model';
+
 /**
  * One invoice line of a report's carbon calculator — the working set UX-41 keeps visible and editable (task 38.1;
  * FR-33, UC-32).
@@ -34,6 +36,13 @@ export interface CalcLineOverride {
   readonly explanation: string;
 }
 
+/**
+ * The monthly form's twelve figures, by position from the period's start month (task 39.1; §12.5.6's task-39 row (1)) —
+ * each a decimal string, or `null` for a month left empty. Their sum is the line's quantity, computed by the server;
+ * which calendar month each stands for is the period's (`domain/period-months.ts`), and nothing stores it.
+ */
+export type MonthlyQuantities = readonly (string | null)[];
+
 /** A line's identity: the report it belongs to and the id the client chose for it. */
 export interface CalcSourceKey {
   readonly reportId: string;
@@ -49,11 +58,21 @@ export interface CalcSourceWrite extends CalcSourceKey {
   /** The reporter's own name for it — "the van". */
   readonly description: string | null;
   readonly contents: CalcSourceContents;
+  /**
+   * The twelve month figures the quantity sums, or `null` for a line entered as one figure for the period. **Not part
+   * of `contents`**, which is what a run copies: a run retains the quantity either way (the task-38.1 row (3)).
+   */
+  readonly monthlyQuantities: MonthlyQuantities | null;
   /** The reporter's figure in place of the computed one, or `null` where the computed one stands. */
   readonly override: CalcLineOverride | null;
 }
 
 export interface CalcSource extends CalcSourceWrite {
+  /**
+   * Who replaced the line's tonnes (task 39.4; FR-36) — `null` where nothing is replaced, or for an override made before
+   * the person was recorded. On the read shape only: the table's trigger takes it from the request's binding.
+   */
+  readonly overriddenBy: OverridingPerson | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }

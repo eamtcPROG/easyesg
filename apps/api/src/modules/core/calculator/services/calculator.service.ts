@@ -2,11 +2,14 @@ import { Injectable } from '@nestjs/common';
 import type { ScopeTotal } from '../domain/scope-total';
 import type { CalcRun, StoredCalcRun } from '../models/calc-run.model';
 import type { CalcSource, CalcSourceKey } from '../models/calc-source.model';
+import type { CalculatorView } from '../models/calculator-view.model';
 import type { FactorSet } from '../models/factor-set.model';
 import { ExplainFigure } from '../use-cases/explain-figure.use-case';
 import { OverrideFigure } from '../use-cases/override-figure.use-case';
+import { ReadCalcFigures } from '../use-cases/read-calc-figures.use-case';
 import { ReadCalcRun } from '../use-cases/read-calc-run.use-case';
 import { ReadCalcSources } from '../use-cases/read-calc-sources.use-case';
+import { ReadCalculator } from '../use-cases/read-calculator.use-case';
 import { RecordCalcRun } from '../use-cases/record-calc-run.use-case';
 import { RemoveCalcSource } from '../use-cases/remove-calc-source.use-case';
 import { RestoreFigure } from '../use-cases/restore-figure.use-case';
@@ -20,6 +23,7 @@ import { WriteCalcSource, type WriteCalcSourceCommand } from '../use-cases/write
 @Injectable()
 export class CalculatorService {
   constructor(
+    private readonly readCalculator: ReadCalculator,
     private readonly readSources: ReadCalcSources,
     private readonly writeSource: WriteCalcSource,
     private readonly removeSource: RemoveCalcSource,
@@ -28,7 +32,16 @@ export class CalculatorService {
     private readonly overrideFigure: OverrideFigure,
     private readonly restoreFigure: RestoreFigure,
     private readonly explainFigure: ExplainFigure,
+    private readonly readFigures: ReadCalcFigures,
   ) {}
+
+  figures(query: { readonly reportId: string }): ReturnType<ReadCalcFigures['execute']> {
+    return this.readFigures.execute(query);
+  }
+
+  calculator(query: { readonly reportId: string }): Promise<CalculatorView> {
+    return this.readCalculator.execute(query);
+  }
 
   sources(query: { readonly reportId: string }): Promise<CalcSource[]> {
     return this.readSources.execute(query);

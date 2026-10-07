@@ -1,5 +1,5 @@
 import type { FactorSet, FactorSource } from '../models/factor-set.model';
-import { contentsRefusal, factorRefusal, overrideRefusal } from './calc-source-check';
+import { contentsRefusal, factorRefusal, monthsRefusal, overrideRefusal } from './calc-source-check';
 
 describe('an invoice line', () => {
   const measured = { quantity: '500', unitCode: 'm3', notAvailableReason: null };
@@ -68,6 +68,32 @@ describe('an invoice line', () => {
       ['a replacement on an explained line, which has nothing computed', { contents: explained, override: replacement }],
     ])('refuses %s', (_case, input) => {
       expect(overrideRefusal(input)).toBe('override');
+    });
+  });
+
+  describe('monthsRefusal (task 39.1)', () => {
+    // A monthly line as a client writes it: months and a unit, the quantity left for the server to sum.
+    const monthly = { quantity: null, unitCode: 'm3', notAvailableReason: null };
+    const months = (entered: Readonly<Record<number, string | number>>): (string | null)[] =>
+      Array.from({ length: 12 }, (_, index) => (entered[index] === undefined ? null : String(entered[index])));
+
+    it('accepts a line with no months, and twelve months with one or more entered and the rest empty', () => {
+      expect(monthsRefusal({ contents: measured, monthlyQuantities: null })).toBeNull();
+      expect(monthsRefusal({ contents: monthly, monthlyQuantities: months({ 0: 40, 1: 45 }) })).toBeNull();
+      expect(monthsRefusal({ contents: monthly, monthlyQuantities: months({ 11: 0 }) })).toBeNull();
+    });
+
+    it.each([
+      ['eleven months', { contents: monthly, monthlyQuantities: months({ 0: 40 }).slice(1) }],
+      ['thirteen months', { contents: monthly, monthlyQuantities: [...months({ 0: 40 }), '5'] }],
+      ['every month empty', { contents: monthly, monthlyQuantities: months({}) }],
+      ['a month written with a comma', { contents: monthly, monthlyQuantities: months({ 0: '40,5' }) }],
+      ['a negative month', { contents: monthly, monthlyQuantities: months({ 0: '-4' }) }],
+      ['a quantity sent beside them', { contents: measured, monthlyQuantities: months({ 0: 40 }) }],
+      ['no unit', { contents: { ...monthly, unitCode: null }, monthlyQuantities: months({ 0: 40 }) }],
+      ['a reason beside them', { contents: { ...monthly, notAvailableReason: 'Billed' }, monthlyQuantities: months({ 0: 40 }) }],
+    ])('refuses %s', (_case, input) => {
+      expect(monthsRefusal(input)).toBe('months');
     });
   });
 });

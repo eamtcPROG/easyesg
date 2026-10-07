@@ -236,4 +236,59 @@ describe('useAutosave', () => {
     act(() => result.current.retry());
     await waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(2));
   });
+
+  it('sends a queued line to its own route, after the values, and a removal as a DELETE (task 39.1)', async () => {
+    const requests: { url: string; method: string; body: unknown }[] = [];
+    const stored = {
+      id: 'line-1',
+      siteOrdinal: 0,
+      sourceKey: 'natural_gas',
+      description: null,
+      quantity: '500',
+      unitCode: 'm3',
+      notAvailableReason: null,
+      monthlyQuantities: null,
+      overrideTonnes: null,
+      overrideExplanation: null,
+      updatedAt: 1,
+    };
+    const fetchImpl = vi.fn((url: string, init?: RequestInit) => {
+      const body = init?.body === undefined ? null : (JSON.parse(init.body as string) as unknown);
+      requests.push({ url, method: init?.method ?? 'GET', body });
+      const json = (payload: unknown) =>
+        Promise.resolve(
+          new Response(JSON.stringify(payload), { status: 200, headers: { 'content-type': 'application/json' } }),
+        );
+      if (url.endsWith('/values')) {
+        const values = (body as { values: DisclosureValueWrite[] }).values;
+        return json({ objects: values.map(committedRow), total: values.length, totalpages: 1, messages: [] });
+      }
+      if (init?.method === 'DELETE') return Promise.resolve(new Response(null, { status: 204 }));
+      return json({ object: stored, messages: [] });
+    }) as unknown as typeof fetch;
+
+    const { result } = renderHook(
+      () => useAutosave({ reportId: 'r1', scope: 'a/r1', store: memoryPendingWriteStore(), fetch: fetchImpl }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.state.hydrated).toBe(true));
+
+    const line = { siteOrdinal: 0, sourceKey: 'natural_gas', quantity: '500', unitCode: 'm3' };
+    act(() => {
+      result.current.change({ lineId: 'line-1', line });
+      result.current.change(write('CityOfSite', 'Cahul'));
+    });
+    await waitFor(() => expect(result.current.state.pending).toEqual({}));
+    // The value first — a site B1 gains in the same flush is there when the line arrives — then the line, whole.
+    expect(requests.map((each) => [each.method, each.url])).toEqual([
+      ['PUT', '/api/v1/reports/r1/values'],
+      ['PUT', '/api/v1/reports/r1/calculator/sources/line-1'],
+    ]);
+    expect(requests[1]?.body).toEqual(line);
+    expect(result.current.state.committedLines['line-1']).toEqual(stored);
+
+    act(() => result.current.change({ lineId: 'line-1', removed: true }));
+    await waitFor(() => expect(result.current.state.committedLines['line-1']).toBeNull());
+    expect(requests.at(-1)).toMatchObject({ method: 'DELETE', url: '/api/v1/reports/r1/calculator/sources/line-1' });
+  });
 });

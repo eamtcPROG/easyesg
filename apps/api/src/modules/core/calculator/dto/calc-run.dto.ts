@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { EpochMillis } from '@api/contracts/types/time';
+import { OverridingPersonDto } from '@api/modules/core/disclosure/dto/overriding-person.dto';
 import { LINE_OUTCOME, type LineEmission, type LineOutcome } from '../domain/line-emission';
 import type { ScopeTotal } from '../domain/scope-total';
 import { B3_ELEMENT_FOR_SCOPE } from '../models/b3-element.model';
@@ -56,6 +57,13 @@ export class CalcInputDto {
   @ApiProperty({ type: String, nullable: true })
   readonly overrideExplanation: string | null;
 
+  @ApiProperty({
+    type: OverridingPersonDto,
+    nullable: true,
+    description: 'Who had replaced the line’s tonnes when the run read it (FR-36); null where nothing was replaced.',
+  })
+  readonly overriddenBy: OverridingPersonDto | null;
+
   constructor(input: CalcInput) {
     this.sourceId = input.sourceId;
     this.siteOrdinal = input.siteOrdinal;
@@ -66,6 +74,7 @@ export class CalcInputDto {
     this.notAvailableReason = input.contents.notAvailableReason;
     this.overrideTonnes = input.override?.tonnesCo2e ?? null;
     this.overrideExplanation = input.override?.explanation ?? null;
+    this.overriddenBy = input.overriddenBy === null ? null : new OverridingPersonDto(input.overriddenBy);
   }
 }
 

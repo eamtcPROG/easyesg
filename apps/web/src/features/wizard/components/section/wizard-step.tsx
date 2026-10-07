@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getPathname } from '@/i18n/navigation';
 import { readActiveMembership } from '@/server/data/memberships';
 import { WIZARD_READ, readWizardStep } from '@/server/data/wizard';
+import { readCalcFigures } from '@/server/data/calculator';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { readSession } from '@/server/session/session';
@@ -14,6 +15,7 @@ import { AutosaveBanner } from '../banner/autosave-banner';
 import { ReadOnlyBanner } from '../banner/read-only-banner';
 import { StepFields } from '../fields/section/step-fields';
 import { AutosaveProvider } from '../providers/autosave-context';
+import { StepFiguresProvider } from '../providers/step-figures-context';
 import { WizardReauthentication } from '../session/wizard-reauthentication';
 import { modulesInScope, moduleStateOf } from '../../tools/module-state';
 import { placeOf } from '../../tools/step-place';
@@ -23,6 +25,8 @@ import { ReportBar } from '../bar/report-bar';
 import { ModuleRail } from '../rail/module-rail';
 import { ModuleSwitcher } from '../rail/module-switcher';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
+import { CalculatorEntry } from '@/features/calculator/components/entry/calculator-entry';
+import { CALCULATOR_MODULE } from '@/features/calculator/tools/calculator-module';
 
 /**
  * S-07's one region: the reads, which of §8.1's arms applies, and the shell over the step (cut out
@@ -54,13 +58,15 @@ export async function WizardStep({
   readonly reportId: string;
   readonly module: string;
 }) {
-  const [t, messages, read, session, membership, locale] = await Promise.all([
+  const [t, messages, read, session, membership, locale, calculatorFigures] = await Promise.all([
     getTranslations(WIZARD_MESSAGES),
     getMessages(),
     readWizardStep({ reportId, module }),
     readSession(),
     readActiveMembership(),
     getLocale(),
+    // B3's two scopes are the fields a calculator run writes (task 39.3), read beside the step rather than after it.
+    module === CALCULATOR_MODULE ? readCalcFigures(reportId) : Promise.resolve(null),
   ]);
 
   if (read.status === TENANT_READ.FORBIDDEN) {
@@ -129,13 +135,17 @@ export async function WizardStep({
           />
         )}
         <AutosaveBanner />
-        <StepFields
-          fields={fields}
-          axes={read.step.axes}
-          derivationInputs={read.step.derivationInputs}
-          priorValues={priorValuesOf(read.prior)}
-          readOnly={readOnly}
-        />
+        {/* B3's figures are the carbon calculator's to work out from the bills (task 39.2; S-09's entry point). */}
+        {module === CALCULATOR_MODULE ? <CalculatorEntry reportId={reportId} /> : null}
+        <StepFiguresProvider reportId={reportId} precision={read.step.precision} calculator={calculatorFigures}>
+          <StepFields
+            fields={fields}
+            axes={read.step.axes}
+            derivationInputs={read.step.derivationInputs}
+            priorValues={priorValuesOf(read.prior)}
+            readOnly={readOnly}
+          />
+        </StepFiguresProvider>
       </WizardShell>
       <WizardReauthentication
         module={module}

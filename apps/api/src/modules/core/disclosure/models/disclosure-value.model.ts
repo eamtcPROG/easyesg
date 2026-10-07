@@ -40,8 +40,8 @@ export type DisclosureOrigin = (typeof DISCLOSURE_ORIGIN)[keyof typeof DISCLOSUR
  * Beside the vocabulary because it is an operation over it (root `CLAUDE.md`: *"an operation over a
  * vocabulary lives with the vocabulary, not with each caller"*). A step read serving a field with no
  * stored row must still answer an origin, and `?? DISCLOSURE_ORIGIN.REPORTED` written at that call
- * site is a second place the column's default is true — which is the thing that drifts when 39.2
- * makes `CALCULATED` reachable and someone changes one of the two.
+ * site is a second place the column's default is true — which is the thing that drifts now that runs
+ * make `CALCULATED` reachable (tasks 38.4, 39.2) and someone changes one of the two.
  */
 export const DEFAULT_DISCLOSURE_ORIGIN: DisclosureOrigin = DISCLOSURE_ORIGIN.REPORTED;
 
@@ -222,8 +222,27 @@ export interface DisclosureValue extends DisclosureValueKey, DisclosureValueCont
    * reporter typed. On the read shape for `origin`'s reason: only the calculator's figure routes write it.
    */
   readonly explanation: string | null;
+  /**
+   * Who replaced the computed figure (task 39.4; FR-36, BR-CALC-3) — on an `overridden` value, and `null` on any other,
+   * or on an override made before the person was recorded. On the read shape only: the table's trigger takes it from
+   * the request's own binding, so no write can name it.
+   */
+  readonly overriddenBy: OverridingPerson | null;
   readonly createdAt: number;
   readonly updatedAt: number;
+}
+
+/**
+ * The person who replaced a computed figure, as a figure names them (task 39.4; §12.5.6's task-39 row (3)): the
+ * account, stored with no foreign key so the attribution outlives it, and **its display name resolved when it is read**
+ * — UX-137's, so a rename shows the new name. `name` is `null` where the account no longer exists: the figure and its
+ * attribution stand, and only the name is gone.
+ *
+ * Shared with the calculator's lines, whose override names its person the same way.
+ */
+export interface OverridingPerson {
+  readonly accountId: string;
+  readonly name: string | null;
 }
 
 /** A value to write. The key says which field; the contents say what it now holds. */

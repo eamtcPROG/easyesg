@@ -1,9 +1,9 @@
 'use client';
 
-import type { DisclosureValueResponse } from '@easyesg/contracts';
+import type { DisclosureValueResponse, ProblemDocument } from '@easyesg/contracts';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-import { API_OUTCOME } from '@/lib/api-outcome';
+import { API_OUTCOME, type ApiOutcomeStatus } from '@/lib/api-outcome';
 import {
   ACKNOWLEDGEMENT_BUDGET_MS,
   AUTOSAVE_EVENT,
@@ -15,12 +15,23 @@ import {
   hasUnsynced,
   initialAutosaveState,
   isDerivationInputWrite,
+  isLineRemoval,
+  isQueuedLine,
+  type CommittedLine,
   type QueuedWrite,
   type AutosaveState,
   type FlushFailure,
 } from '@/features/wizard/tools/autosave-state';
 import type { PendingWriteStore } from './pending-store';
+import { deleteCalcLine, putCalcLine } from './write-lines';
 import { putDerivationInputs, putDisclosureValues } from './write-values';
+
+/** What a flush that landed carries back: the disclosures as committed, and each line as stored or removed. */
+interface FlushCommitted {
+  readonly values: readonly DisclosureValueResponse[];
+  readonly lines: readonly CommittedLine[];
+}
+
 
 /**
  * The wizard's persistence model, live (task 35.2; AD-9's §4.10, §11.1).
@@ -135,56 +146,72 @@ export function useAutosave(input: {
     latest.current = state;
   }, [state]);
 
-  const flush = useMutation<DisclosureValueResponse[], FlushError>({
+  const flush = useMutation<FlushCommitted, FlushError>({
     mutationFn: async () => {
       const { writes, sent } = flushSnapshot(latest.current);
       dispatch({ type: AUTOSAVE_EVENT.FLUSH_STARTED, sent });
-      // **Partitioned here rather than at every field**, which is what keeps one queue serving two
-      // stores (task 36.10): a derivation input is not a disclosure and lands on its own endpoint,
-      // and nothing above this line had to know which it was writing.
+      // **Partitioned here rather than at every field**, which is what keeps one queue serving three
+      // stores (tasks 36.10, 39.1): a derivation input is not a disclosure and lands on its own endpoint,
+      // as does one of S-09's lines, and nothing above this line had to know which it was writing.
       const inputs = writes.filter(isDerivationInputWrite);
+      const lines = writes.filter(isQueuedLine);
       // The predicate is spelled out rather than negated inline: a `!` inside `filter` does not
       // narrow, and an `as` here would be the cast this codebase refuses on validated data.
-      const values = writes.flatMap((write) => (isDerivationInputWrite(write) ? [] : [write]));
+      const values = writes.flatMap((write) =>
+        isDerivationInputWrite(write) || isQueuedLine(write) ? [] : [write],
+      );
 
-      // Values first, then inputs. The order matters and is not arbitrary: the api recomputes a
+      // A step that did not land ends the flush with its failure: the reducer keeps everything the flush
+      // carried, and a write that did land is sent again next time — every one of them is idempotent.
+      const failWith = (outcome: { readonly status: ApiOutcomeStatus; readonly problem?: ProblemDocument }): never => {
+        // The browser's own verdict outranks the event stream: an `offline` event can be missed
+        // between a blur and its flush, and a request that failed while `navigator.onLine` is false
+        // is a queued change, not a failed one (UX-35's third state, not its fourth).
+        if (outcome.status === API_OUTCOME.Unreachable && !browserOnline()) {
+          dispatch({ type: AUTOSAVE_EVENT.CONNECTION_CHANGED, connection: CONNECTION.OFFLINE });
+        }
+        throw new FlushError(
+          outcome.status === API_OUTCOME.Problem && outcome.problem !== undefined
+            ? { kind: FLUSH_FAILURE.REFUSED, problem: outcome.problem }
+            : { kind: FLUSH_FAILURE.UNREACHABLE },
+        );
+      };
+
+      // Values first, then inputs, then lines. The first two are ordered: the api recomputes a
       // derived figure after each write, so sending the inputs last means the last recompute sees
-      // every operand this flush carried. The reverse order computes twice and the first is stale.
-      const outcome =
-        values.length === 0
-          ? { status: API_OUTCOME.Ok, value: [] as DisclosureValueResponse[], messages: [] }
-          : await putDisclosureValues({ reportId, values, fetch: input.fetch });
-      if (outcome.status === API_OUTCOME.Ok && inputs.length > 0) {
+      // every operand this flush carried — the reverse order computes twice and the first is stale.
+      // Lines after values, so a line at a site B1 gained in the same flush finds the site there.
+      let committed: DisclosureValueResponse[] = [];
+      if (values.length > 0) {
+        const outcome = await putDisclosureValues({ reportId, values, fetch: input.fetch });
+        if (outcome.status !== API_OUTCOME.Ok) failWith(outcome);
+        else committed = outcome.value;
+      }
+      if (inputs.length > 0) {
         const written = await putDerivationInputs({ reportId, values: inputs, fetch: input.fetch });
-        if (written.status !== API_OUTCOME.Ok) {
-          if (written.status === API_OUTCOME.Unreachable && !browserOnline()) {
-            dispatch({ type: AUTOSAVE_EVENT.CONNECTION_CHANGED, connection: CONNECTION.OFFLINE });
-          }
-          throw new FlushError(
-            written.status === API_OUTCOME.Problem
-              ? { kind: FLUSH_FAILURE.REFUSED, problem: written.problem }
-              : { kind: FLUSH_FAILURE.UNREACHABLE },
-          );
+        if (written.status !== API_OUTCOME.Ok) failWith(written);
+      }
+      const committedLines: CommittedLine[] = [];
+      // One request per line, in the order they were changed: a line is written whole under its own id (task 38.1).
+      for (const line of lines) {
+        if (isLineRemoval(line)) {
+          const removed = await deleteCalcLine({ reportId, lineId: line.lineId, fetch: input.fetch });
+          if (removed.status !== API_OUTCOME.Ok) failWith(removed);
+          committedLines.push({ lineId: line.lineId, stored: null });
+        } else {
+          const stored = await putCalcLine({ reportId, lineId: line.lineId, line: line.line, fetch: input.fetch });
+          if (stored.status !== API_OUTCOME.Ok) failWith(stored);
+          else committedLines.push({ lineId: line.lineId, stored: stored.value });
         }
       }
-      if (outcome.status === API_OUTCOME.Ok) return outcome.value;
-      // The browser's own verdict outranks the event stream: an `offline` event can be missed
-      // between a blur and its flush, and a request that failed while `navigator.onLine` is false
-      // is a queued change, not a failed one (UX-35's third state, not its fourth).
-      if (outcome.status === API_OUTCOME.Unreachable && !browserOnline()) {
-        dispatch({ type: AUTOSAVE_EVENT.CONNECTION_CHANGED, connection: CONNECTION.OFFLINE });
-      }
-      throw new FlushError(
-        outcome.status === API_OUTCOME.Problem
-          ? { kind: FLUSH_FAILURE.REFUSED, problem: outcome.problem }
-          : { kind: FLUSH_FAILURE.UNREACHABLE },
-      );
+      return { values: committed, lines: committedLines };
     },
     networkMode: 'online',
     retry: (count, error) =>
       error.failure.kind === FLUSH_FAILURE.UNREACHABLE && count < schedule.retries,
     retryDelay: schedule.delayMs,
-    onSuccess: (committed) => dispatch({ type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED, committed }),
+    onSuccess: (done) =>
+      dispatch({ type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED, committed: done.values, lines: done.lines }),
     onError: (error) => dispatch({ type: AUTOSAVE_EVENT.FLUSH_FAILED, failure: error.failure }),
   });
   const { mutate, isPending } = flush;

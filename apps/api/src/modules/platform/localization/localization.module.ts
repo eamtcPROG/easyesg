@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { DISCLOSURE_LABELS } from '@api/contracts/disclosure-label.port';
+import { PRESENTATION_PRECISION } from '@api/contracts/presentation-precision.port';
 import { DisclosureLabelService } from './services/disclosure-label.service';
+import { PresentationPrecisionService } from './services/presentation-precision.service';
 
 /**
  * `platform/localization` — FR-63, FR-64
@@ -21,9 +23,16 @@ import { DisclosureLabelService } from './services/disclosure-label.service';
  * **Registered in both modes**, like the taxonomy registry it labels. The worker renders exports
  * against a report's pinned version (DR-4), and a resolver available only to the HTTP tier would
  * make the export — the one artefact a bank reads — the one place an element key could not be named.
+ *
+ * **Since task 39.2 it also says how many places a computed figure is shown to** (`PRESENTATION_PRECISION`, over the
+ * `presentation_precision` artefact; §12.5.6's task-39 row (5)) — a presentation concern beside the wording, registered in
+ * both modes for the same reason: S-09 reads it on the HTTP tier, and the exports will on the worker.
  */
 @Module({
-  providers: [{ provide: DISCLOSURE_LABELS, useClass: DisclosureLabelService }],
-  exports: [DISCLOSURE_LABELS],
+  providers: [
+    { provide: DISCLOSURE_LABELS, useClass: DisclosureLabelService },
+    { provide: PRESENTATION_PRECISION, useClass: PresentationPrecisionService },
+  ],
+  exports: [DISCLOSURE_LABELS, PRESENTATION_PRECISION],
 })
 export class LocalizationModule {}

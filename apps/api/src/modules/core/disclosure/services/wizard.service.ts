@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { PRESENTATION_PRECISION, type PresentationPrecision } from '@api/contracts/presentation-precision.port';
 
 import { requestLocale } from '@api/infrastructure/persistence/request-context';
 import type { DisclosureValue } from '../models/disclosure-value.model';
-import type { DisclosureModuleSummary, DisclosureStep } from '../models/wizard-step.model';
+import type { DisclosureModuleSummary, PresentedDisclosureStep } from '../models/wizard-step.model';
 import { ReadWizardStep } from '../use-cases/read-wizard-step.use-case';
 import {
   WriteDerivationInputs,
@@ -27,6 +28,7 @@ export class WizardService {
     private readonly reads: ReadWizardStep,
     private readonly writes: WriteDisclosureValues,
     private readonly derivationWrites: WriteDerivationInputs,
+    @Inject(PRESENTATION_PRECISION) private readonly precision: PresentationPrecision,
   ) {}
 
   modules(query: { readonly reportId: string }): Promise<readonly DisclosureModuleSummary[]> {
@@ -35,10 +37,13 @@ export class WizardService {
     return this.reads.modules({ ...query, locale: requestLocale() });
   }
 
-  step(query: { readonly reportId: string; readonly module: string }): Promise<DisclosureStep> {
+  async step(query: { readonly reportId: string; readonly module: string }): Promise<PresentedDisclosureStep> {
     // Falls back to source rather than throwing: a step with unresolved wording is still an
     // answerable step, and refusing it would make a missing header fatal to the whole product.
-    return this.reads.step({ ...query, locale: requestLocale() });
+    const step = await this.reads.step({ ...query, locale: requestLocale() });
+    // The places a computed or derived figure is shown to (task 39.3; §12.5.6's task-39 row (7)) — the same rule S-09,
+    // the PDF and the Excel export round by, so the wizard cannot disagree with them about a figure.
+    return { ...step, precision: this.precision.places() };
   }
 
   write(command: {

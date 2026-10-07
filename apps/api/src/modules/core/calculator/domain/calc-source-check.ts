@@ -1,6 +1,7 @@
-import type { CalcLineOverride, CalcSourceContents } from '../models/calc-source.model';
+import type { CalcLineOverride, CalcSourceContents, MonthlyQuantities } from '../models/calc-source.model';
 import type { FactorSet } from '../models/factor-set.model';
 import { isDecimalString } from '@api/contracts/types/decimal';
+import { MONTHS_IN_FORM } from './period-months';
 
 /**
  * Whether an invoice line can be calculated, and if not, why (task 38.1; FR-33, UX-14, UX-40).
@@ -21,6 +22,11 @@ export const CALC_SOURCE_REFUSAL = {
   UNIT: 'unit',
   /** A replacement figure that is not a decimal, carries no reason, or replaces nothing computed (task 38.4). */
   OVERRIDE: 'override',
+  /**
+   * Month figures that are not the monthly form (task 39.1): not twelve, one that is not a number, none entered at
+   * all, sent beside a quantity or a reason, or on a period that does not span twelve calendar months.
+   */
+  MONTHS: 'months',
 } as const;
 export type CalcSourceRefusal = (typeof CALC_SOURCE_REFUSAL)[keyof typeof CALC_SOURCE_REFUSAL];
 
@@ -68,4 +74,26 @@ export function overrideRefusal(input: {
     return CALC_SOURCE_REFUSAL.OVERRIDE;
   }
   return null;
+}
+
+/**
+ * A line's month figures, where it has them (task 39.1; §12.5.6's task-39 row (1)): twelve, each a decimal or empty,
+ * at least one entered, in the line's one unit — and **no quantity beside them**, because the quantity is their sum
+ * and the server computes it, nor a reason, because a line with months has a figure. Whether the period offers the
+ * form is asked separately, against the report, by the use case.
+ */
+export function monthsRefusal(input: {
+  readonly contents: CalcSourceContents;
+  readonly monthlyQuantities: MonthlyQuantities | null;
+}): CalcSourceRefusal | null {
+  const months = input.monthlyQuantities;
+  if (months === null) return null;
+  const { quantity, unitCode, notAvailableReason } = input.contents;
+  const shaped =
+    months.length === MONTHS_IN_FORM &&
+    months.every((month) => month === null || isDecimalString(month)) &&
+    months.some((month) => month !== null);
+  return shaped && quantity === null && notAvailableReason === null && unitCode !== null && unitCode !== ''
+    ? null
+    : CALC_SOURCE_REFUSAL.MONTHS;
 }

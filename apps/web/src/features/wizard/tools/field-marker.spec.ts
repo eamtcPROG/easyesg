@@ -21,6 +21,7 @@ const field = (over: Partial<DisclosureField>): DisclosureField => ({
   origin: DISCLOSURE_ORIGIN.REPORTED,
   derived: false,
   explanation: null,
+  overriddenBy: null,
   ordinal: 0,
   currency: null,
   kind: DISCLOSURE_KIND.TEXT,
@@ -58,7 +59,12 @@ const labels: Readonly<Record<DisclosureState, string>> = {
   [DISCLOSURE_STATE.NOT_MATERIAL]: 'Nesemnificativ',
   [DISCLOSURE_STATE.NIL_RETURN]: 'Zero',
 };
-const provenance = { carried: 'Preluat', calculated: 'Calculat', record: 'Din fișa companiei' };
+const provenance = {
+  carried: 'Preluat',
+  calculated: 'Calculat',
+  overridden: 'Cifra dumneavoastră',
+  record: 'Din fișa companiei',
+};
 
 describe('markerFor', () => {
   it('names a calculated figure by its origin, before its state', () => {
@@ -70,7 +76,12 @@ describe('markerFor', () => {
     expect(marker).toEqual({ label: 'Calculat', tone: FIELD_TONE.NEUTRAL });
   });
 
-  it('reads origin before carry-forward — the seam task 39.2 writes into', () => {
+  it('names a substituted figure as the reporter’s, in the amber of a decision recorded (task 39.3)', () => {
+    const marker = markerFor(field({ origin: DISCLOSURE_ORIGIN.OVERRIDDEN }), labels, provenance);
+    expect(marker).toEqual({ label: 'Cifra dumneavoastră', tone: FIELD_TONE.WARNING });
+  });
+
+  it('reads origin before carry-forward — the seam a calculator run writes into', () => {
     const marker = markerFor(
       field({ origin: DISCLOSURE_ORIGIN.CALCULATED, carriedForward: true }),
       labels,

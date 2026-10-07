@@ -1327,6 +1327,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/{id}/calculator": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The carbon calculator, as it opens
+         * @description What a line may say and where — the sources and units of the factor set the report’s period resolves, the report’s B1 sites as the wizard names them, and the months the monthly form stands for — beside the lines themselves (S-09; FR-33, UX-40, UX-41).
+         */
+        get: operations["CalculatorController_view"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/{id}/calculator/sources": {
         parameters: {
             query?: never;
@@ -1403,6 +1423,26 @@ export interface paths {
          * @description What the run read, the factor set it is pinned to, and each line's derivation — input, MWh, factor applied, tonnes (UX-42) — recomputed from the retained inputs against the pinned set, never the one now in force, with whether that reproduces what the run stored (NFR-19).
          */
         get: operations["CalculatorController_replay"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/calculator/figures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The figures B3 took from the calculator
+         * @description The latest run — what it stored for Scope 1 and location-based Scope 2, the factor set it pinned and when — so B3 can show a computed figure an override superseded beside the substitute (UC-34, UX-43).
+         */
+        get: operations["CalculatorController_figures"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3529,6 +3569,15 @@ export interface components {
             /** @description Why the module does not apply, where its elements agree on one reason; null otherwise, including whenever the module applies. */
             applicabilityCause: components["schemas"]["ApplicabilityCauseDto"] | null;
         };
+        OverridingPersonDto: {
+            /**
+             * Format: uuid
+             * @description The account that made the override.
+             */
+            accountId: string;
+            /** @description Their display name as it reads now — given and family name, or the address where they gave none — or null where the account no longer exists. */
+            name: string | null;
+        };
         DisclosureOptionDto: {
             /**
              * @description The member's taxonomy-qualified name — what an answer stores; the Excel export maps it to the template's own value. An enumeration_set answer holds its chosen values space-separated.
@@ -3567,6 +3616,8 @@ export interface components {
             origin: "reported" | "calculated" | "overridden";
             /** @description The note on a calculated figure, or the reason an overridden one replaced it (UC-34, UX-43); null on what a reporter typed. */
             explanation: string | null;
+            /** @description Who replaced the computed figure, on an overridden field (FR-36); null on every other. */
+            overriddenBy: components["schemas"]["OverridingPersonDto"] | null;
             /** @description Whether the platform derives this figure rather than asking for it (FR-29): render it read-only, since a write to it is refused. From the same artefact the refusal reads. */
             derived: boolean;
             /** @description Position within a repeating group; 0 where there is none. */
@@ -3674,6 +3725,16 @@ export interface components {
             axes: components["schemas"]["DisclosureAxisDto"][];
             /** @description The values this step’s derived figures are computed from (UC-26, UC-27). **Not fields**: they carry no state, unit, dimension or applicability and are not exported as facts, so they are a separate list rather than fields a consumer must remember to exclude. Empty for every module the template computes no figure for. */
             derivationInputs: components["schemas"]["DerivationInputDto"][];
+            /**
+             * @description Decimal places by unit to which a computed or derived figure on this step is shown — once, half-up, the rule every surface rounds by (task 39.3). A figure the reporter typed is shown as typed; a unit absent is unrounded.
+             * @example {
+             *       "tCO2e": 2,
+             *       "MWh": 2
+             *     }
+             */
+            precision: {
+                [key: string]: number;
+            };
         };
         DisclosureValueResponseDto: {
             /** Format: uuid */
@@ -3834,6 +3895,69 @@ export interface components {
             /** @description The signed token from the unsubscribe link. In the body, as the invitation’s is, so the api’s own logs never carry it; the link that holds it is a page on the tenant application. */
             token: string;
         };
+        CalcFactorSourceDto: {
+            /**
+             * @description The source’s key — a catalogue key its name resolves by.
+             * @example natural_gas
+             */
+            key: string;
+            /**
+             * @description Which B3 figure the source’s emissions count toward.
+             * @enum {string}
+             */
+            ghgScope: "scope_1" | "scope_2_location_based";
+            /**
+             * @description The units a line of it may be entered in, as the factor set lists them — catalogue keys too.
+             * @example [
+             *       "m3"
+             *     ]
+             */
+            units: string[];
+            /**
+             * @description The MWh one of each unit amounts to, as a decimal string, exactly as the set publishes it — the conversion step of UX-42’s derivation (task 39.2).
+             * @example {
+             *       "m3": "0.0095773"
+             *     }
+             */
+            megawattHoursPerUnit: {
+                [key: string]: string;
+            };
+            /**
+             * @description Tonnes of CO₂e per MWh of the source, as a decimal string, exactly as published — the factor applied.
+             * @example 0.202544
+             */
+            emissionFactor: string;
+            /** @description Where the factor comes from — the publication, table and edition. Data, not wording. */
+            reference: string;
+        };
+        CalcFactorSetDto: {
+            /**
+             * @description The country whose set it is.
+             * @example md
+             */
+            country: string;
+            /**
+             * @description The immutable revision — what the run is pinned to.
+             * @example 1
+             */
+            revision: number;
+            /**
+             * @description The name its publisher gave it — what a reader is shown.
+             * @example 2026.1
+             */
+            label: string;
+            /** @description Its sources, in the order they were published. */
+            sources: components["schemas"]["CalcFactorSourceDto"][];
+        };
+        CalcSiteDto: {
+            /** @description Its row on the site axis — what a line’s `siteOrdinal` names. */
+            ordinal: number;
+            /**
+             * @description What B1 calls it, as the wizard names the row; null where nothing in B1 names it yet.
+             * @example Str. Alba Iulia 21, Chișinău
+             */
+            name: string | null;
+        };
         CalcSourceDto: {
             /**
              * Format: uuid
@@ -3848,12 +3972,110 @@ export interface components {
             quantity: string | null;
             unitCode: string | null;
             notAvailableReason: string | null;
+            /** @description The twelve month figures `quantity` sums, by position from the period’s start month, null for a month left empty — or null for a line entered as one figure (task 39.1). */
+            monthlyQuantities: (string | null)[] | null;
             /** @description The reporter’s tonnes in place of the computed ones. */
             overrideTonnes: string | null;
             /** @description Why they replace them. */
             overrideExplanation: string | null;
+            /** @description Who replaced the line’s tonnes (FR-36); null where the computed figure stands. */
+            overriddenBy: components["schemas"]["OverridingPersonDto"] | null;
             /** @description Unix epoch milliseconds, UTC. */
             updatedAt: number;
+        };
+        ScopeLineDto: {
+            /**
+             * Format: uuid
+             * @description The line, as the run retained it.
+             */
+            sourceId: string;
+            /**
+             * @description Measured, explained with no figure, or measured and replaced.
+             * @enum {string}
+             */
+            outcome: "computed" | "not_available" | "overridden";
+            /** @description The energy it stands for, in MWh; null where explained. */
+            megawattHours: string | null;
+            /** @description Its emissions in tCO₂e as the scope counts them, unrounded — the reporter’s where overridden. */
+            tonnesCo2e: string | null;
+            /** @description Where overridden, what the factors give — superseded and kept beside the substitute (UX-43). */
+            computedTonnesCo2e: string | null;
+            /** @description Where overridden, why. */
+            explanation: string | null;
+        };
+        ScopeResultDto: {
+            /** @enum {string} */
+            ghgScope: "scope_1" | "scope_2_location_based";
+            /**
+             * @description The B3 element it answers.
+             * @example GrossScope1GreenhouseGasEmissions
+             */
+            elementKey: string;
+            /** @description Tonnes of CO₂e, unrounded and exact; null where no line of the scope was measured — never zero. */
+            tonnesCo2e: string | null;
+            /** @description The lines of the scope with no figure — what the total leaves out. */
+            unmeasured: string[];
+            lines: components["schemas"]["ScopeLineDto"][];
+        };
+        CalcWorkingDto: {
+            /** @description Scope 1, then location-based Scope 2, as a run recorded now would compute them, line by line. */
+            scopes: components["schemas"]["ScopeResultDto"][];
+            /** @description Lines the set in force no longer covers — a correction dropped their source or unit — which a run refuses. */
+            uncovered: string[];
+        };
+        CalcRunPinDto: {
+            /** @example md */
+            country: string;
+            /** @example 1 */
+            revision: number;
+            /** @example 2026.1 */
+            label: string | null;
+        };
+        CalcStoredResultDto: {
+            /** @example GrossScope1GreenhouseGasEmissions */
+            elementKey: string;
+            /** @description Tonnes of CO₂e, unrounded; null where nothing was measured. */
+            tonnesCo2e: string | null;
+        };
+        CalcLatestRunDto: {
+            /** Format: uuid */
+            id: string;
+            factorSet: components["schemas"]["CalcRunPinDto"];
+            /** @description Unix epoch milliseconds, UTC. */
+            recordedAt: number;
+            /** @description What it wrote into B3. */
+            results: components["schemas"]["CalcStoredResultDto"][];
+        };
+        CalculatorDto: {
+            /** @description The set the report’s period resolves, or null where none serves it — and then no line can be written. */
+            factorSet: components["schemas"]["CalcFactorSetDto"] | null;
+            /** @description The report’s B1 site rows. Empty until B1 records a site. */
+            sites: components["schemas"]["CalcSiteDto"][];
+            /**
+             * @description The twelve calendar months, `YYYY-MM`, that the monthly form’s rows stand for, from the period’s start — or null where the period does not span twelve calendar months, and a line takes one figure for the period.
+             * @example [
+             *       "2026-01",
+             *       "2026-02",
+             *       "2026-03"
+             *     ]
+             */
+            months: string[] | null;
+            /** @description The report’s invoice lines, oldest first. */
+            sources: components["schemas"]["CalcSourceDto"][];
+            /** @description What the lines come to now against the set in force (task 39.2), or null where no set serves the period. */
+            working: components["schemas"]["CalcWorkingDto"] | null;
+            /** @description The latest recorded run, or null before the first. */
+            latestRun: components["schemas"]["CalcLatestRunDto"] | null;
+            /**
+             * @description Decimal places by unit, as every surface rounds a computed figure — once, half-up (182/3). A unit absent is shown unrounded.
+             * @example {
+             *       "tCO2e": 2,
+             *       "MWh": 2
+             *     }
+             */
+            precision: {
+                [key: string]: number;
+            };
         };
         WriteCalcSourceRequestDto: {
             /**
@@ -3872,10 +4094,28 @@ export interface components {
              */
             description?: string | null;
             /**
-             * @description The figure on the invoice, as a decimal string — `500`, `1700.5` — in `unitCode`. Omit it, and the unit, where `notAvailableReason` says why there is none.
+             * @description The figure on the invoice, as a decimal string — `500`, `1700.5` — in `unitCode`. Omit it, and the unit, where `notAvailableReason` says why there is none, and omit it where `monthlyQuantities` carries the figure.
              * @example 500
              */
             quantity?: string | null;
+            /**
+             * @description The monthly form (task 39.1): twelve figures in `unitCode`, by position from the period’s start month, each a decimal string or null for a month left empty, at least one entered. The line’s quantity is their sum, computed by the server. Only where the period spans twelve calendar months (the calculator read’s `months`); sent without `quantity` or `notAvailableReason`. Omit it, or send null, for one figure for the period.
+             * @example [
+             *       "40",
+             *       "45",
+             *       null,
+             *       "38",
+             *       "30",
+             *       "22",
+             *       "18",
+             *       "17",
+             *       "21",
+             *       "33",
+             *       "41",
+             *       "48"
+             *     ]
+             */
+            monthlyQuantities?: (string | null)[] | null;
             /**
              * @description One of the source's units.
              * @example m3
@@ -3931,40 +4171,8 @@ export interface components {
             /** @description The reporter’s tonnes in place of the computed ones. */
             overrideTonnes: string | null;
             overrideExplanation: string | null;
-        };
-        ScopeLineDto: {
-            /**
-             * Format: uuid
-             * @description The line, as the run retained it.
-             */
-            sourceId: string;
-            /**
-             * @description Measured, explained with no figure, or measured and replaced.
-             * @enum {string}
-             */
-            outcome: "computed" | "not_available" | "overridden";
-            /** @description The energy it stands for, in MWh; null where explained. */
-            megawattHours: string | null;
-            /** @description Its emissions in tCO₂e as the scope counts them, unrounded — the reporter’s where overridden. */
-            tonnesCo2e: string | null;
-            /** @description Where overridden, what the factors give — superseded and kept beside the substitute (UX-43). */
-            computedTonnesCo2e: string | null;
-            /** @description Where overridden, why. */
-            explanation: string | null;
-        };
-        ScopeResultDto: {
-            /** @enum {string} */
-            ghgScope: "scope_1" | "scope_2_location_based";
-            /**
-             * @description The B3 element it answers.
-             * @example GrossScope1GreenhouseGasEmissions
-             */
-            elementKey: string;
-            /** @description Tonnes of CO₂e, unrounded and exact; null where no line of the scope was measured — never zero. */
-            tonnesCo2e: string | null;
-            /** @description The lines of the scope with no figure — what the total leaves out. */
-            unmeasured: string[];
-            lines: components["schemas"]["ScopeLineDto"][];
+            /** @description Who had replaced the line’s tonnes when the run read it (FR-36); null where nothing was replaced. */
+            overriddenBy: components["schemas"]["OverridingPersonDto"] | null;
         };
         CalcRunDto: {
             /** Format: uuid */
@@ -3989,6 +4197,10 @@ export interface components {
             scopes: components["schemas"]["ScopeResultDto"][];
             /** @description Whether computing the retained inputs again against the pinned factor set gives exactly the figures the run stored. False means the arithmetic or the record changed, never that the factors moved on. */
             reproduces: boolean;
+        };
+        CalcFiguresDto: {
+            /** @description The latest run: what it stored for each scope — the computed figure an override supersedes — or null. */
+            latestRun: components["schemas"]["CalcLatestRunDto"] | null;
         };
         OverrideFigureRequestDto: {
             /**
@@ -7507,6 +7719,37 @@ export interface operations {
             };
         };
     };
+    CalculatorController_view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The calculator, possibly with nothing entered. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["CalculatorDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CalculatorController_sources: {
         parameters: {
             query?: never;
@@ -7693,6 +7936,37 @@ export interface operations {
                 };
             };
             /** @description No such run of this report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CalculatorController_figures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The latest run, or none before the first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["CalcFiguresDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
             404: {
                 headers: {
                     [name: string]: unknown;

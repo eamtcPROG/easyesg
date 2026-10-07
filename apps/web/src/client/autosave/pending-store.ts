@@ -67,14 +67,30 @@ const openDatabase = (indexedDb: IDBFactory): Promise<IDBDatabase> =>
     open.onblocked = () => reject(new Error('IndexedDB open blocked'));
   });
 
-const isWriteList = (value: unknown): value is QueuedWrite[] =>
-  Array.isArray(value) &&
-  value.every(
-    (item) =>
-      typeof item === 'object' &&
-      item !== null &&
-      typeof (item as { elementKey?: unknown }).elementKey === 'string',
-  );
+/**
+ * One stored item as one of the queue's three shapes, by the property that names each (`autosave-state.ts`).
+ *
+ * **Each shape is recognised, not only the first** (task 39.1). This read `elementKey` alone, so a queue holding a
+ * derivation input (task 36.10) failed the whole list on reload and every change in it was dropped — FR-38's survival
+ * across a close, lost for exactly the values task 36.10 put in the queue, with the indicator having said *queued*.
+ */
+const isQueuedItem = (item: unknown): boolean => {
+  if (typeof item !== 'object' || item === null) return false;
+  const shaped = item as { elementKey?: unknown; inputKey?: unknown; lineId?: unknown; line?: unknown; removed?: unknown };
+  if (typeof shaped.lineId === 'string') {
+    return shaped.removed === true || (typeof shaped.line === 'object' && shaped.line !== null);
+  }
+  return typeof shaped.elementKey === 'string' || typeof shaped.inputKey === 'string';
+};
+
+const isWriteList = (value: unknown): value is QueuedWrite[] => Array.isArray(value) && value.every(isQueuedItem);
+
+/**
+ * What a stored queue reads back as: the list, where every item is one the queue recognises, or nothing.
+ * **Validated rather than cast**: what is read back was written by an earlier build of this code, and a shape it no
+ * longer recognises must not become a request body. Exported for its spec — the adapter itself needs a browser.
+ */
+export const storedQueue = (stored: unknown): readonly QueuedWrite[] => (isWriteList(stored) ? stored : []);
 
 /**
  * The IndexedDB adapter, over **one connection held for the page's lifetime**.
@@ -161,11 +177,7 @@ export function indexedDbPendingWriteStore(indexedDb: IDBFactory): PendingWriteS
       return inTurn((db) =>
         request<unknown>(
           db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(scope),
-        ).then((stored) =>
-          // Validated rather than cast: what is read back was written by an earlier build of this
-          // code, and a shape it no longer recognises must not become a request body.
-          isWriteList(stored) ? stored : [],
-        ),
+        ).then(storedQueue),
       );
     },
     save(scope, writes) {

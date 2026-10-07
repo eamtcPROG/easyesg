@@ -28,6 +28,7 @@ const value = (over: Partial<DisclosureValue> & { elementKey: string }): Disclos
   ordinal: 0,
   origin: DISCLOSURE_ORIGIN.REPORTED,
   explanation: null,
+  overriddenBy: null,
   valueNumeric: null,
   valueText: null,
   valueBoolean: null,

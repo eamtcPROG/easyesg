@@ -27438,3 +27438,469 @@ searched by running the seed, since the lint block could not see it.
 - the payload refusal skipped: 3 fail;
 - `calc_run_worker_directory_select` dropped from the test stack: 2 fail — the policy's three states and the notice
   itself.
+
+## Task 39.1 — S-09's invoice lines, the monthly form, and every line through the queue · 2026-10-07
+
+S-09 was a `return null` stub, so this sub-step built the screen's whole entry half. It is a composition of S-07, with
+the same bar, rail (B3 marked), autosave provider, indicator, banner and re-authentication. The reader enters bills by
+source and site in the unit printed on them, as one figure or as twelve months, or says why a bill has no figure. Every
+line goes into the wizard's own queue. The api gained the monthly form and one read, `GET /reports/{id}/calculator`.
+The decisions are `architecture.md` §12.5.6's task-39 row.
+
+### Decisions (project owner, one batch of four, each the recommended option)
+
+All four were raised before code, and all four bind later sub-steps too.
+
+- **(1) The monthly form is twelve rows by position from the period's start month.** The server sums the months entered
+  into the quantity. A month left empty is flagged, never refused. The form is offered only on a period of twelve whole
+  calendar months; FR-21 accepts any length (182/15), and the artboard lists the form as *still open*.
+- **(2) Lines go through FR-38's queue; the run and the three B3 figure actions are direct and need a connection.**
+  That fixes 39.2's and 39.3's shape now.
+- **(3) The overriding person is an account, named at read.** The preview's half moves to 43.2, because S-10 is not
+  built. 43.2's row and FR-36's Status line say so.
+- **(4) UX-44's notice stores no dismissal.** It is 39.2's.
+
+FR-33, FR-35, FR-36 and FR-38 carry History lines for these. 43.2's row gained the preview half, and 43's Covered FR
+gained FR-36 with it.
+
+### The calls taken in the build, and why each holds
+
+- **The months are an array column on the line, not a table of month rows** (`calc_source.monthly_quantities`).
+  - A line is written whole: one `PUT`, one upsert, one trail entry. The months share its row-level security, FR-22's
+    lock trigger and FR-54's capture with nothing added.
+  - The sum is a `CHECK` over an immutable `core.calc_months_total`, `COALESCE`d, because a comparison with an
+    all-empty form's `NULL` total is `NULL`, and a `NULL` check passes. The e2e proves both refusals at the database.
+  - The run's copy is unchanged: it carries the quantity either way, as the task-38.1 row (3) said.
+- **The use case computes the quantity; a caller's quantity beside months is refused** (`months_invalid`, in three
+  locales). Whether the period offers the form is asked against the report, because a period's dates can be edited and
+  a constraint could not see them.
+- **S-09 opens on one read**, `GET /reports/{id}/calculator`. It carries the set in force's sources and units, the B1
+  sites, the months, and the lines.
+  - What the screen offers is what the write admits, because both call the same three functions: `FACTOR_SETS.inForce`,
+    `siteRows` and `periodMonths`.
+  - With no factor set, the read still answers and the lines show read-only, because UX-41 keeps them on screen. The
+    writes refuse as before.
+- **A site is named by the wizard's own B1 step** (`CALC_SITE_NAMES` over the exported `WizardService`). The naming —
+  the first text answer on the axis, or the record's name for the site (task 180.3) — lives in
+  `read-wizard-step.use-case.ts`. A second rule here would drift. The e2e meets it: the record's site reads *Brutăria*,
+  not its address.
+- **The queue's third shape is `{ lineId, line }` or `{ lineId, removed: true }`**, keyed on the line's id, flushed
+  after values and derivation inputs, one request per line. A removal after an edit replaces the edit. A flush that
+  fails partway leaves everything pending, and the PUT is idempotent, so the lines that landed are sent again
+  harmlessly. Acknowledged lines land in `committedLines`. S-09 shows served ⊕ committed ⊕ pending (`lines.ts`), so a
+  line entered offline is on screen at once, marked *În așteptare*.
+- **Units come in no promised order.** The factor set's payload is `jsonb`, which sorts keys, so electricity arrives
+  `MWh`, `kWh`. A line with several units therefore gets **no default**: a kWh bill read as MWh is the thousand-fold
+  mistake the artboard warns about. A source entered in one unit asks nothing.
+- **The step's width is the reading measure** (`--measure-text`, about 700 px), as the artboard's table is beside the
+  summary 39.2 docks. A line is three columns: what it is, what the bill says, the period. Its months and its name and
+  actions span the row beneath. Below `wide` each line is a card.
+- **The empty state is the calculator's own block, not `EmptyState`.** That component takes one paragraph, and the
+  artboard draws a numbered list of bills. A component only this screen needs is this app's (UX-89 as amended).
+
+### Found, and fixed where it held
+
+**The durable queue dropped derivation inputs on reload, from task 36.10 until now.** `pending-store.ts` validated a
+stored list by `elementKey` alone, so a list holding a derivation input — which has an `inputKey` — failed whole, and
+every change in it was lost across a close, with the indicator having said *queued*. `storedQueue` now recognises each
+of the three shapes, and `pending-store.spec.ts` holds it, including the list a derivation input used to empty. Searched
+for the shape: the only other reader of the stored list is `useAutosave`'s `RESTORED`, which takes what `load` gives.
+
+### Moved for a second reader
+
+`parseDecimalInput` moved from `features/wizard/tools/values.ts` to `lib/decimal-input.ts`, with its spec, when S-09's
+figures became its second reader. One reading of a typed number means a figure accepted on one screen is never refused
+on the other. The calculator wraps it (`readFigure`) to refuse a negative figure, which no bill shows and the api
+refuses.
+
+### Recorded, not built here
+
+- **§4.7's *one source per screen with n of N* at 390.** The list renders as cards at 390. The per-source sequence
+  shares 39.2's `?line=` address, *open derivation is an address*, and is built with it.
+- **§4.7's *spreadsheet import*.** It has no requirement, use case or task, and the artboard marks it *still open*. It
+  is raised with the owner at the task's close rather than closed in passing.
+
+### Skills, read against the diff
+
+- `one-idea-per-file`:
+  - api: the read use case, the site-names adapter, and each domain function — months, sum, site names — are a file
+    each, with a spec.
+  - web: the route is a shell; the section reads and picks the arm; each part is a file; every reducer, conversion and
+    predicate is in `tools/` with a spec — `lines`, `line-write`, `line-entry`, `month-total`, `figure-input`,
+    `shown-site`, `source-groups`.
+  - The first draft held `LineFigureUnit` inside `line-row.tsx`. It became `line-unit.tsx`.
+- `one-kind-per-folder`: `features/calculator/` is a single-screen root with `components/` and `tools/`. Its `index.ts`
+  scaffold went, and no boundary fixture imported it. `components/` holds `section/` (the route's child), `board/`,
+  `lines/` and `adding/` (the board's parts), `states/`, `shared/` (the namespace and the words hook several parts
+  read) and `styles/`.
+- `vercel-react-best-practices`:
+  - The server reads are one `Promise.all` (`async-parallel`).
+  - The board memoizes the overlaid lines and the source map.
+  - Declined: `rerender-memo` on a row. Each row reads the autosave context, so a memo boundary would not stop its
+    re-render.
+- `vercel-composition-patterns`: the first `CommitField` switched control on a `multiline` boolean beside `decimal` and
+  `labelHidden`. It became `CommitField` and `CommitArea` over one `useCommitDraft` hook, with `inputMode` passed
+  through.
+- `nestjs-best-practices`:
+  - Applied: `di-use-interfaces-tokens` (`CALC_SITE_NAMES`) and `security-validate-all-input` (a bounded array; the
+    shape is the use case's to refuse, with its own message, as the contents already are).
+  - Declined: `error-throw-http-exceptions`, for the standing reason.
+
+### Proven to bite, each restored
+
+- The period check removed from `WriteCalcSource`: 1 unit case red.
+- The quantity no longer computed from the months: 3 red.
+- The table's own `calc_source_months_total`: the e2e's *refused below the api* case writes a wrong quantity and an
+  all-empty form as `esg_app`, and fails if either lands.
+- The flush's order and routes: `use-autosave.spec.tsx`'s new case asserts the PUT to the line's route after the
+  values, and the DELETE for a removal.
+
+### Gates
+
+The change reaches `apps/api` (a migration, a controller and DTOs, module wiring), `packages/contracts` (the
+regenerated contract and the `GHG_SCOPE` mirror), `packages/i18n` (one message key) and `apps/web` — so every row of the
+lookup table.
+
+- **Api unit**: 1,682 of 1,682.
+- **Api e2e**: `pnpm e2e`, 1,583 of 1,583 across 64 suites, on a run of its own. The first run overlapped the web and
+  admin unit suites, and three unrelated suites timed out under the load (11 failures; all 11 passed when rerun
+  alone). The owner's instruction followed: **on this machine, suites run one at a time and never beside a dev
+  server**. No `ERROR`, unhandled rejection or Nest dependency warning in the log.
+- **Worker boot**: `pnpm e2e:worker`, 9 of 9.
+- **Contract and schema**: `pnpm migrations:check`, 61 invariants on both stacks, and `pnpm openapi:check`, with the
+  regenerated contract staged (115 paths; the root file's count moved with it).
+- **Unit suites**: web 1,384 and admin 296. The `i18n` package's 130.
+- **Static**: typecheck in `api`, `web`, `admin` and `contracts`. `pnpm lint`. `pnpm docs:check`, 48 claims — three
+  counts moved: the `@easyesg/ui/forms` import sites, the built feature folders, and the Client Components.
+  `pnpm routes:check`.
+- **Browser suite**: `pnpm e2e:web`, all three projects, 301 of 305. The four failures:
+  - The three new S-09 +40% frames. The monthly form's legend pads the line's name inside it, so `exactlyPadded` over
+    the whole sentence could not match. The locator now admits padding in both places.
+  - S-26's locale journey timed out on `page.goto`, in a stretch of the log full of the documented *destination stream
+    closed early* noise.
+  - All four passed when rerun on the same bundle. S-09's five journeys and its three frames are among the passes.
+- **Not run**: the review agents, which run at the Stage's end.
+
+## Task 39.2 — What the lines come to, how, and the hand-back to B3 · 2026-10-07
+
+S-09 now shows what each line comes to against the set in force: its MWh and its tonnes, rounded once to the
+configured places. The step-by-step derivation opens at its own address. A summary beside the step carries
+*use these figures in B3*, which records the run and lands the reader on B3, where the figure stands marked as
+calculated. UX-44's notice names a newer set when one is in force, with each figure *now* and *would be*, and offers to
+recalculate. B3 opens the calculator. The decisions are `architecture.md` §12.5.6's task-39 row (4) … (6).
+
+### Decisions (project owner, a second batch of two, each the recommended option)
+
+- **(5) The per-unit precision of 182/3 is a configuration-store artefact**, `presentation_precision` (scope
+  `global`), served with S-09's read. The PDF and Excel tasks read the same one. S-09's starting digits are its
+  artboard's: two places for `tCO2e` and for `MWh`.
+- **(6) The derivation is in the units the set publishes and B3 reports, MWh and tCO₂e**, not the artboard's kWh and
+  kg. The rate and the factor are shown with every digit, so each can be found in the published set.
+
+FR-34's Configuration-held values name the artefact; FR-34 and FR-35 are *Built*.
+
+### The calls taken in the build, and why each holds
+
+- **The working figures are the run's own arithmetic, with nothing retained** (`domain/working-results.ts`): the
+  lines as a run would copy them, through `runResults`. What the screen shows is what the run will store.
+  - A line the set no longer covers — a correction dropped its source or unit — would make `lineEmission` throw. It is
+    set aside and named in `uncovered`, so one line cannot fail the whole read. The summary says which line stands in
+    the way, and the run still refuses it.
+- **The latest run is read with its pinned set's label.** A pin that reads as nothing answers no label, and the notice
+  says *an earlier factor set*, rather than the read failing. `CalcRunStore.latest` uses `latestResult`'s ordering and
+  tie-break, so the two agree on which run is latest.
+- **`presentation_precision` fails open, toward the exact figure.** An absent or malformed artefact leaves every figure
+  unrounded and says so at `error`, because a screen cannot refuse to show a figure the way a write can refuse to
+  happen. A payload is read whole or not at all; publication refuses what the reader would not read, through
+  `configuration-kind-rules.ts`, as the factor set is.
+- **The rounding is exact and happens before the figure is a number** (`roundHalfUp`, a `bigint` over the decimal
+  string). The rounded string then goes to next-intl's formatter with that many places, which only lays it out. Two
+  constraints shaped this:
+  - The browser tier bans `new Intl.*` (NFR-26's selector).
+  - next-intl's `number` takes a number, not a string.
+
+  The places are passed inline because they are configuration (5), and a named format would be a hard-coded second
+  copy. A published figure keeps every digit through a new named format, `exact` (fifteen significant digits, which a
+  double carries back exactly).
+- **The run is a Server Action, and it waits** (`run-standing.ts`):
+  - It waits **offline**, per decision (2).
+  - It waits **while a line is unsent** — a run copies the lines the server holds, so a queued line would be left out
+    of the figures B3 receives.
+  - It waits **while a line is uncovered**.
+
+  Each wait is said in words under the button. On success the reader lands on B3; a refusal is shown in the api's own
+  three parts.
+- **The figures are Query's** (`client/calculator/use-calculator.ts`): the server's read first, then read again when
+  the queue acknowledges a line. `committedLines` now keeps its identity across a flush that carried no line, so a
+  values-only flush does not refetch the calculator; a spec holds it. `gcTime: 0`, so a later visit starts from its own
+  server-rendered read rather than an older cache.
+- **An open derivation is an address** (`?line=`, §4.7). On a phone it is also §4.7's *one source per screen with n of
+  N*: `LinePager` and two `:has()` rules hide the other lines below the narrow frame. That closes what 39.1 recorded as
+  waiting for this address.
+- **B3's way in is one callout above its fields, not a control on each field.** The same bills answer both scopes, and
+  a reader whose accountant has the tonnes types them below and never opens it.
+- **The derivation's step value, the cells and the totals are each one message**, `{value} {unit}` (UX-95). They are
+  not a number and a unit concatenated in code.
+
+### Corrected where the rule held
+
+`field-marker.ts` said `calculated` *"cannot occur yet … until task 39.2"*, false since 38.4. A sentence in
+`disclosure-value.model.ts` spoke of 39.2 in the future. Searched every `39.[234]` in both apps; the migration header
+that says the same is frozen history and was left alone.
+
+### Skills, read against the diff
+
+- `one-idea-per-file`:
+  - Every decision a cell or a button makes is a pure tool with a spec: `line-display`, `run-standing`,
+    `factor-change`, `computation`, `figure-format` (`roundHalfUp`), `open-line`, `line-results`.
+  - The derivation, the summary, the notice, the pager, the B3 entry and the run's refusal are a file each.
+  - The run and its refusal, which the summary and the notice share, sit in `shared/`.
+  - The first draft of `LineRow` computed its cells inline. That moved to `line-display.ts`.
+- `one-kind-per-folder`:
+  - `features/calculator/` gained its wire kind, `actions/`, with the run's Server Action.
+  - `components/` gained `summary/` (the shell's panel), `notice/` (the board's first child) and `entry/`, which S-07's
+    section renders on B3. That is a cross-feature read, and the file's docblock says why it lives beside the screen it
+    opens.
+- `vercel-react-best-practices`:
+  - `client-swr-dedup`, met by Query: the board and the summary read one key, which is one read.
+  - `rerender-derived-state`: `computationOf` is memoized over the read.
+- `nestjs-best-practices`:
+  - `di-use-interfaces-tokens` (`PRESENTATION_PRECISION` in `contracts/`, registered in both modes for the exports).
+  - Declined: `error-throw-http-exceptions`, for the standing reason.
+
+### Proven to bite, each restored
+
+The pure tools carry the arithmetic and the decisions:
+- `roundHalfUp`: `0.125` and `2.675` round up.
+- `formatFigure`: a factor keeps every digit.
+- `run-standing`: each wait, in its order.
+- `factor-change`: a pin equal to the set in force says nothing.
+
+The browser journeys hold the flows:
+- the figures before a run;
+- B3 untouched until the button, then holding `0.9699123256` marked *Calculat*;
+- the derivation's exact rate and factor;
+- the button disabled offline, with its reason;
+- UX-44's notice from a seeded earlier pin, and its recalculation.
+
+### Gates
+
+The change reaches `apps/api` (a module's providers in both modes, a DTO and a controller's answer, a seed artefact),
+`packages/contracts` and `apps/web`. One chain, one suite at a time (the owner's instruction during 39.1):
+- `pnpm lint`; typecheck in `api`, `web`, `admin` and `contracts`.
+- Unit suites: api 1,698, web 1,417, admin 296.
+- `pnpm openapi:check`, with the contract staged.
+- `pnpm e2e`: 1,584 of 1,584 across 64 suites, the calculator suite's new read case among them.
+- `pnpm e2e:worker`: 9 of 9, the boot proof for `PRESENTATION_PRECISION` in worker mode.
+- `pnpm routes:check`; `pnpm docs:check`, 48 claims — the seed artefacts (26) and the Client Components (187) moved.
+- `pnpm e2e:web`, all three projects: 308 of 309. The one failure was S-06's creation journey, aborted on a
+  `page.goto('/reports')` (`net::ERR_ABORTED; maybe frame was detached?`) on a screen this sub-step does not touch. It
+  passed alone and then three times in a row on the same bundle.
+- No `ERROR`, unhandled rejection or dependency warning in the api runs.
+- **Not run**: `migrations:check`, since there is no migration; and the review agents, which run at the Stage's end.
+
+## Task 39.3 — Review, explain or replace a computed figure, on S-09 and on B3 · 2026-10-07
+
+UC-34 now has its screens. On S-09 a line's tonnes can be replaced with the reporter's own and a reason. The computed
+figure stays beside the substitute, and one action puts it back. On S-07, B3's two scopes, once a run has written them,
+are no longer typed fields: each shows the figure rounded to its unit's places, where it came from, and three acts —
+**replace it** with tonnes and a reason, **explain it** with a note, or, once replaced, **put the computed figure back**.
+A replaced scope is never shown alone: the substitute, the figure it superseded and the reason sit together (UX-43). The
+decisions are `architecture.md` §12.5.6's task-39 row (2) and (7).
+
+### Decision (project owner, one question before 39.3, the recommended option)
+
+- **(7) S-07 rounds a computed or derived figure to the same configured places as S-09.** The step read serves
+  `presentation_precision` beside its fields, and a `calculated`, `overridden` or derived figure is shown rounded once,
+  half-up. A figure the reporter typed is shown as typed. FR-34's behaviour (1) and history say so.
+
+### The calls taken in the build, and why each holds
+
+- **The figure a B3 override superseded comes from its own read**, `GET /reports/{id}/calculator/figures`: the latest
+  run's stored result per scope. The field holds only the substitute, and the superseded figure is the run's, retained
+  permanently (§12.5.6's task-38.4 row (4)), so nothing was copied to keep it. It is a calculator read rather than a
+  member of the step's answer because the disclosure module would otherwise have to read the calculator's runs, and the
+  calculator already depends on disclosure for B3's writes. S-07's section starts it beside the step read when the
+  module is B3, so it costs no waterfall.
+- **The step's figures reach the fields through a context**, `StepFiguresProvider` (places, the calculator's figures,
+  the report). Derived figures anywhere and B3's two scopes read it where they render, rather than three props threaded
+  through `StepFields` and every `StepField`. **Outside a step it answers no places and no calculator** — a field drawn
+  alone shows every digit, the same fail-open answer `PresentationPrecision` gives when its artefact cannot be read.
+- **A B3 scope a run wrote is `CalculatedFigure`, not a typed control** (`StepField`'s `calculatorFigure` arm, through
+  `CALCULATOR_FIGURE`/`isCalculatorFigure` in `packages/contracts`). The ordinary write already refuses it (FR-36's
+  refusal), so a text box would only invite a refusal. A scope the reporter typed, or one no run has touched, stays the
+  ordinary control. That arm withholds *carry forward* and *not available*: neither is an answer to a figure the
+  calculator computed.
+- **The overridden marker is the warning tone**, *Cifra dumneavoastră*, where *Calculat* is neutral — BR-CALC-3's flag.
+  The marker is still not the override's whole display; the control beside it carries both figures and the reason.
+- **The three B3 acts are Server Actions and need a connection** (row (2)). Offline the buttons are disabled and the
+  control says why. On success the step is read again (`router.refresh()`), because the field's origin is the server's
+  answer; a refusal stays on screen in the api's own three parts (`RequestRefusal`, now told what it is about through
+  `REFUSAL_ABOUT`).
+- **A line override rides the line's own write** (row (2)): `LineOverride` writes the whole line with the override, or
+  with none, through the wizard's queue, so it is sent on reconnection like any of the line's fields.
+- **The reason is required, and the rule carries its message.** `FigureOverrideForm`, shared by the line and the B3
+  control, has `required` with a message (`BoundRules` refuses a bare `true`) and a `validate` that trims, because
+  `required` passes a reason of spaces and the api refuses that too. The field is marked invalid and described by the
+  message, and the summary links to it.
+
+### Corrected where the rule held
+
+- `REFUSAL_ABOUT` had been declared in `request-refusal.tsx`, a `'use client'` module. It moved to
+  `tools/refusal-about.ts`, directive-free, before any server reader could meet it as `undefined`.
+- `FigureOverrideForm` took a `useId()` for its `<form>` that nothing referenced; removed.
+- (7) changed how S-07 draws a derived figure, from its raw digits to the locale's layout, so B8's turnover rate now
+  reads `0,125` in Romanian where it read `0.125`. `wizard.spec.ts` had pinned the raw digits; the expectation moved,
+  because a full stop as the decimal separator in a Romanian screen was never NFR-26's answer.
+- Searched every browser spec for a figure pinned with a full stop. One more: S-09's month total, `353.5 m³` (39.1).
+  It and the two other figures S-09 draws to be read rather than typed — a read-only month and a read-only line's
+  quantity — now go through `formatFigure` with every digit kept. The inputs still hold the canonical form as typed.
+- The B3 journey first expected the derived total beside a gas line alone. Task 38.4's `sum` answers no total while
+  Scope 2 has no figure, which is the recorded rule, so the journey now enters a grid line too and reads the total
+  rounded (`11,08`) and then derived over the substitute (`11,86`).
+
+### Skills, read against the diff
+
+- `one-idea-per-file`: the figure control, its note form, its action hook, the override form, the line's override and
+  the context are a file each. The decisions are pure tools with specs: `figure-input` (reading a typed figure),
+  `line-write` (the override fields in a line's write), `field-marker` (the marker and its tone).
+- `one-kind-per-folder`: `components/figure/` is B3's control, the one region S-07 draws from this feature;
+  `shared/` gained the override form, read by `figure/` and `lines/` — its admission test.
+- `vercel-react-best-practices`: `async-parallel` (the figures read beside the step); `server-serialization` (only the
+  latest run's figures cross to the client); `rerender-memo` — the context value is memoized over its three members.
+  Which form is open is one `useState`, since nothing else moves with it.
+- `vercel-composition-patterns`: the override form takes its cancel label from the caller — *keep the computed figure*
+  where nothing is replaced, *cancel* where a substitute stands — per-caller wording, not a boolean.
+- `nestjs-best-practices`: `di-use-interfaces-tokens` (the figures read is a use case over the existing ports).
+
+### Proven to bite, each restored
+
+- The browser journeys: a line override refused without a reason — invalid, described, nothing written — then held at
+  `0.84` with its reason, both figures and the marker shown, and restored to the computed `0,97 t`; and on B3 a note
+  saved and shown, an override refused without a reason, held as `overridden` at `1.75`, both figures shown, the derived
+  total following it, and put back to `calculated` at `0.9699123256`.
+- The total's assertion bit before it was right: run against a report with no Scope 2, it failed on *no answer*, which
+  is how the premise above was found.
+- The api case: the figures read answers nothing before a run, and after an override still answers the run's
+  `0.9699123256` while the field holds `1.75`.
+- `field-marker`'s spec gives `overridden` the warning tone.
+
+### Gates
+
+The change reaches `apps/api` (a controller and its DTO, a use case), `packages/contracts` (the route, its alias and
+`CALCULATOR_FIGURE`) and `apps/web`, so by the close table every dependent's row ran, `apps/admin`'s included. One
+chain, one suite at a time, no dev server running:
+- `pnpm lint`; typecheck in `contracts`, `api`, `web` and `admin`.
+- Unit suites: contracts; api 1,701; web 1,419 (one failure on the first run, S-16's invite dialogue asserting the
+  dialogue gone straight after a re-render — unchanged since the last commit, 9 of 9 alone and green in the full rerun);
+  admin 296.
+- `pnpm openapi:check`: red on the first run because the contract had been staged before this route was emitted, green
+  once the regenerated pair was staged.
+- `pnpm e2e`: 1,591 of 1,591 across 64 suites, the figures read's case among them. `pnpm e2e:worker` green.
+- `pnpm routes:check`; `pnpm docs:check`, 48 claims — the paths (116), the Client Components (193) and the
+  `@easyesg/ui/forms` import sites (44) moved.
+- `pnpm e2e:web`: all three projects on the first run, 309 of 311 — my B3 journey on the premise above, and B8's
+  raw digits. Rerun after the fixes, `identity` and `expansion` (nothing since touches the console, which had passed):
+  284 of 285. The one failure was S-36's expansion frame at 1440 timing out on its sign-in before S-36 is reached; 4 of
+  4 alone on the same bundle.
+- The server printed only digest `2667547900`, the abandoned-stream line `apps/web/CLAUDE.md` records, 29 times; no
+  other `⨯`, and no `ERROR` or unhandled rejection in the api runs.
+- **Not run**: `migrations:check`, since 39.3 has no migration; and the review agents, which run at the Stage's end.
+
+## Task 39.4 — The person who replaced a figure, on the figure; task 39 closes · 2026-10-07
+
+A replaced figure now names the person who replaced it, on S-09's line and on S-07's B3 field: *Înlocuită de Ana
+Popescu.* The account is stored on the figure itself — `report_disclosure_value.overridden_by`, `calc_source.override_by`,
+and a run's copy in `calc_input` — and its display name is resolved whenever the figure is read. FR-36's AC-5 is met for
+the stored figure and its read shape; the preview's half is 43.2's, as `architecture.md` §12.5.6's task-39 row (3)
+already records. With 39.4, task 39 closes.
+
+### The calls taken in the build, and why each holds
+
+- **A trigger writes the person, from the binding, and the columns are withheld from `esg_app`.** Row (3) asks for the
+  request's own `app.current_user`, as `calc_run.recorded_by` takes it. A column `DEFAULT` cannot, because an override is
+  an `UPDATE` of a row that already stands. So a `BEFORE` trigger on each table sets it, and the two columns join
+  `APP_IMMUTABLE_COLUMNS` in the schema invariants: no grant, so the trigger is the only writer. A request that sends
+  `overriddenBy` is refused by the whitelist (400), which the api case asserts.
+- **"The account that made the override" is whoever last changed the substituted figure or its reason.** A line is
+  written whole, so an edit of its description or site re-sends an unchanged override. Naming the editor would credit them
+  with a figure they never touched. The trigger compares `OLD` with `NEW` and keeps the person when the override is
+  unchanged, names whoever changes it, and clears it with the override — and a run replacing a B3 override clears it the
+  same way. FR-36's effects say so.
+- **No backfill.** An override made before this carries no person and reads as none. A backfill would have to write under
+  forced row security and past FR-22's lock trigger, for rows no pilot holds, and the trail already names who made it.
+- **The name is UX-137's `displayName`, called in the adapter** (`persistence/core/overriding-person.ts`, with a spec).
+  The access store derives it in SQL because it sorts by it; nothing sorts by an overrider. An erased account keeps its
+  id on the figure and reads as no name, through a `LEFT JOIN` that reaches only accounts that overrode a figure this
+  organization's row-level security already shows.
+- **Every reading statement names the person, writes included.** The stores' upserts end in a `SELECT` over their own
+  `RETURNING` (a data-modifying CTE), so what a write answers is what a read would. The run's copy is ordered by
+  `calc_input.id`, the `uuidv7()` its read orders by, so the CTE changes nothing about the order a run answers in.
+- **A queued line shows the person only while its override is the one stored** (`tools/lines.ts`): the table's rule,
+  applied before the server has answered. A changed override names no one until it does, while the line's chip says it
+  is unsent. `LineFields`, what a write is built from, excludes the person, so no write can carry it; the spec proves it.
+- **The person was the one structural input to the read shapes**: `OverridingPerson` on the domain value, the step field,
+  the line and the run's input, with one DTO (`OverridingPersonDto`) and one contract alias, so a B3 scope and a line read
+  alike.
+
+### Copy changed because the person is named
+
+S-09's sentence for a replaced line read *"Ați înlocuit cifra calculată de …"* ("You replaced"). It was the artboard's
+sentence, and it is false the moment a colleague's override is named beside it. It is impersonal now in all three
+locales — *"Cifra calculată de {computed} a fost înlocuită"* — with the person in its own sentence. *"Cifra
+dumneavoastră"* stays: it is the artboard's term for the company's figure set against the calculator's, in the formal
+plural, not a claim about who typed it.
+
+### Decision at the task's close (project owner, one question, not the recommended option)
+
+- **(8) S-09's spreadsheet import is a task of its own, 204**, appended after task 39 in Stage 2. §4.7 lists it and the
+  artboard files it under *Still open*, with no requirement behind it. I recommended recording it as an open question;
+  the owner chose a task, so the calculator Stage cannot end without it. 204.1 writes the FR and UC and raises the
+  mapping, the error report, the files accepted and how imported lines meet FR-38's queue before anything is built.
+  Recorded in `architecture.md` §12.5.6's task-39 row (8) and `design_spec.md` §4.7's S-09 row. Its Covered FR is `—`
+  until 204.1 writes one, which is what `docs:check`'s inverse derives.
+
+### Searched where the rule holds
+
+- Every construction of `DisclosureValue`, `CalcSource`, `CalcInput` and `DisclosureField`: the field is required, so the
+  compiler listed them. One was not a test double — `domain/working-results.ts`, which builds the inputs a run would copy
+  and now carries the person too.
+- Every statement that reads the three tables: the two stores' selects and upserts, and the run's copy and its read.
+
+### Skills, read against the diff
+
+- `one-idea-per-file`: the person's join, columns and mapping are one file shared by three repositories, with a spec of
+  its four cases; the DTO is a file of its own in `disclosure/dto/`, which the calculator's DTOs import.
+- `nestjs-best-practices`: `security-validate-all-input` — the whitelist refusing a caller-supplied person is the
+  boundary, and the trigger is the guarantee below it (P-4).
+- `vercel-react-best-practices`: nothing new renders on its own; the two components read one more member of what they
+  already receive. No memoization question arises.
+
+### Proven to bite
+
+- The api cases: a B3 figure names the editor, a second person's change names them, the removal clears it, and a request
+  naming someone else is refused; a line names the editor, keeps them through another person's edit of its description,
+  names the second person when the reason changes, and a run keeps the person it read after the line moves on.
+- `overriding-person.spec.ts`: a name, the address fallback, an erased account, no person.
+- `lines.spec.ts`: a queued line keeps the person of an unchanged override and names no one for a changed one;
+  `line-write.spec.ts`: the person never reaches a write.
+- The browser journeys: *Înlocuită de Ana Popescu.* on the line and on B3, gone once the computed figure is back.
+- `migrations:check` applies, reverts and re-applies the migration, and the withheld-columns invariant accounts for the
+  three new columns.
+
+### Gates
+
+The change reaches a migration and `apps/api` (stores, use-case models, three DTOs), `packages/contracts` (the person's
+schema and alias) and `apps/web`, so by the close table every dependent's row ran, `apps/admin`'s included. One chain,
+one suite at a time, no dev server running, and green on its first run:
+- `pnpm lint`; typecheck in `contracts`, `api`, `web` and `admin`.
+- Unit suites: contracts; api 1,705; web 1,421; admin 296.
+- `pnpm openapi:check`, with the regenerated contract staged.
+- `pnpm migrations:check`: the migration applied, reverted and re-applied on the test stack, applied on the dev stack,
+  and the schema invariants 61 of 61 — the withheld-columns list accounting for the three new columns.
+- `pnpm e2e`: 1,593 of 1,593 across 64 suites, the two attribution cases among them. `pnpm e2e:worker` green.
+- `pnpm routes:check`; `pnpm docs:check`, 48 claims — the archive's numbers (137) and rows (250) moved with task 39.
+- `pnpm e2e:web`, all three projects: 311 of 311.
+- The server printed only digest `2667547900`, the abandoned-stream line `apps/web/CLAUDE.md` records, 34 times; no
+  other `⨯`, and no `ERROR` or unhandled rejection in the api runs.
+- **Not run**: the review agents and `gates:clean`, which run when Stage 2 ends — task 39 is not its last row.

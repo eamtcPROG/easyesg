@@ -19,8 +19,14 @@ import type {
 import { returnedRows } from '../returned-rows';
 import { SQL_STATE, hasSqlState } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
+import {
+  overridingPerson,
+  overridingPersonColumns,
+  overridingPersonJoin,
+  type OverridingPersonRow,
+} from './overriding-person';
 
-interface DisclosureValueRow {
+interface DisclosureValueRow extends OverridingPersonRow {
   id: string;
   report_id: string;
   element_key: string;
@@ -46,9 +52,17 @@ interface DisclosureValueRow {
   updated_at: Date;
 }
 
-const VALUE_COLUMNS = `id, report_id, element_key, dimension_key, ordinal,
-        value_numeric, value_text, value_boolean, value_date::text AS value_date,
-        unit_code, state, not_available_reason, carried_forward, origin, explanation, created_at, updated_at`;
+/**
+ * Every reading statement selects from the row aliased `figure` joined to the person who overrode it (task 39.4), so
+ * a value read back from a write names that person as a read does — the writes select from their own `RETURNING`.
+ */
+const VALUE_COLUMNS = `figure.id, figure.report_id, figure.element_key, figure.dimension_key, figure.ordinal,
+        figure.value_numeric, figure.value_text, figure.value_boolean, figure.value_date::text AS value_date,
+        figure.unit_code, figure.state, figure.not_available_reason, figure.carried_forward, figure.origin,
+        figure.explanation, figure.created_at, figure.updated_at, ${overridingPersonColumns('overridden_by')}`;
+
+const valuesOf = (source: string): string => `${source} figure ${overridingPersonJoin('overridden_by')}`;
+const STORED_VALUES = valuesOf('core.report_disclosure_value');
 
 const toValue = (row: DisclosureValueRow): DisclosureValue => ({
   id: row.id,
@@ -66,6 +80,7 @@ const toValue = (row: DisclosureValueRow): DisclosureValue => ({
   carriedForward: row.carried_forward,
   origin: row.origin,
   explanation: row.explanation,
+  overriddenBy: overridingPerson(row),
   createdAt: row.created_at.getTime(),
   updatedAt: row.updated_at.getTime(),
 });
@@ -97,9 +112,9 @@ export class DisclosureValueStoreRepository
     // rather than a set.
     const rows = await this.manager.query<DisclosureValueRow[]>(
       `SELECT ${VALUE_COLUMNS}
-         FROM core.report_disclosure_value
-        WHERE report_id = $1
-        ORDER BY element_key, dimension_key, ordinal`,
+         FROM ${STORED_VALUES}
+        WHERE figure.report_id = $1
+        ORDER BY figure.element_key, figure.dimension_key, figure.ordinal`,
       [query.reportId],
     );
     return rows.map(toValue);
@@ -108,8 +123,8 @@ export class DisclosureValueStoreRepository
   async find(key: DisclosureValueKey): Promise<DisclosureValue | null> {
     const rows = await this.manager.query<DisclosureValueRow[]>(
       `SELECT ${VALUE_COLUMNS}
-         FROM core.report_disclosure_value
-        WHERE report_id = $1 AND element_key = $2 AND dimension_key = $3 AND ordinal = $4`,
+         FROM ${STORED_VALUES}
+        WHERE figure.report_id = $1 AND figure.element_key = $2 AND figure.dimension_key = $3 AND figure.ordinal = $4`,
       [key.reportId, key.elementKey, key.dimensionKey, key.ordinal],
     );
     return rows.length === 0 ? null : toValue(rows[0]);
@@ -234,7 +249,8 @@ export class DisclosureValueStoreRepository
     try {
       const rows = returnedRows<DisclosureValueRow>(
         await this.manager.query(
-          `INSERT INTO core.report_disclosure_value (
+          `WITH written AS (
+           INSERT INTO core.report_disclosure_value (
                organization_id, report_id, element_key, dimension_key, ordinal,
                value_numeric, state, origin, explanation)
            SELECT r.organization_id, r.id, $2, $3, $4, $5, $6, $7, $8
@@ -246,7 +262,8 @@ export class DisclosureValueStoreRepository
                   origin        = EXCLUDED.origin,
                   explanation   = EXCLUDED.explanation,
                   updated_at    = now()
-        RETURNING ${VALUE_COLUMNS}`,
+        RETURNING *)
+           SELECT ${VALUE_COLUMNS} FROM ${valuesOf('written')}`,
           [
             value.key.reportId,
             value.key.elementKey,
@@ -288,7 +305,8 @@ export class DisclosureValueStoreRepository
     try {
       const rows = returnedRows<DisclosureValueRow>(
         await this.manager.query(
-          `INSERT INTO core.report_disclosure_value (
+          `WITH written AS (
+           INSERT INTO core.report_disclosure_value (
                organization_id, report_id, element_key, dimension_key, ordinal,
                value_numeric, state, origin)
            SELECT r.organization_id, r.id, $2, $3, $4, $5, $6, $7
@@ -299,7 +317,8 @@ export class DisclosureValueStoreRepository
                   state         = EXCLUDED.state,
                   origin        = EXCLUDED.origin,
                   updated_at    = now()
-        RETURNING ${VALUE_COLUMNS}`,
+        RETURNING *)
+           SELECT ${VALUE_COLUMNS} FROM ${valuesOf('written')}`,
           [
             value.key.reportId,
             value.key.elementKey,

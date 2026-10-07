@@ -56,6 +56,21 @@ export class CalcSourceContentsError extends DomainError {
 }
 
 /**
+ * A line's month figures are not S-09's monthly form (task 39.1; §12.5.6's task-39 row (1)): not twelve, one not a
+ * number, none entered, sent beside a quantity or a reason — or the report's period does not span twelve calendar
+ * months, so there is no form for them to be. A client defect or a screen loaded before the period's dates moved;
+ * either way the line is refused whole rather than stored with a quantity nobody typed.
+ */
+export class CalcMonthsInvalidError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.calculator.months_invalid');
+  }
+}
+
+/**
  * The id a client chose for a line already names a line of **another** of the organization's reports. A line never
  * moves between reports; under the generic conflict, since it is a client defect rather than a state a screen offers.
  */

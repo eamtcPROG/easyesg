@@ -2,6 +2,7 @@ import { ReportNotFoundError } from '@api/modules/core/disclosure/errors/report.
 import { TaxonomyRegistryService } from '@api/modules/platform/taxonomy/services/taxonomy-registry.service';
 import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-configuration-store';
 import {
+  CalcMonthsInvalidError,
   CalcSourceContentsError,
   CalcSourceElsewhereError,
   CalcUnitNotAdmittedError,
@@ -22,13 +23,17 @@ describe('WriteCalcSource', () => {
     sourceKey: 'natural_gas',
     description: 'Oven',
     contents: { quantity: '500', unitCode: 'm3', notAvailableReason: null },
+    monthlyQuantities: null,
     override: null,
   };
 
-  const build = (options: { answered?: readonly number[]; factorSets?: FakeFactorSets } = {}) => {
+  const build = (
+    options: { answered?: readonly number[]; factorSets?: FakeFactorSets; report?: typeof FY2026_REPORT } = {},
+  ) => {
     const sources = new FakeCalcSourceStore();
     const factorSets = options.factorSets ?? new FakeFactorSets();
-    const reports = new FakeCalcReports([FY2026_REPORT], new Map([[FY2026_REPORT.reportId, options.answered ?? []]]));
+    const report = options.report ?? FY2026_REPORT;
+    const reports = new FakeCalcReports([report], new Map([[report.reportId, options.answered ?? []]]));
     return { sources, factorSets, write: new WriteCalcSource(reports, sources, factorSets, taxonomy) };
   };
 
@@ -68,7 +73,50 @@ describe('WriteCalcSource', () => {
 
   it('refuses an id another report’s line already holds', async () => {
     const { sources, write } = build();
-    sources.lines.push({ ...line, reportId: 'report-2025', createdAt: new Date(0), updatedAt: new Date(0) });
+    sources.lines.push({ ...line, reportId: 'report-2025', overriddenBy: null, createdAt: new Date(0), updatedAt: new Date(0) });
     await expect(write.execute(line)).rejects.toBeInstanceOf(CalcSourceElsewhereError);
+  });
+
+  describe('the monthly form (task 39.1)', () => {
+    // Twelve months of gas bills, March left empty: flagged on screen, not refused here.
+    const months = ['40', '45', null, '38', '30', '22', '18', '17', '21', '33', '41', '48.5'];
+    const monthly: WriteCalcSourceCommand = {
+      ...line,
+      contents: { quantity: null, unitCode: 'm3', notAvailableReason: null },
+      monthlyQuantities: months,
+    };
+
+    it('stores the months, and their exact sum as the quantity a run will copy', async () => {
+      const { sources, write } = build();
+      await expect(write.execute(monthly)).resolves.toMatchObject({
+        contents: { quantity: '353.5', unitCode: 'm3' },
+        monthlyQuantities: months,
+      });
+      expect(sources.lines[0].contents.quantity).toBe('353.5');
+    });
+
+    it('takes the quantity from the months, never from the caller', async () => {
+      const { sources, write } = build();
+      await expect(write.execute({ ...monthly, contents: { ...monthly.contents, quantity: '999' } })).rejects.toBeInstanceOf(
+        CalcMonthsInvalidError,
+      );
+      expect(sources.lines).toHaveLength(0);
+    });
+
+    it('refuses months on a period that is not twelve whole calendar months, and stores nothing', async () => {
+      const catchUp = { ...FY2026_REPORT, periodStart: { ...FY2026_REPORT.periodStart, date: '2026-06-01' } };
+      const { sources, write } = build({ report: catchUp });
+      await expect(write.execute(monthly)).rejects.toBeInstanceOf(CalcMonthsInvalidError);
+      expect(sources.lines).toHaveLength(0);
+      // The same period still takes the line as one figure.
+      await expect(write.execute(line)).resolves.toMatchObject({ monthlyQuantities: null });
+    });
+
+    it('checks the summed quantity against the factor set like any other figure', async () => {
+      const { write } = build();
+      await expect(
+        write.execute({ ...monthly, contents: { ...monthly.contents, unitCode: 'Gcal' } }),
+      ).rejects.toBeInstanceOf(CalcUnitNotAdmittedError);
+    });
   });
 });

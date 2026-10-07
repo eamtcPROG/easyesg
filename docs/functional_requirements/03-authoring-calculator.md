@@ -403,7 +403,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-33 — Record consumption in invoice units, retained permanently
 
-**Status.** Partial — delivered 38.1 · remaining 39.1
+**Status.** Built — delivered 38.1, 39.1
 
 **Obligation.** The system shall record energy and fuel consumption by source and by site in the units of the company's own invoices, retaining the raw inputs permanently alongside every figure derived from them so that a calculation can be retraced.
 
@@ -411,14 +411,14 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 |---|---|
 | **Actors** | Editor or OA records lines. A view-only member reads them. |
 | **Traces** | UC-32, UC-52 · P-11 · `architecture.md` OQ-20 (*`CALC_INPUT` permanent*), §7.2, §9.9 · BR-CALC-1 · entity *Energy / fuel consumption input* |
-| **Surfaces** | S-09 (entered from S-07's B3 step) · `GET`, `PUT`, `DELETE /reports/{id}/calculator/sources[/{sourceId}]` |
+| **Surfaces** | S-09 (entered from S-07's B3 step) · `GET /reports/{id}/calculator` (what a line may say: the factor set's sources and units, the B1 sites, the monthly form's months — task 39.1) · `GET`, `PUT`, `DELETE /reports/{id}/calculator/sources[/{sourceId}]` |
 
 **Preconditions.** An editable report session (FR-26). The report's B1 records at least one site.
 
 **Inputs.** One **line** per invoice: a source, a site, and either a quantity with its unit or the reason there is no quantity. The client chooses the line's identifier, so an autosave that is replayed rewrites the same line. The admitted sources and their units are the factor set's (§2.4 below), never a list in code. The site is one of the report's own B1 site rows.
 
 **Behaviour.**
-1. A line holds **one figure for the period**. The artboard's monthly form, with twelve month rows summed into the quantity, is task 39.1's.
+1. A line holds **one figure for the period**, or, where the period spans twelve calendar months, **twelve month figures whose sum is its quantity** (task 39.1). The months are counted from the period's start month; the server computes the sum, so quantity and months cannot disagree; a month left empty is flagged on the line and never refused, and at least one month holds a figure. A period of any other length keeps the single figure (§12.5.6 task-39 row (1)).
 2. Source and unit are checked against the factor set the period resolves to when the line is written (FR-35), and checked again when a run reads them.
 3. The lines are the report's **working set**. A run copies them into its own retained inputs in the run's transaction, so later edits to a line never alter what a past run read.
 4. A B1 site that still holds lines cannot be removed until its lines are.
@@ -428,6 +428,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - Unit the source does not admit → 400 · `validation-failed` (`core.calculator.unit_not_admitted`)
 - Site the report does not hold → 400 · `validation-failed` (`core.calculator.unknown_site`)
 - Neither a quantity with a unit nor a reason, or both → 400 · `validation-failed` (`core.calculator.contents_invalid`)
+- Month figures on a period that does not span twelve calendar months, not twelve of them, or sent with a quantity → 400 · `validation-failed` (task 39.1)
 - Line identifier already used by another report → 409 · `conflict` (`core.calculator.source_elsewhere`)
 - No factor set serves the period → 409 · `conflict` (`core.calculator.no_factor_set`)
 - Period locked → 409 · `report-not-editable` (FR-22) · Unknown report → 404
@@ -448,10 +449,11 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **History.**
 - 1 Oct 2026 · project owner · the two layers (working lines, a run's copy), lines on B1 sites, one figure per period with the monthly form deferred, and run permanence · `architecture.md` §12.5.6 task-38.1 row, §7.2
+- 7 Oct 2026 · project owner · twelve month rows from the period's start, summed, a missing month flagged; only on a twelve-month period; lines through the queue, the run and B3 figure actions direct · §12.5.6 task-39 row (1), (2)
 
 ### FR-34 — Compute Scope 1 and location-based Scope 2
 
-**Status.** Partial — delivered 37.1, 37.2, 38.2, 38.3, 38.4 · remaining 39.2
+**Status.** Built — delivered 37.1, 37.2, 38.2, 38.3, 38.4, 39.2
 
 **Obligation.** The system shall convert each consumption line to MWh, apply the emission factor set in force for the reporting period, and compute Scope 1 and location-based Scope 2 in tCO₂e, writing them into B3. From those figures it derives B3's total and its GHG intensity: the total divided by B1 turnover, in the report's currency.
 
@@ -464,7 +466,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Preconditions.** At least one line (FR-33). A factor set serves the period's start date (FR-35).
 
 **Behaviour.**
-1. Each line's figure is *quantity × MWh per unit × tCO₂e per MWh*, summed per scope. The arithmetic is **exact decimal**, with no rounding stored. Each surface rounds once, half-up, to a per-unit precision held as configuration (§12.5.6 task-182 row (3); the digits are 39.2's, 44's and 46's).
+1. Each line's figure is *quantity × MWh per unit × tCO₂e per MWh*, summed per scope. The arithmetic is **exact decimal**, with no rounding stored. Each surface rounds once, half-up, to a per-unit precision held as configuration (§12.5.6 task-182 row (3); the digits are 39.2's, 44's and 46's). S-07 rounds a computed or derived figure to the same places as S-09, read with the step; a figure the reporter typed is shown as typed (§12.5.6 task-39 row (7)).
 2. Which scope a source counts toward is the factor set's `ghgScope` (`scope_1`, `scope_2_location_based`), never a list of fuels in code.
 3. A run writes Scope 1 and location-based Scope 2 into B3. **The total and the GHG intensity are derivations.** They are recomputed whenever a scope, an override or their other input changes, and they are read-only in the wizard.
 4. **A scope with no measured line has no figure, not zero** (FR-30). A scope that is only partly explained totals its measured lines and lists the rest.
@@ -480,7 +482,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **Effects.** The run record, its retained inputs and its results are written in one transaction. B3's Scope 1 and Scope 2 values carry `origin = calculated`.
 
-**Configuration-held values.** Per source: MWh per invoice unit, tCO₂e per MWh, `ghgScope` and a citation (`emission-factor-set.md.json`, label `2026.1`). Two examples: natural gas is 0.0095773 MWh/m³ at 0.202544 tCO₂e/MWh, and grid electricity is 0.594645 tCO₂e/MWh. The derivation formulas `sum` and `intensity` are in `config/seed/disclosure-derivation.vsme.json`. The intensity's significant-figure rule is in code (`INTENSITY_SIGNIFICANT_FIGURES = 10`, half-up).
+**Configuration-held values.** Per source: MWh per invoice unit, tCO₂e per MWh, `ghgScope` and a citation (`emission-factor-set.md.json`, label `2026.1`). The places each surface rounds a figure to, by unit: `presentation-precision.global.json` (kind `presentation_precision`), starting at two places for `tCO2e` and `MWh` (task 39.2; §12.5.6 task-39 row (5)). Two examples: natural gas is 0.0095773 MWh/m³ at 0.202544 tCO₂e/MWh, and grid electricity is 0.594645 tCO₂e/MWh. The derivation formulas `sum` and `intensity` are in `config/seed/disclosure-derivation.vsme.json`. The intensity's significant-figure rule is in code (`INTENSITY_SIGNIFICANT_FIGURES = 10`, half-up).
 
 **Boundaries.** Market-based Scope 2 is not computed; it would be a new `ghgScope` member. Scope 3 is out of scope. Version stamping is FR-35's, and overrides are FR-36's.
 
@@ -498,10 +500,12 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - 1 Oct 2026 · build · exact arithmetic, absent rather than zero, scope from data · §12.5.6 task-38.2 row
 - 1 Oct 2026 · project owner · total and intensity as derivations; results retained; replay · §12.5.6 task-38.4 row
 - 5 Oct 2026 · project owner · intensity divides by turnover; one rounding rule · §12.5.6 task-182 row (2), (3)
+- 7 Oct 2026 · project owner · the places are a configuration artefact; S-09 shows the derivation in MWh and tCO₂e, as the set publishes · §12.5.6 task-39 row (5), (6)
+- 7 Oct 2026 · project owner · S-07 rounds computed and derived figures to S-09's configured places · §12.5.6 task-39 row (7)
 
 ### FR-35 — Pin the factor set version to every result
 
-**Status.** Partial — delivered 37.1, 37.2, 37.3, 38.1, 38.4 · remaining 39.2 (UX-44)
+**Status.** Built — delivered 37.1, 37.2, 37.3, 38.1, 38.4, 39.2
 
 **Obligation.** The system shall store against every computed result the emission factor set version it was computed under, so that a later factor update never silently restates a figure already reported.
 
@@ -516,7 +520,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 2. A run pins `(country, revision)`. The revision is unique per country and immutable. The label (for example `2026.1`) is what a reader sees.
 3. One effective-dated artefact exists per country, and no two sets may overlap one period.
 4. A correction to a set published for a window applies only to runs made after it. Earlier runs keep their pin.
-5. When a set changes for a period that existing runs used, those results are not restated. The reporter is told and may recalculate (UX-44; the notice is FR-166's).
+5. When a set changes for a period that existing runs used, those results are not restated. The reporter is told and may recalculate (UX-44; the notice is FR-166's). S-09 shows UX-44's notice while the latest run's pinned set differs from the set in force, naming both by label with each figure *now* and *would be*, and offering recalculation; no dismissal is stored (§12.5.6 task-39 row (4)).
 
 **Refusals.** No set serves the period's start → 409 `core.calculator.no_factor_set`.
 
@@ -535,10 +539,11 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **History.**
 - 1 Oct 2026 · project owner · the set is resolved by the period's start and not the run date, which supersedes A-05's artboard lines · §12.5.6 task-37 row; §9.9 amended
 - 6 Oct 2026 · project owner · a replaced set tells the organizations whose open reports' latest runs used it; a revert replaces too · §12.5.6 task-37.3/37.4 row (2), (3) (task 37.3)
+- 7 Oct 2026 · project owner · UX-44's notice on S-09 stores no dismissal · §12.5.6 task-39 row (4)
 
 ### FR-36 — Annotate or override a computed figure
 
-**Status.** Partial — delivered 38.4 (38.5 closed inside it) · remaining 39.3, 39.4 (the person on the figure), 44.6, 46.5 (the marker in each export)
+**Status.** Partial — delivered 38.4 (38.5 closed inside it), 39.3, 39.4 · remaining 43.2 (the person in the preview), 44.6, 46.5 (the marker in each export)
 
 **Obligation.** The system shall allow a computed figure to be annotated, or replaced by an externally calculated figure with a stated reason, flagging the replacement, naming on the figure the person who made it, and retaining the superseded computed figure.
 
@@ -565,7 +570,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - An ordinary write to a computed or overridden figure → 409 `core.report.computed_figure_not_writable`
 - Period locked → 409 `report-not-editable`
 
-**Effects.** `report_disclosure_value.origin` becomes `overridden`, with an `explanation` required by a database check. Line overrides are non-negative and require a reason, also by check. The figure names who overrode it, on the stored value and its read shape (task 39.4), and every change also enters the field change trail, which records who, when and the previous value (FR-54).
+**Effects.** `report_disclosure_value.origin` becomes `overridden`, with an `explanation` required by a database check. Line overrides are non-negative and require a reason, also by check. The figure names who overrode it, on the stored value and its read shape (task 39.4): the account is stored with no foreign key and its display name is resolved at read, so an erased account reads as no name. The account is the request's own binding, written by the table rather than sent by the caller, and it is the account that last changed the substituted figure or its reason: a line written again with its override unchanged keeps the person who made it, and clearing an override, or a run replacing a scope override, clears the person with it. A run retains each line's person with the line. Every change also enters the field change trail, which records who, when and the previous value (FR-54). The B3 figure actions are direct requests that need a connection; a line override rides the line's queued write (§12.5.6 task-39 row (2), (3)).
 
 **Boundaries.** The *company estimate* marker and footnote are 44.6's in the PDF and 46.5's in the Excel export. The screen is 39.3's.
 
@@ -574,13 +579,16 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-2** Given an override with no reason, then it is refused with 400 and nothing changes. *(source: UX-43; §12.5.6 task-38.4 row)*
 - **AC-3** Given an overridden scope, when the override is removed, then the latest run's result is restored with nothing re-entered. *(source: §12.5.6 task-38.4 row)*
 - **AC-4** Given an overridden scope, when a new run is made, then the run's result replaces it and the trail holds both. A line override, by contrast, survives the run. *(source: §12.5.6 task-38.4 row)*
-- **AC-5** Given an override, then the figure's read names the person who made it, and the change trail records that person, the timestamp and the superseded value. *(source: FR text; §12.5.6 task-182 row (4); FR-54)* Unmet until 39.4.
+- **AC-5** Given an override, then the figure's read names the person who made it, and the change trail records that person, the timestamp and the superseded value. *(source: FR text; §12.5.6 task-182 row (4); FR-54)*
 - **AC-6** Given a computed or overridden figure, when it is written through the ordinary value route, then it is refused with 409. *(source: §12.5.6 task-38.4 row)*
 
 **History.**
 - 8 Sep 2026 · project owner · `origin` marker added ahead of its producer; an override is a component that shows both values, not a word · §12.5.6 task-36.4 row
 - 1 Oct 2026 · project owner · both granularities, built in 38.4 rather than 38.5 · §12.5.6 task-38.4 row; §7.3 amended
 - 5 Oct 2026 · project owner · the person named on the figure; the marker owned by 44.6 and 46.5 · §12.5.6 task-182 row (4), (7)
+- 7 Oct 2026 · project owner · the person is an account named at read; the preview's half is 43.2's · §12.5.6 task-39 row (3)
+- 7 Oct 2026 · build · the screens: a line override rides the line's queued write; on S-07 a B3 scope is replaced, explained or put back beside the run's stored result, read with the step (task 39.3) · §12.5.6 task-39 row (2)
+- 7 Oct 2026 · build · the person stored by the table from the binding, named at read on S-09 and S-07; a line written again keeps its override's person (task 39.4) · §12.5.6 task-39 row (3)
 
 ## 3. Draft persistence (index §3.7)
 
@@ -622,7 +630,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-38 — Queue offline and warn while unsynced
 
-**Status.** Partial — delivered 35.2, 36.2, 92, 93 · remaining 39.1 (calculator lines through the queue)
+**Status.** Built — delivered 35.2, 36.2, 92, 93, 39.1
 
 **Obligation.** The system shall queue changes durably on the device and retry them when the network or the session is unavailable, warning the user while anything remains unsynced and before any action that would abandon the queue.
 
@@ -647,7 +655,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-2** Given a queued change, when connectivity returns, then it is submitted with no user action. *(source: FR text)*
 - **AC-3** Given the session has expired, when a write is refused with 401, then it is kept, and it is sent after re-authentication in place. *(source: §12.5.6 task-35.3 and task-92 rows)*
 - **AC-4** Given an unsent queue, when the user signs out, switches organization or leaves the wizard and the queue cannot be sent, then a dialogue warns and offers to cancel. *(source: UX-37; §12.5.6 task-93 and task-83 rows)*
-- **AC-5** Given the network is unavailable, when a calculator line is written, then it is queued and sent on reconnection like any field. *(source: §12.5.6 task-182 row (5))* Unmet until 39.1.
+- **AC-5** Given the network is unavailable, when a calculator line is written, then it is queued and sent on reconnection like any field. *(source: §12.5.6 task-182 row (5); `e2e/web/calculator.spec.ts`)*
 
 **History.**
 - 2 Sep 2026 · build · the queue is scoped to the account · §12.5.6 task-35.2 row

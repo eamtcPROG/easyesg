@@ -100,7 +100,23 @@ traps each one left — grouped by area rather than by the task that built it.
   with a reason or explained (`…/calculator/figures/{element}/override`, `…/explanation`), and one line's tonnes
   replaced with a reason (the line's `overrideTonnes`). **The ordinary disclosure write refuses a computed or overridden
   figure** — an upsert guarded in its `WHERE` — so typing over one is the override route or nothing (§12.5.6's
-  task-38.4 row). **The run tables carry no `UPDATE` or `DELETE` policy, so under
+  task-38.4 row). **Since task 39.1 S-09 opens on `GET /reports/{id}/calculator`** — the set in force's sources and
+  units, the B1 sites named by the wizard's own B1 step (`CALC_SITE_NAMES` over `WizardService`), the monthly form's
+  months — and a line may carry **twelve month figures** (`core.calc_source.monthly_quantities`), whose exact sum the
+  use case writes as the quantity and `calc_source_months_total` holds equal, offered only on a period of twelve whole
+  calendar months (§12.5.6's task-39 row (1)). **Since 39.2 the read also answers what the lines come to** against the
+  set in force (`domain/working-results.ts` — the run's own arithmetic, nothing retained, a line the set no longer covers
+  named rather than thrown on), the latest run with its pinned set's label, and the places every surface rounds a figure
+  to (`PRESENTATION_PRECISION`, `platform/localization`, over the `presentation_precision` artefact, which fails open to
+  the exact figure). **Since 39.3 S-07 reads `GET /reports/{id}/calculator/figures`** — the latest run's stored result
+  per scope, its own read rather than S-09's, so an overridden B3 scope is shown beside the figure it superseded (UX-43)
+  — and the wizard's step read carries those places as `precision`, which S-07 rounds a computed or derived figure to
+  (§12.5.6's task-39 row (7)). **Since 39.4 an override names its person** (§12.5.6's task-39 row (3)):
+  `report_disclosure_value.overridden_by` and `calc_source.override_by`, copied into `calc_input` by a run, are written
+  by a `BEFORE` trigger from `app.current_user` and withheld from `esg_app`, so no request can name someone else — a line
+  written again with its override unchanged keeps its person — and every reading statement joins `identity.account` to
+  name them by UX-137's `displayName` (`persistence/core/overriding-person.ts`), an erased account reading as no name.
+  **The run tables carry no `UPDATE` or `DELETE` policy, so under
   forced row security even their owner's `DELETE` matches nothing and says nothing** — a suite's cleanup lifts `FORCE`
   inside its transaction (`test/calculator.e2e-spec.ts`), and a report a run rests on cannot be deleted at all (OQ-20).
   **Since task 37.4 a factor set is validated at publication**: `ConfigurationPublisher` asks a kind's rule
@@ -112,7 +128,7 @@ traps each one left — grouped by area rather than by the task that built it.
   used the set leaving, to its editors and administrator, and withdraws the entering set's own — **the first producer on
   the worker**, one organization at a time through `TENANT_WORK` (`contracts/tenant-work.port.ts`) (§12.5.6's
   task-37.3/37.4 row).
-- **Not live**: the calculator's runs and validation (38 … 42), preview and export (43 … 47),
+- **Not live**: validation (40 … 42), preview and export (43 … 47),
   the outstanding-report and deadline notices (51.2), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).

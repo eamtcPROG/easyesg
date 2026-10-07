@@ -390,6 +390,15 @@ export async function cleanupOrganizations(organizationIds: readonly string[]): 
       // task 148, a hint is an outbox row naming the organization, and the outbox carries no foreign key to cascade
       // along (AD-6). Left behind, they are rows `outbox.e2e-spec.ts` re-dispatches as its own. Only this organization's.
       await client.query(`DELETE FROM audit.outbox_event WHERE organization_id = $1`, [organizationId]);
+      // **Its calculator runs first** (task 39.2): a run's keys into the report take no `ON DELETE` action — OQ-20
+      // retains a run's inputs permanently — so a report a run rests on cannot cascade away. The run tables carry no
+      // `DELETE` policy either, so under forced row security even the owner's delete matches nothing and says nothing;
+      // `FORCE` is lifted inside this transaction alone, as `apps/api/test/calculator.e2e-spec.ts` lifts it.
+      for (const table of ['core.calc_input', 'core.calc_result', 'core.calc_run']) {
+        await client.query(`ALTER TABLE ${table} NO FORCE ROW LEVEL SECURITY`);
+        await client.query(`DELETE FROM ${table} WHERE organization_id = $1`, [organizationId]);
+        await client.query(`ALTER TABLE ${table} FORCE ROW LEVEL SECURITY`);
+      }
       await client.query(`DELETE FROM core.organization WHERE id = $1`, [organizationId]);
       await client.query('COMMIT');
     }
@@ -591,6 +600,10 @@ export async function disclosureValueOf(input: {
   notAvailableReason: string | null;
   valueBoolean: boolean | null;
   state: string;
+  /** Where the figure came from (task 36.4) — `calculated` from a run, `overridden` by a reporter (task 39.3). */
+  origin: string;
+  /** A calculated figure's note, or an overridden one's reason (task 38.4). */
+  explanation: string | null;
 } | null> {
   const client = new Client(asOwner());
   await client.connect();
@@ -604,8 +617,10 @@ export async function disclosureValueOf(input: {
       not_available_reason: string | null;
       value_boolean: boolean | null;
       state: string;
+      origin: string;
+      explanation: string | null;
     }>(
-      `SELECT value_numeric, value_text, unit_code, not_available_reason, value_boolean, state
+      `SELECT value_numeric, value_text, unit_code, not_available_reason, value_boolean, state, origin, explanation
          FROM core.report_disclosure_value
         WHERE report_id = $1 AND element_key = $2 AND dimension_key = $3 AND ordinal = $4`,
       [input.reportId, input.elementKey, input.dimensionKey ?? '', input.ordinal ?? 0],
@@ -621,6 +636,8 @@ export async function disclosureValueOf(input: {
           notAvailableReason: row.not_available_reason,
           valueBoolean: row.value_boolean,
           state: row.state,
+          origin: row.origin,
+          explanation: row.explanation,
         };
   } finally {
     await client.end();
@@ -967,5 +984,146 @@ export async function inAppDeliveriesTo(input: { readonly organizationId: string
     return Number(counted.rows[0]?.count ?? 0);
   } finally {
     await worker.end();
+  }
+}
+
+/**
+ * S-09's lines as stored (task 39.1): what a journey checks a blur, a queue drained on reconnection or a monthly form
+ * against — the row itself, as `disclosureValueOf` checks a field, so an acknowledgement is held to the commit it
+ * claims (NFR-56). The figures cross as text, never through the driver's number parsing.
+ */
+export async function calcLinesOf(input: {
+  readonly organizationId: string;
+  readonly reportId: string;
+}): Promise<
+  {
+    readonly siteOrdinal: number;
+    readonly sourceKey: string;
+    readonly quantity: string | null;
+    readonly unitCode: string | null;
+    readonly notAvailableReason: string | null;
+    readonly monthlyQuantities: (string | null)[] | null;
+    readonly overrideTonnes: string | null;
+    readonly overrideExplanation: string | null;
+  }[]
+> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('app.current_org', $1, true)`, [input.organizationId]);
+    const result = await client.query<{
+      site_ordinal: number;
+      source_key: string;
+      quantity: string | null;
+      unit_code: string | null;
+      not_available_reason: string | null;
+      monthly_quantities: (string | null)[] | null;
+      override_tonnes: string | null;
+      override_explanation: string | null;
+    }>(
+      `SELECT site_ordinal, source_key, quantity::text AS quantity, unit_code, not_available_reason,
+              monthly_quantities::text[] AS monthly_quantities, override_tonnes::text AS override_tonnes,
+              override_explanation
+         FROM core.calc_source WHERE report_id = $1 ORDER BY created_at, id`,
+      [input.reportId],
+    );
+    await client.query('COMMIT');
+    return result.rows.map((row) => ({
+      siteOrdinal: row.site_ordinal,
+      sourceKey: row.source_key,
+      quantity: row.quantity,
+      unitCode: row.unit_code,
+      notAvailableReason: row.not_available_reason,
+      monthlyQuantities: row.monthly_quantities,
+      overrideTonnes: row.override_tonnes,
+      overrideExplanation: row.override_explanation,
+    }));
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * One of S-09's lines written straight to the store (task 39.1), for a journey whose subject is how lines are shown
+ * rather than how they are entered — the +40% check measures a monthly line's twelve rows without typing them. The id
+ * is chosen here, as a client chooses it; the quantity is the months' sum where months are given, the table's own
+ * `calc_source_months_total` refusing anything else.
+ */
+export async function seedCalcLine(input: {
+  readonly organizationId: string;
+  readonly reportId: string;
+  readonly siteOrdinal: number;
+  readonly sourceKey: string;
+  readonly quantity: string;
+  readonly unitCode: string;
+  readonly monthlyQuantities?: readonly (string | null)[];
+}): Promise<string> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    const id = randomUUID();
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('app.current_org', $1, true)`, [input.organizationId]);
+    await client.query(
+      `INSERT INTO core.calc_source
+         (id, organization_id, report_id, site_ordinal, source_key, quantity, unit_code, monthly_quantities)
+       VALUES ($1, $2, $3, $4, $5, $6::numeric, $7, $8::numeric[])`,
+      [
+        id,
+        input.organizationId,
+        input.reportId,
+        input.siteOrdinal,
+        input.sourceKey,
+        input.quantity,
+        input.unitCode,
+        input.monthlyQuantities === undefined ? null : [...input.monthlyQuantities],
+      ],
+    );
+    await client.query('COMMIT');
+    return id;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * A recorded run written straight to the store (task 39.2), pinned to a revision of the `md` set and carrying the B3
+ * figures it stored — for UX-44's journey, whose subject is a report whose latest run used a set that is no longer the
+ * one in force, which no ordinary journey can arrange without publishing a correction mid-suite. A revision no artefact
+ * holds is a pin that reads as no label, which the notice names as *an earlier set*.
+ */
+export async function seedCalcRun(input: {
+  readonly organizationId: string;
+  readonly reportId: string;
+  readonly revision: number;
+  readonly results: readonly { readonly elementKey: string; readonly tonnesCo2e: string | null }[];
+}): Promise<void> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('app.current_org', $1, true)`, [input.organizationId]);
+    const run = await client.query<{ id: string }>(
+      `INSERT INTO core.calc_run (organization_id, report_id, factor_set_country, factor_set_revision)
+       VALUES ($1, $2, 'md', $3) RETURNING id`,
+      [input.organizationId, input.reportId, input.revision],
+    );
+    for (const result of input.results) {
+      await client.query(
+        `INSERT INTO core.calc_result (organization_id, report_id, run_id, element_key, value_numeric)
+         VALUES ($1, $2, $3, $4, $5::numeric)`,
+        [input.organizationId, input.reportId, run.rows[0]?.id, result.elementKey, result.tonnesCo2e],
+      );
+    }
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    await client.end();
   }
 }

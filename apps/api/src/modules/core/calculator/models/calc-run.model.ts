@@ -1,3 +1,4 @@
+import type { OverridingPerson } from '@api/modules/core/disclosure/models/disclosure-value.model';
 import type { CalcLineOverride, CalcSourceContents } from './calc-source.model';
 import type { FactorSetPin } from './factor-set.model';
 
@@ -18,6 +19,8 @@ export interface CalcInput {
   readonly contents: CalcSourceContents;
   /** The line's substituted figure as the run read it — part of what it retained, so its replay reproduces it. */
   readonly override: CalcLineOverride | null;
+  /** Who had made that substitution when the run read it (task 39.4), named as it reads now. */
+  readonly overriddenBy: OverridingPerson | null;
 }
 
 export interface CalcRun {
@@ -43,5 +46,17 @@ export interface CalcResult {
 
 /** A recorded run with the results it stored — what a replay compares against. */
 export interface StoredCalcRun extends CalcRun {
+  readonly results: readonly CalcResult[];
+}
+
+/**
+ * The report's latest run as S-09 shows it (task 39.2): which set it pinned and when, and what it stored — the figures
+ * B3 holds from it, and *now* beside UX-44's *would be* when a newer set is in force. No inputs: the lines on screen are
+ * the working set, and a run's own copy is `find`'s.
+ */
+export interface LatestCalcRun {
+  readonly id: string;
+  readonly factorSet: FactorSetPin;
+  readonly recordedAt: Date;
   readonly results: readonly CalcResult[];
 }

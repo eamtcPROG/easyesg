@@ -402,12 +402,16 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // S-09's invoice lines and the runs that retain them (task 38.1; UC-32, UC-33). The wizard's split, for its reason:
   // the lines are read by every member (FR-25) and written on edit rights (FR-26), and recording a run is the same
   // authoring act as entering the figure it computes.
+  // S-09 as it opens (task 39.1): what a line may say, beside the lines — a read like the lines', so every member's.
+  'GET /reports/:id/calculator': ALL_MEMBERS,
   'GET /reports/:id/calculator/sources': ALL_MEMBERS,
   'PUT /reports/:id/calculator/sources/:sourceId': WRITING_MEMBERS,
   'DELETE /reports/:id/calculator/sources/:sourceId': WRITING_MEMBERS,
   'POST /reports/:id/calculator/runs': WRITING_MEMBERS,
   // A recorded run computed again against its own factor set (task 38.4; UX-42, NFR-19) — a read, so every member's.
   'GET /reports/:id/calculator/runs/:runId': ALL_MEMBERS,
+  // The figures B3 took from the calculator (task 39.3; UX-43): the latest run, read — every member's.
+  'GET /reports/:id/calculator/figures': ALL_MEMBERS,
   // UC-34 over a computed B3 figure (task 38.4; FR-36): replacing, restoring or explaining it is authoring the figure.
   'PUT /reports/:id/calculator/figures/:elementKey/override': WRITING_MEMBERS,
   'DELETE /reports/:id/calculator/figures/:elementKey/override': WRITING_MEMBERS,

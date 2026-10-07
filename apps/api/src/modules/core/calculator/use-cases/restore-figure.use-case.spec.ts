@@ -19,7 +19,9 @@ describe('RestoreFigure', () => {
     sourceKey: 'natural_gas',
     description: null,
     contents: { quantity: '500', unitCode: 'm3', notAvailableReason: null },
+    monthlyQuantities: null,
     override: null,
+    overriddenBy: null,
     createdAt: new Date(0),
     updatedAt: new Date(0),
   };

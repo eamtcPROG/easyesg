@@ -13,7 +13,7 @@ every screen. Cite them; do not re-derive them.
 Identity, organization, periods, reports, entities, the wizard, the notification centre and the profile are live; the
 calculator, validation, preview and export, checkout and billing and the public tier are the
 fourteen addresses `AddressNotice` answers for (fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across seven route groups,
-8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (ten built),
+8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (11 built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
 browser (`pnpm e2e:web`).
@@ -21,7 +21,11 @@ browser (`pnpm e2e:web`).
 **Live screens** (tasks 20 … 36; 97 … 131 for the chrome and the refactors): S-01 register and sign-in with its factor
 step and provider buttons, S-02 verify, reset and set-password, S-03 the invitation landing, S-04 create organization,
 S-05 home, S-06 reports, S-07 the wizard shell with autosave and the B1–B11 disclosure forms, S-13 entities, S-14
-periods, S-15 organization profile, S-16 users with, since task 50.3, its reminder panel, S-26 notification centre
+periods, S-15 organization profile, S-16 users with, since task 50.3, its reminder panel, S-09 since task 39.1 —
+invoice lines by source and site, the monthly form, every line through the wizard's queue — and since 39.2 what they
+come to, each line's derivation at its own address, *use these figures in B3* and UX-44's notice, and since 39.3 UC-34's
+acts — a line's tonnes replaced with a reason on S-09, and on S-07's B3 a scope replaced, explained or put back — with,
+since 39.4, the person who made each replacement named beside it, S-26 notification centre
 with, since task 37.3, its category filter,
 S-27 profile, languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
 layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
@@ -29,8 +33,8 @@ complete your account, S-37 choose organization, S-38 unsubscribe from an email;
 83.2, the organization switcher, and the workspace tier with its drawer, and since task 67.9 UX-124's support-access
 banner across every signed-in screen, and since task 50.2.1 the band's notification bell with the unread count, polled
 every minute, and its row in the compact drawer, the bell opening the panel of the latest notices since 50.2.2. **Not
-live** beyond those fourteen addresses: the wizard's three deferred steps (S-09, S-10, S-11), which still return
-`null` under UX-5's exit control.
+live** beyond those fourteen addresses: the wizard's two deferred
+steps S-10 and S-11, which still return `null` under UX-5's exit control.
 
 `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must. What follows is what a reader needs in hand for each live slice, grouped by
 the seam it sits on rather than by the task that built it.
@@ -379,7 +383,7 @@ memory fallback, and `putDisclosureValues`, the **first browser-originated write
 (`StepFields` → `StepField` → `DisclosureControl`, one control per kind), with the indicator in the bar
 (`WizardBar`'s `saveState`, since task 179.1), the unsynced banner above the fields, and the exit — the bar's arrow,
 `components/bar/exit-link.tsx` — with its consequence dialogue.
-Four things to know before touching it:
+Five things to know before touching it:
 
 - **The reducer owns what is unacknowledged; Query owns only the wire.** `FLUSH_SUCCEEDED` is
   dispatched from `onSuccess` with the rows as committed, and nothing leaves `pending` before that
@@ -394,6 +398,13 @@ Four things to know before touching it:
   the next step's mount restores and flushes it. The exit control warns (UX-37); the rail does not,
   because a step change abandons nothing. The queue's key carries the **account id** from the sealed
   session — `pending-store.ts` says why a report-scoped key would let the next sign-in drain it.
+- **The queue carries a third shape since task 39.1: S-09's invoice lines** (§12.5.6's task-39 row (2)). A line is
+  written whole under the id its client chose (`{ lineId, line }`, or `{ lineId, removed: true }`), coalesced on that id,
+  and flushed after the values and the derivation inputs, one request per line (`client/autosave/write-lines.ts`); the
+  api's answers land in `committedLines` beside `committed`. S-09 is a composition of S-07 — the same provider, bar,
+  rail and re-authentication — so the bar's indicator, the exit's warning and the organization switch all count its
+  lines. **The durable store now recognises each shape it reads back** (`storedQueue`): it read `elementKey` alone, so a
+  queue holding a derivation input was emptied on reload from task 36.10 until then.
 - **Two required slots are `null` with their owners named**: `help` (OQ-59 — no source for UX-17's
   sentences exists) and `notAvailable` (task 36.13). `enumeration` kinds render as text until task
   36.2 brings the domain to the browser; `text_block` is a plain `TextArea` until 36.2's narrative
@@ -996,7 +1007,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **167 files here are Client Components** (6 Oct 2026: two more since task 203.2 — `shared/list-search.tsx`, the search S-06, S-13 and S-16 share, and S-16's search region; three more since task 190 — S-28's arrival notice, the re-authentication dialogue's recovered stage, and S-05's *not now* on the second-factor prompt. 30 Sep 2026: three more since task 179.1 drew S-07 as its artboards — the module list below `wide`, the bar's action drawn ahead of its screen, and the bar's ⋯ at `compact`; the exit and the save state moved into the bar and are counted once; one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to
+  **193 files here are Client Components** (7 Oct 2026: six more since task 39.3 gave UC-34's acts a screen — B3's figure control on S-07, its note form and its action hook, the override form that control and a line share, a line's override, and the step's figures context; seven more since task 39.2 gave S-09 its figures — the derivation, the summary beside the step, UX-44's notice, the one-source pager, the run's hook and its refusal, and the calculator's Query hook; thirteen more since task 39.1 built S-09 — its board and site chips, the add-a-source form, the empty state, a site's lines, the line row with its figure, unit and monthly form, the two commit-on-blur fields and their hook, and the words hook its parts share. 6 Oct 2026: two more since task 203.2 — `shared/list-search.tsx`, the search S-06, S-13 and S-16 share, and S-16's search region; three more since task 190 — S-28's arrival notice, the re-authentication dialogue's recovered stage, and S-05's *not now* on the second-factor prompt. 30 Sep 2026: three more since task 179.1 drew S-07 as its artboards — the module list below `wide`, the bar's action drawn ahead of its screen, and the bar's ⋯ at `compact`; the exit and the save state moved into the bar and are counted once; one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to
   S-13 and added the report-contact section beside it; one fewer since task 175 moved S-15's identifiers section to
   S-13's identity section; two since S-13's card — the guarded link its ways back share,
 and the side column's archive panel; 28 Sep 2026: five since S-13's review — the index's filter row and the

@@ -3,7 +3,7 @@ import type { DisclosureKind } from '@easyesg/vsme';
 import type { PeriodType } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
 import type { ApplicabilityCondition } from './applicability.model';
-import type { DisclosureOrigin, DisclosureState } from './disclosure-value.model';
+import type { DisclosureOrigin, DisclosureState, OverridingPerson } from './disclosure-value.model';
 
 /**
  * What the wizard is given (task 89; S-07, FR-24 … FR-32).
@@ -201,6 +201,8 @@ export interface DisclosureField {
    * `null` on everything a reporter typed.
    */
   readonly explanation: string | null;
+  /** Who replaced the computed figure, on an `overridden` field (task 39.4; FR-36); `null` everywhere else. */
+  readonly overriddenBy: OverridingPerson | null;
   readonly ordinal: number;
   readonly kind: DisclosureKind;
   readonly periodType: PeriodType;
@@ -351,6 +353,15 @@ export interface DisclosureStep {
    * the step carries the axis once.
    */
   readonly axes: readonly DisclosureAxis[];
+}
+
+/**
+ * A step as the wizard is served it (task 39.3): the step, and the places a computed or derived figure on it is shown to
+ * — `presentation_precision`, by unit (§12.5.6's task-39 row (7)). **Added by the service, not the use case**: the
+ * places are presentation, the same for every step, and the use case answers what the report holds.
+ */
+export interface PresentedDisclosureStep extends DisclosureStep {
+  readonly precision: Readonly<Record<string, number>>;
 }
 
 /**

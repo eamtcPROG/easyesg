@@ -1,6 +1,7 @@
 import { Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
 import { NOTIFICATION_PORT, type NotificationPort } from '@api/contracts/notification.port';
+import { PRESENTATION_PRECISION, type PresentationPrecision } from '@api/contracts/presentation-precision.port';
 import { TAXONOMY_REGISTRY, type TaxonomyRegistry } from '@api/contracts/taxonomy-registry.port';
 import { TENANT_WORK, type TenantWork } from '@api/contracts/tenant-work.port';
 import { CalcReportsRepository } from '@api/infrastructure/persistence/core/calc-reports.repository';
@@ -14,23 +15,28 @@ import {
   CALCULATED_FIGURES,
   type CalculatedFigures,
 } from '@api/modules/core/disclosure/interfaces/calculated-figures.interface';
+import { LocalizationModule } from '@api/modules/platform/localization/localization.module';
 import { NotificationModule } from '@api/modules/platform/notification/notification.module';
 import { TaxonomyModule } from '@api/modules/platform/taxonomy/taxonomy.module';
 import { FactorSetReplacedHandler } from './consumers/factor-set-replaced.handler';
 import { CalculatorController } from './controllers/calculator.controller';
 import { CALC_REPORTS, type CalcReports } from './interfaces/calc-report.interface';
 import { CALC_RUN_STORE, type CalcRunStore } from './interfaces/calc-run-store.interface';
+import { CALC_SITE_NAMES, type CalcSiteNames } from './interfaces/calc-site-names.interface';
 import { CALC_SOURCE_STORE, type CalcSourceStore } from './interfaces/calc-source-store.interface';
 import { FACTOR_SET_USERS, type FactorSetUsers } from './interfaces/factor-set-users.interface';
 import { FACTOR_SETS, type FactorSets } from './interfaces/factor-sets.interface';
 import { REPORT_UPDATE_AUDIENCE, type ReportUpdateAudience } from './interfaces/report-update-audience.interface';
 import { CalculatorService } from './services/calculator.service';
 import { FactorSetCatalog } from './services/factor-set-catalog.service';
+import { WizardSiteNames } from './services/wizard-site-names.service';
 import { ExplainFigure } from './use-cases/explain-figure.use-case';
 import { NotifyFactorSetReplaced } from './use-cases/notify-factor-set-replaced.use-case';
 import { OverrideFigure } from './use-cases/override-figure.use-case';
+import { ReadCalcFigures } from './use-cases/read-calc-figures.use-case';
 import { ReadCalcRun } from './use-cases/read-calc-run.use-case';
 import { ReadCalcSources } from './use-cases/read-calc-sources.use-case';
+import { ReadCalculator } from './use-cases/read-calculator.use-case';
 import { RecordCalcRun } from './use-cases/record-calc-run.use-case';
 import { RemoveCalcSource } from './use-cases/remove-calc-source.use-case';
 import { RestoreFigure } from './use-cases/restore-figure.use-case';
@@ -66,6 +72,29 @@ const httpProviders: Provider[] = [
   { provide: CALC_REPORTS, useClass: CalcReportsRepository },
   { provide: CALC_SOURCE_STORE, useClass: CalcSourceStoreRepository },
   { provide: CALC_RUN_STORE, useClass: CalcRunStoreRepository },
+  // S-09's site names are the wizard's (task 39.1), read through `WizardService`, which `DisclosureModule` exports.
+  { provide: CALC_SITE_NAMES, useClass: WizardSiteNames },
+  {
+    provide: ReadCalculator,
+    inject: [
+      CALC_REPORTS,
+      CALC_SOURCE_STORE,
+      FACTOR_SETS,
+      TAXONOMY_REGISTRY,
+      CALC_SITE_NAMES,
+      CALC_RUN_STORE,
+      PRESENTATION_PRECISION,
+    ],
+    useFactory: (
+      reports: CalcReports,
+      sources: CalcSourceStore,
+      factorSets: FactorSets,
+      taxonomy: TaxonomyRegistry,
+      siteNames: CalcSiteNames,
+      runs: CalcRunStore,
+      precision: PresentationPrecision,
+    ) => new ReadCalculator(reports, sources, factorSets, taxonomy, siteNames, runs, precision),
+  },
   {
     provide: ReadCalcSources,
     inject: [CALC_REPORTS, CALC_SOURCE_STORE],
@@ -87,6 +116,12 @@ const httpProviders: Provider[] = [
     inject: [CALC_REPORTS, CALC_RUN_STORE, FACTOR_SETS, CALCULATED_FIGURES],
     useFactory: (reports: CalcReports, runs: CalcRunStore, factorSets: FactorSets, figures: CalculatedFigures) =>
       new RecordCalcRun(reports, runs, factorSets, figures),
+  },
+  {
+    provide: ReadCalcFigures,
+    inject: [CALC_REPORTS, CALC_RUN_STORE, FACTOR_SETS],
+    useFactory: (reports: CalcReports, runs: CalcRunStore, factorSets: FactorSets) =>
+      new ReadCalcFigures(reports, runs, factorSets),
   },
   {
     provide: ReadCalcRun,
@@ -138,7 +173,8 @@ const workerProviders: Provider[] = [
   // `DisclosureModule` for `CALCULATED_FIGURES` (task 38.4): a run's figures arrive in B3 through that module's own
   // write rule — written as calculated, an earlier run's cleared, the total and intensity recomputed — not through its
   // store, which would be a second copy of the rule.
-  imports: [TaxonomyModule, DisclosureModule, NotificationModule],
+  // `LocalizationModule` for `PRESENTATION_PRECISION` (task 39.2): S-09 is served the places every surface rounds to.
+  imports: [TaxonomyModule, DisclosureModule, NotificationModule, LocalizationModule],
   controllers: mode === APP_MODE.WORKER ? [] : [CalculatorController],
   providers: [
     { provide: FACTOR_SETS, useClass: FactorSetCatalog },

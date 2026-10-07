@@ -23,6 +23,7 @@ const field = (options: DisclosureOption[] | null): DisclosureField => ({
   origin: DISCLOSURE_ORIGIN.REPORTED,
   derived: false,
   explanation: null,
+  overriddenBy: null,
   ordinal: 0,
   currency: null,
   kind: DISCLOSURE_KIND.TEXT,

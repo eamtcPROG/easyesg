@@ -1,0 +1,598 @@
+/*
+ * S-09's surfaces (task 39.1), as `EasyESG Carbon Calculator.dc.html` draws them at 1440 and lets them fold at 834 and
+ * 390: the crumb over the heading, the chips and *add a source*, a table of lines per site that becomes a card per line
+ * below `wide`, and the monthly form inside a line. Colour, space and type from the token cascade only (UX-127).
+ */
+
+/* S-09's way in, above B3's fields, with the fields' own spacing below it. */
+.entry {
+  margin-block-end: var(--space-5);
+}
+
+/* *B3 — Energy and emissions › Carbon calculator*, above the heading. */
+.crumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crumb > li + li::before {
+  content: '›';
+  margin-inline-end: var(--space-2);
+  color: var(--text-muted);
+}
+
+.crumbLink {
+  color: var(--accent);
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+/* The site chips, outlined, the one shown in the accent — S-26's tabs' idiom. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 36px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-default);
+  color: var(--text-body);
+  font: 400 14px/20px var(--font-text);
+  text-decoration: none;
+}
+
+.chip:hover {
+  background: var(--surface-sunken);
+}
+
+.chip[aria-current] {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* A site's card: its name, the column heads, its lines, and *add a source at this site*. */
+.site {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+.siteName {
+  margin: 0;
+  color: var(--text-muted);
+  font: 500 12px/16px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* A line: what it is, what the bill says, over which period; its twelve months beneath when it has them; then its name
+   and what may be done with it, quietly, across the row. Sized to the step's reading measure, where the artboard's
+   table sits beside the summary it docks. */
+.columns,
+.line {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) minmax(4.5rem, 0.6fr) minmax(4.5rem, 0.6fr) minmax(5.5rem, 0.7fr);
+  column-gap: var(--space-3);
+  align-items: start;
+}
+
+.columns {
+  color: var(--text-muted);
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line {
+  row-gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-block-start: 1px solid var(--border-default);
+}
+
+.lineSource,
+.lineInvoice,
+.lineResult,
+.linePeriod {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.lineMonths,
+.lineDetails {
+  grid-column: 1 / -1;
+}
+
+.lineDetails {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.lineDescription {
+  flex: 1 1 14rem;
+  max-inline-size: 22rem;
+}
+
+.lineSource p,
+.linePeriod p,
+.lineResult p,
+.lineInvoice p {
+  margin: 0;
+}
+
+.sourceName {
+  color: var(--text-default);
+  font-weight: 500;
+}
+
+.scope,
+.description {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.lineActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+/* The figure and its unit on one line, as the bill reads — at 390 too (the artboard's narrow frame). */
+.figure {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.figure > :first-child {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.unit {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--field-block-size);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-1);
+  background: var(--field-unit-surface);
+  color: var(--text-body);
+  white-space: nowrap;
+}
+
+.figureText {
+  color: var(--text-default);
+}
+
+.noFigure {
+  display: block;
+  margin-block-end: var(--space-1);
+  color: var(--text-muted);
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* The monthly form: twelve rows in a grid that folds, the total and its gaps beneath. */
+.months {
+  margin: 0;
+}
+
+.monthGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: var(--space-3);
+}
+
+.monthValue {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.monthTotal {
+  margin: var(--space-3) 0 0;
+  color: var(--text-default);
+  font-weight: 500;
+}
+
+.monthNote {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.addAtSite {
+  align-self: flex-start;
+}
+
+/* *Add a source*: a raised card above the lines. */
+.adding {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-2);
+  background: var(--surface-raised);
+}
+
+.addingHeading {
+  margin: 0;
+  font: 500 16px/24px var(--font-text);
+}
+
+.addingForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.addingFigure {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, auto);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.addingUnit {
+  align-self: end;
+  margin: 0;
+  padding-block-end: var(--space-2);
+}
+
+.addingActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+/* Empty — first use: the bills to hand, numbered. */
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-6);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+.empty p {
+  margin: 0;
+}
+
+.emptyTitle {
+  color: var(--text-default);
+}
+
+.bills {
+  margin: 0;
+  padding-inline-start: var(--space-6);
+  color: var(--text-body);
+  list-style: decimal;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-4);
+}
+
+/* A line's working figures (task 39.2): the tonnes set as the figure that goes to B3, the derivation a link under it. */
+.tonnes {
+  color: var(--text-default);
+  font-weight: 500;
+}
+
+.how {
+  color: var(--accent);
+  font-size: 13px;
+}
+
+/* UX-42's four steps, open in place on the row. */
+.derivation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-2);
+  background: var(--surface-sunken);
+}
+
+.derivationHeading {
+  margin: 0;
+  color: var(--text-muted);
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding-inline-start: var(--space-6);
+  list-style: decimal;
+}
+
+.steps > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-4);
+}
+
+.stepTitle {
+  color: var(--text-default);
+  font-weight: 500;
+}
+
+.stepDetail {
+  grid-column: 1;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.stepValue {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: var(--text-default);
+  white-space: nowrap;
+}
+
+.derivationSet {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 13px;
+}
+
+/* *Source 3 of 4* — drawn only on a phone, where an open derivation is one source per screen. */
+.pager {
+  display: none;
+}
+
+/* *What goes back to B3*, docked beside the lines. */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+.summaryHeading {
+  margin: 0;
+  color: var(--text-muted);
+  font: 500 12px/16px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.total dt {
+  color: var(--text-body);
+  font-size: 14px;
+}
+
+.total dd {
+  margin: 0;
+}
+
+.totalFigure {
+  color: var(--text-default);
+  font: 500 24px/32px var(--font-text);
+}
+
+.totalNote,
+.pinnedNote,
+.summaryNote {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.pinned {
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--border-default);
+}
+
+.pinned p {
+  margin: 0;
+}
+
+.pinnedLabel {
+  color: var(--text-muted);
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pinnedName {
+  color: var(--text-default);
+  font-weight: 500;
+}
+
+/* B3's computed figure on S-07 (task 39.3): the figure, where it came from or what it replaced, and UC-34's acts. */
+.calculated {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.calculated p {
+  margin: 0;
+}
+
+.calculatedFigure {
+  color: var(--text-default);
+  font: 500 20px/28px var(--font-text);
+}
+
+.calculatedSource,
+.superseded {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.superseded {
+  text-decoration: line-through;
+  text-decoration-color: var(--border-strong);
+}
+
+.calculatedReason {
+  color: var(--text-body);
+}
+
+/* The substitution, in place: the computed figure above the reporter's and the reason they give. */
+.overrideForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.lineOverride {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: 3px solid var(--border-strong);
+  background: var(--surface-sunken);
+}
+
+.lineOverride p {
+  margin: 0;
+}
+
+.yours {
+  color: var(--text-muted);
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* UX-44's figures, now and would be. */
+.change {
+  inline-size: 100%;
+  margin-block-start: var(--space-3);
+  border-collapse: collapse;
+}
+
+.change th,
+.change td {
+  padding: var(--space-2) var(--space-3) var(--space-2) 0;
+  border-block-end: 1px solid var(--border-default);
+  text-align: start;
+  font-weight: 400;
+}
+
+.change thead th {
+  color: var(--text-muted);
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Below `wide` the table becomes a card per line (the 834 frame): the heads go, each cell stacks. */
+@media (max-width: 63.999rem) {
+  .columns {
+    display: none;
+  }
+
+  .line {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .site,
+  .adding {
+    padding: var(--space-4);
+  }
+}
+
+@media (max-width: 39.999rem) {
+  .addingFigure {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* One source per screen (§4.7): with a derivation open, the open line alone, its site, and the pager. */
+  .pager {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .pagerPosition {
+    margin: 0;
+    color: var(--text-muted);
+    font: 500 11px/16px var(--font-mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .pagerLinks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+
+  .board[data-focused] .chips,
+  .board[data-focused] .line:not([data-open]),
+  .board[data-focused] .site:not(:has([data-open])),
+  .board[data-focused] .columns,
+  .board[data-focused] .addAtSite {
+    display: none;
+  }
+}

@@ -3676,6 +3676,53 @@
         ]
       }
     },
+    "/api/v1/reports/{id}/calculator": {
+      "get": {
+        "description": "What a line may say and where — the sources and units of the factor set the report’s period resolves, the report’s B1 sites as the wizard names them, and the months the monthly form stands for — beside the lines themselves (S-09; FR-33, UX-40, UX-41).",
+        "operationId": "CalculatorController_view",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The calculator, possibly with nothing entered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/CalculatorDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          }
+        },
+        "summary": "The carbon calculator, as it opens",
+        "tags": [
+          "calculator"
+        ]
+      }
+    },
     "/api/v1/reports/{id}/calculator/sources": {
       "get": {
         "description": "Every line by source and site, in invoice units (FR-33), oldest first. They stay after a calculation.",
@@ -3942,6 +3989,53 @@
           }
         },
         "summary": "One recorded run, computed again against its own factor set",
+        "tags": [
+          "calculator"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/calculator/figures": {
+      "get": {
+        "description": "The latest run — what it stored for Scope 1 and location-based Scope 2, the factor set it pinned and when — so B3 can show a computed figure an override superseded beside the substitute (UC-34, UX-43).",
+        "operationId": "CalculatorController_figures",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The latest run, or none before the first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/CalcFiguresDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          }
+        },
+        "summary": "The figures B3 took from the calculator",
         "tags": [
           "calculator"
         ]
@@ -9669,6 +9763,25 @@
           "applicabilityCause"
         ]
       },
+      "OverridingPersonDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account that made the override."
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Their display name as it reads now — given and family name, or the address where they gave none — or null where the account no longer exists."
+          }
+        },
+        "required": [
+          "accountId",
+          "name"
+        ]
+      },
       "DisclosureOptionDto": {
         "type": "object",
         "properties": {
@@ -9759,6 +9872,16 @@
             "type": "string",
             "nullable": true,
             "description": "The note on a calculated figure, or the reason an overridden one replaced it (UC-34, UX-43); null on what a reporter typed."
+          },
+          "overriddenBy": {
+            "nullable": true,
+            "description": "Who replaced the computed figure, on an overridden field (FR-36); null on every other.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OverridingPersonDto"
+              }
+            ]
           },
           "derived": {
             "type": "boolean",
@@ -9925,6 +10048,7 @@
           "dimensionLabel",
           "origin",
           "explanation",
+          "overriddenBy",
           "derived",
           "ordinal",
           "kind",
@@ -10052,6 +10176,17 @@
             "items": {
               "$ref": "#/components/schemas/DerivationInputDto"
             }
+          },
+          "precision": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "example": {
+              "tCO2e": 2,
+              "MWh": 2
+            },
+            "description": "Decimal places by unit to which a computed or derived figure on this step is shown — once, half-up, the rule every surface rounds by (task 39.3). A figure the reporter typed is shown as typed; a unit absent is unrounded."
           }
         },
         "required": [
@@ -10059,7 +10194,8 @@
           "taxonomyVersion",
           "fields",
           "axes",
-          "derivationInputs"
+          "derivationInputs",
+          "precision"
         ]
       },
       "DisclosureValueResponseDto": {
@@ -10489,6 +10625,114 @@
           "token"
         ]
       },
+      "CalcFactorSourceDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "natural_gas",
+            "description": "The source’s key — a catalogue key its name resolves by."
+          },
+          "ghgScope": {
+            "type": "string",
+            "enum": [
+              "scope_1",
+              "scope_2_location_based"
+            ],
+            "description": "Which B3 figure the source’s emissions count toward."
+          },
+          "units": {
+            "example": [
+              "m3"
+            ],
+            "description": "The units a line of it may be entered in, as the factor set lists them — catalogue keys too.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "megawattHoursPerUnit": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "example": {
+              "m3": "0.0095773"
+            },
+            "description": "The MWh one of each unit amounts to, as a decimal string, exactly as the set publishes it — the conversion step of UX-42’s derivation (task 39.2)."
+          },
+          "emissionFactor": {
+            "type": "string",
+            "example": "0.202544",
+            "description": "Tonnes of CO₂e per MWh of the source, as a decimal string, exactly as published — the factor applied."
+          },
+          "reference": {
+            "type": "string",
+            "description": "Where the factor comes from — the publication, table and edition. Data, not wording."
+          }
+        },
+        "required": [
+          "key",
+          "ghgScope",
+          "units",
+          "megawattHoursPerUnit",
+          "emissionFactor",
+          "reference"
+        ]
+      },
+      "CalcFactorSetDto": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "example": "md",
+            "description": "The country whose set it is."
+          },
+          "revision": {
+            "type": "number",
+            "example": 1,
+            "description": "The immutable revision — what the run is pinned to."
+          },
+          "label": {
+            "type": "string",
+            "example": "2026.1",
+            "description": "The name its publisher gave it — what a reader is shown."
+          },
+          "sources": {
+            "description": "Its sources, in the order they were published.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalcFactorSourceDto"
+            }
+          }
+        },
+        "required": [
+          "country",
+          "revision",
+          "label",
+          "sources"
+        ]
+      },
+      "CalcSiteDto": {
+        "type": "object",
+        "properties": {
+          "ordinal": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Its row on the site axis — what a line’s `siteOrdinal` names."
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "example": "Str. Alba Iulia 21, Chișinău",
+            "description": "What B1 calls it, as the wizard names the row; null where nothing in B1 names it yet."
+          }
+        },
+        "required": [
+          "ordinal",
+          "name"
+        ]
+      },
       "CalcSourceDto": {
         "type": "object",
         "properties": {
@@ -10522,6 +10766,15 @@
             "type": "string",
             "nullable": true
           },
+          "monthlyQuantities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true,
+            "description": "The twelve month figures `quantity` sums, by position from the period’s start month, null for a month left empty — or null for a line entered as one figure (task 39.1)."
+          },
           "overrideTonnes": {
             "type": "string",
             "nullable": true,
@@ -10531,6 +10784,16 @@
             "type": "string",
             "nullable": true,
             "description": "Why they replace them."
+          },
+          "overriddenBy": {
+            "nullable": true,
+            "description": "Who replaced the line’s tonnes (FR-36); null where the computed figure stands.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OverridingPersonDto"
+              }
+            ]
           },
           "updatedAt": {
             "type": "number",
@@ -10545,9 +10808,275 @@
           "quantity",
           "unitCode",
           "notAvailableReason",
+          "monthlyQuantities",
           "overrideTonnes",
           "overrideExplanation",
+          "overriddenBy",
           "updatedAt"
+        ]
+      },
+      "ScopeLineDto": {
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The line, as the run retained it."
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "computed",
+              "not_available",
+              "overridden"
+            ],
+            "description": "Measured, explained with no figure, or measured and replaced."
+          },
+          "megawattHours": {
+            "type": "string",
+            "nullable": true,
+            "description": "The energy it stands for, in MWh; null where explained."
+          },
+          "tonnesCo2e": {
+            "type": "string",
+            "nullable": true,
+            "description": "Its emissions in tCO₂e as the scope counts them, unrounded — the reporter’s where overridden."
+          },
+          "computedTonnesCo2e": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where overridden, what the factors give — superseded and kept beside the substitute (UX-43)."
+          },
+          "explanation": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where overridden, why."
+          }
+        },
+        "required": [
+          "sourceId",
+          "outcome",
+          "megawattHours",
+          "tonnesCo2e",
+          "computedTonnesCo2e",
+          "explanation"
+        ]
+      },
+      "ScopeResultDto": {
+        "type": "object",
+        "properties": {
+          "ghgScope": {
+            "type": "string",
+            "enum": [
+              "scope_1",
+              "scope_2_location_based"
+            ]
+          },
+          "elementKey": {
+            "type": "string",
+            "example": "GrossScope1GreenhouseGasEmissions",
+            "description": "The B3 element it answers."
+          },
+          "tonnesCo2e": {
+            "type": "string",
+            "nullable": true,
+            "description": "Tonnes of CO₂e, unrounded and exact; null where no line of the scope was measured — never zero."
+          },
+          "unmeasured": {
+            "description": "The lines of the scope with no figure — what the total leaves out.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScopeLineDto"
+            }
+          }
+        },
+        "required": [
+          "ghgScope",
+          "elementKey",
+          "tonnesCo2e",
+          "unmeasured",
+          "lines"
+        ]
+      },
+      "CalcWorkingDto": {
+        "type": "object",
+        "properties": {
+          "scopes": {
+            "description": "Scope 1, then location-based Scope 2, as a run recorded now would compute them, line by line.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScopeResultDto"
+            }
+          },
+          "uncovered": {
+            "description": "Lines the set in force no longer covers — a correction dropped their source or unit — which a run refuses.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "scopes",
+          "uncovered"
+        ]
+      },
+      "CalcRunPinDto": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "example": "md"
+          },
+          "revision": {
+            "type": "number",
+            "example": 1
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026.1"
+          }
+        },
+        "required": [
+          "country",
+          "revision",
+          "label"
+        ]
+      },
+      "CalcStoredResultDto": {
+        "type": "object",
+        "properties": {
+          "elementKey": {
+            "type": "string",
+            "example": "GrossScope1GreenhouseGasEmissions"
+          },
+          "tonnesCo2e": {
+            "type": "string",
+            "nullable": true,
+            "description": "Tonnes of CO₂e, unrounded; null where nothing was measured."
+          }
+        },
+        "required": [
+          "elementKey",
+          "tonnesCo2e"
+        ]
+      },
+      "CalcLatestRunDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "factorSet": {
+            "$ref": "#/components/schemas/CalcRunPinDto"
+          },
+          "recordedAt": {
+            "type": "number",
+            "description": "Unix epoch milliseconds, UTC."
+          },
+          "results": {
+            "description": "What it wrote into B3.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalcStoredResultDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "factorSet",
+          "recordedAt",
+          "results"
+        ]
+      },
+      "CalculatorDto": {
+        "type": "object",
+        "properties": {
+          "factorSet": {
+            "nullable": true,
+            "description": "The set the report’s period resolves, or null where none serves it — and then no line can be written.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalcFactorSetDto"
+              }
+            ]
+          },
+          "sites": {
+            "description": "The report’s B1 site rows. Empty until B1 records a site.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalcSiteDto"
+            }
+          },
+          "months": {
+            "nullable": true,
+            "example": [
+              "2026-01",
+              "2026-02",
+              "2026-03"
+            ],
+            "description": "The twelve calendar months, `YYYY-MM`, that the monthly form’s rows stand for, from the period’s start — or null where the period does not span twelve calendar months, and a line takes one figure for the period.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sources": {
+            "description": "The report’s invoice lines, oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalcSourceDto"
+            }
+          },
+          "working": {
+            "nullable": true,
+            "description": "What the lines come to now against the set in force (task 39.2), or null where no set serves the period.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalcWorkingDto"
+              }
+            ]
+          },
+          "latestRun": {
+            "nullable": true,
+            "description": "The latest recorded run, or null before the first.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalcLatestRunDto"
+              }
+            ]
+          },
+          "precision": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "example": {
+              "tCO2e": 2,
+              "MWh": 2
+            },
+            "description": "Decimal places by unit, as every surface rounds a computed figure — once, half-up (182/3). A unit absent is shown unrounded."
+          }
+        },
+        "required": [
+          "factorSet",
+          "sites",
+          "months",
+          "sources",
+          "working",
+          "latestRun",
+          "precision"
         ]
       },
       "WriteCalcSourceRequestDto": {
@@ -10574,7 +11103,32 @@
             "type": "string",
             "nullable": true,
             "example": "500",
-            "description": "The figure on the invoice, as a decimal string — `500`, `1700.5` — in `unitCode`. Omit it, and the unit, where `notAvailableReason` says why there is none."
+            "description": "The figure on the invoice, as a decimal string — `500`, `1700.5` — in `unitCode`. Omit it, and the unit, where `notAvailableReason` says why there is none, and omit it where `monthlyQuantities` carries the figure."
+          },
+          "monthlyQuantities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true,
+            "minItems": 12,
+            "maxItems": 12,
+            "example": [
+              "40",
+              "45",
+              null,
+              "38",
+              "30",
+              "22",
+              "18",
+              "17",
+              "21",
+              "33",
+              "41",
+              "48"
+            ],
+            "description": "The monthly form (task 39.1): twelve figures in `unitCode`, by position from the period’s start month, each a decimal string or null for a month left empty, at least one entered. The line’s quantity is their sum, computed by the server. Only where the period spans twelve calendar months (the calculator read’s `months`); sent without `quantity` or `notAvailableReason`. Omit it, or send null, for one figure for the period."
           },
           "unitCode": {
             "type": "string",
@@ -10672,6 +11226,16 @@
           "overrideExplanation": {
             "type": "string",
             "nullable": true
+          },
+          "overriddenBy": {
+            "nullable": true,
+            "description": "Who had replaced the line’s tonnes when the run read it (FR-36); null where nothing was replaced.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OverridingPersonDto"
+              }
+            ]
           }
         },
         "required": [
@@ -10683,96 +11247,8 @@
           "unitCode",
           "notAvailableReason",
           "overrideTonnes",
-          "overrideExplanation"
-        ]
-      },
-      "ScopeLineDto": {
-        "type": "object",
-        "properties": {
-          "sourceId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "The line, as the run retained it."
-          },
-          "outcome": {
-            "type": "string",
-            "enum": [
-              "computed",
-              "not_available",
-              "overridden"
-            ],
-            "description": "Measured, explained with no figure, or measured and replaced."
-          },
-          "megawattHours": {
-            "type": "string",
-            "nullable": true,
-            "description": "The energy it stands for, in MWh; null where explained."
-          },
-          "tonnesCo2e": {
-            "type": "string",
-            "nullable": true,
-            "description": "Its emissions in tCO₂e as the scope counts them, unrounded — the reporter’s where overridden."
-          },
-          "computedTonnesCo2e": {
-            "type": "string",
-            "nullable": true,
-            "description": "Where overridden, what the factors give — superseded and kept beside the substitute (UX-43)."
-          },
-          "explanation": {
-            "type": "string",
-            "nullable": true,
-            "description": "Where overridden, why."
-          }
-        },
-        "required": [
-          "sourceId",
-          "outcome",
-          "megawattHours",
-          "tonnesCo2e",
-          "computedTonnesCo2e",
-          "explanation"
-        ]
-      },
-      "ScopeResultDto": {
-        "type": "object",
-        "properties": {
-          "ghgScope": {
-            "type": "string",
-            "enum": [
-              "scope_1",
-              "scope_2_location_based"
-            ]
-          },
-          "elementKey": {
-            "type": "string",
-            "example": "GrossScope1GreenhouseGasEmissions",
-            "description": "The B3 element it answers."
-          },
-          "tonnesCo2e": {
-            "type": "string",
-            "nullable": true,
-            "description": "Tonnes of CO₂e, unrounded and exact; null where no line of the scope was measured — never zero."
-          },
-          "unmeasured": {
-            "description": "The lines of the scope with no figure — what the total leaves out.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "lines": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ScopeLineDto"
-            }
-          }
-        },
-        "required": [
-          "ghgScope",
-          "elementKey",
-          "tonnesCo2e",
-          "unmeasured",
-          "lines"
+          "overrideExplanation",
+          "overriddenBy"
         ]
       },
       "CalcRunDto": {
@@ -10852,6 +11328,24 @@
           "inputs",
           "scopes",
           "reproduces"
+        ]
+      },
+      "CalcFiguresDto": {
+        "type": "object",
+        "properties": {
+          "latestRun": {
+            "nullable": true,
+            "description": "The latest run: what it stored for each scope — the computed figure an override supersedes — or null.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalcLatestRunDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "latestRun"
         ]
       },
       "OverrideFigureRequestDto": {
