@@ -28364,3 +28364,14 @@ locally, and each fix proven on a copy of `dev` before it was pushed here, at th
 - **`apps/api`'s `test:cov` is gone.** The search above found it in the same shape — `jest --coverage` with no
   package build and no `NODE_OPTIONS`, so on a fresh checkout it failed before measuring anything — and nothing ran
   it. With `pnpm test:coverage` in place it was a second, broken way to measure the api, which is task 205's subject.
+- **The second run reached `pnpm e2e:web`, which no CI run had reached since 1 Oct 2026** — every run since stopped
+  at the seed — and one of 318 failed: A-08's record, scanned by axe as it opened, read its muted lede at 4.25:1.
+  Neither colour axe reported is a token: the text's token is `#65717C` and the page ground `#F4F6F8`, so both were
+  blends — the dialogue was still fading in. At rest the lede sits on `--surface-raised` and passes. The rule was
+  already written, in `e2e/web/support/animations.ts` (28 Sep 2026): *every finite animation on the page settles
+  before a check that measures what is painted*. `admin-accounts.spec.ts` now settles before each scan, as
+  `organization-register.spec.ts` does. **Not reproduced locally**: this container's Chromium is revision 1194 and
+  Playwright 1.62.1 drives 1234, and the failure is a race; CI is the proof. **Searched for the shape, not fixed
+  here:** seven more specs scan with axe and never settle — `session`, `credentials`, `identity-providers`,
+  `notification-categories` and `support-access` in the console, `unsubscribe` and `profile` in the tenant app —
+  each a race of the same kind wherever its scan lands on something still animating.

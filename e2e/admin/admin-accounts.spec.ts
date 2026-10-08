@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleAnimations } from '../web/support/animations';
 import { cleanupInvitationEmails, invitationTokenFor } from './support/invitations';
 import { OPERATOR_ROLE, cleanupOperators, provisionOperator } from './support/provision';
 import { currentTotpCode } from './support/totp';
@@ -35,7 +36,11 @@ async function signIn(page: Page, input: { readonly email: string; readonly secr
   await page.getByRole('button', { name: 'Continuați în consolă' }).click();
 }
 
+// A-08's record is a dialogue that fades in, and axe measures colour as painted — so every scan here waits for
+// the page's animations to finish. Without it the record's muted lede read 4.25:1 through the fade (PR #1's CI,
+// 8 Oct 2026).
 const expectNoAxeViolations = async (page: Page) => {
+  await settleAnimations(page);
   const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
   expect(results.violations).toEqual([]);
 };
