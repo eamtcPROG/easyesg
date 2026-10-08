@@ -118,6 +118,9 @@ export const ProblemType = {
    *  §12.5.6). Its own slug because it is the one refusal here whose way out is to wait, not to act,
    *  and it disappears when task 54.2 replaces the artefact. */
   SeatAllowanceUnavailable: 'seat-allowance-unavailable',
+  /** Task 41.1: no validation rule set can be read, so a run or a lock — which pins one — is refused rather than
+   *  evaluated against nothing, which would read ready to file. A configuration fault the platform corrects. */
+  ValidationRulesUnavailable: 'validation-rules-unavailable',
   /** Task 67.9: the operator already has a support-access request with this organization that is waiting
    *  or running. Its own slug because A-07 names the way out — the request that exists — which the generic
    *  `conflict` cannot. */

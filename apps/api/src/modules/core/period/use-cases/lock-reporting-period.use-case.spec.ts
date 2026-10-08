@@ -11,6 +11,11 @@ import {
   PeriodLockedError,
   PeriodNotFoundError,
 } from '../errors/period.errors';
+import { ValidationRulesUnavailableError } from '@api/modules/core/validation/errors/validation.errors';
+import type {
+  RuleSetInForce,
+  ValidationRuleSets,
+} from '@api/modules/core/validation/interfaces/validation-rule-sets.interface';
 
 /**
  * UC-57 and UC-58 — lock and reopen (FR-22).
@@ -26,15 +31,30 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
   const LATER = new Date('2026-08-30T10:00:00.000Z');
   const ACTOR = '00000000-0000-0000-0000-0000000000f1';
 
-  const build = (rows = [aPeriod()]) => {
+  /** The rule set a lock pins (task 41.1): revision 7 is in force, and the days it was asked about are kept. */
+  const IN_FORCE: RuleSetInForce = { ruleSet: { rules: [] }, revision: 7 };
+
+  const build = (rows = [aPeriod()], inForce: RuleSetInForce | null = IN_FORCE) => {
     const store = new FakeReportingPeriodStore(rows);
+    const askedOn: string[] = [];
+    const ruleSets: ValidationRuleSets = {
+      inForce: ({ on }) => {
+        askedOn.push(on);
+        return inForce;
+      },
+      pinned: () => Promise.resolve(null),
+    };
     let now = NOW;
     return {
       store,
+      askedOn,
       advance: () => {
         now = LATER;
       },
-      useCase: new LockReportingPeriod(store, () => now),
+      at: (instant: Date) => {
+        now = instant;
+      },
+      useCase: new LockReportingPeriod(store, () => now, ruleSets),
       edit: new OpenReportingPeriod(
         store,
         new FakeReportingEntityStore(),
@@ -60,6 +80,24 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
       await expect(useCase.lock({ periodId: aPeriod().id, actorId: ACTOR })).rejects.toThrow(
         PeriodLockStateError,
       );
+    });
+
+    it('pins the validation rule set in force on the lock day, in the period’s own zone (FR-73 item 9)', async () => {
+      const { useCase, askedOn, at } = build();
+      // 22:30 UTC on 30 August is already the 31st in Chișinău, the period's zone.
+      at(new Date('2026-08-30T22:30:00.000Z'));
+      const locked = await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR });
+
+      expect(askedOn).toEqual(['2026-08-31']);
+      expect(locked.lockedRuleSetRevision).toBe(7);
+    });
+
+    it('refuses the lock, and leaves the period open, where no rule set can be read', async () => {
+      const { useCase, store } = build([aPeriod()], null);
+      await expect(useCase.lock({ periodId: aPeriod().id, actorId: ACTOR })).rejects.toThrow(
+        ValidationRulesUnavailableError,
+      );
+      expect((await store.findPeriod({ periodId: aPeriod().id }))?.lockedAt).toBeNull();
     });
 
     it('refuses a period that does not exist in the bound organization', async () => {
@@ -114,6 +152,8 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
       });
       expect(reopened.lockedAt).toBeNull();
       expect(reopened.lockedBy).toBeNull();
+      // Open again, so it reads as at today rather than the set its lock pinned (FR-73 item 9).
+      expect(reopened.lockedRuleSetRevision).toBeNull();
 
       const [record] = await useCase.reopenings({ periodId: aPeriod().id });
       expect(record).toMatchObject({

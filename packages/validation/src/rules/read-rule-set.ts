@@ -136,7 +136,14 @@ function readElements(raw: unknown): readonly string[] | null {
 }
 
 function readCondition(raw: unknown): Condition | null {
-  if (!isRecord(raw) || !onlyHas(raw, ['kind', 'element']) || !isName(raw.element)) return null;
+  if (!isRecord(raw) || !isName(raw.element)) return null;
+  // A member belongs to `has_member` alone: on the other two it would be a qualifier nothing reads.
+  if (raw.kind === CONDITION_KIND.HAS_MEMBER) {
+    return onlyHas(raw, ['kind', 'element', 'member']) && isName(raw.member)
+      ? { kind: CONDITION_KIND.HAS_MEMBER, element: raw.element, member: raw.member }
+      : null;
+  }
+  if (!onlyHas(raw, ['kind', 'element'])) return null;
   if (raw.kind === CONDITION_KIND.ANSWERED) return { kind: CONDITION_KIND.ANSWERED, element: raw.element };
   if (raw.kind === CONDITION_KIND.IS_TRUE) return { kind: CONDITION_KIND.IS_TRUE, element: raw.element };
   return null;

@@ -1,4 +1,7 @@
 import type { Clock } from '@api/contracts/clock.port';
+import { calendarDateIn } from '@api/contracts/types/time';
+import { ValidationRulesUnavailableError } from '@api/modules/core/validation/errors/validation.errors';
+import type { ValidationRuleSets } from '@api/modules/core/validation/interfaces/validation-rule-sets.interface';
 import type { PeriodReopening, ReportingPeriod } from '../models/reporting-period.model';
 import type { ReportingPeriodStore } from '../interfaces/reporting-period-store.interface';
 import {
@@ -33,11 +36,17 @@ export interface ReopenPeriodCommand {
  * **The actor is a parameter, resolved by the service from the request context.** It is never a
  * field a caller could supply: FR-22 records *who* reopened, and an attribution the request can
  * name is not an attribution.
+ *
+ * **A lock pins the validation rule set in force on its day** (task 41.1; FR-73 item 9, NFR-87; §12.5.6's task-41 row
+ * (5)) — the day in the period's own zone, as *overdue* is read — so a later rule cannot move the locked report's
+ * findings. No set that can be read refuses the lock, as it refuses a run: a lock with no pin would leave those
+ * findings free to move. A reopening clears the pin in the store, with the lock.
  */
 export class LockReportingPeriod {
   constructor(
     private readonly store: ReportingPeriodStore,
     private readonly now: Clock,
+    private readonly ruleSets: ValidationRuleSets,
   ) {}
 
   async lock(command: LockPeriodCommand): Promise<ReportingPeriod> {
@@ -45,7 +54,13 @@ export class LockReportingPeriod {
     if (!current) throw new PeriodNotFoundError();
     if (current.lockedAt !== null) throw new PeriodLockStateError('core.period.already_locked');
 
-    const locked = await this.store.lock({ ...command, at: this.now() });
+    const at = this.now();
+    const inForce = this.ruleSets.inForce({
+      on: calendarDateIn({ instant: at, timezone: current.periodStart.timezone }),
+    });
+    if (inForce === null) throw new ValidationRulesUnavailableError();
+
+    const locked = await this.store.lock({ ...command, at, ruleSetRevision: inForce.revision });
     if (!locked) throw new PeriodNotFoundError();
     return locked;
   }

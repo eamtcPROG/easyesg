@@ -40,6 +40,7 @@ export const aPeriod = (overrides: Partial<ReportingPeriod> = {}): ReportingPeri
   entitySnapshotId: '00000000-0000-0000-0000-0000000000a1',
   lockedAt: null,
   lockedBy: null,
+  lockedRuleSetRevision: null,
   createdAt: new Date('2026-08-01T00:00:00.000Z'),
   updatedAt: new Date('2026-08-01T00:00:00.000Z'),
   entityName: 'Alfa SRL',
@@ -112,10 +113,21 @@ export class FakeReportingPeriodStore implements ReportingPeriodStore {
 
   private reopenings: PeriodReopening[] = [];
 
-  lock(input: { periodId: string; actorId: string | null; at: Date }): Promise<ReportingPeriod | null> {
+  lock(input: {
+    periodId: string;
+    actorId: string | null;
+    at: Date;
+    ruleSetRevision: number;
+  }): Promise<ReportingPeriod | null> {
     const found = this.rows.find((row) => row.id === input.periodId);
     if (!found) return Promise.resolve(null);
-    const locked = { ...found, lockedAt: input.at, lockedBy: input.actorId, updatedAt: input.at };
+    const locked = {
+      ...found,
+      lockedAt: input.at,
+      lockedBy: input.actorId,
+      lockedRuleSetRevision: input.ruleSetRevision,
+      updatedAt: input.at,
+    };
     this.rows = this.rows.map((row) => (row.id === found.id ? locked : row));
     return Promise.resolve(locked);
   }
@@ -144,7 +156,7 @@ export class FakeReportingPeriodStore implements ReportingPeriodStore {
       },
       ...this.reopenings,
     ];
-    const reopened = { ...found, lockedAt: null, lockedBy: null, updatedAt: input.at };
+    const reopened = { ...found, lockedAt: null, lockedBy: null, lockedRuleSetRevision: null, updatedAt: input.at };
     this.rows = this.rows.map((row) => (row.id === found.id ? reopened : row));
     return Promise.resolve(reopened);
   }

@@ -56,6 +56,13 @@ export const DEFAULT_DISCLOSURE_ORIGIN: DisclosureOrigin = DISCLOSURE_ORIGIN.REP
  * "present" or "absent" would force a reporter to lie by omission.
  *
  * Mirrors `report_disclosure_value_state_known` in the migration, which is the database's own copy.
+ *
+ * **Since task 41.2 a stored row holds only the three answers — `ok`, `nil_return`, `not_available`** (§12.5.6's
+ * task-182 validation row, 182/17). The four verdicts are findings (`core.validation_finding`), never a row's state,
+ * and stay here and in the `CHECK` as frozen history, as `not_material` does; a write naming one is refused. A cleared
+ * field is a row holding nothing, in state `ok`. `MISSING` survives in this vocabulary as the step read's **display**
+ * state for a field nobody has answered — what the screen draws, not what the store holds — until task 42.1 replaces the
+ * inline states with verdicts.
  */
 export const DISCLOSURE_STATE = {
   /** Answered, and the answer passes validation. */
@@ -79,27 +86,24 @@ export const DISCLOSURE_STATE = {
 export type DisclosureState = (typeof DISCLOSURE_STATE)[keyof typeof DISCLOSURE_STATE];
 
 /**
- * The state a field holds before anyone answers it.
- *
- * Beside the vocabulary rather than at the call site, per CLAUDE.md: a default *is* a statement
- * about the set, and a copy in the repository and another in the wizard is how the two come to
- * disagree about what an untouched field means.
+ * **The three states a stored row may hold** (task 41.2; 182/17) — answers, never verdicts. The write's own vocabulary:
+ * `DisclosureValueWriteDto` admits these and nothing else, so a write naming a verdict member is a 400.
  */
-export const DEFAULT_DISCLOSURE_STATE = DISCLOSURE_STATE.MISSING;
+export const ANSWER_STATES: readonly DisclosureState[] = [
+  DISCLOSURE_STATE.OK,
+  DISCLOSURE_STATE.NIL_RETURN,
+  DISCLOSURE_STATE.NOT_AVAILABLE,
+];
 
 /**
- * Has this field been answered? **`missing` is the only state that is not an answer.**
+ * The state of a row that holds nothing — a field cleared, or written empty by the platform (task 41.2; 182/17).
  *
- * FR-30's nil return is an answered zero, FR-31's not-material is a considered exclusion and
- * FR-32's not-available is a deliberate non-answer carrying a reason — counting any of them as
- * unanswered would tell a reporter they still have work on a field they have already decided.
- *
- * Beside the vocabulary rather than at each caller (CLAUDE.md): the module list counts with it and
- * task 91.3's site rule asks the same question of B1's rows, and two copies of *what an answer is*
- * is how a progress count and an applicability verdict come to disagree.
+ * **`ok`, not `missing`**, because a row's state is an answer's kind and an empty row is no answer at all: that it is
+ * unanswered is read from its content (`isAnswered`), and whether that matters is a rule's — a required field with no
+ * value is a `MISSING VALUE` finding, an optional one is nothing. **The row is kept rather than deleted**, task 91.2's
+ * *a row in any state suppresses the default*: deleting it would bring a template or record default back.
  */
-export const isAnsweredState = (state: DisclosureState | undefined): boolean =>
-  state !== undefined && state !== DISCLOSURE_STATE.MISSING;
+export const EMPTY_DISCLOSURE_STATE = DISCLOSURE_STATE.OK;
 
 /**
  * FR-30, as one function: **an answered numeric zero is a nil return, and anything else is `ok`.**

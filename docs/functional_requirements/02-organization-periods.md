@@ -435,7 +435,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 ### FR-22 — Lock and reopen a period
 
-**Status.** Built — delivered 31.2, 31.3, 31.4, 32.1.2, 34.1
+**Status.** Built — delivered 31.2, 31.3, 31.4, 32.1.2, 34.1, 41.1 (the rule set a lock pins)
 
 **Obligation.** The system shall allow a reporting period to be locked, after which it refuses every write, **the Organization Administrator's included**, and to be reopened with acting user, timestamp and stated reason recorded.
 
@@ -445,7 +445,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 | **Traces** | UC-57, UC-58 · UX-13, UX-71, UX-72 · P-4 · BR-PER-1 · FR-18, FR-26, FR-53, FR-54 · entity *Reporting period* |
 | **Surfaces** | S-14 (lock and reopen as designed states; a reopening displayed with its reason) · `POST /periods/{id}/lock` · `POST /periods/{id}/reopening` · `GET /periods/{id}/reopenings` |
 
-**Preconditions.** To lock: the period is open. UC-57 states "the report is final and distributed"; **the system does not check it** at MVP. It is the administrator's judgement, and a lock is reversible by a recorded reopening (UC-58). It is revisited when task 41.3 lands (§12.5.6 task-182 identity and organization row, 182/11). To reopen: the period is locked and a genuine correction is required (UC-58).
+**Preconditions.** To lock: the period is open. UC-57 states "the report is final and distributed"; **the system does not check it** at MVP. It is the administrator's judgement, and a lock is reversible by a recorded reopening (UC-58). Revisited at task 41.3 and kept: readiness gates nothing, as 182/27 has it (§12.5.6 task-182 identity and organization row, 182/11; task-41 row (6)). To reopen: the period is locked and a genuine correction is required (UC-58).
 
 **Inputs.** For a reopening, a reason of 1 … 500 characters, trimmed; whitespace is not a reason.
 
@@ -457,6 +457,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 5. **A lock records who and when** (`lockedBy`, `lockedAt`). **A reopening is its own append-only record**, `core.period_reopening`, one row per reopening: when the lock was placed, when and by whom it was reopened, and the reason. It is tenant-scoped and immutable by grant, and it is exempt from the lock trigger because it is the record of the reopening (§12.5.6 task-31.2 row). `GET /periods/{id}/reopenings` answers them newest first, and the period displays that it was reopened, with the reason, thereafter (UX-72).
 6. **The lock is the snapshot.** A locked report reads identically before and after the lock, and a reopen is visible in the record (§12.5.6 task-31.4 row). A locked period's entity snapshot never moves (FR-18).
 7. Locking and reopening are irreversible-class under UX-71: S-14 distinguishes them and states the compensating mechanism. The read-only screen names the lock as its cause (UX-13).
+8. **A lock pins the validation rule set in force on its day**, in the period's zone, and a reopening clears it, so a later rule cannot move a locked report's findings (FR-73 item 9; §12.5.6 task-41 row (5); task 41.1). The pin is the lock's own column, which the period's trigger leaves out of the row it compares, as it does `locked_at` and `locked_by`.
 
 **Refusals.**
 - Not an Organization Administrator → 403 `insufficient-role`
@@ -464,8 +465,9 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - Locking a locked period, or reopening one that is not locked → 409 `conflict` (`core.period.already_locked`, `core.period.not_locked`)
 - A reopening with no reason or a blank one → 400 `validation-failed`
 - A write to the period shell → 409 `period-locked`; a write to its report → 409 `report-not-editable` (FR-26)
+- Locking when no validation rule set can be read → 503 `validation-rules-unavailable`, and the period stays open: a lock with no pin would leave its report's findings free to move (task 41.1)
 
-**Effects.** `locked_at` and `locked_by` set or cleared on the period. A `core.period_reopening` row on each reopening. Every report in the period changes status.
+**Effects.** `locked_at`, `locked_by` and the pinned rule-set revision set or cleared on the period. A `core.period_reopening` row on each reopening. Every report in the period changes status.
 
 **Boundaries.** What the lock freezes in a report is FR-26's. The change trail is FR-54's. The person who locked is on the period; a reopened period's later edits are ordinary edits again.
 
@@ -490,10 +492,12 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - 31 Aug 2026 · project owner · the lock's reach is a gate, not a review property; no report snapshot table · §12.5.6 task-31.4 rows
 - 1 Sep 2026 · build · the lock reaches a `DELETE` of a disclosure value; the period trigger is `BEFORE UPDATE` alone, corrected from the record's claim · §12.5.6 task-34.1 and task-31.2 rows
 - 5 Oct 2026 · project owner · locking checks no final-report precondition at MVP; revisit with task 41.3 · §12.5.6 task-182 identity and organization row (182/11); UC-57 amended
+- 8 Oct 2026 · project owner · a lock pins the validation rule set in force on its day, and a reopening clears it · §12.5.6 task-41 row (5)
+- 8 Oct 2026 · project owner · 182/11's revisit: locking stays ungated by readiness · §12.5.6 task-41 row (6)
 
 ### FR-23 — The organization-wide overview
 
-**Status.** Partial — delivered 30.5, 32.4, 40 (the interpreter the status will read) · remaining 41.3 (completion and validation status), 187 (an archived entity's periods are not attention items)
+**Status.** Partial — delivered 30.5, 32.4, 40 (the interpreter the status will read) · remaining 42.2 (completion and validation status, whose producer 41.3 built), 187 (an archived entity's periods are not attention items)
 
 **Obligation.** The system shall present an organization-wide overview of every period of every entity, with completion and validation status, in a single view.
 
@@ -505,7 +509,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 **Behaviour.**
 1. **A row is a period, not a report.** Since a report is an explicit creation, a period whose deadline nobody has started is the row the readiness question most needs, and it is invisible to `GET /reports` by construction. `GET /periods` answers the organization's periods with the entity's name and the report opened against each, nested as `{ id, status, updatedAt }` or null (§12.5.6 task-32.4 row).
-2. **Standing** is one value: not started (no report), in progress, locked, ready to file, filed. The last two have no producer yet (task 41.3, task 47).
+2. **Standing** is one value: not started (no report), in progress, locked, ready to file, filed. *Ready to file* is read since task 41.3, from the report's latest validation run (FR-41 item 6); *filed* has no producer yet (task 47.5).
 3. **What needs attention** is every period whose filing is not settled, soonest due date first, a period with no due date last by its period end. A locked period is never attention, whatever its standing, because there is nothing to act on and reopening is a deliberate act (S-05, 7 Sep 2026).
 4. **A due date that has passed is marked, and nothing else about lateness is.** The comparison is read in the period's own timezone, because whether a deadline has passed is a legal question (NFR-34). No "due soon" threshold is invented: lead times are FR-173's notification configuration (§12.5.6 task-32.4 rows).
 5. **Where did I leave off** is the one resumable report most recently touched, opened through S-07's own resolver; the screen never picks a step. **What is the state of everything** lists the rows by entity, then most recent year first.
@@ -524,7 +528,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - **AC-4** Given a due date earlier than today in the period's own timezone on a filing that is not settled, then the row is marked passed. *(source: §12.5.6 task-32.4 rows; NFR-34)*
 - **AC-5** Given a locked period, then its row is not an attention item and says it is locked. *(source: S-05 amendment of 7 Sep 2026; UX-13)*
 - **AC-6** Given attention items, then they are ordered by due date, soonest first, with a period lacking one last. *(source: S-05 amendment of 7 Sep 2026)*
-- **AC-7** Given validation and completion have run, then each row shows its completion and validation status. *(source: FR text)* Unmet until 40 and 41.3.
+- **AC-7** Given validation and completion have run, then each row shows its completion and validation status. *(source: FR text)* The api answers both since 41.3 (`GET /reports/{id}/validation`, and the report's status); drawn by 42.2 (§12.5.6's task-41 row (7)).
 - **AC-8** Given an entity with no period, then the overview has no row for it. *(source: §12.5.6 task-182 identity and organization row, 182/16)*
 - **AC-9** Given a period of an archived entity, then it is listed in the table and is not an attention item. *(source: §12.5.6 task-182 identity and organization row, 182/16)* Unmet until 187.
 

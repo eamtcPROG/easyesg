@@ -2858,6 +2858,103 @@
         ]
       }
     },
+    "/api/v1/reports/{id}/validation": {
+      "get": {
+        "description": "The last run and its findings, in rule order, as the run left them — except that a finding whose field no longer applies, or whose section or module has since been declared omitted, is not returned (FR-43, 182/26). Nothing is evaluated: a report edited since its last run reads as that run left it.",
+        "operationId": "ValidationController_read",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The last run, or none, and its findings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ValidationDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          }
+        },
+        "summary": "What the last validation run found",
+        "tags": [
+          "validation"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/validation/runs": {
+      "post": {
+        "description": "Evaluates the report at whatever completeness it stands, against the rule set in force today — or, on a locked period, the one its lock pinned — and replaces the report’s findings with what it finds (FR-43, FR-73 item 9). Repeated over unchanged answers it finds the same. A locked report is validated like any other (182/21).",
+        "operationId": "ValidationController_run",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The run, and what it found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ValidationDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          },
+          "503": {
+            "description": "No validation rule set can be read right now (problem type validation-rules-unavailable), so nothing was checked and nothing changed. Try again shortly."
+          }
+        },
+        "summary": "Run validation",
+        "tags": [
+          "validation"
+        ]
+      }
+    },
     "/api/v1/reports": {
       "get": {
         "description": "Organization-wide by default, which is what FR-23’s overview reads. Narrowed to one entity by query parameter — the active organization comes from the session, never from a parameter.",
@@ -3676,6 +3773,53 @@
         ]
       }
     },
+    "/api/v1/reports/{id}/prior-period": {
+      "get": {
+        "description": "Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.",
+        "operationId": "ComparativesController_priorPeriod",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The prior period’s answers, each with its comparability verdict.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/PriorPeriodResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          }
+        },
+        "summary": "The prior period’s answers for this report",
+        "tags": [
+          "report"
+        ]
+      }
+    },
     "/api/v1/reports/{id}/calculator": {
       "get": {
         "description": "What a line may say and where — the sources and units of the factor set the report’s period resolves, the report’s B1 sites as the wizard names them, and the months the monthly form stands for — beside the lines themselves (S-09; FR-33, UX-40, UX-41).",
@@ -4188,53 +4332,6 @@
         "summary": "Explain a computed B3 figure, or remove its note",
         "tags": [
           "calculator"
-        ]
-      }
-    },
-    "/api/v1/reports/{id}/prior-period": {
-      "get": {
-        "description": "Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.",
-        "operationId": "ComparativesController_priorPeriod",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The prior period’s answers, each with its comparability verdict.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/ResultObjectDto"
-                    },
-                    {
-                      "properties": {
-                        "object": {
-                          "$ref": "#/components/schemas/PriorPeriodResponseDto"
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such report in the active organization."
-          }
-        },
-        "summary": "The prior period’s answers for this report",
-        "tags": [
-          "report"
         ]
       }
     },
@@ -9270,7 +9367,7 @@
               "ready_to_file",
               "filed"
             ],
-            "description": "Where the report stands. `open` and `locked` are written only by the period lock (FR-22)."
+            "description": "Where the report stands. `open` and `locked` are written only by the period lock (FR-22); an open report whose latest validation run left nothing outstanding reads `ready_to_file` (FR-41, 182/19)."
           },
           "updatedAt": {
             "type": "number",
@@ -9502,6 +9599,246 @@
           }
         }
       },
+      "ValidationRunDto": {
+        "type": "object",
+        "properties": {
+          "evaluatedAt": {
+            "type": "number",
+            "description": "When the run evaluated — epoch milliseconds, UTC."
+          },
+          "rulesOn": {
+            "description": "The day the rule set was read as at: today in the period’s zone, or the day its lock pinned.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDateDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "evaluatedAt",
+          "rulesOn"
+        ]
+      },
+      "FieldAddressDto": {
+        "type": "object",
+        "properties": {
+          "elementKey": {
+            "type": "string",
+            "example": "NumberOfEmployees"
+          },
+          "dimensionKey": {
+            "type": "string",
+            "example": "",
+            "description": "An axis member, or '' where the element is undimensioned."
+          },
+          "ordinal": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Position within a repeating group; 0 otherwise."
+          }
+        },
+        "required": [
+          "elementKey",
+          "dimensionKey",
+          "ordinal"
+        ]
+      },
+      "ValidationFindingDto": {
+        "type": "object",
+        "properties": {
+          "rule": {
+            "type": "string",
+            "example": "b1-turnover",
+            "description": "The rule within its set."
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "missing",
+              "inconsistency",
+              "error",
+              "invalid_url"
+            ],
+            "description": "FR-40’s verdict. A field with no finding is OK."
+          },
+          "field": {
+            "$ref": "#/components/schemas/FieldAddressDto"
+          },
+          "related": {
+            "description": "The fields it conflicts with, or that may answer it (FR-42 item 4).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldAddressDto"
+            }
+          },
+          "message": {
+            "type": "string",
+            "example": "validation.required",
+            "description": "The catalogue key its wording is resolved by."
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The values its wording quotes, by name — decimals as canonical text. Empty where it quotes none."
+          }
+        },
+        "required": [
+          "rule",
+          "verdict",
+          "field",
+          "related",
+          "message",
+          "params"
+        ]
+      },
+      "CountsDto": {
+        "type": "object",
+        "properties": {
+          "resolved": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Answered — a value or a nil return — with nothing outstanding on it."
+          },
+          "reasoned": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Declared not available with its reason (FR-32), nothing outstanding on it."
+          },
+          "outstanding": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Carrying a finding."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_started",
+              "in_progress",
+              "complete"
+            ],
+            "description": "Not started while nothing is resolved or reasoned, in progress while something is outstanding, complete otherwise — for the report, complete is ready to file (182/19)."
+          }
+        },
+        "required": [
+          "resolved",
+          "reasoned",
+          "outstanding",
+          "status"
+        ]
+      },
+      "ModuleRollUpDto": {
+        "type": "object",
+        "properties": {
+          "resolved": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Answered — a value or a nil return — with nothing outstanding on it."
+          },
+          "reasoned": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Declared not available with its reason (FR-32), nothing outstanding on it."
+          },
+          "outstanding": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Carrying a finding."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_started",
+              "in_progress",
+              "complete"
+            ],
+            "description": "Not started while nothing is resolved or reasoned, in progress while something is outstanding, complete otherwise — for the report, complete is ready to file (182/19)."
+          },
+          "module": {
+            "type": "string",
+            "example": "B8",
+            "description": "The module, by the standard’s own reference."
+          },
+          "outstandingFields": {
+            "description": "The fields outstanding in it, as findings name them.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldAddressDto"
+            }
+          }
+        },
+        "required": [
+          "resolved",
+          "reasoned",
+          "outstanding",
+          "status",
+          "module",
+          "outstandingFields"
+        ]
+      },
+      "RollUpDto": {
+        "type": "object",
+        "properties": {
+          "report": {
+            "description": "Each field counted once, whatever modules present it.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CountsDto"
+              }
+            ]
+          },
+          "modules": {
+            "description": "Every module in the report’s scope, untouched ones included.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModuleRollUpDto"
+            }
+          }
+        },
+        "required": [
+          "report",
+          "modules"
+        ]
+      },
+      "ValidationDto": {
+        "type": "object",
+        "properties": {
+          "run": {
+            "nullable": true,
+            "description": "Null where the report was never validated.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ValidationRunDto"
+              }
+            ]
+          },
+          "findings": {
+            "description": "In rule order, then the store’s natural key.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationFindingDto"
+            }
+          },
+          "rollUp": {
+            "nullable": true,
+            "description": "What the run came to, as it left it (FR-41 item 8). Null where the report was never validated.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RollUpDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "run",
+          "findings",
+          "rollUp"
+        ]
+      },
       "ReportSubjectDto": {
         "type": "object",
         "properties": {
@@ -9568,7 +9905,7 @@
               "ready_to_file",
               "filed"
             ],
-            "description": "Where the report stands. Open and locked follow the reporting period’s lock, which is their only writer (FR-22)."
+            "description": "Where the report stands. Open and locked follow the reporting period’s lock, which is their only writer (FR-22). An open report whose latest validation run left nothing outstanding reads ready to file (FR-41, 182/19) — read, never written."
           },
           "templateVersion": {
             "type": "string",
@@ -10311,14 +10648,10 @@
             "type": "string",
             "enum": [
               "ok",
-              "missing",
-              "inconsistency",
-              "error",
-              "invalid_url",
-              "not_available",
-              "not_material",
-              "nil_return"
-            ]
+              "nil_return",
+              "not_available"
+            ],
+            "description": "An answer: `ok` (a value, or nothing — a cleared field), `nil_return` or `not_available`. A validation verdict is a finding, never a row’s state, so a write naming one is refused (182/17)."
           },
           "notAvailableReason": {
             "type": "string",
@@ -10623,6 +10956,153 @@
         },
         "required": [
           "token"
+        ]
+      },
+      "PriorReportPinDto": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "periodId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fiscalYear": {
+            "type": "number",
+            "example": 2025,
+            "description": "The fiscal year the comparative was reported for."
+          },
+          "taxonomyVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The taxonomy version the prior report was authored under. Present because it may differ from the current report’s (DR-4), which is what `comparability` is about."
+          }
+        },
+        "required": [
+          "reportId",
+          "periodId",
+          "fiscalYear",
+          "taxonomyVersion"
+        ]
+      },
+      "PriorPeriodValueDto": {
+        "type": "object",
+        "properties": {
+          "elementKey": {
+            "type": "string",
+            "example": "NumberOfEmployeesInHeadcount"
+          },
+          "dimensionKey": {
+            "type": "string",
+            "description": "An axis member, or empty where the element is undimensioned."
+          },
+          "ordinal": {
+            "type": "number",
+            "description": "Position within a repeating group; 0 where there is none."
+          },
+          "valueNumeric": {
+            "type": "string",
+            "nullable": true,
+            "description": "Decimal as a string, never a float."
+          },
+          "valueText": {
+            "type": "string",
+            "nullable": true
+          },
+          "valueBoolean": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "valueDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2025-12-31"
+          },
+          "unitCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "missing",
+              "inconsistency",
+              "error",
+              "invalid_url",
+              "not_available",
+              "not_material",
+              "nil_return"
+            ]
+          },
+          "comparability": {
+            "type": "string",
+            "enum": [
+              "comparable",
+              "element_absent",
+              "shape_changed"
+            ],
+            "description": "Whether this value can be placed beside the current field. A fact read from the two pinned taxonomy versions, not a decision about what to render."
+          }
+        },
+        "required": [
+          "elementKey",
+          "dimensionKey",
+          "ordinal",
+          "valueNumeric",
+          "valueText",
+          "valueBoolean",
+          "valueDate",
+          "unitCode",
+          "state",
+          "comparability"
+        ]
+      },
+      "PriorPeriodResponseDto": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taxonomyVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The current report’s pinned taxonomy version."
+          },
+          "availability": {
+            "type": "string",
+            "enum": [
+              "available",
+              "no_prior_period",
+              "no_prior_report"
+            ],
+            "description": "Why there is nothing to show, where there is nothing. A first year and a prior period nobody reported on are different situations for a reporter (FR-45)."
+          },
+          "prior": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PriorReportPinDto"
+              }
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriorPeriodValueDto"
+            }
+          }
+        },
+        "required": [
+          "reportId",
+          "taxonomyVersion",
+          "availability",
+          "prior",
+          "values"
         ]
       },
       "CalcFactorSourceDto": {
@@ -11377,153 +11857,6 @@
             "description": "A note that stays beside the computed figure. Omit, send null or send blank to remove it."
           }
         }
-      },
-      "PriorReportPinDto": {
-        "type": "object",
-        "properties": {
-          "reportId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "periodId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "fiscalYear": {
-            "type": "number",
-            "example": 2025,
-            "description": "The fiscal year the comparative was reported for."
-          },
-          "taxonomyVersion": {
-            "type": "string",
-            "example": "2026-05-01",
-            "description": "The taxonomy version the prior report was authored under. Present because it may differ from the current report’s (DR-4), which is what `comparability` is about."
-          }
-        },
-        "required": [
-          "reportId",
-          "periodId",
-          "fiscalYear",
-          "taxonomyVersion"
-        ]
-      },
-      "PriorPeriodValueDto": {
-        "type": "object",
-        "properties": {
-          "elementKey": {
-            "type": "string",
-            "example": "NumberOfEmployeesInHeadcount"
-          },
-          "dimensionKey": {
-            "type": "string",
-            "description": "An axis member, or empty where the element is undimensioned."
-          },
-          "ordinal": {
-            "type": "number",
-            "description": "Position within a repeating group; 0 where there is none."
-          },
-          "valueNumeric": {
-            "type": "string",
-            "nullable": true,
-            "description": "Decimal as a string, never a float."
-          },
-          "valueText": {
-            "type": "string",
-            "nullable": true
-          },
-          "valueBoolean": {
-            "type": "boolean",
-            "nullable": true
-          },
-          "valueDate": {
-            "type": "string",
-            "nullable": true,
-            "example": "2025-12-31"
-          },
-          "unitCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "state": {
-            "type": "string",
-            "enum": [
-              "ok",
-              "missing",
-              "inconsistency",
-              "error",
-              "invalid_url",
-              "not_available",
-              "not_material",
-              "nil_return"
-            ]
-          },
-          "comparability": {
-            "type": "string",
-            "enum": [
-              "comparable",
-              "element_absent",
-              "shape_changed"
-            ],
-            "description": "Whether this value can be placed beside the current field. A fact read from the two pinned taxonomy versions, not a decision about what to render."
-          }
-        },
-        "required": [
-          "elementKey",
-          "dimensionKey",
-          "ordinal",
-          "valueNumeric",
-          "valueText",
-          "valueBoolean",
-          "valueDate",
-          "unitCode",
-          "state",
-          "comparability"
-        ]
-      },
-      "PriorPeriodResponseDto": {
-        "type": "object",
-        "properties": {
-          "reportId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "taxonomyVersion": {
-            "type": "string",
-            "example": "2026-05-01",
-            "description": "The current report’s pinned taxonomy version."
-          },
-          "availability": {
-            "type": "string",
-            "enum": [
-              "available",
-              "no_prior_period",
-              "no_prior_report"
-            ],
-            "description": "Why there is nothing to show, where there is nothing. A first year and a prior period nobody reported on are different situations for a reporter (FR-45)."
-          },
-          "prior": {
-            "nullable": true,
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PriorReportPinDto"
-              }
-            ]
-          },
-          "values": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PriorPeriodValueDto"
-            }
-          }
-        },
-        "required": [
-          "reportId",
-          "taxonomyVersion",
-          "availability",
-          "prior",
-          "values"
-        ]
       },
       "SupportAccessDecisionResponseDto": {
         "type": "object",

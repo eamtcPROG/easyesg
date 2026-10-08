@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
+  EMPTY_DISCLOSURE_STATE,
   answeredState,
   type DisclosureOrigin,
 } from '@api/modules/core/disclosure/models/disclosure-value.model';
@@ -234,7 +235,8 @@ export class DisclosureValueStoreRepository
   }
   /**
    * A figure the carbon calculator stands behind (task 38.4) — `writeDerived`'s statement with the explanation beside
-   * the origin. The state is FR-30's, as everywhere: a figure of zero is a nil return, and no figure is `missing`.
+   * the origin. The state is FR-30's, as everywhere: a figure of zero is a nil return, and no figure an
+   * empty row in `ok`, since a row holds answers only (182/17, task 41.2).
    */
   async writeFigure(value: {
     key: DisclosureValueKey;
@@ -244,7 +246,7 @@ export class DisclosureValueStoreRepository
   }): Promise<DisclosureValue> {
     const state =
       value.valueNumeric === null
-        ? DISCLOSURE_STATE.MISSING
+        ? EMPTY_DISCLOSURE_STATE
         : answeredState({ valueNumeric: value.valueNumeric, state: DISCLOSURE_STATE.OK });
     try {
       const rows = returnedRows<DisclosureValueRow>(
@@ -292,7 +294,8 @@ export class DisclosureValueStoreRepository
    *
    * The state is FR-30's, computed from the value by the same function every other write uses: a
    * derived rate of zero is a **nil return**, an affirmative *no accidents in the period*, and a
-   * derivation whose operands are not all present clears back to `missing` rather than to zero.
+   * derivation whose operands are not all present clears back to an empty row rather than to zero — in state `ok`, since a
+   * row holds answers only (182/17, task 41.2).
    */
   async writeDerived(value: {
     key: DisclosureValueKey;
@@ -300,7 +303,7 @@ export class DisclosureValueStoreRepository
   }): Promise<DisclosureValue> {
     const state =
       value.valueNumeric === null
-        ? DISCLOSURE_STATE.MISSING
+        ? EMPTY_DISCLOSURE_STATE
         : answeredState({ valueNumeric: value.valueNumeric, state: DISCLOSURE_STATE.OK });
     try {
       const rows = returnedRows<DisclosureValueRow>(

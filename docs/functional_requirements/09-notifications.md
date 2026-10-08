@@ -188,7 +188,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 ### FR-164 — The outstanding-report notice
 
-**Status.** Not started — remaining 41.3, 51.2
+**Status.** Not started — delivered 41.3 (the roll-up whose outstanding fields it names) · remaining 51.2
 
 **Obligation.** The system shall raise a notice, at a configured repeat interval while a reporting period is open, where mandatory disclosures remain unanswered or validation findings unresolved, naming the specific modules and fields outstanding rather than reporting only that the report is incomplete.
 
@@ -217,7 +217,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 - **AC-2** Given the condition still holds after the configured interval, then the notice is raised again at that interval. *(source: FR text; UC-169; §12.5.6 task-182 notifications row, 182/131)* Unmet until 51.2. The interval is 7 days.
 - **AC-3** Given the set of outstanding fields changes between checks, then the open notice is cancelled and a notice naming the new set is raised. *(source: §12.5.6 task-50.1 row (18); task 51.2)* Unmet until 51.2.
 - **AC-4** Given a view-only member, then they receive no outstanding-report notice. *(source: FR text, "the users with edit access")* Unmet until 51.2.
-- **AC-5** Given a section declared omitted as classified or sensitive, then it is not named as outstanding. *(source: FR-31; UC-38)* Unmet until 41.3 and 51.2.
+- **AC-5** Given a section declared omitted as classified or sensitive, then it is not named as outstanding. *(source: FR-31; UC-38)* Unmet until 51.2; the roll-up leaves the section out since 41.3.
 
 **History.**
 - 21 Sep 2026 · project owner · task 49.1 · the producer is task 51.2, which waits for task 41.3; the repeat interval is decided there · §12.5.6 task-49.1 row (6)
@@ -226,7 +226,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 ### FR-165 — The deadline notice
 
-**Status.** Not started — remaining 41.3, 51.2
+**Status.** Not started — delivered 41.3 (the roll-up whose outstanding fields it names) · remaining 51.2
 
 **Obligation.** The system shall raise a deadline notice at each configured lead time before a period's due date stating the date, days remaining and current completion state, and shall raise none where the report is already complete and validated.
 
@@ -251,7 +251,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 **Acceptance criteria.**
 - **AC-1** Given a period with a due date, then a notice is raised at each configured lead time, carrying the date, the days remaining and the completion state. *(source: FR text; UC-170; §12.5.6 task-182 notifications row, 182/132)* Unmet until 41.3 and 51.2. The lead times are 14, 7 and 1 days, each its own notice.
-- **AC-2** Given the report is complete and validated, then no deadline notice is raised. *(source: FR text; BR-NOT-4)* Unmet until 41.3 and 51.2.
+- **AC-2** Given the report is complete and validated, then no deadline notice is raised. *(source: FR text; BR-NOT-4)* Unmet until 51.2; readiness is read from the roll-up since 41.3.
 - **AC-3** Given a period with no due date, then no deadline notice is raised. *(source: UC-170 precondition; FR-21)* Unmet until 51.2.
 - **AC-4** Given a deadline notice is outstanding, when the period is locked, then it is cancelled. *(source: FR-167)* Unmet until 51.2.
 - **AC-5** Given a due date, then the days remaining a notice states are the whole calendar days from today's date, read in the due date's timezone, to the due date, so a due date that is today reads 0 and a past one reads negative. *(source: §12.5.6 task-182 notifications row, 182/133)* Unmet until 51.2.

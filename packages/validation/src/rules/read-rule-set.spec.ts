@@ -120,6 +120,21 @@ describe('readRuleSet', () => {
     ]);
   });
 
+  it('reads a member condition with its member, and refuses one without it or a member on another kind', () => {
+    const when = { kind: 'has_member', element: 'BasisForReporting', member: 'ConsolidatedMember' };
+    const read = readRuleSet({ rules: [{ ...VALID.required, when }] });
+    expect(read.outcome === RULE_SET_READ.READ && read.ruleSet.rules[0]).toMatchObject({ when });
+    expect(refusing({ ...VALID.required, when: { kind: 'has_member', element: 'A' } })).toEqual([
+      RULE_PROBLEM.MALFORMED_CONDITION,
+    ]);
+    expect(refusing({ ...VALID.required, when: { kind: 'has_member', element: 'A', member: ' ' } })).toEqual([
+      RULE_PROBLEM.MALFORMED_CONDITION,
+    ]);
+    expect(refusing({ ...VALID.required, when: { kind: 'is_true', element: 'A', member: 'M' } })).toEqual([
+      RULE_PROBLEM.MALFORMED_CONDITION,
+    ]);
+  });
+
   it('refuses a relation outside its closed set', () => {
     expect(refusing({ ...VALID.sum, relation: 'about' })).toEqual([RULE_PROBLEM.UNKNOWN_RELATION]);
   });

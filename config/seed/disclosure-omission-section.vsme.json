@@ -1,0 +1,165 @@
+{
+  "sections": {
+    "B1BasisForPreparationAndOtherUndertakingSGeneralInformationMember": [
+      "BasisForReporting",
+      "UndertakingsLegalForm",
+      "OtherUndertakingsLegalForm",
+      "NaceSectorClassificationCodes",
+      "Assets",
+      "Turnover",
+      "NumberOfEmployees",
+      "EmployeeCountingMethodology",
+      "TypeOfNumberOfEmployees",
+      "CountryOfPrimaryOperationsAndLocationOfSignificantAssets"
+    ],
+    "B1ListOfSubsidiariesMember": [
+      "NameOfTheSubsidiary",
+      "RegisteredAddressOfTheSubsidiary"
+    ],
+    "B1DisclosureOfSustainabilityRelatedCertificationSOrLabelSMember": [
+      "DescriptionOfSustainabilityRelatedCertificationsOrLabels"
+    ],
+    "B1ListOfSiteSMember": [
+      "AddressOfSite",
+      "CityOfSite",
+      "CountryOfSite",
+      "GPSLocationOfSite",
+      "PostalCodeOfSite"
+    ],
+    "B2CooperativeSpecificDisclosuresMember": [
+      "DescriptionOfLimitsToTheDistributionOfProfitsConnectedToTheMutualisticNatureOrToTheNatureOfTheActivitiesConsistingInServicesOfGeneralEconomicInterestSGEI",
+      "DescriptionOfTheEffectiveParticipationOfWorkersUsersOrOtherInterestedPartiesOrCommunitiesInGovernance",
+      "FinancialInvestmentInTheCapitalOrAssetsOfSocialEconomyEntities"
+    ],
+    "B3TotalEnergyConsumptionInMWhMember": [
+      "TotalEnergyConsumption"
+    ],
+    "B3BreakdownOfEnergyConsumptionInMWhMember": [
+      "EnergyConsumptionFromElectricity",
+      "EnergyConsumptionFromFuels",
+      "EnergyConsumptionFromSelfGeneratedElectricity"
+    ],
+    "B3EstimatedGreenhouseGasEmissionsConsideringTheGHGProtocolVersion2004InTCO2eMember": [
+      "GrossLocationBasedScope2GreenhouseGasEmissions",
+      "GrossMarketBasedScope2GreenhouseGasEmissions",
+      "GrossScope1GreenhouseGasEmissions",
+      "GrossScope3GreenhouseGasEmissions",
+      "TotalGrossLocationBasedGHGEmissions",
+      "TotalGrossLocationBasedScope1AndScope2GHGEmissions",
+      "TotalGrossMarketBasedGHGEmissions",
+      "TotalGrossMarketBasedScope1AndScope2GHGEmissions"
+    ],
+    "B3GreenhouseGasEmissionIntensityPerTurnoverMember": [
+      "Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased",
+      "Scope1AndScope2GreenhouseGasEmissionsIntensityValueMarketBased",
+      "TotalLocationBasedGreenhouseGasEmissionsIntensityValue",
+      "TotalMarketBasedGreenhouseGasEmissionsIntensityValue"
+    ],
+    "B5SitesInBiodiversitySensitiveAreasMember": [
+      "AreaOfSiteInBiodiversitySensitiveArea",
+      "SiteLocatedInABiodiversitySensitiveArea",
+      "SiteLocatedNearABiodiversitySensitiveArea"
+    ],
+    "B5BiodiversityLandUseMember": [
+      "TotalNatureOrientedAreaOffSite",
+      "TotalNatureOrientedAreaOnSite",
+      "TotalSealedArea",
+      "TotalUseOfLand"
+    ],
+    "B6WaterWithdrawalMember": [
+      "AmountOfWaterWithdrawnAtSitesLocatedInAreasOfHighWaterStress",
+      "TotalAmountOfWaterWithdrawnFromAllSites"
+    ],
+    "B6WaterConsumptionMember": [
+      "TotalWaterConsumption",
+      "WaterDischargeFromUndertakingProductionProcesses"
+    ],
+    "B7DescriptionOfCircularEconomyPrinciplesMember": [
+      "DescriptionOfHowCircularEconomyPrinciplesAreApplied",
+      "UndertakingAppliesCircularEconomyPrinciples"
+    ],
+    "B7WasteGeneratedMember": [
+      "TotalWasteRecycledReusedAndDirectedToDisposalMass",
+      "TotalWasteRecycledReusedAndDirectedToDisposalVolume",
+      "WasteDirectedToDisposalMass",
+      "WasteDirectedToDisposalVolume",
+      "WasteDivertedToRecycleOrReuseMass",
+      "WasteDivertedToRecycleOrReuseVolume",
+      "TotalHazardousWasteGeneratedMass",
+      "TotalHazardousWasteGeneratedVolume",
+      "TotalNonHazardousWasteGeneratedMass",
+      "TotalNonHazardousWasteGeneratedVolume",
+      "TotalWasteGeneratedMass",
+      "TotalWasteGeneratedVolume"
+    ],
+    "B7AnnualMassFlowOfRelevantMaterialsUsedMember": [
+      "NameOfMaterialUsed",
+      "VolumeOfMaterialUsed",
+      "WeightOfMaterialUsed",
+      "TotalMassOfMaterialUsed",
+      "TotalVolumeOfMaterialUsed"
+    ],
+    "B8TypeOfContractMember": [
+      "NumberOfPermanentContractEmployees",
+      "NumberOfTemporaryContractEmployees"
+    ],
+    "B8GenderMember": [
+      "NumberOfFemaleEmployees",
+      "NumberOfMaleEmployees",
+      "NumberOfNonReportedGenderEmployees",
+      "NumberOfOtherGenderEmployees"
+    ],
+    "B8CountryOfEmploymentMember": [
+      "NumberOfEmployeesForCountryOfEmploymentContract"
+    ],
+    "B8TurnoverRateMember": [
+      "EmployeeTurnoverRate"
+    ],
+    "B10RemunerationCollectiveBargainingMember": [
+      "EmployeesReceivePayEqualOrAboveMinimumWageDeterminedByNationalLawOrCollectiveAgreement",
+      "PercentageGapInPayBetweenFemaleAndMaleEmployees",
+      "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements"
+    ],
+    "B10NumberOfTrainingHoursPerEmployeeMember": [
+      "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee",
+      "AverageNumberOfAnnualTrainingHoursPerMaleEmployee",
+      "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee",
+      "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee"
+    ],
+    "C3GHGReductionTargetsInTC02eMember": [
+      "GreenhouseGasEmissionReductionTargetBaseYear",
+      "GreenhouseGasEmissionReductionTargetYear"
+    ],
+    "C3DisclosureOfListOfMainActionsTheEntitySeeksInOrderToAchieveItsTargetsMember": [
+      "DisclosureOfListOfMainActionsTheEntitySeeksInOrderToAchieveItsTargets"
+    ],
+    "C3TransitionPlanForUndertakingsOperatingInHighClimateImpactSectorsMember": [
+      "DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet",
+      "DescriptionOfATransitionPlanForClimateChangeMitigationIncludingAnExplanationOfHowItIsContributingToReduceGhgEmissions"
+    ],
+    "C8RevenuesFromCertainActivitiesMember": [
+      "RevenueDerivedFromChemicalProduction",
+      "RevenueDerivedFromCoal",
+      "RevenueDerivedFromControversialWeaponsAntiPersonnelMinesClusterMunitionsChemicalWeaponsAndBiologicalWeapons",
+      "RevenueDerivedFromCultivationAndProductionOfTobacco",
+      "RevenueDerivedFromGas",
+      "RevenueDerivedFromOil",
+      "TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector"
+    ],
+    "C8ExclusionFromEUReferenceBenchmarksMember": [
+      "UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement"
+    ],
+    "DisclosureOfAnyOtherGeneralAndOrEntitySpecificInformation": [
+      "DisclosureOfAnyOtherGeneralAndOrEntitySpecificInformation"
+    ],
+    "DisclosureOfAnyOtherEnvironmentalAndOrEntitySpecificEnvironmentalDisclosures": [
+      "DisclosureOfAnyOtherEnvironmentalAndOrEntitySpecificEnvironmentalDisclosures"
+    ],
+    "DisclosureOfAnyOtherSocialAndOrEntitySpecificSocialDisclosures": [
+      "DisclosureOfAnyOtherSocialAndOrEntitySpecificSocialDisclosures"
+    ],
+    "DisclosureOfAnyOtherGovernanceAndOrEntitySpecificGovernanceDisclosures": [
+      "DisclosureOfAnyOtherGovernanceAndOrEntitySpecificGovernanceDisclosures"
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 import type { DisclosureLabel, Locale } from '@easyesg/i18n';
+import { isAnswered } from '@easyesg/validation';
 import { DISCLOSURE_KIND } from '@easyesg/vsme';
 import type { DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
 import {
@@ -57,7 +58,9 @@ import { B1_ELEMENT } from '../models/b1-element.model';
 import type { EntitySnapshot } from '../models/entity-snapshot.model';
 import { OPERAND_SOURCE, type Derivation } from '../models/derivation.model';
 import { answerableMembers } from '../models/axis-leaves';
-import { OMITTED_DISCLOSURES_ELEMENT, omittedModules } from '../models/omission.model';
+import { OMITTED_DISCLOSURES_ELEMENT, omittedModules, withheldElements } from '../models/omission.model';
+import { evaluationScope, rolledUpModules, type ReportEvaluationScope } from '../models/evaluation-scope';
+import type { OmissionSections } from '../interfaces/omission-sections.interface';
 import type { Derivations } from '../interfaces/derivation.interface';
 import type { TemplateDefaults } from '../interfaces/template-default.interface';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
@@ -71,7 +74,6 @@ import {
   DEFAULT_DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
   NO_DIMENSION,
-  isAnsweredState,
   type DisclosureValue,
 } from '../models/disclosure-value.model';
 import type { Report } from '../models/report.model';
@@ -178,6 +180,11 @@ export class ReadWizardStep {
     /** The answers EFRAG's template ships a field already holding (task 36.11). */
     private readonly templateDefaults: TemplateDefaults,
     private readonly warnings: ReadWarnings,
+    /**
+     * Which elements each omittable section withholds (task 41.2; FR-31 AC-3), as configuration — the one read the
+     * validation scope needs that the wizard's own did not, since a module's omission is derived from B1 alone.
+     */
+    private readonly omissionSections: OmissionSections,
   ) {}
 
   /** The persistent module list (UX-5), with how much of each module has been answered. */
@@ -199,7 +206,7 @@ export class ReadWizardStep {
       const verdict = applicability.get(element.key);
       // An element counts as answered when ANY of its rows is (task 91.2): a repeating group's
       // second site is as much an answer as its first, and `total` counts elements, not rows.
-      const answered = (byElement.get(element.key) ?? []).filter((value) => isAnsweredState(value.state));
+      const answered = (byElement.get(element.key) ?? []).filter(isAnswered);
 
       // **Counted into every module that presents it** (task 36.4). The eight disclosures B3 and C3
       // share are one obligation with one stored value, so each module's own denominator includes
@@ -431,6 +438,52 @@ export class ReadWizardStep {
     };
   }
 
+  /**
+   * What a validation run evaluates over (task 41.2; FR-28, FR-31, FR-177; §12.5.6's task-41 row (4), (h)) — the
+   * report's stored answers, and the elements in its scope with the modules each counts in.
+   *
+   * **Here, beside the wizard's own reads, because every input is this module's and is read the way they read it**:
+   * the report's own pinned version, FR-28's verdicts from `applicabilityOf`, the modules B1 declares omitted from
+   * `omittedModules` — and, which the wizard never needed, the elements a declared *section* withholds. A run and the
+   * module list cannot then disagree about what a report asks; `evaluationScope` is the pure rule over them.
+   */
+  async evaluationScope(query: { readonly reportId: string }): Promise<ReportEvaluationScope> {
+    const { report, registered } = await this.pinned(query.reportId);
+    const { byElement } = await this.stored(query.reportId);
+    const applicability = this.applicabilityOf({ registered, byElement });
+    const inapplicable = new Set(
+      [...applicability].flatMap(([key, verdict]) => (verdict.applicable ? [] : [key])),
+    );
+    // Ruled out with an answer to quote; one with none is waiting on B1, and its module is still owed (FR-41 item 2).
+    const ruledOut = new Set(
+      [...applicability].flatMap(([key, verdict]) =>
+        !verdict.applicable && verdict.cause.answer !== null ? [key] : [],
+      ),
+    );
+    const omitted = this.omittedModules({ registered, byElement });
+    const withheld = withheldElements({
+      selected: this.selectedOmissions(byElement),
+      sections: this.omissionSections.sectionsFor({ standard: registered.standard }),
+    });
+    return {
+      values: [...byElement.values()].flat(),
+      scope: evaluationScope({
+        elements: registered.elements,
+        reportScope: report.scope,
+        inapplicable,
+        omittedModules: omitted,
+        withheld,
+      }),
+      modules: rolledUpModules({
+        elements: registered.elements,
+        moduleOrder: registered.modules,
+        reportScope: report.scope,
+        omittedModules: omitted,
+        ruledOut,
+      }),
+    };
+  }
+
   private async stored(reportId: string): Promise<StoredValues> {
     const stored = await this.values.forReport({ reportId });
     const byElement = new Map<string, DisclosureValue[]>();
@@ -514,11 +567,17 @@ export class ReadWizardStep {
           key,
         });
     if (domain === null) return new Set();
-    const stored = input.byElement.get(OMITTED_DISCLOSURES_ELEMENT) ?? [];
-    const selected = stored.flatMap((value) =>
+    return omittedModules({
+      selected: this.selectedOmissions(input.byElement),
+      domain: domain.members.map((member) => member.key),
+    });
+  }
+
+  /** The members B1's omission list selects, as stored — an `enumeration_set`, split on the member separator. */
+  private selectedOmissions(byElement: ReadonlyMap<string, readonly DisclosureValue[]>): readonly string[] {
+    return (byElement.get(OMITTED_DISCLOSURES_ELEMENT) ?? []).flatMap((value) =>
       (value.valueText ?? '').split(MEMBER_SEPARATOR).filter((member) => member !== ''),
     );
-    return omittedModules({ selected, domain: domain.members.map((member) => member.key) });
   }
 
   /**
@@ -560,9 +619,7 @@ export class ReadWizardStep {
 
     for (const rule of input.rules) {
       if (rule.condition.kind !== APPLICABILITY_CONDITION.MEMBER_WITHIN) continue;
-      const answered = (input.byElement.get(rule.condition.elementKey) ?? []).some((value) =>
-        isAnsweredState(value.state),
-      );
+      const answered = (input.byElement.get(rule.condition.elementKey) ?? []).some(isAnswered);
       if (!answered) continue;
 
       const element = this.taxonomy.element({ ...at, key: rule.condition.elementKey });
@@ -936,7 +993,9 @@ function toField(
     // per workbook (task 36.12). Every other kind answers `null` — a count has no currency, and a
     // ratio's divides out.
     currency: element.kind === DISCLOSURE_KIND.MONETARY ? resolved.currency : null,
-    state: value?.state ?? DISCLOSURE_STATE.MISSING,
+    // The display state: an unanswered field — no row, or a row holding nothing — draws as `missing` until task 42.1
+    // replaces the inline states, while a stored row's own state is only ever an answer (182/17, task 41.2).
+    state: value !== undefined && isAnswered(value) ? value.state : DISCLOSURE_STATE.MISSING,
     notAvailableReason: value?.notAvailableReason ?? null,
     carriedForward: value?.carriedForward ?? false,
     fromRecord: row.fromRecord,

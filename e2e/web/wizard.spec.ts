@@ -876,11 +876,12 @@ test('a field can be declared not available, with a reason, and answered after a
 
   // **Reversible** (UX-29's word for the section case, and the same expectation here): the field
   // returns to unanswered rather than to a value the reporter withdrew, and the reason goes with
-  // the state it explained — the store's own `CHECK` pairs the two.
+  // the state it explained — the store's own `CHECK` pairs the two. Unanswered is a row holding
+  // nothing, in state `ok`: a row's state is an answer's kind and never a verdict (182/17, task 41.2).
   await url.getByRole('button', { name: 'Reveniți la completare' }).click();
   await expect
     .poll(async () => await disclosureValueOf(stored), { timeout: 15_000 })
-    .toMatchObject({ state: 'missing', notAvailableReason: null, valueText: null });
+    .toMatchObject({ state: 'ok', notAvailableReason: null, valueText: null });
 });
 
 /**

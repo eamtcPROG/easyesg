@@ -130,8 +130,9 @@ export const unitOf = (
 /**
  * The write for one field's new value, or its clearing.
  *
- * `null` clears: the row keeps its natural key and moves to `missing` with every column null, which
- * the store's own constraint admits. The carried-forward mark is dropped on any edit (UX-32: marked
+ * `null` clears: the row keeps its natural key and holds nothing, in state `ok` — a row's state is an
+ * answer's kind and never a verdict, so `missing` is a finding the api raises, not a state this writes
+ * (182/17; the api refuses it since task 41.2). Kept rather than deleted, so a default does not return. The carried-forward mark is dropped on any edit (UX-32: marked
  * as carried *until edited*), and a not-available reason cannot outlive its state (§7.3's check).
  */
 export function writeFor(
@@ -146,7 +147,7 @@ export function writeFor(
     dimensionKey: field.dimensionKey,
     ordinal: field.ordinal,
     ...(field.unitCode === null ? {} : { unitCode: field.unitCode }),
-    state: value === null ? DISCLOSURE_STATE.MISSING : DISCLOSURE_STATE.OK,
+    state: DISCLOSURE_STATE.OK,
     carriedForward: false,
   };
   if (value === null) return base;
@@ -193,10 +194,10 @@ export function notAvailableWrite(
 /**
  * Back to unanswered, from a declared gap.
  *
- * **`missing` rather than the value that was there before**, because there is none: declaring
+ * **An empty row rather than the value that was there before**, because there is none: declaring
  * cleared the columns, and inventing a previous value from the screen's memory would resurrect a
  * figure the reporter deliberately withdrew. Resuming means the field is open again, not that the
- * old answer returns.
+ * old answer returns. In state `ok`, as `writeFor`'s clearing is: a row holds answers only (182/17).
  */
 export function resumeWrite(
   field: Pick<DisclosureField, 'elementKey' | 'dimensionKey' | 'ordinal'>,
@@ -205,7 +206,7 @@ export function resumeWrite(
     elementKey: field.elementKey,
     dimensionKey: field.dimensionKey,
     ordinal: field.ordinal,
-    state: DISCLOSURE_STATE.MISSING,
+    state: DISCLOSURE_STATE.OK,
     // **Omitted, not null.** The generated write type carries no `null` here — an absent member is
     // how this wire says *clear it*, which `writeFor` above records for the value columns; the
     // store's own `CHECK` then refuses a reason that outlived its state.

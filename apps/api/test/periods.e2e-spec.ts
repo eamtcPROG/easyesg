@@ -461,6 +461,36 @@ describe('reporting periods (UC-56)', () => {
       ).rejects.toThrow(/is locked/);
     });
 
+    /**
+     * Task 41.1 (FR-73 item 9; §12.5.6's task-41 row (5)): the lock pins the validation rule set in force, and the
+     * reopening clears it. Read from the row because the pin is the database's fact rather than the wire's — and the
+     * reopening succeeding at all is the proof that the lock trigger leaves the pin out of the row it compares, since
+     * clearing it would otherwise be refused as an edit to a locked period.
+     */
+    it('pins the validation rule set in force at the lock, and clears it on reopening', async () => {
+      const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      const pinOf = async () =>
+        (
+          (await asOrganization(owner, ORG, (run) =>
+            run(`SELECT locked_rule_set_revision FROM core.reporting_period WHERE id = $1`, [opened.id]),
+          )) as { locked_rule_set_revision: number | null }[]
+        )[0]?.locked_rule_set_revision;
+      const inForce = (
+        await owner.query<{ revision: number }[]>(
+          `SELECT v.revision FROM config.entry_schedule s JOIN config.entry_version v ON v.id = s.version_id
+            WHERE s.kind = 'validation_rule_set' AND s.scope = 'vsme' AND s.validity @> current_date`,
+        )
+      )[0]?.revision;
+
+      expect(await pinOf()).toBeNull();
+      await lock(opened.id).expect(200);
+      expect(inForce).toBeGreaterThan(0);
+      expect(await pinOf()).toBe(inForce);
+
+      await reopen(opened.id, 'Corectare după verificare').expect(200);
+      expect(await pinOf()).toBeNull();
+    });
+
     it('reopens with a stated reason, and displays it thereafter (UX-72)', async () => {
       const opened = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
       const locked = objectOf((await lock(opened.id).expect(200)).body);

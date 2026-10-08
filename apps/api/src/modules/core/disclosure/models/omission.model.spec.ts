@@ -1,4 +1,4 @@
-import { moduleOfOmissionMember, omittedModules } from './omission.model';
+import { moduleOfOmissionMember, omittedModules, withheldElements } from './omission.model';
 
 /**
  * VSME's only omission ground, and which modules a set of declared sections makes omitted
@@ -97,6 +97,26 @@ describe('the module a declared omission reaches', () => {
           domain: [...domain, 'DisclosureOfAnyOtherSocialAndOrEntitySpecificSocialDisclosures'],
         }),
       ]).toEqual([]);
+    });
+  });
+
+  /** FR-31 AC-3 by section (task 41.2): what a selected section withholds, read from its configured elements. */
+  describe('withheldElements', () => {
+    const sections = new Map([
+      ['B8GenderMember', ['NumberOfMaleEmployees', 'NumberOfFemaleEmployees']],
+      ['B1ListOfSubsidiariesMember', ['NameOfTheSubsidiary']],
+    ]);
+
+    it('withholds the elements of each section selected, read past the stored prefix', () => {
+      expect([...withheldElements({ selected: ['vsme:B8GenderMember'], sections })]).toEqual([
+        'NumberOfMaleEmployees',
+        'NumberOfFemaleEmployees',
+      ]);
+    });
+
+    it('withholds nothing for a module’s own member, which omits the module instead, nor for an unmapped one', () => {
+      expect([...withheldElements({ selected: ['vsme:B8-WorkforceGeneralCharacteristicsMember'], sections })]).toEqual([]);
+      expect([...withheldElements({ selected: [], sections })]).toEqual([]);
     });
   });
 });

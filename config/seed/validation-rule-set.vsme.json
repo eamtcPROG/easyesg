@@ -1,0 +1,803 @@
+{
+  "rules": [
+    {
+      "id": "b1-basis-for-preparation",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "BasisForPreparation"
+        }
+      ]
+    },
+    {
+      "id": "b1-basis-for-reporting",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "BasisForReporting"
+        }
+      ]
+    },
+    {
+      "id": "b1-legal-form",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "UndertakingsLegalForm"
+        }
+      ]
+    },
+    {
+      "id": "b1-other-legal-form",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "OtherUndertakingsLegalForm"
+        }
+      ],
+      "when": {
+        "kind": "has_member",
+        "element": "UndertakingsLegalForm",
+        "member": "OtherUndertakingsLegalFormMember"
+      }
+    },
+    {
+      "id": "b1-nace-codes",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "NaceSectorClassificationCodes"
+        }
+      ]
+    },
+    {
+      "id": "b1-assets",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "Assets"
+        }
+      ]
+    },
+    {
+      "id": "b1-turnover",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "Turnover"
+        }
+      ]
+    },
+    {
+      "id": "b1-employees",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "NumberOfEmployees"
+        }
+      ]
+    },
+    {
+      "id": "b1-employee-counting-methodology",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "EmployeeCountingMethodology"
+        }
+      ]
+    },
+    {
+      "id": "b1-type-of-number-of-employees",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "TypeOfNumberOfEmployees"
+        }
+      ]
+    },
+    {
+      "id": "b1-country-of-primary-operations",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "CountryOfPrimaryOperationsAndLocationOfSignificantAssets"
+        }
+      ]
+    },
+    {
+      "id": "b1-unchanged-disclosures",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "ListOfDisclosuresForWhichNoChangesAreReportedComparedToThePreviousPeriodReporting"
+        }
+      ],
+      "when": {
+        "kind": "is_true",
+        "element": "ReportContainsDisclosuresFromThePreviousReportingPeriodThatRemainUnchanged"
+      }
+    },
+    {
+      "id": "b1-previous-report-link",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "LinkToPreviousReportContainingDisclosuresThatRemainUnchanged"
+        }
+      ],
+      "when": {
+        "kind": "is_true",
+        "element": "ReportContainsDisclosuresFromThePreviousReportingPeriodThatRemainUnchanged"
+      }
+    },
+    {
+      "id": "b1-previous-report-link-address",
+      "kind": "url",
+      "verdict": "invalid_url",
+      "message": "validation.url",
+      "fields": [
+        {
+          "element": "LinkToPreviousReportContainingDisclosuresThatRemainUnchanged"
+        }
+      ]
+    },
+    {
+      "id": "b1-subsidiaries",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "NameOfTheSubsidiary"
+        }
+      ],
+      "when": {
+        "kind": "has_member",
+        "element": "BasisForReporting",
+        "member": "ConsolidatedMember"
+      }
+    },
+    {
+      "id": "b1-subsidiary-rows",
+      "kind": "row_complete",
+      "verdict": "missing",
+      "message": "validation.row_complete",
+      "elements": [
+        "NameOfTheSubsidiary",
+        "RegisteredAddressOfTheSubsidiary"
+      ]
+    },
+    {
+      "id": "b1-sites",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "AddressOfSite"
+        }
+      ]
+    },
+    {
+      "id": "b1-site-rows",
+      "kind": "row_complete",
+      "verdict": "missing",
+      "message": "validation.row_complete",
+      "elements": [
+        "AddressOfSite",
+        "PostalCodeOfSite",
+        "CityOfSite",
+        "CountryOfSite",
+        "GPSLocationOfSite"
+      ]
+    },
+    {
+      "id": "c1-products-and-services",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "DescriptionOfSignificantGroupsOfProductsAndOrServicesOffered"
+        }
+      ]
+    },
+    {
+      "id": "c1-markets",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "DescriptionOfSignificantMarketsTheUndertakingOperatesIn"
+        }
+      ]
+    },
+    {
+      "id": "c1-business-relationships",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "DescriptionOfMainBusinessRelationships"
+        }
+      ]
+    },
+    {
+      "id": "c2-target-description",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "DescriptionOfATargetRelatedToAPolicy"
+        }
+      ],
+      "when": {
+        "kind": "is_true",
+        "element": "UndertakingHasSetATargetWhichIsRelatedToAPolicy"
+      }
+    },
+    {
+      "id": "b3-total-energy",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "TotalEnergyConsumption"
+        }
+      ]
+    },
+    {
+      "id": "b3-energy-breakdown",
+      "kind": "sum",
+      "verdict": "inconsistency",
+      "message": "validation.sum.over",
+      "parts": [
+        {
+          "element": "EnergyConsumptionFromElectricity",
+          "member": "RenewableEnergyMember"
+        },
+        {
+          "element": "EnergyConsumptionFromElectricity",
+          "member": "NonRenewableEnergyMember"
+        },
+        {
+          "element": "EnergyConsumptionFromSelfGeneratedElectricity",
+          "member": "RenewableEnergyMember"
+        },
+        {
+          "element": "EnergyConsumptionFromSelfGeneratedElectricity",
+          "member": "NonRenewableEnergyMember"
+        },
+        {
+          "element": "EnergyConsumptionFromFuels",
+          "member": "RenewableEnergyMember"
+        },
+        {
+          "element": "EnergyConsumptionFromFuels",
+          "member": "NonRenewableEnergyMember"
+        }
+      ],
+      "total": {
+        "element": "TotalEnergyConsumption"
+      },
+      "relation": "at_most"
+    },
+    {
+      "id": "b3-scope-1",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "GrossScope1GreenhouseGasEmissions"
+        }
+      ]
+    },
+    {
+      "id": "b3-scope-2-location-based",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "GrossLocationBasedScope2GreenhouseGasEmissions"
+        }
+      ]
+    },
+    {
+      "id": "b4-public-disclosure-link",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "URLOrLinkToThePubliclyAvailableDisclosure"
+        }
+      ],
+      "when": {
+        "kind": "is_true",
+        "element": "PubliclyAvailableDisclosure"
+      }
+    },
+    {
+      "id": "b4-public-disclosure-link-address",
+      "kind": "url",
+      "verdict": "invalid_url",
+      "message": "validation.url",
+      "fields": [
+        {
+          "element": "URLOrLinkToThePubliclyAvailableDisclosure"
+        }
+      ]
+    },
+    {
+      "id": "b4-public-disclosure-or-table",
+      "kind": "exclusive",
+      "verdict": "inconsistency",
+      "message": "validation.exclusive",
+      "when": {
+        "kind": "is_true",
+        "element": "PubliclyAvailableDisclosure"
+      },
+      "empty": [
+        "AmountOfEmissionToAir",
+        "AmountOfEmissionToWater",
+        "AmountOfEmissionToSoil"
+      ]
+    },
+    {
+      "id": "b6-water-withdrawn",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "TotalAmountOfWaterWithdrawnFromAllSites"
+        }
+      ]
+    },
+    {
+      "id": "b6-water-withdrawn-high-stress",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "AmountOfWaterWithdrawnAtSitesLocatedInAreasOfHighWaterStress"
+        }
+      ]
+    },
+    {
+      "id": "b7-circular-economy",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "UndertakingAppliesCircularEconomyPrinciples"
+        }
+      ]
+    },
+    {
+      "id": "b7-circular-economy-description",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "DescriptionOfHowCircularEconomyPrinciplesAreApplied"
+        }
+      ],
+      "when": {
+        "kind": "is_true",
+        "element": "UndertakingAppliesCircularEconomyPrinciples"
+      }
+    },
+    {
+      "id": "b7-waste",
+      "kind": "required_any",
+      "verdict": "missing",
+      "message": "validation.required_any",
+      "fields": [
+        {
+          "element": "WasteDivertedToRecycleOrReuseMass"
+        },
+        {
+          "element": "WasteDivertedToRecycleOrReuseVolume"
+        },
+        {
+          "element": "WasteDirectedToDisposalMass"
+        },
+        {
+          "element": "WasteDirectedToDisposalVolume"
+        }
+      ]
+    },
+    {
+      "id": "b7-waste-rows-by-mass",
+      "kind": "row_complete",
+      "verdict": "missing",
+      "message": "validation.row_complete",
+      "elements": [
+        "WasteDivertedToRecycleOrReuseMass",
+        "WasteDirectedToDisposalMass"
+      ]
+    },
+    {
+      "id": "b7-waste-rows-by-volume",
+      "kind": "row_complete",
+      "verdict": "missing",
+      "message": "validation.row_complete",
+      "elements": [
+        "WasteDivertedToRecycleOrReuseVolume",
+        "WasteDirectedToDisposalVolume"
+      ]
+    },
+    {
+      "id": "b8-permanent-contract",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "NumberOfPermanentContractEmployees"
+        }
+      ]
+    },
+    {
+      "id": "b8-gender",
+      "kind": "required_any",
+      "verdict": "missing",
+      "message": "validation.required_any",
+      "fields": [
+        {
+          "element": "NumberOfMaleEmployees"
+        },
+        {
+          "element": "NumberOfFemaleEmployees"
+        },
+        {
+          "element": "NumberOfOtherGenderEmployees"
+        },
+        {
+          "element": "NumberOfNonReportedGenderEmployees"
+        }
+      ]
+    },
+    {
+      "id": "b8-gender-against-headcount",
+      "kind": "sum",
+      "verdict": "inconsistency",
+      "message": "validation.sum.inconsistent",
+      "parts": [
+        {
+          "element": "NumberOfMaleEmployees"
+        },
+        {
+          "element": "NumberOfFemaleEmployees"
+        },
+        {
+          "element": "NumberOfOtherGenderEmployees"
+        },
+        {
+          "element": "NumberOfNonReportedGenderEmployees"
+        }
+      ],
+      "total": {
+        "element": "NumberOfEmployees"
+      },
+      "relation": "equal"
+    },
+    {
+      "id": "b8-country-against-headcount",
+      "kind": "sum",
+      "verdict": "missing",
+      "message": "validation.sum.short",
+      "parts": [
+        {
+          "element": "NumberOfEmployeesForCountryOfEmploymentContract"
+        }
+      ],
+      "total": {
+        "element": "NumberOfEmployees"
+      },
+      "relation": "at_least"
+    },
+    {
+      "id": "b8-turnover-rate",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "EmployeeTurnoverRate"
+        }
+      ]
+    },
+    {
+      "id": "b9-accidents",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "NumberOfRecordableWorkRelatedAccidentsInTheReportingPeriod"
+        }
+      ]
+    },
+    {
+      "id": "b9-accident-rate",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod"
+        }
+      ]
+    },
+    {
+      "id": "b9-fatalities",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "NumberOfFatalitiesAsAResultOfWorkRelatedInjuriesAndWorkRelatedIllHealth"
+        }
+      ]
+    },
+    {
+      "id": "b10-minimum-wage",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "EmployeesReceivePayEqualOrAboveMinimumWageDeterminedByNationalLawOrCollectiveAgreement"
+        }
+      ]
+    },
+    {
+      "id": "b10-pay-gap",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "PercentageGapInPayBetweenFemaleAndMaleEmployees"
+        }
+      ]
+    },
+    {
+      "id": "b10-collective-bargaining",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements"
+        }
+      ]
+    },
+    {
+      "id": "b10-training-hours",
+      "kind": "required_any",
+      "verdict": "missing",
+      "message": "validation.required_any",
+      "fields": [
+        {
+          "element": "AverageNumberOfAnnualTrainingHoursPerMaleEmployee"
+        },
+        {
+          "element": "AverageNumberOfAnnualTrainingHoursPerFemaleEmployee"
+        },
+        {
+          "element": "AverageNumberOfAnnualTrainingHoursPerOtherGenderEmployee"
+        },
+        {
+          "element": "AverageNumberOfAnnualTrainingHoursPerNonReportedGenderEmployee"
+        }
+      ]
+    },
+    {
+      "id": "c6-code-of-conduct",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce"
+        }
+      ]
+    },
+    {
+      "id": "c6-content-covered",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce"
+        }
+      ],
+      "when": {
+        "kind": "is_true",
+        "element": "UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce"
+      }
+    },
+    {
+      "id": "c6-other-content",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy"
+        }
+      ],
+      "when": {
+        "kind": "has_member",
+        "element": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce",
+        "member": "OtherContentMember"
+      }
+    },
+    {
+      "id": "c6-complaint-mechanism",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "UndertakingHasAComplaintHandlingMechanismForItsOwnWorkforce"
+        }
+      ]
+    },
+    {
+      "id": "c7-own-workforce-incidents",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce"
+        }
+      ]
+    },
+    {
+      "id": "c7-incident-rights",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "TypeOfHumanRightRelatedToTheConfirmedIncident"
+        }
+      ],
+      "when": {
+        "kind": "is_true",
+        "element": "UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce"
+      }
+    },
+    {
+      "id": "c7-other-rights",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "SpecificationOfOtherHumanRightsRelatedToTheConfirmedIncident"
+        }
+      ],
+      "when": {
+        "kind": "has_member",
+        "element": "TypeOfHumanRightRelatedToTheConfirmedIncident",
+        "member": "OtherContentMember"
+      }
+    },
+    {
+      "id": "c7-value-chain-incidents",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "UndertakingIsAwareOfAnyConfirmedIncidentsInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers"
+        }
+      ]
+    },
+    {
+      "id": "c7-value-chain-specification",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "SpecificationOfAnyConfirmedIncidentInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers"
+        }
+      ],
+      "when": {
+        "kind": "is_true",
+        "element": "UndertakingIsAwareOfAnyConfirmedIncidentsInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers"
+      }
+    },
+    {
+      "id": "c8-revenues-within-turnover",
+      "kind": "sum",
+      "verdict": "inconsistency",
+      "message": "validation.sum.over",
+      "parts": [
+        {
+          "element": "RevenueDerivedFromControversialWeaponsAntiPersonnelMinesClusterMunitionsChemicalWeaponsAndBiologicalWeapons"
+        },
+        {
+          "element": "RevenueDerivedFromCultivationAndProductionOfTobacco"
+        },
+        {
+          "element": "RevenueDerivedFromCoal"
+        },
+        {
+          "element": "RevenueDerivedFromOil"
+        },
+        {
+          "element": "RevenueDerivedFromGas"
+        },
+        {
+          "element": "RevenueDerivedFromChemicalProduction"
+        }
+      ],
+      "total": {
+        "element": "Turnover"
+      },
+      "relation": "at_most"
+    },
+    {
+      "id": "c8-benchmark-exclusion",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.required",
+      "fields": [
+        {
+          "element": "UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement"
+        }
+      ]
+    },
+    {
+      "id": "year-over-year",
+      "kind": "year_over_year",
+      "verdict": "inconsistency",
+      "message": "validation.year_over_year",
+      "proportion": "0.5"
+    }
+  ]
+}

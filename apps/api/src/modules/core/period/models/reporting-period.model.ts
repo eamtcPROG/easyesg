@@ -46,6 +46,13 @@ export interface ReportingPeriod {
    * which is not this one. `core.field_change.actor_id` set the precedent.
    */
   readonly lockedBy: string | null;
+  /**
+   * The validation rule set's revision in force on the day the period was locked, in its own zone — what every run on
+   * its report reads while it stays locked, so a later rule cannot move a locked report's findings (FR-73 item 9,
+   * NFR-87; §12.5.6's task-41 row (5)). Null while open, and for a period locked before task 41.1, which is read as at
+   * its lock day instead.
+   */
+  readonly lockedRuleSetRevision: number | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
   /**
@@ -87,6 +94,8 @@ export interface ReportingPeriod {
 export interface PeriodReport {
   readonly id: string;
   readonly status: ReportStatus;
+  /** Whether its latest validation run left nothing outstanding (task 41.3) — the report's own `readyToFile`. */
+  readonly readyToFile: boolean;
   /**
    * When the report was last written — an instant, converted at the DTO boundary (OQ-50).
    *

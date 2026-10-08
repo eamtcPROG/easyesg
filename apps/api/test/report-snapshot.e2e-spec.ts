@@ -27,8 +27,8 @@ import {
  * permitted — so **this task's deliverable is the proof rather than a table**, and this file is it.
  *
  * **What "reads identically" means, stated rather than assumed.** Locking necessarily moves the
- * lock: the report's `status`, the period's `locked_at`/`locked_by`, and both `updated_at`s. Those
- * four are declared below and everything else *is* the filing. So the claim is not that nothing
+ * lock: the report's `status`, the period's `locked_at`/`locked_by` and, since task 41.1, the rule set it pins, and
+ * both `updated_at`s. Those are declared below and everything else *is* the filing. So the claim is not that nothing
  * changes — it is that **only the declared bookkeeping changes**, which is the same shape as the
  * `refuse_locked_write` triggers' own row-image comparison, and it is asserted the same way: over
  * `to_jsonb` of the whole row, so a column added by a later task is covered the day it is added
@@ -67,7 +67,9 @@ const CHISINAU = 'Europe/Chisinau';
  */
 const LOCK_BOOKKEEPING = {
   report: ['status', 'updated_at'],
-  period: ['locked_at', 'locked_by', 'updated_at'],
+  // The rule set the lock pins (task 41.1; FR-73 item 9) is the lock's own column, written and cleared with it — the
+  // same list the period's `refuse_locked_write` trigger leaves out of the row it compares.
+  period: ['locked_at', 'locked_by', 'locked_rule_set_revision', 'updated_at'],
 } as const;
 
 type Row = Record<string, unknown>;

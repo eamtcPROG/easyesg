@@ -3,6 +3,7 @@ import { PRESENTATION_PRECISION, type PresentationPrecision } from '@api/contrac
 
 import { requestLocale } from '@api/infrastructure/persistence/request-context';
 import type { DisclosureValue } from '../models/disclosure-value.model';
+import type { ReportEvaluationScope } from '../models/evaluation-scope';
 import type { DisclosureModuleSummary, PresentedDisclosureStep } from '../models/wizard-step.model';
 import { ReadWizardStep } from '../use-cases/read-wizard-step.use-case';
 import {
@@ -44,6 +45,11 @@ export class WizardService {
     // The places a computed or derived figure is shown to (task 39.3; §12.5.6's task-39 row (7)) — the same rule S-09,
     // the PDF and the Excel export round by, so the wizard cannot disagree with them about a figure.
     return { ...step, precision: this.precision.places() };
+  }
+
+  /** What a validation run evaluates over (task 41.2) — `core/validation` reads it through its own port. */
+  evaluationScope(query: { readonly reportId: string }): Promise<ReportEvaluationScope> {
+    return this.reads.evaluationScope(query);
   }
 
   write(command: {

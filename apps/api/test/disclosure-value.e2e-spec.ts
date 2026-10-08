@@ -11,7 +11,7 @@ import { runInRequestContext } from '../src/infrastructure/persistence/request-c
 import { setTenantContext } from '../src/infrastructure/persistence/tenant-context';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import {
-  DEFAULT_DISCLOSURE_STATE,
+  EMPTY_DISCLOSURE_STATE,
   DISCLOSURE_STATE,
   type DisclosureState,
   type DisclosureValueContents,
@@ -477,10 +477,11 @@ describe('the disclosure value store (task 34.1)', () => {
       expect(typeof written.valueDate).toBe('string');
     });
 
-    it('starts an unanswered field in the state the vocabulary names', () => {
+    it('keeps an emptied field as a row in an answer state, never a verdict (182/17)', () => {
       // Pinned as a literal on purpose (CLAUDE.md's test exception): this is the wire value, and it
-      // must break if the constant's value is renamed rather than following it.
-      expect(DEFAULT_DISCLOSURE_STATE).toBe('missing');
+      // must break if the constant's value is renamed rather than following it. `missing` was this
+      // value until task 41.2, when a row's state came to hold answers only.
+      expect(EMPTY_DISCLOSURE_STATE).toBe('ok');
     });
   });
 

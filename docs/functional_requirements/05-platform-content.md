@@ -475,7 +475,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 
 ### FR-73 — Validation rule definitions as configuration
 
-**Status.** Partial — delivered 40 (the rule definition, its reader and the interpreter, run identically in both runtimes) · remaining 41.1 (rule sets from the store), 201 (the version-pinned regression suite), 67.8 (A-05's editor)
+**Status.** Partial — delivered 40 (the rule definition, its reader and the interpreter, run identically in both runtimes), 41.1 (the rule set from the store, read as at a date, refused at publication without wording) · remaining 201 (the version-pinned regression suite), 67.8 (A-05's editor, and the 400 its publication answers)
 
 **Obligation.** The system shall maintain validation rule definitions as configuration, each naming the message it fires by a key whose wording is committed in the catalogues, separately from applicability thresholds.
 
@@ -483,7 +483,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 |---|---|
 | **Actors** | PA maintains (A-05). The api and the browser evaluate. |
 | **Traces** | UC-82 · FR-40, FR-42 · NFR-12, NFR-85, NFR-87 · AD-4 · OQ-43, OQ-49 · `architecture.md` §9.8 · entity *Validation rule definition* |
-| **Surfaces** | A-05 · `packages/validation` · no route exists yet |
+| **Surfaces** | A-05 · `packages/validation` · `config/seed/validation-rule-set.vsme.json` · no route publishes a rule set yet (67.8) |
 
 **Behaviour.**
 1. Rules are data interpreted by one interpreter in `packages/validation`, which `apps/api` and `apps/web` both run, so the server verdict and the inline verdict cannot drift (§9.8; task 40).
@@ -493,24 +493,25 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 5. The rule set reaches the api as effective-dated rows, so a rule change takes effect with no redeploy and reverts in one step (task 41.1).
 6. Rules are separate from thresholds. One decides whether a field applies, the other whether a supplied value is coherent (UC-82).
 7. How a verdict reaches a form field is OQ-49, deferred with its assumption recorded. This requirement does not close it.
-8. A publication is refused with 400 `validation-failed` when any locale's catalogue lacks the message key a rule names, as A-17 refuses a notification category with no wording. UX-97 makes a missing key invisible at runtime, so publication is the only place the gap is seen (182/51).
-9. Rules are read as at today while a period is open, and as at the date the period was locked once it is. A rule published mid-year reaches drafts, and a locked report's findings do not move under a later rule (NFR-87). A reopened period is open again and reads as at today (182/44).
+8. A publication is refused with 400 `validation-failed` when any locale's catalogue lacks the message key a rule names, as A-17 refuses a notification category with no wording. UX-97 makes a missing key invisible at runtime, so publication is the only place the gap is seen (182/51). **The configuration store refuses it before writing**, against the release's committed catalogues, so the seed meets the same refusal as A-05 will; the 400 is A-05's to answer (task 41.1, §12.5.6's task-41 row (c)).
+9. Rules are read as at today while a period is open, and once it is locked, **the set in force when the period was locked** — its revision recorded on the period by the lock and cleared by a reopening (§12.5.6's task-41 row (5), 8 Oct 2026; *as at the date the period was locked* until then). A rule published mid-year reaches drafts, and a locked report's findings do not move under a later rule (NFR-87). A reopened period is open again and reads as at today (182/44). *Today* is the day in the period's own zone (§12.5.6's task-41 row (b)).
 
 **Boundaries.** The five validation states and who they roll up to are FR-40 and FR-41. The finding's shape (field, rule, plain-language explanation, link) is FR-42. The notice a rule change may owe is FR-166's (task 67.8).
 
 **Acceptance criteria.**
 - **AC-1** Given the same rule set and the same values, then `apps/api` and `apps/web` return identical verdicts. *(source: §9.8; task 40.3 Expected result)*
-- **AC-2** Given a rule or its message key edited in configuration, then it takes effect with no deployment, independently of the thresholds. *(source: FR text; UC-82)* Unmet until 41.1 and 67.8.
-- **AC-3** Given a rule change, then it reverts in one step. *(source: NFR-85; task 41.1 Expected result)* Unmet until 41.1.
+- **AC-2** Given a rule or its message key edited in configuration, then it takes effect with no deployment, independently of the thresholds. *(source: FR text; UC-82)* A published rule is read within the store's poll since 41.1; the edit is unmet until 67.8.
+- **AC-3** Given a rule change, then it reverts in one step. *(source: NFR-85; task 41.1 Expected result)*
 - **AC-4** Given a change to the wording of a finding, then it ships with a release and is not a publication. *(source: OQ-43; NFR-85 as amended)*
 - **AC-5** Given a rule or factor change, then the version-pinned regression suite runs and no previously reported figure is silently restated. *(source: NFR-87)* Unmet until 201.
-- **AC-6** Given a rule whose message key has no wording in some locale's catalogue, when it is published, then it is refused with 400 and nothing is published. *(source: §12.5.6 task-182 content row, 182/51)* Unmet until 41.1 and 67.8.
-- **AC-7** Given a rule published after a period was locked, then the locked report's findings are those of the rule set in force on the date of the lock. Given a rule published while the period is open, then the next validation applies it. *(source: §12.5.6 task-182 content row, 182/44)* Unmet until 41.1.
+- **AC-6** Given a rule whose message key has no wording in some locale's catalogue, when it is published, then it is refused with 400 and nothing is published. *(source: §12.5.6 task-182 content row, 182/51)* The refusal is the store's since 41.1; the 400 is unmet until 67.8.
+- **AC-7** Given a rule published after a period was locked, then the locked report's findings are those of the rule set in force on the date of the lock. Given a rule published while the period is open, then the next validation applies it. *(source: §12.5.6 task-182 content row, 182/44)* By the lock's pin (§12.5.6's task-41 row (5)), proven over real HTTP by 41.2's e2e.
 
 **History.**
 - 19 Aug 2026 · architecture.md OQ-43 · the message a rule fires is a key whose wording is committed; the rule stays configuration · `architecture.md` OQ-43, AD-4's artefact table; NFR-85
 - 5 Oct 2026 · project owner · a rule whose message key lacks wording is refused at publication; rules are read as at today while the period is open and as at the lock once locked · §12.5.6 task-182 content row (182/44, 182/51)
 - 7 Oct 2026 · project owner · the rule definition is a closed vocabulary of eight kinds, each rule carrying its verdict; a rule set the vocabulary cannot hold is refused by one reader shared by the api and A-05 · §12.5.6 task-40 row
+- 8 Oct 2026 · project owner · one artefact scoped by the standard; *today* in the period's own zone; the store refuses an unworded key at publication; a locked period's rule set is pinned at the lock rather than read as at its date · §12.5.6 task-41 row (5)
 
 ### FR-74 — Content-only and rule-only changes without a redeploy
 

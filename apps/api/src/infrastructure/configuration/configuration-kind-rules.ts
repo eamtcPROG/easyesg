@@ -2,6 +2,9 @@ import { EMISSION_FACTOR_SET_CONFIG_KIND, FACTOR_SET_REPLACED } from '@api/modul
 import { factorSetRefusal } from '@api/modules/core/calculator/domain/factor-set-publication';
 import { PRESENTATION_PRECISION_CONFIG_KIND } from '@api/modules/platform/localization/constants/presentation-precision.constants';
 import { presentationPrecisionRefusal } from '@api/modules/platform/localization/domain/presentation-precision';
+import { isWordedInEveryLocale } from '@api/app/messages/committed-catalogues';
+import { VALIDATION_RULE_SET_CONFIG_KIND } from '@api/modules/core/validation/constants/validation.constants';
+import { ruleSetRefusal } from '@api/modules/core/validation/domain/rule-set-publication';
 
 /**
  * What a publication asks of a kind beyond writing it (tasks 37.3, 37.4; `architecture.md` §12.5.6's task-37.3/37.4
@@ -26,6 +29,11 @@ const RULES: Readonly<Record<string, ConfigurationKindRule>> = {
   [EMISSION_FACTOR_SET_CONFIG_KIND]: { refusal: factorSetRefusal, replaced: FACTOR_SET_REPLACED },
   // A precision the reader would not read is refused where someone can correct it (task 39.2).
   [PRESENTATION_PRECISION_CONFIG_KIND]: { refusal: presentationPrecisionRefusal },
+  // A rule set the interpreter cannot read, or whose message no locale words, is refused before it is written —
+  // the seed included, which is why the wording is the committed catalogues' rather than the engine's (task 41.1).
+  [VALIDATION_RULE_SET_CONFIG_KIND]: {
+    refusal: (payload) => ruleSetRefusal({ payload, worded: isWordedInEveryLocale }),
+  },
 };
 
 /** The kind's rule, or none: most kinds are written as they come and announce nothing. */

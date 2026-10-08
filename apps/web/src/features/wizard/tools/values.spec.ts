@@ -35,9 +35,10 @@ describe('writeFor', () => {
     expect(write).not.toHaveProperty('valueText');
   });
 
-  it('clears as a missing state with every column null', () => {
+  it('clears as a row holding nothing, in state ok — never a verdict (182/17)', () => {
     const cleared = writeFor(numeric, null);
-    expect(cleared).toMatchObject({ state: DISCLOSURE_STATE.MISSING });
+    // The literal is the wire value, pinned on purpose: the api refuses `missing` on a write since task 41.2.
+    expect(cleared).toMatchObject({ state: 'ok' });
     expect(cleared).not.toHaveProperty('valueNumeric');
   });
 
@@ -259,9 +260,9 @@ describe('declaring a value not available', () => {
     expect(notAvailableWrite(field, 'x').carriedForward).toBe(false);
   });
 
-  it('resumes to unanswered, with the reason omitted rather than emptied', () => {
+  it('resumes to unanswered — an empty row in state ok — with the reason omitted rather than emptied', () => {
     const written = resumeWrite(field);
-    expect(written.state).toBe(DISCLOSURE_STATE.MISSING);
+    expect(written.state).toBe('ok');
     // **Omitted, not `''`.** The store pairs a reason to `not_available` alone, so an empty string
     // left behind would be refused — and this wire says *clear it* by absence, as `writeFor` does
     // for the value columns.

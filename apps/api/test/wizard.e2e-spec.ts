@@ -7,6 +7,7 @@ import request from 'supertest';
 import type { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
+import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
 import { ConfigurationPublisher } from '../src/infrastructure/configuration/configuration-publisher.service';
 import { ConfigurationStore } from '../src/infrastructure/configuration/configuration-store.service';
@@ -227,13 +228,13 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     expect(withTwo.find((m) => m.module === 'B1')?.lastAnsweredAt).toBe(later[0]?.updatedAt);
     expect(later[0]?.updatedAt).toBeGreaterThanOrEqual(b1?.lastAnsweredAt ?? Number.POSITIVE_INFINITY);
 
-    // Clearing the answer back to missing is not work in the module: the position must not move
-    // to a step whose only event was an erasure.
+    // Clearing the answer is not work in the module: the position must not move to a step whose only
+    // event was an erasure. A cleared field is a row holding nothing, in state `ok` (182/17, task 41.2).
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
-      values: [{ elementKey: B1_ELEMENT, state: DISCLOSURE_STATE.MISSING }],
+      values: [{ elementKey: B1_ELEMENT, state: DISCLOSURE_STATE.OK }],
     }).expect(200);
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
-      values: [{ elementKey: 'Assets', state: DISCLOSURE_STATE.MISSING }],
+      values: [{ elementKey: 'Assets', state: DISCLOSURE_STATE.OK }],
     }).expect(200);
     const after = objectsOf<ModuleSummary>((await http()
       .get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body);
@@ -358,6 +359,40 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     // A considered non-answer is an answer. Counting it as outstanding would tell a reporter they
     // still have work on a field they have already decided.
     expect(modules.find((m) => m.module === 'B1')?.answered).toBe(1);
+  });
+
+  /**
+   * 182/17 (task 41.2): a row's state holds answers only, and a verdict is a finding. Each verdict member is refused on
+   * the write, by the wire's own vocabulary, and nothing is stored — the field reads as it did.
+   */
+  it.each(['missing', 'inconsistency', 'error', 'invalid_url'])(
+    'refuses a write naming the verdict %s as a state (FR-40 AC-11)',
+    async (verdict) => {
+      const reportId = await createReport(await openPeriod(2026));
+      const refused = await http()
+        .put(`/api/v1/reports/${reportId}/values`)
+        .set(editor.authorization)
+        .send({ values: [{ elementKey: 'Turnover', valueNumeric: '100', state: verdict }] })
+        .expect(400);
+      expect((refused.body as { type?: string }).type).toBe(`${PROBLEM_BASE_URI}/validation-failed`);
+      const turnover = (await readStep(reportId, 'B1')).fields.find((f) => f.elementKey === 'Turnover');
+      expect(turnover?.valueNumeric).toBeNull();
+    },
+  );
+
+  it('keeps a cleared field as a row in state ok, and reads it as unanswered (182/17)', async () => {
+    const reportId = await createReport(await openPeriod(2026));
+    const write = async (value: Record<string, unknown>) =>
+      objectsOf<{ state: string; valueNumeric: string | null }>(
+        (await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({ values: [value] })
+          .expect(200)).body,
+      );
+    await write({ elementKey: 'Turnover', valueNumeric: '100', state: DISCLOSURE_STATE.OK });
+    const written = await write({ elementKey: 'Turnover', state: DISCLOSURE_STATE.OK });
+    expect(written[0]?.state).toBe('ok');
+    expect(written[0]?.valueNumeric).toBeNull();
+    const turnover = (await readStep(reportId, 'B1')).fields.find((f) => f.elementKey === 'Turnover');
+    expect(turnover?.state).toBe(DISCLOSURE_STATE.MISSING);
   });
 
   it('refuses a field the pinned version does not name', async () => {
@@ -519,7 +554,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     // B1 opened: opening it commits every default it shows, and any one of the record's keys stored is the fact the
     // copy stops on. A row in any state counts, `missing` included.
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
-      values: [{ elementKey: 'BasisForPreparation', state: DISCLOSURE_STATE.MISSING }],
+      values: [{ elementKey: 'BasisForPreparation', state: DISCLOSURE_STATE.OK }],
     }).expect(200);
 
     // The Administrator corrects the record AFTER B1 was opened.
@@ -542,7 +577,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
 
     // … and a row cleared back to missing is a decision, not an invitation to re-fill.
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
-      values: [{ elementKey: 'UndertakingsLegalForm', state: DISCLOSURE_STATE.MISSING }],
+      values: [{ elementKey: 'UndertakingsLegalForm', state: DISCLOSURE_STATE.OK }],
     }).expect(200);
     expect(rowsOf(await readStep(reportId), 'UndertakingsLegalForm')[0]?.defaultValue).toBeNull();
 
@@ -693,7 +728,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
 
     // Clearing the winner hands the name on to the next element in order — the postal code.
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
-      values: [{ elementKey: 'AddressOfSite', ordinal: 1, state: DISCLOSURE_STATE.MISSING, carriedForward: false }],
+      values: [{ elementKey: 'AddressOfSite', ordinal: 1, state: DISCLOSURE_STATE.OK, carriedForward: false }],
     }).expect(200);
     expect(named(await readStep(reportId, 'B5'), 'SiteLocatedInABiodiversitySensitiveArea')).toBe('MD-2001');
   });
@@ -734,7 +769,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     // the company's name; the default it was offered is gone with the address, so the name hands on
     // to the next element in presentation order — the city, from the snapshot.
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
-      values: [{ elementKey: 'AddressOfSite', ordinal: 0, state: DISCLOSURE_STATE.MISSING, carriedForward: false }],
+      values: [{ elementKey: 'AddressOfSite', ordinal: 0, state: DISCLOSURE_STATE.OK, carriedForward: false }],
     }).expect(200);
     expect(await siteName()).toBe('Rezina');
 
@@ -742,7 +777,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     // with nothing after it, rather than a site still wearing a description nobody stands behind.
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
       values: ['CityOfSite', 'PostalCodeOfSite', 'GPSLocationOfSite'].map((elementKey) => ({
-        elementKey, ordinal: 0, state: DISCLOSURE_STATE.MISSING, carriedForward: false,
+        elementKey, ordinal: 0, state: DISCLOSURE_STATE.OK, carriedForward: false,
       })),
     }).expect(200);
     expect(await siteName()).toBeNull();
@@ -1654,7 +1689,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       // The headcount is emptied. A stale rate carrying `origin = calculated` would say the system
       // stands behind an answer it can no longer produce.
       await put(reportId, [
-        { elementKey: 'NumberOfEmployees', valueNumeric: null, state: DISCLOSURE_STATE.MISSING },
+        { elementKey: 'NumberOfEmployees', valueNumeric: null, state: DISCLOSURE_STATE.OK },
       ]);
       const cleared = field(await readStep(reportId, 'B9'), ACCIDENT_RATE);
       expect(cleared?.valueNumeric).toBeNull();
@@ -1842,7 +1877,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
             // Qualified, as the wizard writes them; the unqualified form this case first used
             // is one the product never produces, and it hid a real defect until a browser caught it.
             valueText: members.map((m) => `vsme:${m}`).join(' '),
-            state: members.length === 0 ? DISCLOSURE_STATE.MISSING : DISCLOSURE_STATE.OK,
+            state: DISCLOSURE_STATE.OK,
           },
         ]);
         return objectsOf<ModuleSummary>(

@@ -116,9 +116,10 @@ describe('evaluateApplicability (task 91.3; FR-28)', () => {
       expect(evaluated.get(TURNOVER_RATE)?.applicable).toBe(false);
       expect(evaluated.get(TURNOVER_RATE)?.cause.answer).toBeNull();
 
-      // A row cleared back to `missing` is not an answer — the same rule the module counts use.
+      // A cleared row — one holding nothing, in state `ok` since a row holds answers only (182/17) — is not an answer:
+      // the same predicate the module counts and the interpreter use, read from the content.
       const cleared = evaluate(rules, [
-        value({ elementKey: HEADCOUNT, valueNumeric: '200', state: DISCLOSURE_STATE.MISSING }),
+        value({ elementKey: HEADCOUNT, valueNumeric: null, state: DISCLOSURE_STATE.OK }),
       ]);
       expect(cleared.get(TURNOVER_RATE)?.applicable).toBe(false);
     });
@@ -159,7 +160,7 @@ describe('evaluateApplicability (task 91.3; FR-28)', () => {
 
     it('applies on a second row when the first was cleared', () => {
       const evaluated = evaluate([siteRule], [
-        value({ elementKey: SITE_CITY, ordinal: 0, state: DISCLOSURE_STATE.MISSING }),
+        value({ elementKey: SITE_CITY, ordinal: 0, valueText: null, state: DISCLOSURE_STATE.OK }),
         value({ elementKey: SITE_CITY, ordinal: 1, valueText: 'Bălți' }),
       ]);
       expect(evaluated.get(BIODIVERSITY)?.applicable).toBe(true);

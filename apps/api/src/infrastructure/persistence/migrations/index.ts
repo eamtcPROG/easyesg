@@ -60,6 +60,9 @@ import { EnrolmentPromptDismissal1791849600000 } from './1791849600000-enrolment
 import { FactorSetNoticeReach1791936000000 } from './1791936000000-factor-set-notice-reach';
 import { CalculatorMonthlyQuantities1792022400000 } from './1792022400000-calculator-monthly-quantities';
 import { OverrideAttribution1792108800000 } from './1792108800000-override-attribution';
+import { LockedRuleSet1792195200000 } from './1792195200000-locked-rule-set';
+import { ValidationFindings1792281600000 } from './1792281600000-validation-findings';
+import { ValidationRollUp1792368000000 } from './1792368000000-validation-roll-up';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -140,4 +143,7 @@ export const migrations = [
   FactorSetNoticeReach1791936000000,
   CalculatorMonthlyQuantities1792022400000,
   OverrideAttribution1792108800000,
+  LockedRuleSet1792195200000,
+  ValidationFindings1792281600000,
+  ValidationRollUp1792368000000,
 ];

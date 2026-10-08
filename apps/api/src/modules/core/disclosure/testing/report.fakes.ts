@@ -38,6 +38,8 @@ export const aReport = (overrides: Partial<Report> = {}): Report => ({
   reportingPeriodId: '00000000-0000-0000-0000-0000000000c1',
   scope: REPORT_SCOPE.BASIC,
   status: REPORT_STATUS.OPEN,
+  // Never validated, so never ready (task 41.3) — what a new report reads.
+  readyToFile: false,
   // The column's own DEFAULT, mirrored rather than invented: a fake that disagreed with the schema
   // would make every monetary field's currency a property of the test rather than of the filing.
   reportingCurrency: 'MDL',

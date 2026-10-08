@@ -13,8 +13,7 @@ import {
   type DisclosureValueStore,
 } from '../interfaces/disclosure-value-store.interface';
 import {
-  DEFAULT_DISCLOSURE_STATE,
-  DISCLOSURE_STATE,
+  EMPTY_DISCLOSURE_STATE,
   type DisclosureState,
   type DisclosureValue,
 } from '../models/disclosure-value.model';
@@ -131,7 +130,6 @@ export class DisclosureFacade {
     state: DisclosureState | undefined,
   ): Promise<void> {
     const column = COLUMN_OF_KIND[disclosure.kind];
-    const empty = value === null || value === undefined;
     await this.values.write({
       key: { reportId, elementKey: disclosure.key, dimensionKey, ordinal },
       contents: {
@@ -140,7 +138,8 @@ export class DisclosureFacade {
         valueBoolean: column === VALUE_COLUMN.BOOLEAN ? (value as boolean | null) : null,
         valueDate: column === VALUE_COLUMN.DATE ? (value as string | null) : null,
         unitCode: null,
-        state: state ?? (empty ? DEFAULT_DISCLOSURE_STATE : DISCLOSURE_STATE.OK),
+        // An empty value is a cleared field, which is a row in state `ok` holding nothing (182/17, task 41.2).
+        state: state ?? EMPTY_DISCLOSURE_STATE,
         notAvailableReason: null,
         carriedForward: false,
       },

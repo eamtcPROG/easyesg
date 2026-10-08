@@ -3,6 +3,7 @@ import { IsIn, IsOptional, IsUUID } from 'class-validator';
 import {
   REPORT_SCOPE,
   REPORT_STATUS,
+  statusAsRead,
   type Report,
   type ReportScope,
   type ReportStatus,
@@ -135,7 +136,8 @@ export class ReportResponseDto {
     enum: STATUSES,
     description:
       'Where the report stands. Open and locked follow the reporting period’s lock, which is ' +
-      'their only writer (FR-22).',
+      'their only writer (FR-22). An open report whose latest validation run left nothing outstanding ' +
+      'reads ready to file (FR-41, 182/19) — read, never written.',
   })
   readonly status: ReportStatus;
 
@@ -166,7 +168,7 @@ export class ReportResponseDto {
     this.id = report.id;
     this.reportingPeriodId = report.reportingPeriodId;
     this.scope = report.scope;
-    this.status = report.status;
+    this.status = statusAsRead(report);
     this.templateVersion = report.templateVersion;
     this.taxonomyVersion = report.taxonomyVersion;
     // The one conversion OQ-50 permits, at the persistence-to-DTO boundary.

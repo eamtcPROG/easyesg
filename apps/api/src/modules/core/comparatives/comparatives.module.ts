@@ -52,5 +52,8 @@ const httpProviders: Provider[] = [
   imports: [TaxonomyModule],
   controllers: mode === APP_MODE.WORKER ? [] : [ComparativesController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
+  // Since task 41.2: a validation run's year-over-year rule compares against the prior period's comparable values
+  // (FR-46 item 3), read through this module's own use case so FR-45's linkage is resolved in one place.
+  exports: mode === APP_MODE.WORKER ? [] : [ReadPriorPeriodValues],
 })
 export class ComparativesModule {}

@@ -27,6 +27,7 @@ import {
   type DisclosureOrigin,
   type DisclosureState,
   type DisclosureValue,
+  ANSWER_STATES,
 } from '../models/disclosure-value.model';
 import type {
   ApplicabilityDriver,
@@ -661,8 +662,13 @@ export class DisclosureValueWriteDto {
   @IsString()
   unitCode?: string | null;
 
-  @ApiProperty({ enum: STATES })
-  @IsIn(STATES)
+  @ApiProperty({
+    enum: ANSWER_STATES,
+    description:
+      'An answer: `ok` (a value, or nothing — a cleared field), `nil_return` or `not_available`. A validation ' +
+      'verdict is a finding, never a row’s state, so a write naming one is refused (182/17).',
+  })
+  @IsIn(ANSWER_STATES)
   state!: DisclosureState;
 
   @ApiPropertyOptional({

@@ -48,10 +48,12 @@ export {
   CONDITION_KIND,
   RELATION,
   RULE_KIND,
+  type AnswerCondition,
   type Condition,
   type ConditionKind,
   type ExclusiveRule,
   type FieldSelector,
+  type MemberCondition,
   type RangeRule,
   type Relation,
   type RequiredAnyRule,
@@ -64,6 +66,7 @@ export {
   type SumRule,
   type UrlRule,
   type YearOverYearRule,
+  elementsOf,
 } from './rules/rule-definition.js';
 export {
   RULE_PROBLEM,
@@ -77,5 +80,11 @@ export {
 /** The interpreter (task 40.2): answers in, findings out, and the one verdict a field shows. */
 export { evaluateRules, type RuleEvaluation } from './rules/evaluate-rules.js';
 export type { FieldAddress, FieldValue } from './rules/field-value.js';
+/**
+ * **What an answer is** (task 41.2; 182/17): a value in a column, or a declaration of not available. Since a row's state
+ * holds answers only, a cleared field is a row holding nothing in state `ok` — so whether a row is answered is read
+ * from its content, by this one predicate, in the api's readers and the interpreter alike.
+ */
+export { isAnswered, isDeclaredUnavailable } from './rules/field-value.js';
 export type { Finding } from './rules/finding.js';
 export { VERDICT, mostSevereVerdict, type Verdict } from './rules/verdict.js';

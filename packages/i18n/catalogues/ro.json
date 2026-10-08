@@ -129,6 +129,9 @@
     "seat-allowance-unavailable": {
       "title": "Locurile nu pot fi verificate acum"
     },
+    "validation-rules-unavailable": {
+      "title": "Regulile de validare nu pot fi citite acum"
+    },
     "admin-account-exists": {
       "title": "Contul există deja"
     },
@@ -148,7 +151,20 @@
       "title": "Setările s-au schimbat între timp"
     }
   },
-  "validation": {},
+  "validation": {
+    "required": "Această întrebare nu are încă un răspuns, iar raportul are nevoie de el, așa că nu este complet fără el. Răspundeți la ea sau marcați-o ca indisponibilă, indicând motivul.",
+    "required_any": "Niciuna dintre aceste întrebări nu are încă un răspuns, iar raportul are nevoie de cel puțin unul, așa că nu este complet fără el. Răspundeți la cel puțin una dintre ele sau marcați-le ca indisponibile, indicând motivul.",
+    "row_complete": "Acest rând a fost început, dar îi lipsește încă această valoare, așa că rândul ar fi raportat pe jumătate completat. Completați valoarea sau ștergeți rândul, dacă nu ar trebui să existe.",
+    "sum": {
+      "inconsistent": "Aceste cifre însumează {parts}, ceea ce nu corespunde totalului de {total}, așa că raportul s-ar contrazice. Corectați cifrele sau totalul, astfel încât să concorde.",
+      "over": "Aceste cifre însumează {parts}, mai mult decât totalul de {total} din care fac parte, așa că raportul s-ar contrazice. Corectați cifrele sau totalul.",
+      "short": "Aceste cifre însumează {parts}, mai puțin decât totalul de {total}, așa că o parte din total rămâne nejustificată. Adăugați cifrele care lipsesc sau corectați totalul."
+    },
+    "range": "Valoarea {value} depășește limitele acceptate pentru această întrebare, așa că nu poate fi raportată în forma actuală. Verificați cifra și introduceți una aflată în intervalul acceptat.",
+    "url": "Adresa „{value}” nu este o adresă web completă, așa că un cititor nu ar putea s-o deschidă. Introduceți adresa întreagă, începând cu https:// sau http://.",
+    "exclusive": "Acest răspuns nu lasă loc valorilor introduse la întrebările legate de el, așa că raportul ar afirma două lucruri care nu pot fi adevărate simultan. Schimbați răspunsul sau ștergeți valorile legate de el.",
+    "year_over_year": "Această cifră a trecut de la {prior} în perioada anterioară la {current} acum, o schimbare de {change}, mai mare decât de obicei de la un an la altul. O schimbare mare poate fi corectă, dar un cititor o va pune la îndoială. Verificați cifra și, dacă este corectă, explicați schimbarea în raport."
+  },
   "identity": {
     "registration": {
       "email_taken": "Există deja un cont pentru această adresă, așa că nu putem crea încă unul. Autentificați-vă cu adresa respectivă sau cereți resetarea parolei dacă nu v-o mai amintiți.",
@@ -285,6 +301,9 @@
       "run_not_found": "Calculul indicat nu există în acest raport, așa că nu a putut fi afișat. Reîmprospătați pagina pentru a încărca cel mai recent calcul al raportului.",
       "override_invalid": "O cifră de înlocuire are nevoie de tonele de CO₂e scrise ca număr și de motivul pentru care înlocuiți cifra calculată, așa că nu a putut fi salvată. Introduceți-le pe amândouă sau păstrați cifra calculată.",
       "unknown_figure": "Cifra indicată nu este una pe care o produce calculatorul de carbon, așa că nu poate fi explicată sau înlocuită aici. Reîmprospătați pagina și alegeți domeniul de aplicare 1 sau 2."
+    },
+    "validation": {
+      "rules_unavailable": "Regulile după care este verificat raportul nu pot fi citite în acest moment, așa că raportul nu a fost verificat și nimic nu s-a modificat. Problema se rezolvă de partea noastră; încercați din nou peste puțin timp și contactați echipa de asistență dacă persistă."
     }
   },
   "notification": {

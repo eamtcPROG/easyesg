@@ -129,6 +129,9 @@
     "seat-allowance-unavailable": {
       "title": "Seats cannot be checked right now"
     },
+    "validation-rules-unavailable": {
+      "title": "Validation rules cannot be read right now"
+    },
     "admin-account-exists": {
       "title": "Account already exists"
     },
@@ -148,7 +151,20 @@
       "title": "The settings changed in the meantime"
     }
   },
-  "validation": {},
+  "validation": {
+    "required": "This question has no answer yet, and the report needs one, so it is not complete without it. Answer it, or mark it as not available and give the reason.",
+    "required_any": "None of these questions has an answer yet, and the report needs at least one of them, so it is not complete without it. Answer at least one, or mark them as not available and give the reason.",
+    "row_complete": "This row has been started but this value is still missing from it, so the row would be reported half-filled. Fill in the value, or remove the row if it should not be there.",
+    "sum": {
+      "inconsistent": "These figures add up to {parts}, which does not match their total of {total}, so the report would contradict itself. Correct the figures or the total so that they agree.",
+      "over": "These figures add up to {parts}, more than the total of {total} they are part of, so the report would contradict itself. Correct the figures or the total.",
+      "short": "These figures add up to {parts}, less than the total of {total}, so part of the total is not accounted for. Add the figures that are missing, or correct the total."
+    },
+    "range": "The value {value} is outside what this question accepts, so it cannot be reported as it stands. Check the figure and enter one within the accepted range.",
+    "url": "The address “{value}” is not a complete web address, so a reader could not follow it. Enter the full address, beginning with https:// or http://.",
+    "exclusive": "This answer leaves no room for the values entered in the related questions, so the report would say two things that cannot both be true. Change the answer, or clear the related values.",
+    "year_over_year": "This figure went from {prior} in the previous period to {current} now, a change of {change}, which is larger than usual from one year to the next. A large change may be correct, but a reader will question it. Check the figure, and if it is right, explain the change in the report."
+  },
   "identity": {
     "registration": {
       "email_taken": "An account already exists for this address, so a second one cannot be created. Sign in with that address instead, or ask for a password reset if you no longer remember it.",
@@ -285,6 +301,9 @@
       "run_not_found": "That calculation does not exist in this report, so it could not be shown. Refresh the page to load the report’s latest calculation.",
       "override_invalid": "A replacement figure needs the tonnes of CO₂e written as a number and the reason you are replacing the calculated one, so it could not be saved. Enter both, or keep the calculated figure.",
       "unknown_figure": "That figure is not one the carbon calculator produces, so it cannot be explained or replaced here. Refresh the page and choose Scope 1 or Scope 2."
+    },
+    "validation": {
+      "rules_unavailable": "The rules the report is checked against cannot be read right now, so it was not checked and nothing was changed. This is resolved on our side; try again shortly, and contact support if it persists."
     }
   },
   "notification": {

@@ -58,6 +58,8 @@ import { WizardService } from './services/wizard.service';
 import { CreateReport } from './use-cases/create-report.use-case';
 import { SendReportReminder } from './use-cases/send-report-reminder.use-case';
 import { ReadWizardStep, type WizardVocabulary } from './use-cases/read-wizard-step.use-case';
+import { OMISSION_SECTIONS, type OmissionSections } from './interfaces/omission-sections.interface';
+import { OmissionSectionsService } from './services/omission-sections.service';
 import { CalculatedFiguresService } from './services/calculated-figures.service';
 import { ExplainCalculatedFigure } from './use-cases/explain-calculated-figure.use-case';
 import { OverrideCalculatedFigure } from './use-cases/override-calculated-figure.use-case';
@@ -116,6 +118,9 @@ const httpProviders: Provider[] = [
   // that holds its values.
   { provide: APPLICABILITY_RULES, useClass: ApplicabilityRulesService },
   { provide: AXIS_SHAPES, useClass: AxisShapeService },
+  // Task 41.2's sections: which elements each section B1's omission list offers withholds (FR-31 AC-3). Beside the
+  // applicability rules, for their reason — an adapter over the store that validates and caches per revision.
+  { provide: OMISSION_SECTIONS, useClass: OmissionSectionsService },
   {
     provide: ReadWizardStep,
     inject: [
@@ -129,6 +134,7 @@ const httpProviders: Provider[] = [
       DERIVATIONS,
       DERIVATION_INPUT_STORE,
       TEMPLATE_DEFAULTS,
+      OMISSION_SECTIONS,
     ],
     useFactory: (
       reports: ReportStore,
@@ -141,6 +147,7 @@ const httpProviders: Provider[] = [
       derivations: Derivations,
       derivationInputs: DerivationInputStore,
       templateDefaults: TemplateDefaults,
+      omissionSections: OmissionSections,
     ) =>
       new ReadWizardStep(
         reports,
@@ -154,6 +161,7 @@ const httpProviders: Provider[] = [
         derivationInputs,
         templateDefaults,
         new Logger(ReadWizardStep.name),
+        omissionSections,
       ),
   },
   { provide: DERIVATION_INPUT_STORE, useClass: DerivationInputStoreRepository },

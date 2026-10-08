@@ -408,6 +408,9 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'PUT /reports/:id/calculator/sources/:sourceId': WRITING_MEMBERS,
   'DELETE /reports/:id/calculator/sources/:sourceId': WRITING_MEMBERS,
   'POST /reports/:id/calculator/runs': WRITING_MEMBERS,
+  // Task 41.2: every member reads what the last run found, and an editor or the OA runs one (182/22).
+  'GET /reports/:id/validation': ALL_MEMBERS,
+  'POST /reports/:id/validation/runs': WRITING_MEMBERS,
   // A recorded run computed again against its own factor set (task 38.4; UX-42, NFR-19) — a read, so every member's.
   'GET /reports/:id/calculator/runs/:runId': ALL_MEMBERS,
   // The figures B3 took from the calculator (task 39.3; UX-43): the latest run, read — every member's.

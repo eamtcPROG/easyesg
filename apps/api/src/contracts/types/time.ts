@@ -85,3 +85,24 @@ export const isLegalDate = (value: LegalDate): boolean => {
   if (parsed.toISOString().slice(0, 10) !== value.date) return false;
   return isIanaTimeZone(value.timezone);
 };
+
+/**
+ * The calendar day an instant falls on in a zone, as `YYYY-MM-DD` (task 41.1).
+ *
+ * **Beside `LegalDate` because it is the way one is made from an instant**, and the question NFR-34 asks of every date
+ * is which zone answered it. FR-73's *the date the period was locked* is the first reader: a lock at 23:30 in Chișinău
+ * is a lock on that day there, and the next day in UTC — and which rule set a locked report reads turns on it.
+ *
+ * `en-CA` is not a locale choice: it is the one whose short date is already ISO 8601's `YYYY-MM-DD`, and the parts are
+ * read by type rather than by position, so nothing depends on how the locale orders them.
+ */
+export const calendarDateIn = (input: { readonly instant: Date; readonly timezone: string }): string => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: input.timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(input.instant);
+  const part = (type: Intl.DateTimeFormatPartTypes): string => parts.find((p) => p.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
+};

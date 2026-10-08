@@ -66,6 +66,8 @@ export interface ReportingPeriodStore {
     readonly periodId: string;
     readonly actorId: string | null;
     readonly at: Date;
+    /** The validation rule set in force on the lock day, which the lock pins (FR-73 item 9; task 41.1). */
+    readonly ruleSetRevision: number;
   }): Promise<ReportingPeriod | null>;
 
   /**

@@ -5,7 +5,8 @@ import {
   type ApplicabilityRule,
   type EvaluatedApplicability,
 } from '../models/applicability.model';
-import { isAnsweredState, type DisclosureValue } from '../models/disclosure-value.model';
+import { isAnswered } from '@easyesg/validation';
+import type { DisclosureValue } from '../models/disclosure-value.model';
 
 /**
  * FR-28's conditional applicability, evaluated (task 91.3; BR-APP-1 … BR-APP-5).
@@ -143,7 +144,7 @@ const answeredRow = (
   answers: ReadonlyMap<string, readonly DisclosureValue[]>,
   elementKey: string,
 ): DisclosureValue | undefined =>
-  (answers.get(elementKey) ?? []).find((value) => isAnsweredState(value.state));
+  (answers.get(elementKey) ?? []).find(isAnswered);
 
 /**
  * Is the stored answer one of the rule's members, or below one?

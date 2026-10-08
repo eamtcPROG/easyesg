@@ -9,6 +9,11 @@ import {
   type ReportingEntityStore,
 } from '@api/modules/core/entity/interfaces/reporting-entity-store.interface';
 import { TaxonomyModule } from '@api/modules/platform/taxonomy/taxonomy.module';
+import {
+  VALIDATION_RULE_SETS,
+  type ValidationRuleSets,
+} from '@api/modules/core/validation/interfaces/validation-rule-sets.interface';
+import { ValidationModule } from '@api/modules/core/validation/validation.module';
 import { PeriodsController } from './controllers/periods.controller';
 import {
   REPORTING_PERIOD_STORE,
@@ -39,6 +44,10 @@ import { OpenReportingPeriod } from './use-cases/open-reporting-period.use-case'
  * `EntityModule` would pull in its controllers and give this module a dependency on routes it never
  * calls.
  *
+ * **It imports `ValidationModule` for the rule set a lock pins** (task 41.1; FR-73 item 9) rather than re-providing the
+ * catalogue, the registry's reason above: the catalogue caches each revision's reading, and a second one would be a
+ * second cache.
+ *
  * **Nothing here is registered on the worker.** No outbox job routes to this module; opening and
  * editing a period are synchronous and emit no notification of their own. UC-170's deadline notice
  * counts down to `due_date` and is task 50's, on its own schedule.
@@ -52,8 +61,9 @@ const httpProviders: Provider[] = [
   { provide: CLOCK, useValue: () => new Date() },
   {
     provide: LockReportingPeriod,
-    inject: [REPORTING_PERIOD_STORE, CLOCK],
-    useFactory: (store: ReportingPeriodStore, now: Clock) => new LockReportingPeriod(store, now),
+    inject: [REPORTING_PERIOD_STORE, CLOCK, VALIDATION_RULE_SETS],
+    useFactory: (store: ReportingPeriodStore, now: Clock, ruleSets: ValidationRuleSets) =>
+      new LockReportingPeriod(store, now, ruleSets),
   },
   {
     provide: OpenReportingPeriod,
@@ -68,7 +78,7 @@ const httpProviders: Provider[] = [
 ];
 
 @Module({
-  imports: [TaxonomyModule],
+  imports: [TaxonomyModule, ValidationModule],
   controllers: mode === APP_MODE.WORKER ? [] : [PeriodsController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
 })

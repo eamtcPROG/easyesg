@@ -81,3 +81,22 @@ export function omittedModules(input: {
 
 /** A member without its taxonomy prefix. The one place the two forms are reconciled. */
 const bare = (member: string): string => member.slice(member.indexOf(':') + 1);
+
+/**
+ * The elements the selected **sections** withhold (task 41.2; FR-31 AC-3; §12.5.6's task-41 row (4)) — each selected
+ * member's elements, read from the configuration that maps a section to them. A module's own member is not looked up:
+ * it omits the module whole, which `omittedModules` derives, and a member nothing maps withholds nothing.
+ *
+ * **Compared bare**, `omittedModules`' reason: the selection is stored qualified and the configuration names members as
+ * the domain does.
+ */
+export function withheldElements(input: {
+  readonly selected: readonly string[];
+  readonly sections: ReadonlyMap<string, readonly string[]>;
+}): ReadonlySet<string> {
+  const withheld = new Set<string>();
+  for (const member of input.selected) {
+    for (const element of input.sections.get(bare(member)) ?? []) withheld.add(element);
+  }
+  return withheld;
+}

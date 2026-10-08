@@ -43,6 +43,21 @@ export type ReportScope = (typeof REPORT_SCOPE)[keyof typeof REPORT_SCOPE];
 export const DEFAULT_REPORT_SCOPE: ReportScope = REPORT_SCOPE.BASIC;
 
 /**
+ * The letter a Comprehensive Module reference begins with — the standard's own naming, B for Basic and C for
+ * Comprehensive. Unexported: `scopeAsks` is its one reader.
+ */
+const COMPREHENSIVE_LETTER = 'C';
+
+/**
+ * Does a report of this scope ask the module (task 41.2; D-A, FR-177)? **Basic asks B1–B11; Basic and Comprehensive
+ * asks every module**, Comprehensive being additive over Basic, never instead of it. Beside the vocabulary, per the rule
+ * that an operation over a closed set lives with it. `apps/web`'s `modulesInScope` draws the wizard's list by the same
+ * letter; the api may not import it, so the rule is stated twice and pinned by a spec on each side.
+ */
+export const scopeAsks = (input: { readonly scope: ReportScope; readonly module: string }): boolean =>
+  input.scope === REPORT_SCOPE.BASIC_AND_COMPREHENSIVE || !input.module.startsWith(COMPREHENSIVE_LETTER);
+
+/**
  * The report lifecycle — the `report_status_known` CHECK's vocabulary.
  *
  * **Four states are declared and two are reachable**, which is stated rather than left to be
@@ -50,16 +65,20 @@ export const DEFAULT_REPORT_SCOPE: ReportScope = REPORT_SCOPE.BASIC;
  * FR-22 makes the lock a property of the reporting period, and this column is its shadow inside the
  * report, moved in the same transaction so the two cannot disagree. Nothing else may write them.
  *
- * `READY_TO_FILE` arrives with task 41.3's completion roll-up and `FILED` with task 47's export
- * history. They are declared now because the column's `CHECK` is frozen history the day it ships and
- * because both prototypes draw all four; they are unwritten until their owners land.
+ * `READY_TO_FILE` is read since task 41.3 and never stored (`statusAsRead`); `FILED` arrives with task 47.5. Both
+ * were declared with the column because its `CHECK` is frozen history the day it ships and both prototypes draw all
+ * four.
  */
 export const REPORT_STATUS = {
   /** Authorable. The state a report is created in. */
   OPEN: 'open',
   /** The period is locked, so the report takes no writes from anyone (FR-22). */
   LOCKED: 'locked',
-  /** Complete and validated, awaiting filing. Written by task 41.3, not yet reachable. */
+  /**
+   * Nothing outstanding at the latest validation run (task 41.3; FR-41 item 6; 182/19). **Read, never stored**: the
+   * column keeps the lock's two states, and an open report whose latest run left nothing outstanding reads this one
+   * (`statusAsRead`), so no write — and no lock — has to say what becomes of it (§12.5.6's task-41 row (2)).
+   */
   READY_TO_FILE: 'ready_to_file',
   /** Filed. Written by task 47's export history, not yet reachable. */
   FILED: 'filed',
@@ -90,12 +109,25 @@ export interface ReportSubject {
   readonly dueDate: LegalDate | null;
 }
 
+/**
+ * The status a reader is shown (task 41.3; 182/19): `ready_to_file` for an open report its latest validation run left
+ * ready, and the stored status otherwise — the lock's `locked` stays `locked`. **Only at the wire**: every rule about a
+ * report (a reminder refused once it is no longer open, the lock) reads the stored status, which readiness never moves.
+ */
+export const statusAsRead = (report: { readonly status: ReportStatus; readonly readyToFile: boolean }): ReportStatus =>
+  report.status === REPORT_STATUS.OPEN && report.readyToFile ? REPORT_STATUS.READY_TO_FILE : report.status;
+
 export interface Report {
   readonly id: string;
   /** The period this report covers. At most one report per period, so this identifies it too. */
   readonly reportingPeriodId: string;
   readonly scope: ReportScope;
   readonly status: ReportStatus;
+  /**
+   * Whether its latest validation run left nothing outstanding (task 41.3) — read from the run, never stored. The wire
+   * shows it through `statusAsRead`.
+   */
+  readonly readyToFile: boolean;
   /**
    * DR-4's pin — FR-66's *explicit template and taxonomy version against every report*.
    *

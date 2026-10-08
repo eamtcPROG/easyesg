@@ -28375,3 +28375,405 @@ locally, and each fix proven on a copy of `dev` before it was pushed here, at th
   here:** seven more specs scan with axe and never settle — `session`, `credentials`, `identity-providers`,
   `notification-categories` and `support-access` in the console, `unsubscribe` and `profile` in the tenant app —
   each a race of the same kind wherever its scan lands on something still animating.
+
+## Task 41.1 — The rule set in force, written from the template's status columns · 2026-10-08
+
+The api now holds a validation rule set and reads it the way FR-73 asks. It is `config/seed/validation-rule-set.vsme.json`,
+kind `validation_rule_set`, scope `vsme`: 59 rules translated from the status columns of EFRAG's Digital Template,
+plus 182/28's year-over-year rule at ±50%. `VALIDATION_RULE_SETS` answers the set in force on a date, and a set by
+the revision a lock pinned, both through `@easyesg/validation`'s own reader. Locking a period now records the
+revision in force on its day, in the period's zone, and a reopening clears it, so a later rule cannot move a locked
+report's findings. The configuration store refuses a set the reader would not read, or whose
+message key some locale's committed catalogue does not word. The seed meets that refusal too. Nothing evaluates a
+report yet: the run and its findings are 41.2's.
+
+### Decided before building
+
+One batch of four went to the owner for the whole of task 41. It came after the template's status columns had been
+profiled: 101 cells across the four disclosure sheets can answer `MISSING VALUE`, each with its own condition. The
+owner took the recommended option each time. `architecture.md` §12.5.6's task-41 row holds the four decisions and the
+calls derived from the sources.
+
+1. **The seed carries every check those columns make, B1–B11 and C1–C9**, with one condition kind added for a
+   particular choice.
+2. **Readiness is derived on read** and never stored.
+3. **S-07's list switches to the server status with 42.2's panel**, not with 41.3.
+4. **An omitted section's elements are a data artefact.**
+
+Decisions 2–4 are 41.2's and 41.3's. The FR-41 items, the task-179.1 row and the 41.3 and 42.2 rows were amended the
+same day, before any code was written.
+
+### The calls taken in the build, and why each holds
+
+- **A check is carried when what it turns on is a taxonomy element, and not when it turns on a question only the
+  template asks.** About a third of the template's requirements sit behind yes/no boxes no XBRL element holds, such as
+  *has the undertaking set GHG reduction targets* or *is it required by law to report pollutants*. The platform asks
+  none of them. Inventing a stand-in, such as *the base year is answered, so targets were set*, would be platform logic
+  wearing the template's name, so those checks are listed as not carried. That list is in §12.5.6's row: ten groups,
+  each with why the platform does not need it.
+- **Two of the template's gates are the platform's scope rather than conditions.** *Option B* is the report's own scope
+  (FR-177), and a section's checkbox is an omission (FR-31). So the evaluation's scope carries both, as task 40's row
+  intended, and no rule mentions `BasisForPreparation` as a condition.
+- **One rule per field, never one rule over several fields from different sections.** A rule naming an element outside
+  the scope is skipped whole (task-40 row (1)). So a rule spanning two sections would stop checking both the moment one
+  of them was omitted.
+- **`has_member` matches members bare, and whole.** The store holds `vsme:ConsolidatedMember` (task 91.1), and a rule
+  should not need to know a version's prefix. A choice of several is split on whitespace, as the store writes it.
+  A declaration of not available holds no member, even over a choice left behind under it.
+- **One message key per kind of check, shared by every rule that check is.** There are ten keys under `validation`,
+  each worded in NFR-79's three parts in all three locales, separately authored. The finding's field is named by its own
+  label beside it. That is why a per-rule key would add nothing until one generic sentence is false of some rule.
+- **The wording check reads the committed catalogues' leaves, not the ICU engine.** The seed loader starts no catalogue,
+  and `translate()` answers `undefined` before `initialiseCatalogue()`. A check through it would refuse every seed run.
+  `app/messages/committed-catalogues.ts` now holds the locale-to-catalogue map, and `catalogue.ts` builds its engine
+  over that same map, so the two cannot differ.
+- **A locked period's rule set is pinned at the lock, not read as at its date — asked during the build** (owner,
+  8 Oct 2026, the recommended option; §12.5.6's task-41 row (5)). Tracing the publisher found two things. It publishes
+  into an exact window and splits none, so a change to the seed's one unbounded window replaces the set for every date.
+  And a revert re-points a slot without recording when, so the schedule as it stood at a past instant cannot be rebuilt
+  from history. So FR-73 item 9 read *as at the lock date* would have moved a locked report's findings at the first
+  rule change — AC-7 and NFR-87 broken.
+  - `core.reporting_period.locked_rule_set_revision` (migration `1792195200000`) is written by the lock and cleared by
+    the reopening. A `CHECK` admits it only beside a lock.
+  - The lock trigger leaves the pin out of the row it compares, or a reopening would be refused as an edit to a locked
+    period.
+  - The lock refuses with 503 where no set can be read, since a lock with no pin would leave its findings free to move.
+  - A period locked before this migration carries no pin. 41.2's run reads it as at its lock day — the one place
+    `ruleSetDate`'s lock branch is still read.
+- **The seed is one unbounded window**, which a later rule replaces whole. The pin is what keeps locked reports still.
+
+**What each rule translates**, by sheet and status cell:
+- **General Information:** F125 → `b1-basis-for-preparation`. F179–F287 → the eight undertaking rules. F181 →
+  `b1-other-legal-form`. F22 and F122 → `b1-unchanged-disclosures`, `b1-previous-report-link` and its address check.
+  F292–F391 → `b1-subsidiaries` and `b1-subsidiary-rows`. I406–I505 → `b1-sites` and `b1-site-rows`. H527–H529 → the
+  three C1 rules. H522 → `c2-target-description`.
+- **Environmental:** L5 → `b3-total-energy`. L12 → `b3-energy-breakdown`. L22 and L23 → `b3-scope-1` and
+  `b3-scope-2-location-based`. L75, L76 and L80 → B4's link, its address check and its exclusion. E303 and E304 → the
+  two B6 rules. H316 and H317 → the two B7 circular-economy rules. M323–M422 → `b7-waste` and the two waste-row rules.
+- **Social:** H10 → `b8-permanent-contract`. H18 → `b8-gender` and `b8-gender-against-headcount`. I29 →
+  `b8-country-against-headcount`. I134–I136 → `b8-turnover-rate`. I140–I144 → the three B9 rules. I147–I157 → the four
+  B10 rules. I172–I194 → the four C6 and five C7 rules.
+- **Governance:** I12 → `c8-revenues-within-turnover`. I22 → `c8-benchmark-exclusion`.
+
+### Found in passing
+
+- **The task-40 row named the wrong split.** It said the template answers *a gender split short of headcount* as
+  missing. The formulas say a gender split that misses headcount is `VALUE INCONSISTENCY` (H18), and a split by country
+  *short* of headcount is `MISSING VALUE` (I29). The decision it illustrated, a verdict per rule, stands. The seed
+  follows the formulas, and §12.5.6's task-41 row records the correction.
+- **My own first draft of the §12.5.6 row named C3's transition-plan date** as a `has_member` use. That status turns on
+  a template-only enumeration (D57), so the row was corrected before the close. The four real uses are B1's subsidiaries,
+  B1's other legal form, C6's other content and C7's other rights.
+- **`elementsOf` was documented as exported and was not.** The barrel listed the rule types and not the function. The
+  artefact spec needs it, so it is exported now.
+- **`CLAUDE.md`'s seed-artefact count** moved from 26 to 27, caught by `docs:check`.
+
+### Skills, read against the diff
+
+- `nestjs-best-practices`: the adapter is a provider behind a symbol port, registered in both modes like the store it
+  reads. There is no controller.
+- `one-idea-per-file`:
+  - `rule-set-publication.ts`, `rule-set-date.ts` and `committed-catalogues.ts` each hold one idea and have a spec.
+  - The adapter does not cache in the use case's place.
+  - The docblocks state no counts of things outside themselves. The artefact spec says *three things* about its own
+    assertions, which it holds.
+- The two front-end skills do not apply: no front-end source changed. The web's 87 corpus cases now include the five
+  new ones, run against the package's source.
+
+### Proven to bite
+
+Every mutation below was restored afterwards.
+
+- **Package: five mutations.**
+  - Three turned the corpus red: dropping the prefix strip, matching a member by suffix, and a member on `is_true`.
+  - A has-member condition with no member turned the reader spec red.
+  - Removing `holdsValue` from `has_member` **survived** at first, because the not-available case carried no text. The
+    case now carries a choice left behind under the declaration, and the mutation is red.
+- **api: fifteen mutations.**
+  - `isWordedInEveryLocale` always true; the kind table binding no rule; a member, an axis member and an element
+    misspelt in the seed; the proportion changed; Russian losing `validation.url`; the date ignoring the lock; the date
+    taken in UTC; and `calendarDateIn` swapping day and month. Each turned at least one spec red.
+  - **Two survived at first.** The blank-value filter in `committed-catalogues.ts` was dead: `leafKeys` answers leaves
+    only, and the i18n parity suite already refuses a blank. It was removed rather than covered. The adapter's
+    fail-closed path had no spec. One now holds it: an unreadable set answers no set, never an empty one, and says so
+    once. Losing the per-revision cache, reading the date, or failing closed now each turn it red.
+- **The pin: five mutations, each red.**
+  - Taking the lock day in UTC turned the lock spec's zone case red.
+  - Locking with no readable set turned its refusal case red.
+  - The store writing no pin turned 13 periods e2e cases red.
+  - A reopening that kept the pin turned 5 red. That is the `CHECK` refusing a pin on an open period.
+  - The trigger **without** the pin's exclusion was applied to the test stack by `migrations:check` and turned the
+    same 5 reopening cases red. The migration was then restored and reapplied, and the periods and snapshot suites
+    ran green again.
+
+### Found by the gates
+
+**`report-snapshot.e2e-spec.ts` failed twice on the first full run after the pin.** Its claim is that a lock moves the
+lock and nothing else. It compares each row minus a declared list of the lock's own columns, and the pin is now one of
+them. The list gained it, beside the trigger's own exclusion. **Searched for the shape:** every list of the period's
+lock columns in `apps/api`. Only the two migrations, this suite and the period repository name `locked_by`, and each
+now names the pin too.
+
+### Gates
+
+The change reaches `packages/validation`, `packages/i18n`, `apps/api` and the seed, so every dependent's row ran. Each
+suite ran on its own, with no dev server running.
+- `pnpm lint`.
+- Typecheck in `validation`, `i18n`, `api`, `web` and `admin`.
+- Unit suites: validation 166, i18n 130, api 1,823 (1,818 before the pin), web 1,583, admin 296.
+- `pnpm docs:check`: 48 claims. It found `CLAUDE.md`'s seed count, above.
+- `pnpm routes:check`.
+- `pnpm e2e`: 64 suites, 1,593 tests, before the pin. After it, 63 suites passed and the snapshot suite failed as
+  described. Once fixed, it and the periods suite passed (38 of 38), and were run again after the trigger mutation.
+  Nothing was logged unhandled and there were no dependency errors. The test stack's seed published
+  `validation_rule_set/vsme` as revision 1, which is the real kind rule admitting the shipped set.
+- `pnpm e2e:worker`: 9 of 9, before and after the pin, since `ValidationModule` registers in both modes and
+  `PeriodModule` imports it.
+- `pnpm e2e:web`, all three projects, because both front ends bundle the catalogues: 318 of 318. The server printed
+  only digest `2667547900`, the abandoned-stream line, 23 times.
+- `pnpm migrations:check`: 61 cases on each stack, applied, reverted and re-applied.
+- **Not run:** `openapi:check`, since no controller or DTO changed. The review agents and `gates:clean` wait for
+  Stage 2's end.
+
+## Task 41.2 — A report's findings, run when asked, replaced each time, read through the report's scope · 2026-10-08
+
+The api now validates a report. `POST /reports/{id}/validation/runs`, admitted to an editor and the OA, evaluates it at
+whatever completeness it stands. On an open period it uses the rule set in force today, and on a locked one the set its
+lock pinned. Each run replaces the report's run and findings. `GET /reports/{id}/validation` answers them to every
+member, dropping a finding whose element has left the report's scope since. Three things changed on the way, each
+named by a decision:
+- **A value row now holds answers only** (182/17). The write admits `ok`, `nil_return` and `not_available`, and a
+  cleared field is a row holding nothing in `ok`.
+- **A section declared omitted leaves the scope** (FR-31 AC-3). Its elements are read from a new
+  `disclosure_omission_section` artefact.
+- **A run on a locked report writes like any other** (182/21).
+
+### How it is cut
+
+- **`core/validation`** — the run, its findings and its reads:
+  - `RunValidation` is one use case for the run and the read, because both read the report's scope the same way.
+  - `ValidationService` and `ValidationController`.
+  - Five ports of its own:
+    - the report's lock and zone (`ValidationReports`);
+    - the scope (`EvaluationScopes`);
+    - the prior period's comparable values (`PriorComparables`);
+    - the rule set (41.1's);
+    - the store.
+  - `findingsInScope` and `comparablePrior` are pure, each with a spec.
+- **`core/disclosure` computes the scope**, since every input is its own: applicability, modules and sections omitted,
+  and the report's scope.
+  - `evaluationScope` (`models/evaluation-scope.ts`) is the pure rule.
+  - `scopeAsks` sits beside `REPORT_SCOPE`.
+  - `withheldElements` sits beside `omittedModules`.
+  - `ReadWizardStep.evaluationScope` reads the inputs the way the wizard's own reads do.
+  - `WizardService` exposes it, and `core/validation` binds its port to that with `useExisting`.
+- **`core/comparatives` exports `ReadPriorPeriodValues`** on the request tier. A run compares only what
+  `comparablePrior` keeps.
+- **Persistence** (migration `1792281600000`):
+  - `core.validation_run` holds one row per report: when, by whom, and the rule set's day, with its zone and revision.
+  - `core.validation_finding` hangs off the run and cascades with it.
+  - `ValidationStoreRepository` replaces both in one transaction. It deletes the run, then inserts the run and every
+    finding in one statement from a JSON array, numbered in the interpreter's order.
+
+### The calls taken in the build, and why each holds
+
+- **A cleared field is an empty row in `ok`, never a deleted row** (§12.5.6's task-41 row (f)). Task 91.2's *a row in
+  any state suppresses the default* makes deletion bring a default back. The interpreter already read an empty row as no
+  answer (task 40).
+  - `isAnswered` is exported from the package and replaces the api's state-based `isAnsweredState` in every reader:
+    the module counts, the applicability drivers, record provenance and the step read's projection.
+  - `DEFAULT_DISCLOSURE_STATE` became `EMPTY_DISCLOSURE_STATE` (`ok`). `ANSWER_STATES` is the write's own vocabulary.
+  - Every server writer of an empty figure, and the web's clear and resume, now write `ok`.
+  - Rows stored `missing` before this task read as unanswered by their content, and none is rewritten.
+- **The step read keeps projecting `missing` as an unanswered field's display state**, so S-07's markers are unchanged
+  until 42.1 replaces the inline states with verdicts.
+- **A finding crosses the wire as data, with no wording** (row (j)). The browser's inline verdicts are worded from the
+  same keys, and which tier words a finding for the screen is 42.1's and 42.4's, beside OQ-49. The assumption is
+  recorded in §12.5.6.
+- **Drop at read is by the field's element against the current scope**, the same scope the run evaluated over. So a
+  finding about a field ruled out by B1, or a section or module declared omitted, or a module the report's scope no
+  longer asks, is not returned.
+- **The section mapping comes from the taxonomy's presentation roles, not the template's cells.** The ranges the
+  template's own formulas read behind its section checkboxes are unreliable: subsidiaries reads B1's sites, and C2 reads
+  the NACE rows. Each checkbox's section is the presentation role of the same name. Recorded in the seed README.
+- **The B2 quirk is task 36.13's, left as found.** B2's only section is its cooperative disclosures, so omitting that one
+  section omits B2 whole under `omittedModules`' *every section* rule. Noticed while mapping, not changed here.
+
+### Found in passing
+
+- **Path order in `openapi/v1.json` moved.** `ValidationModule` now imports `ComparativesModule`, which changes the
+  order Nest registers controllers in. The emit is still deterministic, so the diff was accepted.
+- **`openapi:check` diffs against the index**, so a regenerated contract left unstaged reads as drift. It was staged
+  before the check, as the eventual commit will hold it.
+- **The served contract disagreed with the committed one on `evaluatedAt`.** The full `pnpm e2e` run found it.
+  `ValidationRunDto.evaluatedAt: EpochMillis` reflected as `number` under `nest build`, where `openapi:emit` reads it,
+  and as `object` under ts-jest, where `docs.e2e-spec.ts` serves `/docs-json`. The alias erases differently in the two
+  compilers. It now states `type: Number`, as the repository's other epoch fields already do. **Searched for the
+  shape:** every DTO field typed `EpochMillis` outside the existing ones. This was the only one without the explicit
+  type.
+
+### Skills, read against the diff
+
+- `nestjs-best-practices`:
+  - The controller is thin and calls a service, which calls one use case.
+  - The ports are DI symbols beside their interfaces.
+  - The scope port is bound to `WizardService` by `useExisting`, not re-provided, so the disclosure module's cached
+    readers are shared.
+  - The request tier is registered only outside worker mode, with `PeriodModule`'s import of `ValidationModule` reaching
+    only the rule-set catalogue there.
+  - Errors are `DomainError`s with message keys, each worded in three locales.
+- `one-idea-per-file`:
+  - One use case, one service, one controller and one DTO file holding the response's four classes, the `calc-run.dto`
+    shape.
+  - Every pure rule (`evaluationScope`, `scopeAsks`, `withheldElements`, `findingsInScope`, `comparablePrior`) has a spec.
+  - `ReadWizardStep` gained one public method and one private helper (`selectedOmissions`), extracted from
+    `omittedModules`. The file's refactor is task 133.2's, scheduled at the end of this Stage, so it was not split here.
+- `vercel-react-best-practices`: the web change is two pure write builders and their spec, with no component touched.
+- `one-kind-per-folder` does not apply: no web file was added, moved or split.
+
+### Proven to bite
+
+Every mutation below was restored afterwards.
+- **Unit level, ten, all red:**
+  - the read dropping nothing;
+  - the scope ignoring withheld elements, applicability, the report's scope, or omitted modules;
+  - a locked report reading today's set instead of its pin;
+  - the prior period kept whole;
+  - `withheldElements` comparing the stored, prefixed member;
+  - an unreadable set storing an empty run;
+  - `scopeAsks` asking every module.
+- **e2e level, four, all red:**
+  - the store accumulating instead of replacing;
+  - the wizard reading no section artefact;
+  - the write DTO admitting a verdict;
+  - the step read projecting a stored row's state rather than its content.
+- **Web: one, red.** `writeFor` clearing to `missing`.
+- **Schema invariants: two, red.** Dropping `core.validation_run` from the lock-exemption list turned three cases red.
+  Dropping it from the unaudited list turned four red.
+
+### Found by the gates
+
+- **The browser suite found one journey pinning the old behaviour.** `wizard.spec.ts`'s UX-15 journey asserted that
+  resuming a declared field stores `missing`. It now stores a row holding nothing in `ok` (182/17). The assertion and
+  its comment were updated, and the journey rerun alone against the same bundles passed. **Searched for the shape:**
+  every `'missing'` and `DISCLOSURE_STATE.MISSING` under `e2e/`. This was the only one. Under `apps/api/test`, the
+  wizard suite's nine clearing writes were moved to `ok` while the change was built.
+
+### Gates
+
+The change reaches `packages/validation`, `packages/contracts` (regenerated), `apps/api` (a controller, DTOs and a
+migration) and `apps/web`, so every dependent's row ran, one suite at a time, with no dev server running.
+- `pnpm lint`.
+- Typecheck in `validation`, `contracts`, `api`, `web` and `admin`.
+- Unit suites: validation 166, api 1,850, web 1,583, admin 296.
+- `pnpm openapi:check`, run once the regenerated contract was staged.
+- `pnpm routes:check`.
+- `pnpm docs:check`: 48 claims. It found `CLAUDE.md`'s seed count (28) and path count (118).
+- `pnpm migrations:check`: 61 cases on each stack.
+- `pnpm e2e`: 64 suites passed and `docs.e2e-spec.ts` failed on `evaluatedAt`, above. Once fixed, it and the
+  validation suite passed (16 of 16). Nothing was logged unhandled. A run measured 134 ms.
+- `pnpm e2e:worker`: 9 of 9.
+- `pnpm e2e:web`, all three projects: 317 of 318, the UX-15 journey failing as above. It passed 1 of 1 once updated. The
+  server printed only digest `2667547900`, 24 times.
+- **Not run:** nothing in the table was skipped. The review agents and `gates:clean` wait for Stage 2's end.
+
+## Task 41.3 — The roll-up a run comes to, and readiness read from it; task 41 closes · 2026-10-08
+
+Each validation run now also computes UC-38's roll-up: counts per module and for the report (resolved, reasoned,
+outstanding), each module with the fields outstanding in it. `GET /reports/{id}/validation` answers it as the run left
+it, with a status derived from the counts and never a percentage. An open report whose latest run left nothing
+outstanding, and something resolved or reasoned, reads `ready_to_file` on `GET /reports`, `GET /reports/{id}` and
+`GET /periods`. Nothing writes that status. With 41.1 and 41.2, task 41 closes. Stage 2 does not: tasks 201, 51, 42
+and onward remain.
+
+### Decided before and during building
+
+Task 41's batch settled two of 41.3's questions: readiness derived on read (2), and S-07's list switching in 42.2 (3).
+Two more were asked here, each answered with the recommended option and recorded in §12.5.6's task-41 row:
+- **(6) Locking stays ungated by readiness.** This is 182/11's revisit, which that decision said it owed to 41.3. A gate
+  would contradict 182/27, *nothing is gated by findings*. FR-22's preconditions and 182/11's text say so now.
+- **(7) S-05's and S-06's completion and validation columns are 42.2's.** 41.3 produces them, and no task had drawn
+  them. Task 42's row, FR-23 AC-7 and FR-25 AC-3 moved, and 42's Covered FR gained FR-23 and FR-25, as
+  `docs:check`'s inverse requires.
+
+### The calls taken in the build, and why each holds
+
+- **My own derived call (h) was narrowed, and the narrowing recorded.**
+  - It had said the findings, the counts and readiness would all drop at read a field that left the scope since the
+    run, so the three "cannot disagree".
+  - Readiness is on every report and period read. Applying the drop there means computing every listed report's scope
+    on every list read.
+  - Decision (2)'s own words, *whose latest run left nothing outstanding*, and FR-41 item 8, *reads as the run left it*,
+    both name the run's result.
+  - So the roll-up and readiness are the run's, and only the findings list drops at read. (g)'s *the answers it read*
+    went with it: the run stores counts, not answers.
+- **Readiness is a flag beside the status, made the status only at the wire.**
+  - `readyToFileOf` is one SQL predicate over the run row, in `report-readiness.ts`, joined by both reads into
+    `Report.readyToFile` and `PeriodReport.readyToFile`.
+  - `statusAsRead`, beside `REPORT_STATUS`, gives `ready_to_file` only for an open report.
+  - `SendReportReminder` refuses a report whose stored status is not `open`. Deriving readiness inside the domain status
+    would have refused reminders on a ready report, and the lock's own rule reads the stored status too.
+- **A module waiting on B1 is listed; a module ruled out whole is not** (FR-41 item 2).
+  - The first e2e run found B6 missing from a new report's roll-up. Its elements wait on B1's activity code, and the
+    evaluation scope leaves out waiting and ruled-out elements alike.
+  - A waiting element is still not evaluated, since there is nothing yet to say about a field that may not apply. Its
+    module is owed, though, so `rolledUpModules` lists the modules separately: asked, not omitted, and with at least one
+    element FR-28 has not ruled out, in the version's own order.
+  - *Waiting* is the web's own test: an inapplicable verdict with no answer to quote.
+- **The status is derived from the counts on read, never stored**, so it cannot disagree with them.
+  - Not started takes precedence: a module with nothing resolved or reasoned is *not started*, however much is
+    outstanding.
+  - Complete reads ready for the report (182/19).
+
+### Found in passing
+
+- **The e2e's no-percentage check matched an element key.** `JSON.stringify(rollUp)` contains
+  `PercentageOfEmployees…`. It now asserts the counts' own keys.
+- **`roll-up.ts` compared against a string literal**, which the vocabulary selector refused. The three outcomes are now
+  a file-local `as const`.
+
+### Proven to bite
+
+Every mutation below was restored afterwards.
+- **Twelve mutations, all red in the end.** Each of the following turned a spec or the validation suite red:
+  - a finding's field counted as resolved;
+  - not available counted as resolved;
+  - answers outside the scope counted;
+  - empty rows counted;
+  - a shared element counted in its first module only;
+  - outstanding outranking *not started*;
+  - waiting modules dropped;
+  - `statusAsRead` ignoring *open*;
+  - readiness ignoring outstanding;
+  - the period read not derived.
+- **One survived at first.** Readiness that ignored *something resolved or reasoned* survived, because no case had a run
+  that counted nothing. The case added — every module declared omitted, which reads *not started* and stays `open` —
+  turns it red.
+
+### Gates
+
+The change reaches `apps/api` (a migration, DTOs and the report and period reads), `packages/validation` (one export)
+and `packages/contracts` (regenerated), so every dependent's row ran, one suite at a time, with no dev server running.
+- `pnpm lint`. It refused the string literal above.
+- Typecheck in `validation`, `contracts`, `api`, `web` and `admin`.
+- Unit suites: validation 166, api 1,862, web 1,583, admin 296.
+- `pnpm openapi:check`, `pnpm routes:check`, and `pnpm docs:check` (48 claims). `docs:check` found the archive's counts
+  (141 numbers, 254 rows), the plan's (64 here, 141 closed), and task 42's Covered FR.
+- `pnpm migrations:check`: 61 cases on each stack.
+- `pnpm e2e`: 65 suites, 1,629 tests, nothing unhandled. A run measured 28 ms.
+- `pnpm e2e:worker`: 9 of 9.
+- `pnpm e2e:web`, all three projects: 318 of 318. The server printed only digest `2667547900`, 20 times.
+- **Not run:** the review agents and `gates:clean`, which wait for Stage 2's end. Task 41 is not its last row.
+
+### Task 41 closes
+
+All three sub-steps are done. The row moved into `archived_tasks.md` under Phase 4, where 37 … 40 sit, as one commit.
+- **What task 41 leaves to others, each on its own row:**
+  - 42.1 words and draws the inline verdicts, and closes OQ-49.
+  - 42.2 draws S-08's panel, S-07's list, and S-05's and S-06's columns from the roll-up.
+  - 42.4 settles which tier words a finding (row (j)).
+  - 47.4 runs validation at an export request.
+  - 51.2 names a notice's outstanding fields from the roll-up.
+  - 67.8 publishes a rule set and answers its refusal with a 400.
+- **Not owned by any row, and raised rather than assumed:** NFR-39's maximum-population fixture (FR-43 AC-4). It was
+  measured at 28–134 ms on reports with their Basic figures answered, and is proven by no fixture.

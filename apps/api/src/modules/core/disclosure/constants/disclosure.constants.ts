@@ -86,3 +86,15 @@ export const DISCLOSURE_DERIVATION_CONFIG_KIND = 'disclosure_derivation';
  * *this* undertaking beats an assumption the template makes about every undertaking.
  */
 export const DISCLOSURE_TEMPLATE_DEFAULT_CONFIG_KIND = 'disclosure_template_default';
+
+/**
+ * Which elements each section B1's omission list offers withholds (task 41.2; FR-31 AC-3; `architecture.md` §12.5.6's
+ * task-41 row (4)) — seeded from `config/seed/disclosure-omission-section.vsme.json`. **Scope is the standard**, as the
+ * applicability artefact's: a section is a fact about VSME's own list, and both registered versions share it.
+ *
+ * **Hand-written, and from the taxonomy's presentation roles rather than from the template's cells.** Each section is a
+ * checkbox on the template's *Table of Contents & Validation* sheet, and its elements are those of the presentation role
+ * of the same name. The ranges the template's own formulas read behind those checkboxes were found unreliable — the
+ * subsidiaries' check reads B1's sites table, and C2's reads the NACE rows — so they are not the source.
+ */
+export const DISCLOSURE_OMISSION_SECTION_CONFIG_KIND = 'disclosure_omission_section';

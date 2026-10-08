@@ -49,11 +49,11 @@ describe('showsRecordValue', () => {
     expect(showsRecordValue({ elementKey: 'UndertakingsLegalForm', value: changed, given })).toBe(false);
   });
 
-  it('is not the record’s once cleared, whatever the columns still hold', () => {
+  it('is not the record’s once cleared — a row holding nothing, in state ok (182/17)', () => {
     const cleared = stored({
       elementKey: 'UndertakingsLegalForm',
-      valueText: given.valueText,
-      state: DISCLOSURE_STATE.MISSING,
+      valueText: null,
+      state: DISCLOSURE_STATE.OK,
     });
 
     expect(showsRecordValue({ elementKey: 'UndertakingsLegalForm', value: cleared, given })).toBe(false);
@@ -118,7 +118,7 @@ describe('recordSiteNames', () => {
       ['CityOfSite', [stored({ elementKey: 'CityOfSite', ordinal: 1, valueText: 'Bălți' })]],
     ]);
     const cleared = new Map([
-      ['AddressOfSite', [stored({ elementKey: 'AddressOfSite', state: DISCLOSURE_STATE.MISSING })]],
+      ['AddressOfSite', [stored({ elementKey: 'AddressOfSite', valueText: null, state: DISCLOSURE_STATE.OK })]],
     ]);
 
     expect([...recordSiteNames({ snapshot: twoSites, record, stored: readdressed }).keys()]).toEqual([0]);

@@ -14,9 +14,9 @@ notification core (49) — categories, one mail path, `raise()` and delivery by 
 50.1.1, each notice recorded once and each delivery a row per recipient and channel, each recipient's centre
 since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, and its first
 producer through `raise()` since 50.3, UC-175's reminder, and each person's preferences, honoured at dispatch, with FR-169's
-one-click unsubscribe since task 52, and the calculator since tasks 37 … 39; validation's run and findings, export, billing,
-the console's screens, edge and deploy, the public tier and the Comprehensive Module are not — the rule interpreter
-they will run is `@easyesg/validation`'s since task 40. `docs/archived_tasks.md` says what each closed task
+one-click unsubscribe since task 52, the calculator since tasks 37 … 39, and validation's rule set, run, findings and
+roll-up since task 41, over `@easyesg/validation`'s interpreter; validation's screens, export, billing, the console's
+screens, edge and deploy, the public tier and the Comprehensive Module are not. `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
 traps each one left — grouped by area rather than by the task that built it.
@@ -128,8 +128,8 @@ traps each one left — grouped by area rather than by the task that built it.
   used the set leaving, to its editors and administrator, and withdraws the entering set's own — **the first producer on
   the worker**, one organization at a time through `TENANT_WORK` (`contracts/tenant-work.port.ts`) (§12.5.6's
   task-37.3/37.4 row).
-- **Not live**: validation's run, findings and screens (41, 42 — the interpreter is `@easyesg/validation`'s since task 40, and
-  `core/validation/rule-corpus.spec.ts` runs its corpus against the package's CommonJS build), preview and export (43 … 47),
+- **Not live**: validation's screens (42 — since 41.1 … 41.3 the rule set, the run, its findings and its roll-up are live;
+  see "Validation" below), preview and export (43 … 47),
   the outstanding-report and deadline notices (51.2), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
@@ -505,6 +505,31 @@ Four things to know before touching it:
   `PeriodsController` carry — master data is OA-owned (D-2), a report is the Contributor's workspace
   (UC-18, FR-26). A create route the RC could not reach means the author cannot start their report.
 
+
+**Validation**
+
+- **The rule set in force is configuration, and a lock pins it** (task 41.1; §12.5.6's task-41 row). `VALIDATION_RULE_SETS`
+  reads `config/seed/validation-rule-set.vsme.json` as at a day — today in the period's zone — or by the revision a lock
+  recorded in `core.reporting_period.locked_rule_set_revision`, which a reopening clears; the lock refuses with 503
+  `validation-rules-unavailable` where no set can be read. **The store refuses a set the package's reader would not read,
+  or whose message key some locale does not word**, through the kind rule — read from the committed catalogues'
+  leaves (`app/messages/committed-catalogues.ts`), because the seed loader starts no ICU engine and `translate()`
+  answers nothing before it is initialised. The period's lock trigger leaves the pin out of the row it compares; a new
+  column of the lock's own must be added to that exclusion and to `report-snapshot.e2e-spec.ts`'s bookkeeping list.
+- **A run replaces the report's run and findings** (task 41.2): `core.validation_run`, one row per report, and
+  `core.validation_finding` hanging off it, deleted and written again in the request's transaction. Both sit inside
+  the lock and are exempt from its trigger (182/21), carry `DELETE` grants and policies and no `UPDATE`, and cascade from
+  the report. **The scope is `core/disclosure`'s** (`WizardService.evaluationScope`: applicability, modules and
+  sections omitted, the report's scope), and a read drops a finding whose element has left it (182/26).
+- **A value row holds answers only** (182/17): the write admits `ok`, `nil_return` and `not_available`, a cleared field
+  is a row holding nothing in `ok`, and every reader judges an answer by its content through the package's
+  `isAnswered`. The step read still projects `missing` as an unanswered field's display state, for 42.1 to replace.
+- **The roll-up is the run's, and readiness is read from it** (task 41.3; §12.5.6's task-41 row (2), (h)). A run stores
+  the report's counts on `core.validation_run` and a row per module (`core.validation_module`) with its outstanding
+  fields; the read answers them as the run left them, unfiltered. **`ready_to_file` is never written**: the report and
+  period reads join `readyToFileOf` (`persistence/core/report-readiness.ts`) into a `readyToFile` flag, and the DTOs
+  turn it into the status through `statusAsRead`. Anything that decides on a report's status — the reminder, the lock
+  — must keep reading the stored one.
 
 **Push**
 

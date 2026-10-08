@@ -1,5 +1,6 @@
+import { isAnswered } from '@easyesg/validation';
 import { B1_ELEMENT } from '../models/b1-element.model';
-import { DISCLOSURE_STATE, NO_DIMENSION, type DisclosureValue } from '../models/disclosure-value.model';
+import { NO_DIMENSION, type DisclosureValue } from '../models/disclosure-value.model';
 import type { EntitySnapshot } from '../models/entity-snapshot.model';
 import type { DisclosureDefault } from '../models/wizard-step.model';
 import type { EntityDefaults } from './entity-defaults';
@@ -38,7 +39,7 @@ const givesSomething = (given: DisclosureDefault): boolean =>
 /** Whether a stored answer still holds exactly what the record gave: the same columns, and answered rather than cleared. */
 function holdsWhatWasGiven(value: DisclosureValue, given: DisclosureDefault): boolean {
   return (
-    value.state !== DISCLOSURE_STATE.MISSING &&
+    isAnswered(value) &&
     value.valueText === given.valueText &&
     value.valueNumeric === given.valueNumeric &&
     value.valueBoolean === given.valueBoolean &&

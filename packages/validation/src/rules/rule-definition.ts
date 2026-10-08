@@ -69,14 +69,35 @@ export const CONDITION_KIND = {
   ANSWERED: 'answered',
   /** A yes/no element is answered yes — B4's link is required only when the disclosure is public. */
   IS_TRUE: 'is_true',
+  /**
+   * A choice is answered with the member named — or, for a choice of several, includes it (task 41.1, §12.5.6's
+   * task-41 row (1)). The template asks some things only after a particular answer rather than after a yes: B1's
+   * subsidiaries on a consolidated basis, the legal form spelled out when *other* is chosen.
+   */
+  HAS_MEMBER: 'has_member',
 } as const;
 
 export type ConditionKind = (typeof CONDITION_KIND)[keyof typeof CONDITION_KIND];
 
-export interface Condition {
-  readonly kind: ConditionKind;
+/** A condition on an answer as a whole — given, or a yes. */
+export interface AnswerCondition {
+  readonly kind: typeof CONDITION_KIND.ANSWERED | typeof CONDITION_KIND.IS_TRUE;
   readonly element: string;
 }
+
+/**
+ * A condition on which member a choice holds. **The member is named bare** (`ConsolidatedMember`), as an axis member
+ * is in a field selector, and matched against the stored answer with its taxonomy prefix set aside — the store holds
+ * the qualified name (`vsme:ConsolidatedMember`, task 91.1), and a rule should not have to know which prefix a version
+ * writes.
+ */
+export interface MemberCondition {
+  readonly kind: typeof CONDITION_KIND.HAS_MEMBER;
+  readonly element: string;
+  readonly member: string;
+}
+
+export type Condition = AnswerCondition | MemberCondition;
 
 /**
  * A field a rule names: an element, and optionally one member of its axis. **With no member it means every row the

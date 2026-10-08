@@ -20,12 +20,14 @@ import type {
 import { returnedRows } from '../returned-rows';
 import { SQL_STATE, hasSqlState } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
+import { readyToFileOf } from './report-readiness';
 
 interface ReportRow {
   id: string;
   reporting_period_id: string;
   scope: ReportScope;
   status: ReportStatus;
+  ready_to_file: boolean;
   template_version: string;
   reporting_currency: string;
   taxonomy_version: string;
@@ -51,7 +53,7 @@ interface ReportRow {
  * unqualified `id` would be ambiguous there. One list rather than two is what keeps the three reads
  * answering the same shape.
  */
-const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, r.status,
+const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, r.status, ${readyToFileOf('r')} AS ready_to_file,
         r.template_version, r.taxonomy_version, r.reporting_currency, r.created_at, r.updated_at,
         p.reporting_entity_id, e.name AS entity_name, p.fiscal_year,
         p.period_start::text AS period_start, p.period_start_tz,
@@ -80,6 +82,7 @@ const toReport = (row: ReportRow): Report => ({
   reportingPeriodId: row.reporting_period_id,
   scope: row.scope,
   status: row.status,
+  readyToFile: row.ready_to_file,
   templateVersion: row.template_version,
   reportingCurrency: row.reporting_currency,
   taxonomyVersion: row.taxonomy_version,

@@ -349,6 +349,15 @@ const UNAUDITED_TABLES = [
   'core.calc_result',
   'core.calc_run',
   /**
+   * `core.validation_run` and `core.validation_finding` (task 41.2) are derived, and replaced whole by each run: the
+   * request tier holds `SELECT`, `INSERT` and `DELETE` and no `UPDATE`, so no value in them is ever edited — a trail of
+   * them would record each run writing its own result. What a finding is about, the value, is audited where it lives.
+   */
+  'core.validation_finding',
+  // And its roll-up per module (task 41.3), replaced with it on the same grant.
+  'core.validation_module',
+  'core.validation_run',
+  /**
    * `notification.notification` (task 50.1.1) is written by the worker from a raised event, never by a person: no
    * member changes a notice, so there is no value whose author FR-54 could ask after. The raise itself is the
    * producer's decision and is attributed where that decision is stored.
@@ -537,6 +546,42 @@ const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
     'recorded_by',
     'report_id',
   ],
+  // Task 41.2: a run and its findings are replaced, never edited — no column is the request tier's to update.
+  'core.validation_finding': [
+    'dimension_key',
+    'element_key',
+    'id',
+    'message',
+    'ordinal',
+    'organization_id',
+    'params',
+    'position',
+    'related',
+    'report_id',
+    'rule_id',
+    'verdict',
+  ],
+  'core.validation_module': [
+    'module',
+    'organization_id',
+    'outstanding',
+    'outstanding_fields',
+    'reasoned',
+    'report_id',
+    'resolved',
+  ],
+  'core.validation_run': [
+    'evaluated_at',
+    'evaluated_by',
+    'organization_id',
+    'outstanding',
+    'reasoned',
+    'report_id',
+    'resolved',
+    'rules_on',
+    'rules_on_tz',
+    'rules_revision',
+  ],
   'notification.delivery': [
     'channel',
     'dispatched_at',
@@ -677,8 +722,18 @@ const LOCK_GUARDED_ROOTS = ['core.report', 'core.reporting_period'];
  * clears the lock — guarding it would refuse the one write that ends the lock. It needs no guard of
  * its own because it is immutable by grant: no runtime role holds UPDATE or DELETE and it carries
  * no policy for either, which is a stronger guarantee than the trigger's, not a weaker one.
+ *
+ * `core.validation_run`, `core.validation_finding` and `core.validation_module` (tasks 41.2, 41.3; 182/21) are derived,
+ * not filed content: a locked report
+ * is the one about to be exported, and its warning must be computed from the rules rather than frozen — so a run on a
+ * locked report writes them like any other (FR-43 AC-7).
  */
-const LOCK_GUARD_EXEMPT_TABLES = ['core.period_reopening'];
+const LOCK_GUARD_EXEMPT_TABLES = [
+  'core.period_reopening',
+  'core.validation_finding',
+  'core.validation_module',
+  'core.validation_run',
+];
 
 const tablesInsideALockWithoutGuard = (x: Executor) =>
   x.query<{ location: string }[]>(

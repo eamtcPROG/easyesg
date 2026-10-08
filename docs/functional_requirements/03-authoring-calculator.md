@@ -58,7 +58,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-25 — The reports list
 
-**Status.** Partial — delivered 31.3, 32.2, 32.2.1, 32.2.2, 40 (the interpreter the summary will read) · remaining 41.1, 41.3 (completion and validation summary)
+**Status.** Partial — delivered 31.3, 32.2, 32.2.1, 32.2.2, 40 (the interpreter the summary will read) · remaining 42.2 (completion and validation summary, whose producer 41.3 built)
 
 **Obligation.** The system shall list the reports of the active organization, each with its entity, period, scope, status and last activity and its completion and validation summary, showing a view-only member the same entries without edit affordances.
 
@@ -80,7 +80,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Acceptance criteria.**
 - **AC-1** Given reports in the active organization, then each is listed with entity, period dates, scope and status. *(source: FR text; §12.5.6 task-32.2 row)*
 - **AC-2** Given a view-only member, then the same entries are listed and no create or edit control is offered. *(source: FR text; UC-17)*
-- **AC-3** Given validation and completion have run, then each entry shows its completion and validation summary. *(source: FR text)* Unmet until 41.3.
+- **AC-3** Given validation and completion have run, then each entry shows its completion and validation summary. *(source: FR text)* The api answers both since 41.3; drawn by 42.2 (§12.5.6's task-41 row (7)).
 
 **History.**
 - 31 Aug 2026 · project owner · rows answer their subject; the summary columns are refused until their producers exist · §12.5.6 task-32.2 rows
@@ -257,7 +257,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-31 — A section omitted as classified or sensitive
 
-**Status.** Partial — delivered 36.13, 91.1, 179.1 · remaining 41.2, 41.3 (validation and roll-up), 44.3, 46.1 (both exports), 94 (help replaces the notice)
+**Status.** Partial — delivered 36.13, 91.1, 179.1, 41.2 (validation by section), 41.3 (the roll-up discounts it) · remaining 44.3, 46.1 (both exports), 94 (help replaces the notice)
 
 **Obligation.** The system shall allow a disclosure section to be declared omitted as classified or sensitive information, the one ground VSME ¶19 permits, recording it in B1's list of omitted disclosures without a rationale (¶24(b)). The declaration shall satisfy validation rather than suppress it, be discounted in completion, and appear in both exports.
 
@@ -276,7 +276,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Acceptance criteria.**
 - **AC-1** Given a section selected in the B1 list, then the declaration is stored there with no rationale field. *(source: FR text; ¶24(b))*
 - **AC-2** Given a module's own member is selected, then the module list shows it *Omitted*, distinct from complete or incomplete. *(source: UC-30; §12.5.6 task-36.13 row)*
-- **AC-3** Given an omitted section, then validation reports it satisfied and completion discounts it. *(source: FR text; UC-30)* Unmet until 41.2 and 41.3.
+- **AC-3** Given an omitted section, then validation reports it satisfied and completion discounts it. *(source: FR text; UC-30)* Validation since 41.2 and completion since 41.3, a section's elements read from `disclosure_omission_section` (§12.5.6's task-41 row (4)).
 - **AC-4** Given an omitted section, then both exports state it, and the Excel export does so in the template's own element. *(source: FR text)* Unmet until 44.3 and 46.1.
 - **AC-5** Given the member is deselected, then the section reads as before the declaration. *(source: UC-30)*
 

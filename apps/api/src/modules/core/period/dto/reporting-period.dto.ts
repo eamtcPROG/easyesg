@@ -17,6 +17,7 @@ import { Trim } from '@api/app/decorators/trim.decorator';
 import type { EpochMillis, LegalDate } from '@api/contracts/types/time';
 import {
   REPORT_STATUS,
+  statusAsRead,
   type ReportStatus,
 } from '@api/modules/core/disclosure/models/report.model';
 import type {
@@ -157,7 +158,8 @@ export class PeriodReportDto {
   @ApiProperty({
     enum: Object.values(REPORT_STATUS),
     description:
-      'Where the report stands. `open` and `locked` are written only by the period lock (FR-22).',
+      'Where the report stands. `open` and `locked` are written only by the period lock (FR-22); an open report ' +
+      'whose latest validation run left nothing outstanding reads `ready_to_file` (FR-41, 182/19).',
   })
   readonly status: ReportStatus;
 
@@ -169,7 +171,8 @@ export class PeriodReportDto {
 
   constructor(report: PeriodReport) {
     this.id = report.id;
-    this.status = report.status;
+    // Readiness is read, never stored (task 41.3): the same rule the report's own read applies.
+    this.status = statusAsRead(report);
     // OQ-50's conversion, at the boundary that owns it — beside `createdAt`/`updatedAt` below and
     // deliberately not beside the period's own calendar boundaries, which stay calendar dates.
     this.updatedAt = report.updatedAt.getTime();

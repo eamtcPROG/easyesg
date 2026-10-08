@@ -351,6 +351,120 @@
       "scope": ["EmployeeCountingMethodology"],
       "values": [{"elementKey": "NumberOfEmployees", "valueNumeric": "20"}],
       "findings": []
+    },
+    {
+      "name": "a requirement on a particular answer holds once the choice is that member, read past its taxonomy prefix",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-subsidiaries",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "NameOfTheSubsidiary"}],
+            "when": {"kind": "has_member", "element": "BasisForReporting", "member": "ConsolidatedMember"}
+          }
+        ]
+      },
+      "scope": ["BasisForReporting", "NameOfTheSubsidiary"],
+      "values": [{"elementKey": "BasisForReporting", "valueText": "vsme:ConsolidatedMember"}],
+      "findings": [
+        {
+          "rule": "b1-subsidiaries",
+          "verdict": "missing",
+          "field": {"elementKey": "NameOfTheSubsidiary", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "a requirement on a particular answer waits while the choice is another member",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-subsidiaries",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "NameOfTheSubsidiary"}],
+            "when": {"kind": "has_member", "element": "BasisForReporting", "member": "ConsolidatedMember"}
+          }
+        ]
+      },
+      "scope": ["BasisForReporting", "NameOfTheSubsidiary"],
+      "values": [{"elementKey": "BasisForReporting", "valueText": "vsme:IndividualMember"}],
+      "findings": []
+    },
+    {
+      "name": "a requirement on a particular answer holds once a choice of several includes the member",
+      "rules": {
+        "rules": [
+          {
+            "id": "c6-other-content",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy"}],
+            "when": {"kind": "has_member", "element": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce", "member": "OtherContentMember"}
+          }
+        ]
+      },
+      "scope": [
+        "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce",
+        "SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy"
+      ],
+      "values": [{"elementKey": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce", "valueText": "vsme:ChildLabourMember vsme:OtherContentMember"}],
+      "findings": [
+        {
+          "rule": "c6-other-content",
+          "verdict": "missing",
+          "field": {"elementKey": "SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "a member is matched whole, never as the end of a longer one",
+      "rules": {
+        "rules": [
+          {
+            "id": "c6-other-content",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy"}],
+            "when": {"kind": "has_member", "element": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce", "member": "OtherContentMember"}
+          }
+        ]
+      },
+      "scope": [
+        "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce",
+        "SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy"
+      ],
+      "values": [{"elementKey": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce", "valueText": "vsme:AnyOtherContentMember"}],
+      "findings": []
+    },
+    {
+      "name": "a declaration of not available holds no member, even over a choice left behind under it",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-subsidiaries",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.required",
+            "fields": [{"element": "NameOfTheSubsidiary"}],
+            "when": {"kind": "has_member", "element": "BasisForReporting", "member": "ConsolidatedMember"}
+          }
+        ]
+      },
+      "scope": ["BasisForReporting", "NameOfTheSubsidiary"],
+      "values": [{"elementKey": "BasisForReporting", "valueText": "vsme:ConsolidatedMember", "state": "not_available"}],
+      "findings": []
     }
   ]
 }

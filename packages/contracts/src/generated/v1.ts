@@ -1018,6 +1018,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/{id}/validation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the last validation run found
+         * @description The last run and its findings, in rule order, as the run left them — except that a finding whose field no longer applies, or whose section or module has since been declared omitted, is not returned (FR-43, 182/26). Nothing is evaluated: a report edited since its last run reads as that run left it.
+         */
+        get: operations["ValidationController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/validation/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run validation
+         * @description Evaluates the report at whatever completeness it stands, against the rule set in force today — or, on a locked period, the one its lock pinned — and replaces the report’s findings with what it finds (FR-43, FR-73 item 9). Repeated over unchanged answers it finds the same. A locked report is validated like any other (182/21).
+         */
+        post: operations["ValidationController_run"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports": {
         parameters: {
             query?: never;
@@ -1327,6 +1367,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/{id}/prior-period": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The prior period’s answers for this report
+         * @description Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.
+         */
+        get: operations["ComparativesController_priorPeriod"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/{id}/calculator": {
         parameters: {
             query?: never;
@@ -1488,26 +1548,6 @@ export interface paths {
          * @description UC-34 (FR-36): a note that stays beside a figure the calculator computed and that still stands.
          */
         put: operations["CalculatorController_explain"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/reports/{id}/prior-period": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The prior period’s answers for this report
-         * @description Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.
-         */
-        get: operations["ComparativesController_priorPeriod"];
-        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -3373,7 +3413,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /**
-             * @description Where the report stands. `open` and `locked` are written only by the period lock (FR-22).
+             * @description Where the report stands. `open` and `locked` are written only by the period lock (FR-22); an open report whose latest validation run left nothing outstanding reads `ready_to_file` (FR-41, 182/19).
              * @enum {string}
              */
             status: "open" | "locked" | "ready_to_file" | "filed";
@@ -3458,6 +3498,94 @@ export interface components {
             periodEnd?: components["schemas"]["LegalDateDto"];
             dueDate?: components["schemas"]["LegalDateDto"] | null;
         };
+        ValidationRunDto: {
+            /** @description When the run evaluated — epoch milliseconds, UTC. */
+            evaluatedAt: number;
+            /** @description The day the rule set was read as at: today in the period’s zone, or the day its lock pinned. */
+            rulesOn: components["schemas"]["LegalDateDto"];
+        };
+        FieldAddressDto: {
+            /** @example NumberOfEmployees */
+            elementKey: string;
+            /**
+             * @description An axis member, or '' where the element is undimensioned.
+             * @example
+             */
+            dimensionKey: string;
+            /** @description Position within a repeating group; 0 otherwise. */
+            ordinal: number;
+        };
+        ValidationFindingDto: {
+            /**
+             * @description The rule within its set.
+             * @example b1-turnover
+             */
+            rule: string;
+            /**
+             * @description FR-40’s verdict. A field with no finding is OK.
+             * @enum {string}
+             */
+            verdict: "missing" | "inconsistency" | "error" | "invalid_url";
+            field: components["schemas"]["FieldAddressDto"];
+            /** @description The fields it conflicts with, or that may answer it (FR-42 item 4). */
+            related: components["schemas"]["FieldAddressDto"][];
+            /**
+             * @description The catalogue key its wording is resolved by.
+             * @example validation.required
+             */
+            message: string;
+            /** @description The values its wording quotes, by name — decimals as canonical text. Empty where it quotes none. */
+            params: {
+                [key: string]: string;
+            };
+        };
+        CountsDto: {
+            /** @description Answered — a value or a nil return — with nothing outstanding on it. */
+            resolved: number;
+            /** @description Declared not available with its reason (FR-32), nothing outstanding on it. */
+            reasoned: number;
+            /** @description Carrying a finding. */
+            outstanding: number;
+            /**
+             * @description Not started while nothing is resolved or reasoned, in progress while something is outstanding, complete otherwise — for the report, complete is ready to file (182/19).
+             * @enum {string}
+             */
+            status: "not_started" | "in_progress" | "complete";
+        };
+        ModuleRollUpDto: {
+            /** @description Answered — a value or a nil return — with nothing outstanding on it. */
+            resolved: number;
+            /** @description Declared not available with its reason (FR-32), nothing outstanding on it. */
+            reasoned: number;
+            /** @description Carrying a finding. */
+            outstanding: number;
+            /**
+             * @description Not started while nothing is resolved or reasoned, in progress while something is outstanding, complete otherwise — for the report, complete is ready to file (182/19).
+             * @enum {string}
+             */
+            status: "not_started" | "in_progress" | "complete";
+            /**
+             * @description The module, by the standard’s own reference.
+             * @example B8
+             */
+            module: string;
+            /** @description The fields outstanding in it, as findings name them. */
+            outstandingFields: components["schemas"]["FieldAddressDto"][];
+        };
+        RollUpDto: {
+            /** @description Each field counted once, whatever modules present it. */
+            report: components["schemas"]["CountsDto"];
+            /** @description Every module in the report’s scope, untouched ones included. */
+            modules: components["schemas"]["ModuleRollUpDto"][];
+        };
+        ValidationDto: {
+            /** @description Null where the report was never validated. */
+            run: components["schemas"]["ValidationRunDto"] | null;
+            /** @description In rule order, then the store’s natural key. */
+            findings: components["schemas"]["ValidationFindingDto"][];
+            /** @description What the run came to, as it left it (FR-41 item 8). Null where the report was never validated. */
+            rollUp: components["schemas"]["RollUpDto"] | null;
+        };
         ReportSubjectDto: {
             /** Format: uuid */
             reportingEntityId: string;
@@ -3477,7 +3605,7 @@ export interface components {
             /** @enum {string} */
             scope: "basic" | "basic_and_comprehensive";
             /**
-             * @description Where the report stands. Open and locked follow the reporting period’s lock, which is their only writer (FR-22).
+             * @description Where the report stands. Open and locked follow the reporting period’s lock, which is their only writer (FR-22). An open report whose latest validation run left nothing outstanding reads ready to file (FR-41, 182/19) — read, never written.
              * @enum {string}
              */
             status: "open" | "locked" | "ready_to_file" | "filed";
@@ -3768,8 +3896,11 @@ export interface components {
             /** @example 2026-12-31 */
             valueDate?: string;
             unitCode?: string;
-            /** @enum {string} */
-            state: "ok" | "missing" | "inconsistency" | "error" | "invalid_url" | "not_available" | "not_material" | "nil_return";
+            /**
+             * @description An answer: `ok` (a value, or nothing — a cleared field), `nil_return` or `not_available`. A validation verdict is a finding, never a row’s state, so a write naming one is refused (182/17).
+             * @enum {string}
+             */
+            state: "ok" | "nil_return" | "not_available";
             /** @description Required exactly when the state is not available (FR-32) — enforced by the store. */
             notAvailableReason?: string;
             /** @description FR-47: this value was carried forward from the prior period. */
@@ -3894,6 +4025,60 @@ export interface components {
         UnsubscribeTokenRequestDto: {
             /** @description The signed token from the unsubscribe link. In the body, as the invitation’s is, so the api’s own logs never carry it; the link that holds it is a page on the tenant application. */
             token: string;
+        };
+        PriorReportPinDto: {
+            /** Format: uuid */
+            reportId: string;
+            /** Format: uuid */
+            periodId: string;
+            /**
+             * @description The fiscal year the comparative was reported for.
+             * @example 2025
+             */
+            fiscalYear: number;
+            /**
+             * @description The taxonomy version the prior report was authored under. Present because it may differ from the current report’s (DR-4), which is what `comparability` is about.
+             * @example 2026-05-01
+             */
+            taxonomyVersion: string;
+        };
+        PriorPeriodValueDto: {
+            /** @example NumberOfEmployeesInHeadcount */
+            elementKey: string;
+            /** @description An axis member, or empty where the element is undimensioned. */
+            dimensionKey: string;
+            /** @description Position within a repeating group; 0 where there is none. */
+            ordinal: number;
+            /** @description Decimal as a string, never a float. */
+            valueNumeric: string | null;
+            valueText: string | null;
+            valueBoolean: boolean | null;
+            /** @example 2025-12-31 */
+            valueDate: string | null;
+            unitCode: string | null;
+            /** @enum {string} */
+            state: "ok" | "missing" | "inconsistency" | "error" | "invalid_url" | "not_available" | "not_material" | "nil_return";
+            /**
+             * @description Whether this value can be placed beside the current field. A fact read from the two pinned taxonomy versions, not a decision about what to render.
+             * @enum {string}
+             */
+            comparability: "comparable" | "element_absent" | "shape_changed";
+        };
+        PriorPeriodResponseDto: {
+            /** Format: uuid */
+            reportId: string;
+            /**
+             * @description The current report’s pinned taxonomy version.
+             * @example 2026-05-01
+             */
+            taxonomyVersion: string;
+            /**
+             * @description Why there is nothing to show, where there is nothing. A first year and a prior period nobody reported on are different situations for a reporter (FR-45).
+             * @enum {string}
+             */
+            availability: "available" | "no_prior_period" | "no_prior_report";
+            prior: components["schemas"]["PriorReportPinDto"] | null;
+            values: components["schemas"]["PriorPeriodValueDto"][];
         };
         CalcFactorSourceDto: {
             /**
@@ -4220,60 +4405,6 @@ export interface components {
              * @example The Cahul shop is billed by its landlord and is not included.
              */
             explanation?: string | null;
-        };
-        PriorReportPinDto: {
-            /** Format: uuid */
-            reportId: string;
-            /** Format: uuid */
-            periodId: string;
-            /**
-             * @description The fiscal year the comparative was reported for.
-             * @example 2025
-             */
-            fiscalYear: number;
-            /**
-             * @description The taxonomy version the prior report was authored under. Present because it may differ from the current report’s (DR-4), which is what `comparability` is about.
-             * @example 2026-05-01
-             */
-            taxonomyVersion: string;
-        };
-        PriorPeriodValueDto: {
-            /** @example NumberOfEmployeesInHeadcount */
-            elementKey: string;
-            /** @description An axis member, or empty where the element is undimensioned. */
-            dimensionKey: string;
-            /** @description Position within a repeating group; 0 where there is none. */
-            ordinal: number;
-            /** @description Decimal as a string, never a float. */
-            valueNumeric: string | null;
-            valueText: string | null;
-            valueBoolean: boolean | null;
-            /** @example 2025-12-31 */
-            valueDate: string | null;
-            unitCode: string | null;
-            /** @enum {string} */
-            state: "ok" | "missing" | "inconsistency" | "error" | "invalid_url" | "not_available" | "not_material" | "nil_return";
-            /**
-             * @description Whether this value can be placed beside the current field. A fact read from the two pinned taxonomy versions, not a decision about what to render.
-             * @enum {string}
-             */
-            comparability: "comparable" | "element_absent" | "shape_changed";
-        };
-        PriorPeriodResponseDto: {
-            /** Format: uuid */
-            reportId: string;
-            /**
-             * @description The current report’s pinned taxonomy version.
-             * @example 2026-05-01
-             */
-            taxonomyVersion: string;
-            /**
-             * @description Why there is nothing to show, where there is nothing. A first year and a prior period nobody reported on are different situations for a reporter (FR-45).
-             * @enum {string}
-             */
-            availability: "available" | "no_prior_period" | "no_prior_report";
-            prior: components["schemas"]["PriorReportPinDto"] | null;
-            values: components["schemas"]["PriorPeriodValueDto"][];
         };
         SupportAccessDecisionResponseDto: {
             /** @enum {string} */
@@ -7140,6 +7271,75 @@ export interface operations {
             };
         };
     };
+    ValidationController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The last run, or none, and its findings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ValidationDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ValidationController_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run, and what it found. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ValidationDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No validation rule set can be read right now (problem type validation-rules-unavailable), so nothing was checked and nothing changed. Try again shortly. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ReportsController_list: {
         parameters: {
             query?: {
@@ -7719,6 +7919,37 @@ export interface operations {
             };
         };
     };
+    ComparativesController_priorPeriod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The prior period’s answers, each with its comparability verdict. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["PriorPeriodResponseDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     CalculatorController_view: {
         parameters: {
             query?: never;
@@ -8102,37 +8333,6 @@ export interface operations {
             };
             /** @description The reporting period is locked (FR-22). Or the figure is not a computed one that stands. */
             409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ComparativesController_priorPeriod: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The prior period’s answers, each with its comparability verdict. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResultObjectDto"] & {
-                        object?: components["schemas"]["PriorPeriodResponseDto"];
-                    };
-                };
-            };
-            /** @description No such report in the active organization. */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };

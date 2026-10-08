@@ -20,6 +20,7 @@ import type {
 import { returnedRows } from '../returned-rows';
 import { SQL_STATE, hasSqlState } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
+import { readyToFileOf } from './report-readiness';
 
 interface PeriodRow {
   id: string;
@@ -37,6 +38,7 @@ interface PeriodRow {
   entity_snapshot_id: string | null;
   locked_at: Date | null;
   locked_by: string | null;
+  locked_rule_set_revision: number | null;
   created_at: Date;
   updated_at: Date;
   // The joins (task 32.4). The entity's name completes a reference the row already carries; the
@@ -46,6 +48,7 @@ interface PeriodRow {
   report_id: string | null;
   report_status: ReportStatus | null;
   report_updated_at: Date | null;
+  report_ready_to_file: boolean;
 }
 
 /**
@@ -83,8 +86,9 @@ const PERIOD_COLUMNS = `p.id, p.reporting_entity_id, p.fiscal_year,
         p.period_end::text    AS period_end,   p.period_end_tz,
         p.due_date::text      AS due_date,     p.due_date_tz,
         p.template_version, p.taxonomy_version, p.prior_period_id, p.entity_snapshot_id,
-        p.locked_at, p.locked_by, p.created_at, p.updated_at,
+        p.locked_at, p.locked_by, p.locked_rule_set_revision, p.created_at, p.updated_at,
         e.name AS entity_name, r.id AS report_id, r.status AS report_status,
+        (r.id IS NOT NULL AND ${readyToFileOf('r')}) AS report_ready_to_file,
         r.updated_at AS report_updated_at`;
 
 /**
@@ -120,6 +124,7 @@ const toPeriod = (row: PeriodRow): ReportingPeriod => ({
   entitySnapshotId: row.entity_snapshot_id,
   lockedAt: row.locked_at,
   lockedBy: row.locked_by,
+  lockedRuleSetRevision: row.locked_rule_set_revision,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
   entityName: row.entity_name,
@@ -127,7 +132,12 @@ const toPeriod = (row: PeriodRow): ReportingPeriod => ({
   // make a half-joined report representable in the one place the model says it is not.
   report:
     row.report_id !== null && row.report_status !== null && row.report_updated_at !== null
-      ? { id: row.report_id, status: row.report_status, updatedAt: row.report_updated_at }
+      ? {
+          id: row.report_id,
+          status: row.report_status,
+          readyToFile: row.report_ready_to_file,
+          updatedAt: row.report_updated_at,
+        }
       : null,
 });
 
@@ -334,15 +344,16 @@ export class ReportingPeriodStoreRepository
     periodId: string;
     actorId: string | null;
     at: Date;
+    ruleSetRevision: number;
   }): Promise<ReportingPeriod | null> {
     try {
       const rows = returnedRows<{ id: string }>(
         await this.manager.query(
           `UPDATE core.reporting_period
-              SET locked_at = $2, locked_by = $3, updated_at = $2
+              SET locked_at = $2, locked_by = $3, locked_rule_set_revision = $4, updated_at = $2
             WHERE id = $1
         RETURNING id`,
-          [input.periodId, input.at, input.actorId],
+          [input.periodId, input.at, input.actorId, input.ruleSetRevision],
         ),
       );
       if (!rows[0]) return null;
@@ -393,7 +404,7 @@ export class ReportingPeriodStoreRepository
       const rows = returnedRows<{ id: string }>(
         await this.manager.query(
           `UPDATE core.reporting_period
-              SET locked_at = NULL, locked_by = NULL, updated_at = $2
+              SET locked_at = NULL, locked_by = NULL, locked_rule_set_revision = NULL, updated_at = $2
             WHERE id = $1
         RETURNING id`,
           [input.periodId, input.at],
