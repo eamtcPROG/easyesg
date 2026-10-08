@@ -28,6 +28,14 @@ export default defineConfig({
     // harness, not slack for the code: a genuine hang still fails.
     testTimeout: 30_000,
     include: ['src/**/*.spec.{ts,tsx}'],
-    coverage: { provider: 'v8', reportsDirectory: './coverage' },
+    // Off unless `--coverage` is passed, which only `pnpm test:coverage` does (task 205); the
+    // json-summary is what `tools/check-coverage.mjs` reads. `include` is what makes a source file
+    // no spec imports count as uncovered — without it Vitest 4 reports only the files a test loaded.
+    coverage: {
+      provider: 'v8',
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      reporter: ['json-summary', 'text-summary'],
+    },
   },
 });

@@ -15,9 +15,9 @@ import { RULE_SET_READ, readRuleSet } from './read-rule-set.js';
 /**
  * The shared rule corpus, run here against the package's source (task 40.3) — the local loop, and the fixtures §12.5.6's
  * 95% line / 90% branch floor for the validation engine names (NFR-88: *"coverage is over the config interpreter, with
- * the rule corpus as fixtures"*). **Nothing measures that floor yet**: no coverage provider is installed and no task
- * owns NFR-88's gate. What stood in at task 40 was a mutation run over the interpreter, every mutation red
- * (`build-log.md`'s task-40 entry).
+ * the rule corpus as fixtures"*). **Measured since task 205**: `pnpm test:coverage` runs this package's suites with
+ * coverage on and holds `src/rules/` to that floor, read from §12.5.6's table. Before it, what stood in at task 40 was
+ * a mutation run over the interpreter, every mutation red (`build-log.md`'s task-40 entry).
  *
  * **The proof that the two runtimes agree is not this file**: `apps/api`'s jest runs the same files against the
  * package's CommonJS build, and `apps/web`'s vitest against its source, each reading the directory — so a case file

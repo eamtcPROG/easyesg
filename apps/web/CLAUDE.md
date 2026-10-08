@@ -1048,9 +1048,9 @@ where the hook beside them carries no directive; one since S-02's reset request 
   needs `waitFor`, as `access-board.spec.tsx` already does.
 
   **What makes this worth a trap entry is how it failed.** It passed six local runs, and it passed
-  in the *same CI run* that failed it: `pnpm test` executes in both the hermetic job and the
-  `BILLING_ENABLED=false` job, and on one commit the two disagreed — same command, same tree,
-  opposite outcomes. A flake that only appears under a scheduler you do not control is invisible to
+  in the *same CI run* that failed it: the unit suites execute in both the hermetic job (as `pnpm test:coverage`
+  since task 205) and the `BILLING_ENABLED=false` job, and on one commit the two disagreed — same suites, same
+  tree, opposite outcomes. A flake that only appears under a scheduler you do not control is invisible to
   every local repetition, so treat a red job whose diff cannot explain it as a timing assertion
   before you go looking for a regression.
 
