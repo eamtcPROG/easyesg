@@ -1,6 +1,6 @@
 'use client';
 
-import type { CalcFactorSource, CalcSite, WriteCalcLineRequest } from '@easyesg/contracts';
+import type { CalcFactorSource, CalcSite } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { memo, useCallback, useEffect, useId, useReducer } from 'react';
 import { loadSpreadsheetReaders, readSpreadsheet, SPREADSHEET_OUTCOME } from '@/client/spreadsheet/read-spreadsheet';
@@ -9,13 +9,8 @@ import { IMPORT_EVENT, IMPORT_STAGE, importReducer, INITIAL_IMPORT_STATE } from 
 import styles from '../../styles/calculator.module.css';
 import { ImportFile } from '../choosing/import-file';
 import { ImportMapping } from '../mapping/import-mapping';
+import type { ImportedLines } from '../shared/imported-lines';
 import { IMPORT_MESSAGES } from '../shared/import-messages';
-
-/** What an import hands the board: the lines to queue, and the file they came from, for the notice. */
-export interface ImportedLines {
-  readonly lines: readonly WriteCalcLineRequest[];
-  readonly file: string;
-}
 
 /**
  * *Import from a spreadsheet* on S-09 (task 204.2; FR-211, UC-215; `architecture.md` §12.5.6's task-204 row): the

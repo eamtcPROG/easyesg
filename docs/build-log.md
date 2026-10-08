@@ -28356,3 +28356,8 @@ locally, and each fix proven on a copy of `dev` before it was pushed here, at th
   `openapi:emit` and `admin:provision` each build first, and the migration and the provisioning entrypoint name
   `@easyesg/` only in comments. `pretest:e2e` and `pretest:worker` now build the packages twice, once more through
   `test:stack`'s seed — seconds, and accepted rather than a hook that trusts its caller.
+- **`pnpm boundaries` refused a cycle task 204.2 left in S-09's import.** `import-mapping.tsx` imported the
+  `ImportedLines` type back from `import-panel.tsx`, which renders it (`no-circular`). The type now lives in
+  `importing/shared/imported-lines.ts`, the leaf that admits what more than one of `importing/`'s folders reads, and
+  its three readers import it there. A type-only move, erased at compile, so no browser journey can see it: proven
+  by `pnpm boundaries` (no violations), the web typecheck and lint, and the web's 1,578 unit tests.
