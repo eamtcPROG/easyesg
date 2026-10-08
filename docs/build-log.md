@@ -29553,3 +29553,76 @@ review agents wait for its end. Every row task 42 reaches ran, one suite at a ti
   and the contract had no validation path; `apps/web/CLAUDE.md` listed the calculator and validation among the
   addresses not yet available.
 
+
+## Task 207 — A dialogue hands focus back to what raised it · 2026-10-09
+
+Appended and closed in one change, at the owner's request, from a gap task 42.3 found and raised rather than fixed:
+the design system's `Dialog` and `ConsequenceDialogue` returned focus to nothing when they closed, on every caller in
+both apps. Both now return it to the control that raised them, against UX-113's *always return to a sensible origin*.
+
+### Decided before building
+
+Nothing was asked: UX-113 states the rule, and `design_spec.md` §11.5 now records how both dialogues meet it. The one
+place the build could have widened — a dialogue raised from a menu — is UX-113's own case, since the item that raised it
+is no origin once it has closed with its menu.
+
+### How it is cut
+
+- **`useReturnFocus`** (`packages/ui/src/feedback/`): the two handlers a Radix dialogue's content takes. As the dialogue
+  opens, `onOpenAutoFocus` records its origin; on close, `onCloseAutoFocus` runs the caller's handler first, cancels
+  Radix's own hand-back, and focuses the origin if it is still in the document. `Dialog` and `ConsequenceDialogue` both
+  take it, and `Dialog` passes a caller's `onCloseAutoFocus` through.
+- **`dialogueOrigin`**, with a spec of four cases: the element that held focus, or, inside `[role="menu"]`, the button
+  the menu is labelled by; `null` for `body`.
+- **S-08's sheet declines the hand-back** for a close a followed finding caused (`ValidationSection`'s `followed`
+  ref), or focus would go from the field back to the count that raised the sheet.
+
+### The calls taken in the build, and why each holds
+
+- **Why Radix alone did not**: a modal dialogue's content composes its close handler to cancel the focus scope's return
+  and focus `triggerRef`, which only `Dialog.Trigger` sets. Every caller here opens the dialogue from state. Read in
+  Radix's source (dialog 1.1.23; alert-dialog 1.1.23 passes its content props through to it) and measured in jsdom.
+- **A menu's item resolves to the menu's button, by `aria-labelledby`.** The first build took the first focus that landed
+  outside the dialogue while it was open, on the belief that the menu hands focus back to its trigger and the dialogue's
+  trap bounces it. A focus log in the console's roster journey showed neither: the item still held focus as the question
+  mounted — so the recorded origin was the item, gone by the close — and the menu, counting focus moving into the
+  dialogue as an interaction outside it, never refocused its trigger. That build was reverted. Radix labels every menu's
+  content by its trigger's id (dropdown-menu 2.1.24), so the account menu and the organization switcher, both raising a
+  consequence dialogue over unsent work, are covered by the same resolution.
+- **The directive stays on the hook**, as on `use-dismissible.ts`; `packages/ui/CLAUDE.md`'s count is 36 of 80.
+
+### Found in passing
+
+- `architecture.md` §12.5.6's task-42 row (g) described the sheet's close as having no hand-back to decline, which was
+  true only while the dialogue returned focus nowhere; it now says the sheet declines it.
+- **Searched for the shape**: every Radix dialogue in `packages/ui`. The drawers, the module switcher and the select open
+  from Radix triggers and return focus already; `Dialog` and `ConsequenceDialogue` were the two without one.
+
+### Skills, read against the diff
+
+- `vercel-composition-patterns`: no boolean added; `Dialog` gains the event handler Radix itself names, and the
+  consequence dialogue gains nothing callers can set.
+- `one-idea-per-file`: the origin's resolution is pure DOM and has its own file and spec; the hook is the wiring.
+- `vercel-react-best-practices`: the hook's handlers are stable (`useCallback`), the origin a ref, since nothing draws
+  from it.
+
+### Proven to bite
+
+- **The hand-back**: each dialogue's close handler removed, its spec's new case red, 1 of 7 and 1 of 6; restored.
+- **The opt-out**: the hook made to ignore a caller's `preventDefault()`, `Dialog`'s *leaves focus where it is* red.
+- **The menu's button**: the console journey's new assertion was red on both builds before `dialogueOrigin`, green after.
+- **The browser**: S-16's withdrawn invitation, declined, returns focus to *Anulați invitația*; the console's record,
+  closed, returns focus to *Vedeți*; its row menu's question, declined, to the row's ⋯; S-08's followed finding stays in
+  its field (42.3's journey).
+
+### Gates
+
+The change reaches `packages/ui`, so every dependent's row ran — `apps/web` and `apps/admin`; the api does not depend
+on it — one suite at a time, with no dev server running.
+- `pnpm lint` and the workspace typecheck.
+- Unit suites: ui 467, the seven new cases among them; web 1,782; admin 298.
+- `pnpm routes:check` and `pnpm docs:check` — 48 claims, which found the package's `'use client'` count (36).
+- `pnpm e2e:web`, all three projects: 326 of 326. The server printed only digest `2667547900` and a calculator
+  journey's deliberate missing revision.
+- **Not run:** `pnpm e2e`, `pnpm e2e:worker` and `openapi:check`, since nothing in the api or the contract changed;
+  `gates:clean` and the review agents, which are Stage 2's end.

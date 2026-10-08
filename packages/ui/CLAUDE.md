@@ -128,7 +128,7 @@ src/
   Server Component as `undefined`, a button in the wrong colours, every gate green). When you add a
   vocabulary, add the sibling module — not an `as const` at the top of the component.
 
-- **35 of the 80 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
+- **36 of the 80 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
   or a handler of its own. `Button` carried it from task 20 without needing it, and the day it
   gained `asChild` that directive took two screens down with a 500 — see the root file's *"A
   component that slots may not be a client boundary"*. `TextLink` is the control: same seam, never
@@ -149,6 +149,14 @@ src/
 - **Presentational by rule: no text, no router.** Strings and `href`s arrive as props. This is not
   tidiness — the same component renders in three locales and in two apps with different routers,
   and `ui-is-presentational` fails the build on `packages/ui → apps/`.
+
+- **A Radix dialogue opened from state hands focus to nothing on close, unless it is told where** (task 207). Radix's
+  modal content cancels the focus scope's own return and focuses `triggerRef`, which only `Dialog.Trigger` sets — and
+  `Dialog` and `ConsequenceDialogue` are opened by their callers' state, so every close dropped focus on `body`, on
+  every caller in both apps, with every gate green. Both now take `useReturnFocus`: the control that held focus as the
+  dialogue opened, or a menu's button where an item in the menu raised it (`dialogueOrigin`, by the menu's
+  `aria-labelledby`), focused again on close; a caller keeps focus elsewhere with `onCloseAutoFocus` and
+  `preventDefault()`. **A new dialogue opened from state takes the same hook**; one with its own `Trigger` needs none.
 
 - **`account-menu.tsx` is a known, uncoverable gap.** It wraps caller-supplied `items[].node` in
   Radix's own `DropdownMenu.Item asChild`, so its rule is the **caller's**: do not pass slotted

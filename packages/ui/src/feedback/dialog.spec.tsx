@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import userEvent from '@testing-library/user-event';
 import { ConsequenceDialogue } from './consequence-dialogue';
 import { Dialog } from './dialog';
@@ -16,6 +17,22 @@ const props = {
   onClose: () => undefined,
   children: <p>The provider's record.</p>,
 };
+
+/** Opened from a button by the caller's state — as every caller opens it — so where focus goes on close is observable. */
+function Opened({ onCloseAutoFocus }: { readonly onCloseAutoFocus?: (event: Event) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>
+        Open
+      </button>
+      <Dialog {...props} open={open} onClose={() => setOpen(false)} onCloseAutoFocus={onCloseAutoFocus} />
+    </>
+  );
+}
+
+/** Radix hands focus back a tick after the content unmounts. */
+const afterTheHandBack = () => act(() => new Promise((resolve) => setTimeout(resolve, 10)));
 
 describe('Dialog', () => {
   it('is a modal dialogue named by its title', () => {
@@ -80,5 +97,23 @@ describe('Dialog', () => {
     await userEvent.keyboard('{Escape}');
     expect(onCancel).toHaveBeenCalledOnce();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  /** Task 207, UX-113: opened by the caller's state, not a Radix trigger, it still hands focus back to its opener. */
+  it('returns focus on close to what opened it', async () => {
+    render(<Opened />);
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+    await userEvent.keyboard('{Escape}');
+    await afterTheHandBack();
+    expect(screen.getByRole('button', { name: 'Open' })).toHaveFocus();
+  });
+
+  /** A close that sends the reader elsewhere — S-08's finding followed to its field — keeps focus off the opener. */
+  it('leaves focus where it is when the caller keeps it there', async () => {
+    render(<Opened onCloseAutoFocus={(event) => event.preventDefault()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+    await userEvent.keyboard('{Escape}');
+    await afterTheHandBack();
+    expect(screen.getByRole('button', { name: 'Open' })).not.toHaveFocus();
   });
 });

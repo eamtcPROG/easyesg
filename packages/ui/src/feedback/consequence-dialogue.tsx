@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { Button } from '../primitives/button';
 import { BUTTON_VARIANT } from '../primitives/button-vocabulary';
 import styles from './consequence-dialogue.module.css';
+import { useReturnFocus } from './use-return-focus';
 
 /**
  * Consequence dialogue — §11.5's Feedback entry and §6.14's instrument.
@@ -71,6 +72,7 @@ export function ConsequenceDialogue({
   onConfirm,
   onCancel,
 }: ConsequenceDialogueProps) {
+  const returnFocus = useReturnFocus({});
   return (
     <AlertDialog.Root
       open={open}
@@ -85,7 +87,12 @@ export function ConsequenceDialogue({
     >
       <AlertDialog.Portal>
         <AlertDialog.Overlay className={styles.overlay} />
-        <AlertDialog.Content className={styles.dialogue}>
+        {/* Opened from state, not a Radix `Trigger`, so Radix would hand focus to nothing on close (task 207). */}
+        <AlertDialog.Content
+          className={styles.dialogue}
+          onOpenAutoFocus={returnFocus.onOpenAutoFocus}
+          onCloseAutoFocus={returnFocus.onCloseAutoFocus}
+        >
           <AlertDialog.Title className={`t-heading-3 ${styles.title}`}>{title}</AlertDialog.Title>
 
           {/* One Description spanning all three facts, so assistive technology is given the whole

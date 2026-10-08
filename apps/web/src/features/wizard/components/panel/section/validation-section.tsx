@@ -2,7 +2,7 @@
 
 import { DIALOG_SIZE, Dialog, ValidationCountBar, ValidationDock } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { PANEL_FILTER, panelFindings, type PanelFilter } from '../../../tools/panel-findings';
 import { useValidationContext } from '../../providers/validation-context';
 import { useCheckReport } from '../run/use-check-report';
@@ -22,7 +22,10 @@ import { PanelBody } from './panel-body';
  *
  * **A finding followed from the sheet closes it first** (task 42.3): the sheet is modal, so while it is open its trap
  * holds focus inside it, and the field the address lands on could not take focus. The link tells the section as it is
- * followed (`FindingFollowContext`), before the browser moves to the field.
+ * followed (`FindingFollowContext`), before the browser moves to the field. **And that close alone keeps focus where
+ * it lands** (task 207): a dialogue hands focus back to what opened it, which here is the count at the step's foot —
+ * straight out of the field — so the section marks the close as a finding's and declines the hand-back
+ * (`onCloseAutoFocus`). A ref, because it carries only the reason for the next close and nothing draws from it.
  *
  * **A Client Component because the panel is interactive throughout** — the run, the filter, the sheet — and its rows
  * read the step's live verdicts. The run it draws is read with the step on the server and held by `ValidationProvider`,
@@ -47,6 +50,7 @@ export function ValidationSection({
   const check = useCheckReport(reportId);
   const [filter, setFilter] = useState<PanelFilter>(PANEL_FILTER.ALL);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const followed = useRef(false);
 
   // Grouping a report's findings is the panel's most expensive derivation, and it feeds both placements.
   const findings = useMemo(
@@ -55,9 +59,18 @@ export function ValidationSection({
   );
 
   // Read by every finding's link, in both placements; its identity changes only when the sheet opens or closes.
-  // Closing an already closed sheet is no change, so the docked panel's links call it too, harmlessly.
-  const onFollow = useCallback(() => setSheetOpen(false), []);
+  // The docked panel's links call it too: the sheet is closed, so nothing is marked and nothing changes.
+  const onFollow = useCallback(() => {
+    if (!sheetOpen) return;
+    followed.current = true;
+    setSheetOpen(false);
+  }, [sheetOpen]);
   const follow = useMemo<FindingFollow>(() => ({ current: module, onFollow }), [module, onFollow]);
+  const keepFocusWhenFollowed = useCallback((event: Event) => {
+    if (!followed.current) return;
+    followed.current = false;
+    event.preventDefault();
+  }, []);
 
   const body = (
     <PanelBody
@@ -89,6 +102,7 @@ export function ValidationSection({
         title={t('title')}
         closeLabel={t('sheetClose')}
         size={DIALOG_SIZE.SHEET}
+        onCloseAutoFocus={keepFocusWhenFollowed}
       >
         {body}
       </Dialog>

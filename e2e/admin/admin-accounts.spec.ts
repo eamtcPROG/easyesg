@@ -136,9 +136,21 @@ test('an invited operator sets their own credentials and signs in, and suspendin
 
   await record.getByRole('button', { name: 'Închideți fișa', exact: true }).click();
   await expect(record).toHaveCount(0);
+  // UX-113 (task 207): closed, the record hands focus back to the row's button that opened it.
+  await expect(inviteeRow.getByRole('button', { name: `Vedeți ${invitee}`, exact: true })).toBeFocused();
   // Closed, the record hands its notice back to the page, above the roster.
   await expect(page.getByText(suspended, { exact: false })).toBeVisible();
   await expect(inviteeRow).toContainText('Suspendat');
+
+  // UX-113 (task 207): a question raised from the row's menu and declined hands focus back to the menu's button — the
+  // item that raised it closed with the menu.
+  const more = inviteeRow.getByRole('button', { name: `Mai multe acțiuni pentru ${invitee}`, exact: true });
+  await more.click();
+  await page.getByRole('menuitem', { name: 'Eliminați accesul…', exact: true }).click();
+  const question = page.getByRole('alertdialog');
+  await question.getByRole('button', { name: 'Renunțați', exact: true }).click();
+  await expect(question).toHaveCount(0);
+  await expect(more).toBeFocused();
 
   const log = page.getByRole('table', { name: 'Intrările jurnalului de sistem, cele mai noi primele' });
   await expect(

@@ -288,12 +288,20 @@ test('an invitation can be withdrawn, and the confirmation names the person', as
   await sendInvitation(page, invited, 'Editare');
   await expect(personCell(page, invited)).toBeVisible();
 
-  await page.getByRole('button', { name: 'Anulați invitația' }).click();
+  const withdraw = page.getByRole('button', { name: 'Anulați invitația' });
+  await withdraw.click();
 
   // UX-70: the specific object, by name, and the specific consequence.
   const dialogue = page.getByRole('alertdialog');
   await expect(dialogue).toContainText(invited);
   await expect(dialogue).toContainText('nu mai funcționează');
+
+  // UX-113 (task 207): declined, the question hands focus back to the control that raised it.
+  await dialogue.getByRole('button', { name: 'Păstrați invitația' }).click();
+  await expect(dialogue).toHaveCount(0);
+  await expect(withdraw).toBeFocused();
+
+  await withdraw.click();
   await dialogue.getByRole('button', { name: 'Anulați invitația' }).click();
 
   await expect(personCell(page, invited)).toHaveCount(0);

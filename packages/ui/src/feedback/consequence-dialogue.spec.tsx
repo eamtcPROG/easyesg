@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import userEvent from '@testing-library/user-event';
 import { ConsequenceDialogue } from './consequence-dialogue';
 
@@ -72,5 +73,26 @@ describe('ConsequenceDialogue (UX-70, UX-69)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(onConfirm).toHaveBeenCalledOnce();
     expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  /** Task 207, UX-113: opened by the caller's state, it hands focus back to the control that asked. */
+  it('returns focus on cancel to what opened it', async () => {
+    function Opened() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            Remove
+          </button>
+          <ConsequenceDialogue {...props} open={open} onCancel={() => setOpen(false)} />
+        </>
+      );
+    }
+    render(<Opened />);
+    await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Keep access' }));
+    // Radix hands focus back a tick after the content unmounts.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
+    expect(screen.getByRole('button', { name: 'Remove' })).toHaveFocus();
   });
 });

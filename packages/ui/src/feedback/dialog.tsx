@@ -5,6 +5,7 @@ import { Dialog as RadixDialog } from 'radix-ui';
 import type { ReactNode } from 'react';
 import { DIALOG_SIZE, type DialogSize } from './dialog-vocabulary';
 import styles from './dialog.module.css';
+import { useReturnFocus } from './use-return-focus';
 
 /**
  * Dialogue — the Components sheet's `ui/dialog.tsx`, added to §11.5 on 24 Sep 2026 (task 170): a modal
@@ -48,6 +49,11 @@ export interface DialogProps {
   /** The closing row of actions — at the end at `wide`, stacked full width at `compact`. */
   readonly footer?: ReactNode;
   readonly size?: DialogSize;
+  /**
+   * Called as the dialogue closes, before focus returns to what opened it (`useReturnFocus`); `preventDefault()` keeps it
+   * where it is. For a close that sends the reader elsewhere — a finding followed from S-08's sheet lands in its field.
+   */
+  readonly onCloseAutoFocus?: (event: Event) => void;
 }
 
 export function Dialog({
@@ -59,7 +65,9 @@ export function Dialog({
   children,
   footer,
   size = DIALOG_SIZE.DEFAULT,
+  onCloseAutoFocus,
 }: DialogProps) {
+  const returnFocus = useReturnFocus({ onCloseAutoFocus });
   return (
     <RadixDialog.Root
       open={open}
@@ -73,6 +81,9 @@ export function Dialog({
           className={styles.dialog}
           data-size={size}
           onPointerDownOutside={(event) => event.preventDefault()}
+          // Opened from state, not a Radix `Trigger`, so Radix would hand focus to nothing on close (task 207).
+          onOpenAutoFocus={returnFocus.onOpenAutoFocus}
+          onCloseAutoFocus={returnFocus.onCloseAutoFocus}
           // With no description, Radix warns unless the attribute is explicitly absent.
           {...(description === undefined ? { 'aria-describedby': undefined } : {})}
         >
