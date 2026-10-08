@@ -28341,3 +28341,18 @@ Docker daemon started by hand. The timings below are that machine's.
     browser journey.
   - `e2e:worker` (no consumer), `openapi:check` (no controller or DTO) and `migrations:check` (no migration).
   - The review agents and `gates:clean`, which wait for Stage 2's end; task 205 is not its last row.
+
+### Found by CI on the pull request
+
+PR #1's first run failed two jobs, each at a step `dev`'s own run 53 (`f878cabc`) fails at too. Each was reproduced
+locally, and each fix proven on a copy of `dev` before it was pushed here, at the owner's choice:
+
+- **`config:seed` loaded `@easyesg/i18n`'s CommonJS build that nothing had built.** CI's *Seed configuration, twice*
+  step runs it on a fresh checkout, and the seed answered `Cannot find module …/@easyesg/i18n/dist/cjs/index.js`.
+  Locally it passed only because an earlier command had left `dist/` behind: the root `CLAUDE.md`'s *a gate must not
+  depend on state a previous command left behind*. `preconfig:seed` now builds the three packages, the line `pretest`
+  already carries. Reproduced by deleting the three `dist/` directories and seeding; with the hook, the same seeds.
+  **Searched for the shape:** every `apps/api` script that loads a package's build. `test`, `test:e2e`, `test:worker`,
+  `openapi:emit` and `admin:provision` each build first, and the migration and the provisioning entrypoint name
+  `@easyesg/` only in comments. `pretest:e2e` and `pretest:worker` now build the packages twice, once more through
+  `test:stack`'s seed — seconds, and accepted rather than a hook that trusts its caller.

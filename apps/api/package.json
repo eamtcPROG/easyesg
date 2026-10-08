@@ -20,6 +20,7 @@
     "db:revert": "pnpm db:cli migration:revert -d src/infrastructure/persistence/migration.data-source.ts",
     "db:show": "pnpm db:cli migration:show -d src/infrastructure/persistence/migration.data-source.ts",
     "db:migrate:prod": "node --env-file-if-exists=.env ./node_modules/typeorm/cli.js migration:run -d dist/infrastructure/persistence/migration.data-source.js",
+    "preconfig:seed": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build && pnpm --filter @easyesg/vsme build",
     "config:seed": "node --env-file-if-exists=.env -r ts-node/register -r tsconfig-paths/register src/infrastructure/configuration/seed-configuration.main.ts",
     "preadmin:provision": "pnpm build",
     "admin:provision": "node --env-file-if-exists=.env dist/infrastructure/provisioning/provision-admin.main.js",
