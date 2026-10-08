@@ -28777,3 +28777,102 @@ All three sub-steps are done. The row moved into `archived_tasks.md` under Phase
   - 67.8 publishes a rule set and answers its refusal with a 400.
 - **Not owned by any row, and raised rather than assumed:** NFR-39's maximum-population fixture (FR-43 AC-4). It was
   measured at 28–134 ms on reports with their Basic figures answered, and is proven by no fixture.
+
+## Task 201 — The version-pinned regression suite: every shipped version kept, every pinned figure replayed · 2026-10-08
+
+NFR-87's suite. Every factor set and validation rule set the seed has shipped is now kept in `config/version-pinned/`.
+Beside each version sit the runs and reports pinned to it and what they came to: a run's results per B3 scope, and a
+report's findings. The api's unit suite re-evaluates every one against its own kept set on every `pnpm test`, and
+requires exactly the recorded figures. It also refuses a seed whose factor set or rule set is not kept, so a rule or
+factor change lands only with its version added beside the earlier ones. FR-71 and FR-73 lose their `201` remainder,
+and FR-73 AC-5 is met. Stage 2 does not close: tasks 51, 42 and onward remain.
+
+### Decided before building
+
+One batch of two, each answered with the recommended option and recorded in §12.5.6's task-201 row:
+- **(1) Kept versions, replayed with no stack.**
+  - The question was where *every prior pinned version* comes from, when CI's test stack starts empty and holds only
+    the seed's current one.
+  - The data side of a restatement is already refused. A run's results and its pin are immutable rows (task-38.1 row),
+    and a lock pins its rule-set revision (task-41 row (5)). 38.4's and 41.2's e2e cases each prove that for one change.
+  - What can still restate an earlier version's figure is code: the factor-set reader, the arithmetic, the interpreter.
+    A suite that records and checks in one run, under one build, agrees with itself. Only figures recorded by an
+    earlier build and committed can see that.
+  - *Declined:* an e2e suite over the stack publishing successive revisions; and both.
+- **(2) Every source, unit and rule bites, asserted.** A source or rule no kept report exercises is one whose drift the
+  suite cannot see, so coverage is a standing check rather than a hope. *Declined:* representative reports only.
+- **Derived, not asked:** (a) only the two pinned artefacts — thresholds are unpinned by FR-72 item 3, and derivation
+  formulas are code pinned with the template; (b) a rule set's figures are its findings (FR-73 item 9), the roll-up
+  being counted from them by code no version carries; (c) an A-05 publication (67.8) never reaches CI. It is held by
+  the pin and by NFR-19's replay (46.4), *assumed* to be NFR-87's intent, and recorded as an assumption in the row.
+
+### The calls taken in the build, and why each holds
+
+- **One file per kept version, the payload and what was recorded under it together.**
+  - Directories are named as the seed file they keep, `emission-factor-set.md/` and `validation-rule-set.vsme/`, and
+    parsed by the loader's own `parseSeedName`.
+  - A factor set's file is named by its label (`2026.1.json`); a rule set has none, so by the date it shipped
+    (`2026-10-08.json`).
+  - Each file opens with an `about` line saying it is never edited and pointing at the directory's README.
+- **The re-evaluation is the product's own path, not a re-implementation.**
+  - A run replays through `ReadCalcRun`, so *reproduces* is NFR-19's own verdict.
+  - A report evaluates through `ValidationRuleSetCatalog.pinned` and `evaluateRules`, the two calls a locked report's
+    validation run makes.
+  - Both read their kept set through the real adapters over `testing/kept-versions.ts`, a `ConfigurationHistory`
+    double serving each kept version at a revision of its own. That revision is the double's, not a store's, because a
+    store's revisions differ per database — which is why a version is kept by its payload.
+  - `RunValidation` itself was not used: it also counts the roll-up, which needs a module map the corpus does not
+    model and which (b) leaves out.
+- **The first figures were computed once, by the current code, and checked by hand.**
+  - A temporary spec wrote them and was deleted, so no generator is committed. The README tells the next author to take
+    a new version's figures from the spec's own diff, and to read each moved figure against the change that moved it.
+  - Checked against arithmetic: 1 250 m³ of gas at 0.0095773 MWh/m³ and 0.202544 t/MWh is 2.424780814 t; 42 000 kWh at
+    0.594645 t/MWh is 24.97509 t.
+- **The corpus, as built.**
+  - The factor set: one run per source and unit, fifteen; one run with every source, a line explained and a line
+    replaced with a reason; and one whose Scope 2 is explained only, so a scope measured by nothing records `null`.
+  - The rule set: four reports over every element the rules name. *Nothing answered* (36 findings); *every condition met,
+    what each makes required left empty* (41); *answered, but rows incomplete, links not web addresses and figures
+    disagreeing* (43); and *every field answered consistently, one declared not available* (none). The last is the
+    over-firing guard: a rule that started firing on a correct answer turns it red.
+  - All sixty rules fire in at least one report. The turnover in the third is halved exactly, so the year-over-year rule
+    is also held at its boundary.
+- **The rule-set coverage check compares with `isDeepStrictEqual`, so it first asserts the unmodified set compares
+  equal.** Without that baseline, a comparison that could never say *unchanged* would make every removal read as a
+  restatement and the check would pass on nothing. The factor-set check compares through `reproduces`, the same signal
+  its main case asserts `true`, so it carries no such risk.
+
+### Searched for the shape
+
+- **Other pinned artefacts**: the taxonomy version is the third pin (FR-66, DR-4). It is not a rule or a factor. Each
+  version is its own extracted file, never edited, and a change of version is a registration and a migration
+  (FR-67 … FR-69), so it is not this suite's.
+- **CI's `paths-ignore`**: `docs/**`, `design/**`, `**/*.md` and `.gitignore`. A seed-only change touches
+  `config/**/*.json`, so it does run CI and this suite.
+
+### Proven to bite
+
+Each mutation was restored afterwards, and `packages/validation` rebuilt after its own.
+- **Unit conversion arithmetic** (`line-emission.ts` truncating a conversion): 15 of the 16 recorded runs red, each
+  diff naming the run and its moved figure. The one conversion of `1` is untouched by that mutation.
+- **The interpreter** (`isAnswered` no longer counting *not available*): the complete report red on the pay-gap field,
+  and the coverage check's baseline red.
+- **A seed factor edited in place** (gas at 0.202545): *keeps every factor set the seed ships* red, naming `md` `2026.1`.
+- **A seed rule edited** (the first rule's verdict): *keeps every rule set the seed ships* red.
+- **A gap in the corpus** (the one MWh run removed): the coverage check red, naming `electricity_grid's MWh`.
+
+### Gates
+
+The change is two spec files, a test double under `apps/api/src/testing/`, the kept versions and the documents. No
+entrypoint's code changed. It ran per the `apps/api` row, one suite at a time, with no dev server running.
+- `pnpm lint`, and `pnpm --filter @easyesg/api typecheck`.
+- The api's unit suite: 230 suites, 1,892 tests.
+- `pnpm docs:check`: 48 claims, with the archive's and the plan's counts moved to 142 and 255, and 63 here.
+- `pnpm e2e`: 65 suites, 1,629 tests, nothing unhandled — **on the second run**. The first passed every test, but
+  failed one suite: `social-auth.e2e-spec.ts`'s `afterAll` exceeded jest's 30 s hook timeout, the suite having taken
+  101 s. That hook restores the identity-provider slot, closes the app and deletes the suite's rows; nothing this task
+  changed is on its path. Alone it passed 9 of 9, and the full rerun passed whole. Recorded rather than retried away:
+  a second sighting makes it a finding about that hook under load.
+- **Not run:** `pnpm e2e:worker` (no consumer changed), `pnpm openapi:check` (no controller or DTO), `pnpm
+  migrations:check` (no migration). The review agents and `gates:clean` wait for Stage 2's end, since task 201 is not
+  its last row.

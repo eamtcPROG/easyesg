@@ -31,6 +31,14 @@ text: labels, help text, validation messages and notification templates ship as 
 catalogues in `packages/i18n`. Only help-centre articles and plan presentation copy — the text
 edited by people who cannot deploy — stay in the store.
 
+## A pinned artefact's earlier versions are kept
+
+**A change to `emission-factor-set.*.json` or `validation-rule-set.vsme.json` lands with its new version in
+`config/version-pinned/`** (task 201, NFR-87). Reports stay pinned to the version they were computed under, and the
+api's unit suite re-evaluates every report pinned to every kept version and refuses a seed whose payload is not one of
+them — so an edit here fails `pnpm test` until it is kept there, beside the versions before it. That directory's README
+says how.
+
 ## Present
 
 | File | Kind | Why it is here and not in code |

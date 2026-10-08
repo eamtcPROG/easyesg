@@ -15,7 +15,8 @@ notification core (49) — categories, one mail path, `raise()` and delivery by 
 since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the record since 50.1.4, and its first
 producer through `raise()` since 50.3, UC-175's reminder, and each person's preferences, honoured at dispatch, with FR-169's
 one-click unsubscribe since task 52, the calculator since tasks 37 … 39, and validation's rule set, run, findings and
-roll-up since task 41, over `@easyesg/validation`'s interpreter; validation's screens, export, billing, the console's
+roll-up since task 41, over `@easyesg/validation`'s interpreter, and NFR-87's version-pinned suite over both since
+task 201; validation's screens, export, billing, the console's
 screens, edge and deploy, the public tier and the Comprehensive Module are not. `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
@@ -530,6 +531,14 @@ Four things to know before touching it:
   period reads join `readyToFileOf` (`persistence/core/report-readiness.ts`) into a `readyToFile` flag, and the DTOs
   turn it into the status through `statusAsRead`. Anything that decides on a report's status — the reminder, the lock
   — must keep reading the stored one.
+- **A pinned version's figures are held by `version-pinned.spec.ts`, one in each of `core/calculator` and
+  `core/validation`** (task 201, NFR-87; §12.5.6's task-201 row). They re-evaluate every run and report kept in
+  `config/version-pinned/` against its own kept set, through `ReadCalcRun` and through `ValidationRuleSetCatalog.pinned`
+  with the interpreter, over `testing/kept-versions.ts`'s history double, and require exactly the recorded results and
+  findings. So **a change to the factor-set reader, the calculator's arithmetic or the interpreter that moves an earlier
+  version's figure fails `pnpm test`** — which is the point, not a fixture to refresh: a moved figure is a restatement
+  unless the change to the code is itself a decision. A seed edit to either artefact fails it too, until the new version
+  is kept beside the old (`config/version-pinned/README.md`).
 
 **Push**
 

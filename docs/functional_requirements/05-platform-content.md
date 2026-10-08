@@ -391,7 +391,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 
 ### FR-71 — Emission and conversion factor sets as data
 
-**Status.** Partial — delivered 16, 37.1, 37.2, 37.3, 37.4 · remaining 201 (the version-pinned regression suite), 67.8 (A-05's editor, and its 400)
+**Status.** Partial — delivered 16, 37.1, 37.2, 37.3, 37.4, 201 (the version-pinned regression suite) · remaining 67.8 (A-05's editor, and its 400)
 
 **Obligation.** The system shall maintain versioned, effective-dated emission and conversion factor sets as data, one artefact per country, so that a set serves the periods that start within its window and no two sets are in force for one period.
 
@@ -419,7 +419,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 
 **Configuration-held values.** `emission-factor-set.md.json`, country `md`, label `2026.1`, serving periods starting before 1 Jan 2027 so that a 2027 set can be an adjacent window (task-37 row (6)). Ten fuels at IPCC 2006 Tier-1 defaults with AR6 GWPs, natural gas at Moldovatransgaz's 8 235 kcal/m³, litres at CDP's densities, and grid electricity at 0.594645 tCO₂e/MWh, the European Commission JRC's Covenant of Mayors 2024 figure for Moldova (2020), reviewed source by source by the owner on 1 Oct 2026 (task-37 row (5)). These are the values the sources record. The testable obligation is that a run reads the set from configuration and applies it.
 
-**Boundaries.** Pinning and resolution are FR-35's. Computation is FR-34's. The notice is FR-166's (task 37.3). 201 builds the version-pinned regression suite NFR-87 requires on every factor change (§12.5.6 task-182 tracking row, 182/160).
+**Boundaries.** Pinning and resolution are FR-35's. Computation is FR-34's. The notice is FR-166's (task 37.3). The version-pinned regression suite NFR-87 requires on every factor change is task 201's: every set the seed has shipped is kept in `config/version-pinned/` with runs pinned to it, and each is replayed against its own set on every unit run (§12.5.6's task-201 row).
 
 **Acceptance criteria.**
 - **AC-1** Given two sets whose windows overlap for one country, then the second is refused as a write by the store. *(source: §12.5.6 task-37 row (1); task 37.1 Expected result)*
@@ -434,6 +434,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 - 1 Oct 2026 · project owner · one effective-dated artefact per country, chosen by the period's start; the revert stays in its window; the starting values reviewed source by source · §12.5.6 task-37 row; §9.9 amended
 - 5 Oct 2026 · project owner · a factor-set payload is validated before it is published and refused with 400 · §12.5.6 task-182 content row (182/50)
 - 6 Oct 2026 · project owner · a dropped source refuses the set too; the rule binds the seed loader; the 400 is the publishing route's mapping · §12.5.6 task-37.3/37.4 row (1) (task 37.4)
+- 8 Oct 2026 · project owner · every set the seed ships is kept with runs pinned to it and replayed on every unit run; a source, scope or unit no kept run exercises fails the suite · §12.5.6's task-201 row (task 201)
 
 ### FR-72 — Applicability thresholds as configuration
 
@@ -475,7 +476,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 
 ### FR-73 — Validation rule definitions as configuration
 
-**Status.** Partial — delivered 40 (the rule definition, its reader and the interpreter, run identically in both runtimes), 41.1 (the rule set from the store, read as at a date, refused at publication without wording) · remaining 201 (the version-pinned regression suite), 67.8 (A-05's editor, and the 400 its publication answers)
+**Status.** Partial — delivered 40 (the rule definition, its reader and the interpreter, run identically in both runtimes), 41.1 (the rule set from the store, read as at a date, refused at publication without wording), 201 (the version-pinned regression suite) · remaining 67.8 (A-05's editor, and the 400 its publication answers)
 
 **Obligation.** The system shall maintain validation rule definitions as configuration, each naming the message it fires by a key whose wording is committed in the catalogues, separately from applicability thresholds.
 
@@ -503,7 +504,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 - **AC-2** Given a rule or its message key edited in configuration, then it takes effect with no deployment, independently of the thresholds. *(source: FR text; UC-82)* A published rule is read within the store's poll since 41.1; the edit is unmet until 67.8.
 - **AC-3** Given a rule change, then it reverts in one step. *(source: NFR-85; task 41.1 Expected result)*
 - **AC-4** Given a change to the wording of a finding, then it ships with a release and is not a publication. *(source: OQ-43; NFR-85 as amended)*
-- **AC-5** Given a rule or factor change, then the version-pinned regression suite runs and no previously reported figure is silently restated. *(source: NFR-87)* Unmet until 201.
+- **AC-5** Given a rule or factor change, then the version-pinned regression suite runs and no previously reported figure is silently restated. *(source: NFR-87)* By task 201 (§12.5.6's task-201 row): a seed change lands only with its version kept in `config/version-pinned/`, and every kept version's recorded findings and run results are re-evaluated on every unit run. A publication through A-05 is held by the pin and by NFR-19's replay (46.4), not by CI (the row's (c)).
 - **AC-6** Given a rule whose message key has no wording in some locale's catalogue, when it is published, then it is refused with 400 and nothing is published. *(source: §12.5.6 task-182 content row, 182/51)* The refusal is the store's since 41.1; the 400 is unmet until 67.8.
 - **AC-7** Given a rule published after a period was locked, then the locked report's findings are those of the rule set in force on the date of the lock. Given a rule published while the period is open, then the next validation applies it. *(source: §12.5.6 task-182 content row, 182/44)* By the lock's pin (§12.5.6's task-41 row (5)), proven over real HTTP by 41.2's e2e.
 
@@ -512,6 +513,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 - 5 Oct 2026 · project owner · a rule whose message key lacks wording is refused at publication; rules are read as at today while the period is open and as at the lock once locked · §12.5.6 task-182 content row (182/44, 182/51)
 - 7 Oct 2026 · project owner · the rule definition is a closed vocabulary of eight kinds, each rule carrying its verdict; a rule set the vocabulary cannot hold is refused by one reader shared by the api and A-05 · §12.5.6 task-40 row
 - 8 Oct 2026 · project owner · one artefact scoped by the standard; *today* in the period's own zone; the store refuses an unworded key at publication; a locked period's rule set is pinned at the lock rather than read as at its date · §12.5.6 task-41 row (5)
+- 8 Oct 2026 · project owner · every rule set the seed ships is kept with reports pinned to it and re-evaluated on every unit run; a rule no kept report makes fire fails the suite · §12.5.6's task-201 row (task 201)
 
 ### FR-74 — Content-only and rule-only changes without a redeploy
 
