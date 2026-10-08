@@ -65,7 +65,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     elementKey: string; ordinal: number; kind: string; periodType: string; order: number;
     label: string | null; labelStanding: string | null; repeating: boolean; axes: string[];
     dimensionKey: string; dimensionLabel: string | null; origin: string;
-    valueText: string | null; valueNumeric: string | null; state: string; carriedForward: boolean;
+    valueText: string | null; valueNumeric: string | null; valueBoolean: boolean | null; state: string;
+    carriedForward: boolean;
     /** The company record's value, shown or still stored as given (task 180.3). */
     fromRecord: boolean;
     unitCode: string | null; unitCodes: string[];
@@ -258,7 +259,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
 
     const field = step.fields.find((f) => f.elementKey === B1_ELEMENT);
     expect(field).toBeDefined();
-    expect(field?.state).toBe(DISCLOSURE_STATE.MISSING);
+    // An unanswered field reads `ok` since task 42.1: a verdict is a finding's (182/17), never the step read's.
+    expect(field?.state).toBe(DISCLOSURE_STATE.OK);
     // The wording and whose it is travel together (NFR-24) — a label without its standing cannot
     // make UX-47's statement.
     expect(field?.label).toBeTruthy();
@@ -393,7 +395,9 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     expect(written[0]?.state).toBe('ok');
     expect(written[0]?.valueNumeric).toBeNull();
     const turnover = (await readStep(reportId, 'B1')).fields.find((f) => f.elementKey === 'Turnover');
-    expect(turnover?.state).toBe(DISCLOSURE_STATE.MISSING);
+    // Cleared, so no answer — and since task 42.1 the step read projects the answer's kind only, `ok`.
+    expect(turnover?.state).toBe(DISCLOSURE_STATE.OK);
+    expect(turnover?.valueNumeric).toBeNull();
   });
 
   it('refuses a field the pinned version does not name', async () => {
@@ -493,8 +497,9 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     expect(rowsOf(step, 'BasisForReporting')[0]?.defaultValue).toBeNull();
     expect(rowsOf(step, 'NumberOfEmployees')[0]?.defaultValue).toBeNull();
 
-    // A default is not an answer: every field is still missing, and the module list agrees.
-    expect(step.fields.every((f) => f.state === DISCLOSURE_STATE.MISSING && f.valueText === null)).toBe(true);
+    // A default is not an answer: every field still holds none — read `ok`, the answer's kind, since task 42.1 — and the
+    // module list agrees.
+    expect(step.fields.every((f) => f.state === DISCLOSURE_STATE.OK && f.valueText === null)).toBe(true);
     const modules = objectsOf<ModuleSummary>((await http()
       .get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body);
     expect(modules.find((m) => m.module === 'B1')?.answered).toBe(0);
@@ -1694,7 +1699,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       ]);
       const cleared = field(await readStep(reportId, 'B9'), ACCIDENT_RATE);
       expect(cleared?.valueNumeric).toBeNull();
-      expect(cleared?.state).toBe(DISCLOSURE_STATE.MISSING);
+      expect(cleared?.state).toBe(DISCLOSURE_STATE.OK);
     });
 
     it('refuses a typed rate — derived rather than typed is a rule, not a screen state (FR-29)', async () => {
@@ -1783,7 +1788,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       // a **default** rather than as a stored value: the wizard's outstanding-defaults commit turns
       // it into an answer, which is what makes it visible in the audit trail as an answer at all.
       expect(wage?.defaultValue).toMatchObject({ valueBoolean: true });
-      expect(wage?.state).toBe(DISCLOSURE_STATE.MISSING);
+      expect(wage?.state).toBe(DISCLOSURE_STATE.OK);
+      expect(wage?.valueBoolean).toBeNull();
     });
 
     it('states B11’s fine in the filing’s currency, and its count in none (UC-29, task 36.12)', async () => {

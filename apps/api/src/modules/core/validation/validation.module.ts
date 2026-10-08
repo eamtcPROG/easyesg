@@ -32,6 +32,9 @@ import { VALIDATION_STORE, type ValidationStore } from './interfaces/validation-
 import { ValidationRuleSetCatalog } from './services/validation-rule-set-catalog.service';
 import { ValidationService } from './services/validation.service';
 import { RunValidation } from './use-cases/run-validation.use-case';
+import { NameFindings } from './use-cases/name-findings.use-case';
+import { DISCLOSURE_LABELS, type DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
+import { LocalizationModule } from '@api/modules/platform/localization/localization.module';
 
 /**
  * `core/validation` — FR-40 … FR-44, FR-73
@@ -93,7 +96,19 @@ const runProviders: Provider[] = [
   },
 ];
 
-const httpProviders: Provider[] = [ValidationService, ...runProviders];
+/**
+ * The request tier names what a run or a read found for its reader (task 42.2): the labels of the version the report
+ * pins, which `LocalizationModule` provides in both modes and only the HTTP answer reads.
+ */
+const httpProviders: Provider[] = [
+  ValidationService,
+  ...runProviders,
+  {
+    provide: NameFindings,
+    inject: [DISCLOSURE_LABELS],
+    useFactory: (labels: DisclosureLabelResolver) => new NameFindings(labels),
+  },
+];
 
 /**
  * FR-164's and FR-165's notices on the worker (task 51.2): the day's sweep, which `ScheduleTicker` starts at its slot,
@@ -129,7 +144,8 @@ const workerProviders: Provider[] = [
 
 @Module({
   // `NotificationModule` for the cadence the notices keep and the port they raise through (task 51.2).
-  imports: [DisclosureModule, ComparativesModule, NotificationModule],
+  // `LocalizationModule` for the labels a finding's field is named by (task 42.2).
+  imports: [DisclosureModule, ComparativesModule, NotificationModule, LocalizationModule],
   controllers: mode === APP_MODE.WORKER ? [] : [ValidationController],
   providers: [
     { provide: VALIDATION_RULE_SETS, useClass: ValidationRuleSetCatalog },

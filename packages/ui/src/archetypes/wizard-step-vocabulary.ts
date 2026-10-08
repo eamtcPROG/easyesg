@@ -6,9 +6,10 @@
  * rendered by Server Components and the switcher below `wide` is a Client Component, and an `as const` exported from a
  * `'use client'` module reaches a Server Component as `undefined`.
  *
- * **Six, where the artboard draws seven.** Its *In progress · n findings* is a validation verdict (task 42), and a
- * state with no producer is a screen state nothing can enter — so it arrives with its producer. What a caller derives
- * each state from is the caller's; this package draws them.
+ * **Seven since task 42.2**: the six the artboard draws, and *not checked yet* — a module with answers and no
+ * validation run that has read them, which the list cannot call complete or in progress without a count no run has
+ * made (`architecture.md` §12.5.6's task-42 row (3)). What a caller derives each state from is the caller's; this
+ * package draws them.
  */
 export const WIZARD_STEP_STATE = {
   /** Every question answered. */
@@ -23,6 +24,8 @@ export const WIZARD_STEP_STATE = {
   WAITING: 'waiting',
   /** Ruled out by an answer already given (FR-28). */
   INAPPLICABLE: 'inapplicable',
+  /** Answered, and not yet checked by a validation run — so neither complete nor in progress can be said of it. */
+  UNCHECKED: 'unchecked',
 } as const;
 
 export type WizardStepState = (typeof WIZARD_STEP_STATE)[keyof typeof WIZARD_STEP_STATE];

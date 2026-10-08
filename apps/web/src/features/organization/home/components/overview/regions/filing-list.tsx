@@ -1,6 +1,7 @@
 import { STATUS_TONE, StatusChip, TextLink, type StatusTone } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
+import { ReportCompletion } from '@/shared/report-completion';
 import { ROUTES, reportRoute, withQuery } from '@/lib/routes';
 import { OVERVIEW_STANDING, type OverviewRow, type OverviewStanding } from '../../../tools/overview';
 // Aliased to `MESSAGES` so every reader below is unchanged: the namespace was written privately
@@ -111,6 +112,9 @@ export async function FilingList({
             <span className={`t-caption ${styles.sub}`}>
               {row.due === null ? t('dueNone') : t('due', { date: row.due })}
             </span>
+            {/* FR-23 AC-7 (task 42.2): the report's completion as its last run left it — S-06's own column, worded
+                once in `shared/`. A period with no report has nothing to complete, and the standing already says so. */}
+            {row.reportId === null ? null : <ReportCompletion validation={row.validation} />}
           </div>
 
           <div className={styles.filingAction}>

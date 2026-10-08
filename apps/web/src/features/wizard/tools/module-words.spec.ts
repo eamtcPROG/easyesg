@@ -1,4 +1,4 @@
-import type { DisclosureModuleSummary } from '@easyesg/contracts';
+import { COMPLETION_STATUS, type ModuleRollUp } from '@easyesg/contracts';
 import { WIZARD_STEP_STATE } from '@easyesg/ui';
 import { createFormatter, createTranslator } from 'next-intl';
 import { describe, expect, it } from 'vitest';
@@ -7,20 +7,27 @@ import en from '@/messages/en.json';
 import ro from '@/messages/ro.json';
 import ru from '@/messages/ru.json';
 import { NAMED_MODULES } from './module-names';
-import { moduleLabel, moduleName, moduleStatus, moduleSummary, rollUpNote, stepStatusNote } from './module-words';
+import {
+  groupCountWords,
+  moduleLabel,
+  moduleName,
+  moduleStatus,
+  moduleSummary,
+  rollUpNote,
+  stepStatusNote,
+} from './module-words';
 
 const translator = (locale: 'en' | 'ro', messages: typeof ro) =>
   createTranslator({ locale, messages, namespace: 'organization.wizard' });
 
-const summary = (overrides: Partial<DisclosureModuleSummary> = {}): DisclosureModuleSummary => ({
+/** A module as the last run left it, with its outstanding count (task 42.2). */
+const checked = (outstanding: number, status: ModuleRollUp['status'] = COMPLETION_STATUS.IN_PROGRESS): ModuleRollUp => ({
   module: 'B1',
-  answered: 2,
-  total: 5,
-  lastAnsweredAt: null,
-  applicable: true,
-  omitted: false,
-  applicabilityCause: null,
-  ...overrides,
+  resolved: 2,
+  reasoned: 0,
+  outstanding,
+  status,
+  outstandingFields: [],
 });
 
 describe('module words', () => {
@@ -52,12 +59,13 @@ describe('module words', () => {
     expect(moduleSummary(t, 'B12')).toBeNull();
   });
 
-  it('counts what is left beneath a state whose words do not, and only there (UX-11)', () => {
-    expect(stepStatusNote(t, { summary: summary({ answered: 0, total: 22 }), state: WIZARD_STEP_STATE.NOT_STARTED })).toBe(
-      '22 fields left',
-    );
-    // A module with nothing to ask — every field ruled out — is not started and has nothing left to count.
-    expect(stepStatusNote(t, { summary: summary({ answered: 0, total: 0 }), state: WIZARD_STEP_STATE.NOT_STARTED })).toBeNull();
+  it('counts what the last run left outstanding beneath a state whose words do not, and only there (UX-11)', () => {
+    expect(
+      stepStatusNote(t, { state: WIZARD_STEP_STATE.NOT_STARTED, checked: checked(22, COMPLETION_STATUS.NOT_STARTED) }),
+    ).toBe('22 fields left');
+    // Nothing a rule asks of it, or no run to have counted: nothing to say.
+    expect(stepStatusNote(t, { state: WIZARD_STEP_STATE.NOT_STARTED, checked: checked(0, COMPLETION_STATUS.NOT_STARTED) })).toBeNull();
+    expect(stepStatusNote(t, { state: WIZARD_STEP_STATE.NOT_STARTED, checked: undefined })).toBeNull();
     // In progress counts in its own words; the rest leave nothing to count.
     for (const state of [
       WIZARD_STEP_STATE.IN_PROGRESS,
@@ -65,33 +73,36 @@ describe('module words', () => {
       WIZARD_STEP_STATE.OMITTED,
       WIZARD_STEP_STATE.WAITING,
       WIZARD_STEP_STATE.INAPPLICABLE,
+      WIZARD_STEP_STATE.UNCHECKED,
     ]) {
-      expect(stepStatusNote(t, { summary: summary(), state })).toBeNull();
+      expect(stepStatusNote(t, { state, checked: checked(3) })).toBeNull();
     }
   });
 
-  it('says how many questions are outstanding in the in-progress line', () => {
-    expect(moduleStatus(t, { summary: summary(), state: WIZARD_STEP_STATE.IN_PROGRESS })).toBe(
-      'In progress · 3 outstanding',
-    );
+  it('says how many fields the last run left outstanding in the in-progress line', () => {
+    expect(moduleStatus(t, { state: WIZARD_STEP_STATE.IN_PROGRESS, checked: checked(3) })).toBe('In progress · 3 outstanding');
   });
 
-  it('words each of the six states', () => {
-    const lines = Object.values(WIZARD_STEP_STATE).map((state) => moduleStatus(t, { summary: summary(), state }));
+  it('words each of the seven states', () => {
+    const lines = Object.values(WIZARD_STEP_STATE).map((state) => moduleStatus(t, { state, checked: checked(3) }));
 
-    expect(new Set(lines).size).toBe(6);
+    expect(new Set(lines).size).toBe(7);
     for (const line of lines) expect(line).not.toMatch(/rail\.|organization\./u);
+  });
+
+  it('says a group no run has counted is not checked yet, and counts one that has', () => {
+    const count = { done: 2, counted: 9, discounted: [], waiting: [], checked: true };
+    expect(groupCountWords(t, count)).toBe('2 of 9 done');
+    expect(groupCountWords(t, { ...count, checked: false })).toBe('Not checked yet');
   });
 
   it('agrees in Romanian on number, which the plural carries', () => {
     const tRo = translator('ro', ro);
-    expect(moduleStatus(tRo, { summary: summary({ answered: 4 }), state: WIZARD_STEP_STATE.IN_PROGRESS })).toBe(
-      'În lucru · un câmp rămas',
-    );
-    expect(moduleStatus(tRo, { summary: summary({ answered: 2, total: 5 }), state: WIZARD_STEP_STATE.IN_PROGRESS })).toBe(
+    expect(moduleStatus(tRo, { state: WIZARD_STEP_STATE.IN_PROGRESS, checked: checked(1) })).toBe('În lucru · un câmp rămas');
+    expect(moduleStatus(tRo, { state: WIZARD_STEP_STATE.IN_PROGRESS, checked: checked(3) })).toBe(
       'În lucru · 3 câmpuri rămase',
     );
-    expect(moduleStatus(tRo, { summary: summary({ answered: 0, total: 25 }), state: WIZARD_STEP_STATE.IN_PROGRESS })).toBe(
+    expect(moduleStatus(tRo, { state: WIZARD_STEP_STATE.IN_PROGRESS, checked: checked(25) })).toBe(
       'În lucru · 25 de câmpuri rămase',
     );
   });
@@ -102,12 +113,12 @@ describe('rollUpNote', () => {
   const format = createFormatter({ locale: 'en', formats });
 
   it('says what is not counted, then what waits, each list joined by the locale', () => {
-    expect(rollUpNote(t, format, { done: 1, counted: 3, discounted: ['B6', 'B8'], waiting: ['B5'] })).toBe(
+    expect(rollUpNote(t, format, { done: 1, counted: 3, discounted: ['B6', 'B8'], waiting: ['B5'], checked: true })).toBe(
       'Not counted: B6 and B8. B5 waits on your B1 answers.',
     );
   });
 
   it('says nothing when nothing is discounted and nothing waits', () => {
-    expect(rollUpNote(t, format, { done: 0, counted: 2, discounted: [], waiting: [] })).toBeNull();
+    expect(rollUpNote(t, format, { done: 0, counted: 2, discounted: [], waiting: [], checked: true })).toBeNull();
   });
 });

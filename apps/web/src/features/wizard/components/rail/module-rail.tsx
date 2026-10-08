@@ -2,8 +2,8 @@ import type { DisclosureModuleSummary } from '@easyesg/contracts';
 import { WizardModuleGroup, WizardModuleItem } from '@easyesg/ui';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { reportStepRoute } from '@/lib/routes';
-import { moduleGroups, moduleStateOf, rollUp } from '../../tools/module-state';
-import { moduleLabel, moduleStatus, rollUpNote } from '../../tools/module-words';
+import { checkOf, groupCount, moduleGroups, moduleStateOf, type ModuleChecks } from '../../tools/module-state';
+import { groupCountWords, moduleLabel, moduleStatus, rollUpNote } from '../../tools/module-words';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import styles from './module-rail.module.css';
 import { StepLink } from '../shared/step-link';
@@ -26,10 +26,13 @@ import { StepLink } from '../shared/step-link';
 export async function ModuleRail({
   reportId,
   modules,
+  checks,
   current,
 }: {
   readonly reportId: string;
   readonly modules: readonly DisclosureModuleSummary[];
+  /** What the last validation run found per module, or `null` where none has checked the report (task 42.2). */
+  readonly checks: ModuleChecks;
   readonly current: string;
 }) {
   const [t, format] = await Promise.all([getTranslations(WIZARD_MESSAGES), getFormatter()]);
@@ -37,24 +40,24 @@ export async function ModuleRail({
   return (
     <>
       {moduleGroups(modules).map(({ group, modules: members }) => {
-        const counts = rollUp(members);
+        const counts = groupCount({ modules: members, checks });
         return (
           <WizardModuleGroup
             key={group}
             name={t(`rail.groups.${group}`)}
-            count={t('rail.count', { done: counts.done, counted: counts.counted })}
-            segments={members.map((summary) => ({ key: summary.module, state: moduleStateOf(summary) }))}
+            count={groupCountWords(t, counts)}
+            segments={members.map((summary) => ({ key: summary.module, state: moduleStateOf({ summary, checks }) }))}
             note={rollUpNote(t, format, counts)}
           >
             {members.map((summary) => {
-              const state = moduleStateOf(summary);
+              const state = moduleStateOf({ summary, checks });
               return (
                 <WizardModuleItem
                   key={summary.module}
                   href={reportStepRoute({ reportId, module: summary.module })}
                   label={moduleLabel(t, summary.module)}
                   state={state}
-                  status={moduleStatus(t, { summary, state })}
+                  status={moduleStatus(t, { state, checked: checkOf({ module: summary.module, checks }) })}
                   current={summary.module === current}
                   // The locale-aware link, injected: `packages/ui` holds no router. Since task 92 it asks whether the
                   // session is still held before a step change (`shared/step-link.tsx`).

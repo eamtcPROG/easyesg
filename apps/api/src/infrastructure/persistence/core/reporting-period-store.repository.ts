@@ -21,6 +21,7 @@ import { returnedRows } from '../returned-rows';
 import { SQL_STATE, hasSqlState } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
 import { readyToFileOf } from './report-readiness';
+import { validationSummaryOf, type ValidationSummaryColumn } from './report-validation-summary';
 
 interface PeriodRow {
   id: string;
@@ -49,6 +50,7 @@ interface PeriodRow {
   report_status: ReportStatus | null;
   report_updated_at: Date | null;
   report_ready_to_file: boolean;
+  report_validation_summary: ValidationSummaryColumn | null;
 }
 
 /**
@@ -89,6 +91,7 @@ const PERIOD_COLUMNS = `p.id, p.reporting_entity_id, p.fiscal_year,
         p.locked_at, p.locked_by, p.locked_rule_set_revision, p.created_at, p.updated_at,
         e.name AS entity_name, r.id AS report_id, r.status AS report_status,
         (r.id IS NOT NULL AND ${readyToFileOf('r')}) AS report_ready_to_file,
+        ${validationSummaryOf('r')} AS report_validation_summary,
         r.updated_at AS report_updated_at`;
 
 /**
@@ -136,6 +139,7 @@ const toPeriod = (row: PeriodRow): ReportingPeriod => ({
           id: row.report_id,
           status: row.report_status,
           readyToFile: row.report_ready_to_file,
+          validation: row.report_validation_summary,
           updatedAt: row.report_updated_at,
         }
       : null,

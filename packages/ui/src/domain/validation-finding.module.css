@@ -1,0 +1,77 @@
+/* One finding in S-08 (task 42.2): a hairline card, its weight a bordered pill in its tone. */
+
+.finding {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+}
+
+.finding[data-weight='cleared'] {
+  background: var(--surface-sunken);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  color: var(--text-default);
+  font: 600 14px/20px var(--font-text);
+}
+
+.detail {
+  color: var(--text-muted);
+  font: 400 12px/18px var(--font-text);
+}
+
+.weight {
+  flex: none;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  font: 500 12px/20px var(--font-text);
+}
+
+.weight[data-weight='must_fix'] {
+  border-color: var(--state-error);
+  background: var(--state-error-tint);
+  color: var(--state-error);
+}
+
+.weight[data-weight='review'] {
+  border-color: var(--state-warning);
+  background: var(--state-warning-tint);
+  color: var(--state-warning);
+}
+
+.weight[data-weight='cleared'] {
+  border-color: var(--state-ok);
+  background: var(--state-ok-tint);
+  color: var(--state-ok);
+}
+
+.message {
+  margin: 0;
+  color: var(--text-body);
+  font: 400 13.5px/20px var(--font-text);
+}
+
+.finding[data-weight='cleared'] .message {
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}

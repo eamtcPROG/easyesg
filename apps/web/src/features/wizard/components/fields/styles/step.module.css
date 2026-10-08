@@ -42,6 +42,16 @@
   text-transform: uppercase;
 }
 
+/* A finding's three parts, one paragraph per finding (task 42.1); a second finding on the same field stands apart from
+   the first by the paragraph's own gap, never a rule. */
+.finding {
+  margin: 0;
+}
+
+.finding + .finding {
+  margin-block-start: var(--space-2);
+}
+
 /* UX-13: read-only keeps the anatomy and shows the answer as text, not as a disabled box that reads
    as a field someone failed to fill in. */
 .readOnlyValue {

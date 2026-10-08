@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getPathname } from '@/i18n/navigation';
 import { periodRoute, reportCalculatorRoute } from '@/lib/routes';
 import { readCalculator } from '@/server/data/calculator';
+import { readValidation } from '@/server/data/validation';
 import { readActiveMembership } from '@/server/data/memberships';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { readSession } from '@/server/session/session';
@@ -16,7 +17,7 @@ import { ModuleRail } from '@/features/wizard/components/rail/module-rail';
 import { ModuleSwitcher } from '@/features/wizard/components/rail/module-switcher';
 import { WizardReauthentication } from '@/features/wizard/components/session/wizard-reauthentication';
 import { WIZARD_MESSAGES } from '@/features/wizard/components/shared/wizard-messages';
-import { modulesInScope } from '@/features/wizard/tools/module-state';
+import { moduleChecksOf, modulesInScope } from '@/features/wizard/tools/module-state';
 import { moduleLabel } from '@/features/wizard/tools/module-words';
 import { placeOf } from '@/features/wizard/tools/step-place';
 import { CALCULATOR_MODULE } from '../../tools/calculator-module';
@@ -55,13 +56,15 @@ export async function CalculatorStep({
   /** `?line=` as the route received it — the line whose derivation is open (task 39.2). */
   readonly line: string | readonly string[] | undefined;
 }) {
-  const [t, tWizard, read, session, membership, locale] = await Promise.all([
+  const [t, tWizard, read, session, membership, locale, validation] = await Promise.all([
     getTranslations(CALCULATOR_MESSAGES),
     getTranslations(WIZARD_MESSAGES),
     readCalculator(reportId),
     readSession(),
     readActiveMembership(),
     getLocale(),
+    // The module list reads what the last validation run found, as S-07's does (task 42.2) — one list, one reading.
+    readValidation(reportId),
   ]);
 
   if (read.status === TENANT_READ.FORBIDDEN) {
@@ -88,7 +91,9 @@ export async function CalculatorStep({
   const { calculator } = read;
   // Nothing can be written without a set to check a line against (the writes refuse), so the lines are a record then.
   const readOnly = read.readOnly !== null || calculator.factorSet === null;
-  const rail = <ModuleRail reportId={reportId} modules={modules} current={CALCULATOR_MODULE} />;
+  const checks = moduleChecksOf(validation);
+  // Drawn twice as two elements, never one element in two slots — S-07's reason (`wizard-step.tsx`, task 42.2).
+  const rail = () => <ModuleRail reportId={reportId} modules={modules} checks={checks} current={CALCULATOR_MODULE} />;
   const b3 = moduleLabel(tWizard, CALCULATOR_MODULE);
 
   return (
@@ -96,10 +101,16 @@ export async function CalculatorStep({
       <WizardShell
         bar={<ReportBar report={read.report} modules={modules} readOnly={read.readOnly} />}
         modulesLabel={tWizard('rail.label')}
-        modules={rail}
+        modules={rail()}
         compactModules={
-          <ModuleSwitcher reportId={reportId} modules={modules} current={CALCULATOR_MODULE} position={place.position}>
-            {rail}
+          <ModuleSwitcher
+            reportId={reportId}
+            modules={modules}
+            checks={checks}
+            current={CALCULATOR_MODULE}
+            position={place.position}
+          >
+            {rail()}
           </ModuleSwitcher>
         }
         position={<CalculatorCrumb reportId={reportId} module={b3} />}

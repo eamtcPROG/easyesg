@@ -10,8 +10,8 @@ every screen. Cite them; do not re-derive them.
 
 ## Current state
 
-Identity, organization, periods, reports, entities, the wizard, the notification centre and the profile are live; the
-calculator, validation, preview and export, checkout and billing and the public tier are the
+Identity, organization, periods, reports, entities, the wizard with its validation, the calculator, the notification centre and
+the profile are live; preview and export, checkout and billing and the public tier are the
 fourteen addresses `AddressNotice` answers for (fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across seven route groups,
 8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (11 built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
@@ -25,7 +25,7 @@ periods, S-15 organization profile, S-16 users with, since task 50.3, its remind
 invoice lines by source and site, the monthly form, every line through the wizard's queue — and since 39.2 what they
 come to, each line's derivation at its own address, *use these figures in B3* and UX-44's notice, and since 39.3 UC-34's
 acts — a line's tonnes replaced with a reason on S-09, and on S-07's B3 a scope replaced, explained or put back — with,
-since 39.4, the person who made each replacement named beside it, and since 204.2 its spreadsheet import — an `.xlsx` or `.csv` read in the browser by `client/spreadsheet/`, its columns and values matched, the rows it cannot read reported, each readable row queued as a typed line, S-26 notification centre
+since 39.4, the person who made each replacement named beside it, and since 204.2 its spreadsheet import — an `.xlsx` or `.csv` read in the browser by `client/spreadsheet/`, its columns and values matched, the rows it cannot read reported, each readable row queued as a typed line, S-07's fields with their verdicts where they are answered, live, since task 42.1, S-08 since 42.2 — the validation panel beside the step at `wide` and a sheet below it, *Check my report*, and the run's roll-up on S-07's list, S-05 and S-06 — with each finding an address that lands focus in its field since 42.3, S-26 notification centre
 with, since task 37.3, its category filter,
 S-27 profile, languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
 layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
@@ -1007,7 +1007,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **201 files here are Client Components** (7 Oct 2026: eight more since task 204.2 gave S-09 its spreadsheet import — the panel's section, its file arm, its mapping arm with the sheet, column and value choices and the report, and the notice an import leaves; six more since task 39.3 gave UC-34's acts a screen — B3's figure control on S-07, its note form and its action hook, the override form that control and a line share, a line's override, and the step's figures context; seven more since task 39.2 gave S-09 its figures — the derivation, the summary beside the step, UX-44's notice, the one-source pager, the run's hook and its refusal, and the calculator's Query hook; thirteen more since task 39.1 built S-09 — its board and site chips, the add-a-source form, the empty state, a site's lines, the line row with its figure, unit and monthly form, the two commit-on-blur fields and their hook, and the words hook its parts share. 6 Oct 2026: two more since task 203.2 — `shared/list-search.tsx`, the search S-06, S-13 and S-16 share, and S-16's search region; three more since task 190 — S-28's arrival notice, the re-authentication dialogue's recovered stage, and S-05's *not now* on the second-factor prompt. 30 Sep 2026: three more since task 179.1 drew S-07 as its artboards — the module list below `wide`, the bar's action drawn ahead of its screen, and the bar's ⋯ at `compact`; the exit and the save state moved into the bar and are counted once; one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to
+  **206 files here are Client Components** (8 Oct 2026: two more since task 42.3 — the step's field focus, which lands a finding's address in its field, and the context a finding's link reads in S-08; two more since task 42.2 — S-08's section, which docks the panel and raises its sheet, and its run's hook; one more since task 42.1 — the wizard's validation provider, which runs the interpreter over the step's held answers. 7 Oct 2026: eight more since task 204.2 gave S-09 its spreadsheet import — the panel's section, its file arm, its mapping arm with the sheet, column and value choices and the report, and the notice an import leaves; six more since task 39.3 gave UC-34's acts a screen — B3's figure control on S-07, its note form and its action hook, the override form that control and a line share, a line's override, and the step's figures context; seven more since task 39.2 gave S-09 its figures — the derivation, the summary beside the step, UX-44's notice, the one-source pager, the run's hook and its refusal, and the calculator's Query hook; thirteen more since task 39.1 built S-09 — its board and site chips, the add-a-source form, the empty state, a site's lines, the line row with its figure, unit and monthly form, the two commit-on-blur fields and their hook, and the words hook its parts share. 6 Oct 2026: two more since task 203.2 — `shared/list-search.tsx`, the search S-06, S-13 and S-16 share, and S-16's search region; three more since task 190 — S-28's arrival notice, the re-authentication dialogue's recovered stage, and S-05's *not now* on the second-factor prompt. 30 Sep 2026: three more since task 179.1 drew S-07 as its artboards — the module list below `wide`, the bar's action drawn ahead of its screen, and the bar's ⋯ at `compact`; the exit and the save state moved into the bar and are counted once; one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to
   S-13 and added the report-contact section beside it; one fewer since task 175 moved S-15's identifiers section to
   S-13's identity section; two since S-13's card — the guarded link its ways back share,
 and the side column's archive panel; 28 Sep 2026: five since S-13's review — the index's filter row and the
@@ -1071,6 +1071,20 @@ where the hook beside them carries no directive; one since S-02's reset request 
   never crosses Flight. And it is intermittent in the worst direction: the failing arm renders only
   when the tenant read answers `READY`, so a request whose API call had failed served a clean error
   state and returned 200.
+
+- **An async Server Component's element goes in one slot; drawn twice, it is two elements** (8 Oct 2026, task 42.2).
+  React's Flight encoder writes an object once and refers to it by path from anywhere else it appears, and an async
+  component's output travels as a row of its own. S-07 built one `<ModuleRail>` and placed it twice — the docked list
+  and the compact switcher's child — so the shell's row referred to itself *through* the list's row. That was harmless
+  until the list shared an object with the rest of the step: 42.2's *not checked yet* mark is a lucide icon, whose
+  `iconNode` is a module-level array, drawn in the heading and on the current module's row. The list's row then referred
+  back into the shell's, and **the browser's Flight client waited on the cycle forever**: a client navigation never
+  committed and a full load never hydrated. No error, no console line, an idle main thread (2,208 of 2,214 profile
+  samples), a complete payload on the wire — B8's and B10's journeys read it as fills that sent nothing, S-09's as a
+  hand-back to B3 that never landed. Building the glyph per render does not help (the `iconNode` is still shared); two
+  elements do (`rail()` in `wizard-step.tsx` and `calculator-step.tsx`). **A component drawn in two places is called
+  twice, never placed twice** — and the shared object that closes the cycle can be anything, so the rule is about the
+  placement. Searched for the shape: no other Server Component places one element in two slots.
 
 - **`⨯ Error: The destination stream closed early.` (digest `2667547900`) in a gate log is a stream the
   client abandoned, not a render that failed** (13 Sep 2026, measured rather than assumed). React

@@ -60,14 +60,14 @@ export const DEFAULT_DISCLOSURE_ORIGIN: DisclosureOrigin = DISCLOSURE_ORIGIN.REP
  * **Since task 41.2 a stored row holds only the three answers — `ok`, `nil_return`, `not_available`** (§12.5.6's
  * task-182 validation row, 182/17). The four verdicts are findings (`core.validation_finding`), never a row's state,
  * and stay here and in the `CHECK` as frozen history, as `not_material` does; a write naming one is refused. A cleared
- * field is a row holding nothing, in state `ok`. `MISSING` survives in this vocabulary as the step read's **display**
- * state for a field nobody has answered — what the screen draws, not what the store holds — until task 42.1 replaces the
- * inline states with verdicts.
+ * field is a row holding nothing, in state `ok`. `MISSING` was the step read's **display** state for a field nobody had
+ * answered until task 42.1, which reads such a field `ok` and draws `MISSING VALUE` only where a rule raises it (§12.5.6's
+ * task-42 row (a)); it stays in the vocabulary as the `CHECK`'s frozen history, as the other verdicts do.
  */
 export const DISCLOSURE_STATE = {
   /** Answered, and the answer passes validation. */
   OK: 'ok',
-  /** Applicable and unanswered — the state a new report's fields start in. */
+  /** FR-40's `MISSING VALUE` — a verdict, so a finding's since 182/17, and nothing writes or projects it (task 42.1). */
   MISSING: 'missing',
   /** Answered, but inconsistent with another disclosure — FR-40's `VALUE INCONSISTENCY`. */
   INCONSISTENCY: 'inconsistency',

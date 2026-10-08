@@ -2,22 +2,27 @@ import { CALLOUT_INTENT, Callout, WizardShell } from '@easyesg/ui';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { getPathname } from '@/i18n/navigation';
-import { readActiveMembership } from '@/server/data/memberships';
+import { mayWrite, readActiveMembership } from '@/server/data/memberships';
 import { WIZARD_READ, readWizardStep } from '@/server/data/wizard';
 import { readCalcFigures } from '@/server/data/calculator';
+import { readInlineRules, readValidation } from '@/server/data/validation';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { readSession } from '@/server/session/session';
 import { periodRoute, reportStepRoute } from '@/lib/routes';
 import { priorValuesOf } from '../../tools/comparatives';
+import { servedAnswers } from '../../tools/answers-held';
 import { labelledOptions } from '../../tools/step-words';
 import { AutosaveBanner } from '../banner/autosave-banner';
 import { ReadOnlyBanner } from '../banner/read-only-banner';
+import { FieldFocus } from '../fields/focus/field-focus';
 import { StepFields } from '../fields/section/step-fields';
 import { AutosaveProvider } from '../providers/autosave-context';
 import { StepFiguresProvider } from '../providers/step-figures-context';
+import { ValidationProvider } from '../providers/validation-context';
+import { ValidationSection } from '../panel/section/validation-section';
 import { WizardReauthentication } from '../session/wizard-reauthentication';
-import { modulesInScope, moduleStateOf } from '../../tools/module-state';
+import { checkOf, moduleChecksOf, modulesInScope, moduleStateOf } from '../../tools/module-state';
 import { placeOf } from '../../tools/step-place';
 import { moduleLabel, moduleStatus, moduleSummary, stepStatusNote } from '../../tools/module-words';
 import { StepFoot } from '../foot/step-foot';
@@ -58,16 +63,21 @@ export async function WizardStep({
   readonly reportId: string;
   readonly module: string;
 }) {
-  const [t, messages, read, session, membership, locale, calculatorFigures] = await Promise.all([
-    getTranslations(WIZARD_MESSAGES),
-    getMessages(),
-    readWizardStep({ reportId, module }),
-    readSession(),
-    readActiveMembership(),
-    getLocale(),
-    // B3's two scopes are the fields a calculator run writes (task 39.3), read beside the step rather than after it.
-    module === CALCULATOR_MODULE ? readCalcFigures(reportId) : Promise.resolve(null),
-  ]);
+  const [t, messages, read, session, membership, locale, calculatorFigures, validation, inlineRules] =
+    await Promise.all([
+      getTranslations(WIZARD_MESSAGES),
+      getMessages(),
+      readWizardStep({ reportId, module }),
+      readSession(),
+      readActiveMembership(),
+      getLocale(),
+      // B3's two scopes are the fields a calculator run writes (task 39.3), read beside the step rather than after it.
+      module === CALCULATOR_MODULE ? readCalcFigures(reportId) : Promise.resolve(null),
+      // What the last run found, and the rules the browser evaluates the step against live (task 42.1) — beside the step
+      // rather than after it, and each `null` where it cannot be read: validation is an aid, never a precondition.
+      readValidation(reportId),
+      readInlineRules(reportId),
+    ]);
 
   if (read.status === TENANT_READ.FORBIDDEN) {
     // A choice not made is S-37's to answer, and this arm renders on every navigation (the gate says why).
@@ -95,58 +105,93 @@ export async function WizardStep({
   const summary = modules.find((m) => m.module === module);
   if (summary === undefined) notFound();
 
+  // What the last validation run found per module (task 42.2) — the list, the stepper and the heading read it alike.
+  const checks = moduleChecksOf(validation);
   // The heading's state is the list's own (task 179.3): one `moduleStateOf`, so the step and its row cannot disagree.
-  const state = moduleStateOf(summary);
+  const state = moduleStateOf({ summary, checks });
+  const checked = checkOf({ module, checks });
   // Where the step stands, computed once for the heading, the stepper and the foot (`section-compute-once`).
   const place = placeOf({ modules, current: module });
   const readOnly = read.readOnly !== null;
   const fields = labelledOptions(read.step.fields, messages.organization.countries);
-  // One list, drawn twice: docked at `wide`, and in the drawer below it (task 179.1).
-  const rail = <ModuleRail reportId={reportId} modules={modules} current={module} />;
+  // Last year's comparable answers, indexed by the queue's key — read beside each field, and by the interpreter for the
+  // year-over-year rule (FR-46).
+  const prior = priorValuesOf(read.prior);
+  // One list, drawn twice: docked at `wide`, and in the drawer below it (task 179.1) — **as two elements, never one
+  // element in two slots** (task 42.2). The list is an async Server Component, so the payload carries it as a row of its
+  // own; one element placed twice makes the shell's row refer to itself through that row, and once the list shares any
+  // object with the rest of the step — the step mark's icon, drawn in the heading and on the list's row — the browser's
+  // Flight client waits on a cycle it never resolves. The navigation to the step never commits, with no error.
+  const rail = () => <ModuleRail reportId={reportId} modules={modules} checks={checks} current={module} />;
 
   return (
     <AutosaveProvider reportId={reportId} accountId={session.account.id}>
-      <WizardShell
-        bar={<ReportBar report={read.report} modules={modules} readOnly={read.readOnly} />}
-        modulesLabel={t('rail.label')}
-        modules={rail}
-        compactModules={
-          <ModuleSwitcher reportId={reportId} modules={modules} current={module} position={place.position}>
-            {rail}
-          </ModuleSwitcher>
-        }
-        title={moduleLabel(t, module)}
-        position={t('step.position', { position: place.position, total: place.total })}
-        summary={moduleSummary(t, module)}
-        status={{
-          state,
-          words: moduleStatus(t, { summary, state }),
-          note: stepStatusNote(t, { summary, state }),
-        }}
-        foot={<StepFoot reportId={reportId} place={place} />}
+      <ValidationProvider
+        served={servedAnswers({ fields: read.step.fields, readOnly })}
+        rules={inlineRules}
+        validation={validation}
+        prior={[...prior.values()]}
       >
-        {read.readOnly === null ? null : (
-          <ReadOnlyBanner
-            cause={read.readOnly}
-            periodHref={periodRoute({
-              entityId: read.report.subject.reportingEntityId,
-              periodId: read.report.reportingPeriodId,
-            })}
-          />
-        )}
-        <AutosaveBanner />
-        {/* B3's figures are the carbon calculator's to work out from the bills (task 39.2; S-09's entry point). */}
-        {module === CALCULATOR_MODULE ? <CalculatorEntry reportId={reportId} /> : null}
-        <StepFiguresProvider reportId={reportId} precision={read.step.precision} calculator={calculatorFigures}>
-          <StepFields
-            fields={fields}
-            axes={read.step.axes}
-            derivationInputs={read.step.derivationInputs}
-            priorValues={priorValuesOf(read.prior)}
-            readOnly={readOnly}
-          />
-        </StepFiguresProvider>
-      </WizardShell>
+        <WizardShell
+          bar={<ReportBar report={read.report} modules={modules} readOnly={read.readOnly} />}
+          modulesLabel={t('rail.label')}
+          modules={rail()}
+          compactModules={
+            <ModuleSwitcher
+              reportId={reportId}
+              modules={modules}
+              checks={checks}
+              current={module}
+              position={place.position}
+            >
+              {rail()}
+            </ModuleSwitcher>
+          }
+          title={moduleLabel(t, module)}
+          position={t('step.position', { position: place.position, total: place.total })}
+          summary={moduleSummary(t, module)}
+          status={{
+            state,
+            words: moduleStatus(t, { state, checked }),
+            note: stepStatusNote(t, { state, checked }),
+          }}
+          foot={<StepFoot reportId={reportId} place={place} />}
+          // S-08, beside the step at `wide` and a count raising it as a sheet below (task 42.2). The run control is an
+          // editor's and the OA's (182/22) — on a locked period too, which is validated like any other (182/21).
+          panel={
+            <ValidationSection
+              reportId={reportId}
+              module={module}
+              moduleOrder={modules.map((summary) => summary.module)}
+              mayRun={mayWrite(membership)}
+            />
+          }
+        >
+          {read.readOnly === null ? null : (
+            <ReadOnlyBanner
+              cause={read.readOnly}
+              periodHref={periodRoute({
+                entityId: read.report.subject.reportingEntityId,
+                periodId: read.report.reportingPeriodId,
+              })}
+            />
+          )}
+          <AutosaveBanner />
+          {/* B3's figures are the carbon calculator's to work out from the bills (task 39.2; S-09's entry point). */}
+          {module === CALCULATOR_MODULE ? <CalculatorEntry reportId={reportId} /> : null}
+          <StepFiguresProvider reportId={reportId} precision={read.step.precision} calculator={calculatorFigures}>
+            <StepFields
+              fields={fields}
+              axes={read.step.axes}
+              derivationInputs={read.step.derivationInputs}
+              priorValues={prior}
+              readOnly={readOnly}
+            />
+          </StepFiguresProvider>
+          {/* A finding's address lands focus in its field — opened, shared or followed from S-08 (task 42.3). */}
+          <FieldFocus />
+        </WizardShell>
+      </ValidationProvider>
       <WizardReauthentication
         module={module}
         account={{ id: session.account.id, email: session.account.email, remembered: session.remembered }}

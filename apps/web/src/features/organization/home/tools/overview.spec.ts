@@ -40,9 +40,10 @@ const aPeriod = (over: Partial<ReportingPeriod> = {}): ReportingPeriod => ({
   ...over,
 });
 
-const aReport = (over: Partial<NonNullable<ReportingPeriod['report']>> = {}) => ({
+const aReport = (over: Partial<NonNullable<ReportingPeriod['report']>> = {}): NonNullable<ReportingPeriod['report']> => ({
   id: 'r1',
   status: REPORT_STATUS.OPEN,
+  validation: null,
   updatedAt: 1_000,
   ...over,
 });

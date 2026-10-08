@@ -29,6 +29,19 @@
   inline-size: min(56rem, calc(100vw - var(--space-8)));
 }
 
+/* A panel raised from the foot of the screen (task 42.2): full width, anchored to the foot at every width, and never the
+   whole frame — the screen it serves stays in view above it, as *S-07/S-08 narrow* draws S-08's sheet. */
+.dialog[data-size='sheet'] {
+  inset-block: auto 0;
+  inset-inline: 0;
+  transform: none;
+  inline-size: 100%;
+  max-block-size: 85dvh;
+  border-block-end: 0;
+  border-inline: 0;
+  border-radius: var(--radius-3) var(--radius-3) 0 0;
+}
+
 .head {
   display: flex;
   align-items: flex-start;

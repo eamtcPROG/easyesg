@@ -71,8 +71,9 @@ import {
   type EvaluatedApplicability,
 } from '../models/applicability.model';
 import {
+  ANSWER_STATES,
   DEFAULT_DISCLOSURE_ORIGIN,
-  DISCLOSURE_STATE,
+  EMPTY_DISCLOSURE_STATE,
   NO_DIMENSION,
   type DisclosureValue,
 } from '../models/disclosure-value.model';
@@ -993,9 +994,13 @@ function toField(
     // per workbook (task 36.12). Every other kind answers `null` — a count has no currency, and a
     // ratio's divides out.
     currency: element.kind === DISCLOSURE_KIND.MONETARY ? resolved.currency : null,
-    // The display state: an unanswered field — no row, or a row holding nothing — draws as `missing` until task 42.1
-    // replaces the inline states, while a stored row's own state is only ever an answer (182/17, task 41.2).
-    state: value !== undefined && isAnswered(value) ? value.state : DISCLOSURE_STATE.MISSING,
+    // The answer's kind and nothing else (task 42.1; §12.5.6's task-42 row (a)): a field with no answer — no row, a row
+    // holding nothing, or one stored `missing` before 182/17 — reads `ok`, since whether it matters is a rule's and a
+    // verdict is a finding's (182/17). The wizard draws `MISSING VALUE` where a rule raises it, not on every blank.
+    state:
+      value !== undefined && isAnswered(value) && ANSWER_STATES.includes(value.state)
+        ? value.state
+        : EMPTY_DISCLOSURE_STATE,
     notAvailableReason: value?.notAvailableReason ?? null,
     carriedForward: value?.carriedForward ?? false,
     fromRecord: row.fromRecord,

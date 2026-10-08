@@ -17,6 +17,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { useCallback, useMemo, useTransition } from 'react';
 import { IndexView } from '@/shared/index-view';
 import { ListSearch } from '@/shared/list-search';
+import { ReportCompletion } from '@/shared/report-completion';
 import { Link, useRouter } from '@/i18n/navigation';
 import { ROUTES, reportRoute, withQuery } from '@/lib/routes';
 import {
@@ -51,7 +52,7 @@ import styles from './reports.module.css';
 /** Columns that are not sort dimensions, declared rather than written as a union — the
  *  convention's own reason: a hand-written union has no runtime value, so a typo makes a second
  *  column instead of failing. */
-const REPORT_COLUMN = { PERIOD: 'period', PIN: 'pin' } as const;
+const REPORT_COLUMN = { PERIOD: 'period', COMPLETION: 'completion', PIN: 'pin' } as const;
 
 export type ReportColumnKey = ReportSort | (typeof REPORT_COLUMN)[keyof typeof REPORT_COLUMN];
 
@@ -152,6 +153,13 @@ export function ReportsList({ page, view, options, canCreate }: ReportsListProps
         cell: (row) => (
           <StatusChip tone={STATUS_TONE[row.status]}>{t(`status.${row.status}`)}</StatusChip>
         ),
+      },
+      {
+        key: REPORT_COLUMN.COMPLETION,
+        header: t('columns.completion'),
+        // FR-25 AC-3 (task 42.2): the last run's count, as the artboard's *7/11* — not sortable, being a reading of a
+        // run rather than a fact of the report a reader orders by.
+        cell: (row) => <ReportCompletion validation={row.validation} />,
       },
       {
         key: REPORT_SORT.ACTIVITY,

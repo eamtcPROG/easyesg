@@ -4,6 +4,7 @@ import { AppModule } from '../src/app.module';
 import { APP_MODE } from '../src/config/configuration';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import type { Job } from 'bullmq';
+import type { DataSource } from 'typeorm';
 import { OutboxConsumer } from '../src/infrastructure/queue/outbox-consumer';
 import { ScheduleTicker } from '../src/infrastructure/schedule/schedule-ticker.service';
 import { FACTOR_SET_REPLACED } from '../src/modules/core/calculator/constants/calculator.constants';
@@ -17,6 +18,7 @@ import {
   NOTIFICATION_CANCELLED,
   NOTIFICATION_RAISED,
 } from '../src/modules/platform/notification/constants/notification.constants';
+import { connectAs, databaseNow, deleteScheduledRuns } from './support/database';
 
 /**
  * AD-1's backstop: **one image, two entrypoints, and both of them boot.**
@@ -52,9 +54,17 @@ const workerMode = process.env.MODE === APP_MODE.WORKER;
 
 describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
   let app: INestApplicationContext;
+  // The worker's boot schedules the day's sweep once its slot has passed (task 51.2), and closes before draining it — so
+  // the suite removes the row it caused, from its own start, or the next `pnpm e2e` names it a stray (task 42.1).
+  let owner: DataSource | undefined;
+  let since: Date | undefined;
 
   beforeAll(async () => {
     await initialiseCatalogue();
+    if (workerMode) {
+      owner = await connectAs('DB_MIGRATOR_USER', 'DB_MIGRATOR_PASSWORD', 'easyesg-entrypoint-boot-owner');
+      since = await databaseNow(owner);
+    }
     // `createApplicationContext` and not `create`: this is the worker's own factory, and using it
     // for both means the HTTP run exercises the same resolution path rather than a friendlier one.
     app = await NestFactory.createApplicationContext(AppModule, { logger: false });
@@ -62,6 +72,10 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
 
   afterAll(async () => {
     await app?.close();
+    if (owner !== undefined && since !== undefined) {
+      await deleteScheduledRuns({ owner, eventType: REPORT_NOTICE_SWEEP, since });
+      await owner.destroy();
+    }
   });
 
   it('resolves its whole dependency graph', () => {

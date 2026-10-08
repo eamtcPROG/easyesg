@@ -117,6 +117,17 @@ export interface ReportSubject {
 export const statusAsRead = (report: { readonly status: ReportStatus; readonly readyToFile: boolean }): ReportStatus =>
   report.status === REPORT_STATUS.OPEN && report.readyToFile ? REPORT_STATUS.READY_TO_FILE : report.status;
 
+/**
+ * What a report's latest validation run came to, as a list shows it (task 42.2; FR-23, FR-25; §12.5.6's task-42 row
+ * (f)): the modules it found complete of those it counted, and the fields it left outstanding. Read as the run left it
+ * (182/26), never a percentage (182/18).
+ */
+export interface ReportValidationSummary {
+  readonly modulesComplete: number;
+  readonly modulesCounted: number;
+  readonly outstanding: number;
+}
+
 export interface Report {
   readonly id: string;
   /** The period this report covers. At most one report per period, so this identifies it too. */
@@ -128,6 +139,8 @@ export interface Report {
    * shows it through `statusAsRead`.
    */
   readonly readyToFile: boolean;
+  /** What its latest validation run came to (task 42.2), or `null` where it was never checked. */
+  readonly validation: ReportValidationSummary | null;
   /**
    * DR-4's pin — FR-66's *explicit template and taxonomy version against every report*.
    *

@@ -21,6 +21,7 @@ import { returnedRows } from '../returned-rows';
 import { SQL_STATE, hasSqlState } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
 import { readyToFileOf } from './report-readiness';
+import { validationSummaryOf, type ValidationSummaryColumn } from './report-validation-summary';
 
 interface ReportRow {
   id: string;
@@ -28,6 +29,7 @@ interface ReportRow {
   scope: ReportScope;
   status: ReportStatus;
   ready_to_file: boolean;
+  validation_summary: ValidationSummaryColumn | null;
   template_version: string;
   reporting_currency: string;
   taxonomy_version: string;
@@ -54,6 +56,7 @@ interface ReportRow {
  * answering the same shape.
  */
 const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, r.status, ${readyToFileOf('r')} AS ready_to_file,
+        ${validationSummaryOf('r')} AS validation_summary,
         r.template_version, r.taxonomy_version, r.reporting_currency, r.created_at, r.updated_at,
         p.reporting_entity_id, e.name AS entity_name, p.fiscal_year,
         p.period_start::text AS period_start, p.period_start_tz,
@@ -83,6 +86,7 @@ const toReport = (row: ReportRow): Report => ({
   scope: row.scope,
   status: row.status,
   readyToFile: row.ready_to_file,
+  validation: row.validation_summary,
   templateVersion: row.template_version,
   reportingCurrency: row.reporting_currency,
   taxonomyVersion: row.taxonomy_version,

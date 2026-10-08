@@ -14,6 +14,10 @@ export default defineConfig({
       // on a fresh clone with no prior build — the package's `source` condition expresses the same
       // intent, but Vite 6+ REPLACES the default conditions rather than extending them, and an
       // alias states it without that trap.
+      // The committed catalogues are data beside the source, reached by subpath (`./catalogues/*`) — listed FIRST, since
+      // an alias matches by prefix and the entry below would otherwise send them into `src/index.ts` (task 42.1, which
+      // reads the shared `validation` namespace).
+      '@easyesg/i18n/catalogues': fileURLToPath(new URL('../../packages/i18n/catalogues', import.meta.url)),
       '@easyesg/i18n': fileURLToPath(new URL('../../packages/i18n/src/index.ts', import.meta.url)),
       // Same reasoning: @easyesg/validation dual-builds for Node consumers (OQ-47), and the
       // alias keeps `pnpm test` working on a fresh clone with no prior build.

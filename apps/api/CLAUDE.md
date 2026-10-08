@@ -129,9 +129,7 @@ traps each one left — grouped by area rather than by the task that built it.
   used the set leaving, to its editors and administrator, and withdraws the entering set's own — **the first producer on
   the worker**, one organization at a time through `TENANT_WORK` (`contracts/tenant-work.port.ts`) (§12.5.6's
   task-37.3/37.4 row).
-- **Not live**: validation's screens (42 — since 41.1 … 41.3 the rule set, the run, its findings and its roll-up are live;
-  see "Validation" below), preview and export (43 … 47),
-  the outstanding-report and deadline notices (51.2), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
+- **Not live**: preview and export (43 … 47), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -524,7 +522,23 @@ Four things to know before touching it:
   sections omitted, the report's scope), and a read drops a finding whose element has left it (182/26).
 - **A value row holds answers only** (182/17): the write admits `ok`, `nil_return` and `not_available`, a cleared field
   is a row holding nothing in `ok`, and every reader judges an answer by its content through the package's
-  `isAnswered`. The step read still projects `missing` as an unanswered field's display state, for 42.1 to replace.
+  `isAnswered`. Since task 42.1 the step read projects a field's stored answer kind only — an unanswered field reads
+  `ok` — and `GET /reports/{id}/validation/rules` answers the rules a run would read, with the report's scope, for the
+  browser's inline verdicts (`RunValidation.rules`, the run's own two reads; §12.5.6's task-42 row (1)).
+- **A rule's message is three leaves** (task 42; row (2)): `happened`, `consequence`, `action` beneath the key the rule
+  names, in every locale — `isWordedAsFindingInEveryLocale` refuses anything else at publication, the seed included,
+  and since task 42.4 `committed-catalogues.spec.ts` holds the whole `validation` namespace to it, so a message no seeded
+  rule names yet cannot ship in one sentence.
+- **A finding names its field, in the HTTP process only** (task 42.2; §12.5.6's task-42 row (e)). `NameFindings` adds to
+  each finding and each field it relates to the field's label and a member's, from the catalogue of the version the
+  report pins, and the modules presenting it in the scope the run read; the service composes it after the run or the
+  read, and it is not provided in `MODE=worker`, so the day's sweep (51.2) runs and stores exactly as before. A country
+  member is left to the browser to word by its ISO code.
+- **`GET /reports` and `GET /periods` carry the last run's summary** (task 42.2; row (f)): `validation:
+  { modulesComplete, modulesCounted, outstanding } | null`, joined by `validationSummaryOf`
+  (`persistence/core/report-validation-summary.ts`) beside `readyToFileOf`, from the same run rows. Its DTO has a file of
+  its own (`disclosure/dto/report-validation-summary.dto.ts`), because the report and period DTOs each read it and
+  declared in either it made an import cycle.
 - **The roll-up is the run's, and readiness is read from it** (task 41.3; §12.5.6's task-41 row (2), (h)). A run stores
   the report's counts on `core.validation_run` and a row per module (`core.validation_module`) with its outstanding
   fields; the read answers them as the run left them, unfiltered. **`ready_to_file` is never written**: the report and

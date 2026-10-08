@@ -138,6 +138,26 @@ export const deleteNoticeWithdrawalsOf = async (input: {
   );
 };
 
+/**
+ * Removes the daily rows a worker boot scheduled (task 51.2's ticker; found at task 42.1). A worker booted after a
+ * `@RunsDaily` slot writes that day's row on its first tick, and a boot that closes before draining it leaves it
+ * pending — so the next `pnpm e2e` on the same test stack failed `outbox.e2e-spec.ts` with the row as a stray, whenever
+ * `pnpm e2e:worker` had run after 07:00 in Chișinău that day. **Scoped by the event and the suite's own start**, never a
+ * sweep: a row another worker wrote before the suite began is not taken with it.
+ */
+export const deleteScheduledRuns = async (input: {
+  /** A connection as `esg_migrator` — the only role holding DELETE on `audit.outbox_event`. */
+  readonly owner: DataSource;
+  readonly eventType: string;
+  /** The database's time when the suite began (`databaseNow`). */
+  readonly since: Date;
+}): Promise<void> => {
+  await input.owner.query(
+    `DELETE FROM audit.outbox_event WHERE event_type = $1 AND organization_id IS NULL AND occurred_at >= $2`,
+    [input.eventType, input.since],
+  );
+};
+
 export const deleteHintsOf = async (input: {
   /** A connection as `esg_migrator` — the only role holding DELETE on `audit.outbox_event`. */
   readonly owner: DataSource;

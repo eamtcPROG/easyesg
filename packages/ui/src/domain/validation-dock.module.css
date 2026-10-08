@@ -1,0 +1,16 @@
+/* S-08 docked (task 42.2): from the Wizard shell's side-by-side width (`wizard-shell.module.css`'s 90rem), in view
+   while the step scrolls. */
+
+.dock {
+  display: none;
+}
+
+@media (min-width: 90rem) {
+  .dock {
+    position: sticky;
+    inset-block-start: 0;
+    display: block;
+    max-block-size: 85dvh;
+    overflow-y: auto;
+  }
+}

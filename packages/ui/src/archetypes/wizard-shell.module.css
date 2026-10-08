@@ -146,6 +146,12 @@
   color: var(--state-reasoned);
 }
 
+.state[data-state='unchecked'] {
+  border-color: var(--state-pending);
+  background: var(--state-pending-tint);
+  color: var(--state-pending);
+}
+
 .note {
   margin: 0;
   color: var(--text-muted);
@@ -180,4 +186,16 @@
 
 .panel {
   min-width: 0;
+}
+
+/* Below the side-by-side width, **a slot holding S-08's count** (`ValidationCountBar`, which marks its seat) is kept in
+   view at the foot of the step's region while the step scrolls (task 42.2; *S-07/S-08 narrow*). Only that slot: S-09's
+   summary takes the same slot and stacks below its lines as it always has. Docked beside the step, the panel keeps its
+   own place (`ValidationDock`). */
+@media not (min-width: 90rem) {
+  .panel:has([data-panel-seat]) {
+    position: sticky;
+    inset-block-end: 0;
+    z-index: 1;
+  }
 }

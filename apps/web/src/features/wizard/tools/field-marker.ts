@@ -1,41 +1,48 @@
 import { DISCLOSURE_ORIGIN, type DisclosureField as DisclosureFieldShape, type DisclosureState } from '@easyesg/contracts';
 import { FIELD_TONE, type FieldTone } from '@easyesg/ui';
+import type { Verdict } from '@easyesg/validation';
 import { TONE_OF_STATE, hasMarker } from './field-tone';
 
 /**
  * What the field says about itself, where it has something to say.
  *
- * **Origin is read first, and it is the one marker about where a figure CAME FROM** rather than
- * about its state (task 36.4). UC-21's alternate flow makes B3's figures *"normally produced by
- * the carbon calculator rather than typed directly"*, and UX-12 hangs a provenance mark off exactly this
- * distinction — a trace can only be offered for a figure the system computed.
+ * **A finding's verdict is read first** (task 42.1; FR-40, BR-VAL-1; `architecture.md` §12.5.6's task-42 row (1)): the
+ * field's one state among those its findings fire, live where the open step can evaluate the rule and as the last run
+ * found it otherwise. It outranks every marker below because it is the one the reader has to act on — a calculated
+ * figure that moved beyond the year's threshold says so here, and the computed-figure control beside it still says
+ * where the figure came from.
  *
- * **`calculated` is written by a calculator run** (task 38.4) — S-09's *use these figures in B3*
- * since task 39.2, which lands the reader on this step with the figure so marked — and by B3's two
- * derivations over it. This docblock said the branch was unreachable until 39.2, which stopped being
- * true when 38.4 shipped. `overridden` is marked, and the marker is not the override's whole display — UX-43 requires an override
- * to display the superseded value beside the substituted one and to carry a reason, which is a
- * component and not a word, and it is task 39.3's: the marker says the figure is the reporter's, and the control
- * beside it shows both figures and the reason.
+ * **Then origin, the one marker about where a figure CAME FROM** rather than about its state (task 36.4). UC-21's
+ * alternate flow makes B3's figures *"normally produced by the carbon calculator rather than typed directly"*, and
+ * UX-12 hangs a provenance mark off exactly this distinction — a trace can only be offered for a figure the system
+ * computed. `calculated` is written by a calculator run (task 38.4) and by B3's two derivations over it; `overridden`
+ * is marked, and the marker is not the override's whole display — UX-43's superseded value and reason are the control
+ * beside it (task 39.3).
  *
- * **Then the company record, since task 180.3**: a value the api says still is what the record gives — its default
- * shown, or an answer still equal to it — reads *From the company record* in place of its state, which for a default
- * not yet stored would say *To answer* about a field the reader has nothing to type into. After calculated and carried
- * forward, because each of those says more about where the figure came from.
+ * **Then the company record, since task 180.3**: a value the api says still is what the record gives reads *From the
+ * company record*, after calculated and carried forward, because each of those says more about where the figure came
+ * from.
+ *
+ * **Last the answer's own kind** — declared not available, a nil return — since 182/17 the only states a field's row
+ * holds; `ok` is the absence of a marker.
  */
-export function markerFor(
-  field: DisclosureFieldShape,
-  labels: Readonly<Record<DisclosureState, string>>,
+export function markerFor(input: {
+  readonly field: DisclosureFieldShape;
+  /** The field's one verdict among its findings, or `null` where none names it — the field is OK. */
+  readonly verdict: Verdict | null;
+  readonly labels: Readonly<Record<DisclosureState, string>>;
   // Named rather than two adjacent `string`s, per the root CLAUDE.md: swapped, the call compiles
   // and every calculated figure reads *carried forward* — a plausible wrong answer, which is the
   // whole of what that rule is about.
-  provenance: {
+  readonly provenance: {
     readonly carried: string;
     readonly calculated: string;
     readonly overridden: string;
     readonly record: string;
-  },
-): { readonly label: string; readonly tone: FieldTone } | undefined {
+  };
+}): { readonly label: string; readonly tone: FieldTone } | undefined {
+  const { field, verdict, labels, provenance } = input;
+  if (verdict !== null) return { label: labels[verdict], tone: TONE_OF_STATE[verdict] };
   if (field.origin === DISCLOSURE_ORIGIN.CALCULATED) {
     return { label: provenance.calculated, tone: FIELD_TONE.NEUTRAL };
   }

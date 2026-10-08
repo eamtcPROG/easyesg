@@ -87,4 +87,12 @@ export type { FieldAddress, FieldValue } from './rules/field-value.js';
  */
 export { isAnswered, isDeclaredUnavailable } from './rules/field-value.js';
 export type { Finding } from './rules/finding.js';
-export { VERDICT, mostSevereVerdict, type Verdict } from './rules/verdict.js';
+/** A finding's message: three parts by construction — NFR-79's, each a leaf under the rule's key (task 42). */
+export {
+  FINDING_MESSAGE_PART,
+  FINDING_MESSAGE_PARTS,
+  findingMessagePartKey,
+  wordsFindingMessage,
+  type FindingMessagePart,
+} from './rules/finding-message.js';
+export { VERDICT, VERDICT_SEVERITY, mostSevereVerdict, type Verdict } from './rules/verdict.js';

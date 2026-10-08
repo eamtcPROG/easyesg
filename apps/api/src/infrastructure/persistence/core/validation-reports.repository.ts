@@ -10,6 +10,7 @@ interface ValidationReportRow {
   locked_at: Date | null;
   locked_rule_set_revision: number | null;
   period_start_tz: string;
+  taxonomy_version: string;
 }
 
 /**
@@ -22,7 +23,7 @@ export class ValidationReportsRepository extends TenantRepository<never> impleme
 
   async find(query: { readonly reportId: string }): Promise<ValidationReport | null> {
     const rows = await this.manager.query<ValidationReportRow[]>(
-      `SELECT r.id, p.locked_at, p.locked_rule_set_revision, p.period_start_tz
+      `SELECT r.id, p.locked_at, p.locked_rule_set_revision, p.period_start_tz, r.taxonomy_version
          FROM core.report r
          JOIN core.reporting_period p ON p.id = r.reporting_period_id
         WHERE r.id = $1`,
@@ -35,6 +36,7 @@ export class ValidationReportsRepository extends TenantRepository<never> impleme
       lockedAt: row.locked_at,
       ruleSetPin: row.locked_rule_set_revision,
       timezone: row.period_start_tz,
+      taxonomyVersion: row.taxonomy_version,
     };
   }
 }

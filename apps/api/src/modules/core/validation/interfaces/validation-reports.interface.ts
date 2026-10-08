@@ -1,6 +1,7 @@
 /**
  * The report facts a validation run reads before anything else (task 41.2; FR-73 item 9) — whether its period is
- * locked, the rule set its lock pinned, and the zone its days are read in. A narrow port of this module's own,
+ * locked, the rule set its lock pinned, the zone its days are read in, and since task 42.2 the taxonomy version it is
+ * pinned to, whose wording names a finding's field. A narrow port of this module's own,
  * `CalcReports`' shape: one statement over the report and its period, RLS-scoped.
  */
 export interface ValidationReport {
@@ -11,6 +12,8 @@ export interface ValidationReport {
   readonly ruleSetPin: number | null;
   /** The period's own zone (`period_start_tz`), which reads *today* and the lock's day (task-41 row (b)). */
   readonly timezone: string;
+  /** The taxonomy version the report pins (DR-4) — the one whose labels name a finding's field (task 42.2). */
+  readonly taxonomyVersion: string;
 }
 
 export interface ValidationReports {

@@ -497,7 +497,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 ### FR-23 — The organization-wide overview
 
-**Status.** Partial — delivered 30.5, 32.4, 40 (the interpreter the status will read) · remaining 42.2 (completion and validation status, whose producer 41.3 built), 187 (an archived entity's periods are not attention items)
+**Status.** Partial — delivered 30.5, 32.4, 40 (the interpreter the status will read), 42.2 (completion and validation status: the standing reads readiness, each row the last run's summary) · remaining 187 (an archived entity's periods are not attention items)
 
 **Obligation.** The system shall present an organization-wide overview of every period of every entity, with completion and validation status, in a single view.
 
@@ -514,7 +514,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 4. **A due date that has passed is marked, and nothing else about lateness is.** The comparison is read in the period's own timezone, because whether a deadline has passed is a legal question (NFR-34). No "due soon" threshold is invented: lead times are FR-173's notification configuration (§12.5.6 task-32.4 rows).
 5. **Where did I leave off** is the one resumable report most recently touched, opened through S-07's own resolver; the screen never picks a step. **What is the state of everything** lists the rows by entity, then most recent year first.
 6. **A row's action is removed by a locked period and by a view-only membership**, and the locked one says so (UX-13). The third cause, a suspended entitlement, is task 54's.
-7. **Completion and validation status are refused until their producers exist, not drawn empty**: the roll-up is task 41.3's, server-computed because two counters would be two answers, and findings are task 40's. The wizard's own module list counts in the browser meanwhile (§12.5.6 task-32.4 and task-179.1 rows).
+7. **Completion and validation status are the last run's** (task 42.2; §12.5.6's task-42 row (f)): the standing reads readiness and each row with a report the run's summary — modules complete of those counted, fields outstanding — or *not checked yet* where no run exists. Until 42.2 they were refused rather than drawn empty, the roll-up being server-computed because two counters would be two answers (§12.5.6 task-32.4 and task-179.1 rows).
 8. **Rows are periods only.** An entity with no period has no row; S-13 is where it is seen. The periods of an archived entity stay in the table and are not attention items (§12.5.6 task-182 identity and organization row, 182/16).
 
 **Refusals.** No membership in the active organization → 403 `membership-required`.
@@ -528,7 +528,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - **AC-4** Given a due date earlier than today in the period's own timezone on a filing that is not settled, then the row is marked passed. *(source: §12.5.6 task-32.4 rows; NFR-34)*
 - **AC-5** Given a locked period, then its row is not an attention item and says it is locked. *(source: S-05 amendment of 7 Sep 2026; UX-13)*
 - **AC-6** Given attention items, then they are ordered by due date, soonest first, with a period lacking one last. *(source: S-05 amendment of 7 Sep 2026)*
-- **AC-7** Given validation and completion have run, then each row shows its completion and validation status. *(source: FR text)* The api answers both since 41.3 (`GET /reports/{id}/validation`, and the report's status); drawn by 42.2 (§12.5.6's task-41 row (7)).
+- **AC-7** Given validation and completion have run, then each row shows its completion and validation status. *(source: FR text)* Met since 42.2: `GET /periods` carries the last run's summary beside readiness, and each row draws it (§12.5.6's task-41 row (7), task-42 row (f)).
 - **AC-8** Given an entity with no period, then the overview has no row for it. *(source: §12.5.6 task-182 identity and organization row, 182/16)*
 - **AC-9** Given a period of an archived entity, then it is listed in the table and is not an attention item. *(source: §12.5.6 task-182 identity and organization row, 182/16)* Unmet until 187.
 

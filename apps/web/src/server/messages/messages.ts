@@ -10,6 +10,9 @@ import {
 import ro from '@/messages/ro.json';
 import en from '@/messages/en.json';
 import ru from '@/messages/ru.json';
+import sharedRo from '@easyesg/i18n/catalogues/ro.json';
+import sharedEn from '@easyesg/i18n/catalogues/en.json';
+import sharedRu from '@easyesg/i18n/catalogues/ru.json';
 
 /**
  * The `MessageLoader` adapter — the seam between next-intl and wherever text comes from.
@@ -34,10 +37,17 @@ import ru from '@/messages/ru.json';
  * This stays a port rather than a bare import because `MessageLoader` is what lets FR-61 content
  * join the catalogue later without touching a call site — the cheap direction of OQ-43.
  */
+/**
+ * **One namespace this app reads from the shared committed catalogue rather than its own: `validation`** (task 42.1;
+ * `architecture.md` §12.5.6's task-42 row (2)). A finding's wording is the api's publication rule's as much as this
+ * screen's — a rule set is refused unless every locale words its messages in NFR-79's three parts there — and the
+ * browser evaluates findings live, so it words them itself. Read from `packages/i18n` beside this app's own, never
+ * copied into `src/messages`: a copy would be a second wording free to drift from the one publication checks.
+ */
 const CATALOGUES: Readonly<Record<Locale, MessageCatalogue>> = {
-  ro,
-  en,
-  ru,
+  ro: { ...ro, validation: sharedRo.validation },
+  en: { ...en, validation: sharedEn.validation },
+  ru: { ...ru, validation: sharedRu.validation },
 };
 
 /**

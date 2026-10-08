@@ -152,18 +152,58 @@
     }
   },
   "validation": {
-    "required": "Această întrebare nu are încă un răspuns, iar raportul are nevoie de el, așa că nu este complet fără el. Răspundeți la ea sau marcați-o ca indisponibilă, indicând motivul.",
-    "required_any": "Niciuna dintre aceste întrebări nu are încă un răspuns, iar raportul are nevoie de cel puțin unul, așa că nu este complet fără el. Răspundeți la cel puțin una dintre ele sau marcați-le ca indisponibile, indicând motivul.",
-    "row_complete": "Acest rând a fost început, dar îi lipsește încă această valoare, așa că rândul ar fi raportat pe jumătate completat. Completați valoarea sau ștergeți rândul, dacă nu ar trebui să existe.",
-    "sum": {
-      "inconsistent": "Aceste cifre însumează {parts}, ceea ce nu corespunde totalului de {total}, așa că raportul s-ar contrazice. Corectați cifrele sau totalul, astfel încât să concorde.",
-      "over": "Aceste cifre însumează {parts}, mai mult decât totalul de {total} din care fac parte, așa că raportul s-ar contrazice. Corectați cifrele sau totalul.",
-      "short": "Aceste cifre însumează {parts}, mai puțin decât totalul de {total}, așa că o parte din total rămâne nejustificată. Adăugați cifrele care lipsesc sau corectați totalul."
+    "required": {
+      "happened": "Această întrebare nu are încă un răspuns.",
+      "consequence": "Raportul are nevoie de el, așa că nu este complet fără el.",
+      "action": "Răspundeți la ea sau marcați-o ca indisponibilă, indicând motivul."
     },
-    "range": "Valoarea {value} depășește limitele acceptate pentru această întrebare, așa că nu poate fi raportată în forma actuală. Verificați cifra și introduceți una aflată în intervalul acceptat.",
-    "url": "Adresa „{value}” nu este o adresă web completă, așa că un cititor nu ar putea s-o deschidă. Introduceți adresa întreagă, începând cu https:// sau http://.",
-    "exclusive": "Acest răspuns nu lasă loc valorilor introduse la întrebările legate de el, așa că raportul ar afirma două lucruri care nu pot fi adevărate simultan. Schimbați răspunsul sau ștergeți valorile legate de el.",
-    "year_over_year": "Această cifră a trecut de la {prior} în perioada anterioară la {current} acum, o schimbare de {change}, mai mare decât de obicei de la un an la altul. O schimbare mare poate fi corectă, dar un cititor o va pune la îndoială. Verificați cifra și, dacă este corectă, explicați schimbarea în raport."
+    "required_any": {
+      "happened": "Niciuna dintre aceste întrebări nu are încă un răspuns.",
+      "consequence": "Raportul are nevoie de cel puțin unul, așa că nu este complet fără el.",
+      "action": "Răspundeți la cel puțin una dintre ele sau marcați-le ca indisponibile, indicând motivul."
+    },
+    "row_complete": {
+      "happened": "Acest rând a fost început, dar îi lipsește încă această valoare.",
+      "consequence": "Rândul ar fi raportat pe jumătate completat.",
+      "action": "Completați valoarea sau ștergeți rândul, dacă nu ar trebui să existe."
+    },
+    "sum": {
+      "inconsistent": {
+        "happened": "Aceste cifre însumează {parts}, ceea ce nu corespunde totalului de {total}.",
+        "consequence": "Raportul s-ar contrazice.",
+        "action": "Corectați cifrele sau totalul, astfel încât să concorde."
+      },
+      "over": {
+        "happened": "Aceste cifre însumează {parts}, mai mult decât totalul de {total} din care fac parte.",
+        "consequence": "Raportul s-ar contrazice.",
+        "action": "Corectați cifrele sau totalul."
+      },
+      "short": {
+        "happened": "Aceste cifre însumează {parts}, mai puțin decât totalul de {total}.",
+        "consequence": "O parte din total rămâne nejustificată.",
+        "action": "Adăugați cifrele care lipsesc sau corectați totalul."
+      }
+    },
+    "range": {
+      "happened": "Valoarea {value} depășește limitele acceptate pentru această întrebare.",
+      "consequence": "Nu poate fi raportată în forma actuală.",
+      "action": "Verificați cifra și introduceți una aflată în intervalul acceptat."
+    },
+    "url": {
+      "happened": "Adresa „{value}” nu este o adresă web completă.",
+      "consequence": "Un cititor nu ar putea s-o deschidă.",
+      "action": "Introduceți adresa întreagă, începând cu https:// sau http://."
+    },
+    "exclusive": {
+      "happened": "Acest răspuns nu lasă loc valorilor introduse la întrebările legate de el.",
+      "consequence": "Raportul ar afirma două lucruri care nu pot fi adevărate simultan.",
+      "action": "Schimbați răspunsul sau ștergeți valorile legate de el."
+    },
+    "year_over_year": {
+      "happened": "Această cifră a trecut de la {prior} în perioada anterioară la {current} acum, o schimbare de {change}, mai mare decât de obicei de la un an la altul.",
+      "consequence": "O schimbare mare poate fi corectă, dar un cititor o va pune la îndoială.",
+      "action": "Verificați cifra și, dacă este corectă, explicați schimbarea în raport."
+    }
   },
   "identity": {
     "registration": {

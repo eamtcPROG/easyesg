@@ -9,6 +9,7 @@ import {
   type ReportStatus,
   type ReportSubject,
 } from '../models/report.model';
+import { ReportValidationSummaryDto } from './report-validation-summary.dto';
 import { LegalDateDto } from '@api/modules/core/period/dto/reporting-period.dto';
 import type { EpochMillis, LegalDate } from '@api/contracts/types/time';
 
@@ -142,6 +143,13 @@ export class ReportResponseDto {
   readonly status: ReportStatus;
 
   @ApiProperty({
+    type: ReportValidationSummaryDto,
+    nullable: true,
+    description: 'What its latest validation run came to (FR-41), or null where it was never checked.',
+  })
+  readonly validation: ReportValidationSummaryDto | null;
+
+  @ApiProperty({
     example: '2026-05-01',
     description:
       'The EFRAG Digital Template release this report is pinned to (DR-4, FR-66). Copied from the ' +
@@ -169,6 +177,7 @@ export class ReportResponseDto {
     this.reportingPeriodId = report.reportingPeriodId;
     this.scope = report.scope;
     this.status = statusAsRead(report);
+    this.validation = report.validation === null ? null : new ReportValidationSummaryDto(report.validation);
     this.templateVersion = report.templateVersion;
     this.taxonomyVersion = report.taxonomyVersion;
     // The one conversion OQ-50 permits, at the persistence-to-DTO boundary.

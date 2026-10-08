@@ -18,8 +18,10 @@ import {
 } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { syncStateOf, writeKey } from '../../../tools/autosave-state';
+import { fieldAnchor } from '../../../tools/field-anchor';
 import { priorDraftOf, type PriorValue } from '../../../tools/comparatives';
 import { markerFor } from '../../../tools/field-marker';
+import { TONE_OF_STATE } from '../../../tools/field-tone';
 import {
   notAvailableWrite,
   resumeWrite,
@@ -30,11 +32,13 @@ import {
 } from '../../../tools/values';
 import { CalculatedFigure } from '@/features/calculator/components/figure/calculated-figure';
 import { useAutosaveContext } from '../../providers/autosave-context';
+import { useValidationContext } from '../../providers/validation-context';
 import { DisclosureControl } from '../controls/disclosure-control';
 import { NotAvailableDeclaration } from '../controls/not-available';
 import { FIELD_MESSAGES } from '../shared/step-messages';
 import styles from '../styles/step.module.css';
 import { FieldUnit } from './field-unit';
+import { FindingMessages } from './finding-messages';
 
 /**
  * One field of a step: §6.2's anatomy, its control, and — since task 91.4 — its unit.
@@ -97,8 +101,12 @@ export function StepField({
     [UNIT_CODE.SQUARE_KILOMETRE]: tUnit('sqkm'),
   };
   const { state, change } = useAutosaveContext();
+  const { findingsOf } = useValidationContext();
 
   const key = writeKey(served);
+  // FR-40's verdicts at the point of entry (task 42.1): most severe first, so the first is the field's one state.
+  const findings = findingsOf(key);
+  const verdict = findings[0]?.verdict ?? null;
   const field = withCommitted(served, state.committed[key]);
   const unit = unitOf(field, chosenUnit);
   // The unit is part of the value, so the control writes with it rather than with what is stored.
@@ -116,16 +124,21 @@ export function StepField({
   };
   const marker =
     sync === SAVE_STATE.SAVED
-      ? markerFor(field, markerLabels, {
-          carried: tField('carried'),
-          calculated: tField('calculated'),
-          overridden: tField('overridden'),
-          record: tField('fromRecord'),
+      ? markerFor({
+          field,
+          verdict,
+          labels: markerLabels,
+          provenance: {
+            carried: tField('carried'),
+            calculated: tField('calculated'),
+            overridden: tField('overridden'),
+            record: tField('fromRecord'),
+          },
         })
       : { label: syncLabels[sync], tone: SYNC_TONE[sync] };
   // Last year's answer in this field's own value column, or '' where it holds none there.
   const priorDraft = prior === null ? '' : priorDraftOf({ field, prior });
-  const labelId = labelIdFor(key);
+  const labelId = fieldAnchor(key);
 
   return (
     <DisclosureField
@@ -213,7 +226,12 @@ export function StepField({
         )
       }
       message={
-        field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? (
+        // A finding first (task 42.1): its three parts are what the reader has to act on, and the same sentence S-08
+        // shows for it. A declared gap holds no presence finding, so the two meet only where a declared field still
+        // breaks a rule — and then the rule is the message.
+        verdict !== null ? (
+          <FindingMessages findings={findings} />
+        ) : field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? (
           // The artboard's line over the reason (task 179.2): it is not a note to self, a reader of the export sees it.
           <>
             <span className={styles.recorded}>{tField('notAvailable.recorded')}</span>
@@ -221,7 +239,7 @@ export function StepField({
           </>
         ) : undefined
       }
-      messageTone={FIELD_TONE.REASONED}
+      messageTone={verdict !== null ? TONE_OF_STATE[verdict] : FIELD_TONE.REASONED}
       // **UX-15's declaration, live since task 36.5.** This slot carried `null` from task 35.2 with
       // task 36.13 named as its owner — the field-level half is built here for every module, and
       // UC-30's *section* exclusion remains 36.13's (a different act, with storage FR-31 has not
@@ -290,5 +308,3 @@ const SYNC_TONE: Readonly<Record<Exclude<SaveState, typeof SAVE_STATE.SAVED>, Fi
   [SAVE_STATE.FAILED]: FIELD_TONE.ERROR,
 };
 
-/** A stable, HTML-safe id from the natural key — element and member keys are XBRL names. */
-const labelIdFor = (key: string): string => `disclosure-${key.replace(/[^A-Za-z0-9_-]/gu, '-')}`;

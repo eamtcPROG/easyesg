@@ -11,7 +11,7 @@ Part 4 of the eleven parts of [`functional_requirements.md`](../functional_requi
 
 Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held here: §5.
 
-**What is built and what is not.** Comparatives (FR-45 … FR-47) are built end to end. Traceability is half built: the capture of every change is the database's and has been since task 14, and nothing yet reads the trail as a screen (tasks 84.1, 84.2). Validation has its interpreter since task 40 — `packages/validation` holds the rule definition, the reader that admits a rule set and the interpreter, proven identical in the api's runtime and the browser application's over one corpus — since 41.1 the rule set in force, from the configuration store, written from the template's own status columns, since 41.2 the api's run and its findings, and since 41.3 the roll-up and readiness to file; the screens (42) are not started; export (tasks 43 … 47, with the template package, 45) is not started either: `core/validation`, `core/export` and `core/trace` are empty module shells, `packages/xlsx-patch` does not exist, and the contract has no path for validating, previewing or exporting. The blocks for those requirements state what the sources decided and, where no source decided, what the owner settled on 5 Oct 2026 (`architecture.md` §12.5.6's task-182 rows).
+**What is built and what is not.** Comparatives (FR-45 … FR-47) are built end to end. Traceability is half built: the capture of every change is the database's and has been since task 14, and nothing yet reads the trail as a screen (tasks 84.1, 84.2). Validation has its interpreter since task 40 — `packages/validation` holds the rule definition, the reader that admits a rule set and the interpreter, proven identical in the api's runtime and the browser application's over one corpus — since 41.1 the rule set in force, from the configuration store, written from the template's own status columns, since 41.2 the api's run and its findings, and since 41.3 the roll-up and readiness to file; and since task 42 the screens — each field's verdict where it is answered, live, S-08 with the run's roll-up on S-07, S-05 and S-06, each finding an address that lands focus in its field, and every finding's text held by test to its three parts and to no internal identifier. Export (tasks 43 … 47, with the template package, 45) is not started: `core/export` and `core/trace` are empty module shells, `packages/xlsx-patch` does not exist, and the contract has no path for previewing or exporting. The blocks for those requirements state what the sources decided and, where no source decided, what the owner settled on 5 Oct 2026 (`architecture.md` §12.5.6's task-182 rows).
 
 **Who uses these capabilities.** Two facts are built. The prior-period read (FR-45) is open to every member of the active organization, view-only included. The change trail is captured for every write, whoever makes it. For the rest, **the rule settled on 5 Oct 2026** (project owner, task 182; `architecture.md` §12.5.6 task-182 validation row, 182/22) is this. An **editor** and the **Organization Administrator** run validation, preview and export, re-download exports and read the change trail. A **view-only** member reads validation findings and the roll-up and nothing else of these: no validation run, no preview, no export, no export history or re-download and no trail (403 `insufficient-role` where a route is asked). `actors.md` §5 had granted the Organization Administrator a roll-up read and none of the others, and said nothing of a view-only member; it is amended to match. The blocks below write *editor or OA* for these, as part 3 does for writes.
 
@@ -19,7 +19,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-40 — Per-field validation state, inline
 
-**Status.** Partial — delivered 40 (the rule definition and the interpreter, identical in both runtimes), 41.1 (the rule set in force, from the configuration store), 41.2 (the api's run, its findings, and a value row holding answers only) · remaining 42.1, 42.4
+**Status.** Built — delivered 40 (the rule definition and the interpreter, identical in both runtimes), 41.1 (the rule set in force, from the configuration store), 41.2 (the api's run, its findings, and a value row holding answers only), 42.1 (each field's verdict at the point of entry, live where the open step can evaluate the rule and as the last run found it otherwise; OQ-49 closed), 42.4 (every finding, worded in every locale, held by test to its three parts and to no internal identifier)
 
 **Obligation.** The system shall expose a validation state for every field, among `OK`, `MISSING VALUE`, `VALUE INCONSISTENCY`, `ERROR` and `INVALID URL`, plus the declared-not-available state (FR-32), inline at the point of entry rather than only in a separate report.
 
@@ -36,8 +36,8 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 2. **Three of the design vocabulary's eight states are not verdicts.** `nil_return` is an answer, and a field carrying it is `OK` (design_spec.md OQ-4). `not_material` is unreachable since 9 Sep 2026 and nothing writes it. `not_available` is the declared state of FR-32, reported separately from `MISSING VALUE` (D-4).
 3. The rule types are presence, consistency (the taxonomy's calculation linkbase: headcount by gender and contract totals headcount, waste fractions total waste, GHG roll-ups reconcile), range and format (units, non-negativity, URL validity), and cross-period (FR-46). **Applicability is not one of them**: it is a shape of the form evaluated from a thresholds artefact, not a verdict (task-91.3 rows; FR-28). A field that does not apply is not validated and not counted (task-91.3 rows).
 4. One interpreter in `packages/validation`, run by the api authoritatively and by the browser inline, so the two verdicts cannot disagree. A shared fixture corpus run in both runtimes is the proof (tasks 40.2, 40.3).
-5. **How a verdict reaches a `react-hook-form` field is `architecture.md` OQ-49, deferred on 19 Aug 2026 with its assumption recorded**: the interpreter is authoritative and the form adapts to it by pushing findings in with `setError`; no resolver package is installed; field-level UX that carries no business meaning (required, input mask, must-be-a-number) may stay in the form. Task 42.1 is where it closes. This block does not close it.
-6. Every finding carries the field, the rule, its plain-language explanation and a deep link (§9.8; NFR-78). Its wording is a catalogue key resolved in the reader's locale, in NFR-79's three parts, with no rule id, enum member or taxonomy key in what the reader sees (task 42.4).
+5. **How a verdict reaches a field** (`architecture.md` OQ-49, closed 8 Oct 2026; §12.5.6's task-42 row (1)). The wizard's controls are not `react-hook-form` fields, so a field's verdict is computed in the browser by the interpreter over the step's answers as the wizard holds them — a verdict follows an answer once it leaves the field — with the rule set and the report's scope read from `GET /reports/{id}/validation/rules`. A rule naming an element the open step does not present is not evaluated there, and the last run's findings answer it: a field shows the most severe of the two (item 1). No resolver package is installed, and no rule is re-expressed as a client-side schema.
+6. Every finding carries the field, the rule, its plain-language explanation and a deep link (§9.8; NFR-78). Its wording is a catalogue key resolved in the reader's locale, in NFR-79's three parts, with no rule id, enum member or taxonomy key in what the reader sees (task 42.4). **The key names a message of three parts by construction** — *what happened*, *so what*, *what now*, each its own leaf in the shared committed catalogue — and publication refuses a key that is not such a message worded in every locale; the browser words a finding from that catalogue, so a field and S-08 say the same sentence (§12.5.6's task-42 row (2)).
 7. State is never carried by colour alone: each has a mark, a label and a colour role (UX-23).
 8. **A verdict lives in the findings, and only there** (182/17). A value row's `state` carries answer semantics only: `ok` (the default), `nil_return` and `not_available`. The verdict members the row's database check still lists (`missing`, `inconsistency`, `error`, `invalid_url`, and the unreachable `not_material`) stay there as frozen history, and the platform writes none of them. A field with no row is unanswered, and its `MISSING VALUE` is the finding that says so.
 9. **A value is always stored, and a verdict never refuses a write.** An answer that breaks a rule is stored and a finding is raised about it; autosave never refuses a committed keystroke (FR-37; NFR-38).
@@ -49,15 +49,15 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Boundaries.** Applicability is FR-28's, the declarations FR-31's and FR-32's, the roll-up FR-41's, navigation FR-42's, re-running FR-43's, rule maintenance FR-73's. The year-over-year rule is FR-46's.
 
 **Acceptance criteria.**
-- **AC-1** Given a field, then it shows exactly one of the five states or the declared-not-available state, inline at the point of entry. *(source: FR text; BR-VAL-1; UC-37)* Unmet until 42.1.
-- **AC-2** Given an applicable required field never answered, then it is `MISSING VALUE`. *(source: design_spec.md §6.4)* The api's verdict since 41.2; inline unmet until 42.1.
-- **AC-3** Given a field declared not available with a reason, then it shows that state and not `MISSING VALUE`. *(source: FR text; D-4; FR-32/AC-3)* The api's verdict since 41.2; inline unmet until 42.1.
+- **AC-1** Given a field, then it shows exactly one of the five states or the declared-not-available state, inline at the point of entry. *(source: FR text; BR-VAL-1; UC-37)* Met since 42.1.
+- **AC-2** Given an applicable required field never answered, then it is `MISSING VALUE`. *(source: design_spec.md §6.4)* The api's verdict since 41.2; inline since 42.1.
+- **AC-3** Given a field declared not available with a reason, then it shows that state and not `MISSING VALUE`. *(source: FR text; D-4; FR-32/AC-3)* The api's verdict since 41.2; inline since 42.1.
 - **AC-4** Given a field holding an affirmative zero, then its verdict is `OK`. *(source: design_spec.md §6.4 vocabulary note)*
 - **AC-5** Given a field that does not apply, then it is neither validated nor counted. *(source: §12.5.6 task-91.3 rows)*
 - **AC-6** Given the same answers, then the api and the browser return identical verdicts over the shared corpus. *(source: `architecture.md` §9.8; task 40.3)*
-- **AC-7** Given any finding, then its text names what happened, what follows and what to do, in the reader's locale, and contains no internal identifier. *(source: NFR-79; task 42.4)* Unmet until 42.4.
+- **AC-7** Given any finding, then its text names what happened, what follows and what to do, in the reader's locale, and contains no internal identifier. *(source: NFR-79; task 42.4)* Met since 42.4.
 - **AC-8** Given a rule definition changed and published, then the next evaluation applies it with no deployment. *(source: FR-73; AD-4; NFR-85)*
-- **AC-9** Given any state, then it is distinguishable without colour. *(source: UX-23)* Unmet until 42.1.
+- **AC-9** Given any state, then it is distinguishable without colour. *(source: UX-23)* Met since 42.1: a marker in words, and the message's mark beside its sentence.
 - **AC-10** Given an answer that breaks a rule, then it is stored and a finding is raised about it, and the write is not refused. *(source: §12.5.6 task-182 validation row, 182/17)*
 - **AC-11** Given a stored value, then its state is `ok`, `nil_return` or `not_available`, and a write naming `missing`, `inconsistency`, `error` or `invalid_url` as its state is refused with 400. *(source: §12.5.6 task-182 validation row, 182/17)*
 - **AC-12** Given an element that the template's validation sheet flags as required and that is applicable and unanswered, then it is `MISSING VALUE`; given one the sheet does not flag, then it is not. *(source: §12.5.6 task-182 validation row, 182/24)*
@@ -76,10 +76,11 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 5 Oct 2026 · project owner · every member reads findings; an editor or the OA runs validation · §12.5.6 task-182 validation row (182/22)
 - 7 Oct 2026 · project owner · rules are a closed vocabulary of eight kinds, each carrying its verdict; a field holding several findings shows the most severe; an absolute address is an `http` or `https` scheme and a host, so a bare `www.` address is `INVALID URL` · §12.5.6 task-40 row
 - 8 Oct 2026 · project owner · the seeded set carries every check the template's status columns make, B and C modules, with one condition kind added for a particular choice; a check behind a question only the template asks is not carried · §12.5.6 task-41 row (1)
+- 8 Oct 2026 · project owner · OQ-49 closed: the browser evaluates live what the open step can, the last run answers the rest; a finding's message is three leaves, NFR-79's parts · §12.5.6 task-42 row (1), (2)
 
 ### FR-41 — Roll-up per module and per report
 
-**Status.** Partial — delivered 41.2, 41.3 (the roll-up, computed by each run, and readiness read from it) · remaining 42.2 (S-07's list, S-05 and S-06 read it), 47.5 (marking a report filed). The wizard's module list counts in the browser until 42.2 (task 179.1, delivered); that count is an interim and is not this requirement.
+**Status.** Partial — delivered 41.2, 41.3 (the roll-up, computed by each run, and readiness read from it), 42.2 (S-07's list, S-08's meter, S-05 and S-06 read it; the browser's interim count is gone) · remaining 47.5 (marking a report filed).
 
 **Obligation.** The system shall roll validation state up per module and across the whole report, discounting sections declared omitted as classified or sensitive information (FR-31) so that a legitimate omission does not depress completion.
 
@@ -92,7 +93,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Preconditions.** Persisted findings (task 41.2).
 
 **Behaviour.**
-1. Module-level and report-level states are derived from field states, **server-side, once**: *two counters would be two answers* (§12.5.6 task-32.4 row). The wizard's list counts in the browser until 42.2 lands, *done* meaning every applicable field answered, and reads the server status then (task-179.1 row; *41.3* until 8 Oct 2026, §12.5.6's task-41 row (3)).
+1. Module-level and report-level states are derived from field states, **server-side, once**: *two counters would be two answers* (§12.5.6 task-32.4 row). The wizard's list counted in the browser until 42.2 landed, *done* meaning every applicable field answered, and reads the server status since (task-179.1 row; §12.5.6's task-41 row (3), task-42 row (3)).
 2. **What the roll-up counts.** A module declared omitted leaves the denominator, whether its own member is selected or all its sections are (UX-21; task-36.13 rows). A module ruled out by FR-28 leaves it too; a module waiting on B1 stays in it. A field that does not apply is not counted (task-91.3 rows).
 3. **What counts as resolved** (design_spec.md §6.4): `OK`, `nil_return` and `not_available` do (the last *reasoned*); `MISSING VALUE`, `VALUE INCONSISTENCY`, `ERROR` and `INVALID URL` do not.
 4. The roll-up supplies the named outstanding modules and fields that FR-164's notice carries (UC-38, UC-169; task 51.2 waits for 41.3).
@@ -100,6 +101,8 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 6. **The report's status** (182/19). `ready_to_file` is *computed* from the roll-up: a report is ready when nothing is outstanding, and stops being ready when a run finds something outstanding. No user act sets it. **It is derived on read and never stored** (§12.5.6's task-41 row (2)): the stored status stays the period lock's, and an open report reads `ready_to_file` while its latest run leaves nothing outstanding. `filed` is the reporter's explicit act, *Mark as filed* on S-11 (`design/IMPLEMENTATION_PLAN.md`), and never the result of an export: an export may be a draft for a bank, and only the reporter knows a document has left the building. The period lock stays the only writer of `open` and `locked` (task-31.3 row).
 7. S-06 and S-05 refuse the completion and validation columns until this exists (task-32.2 and task-32.4 rows); FR-25/AC-3 is unmet until 41.3.
 8. **The roll-up is as current as the findings it is read from** (182/26): the api evaluates when asked, not on each write (FR-43), so a report edited since the last run reads as the run left it, and an export request runs validation first (FR-44).
+9. **Before a report's first run there is no roll-up, and nothing is drawn as though there were one** (§12.5.6's task-42 row (3)). A module with nothing answered reads *not started*, which a run would also find; any other reads *not checked yet*, and so does the report on S-05 and S-06. S-08 offers the first run.
+10. **The list reads carry the run's summary** (§12.5.6's task-42 row (f)): `GET /reports` and `GET /periods` answer, beside readiness, how many modules the last run found complete of those it counted and how many fields it left outstanding — the figures S-06's completion column and S-05 draw — or none where no run exists. A count of modules is not a percentage, and none is returned (item 5).
 
 **Boundaries.** What *omitted* means is FR-31's. The state of each field is FR-40's. The notice is FR-164's.
 
@@ -108,7 +111,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-2** Given a section declared omitted under FR-31, then it does not reduce the completion. *(source: FR text; BR-VAL-2; FR-31/AC-3)*
 - **AC-3** Given a module ruled out by FR-28, or a field that does not apply, then it is not counted. *(source: §12.5.6 task-91.3 and task-179.1 rows)*
 - **AC-4** Given a field declared not available with a reason, then it counts as resolved and reasoned. *(source: design_spec.md §6.4)*
-- **AC-5** Given the roll-up, then the wizard's module list reads it and the browser's own count is gone. *(source: §12.5.6 task-179.1 row)* Unmet until 42.2 (§12.5.6's task-41 row (3)).
+- **AC-5** Given the roll-up, then the wizard's module list reads it and the browser's own count is gone. *(source: §12.5.6 task-179.1 row)* Met since 42.2 (§12.5.6's task-41 row (3), task-42 row (3)).
 - **AC-6** Given outstanding items, then the roll-up names the modules and fields. *(source: UC-38; UC-169; FR-164)*
 - **AC-7** Given a report, then the roll-up returns counts per module and for the report (resolved, reasoned, outstanding) and a derived status, and returns no percentage. *(source: §12.5.6 task-182 validation row, 182/18)*
 - **AC-8** Given a report with nothing outstanding, then it reads ready to file; given a later run that finds something outstanding, then it no longer does. No user act sets either. *(source: §12.5.6 task-182 validation row, 182/19)*
@@ -124,10 +127,12 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 5 Oct 2026 · project owner · every member reads the roll-up · §12.5.6 task-182 validation row (182/22)
 - 8 Oct 2026 · project owner · readiness derived on read, never stored; the module list reads the server status with S-08's panel (42.2) rather than with 41.3 · §12.5.6 task-41 row (2), (3)
 - 8 Oct 2026 · build · the roll-up is computed by the run and read as it left it, readiness with it; a module waiting on B1 is listed, one ruled out is not · §12.5.6 task-41 row (h)
+- 8 Oct 2026 · project owner · before the first run a module or a report reads *not checked yet*; the list reads carry the last run's summary · §12.5.6 task-42 row (3), (f)
+- 8 Oct 2026 · build · S-07's list, S-08, S-05 and S-06 read the roll-up; the browser's count is gone · §12.5.6 task-42 row, as built (42.2)
 
 ### FR-42 — From a finding to its field
 
-**Status.** Not started — remaining 42.3. The findings it follows are 41.2's.
+**Status.** Built — delivered 42.3 (each finding and each field it conflicts with an address that lands focus in its field). The findings it follows are 41.2's.
 
 **Obligation.** The system shall allow navigation from any validation finding directly to the affected field, focused, with the rule explanation shown.
 
@@ -149,14 +154,15 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Boundaries.** What a finding says is FR-40's. How findings are listed and grouped is S-08's content (FR-41).
 
 **Acceptance criteria.**
-- **AC-1** Given a finding, when it is selected, then focus moves to the field that produced it and the rule explanation is shown. *(source: FR text; UX-22)* Unmet until 42.3.
-- **AC-2** Given a finding, then selecting it moves focus and does not only scroll. *(source: UX-22; design_spec.md §10.4)* Unmet until 42.3.
-- **AC-3** Given a finding's address opened directly, then it lands on the field. *(source: UX-4; task 42.3)* Unmet until 42.3.
-- **AC-4** Given a finding in a module other than the open one, then selecting it opens that module's step at the field. *(source: UC-39)* Unmet until 42.3.
-- **AC-5** Given a finding of inconsistency, then the conflicting field is linked. *(source: design_spec.md §6.4)* Unmet until 42.3.
+- **AC-1** Given a finding, when it is selected, then focus moves to the field that produced it and the rule explanation is shown. *(source: FR text; UX-22)* Met since 42.3.
+- **AC-2** Given a finding, then selecting it moves focus and does not only scroll. *(source: UX-22; design_spec.md §10.4)* Met since 42.3.
+- **AC-3** Given a finding's address opened directly, then it lands on the field. *(source: UX-4; task 42.3)* Met since 42.3.
+- **AC-4** Given a finding in a module other than the open one, then selecting it opens that module's step at the field. *(source: UC-39)* Met since 42.3.
+- **AC-5** Given a finding of inconsistency, then the conflicting field is linked. *(source: design_spec.md §6.4)* Met since 42.3.
 
 **History.**
 - 5 Oct 2026 · project owner · every member reads the findings, a view-only member included · §12.5.6 task-182 validation row (182/22)
+- 8 Oct 2026 · project owner · a finding's address is its step's with the field's anchor, landing focus in the field's control · §12.5.6 task-42 row (g)
 
 ### FR-43 — Validation re-run at any completeness
 
@@ -303,7 +309,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-46 — The prior-period value beside the input
 
-**Status.** Partial — delivered 34.3, 36.14, 40 (the year-over-year rule kind) · remaining 41.1, 42.1 (the rule seeded, and shown at the field, UX-33)
+**Status.** Built — delivered 34.3, 36.14, 40 (the year-over-year rule kind), 41.1 (the rule seeded at ±50%), 42.1 (its finding shown at the field, live, with both values and the change, UX-33)
 
 **Obligation.** The system shall display the prior-period value alongside the current input at the point of entry, so that an implausible year-over-year movement is visible while it can still be checked.
 
@@ -332,9 +338,9 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-2** Given a prior value that is `element_absent` or `shape_changed`, then it is not shown. *(source: §12.5.6 task-36.14 row)*
 - **AC-3** Given B8's rows for two countries, then each shows its own prior value. *(source: §12.5.6 task-36.14 row)*
 - **AC-4** Given a field answered not available last year, then no empty comparative row appears. *(source: §12.5.6 task-36.14 row)*
-- **AC-5** Given a movement beyond the threshold, then the field is `VALUE INCONSISTENCY`, and its message states both values and the change. *(source: UX-33; `architecture.md` §9.8)* Unmet until 41.1, 42.1.
-- **AC-6** Given a prior value of zero, then no movement finding is raised for the field. *(source: §12.5.6 task-182 validation row, 182/28)* Unmet until 41.1.
-- **AC-7** Given the threshold is changed in configuration, then the next evaluation applies it with no deployment, and one value serves every numeric element. *(source: FR-73; §12.5.6 task-182 validation row, 182/28)* Unmet until 41.1.
+- **AC-5** Given a movement beyond the threshold, then the field is `VALUE INCONSISTENCY`, and its message states both values and the change. *(source: UX-33; `architecture.md` §9.8)* Met since 42.1.
+- **AC-6** Given a prior value of zero, then no movement finding is raised for the field. *(source: §12.5.6 task-182 validation row, 182/28)* Met since 41.1.
+- **AC-7** Given the threshold is changed in configuration, then the next evaluation applies it with no deployment, and one value serves every numeric element. *(source: FR-73; §12.5.6 task-182 validation row, 182/28)* Met since 41.1.
 
 **History.**
 - 9 Sep 2026 · project owner · the wizard shows only comparable values, indexed by the whole natural key · §12.5.6 task-36.14 row

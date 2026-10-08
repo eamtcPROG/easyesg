@@ -33,6 +33,7 @@ const row = (over: Partial<ReportRow> = {}): ReportRow => ({
   templateVersion: '2026-05-01',
   taxonomyVersion: '2026-05-01',
   updatedAt: 1_787_000_000_000,
+  validation: null,
   ...over,
 });
 
@@ -264,6 +265,7 @@ describe('the row from the wire', () => {
     reportingPeriodId: 'p1',
     scope: 'basic',
     status: REPORT_STATUS.OPEN,
+    validation: null,
     templateVersion: '2026-05-01',
     taxonomyVersion: '2026-05-01',
     createdAt: 1,
@@ -289,6 +291,12 @@ describe('the row from the wire', () => {
     expect(built.start).toBe('2026-01-01');
     expect(built.end).toBe('2026-12-31');
     expect(typeof built.start).toBe('string');
+  });
+
+  it('carries the last run’s summary for the completion column, and none where nothing has checked it (task 42.2)', () => {
+    const summary = { modulesComplete: 7, modulesCounted: 11, outstanding: 3 };
+    expect(toReportRows([wire({ validation: summary })])[0]?.validation).toEqual(summary);
+    expect(toReportRows([wire()])[0]?.validation).toBeNull();
   });
 
   it('carries the subject the join answers, so no row has to fetch its own name', () => {

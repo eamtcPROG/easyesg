@@ -21,8 +21,9 @@ import { activateRequestLocale, localizedPageTitle, type LocaleParams } from '@/
  *
  * States (§8.1) present: ready · error — permission · error — recoverable · **read-only**, naming
  * which of UX-13's causes applies and what restores editing · **offline / queued** · **pending —
- * async** (the indicator's *saving*) · success. Still to arrive: empty — first use and the two
- * loading states, with task 36's content; partial, with S-08 (task 42).
+ * async** (the indicator's *saving*) · success · **partial**, since task 42.2: S-08 beside the step, the last run's
+ * findings with the fields still verdicting live. Still to arrive: empty — first use and the two loading states, with
+ * task 36's content.
  *
  * **This file is a shell** (task 134, `shell-composes-only`): it pins the locale and renders
  * `WizardStep`, which reads, decides the arm and draws the shell over the fields. **It has no

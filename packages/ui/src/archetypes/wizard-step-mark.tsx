@@ -1,4 +1,4 @@
-import { Ban, Check, Minus } from 'lucide-react';
+import { Ban, Check, CircleDashed, Minus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { WIZARD_STEP_STATE, type WizardStepState } from './wizard-step-vocabulary';
 import styles from './wizard-step-mark.module.css';
@@ -22,6 +22,8 @@ const GLYPHS: Record<WizardStepState, ReactNode> = {
   [WIZARD_STEP_STATE.OMITTED]: <Ban className={styles.icon} strokeWidth={2.25} />,
   [WIZARD_STEP_STATE.WAITING]: '◦',
   [WIZARD_STEP_STATE.INAPPLICABLE]: <Minus className={styles.icon} strokeWidth={2.5} />,
+  // Answered and not yet checked (task 42.2): a circle drawn in dashes — something is there, nothing is settled.
+  [WIZARD_STEP_STATE.UNCHECKED]: <CircleDashed className={styles.icon} strokeWidth={2.25} />,
 };
 
 export function WizardStepMark({ state }: { readonly state: WizardStepState }) {

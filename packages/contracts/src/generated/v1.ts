@@ -1038,6 +1038,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/{id}/validation/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The rules the report is checked against
+         * @description The rule set a run would read now — in force today in the period’s zone, or the one its lock pinned — and the elements of the report’s scope, so a client evaluates its answers with the same interpreter and the same rules the run does (FR-40, OQ-49). Nothing is evaluated or stored.
+         */
+        get: operations["ValidationController_rules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/{id}/validation/runs": {
         parameters: {
             query?: never;
@@ -3409,6 +3429,14 @@ export interface components {
              */
             timezone: string;
         };
+        ReportValidationSummaryDto: {
+            /** @description The modules the run found complete — nothing outstanding, something answered. */
+            modulesComplete: number;
+            /** @description The modules the run counted: every module the report asks and has not omitted, waiting ones included. */
+            modulesCounted: number;
+            /** @description The fields the run left carrying a finding. */
+            outstanding: number;
+        };
         PeriodReportDto: {
             /** Format: uuid */
             id: string;
@@ -3417,6 +3445,8 @@ export interface components {
              * @enum {string}
              */
             status: "open" | "locked" | "ready_to_file" | "filed";
+            /** @description What its latest validation run came to (FR-23, FR-41), or null where it was never checked. */
+            validation: components["schemas"]["ReportValidationSummaryDto"] | null;
             /** @description Unix epoch milliseconds, UTC. The report's last activity — which is how UX-6 picks the one to resume. */
             updatedAt: number;
         };
@@ -3504,7 +3534,7 @@ export interface components {
             /** @description The day the rule set was read as at: today in the period’s zone, or the day its lock pinned. */
             rulesOn: components["schemas"]["LegalDateDto"];
         };
-        FieldAddressDto: {
+        FindingFieldDto: {
             /** @example NumberOfEmployees */
             elementKey: string;
             /**
@@ -3514,6 +3544,20 @@ export interface components {
             dimensionKey: string;
             /** @description Position within a repeating group; 0 otherwise. */
             ordinal: number;
+            /**
+             * @description The field’s label in the request’s language, as the step read words it; null where none is worded.
+             * @example Numărul de angajați
+             */
+            label: string | null;
+            /** @description The axis member’s label, where the catalogue words one; null for an undimensioned field and for a member it does not word — a country, which a client words from its own catalogue by the member’s ISO code. */
+            memberLabel: string | null;
+            /**
+             * @description The modules of the report’s scope that present the field, in the standard’s order; empty where none does.
+             * @example [
+             *       "B8"
+             *     ]
+             */
+            modules: string[];
         };
         ValidationFindingDto: {
             /**
@@ -3526,9 +3570,9 @@ export interface components {
              * @enum {string}
              */
             verdict: "missing" | "inconsistency" | "error" | "invalid_url";
-            field: components["schemas"]["FieldAddressDto"];
+            field: components["schemas"]["FindingFieldDto"];
             /** @description The fields it conflicts with, or that may answer it (FR-42 item 4). */
-            related: components["schemas"]["FieldAddressDto"][];
+            related: components["schemas"]["FindingFieldDto"][];
             /**
              * @description The catalogue key its wording is resolved by.
              * @example validation.required
@@ -3551,6 +3595,17 @@ export interface components {
              * @enum {string}
              */
             status: "not_started" | "in_progress" | "complete";
+        };
+        FieldAddressDto: {
+            /** @example NumberOfEmployees */
+            elementKey: string;
+            /**
+             * @description An axis member, or '' where the element is undimensioned.
+             * @example
+             */
+            dimensionKey: string;
+            /** @description Position within a repeating group; 0 otherwise. */
+            ordinal: number;
         };
         ModuleRollUpDto: {
             /** @description Answered — a value or a nil return — with nothing outstanding on it. */
@@ -3586,6 +3641,16 @@ export interface components {
             /** @description What the run came to, as it left it (FR-41 item 8). Null where the report was never validated. */
             rollUp: components["schemas"]["RollUpDto"] | null;
         };
+        ValidationRulesDto: {
+            /** @description The day the rule set is read as at: today in the period’s zone, or the day its lock pinned. */
+            rulesOn: components["schemas"]["LegalDateDto"];
+            /** @description The rule set, `{ rules }`, as the configuration store holds it — read with @easyesg/validation’s readRuleSet, which refuses what its vocabulary cannot hold. */
+            ruleSet: {
+                [key: string]: unknown;
+            };
+            /** @description The elements a rule may read — those that apply, are in the report’s scope and are not withheld by an omission (FR-28, FR-31, FR-177). A rule naming any other is not evaluated. */
+            scope: string[];
+        };
         ReportSubjectDto: {
             /** Format: uuid */
             reportingEntityId: string;
@@ -3609,6 +3674,8 @@ export interface components {
              * @enum {string}
              */
             status: "open" | "locked" | "ready_to_file" | "filed";
+            /** @description What its latest validation run came to (FR-41), or null where it was never checked. */
+            validation: components["schemas"]["ReportValidationSummaryDto"] | null;
             /**
              * @description The EFRAG Digital Template release this report is pinned to (DR-4, FR-66). Copied from the reporting period at creation and moved only by an explicit migration run (FR-69).
              * @example 2026-05-01
@@ -3796,7 +3863,10 @@ export interface components {
              * @example MDL
              */
             currency: string | null;
-            /** @enum {string} */
+            /**
+             * @description The answer’s kind: `ok` (a value, or no answer at all), `nil_return` or `not_available`. A validation verdict is a finding, never this (182/17), so the other members are not projected (task 42.1).
+             * @enum {string}
+             */
             state: "ok" | "missing" | "inconsistency" | "error" | "invalid_url" | "not_available" | "not_material" | "nil_return";
             notAvailableReason: string | null;
             /** @description Carried forward from the prior period, and marked for review. */
@@ -7320,6 +7390,44 @@ export interface operations {
             };
             /** @description No such report in the active organization. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ValidationController_rules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The rules, and the scope they read. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ValidationRulesDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No validation rule set can be read right now (problem type validation-rules-unavailable), so there is nothing to check answers against. Try again shortly. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

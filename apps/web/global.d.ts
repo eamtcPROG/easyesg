@@ -1,4 +1,5 @@
 import type ro from '@/messages/ro.json';
+import type sharedRo from '@easyesg/i18n/catalogues/ro.json';
 import type { formats } from '@/i18n/formats';
 
 /**
@@ -15,7 +16,9 @@ import type { formats } from '@/i18n/formats';
  */
 declare module 'next-intl' {
   interface AppConfig {
-    Messages: typeof ro;
+    // The `validation` namespace is the shared catalogue's, read beside this app's own (task 42.1;
+    // `server/messages/messages.ts` says why).
+    Messages: typeof ro & Pick<typeof sharedRo, 'validation'>;
     Formats: typeof formats;
     Locale: import('@easyesg/i18n').Locale;
   }

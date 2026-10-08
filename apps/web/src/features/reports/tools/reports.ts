@@ -68,6 +68,8 @@ export interface ReportRow {
   readonly taxonomyVersion: string;
   /** Epoch-ms. The artboard's *Last activity* column, minus the actor — see `toReportRows`. */
   readonly updatedAt: number;
+  /** What its last validation run came to, or `null` where none has checked it (task 42.2) — the completion column. */
+  readonly validation: Report['validation'];
 }
 
 export interface ReportView {
@@ -184,8 +186,9 @@ const compareBy = (left: ReportRow, right: ReportRow, sort: ReportSort): number 
  * different claim and was the first draft's citation.) `architecture.md` §12.5.6 carries the
  * deferral and the fact that no task row owns the report-level actor.
  *
- * The three columns §5 lists that are refused outright are the parent row's own decision, with
- * their owners recorded: completion is task 41.3's roll-up and validation findings are task 40's.
+ * **Completion is the last run's summary since task 42.2** (FR-25 AC-3; §12.5.6's task-42 row (f)) — refused until
+ * then, with its owners recorded, rather than drawn empty. The list read carries it beside readiness, so a row costs
+ * no read of its own.
  */
 export const toReportRows = (reports: readonly Report[]): ReportRow[] =>
   reports.map((report) => ({
@@ -201,6 +204,7 @@ export const toReportRows = (reports: readonly Report[]): ReportRow[] =>
     templateVersion: report.templateVersion,
     taxonomyVersion: report.taxonomyVersion,
     updatedAt: report.updatedAt,
+    validation: report.validation,
   }));
 
 /** What the entity and year facets offer, entities by name and years newest first. */

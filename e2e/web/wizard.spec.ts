@@ -191,10 +191,10 @@ test('the step says where it stands and what it covers, and its foot leads on (S
 
   await page.waitForURL(`**/reports/${reportId}/B2`);
   await expect(main.getByRole('heading', { level: 1 })).toHaveText('B2 — Practici și politici');
-  // UX-11 on a module nobody has touched: the list's word for its state, and beneath it what is left — the count the
-  // in-progress words carry and *not started* does not.
+  // UX-11 on a module nobody has touched: the list's word for its state. **No count beneath it before a first run**
+  // (task 42.2): the count is the last run's, and no run has checked this report — S-08 says so instead.
   await expect(main.getByText('Neînceput', { exact: true })).toBeVisible();
-  await expect(main.getByText(/^\d+ (de )?câmpuri rămase$/u)).toBeVisible();
+  await expect(main.getByText(/^\d+ (de )?câmpuri rămase$/u)).toHaveCount(0);
   await expect(main.getByRole('link', { name: 'Înapoi: B1', exact: true })).toBeVisible();
 
   // On a phone *Next* names the module by its reference alone, as the 390 frame draws it.

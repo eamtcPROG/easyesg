@@ -1,8 +1,7 @@
-import type { DisclosureModuleSummary } from '@easyesg/contracts';
 import { WIZARD_STEP_STATE, type WizardStepState } from '@easyesg/ui';
 import type { useFormatter, useTranslations } from 'next-intl';
 import { isNamedModule } from './module-names';
-import type { ModuleRollUp } from './module-state';
+import type { GroupCount, ModuleCheck } from './module-state';
 
 /**
  * What a module is called and where it stands, in the reader's words (task 179.1).
@@ -36,16 +35,19 @@ export function moduleLabel(t: WizardTranslator, reference: string): string {
   return name === null ? reference : t('moduleLabel', { module: reference, name });
 }
 
-/** The rail's line — *In progress · 3 outstanding*. The state is the caller's `moduleStateOf`, passed so it is read once. */
+/**
+ * The list's line — *In progress · 3 outstanding*. The state is the caller's `moduleStateOf`, passed so it is read
+ * once; the count is the last run's for the module (task 42.2), as the run left it (182/26).
+ */
 export function moduleStatus(
   t: WizardTranslator,
-  input: { readonly summary: DisclosureModuleSummary; readonly state: WizardStepState },
+  input: { readonly state: WizardStepState; readonly checked: ModuleCheck | undefined },
 ): string {
   switch (input.state) {
     case WIZARD_STEP_STATE.COMPLETE:
       return t('rail.state.complete');
     case WIZARD_STEP_STATE.IN_PROGRESS:
-      return t('rail.state.inProgress', { count: input.summary.total - input.summary.answered });
+      return t('rail.state.inProgress', { count: input.checked?.outstanding ?? 0 });
     case WIZARD_STEP_STATE.NOT_STARTED:
       return t('rail.state.notStarted');
     case WIZARD_STEP_STATE.OMITTED:
@@ -54,36 +56,43 @@ export function moduleStatus(
       return t('rail.state.waiting');
     case WIZARD_STEP_STATE.INAPPLICABLE:
       return t('rail.state.inapplicable');
+    case WIZARD_STEP_STATE.UNCHECKED:
+      return t('rail.state.unchecked');
   }
 }
 
 /**
  * The line under the heading's state, where the state's words leave UX-11's count unsaid (task 179.3), or `null`.
  *
- * The heading's state is the list's own words, and *In progress · 3 outstanding* already carries the count UX-11 asks
- * the step header for. *Not started* does not, so the count is said beneath it — every field of the module, since none
- * is answered. Complete, omitted, waiting and ruled out leave nothing outstanding to count.
+ * *In progress · 3 outstanding* already carries the count UX-11 asks the step header for. *Not started* does not, so
+ * the last run's outstanding count for the module is said beneath it (task 42.2) — the fields a rule asks of it, not
+ * every field it holds, which was the browser's own count until then. Without a run there is no count to state.
  */
 export function stepStatusNote(
   t: WizardTranslator,
-  input: { readonly summary: DisclosureModuleSummary; readonly state: WizardStepState },
+  input: { readonly state: WizardStepState; readonly checked: ModuleCheck | undefined },
 ): string | null {
-  return input.state === WIZARD_STEP_STATE.NOT_STARTED && input.summary.total > 0
-    ? t('step.outstanding', { count: input.summary.total - input.summary.answered })
+  return input.state === WIZARD_STEP_STATE.NOT_STARTED && (input.checked?.outstanding ?? 0) > 0
+    ? t('step.outstanding', { count: input.checked?.outstanding ?? 0 })
     : null;
+}
+
+/** The group's count — *5 of 10 done* — or *not checked yet* where no run has made one (task-42 row (3)). */
+export function groupCountWords(t: WizardTranslator, count: GroupCount): string {
+  return count.checked ? t('rail.count', { done: count.done, counted: count.counted }) : t('rail.state.unchecked');
 }
 
 /**
  * The roll-up's sentence — what is not counted, then what waits — or `null` where there is neither. Two whole
  * messages, each with its list formatted by the locale's own conjunction (UX-95: never a list assembled by hand).
  */
-export function rollUpNote(t: WizardTranslator, format: Formatter, rollUp: ModuleRollUp): string | null {
+export function rollUpNote(t: WizardTranslator, format: Formatter, count: GroupCount): string | null {
   const sentences = [
-    rollUp.discounted.length > 0
-      ? t('rail.discounted', { modules: format.list(rollUp.discounted, 'enumeration') })
+    count.discounted.length > 0
+      ? t('rail.discounted', { modules: format.list(count.discounted, 'enumeration') })
       : null,
-    rollUp.waiting.length > 0
-      ? t('rail.waiting', { modules: format.list(rollUp.waiting, 'enumeration'), count: rollUp.waiting.length })
+    count.waiting.length > 0
+      ? t('rail.waiting', { modules: format.list(count.waiting, 'enumeration'), count: count.waiting.length })
       : null,
   ].filter((sentence) => sentence !== null);
   return sentences.length === 0 ? null : sentences.join(' ');

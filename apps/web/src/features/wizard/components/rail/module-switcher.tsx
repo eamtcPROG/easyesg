@@ -5,7 +5,7 @@ import { WizardModuleSwitcher } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { reportStepRoute } from '@/lib/routes';
-import { moduleStateOf } from '../../tools/module-state';
+import { checkOf, moduleStateOf, type ModuleChecks } from '../../tools/module-state';
 import { moduleLabel, moduleName, moduleStatus } from '../../tools/module-words';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import { StepLink } from '../shared/step-link';
@@ -24,12 +24,15 @@ import { StepLink } from '../shared/step-link';
 export function ModuleSwitcher({
   reportId,
   modules,
+  checks,
   current,
   position,
   children,
 }: {
   readonly reportId: string;
   readonly modules: readonly DisclosureModuleSummary[];
+  /** What the last validation run found per module — the docked list's own (task 42.2). */
+  readonly checks: ModuleChecks;
   readonly current: string;
   /** Where the step stands in `modules`, 1-based — the section's `placeOf`, computed once with the heading's. */
   readonly position: number;
@@ -38,7 +41,7 @@ export function ModuleSwitcher({
 }) {
   const t = useTranslations(WIZARD_MESSAGES);
   const steps = modules.map((summary) => {
-    const state = moduleStateOf(summary);
+    const state = moduleStateOf({ summary, checks });
     return {
       key: summary.module,
       href: reportStepRoute({ reportId, module: summary.module }),
@@ -46,7 +49,7 @@ export function ModuleSwitcher({
       label: moduleLabel(t, summary.module),
       name: moduleName(t, summary.module),
       state,
-      status: moduleStatus(t, { summary, state }),
+      status: moduleStatus(t, { state, checked: checkOf({ module: summary.module, checks }) }),
     };
   });
 

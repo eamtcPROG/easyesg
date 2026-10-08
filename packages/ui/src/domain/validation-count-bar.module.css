@@ -1,0 +1,44 @@
+/* S-08's count below `wide` (task 42.2): the foot of the step, its full width, gone where the panel is docked. */
+
+.seat {
+  padding-block: var(--space-3);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+  color: var(--text-default);
+  font: 500 14px/20px var(--font-text);
+  text-align: start;
+  cursor: pointer;
+}
+
+.bar:hover {
+  background: var(--surface-sunken);
+}
+
+.bar:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 1px var(--border-focus), 0 0 0 4px var(--border-focus-halo);
+}
+
+.chevron {
+  flex: none;
+  inline-size: 18px;
+  block-size: 18px;
+}
+
+@media (min-width: 90rem) {
+  .seat {
+    display: none;
+  }
+}

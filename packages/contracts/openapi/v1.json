@@ -2905,6 +2905,56 @@
         ]
       }
     },
+    "/api/v1/reports/{id}/validation/rules": {
+      "get": {
+        "description": "The rule set a run would read now — in force today in the period’s zone, or the one its lock pinned — and the elements of the report’s scope, so a client evaluates its answers with the same interpreter and the same rules the run does (FR-40, OQ-49). Nothing is evaluated or stored.",
+        "operationId": "ValidationController_rules",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The rules, and the scope they read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ValidationRulesDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          },
+          "503": {
+            "description": "No validation rule set can be read right now (problem type validation-rules-unavailable), so there is nothing to check answers against. Try again shortly."
+          }
+        },
+        "summary": "The rules the report is checked against",
+        "tags": [
+          "validation"
+        ]
+      }
+    },
     "/api/v1/reports/{id}/validation/runs": {
       "post": {
         "description": "Evaluates the report at whatever completeness it stands, against the rule set in force today — or, on a locked period, the one its lock pinned — and replaces the report’s findings with what it finds (FR-43, FR-73 item 9). Repeated over unchanged answers it finds the same. A locked report is validated like any other (182/21).",
@@ -9358,6 +9408,31 @@
           "timezone"
         ]
       },
+      "ReportValidationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "modulesComplete": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The modules the run found complete — nothing outstanding, something answered."
+          },
+          "modulesCounted": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The modules the run counted: every module the report asks and has not omitted, waiting ones included."
+          },
+          "outstanding": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The fields the run left carrying a finding."
+          }
+        },
+        "required": [
+          "modulesComplete",
+          "modulesCounted",
+          "outstanding"
+        ]
+      },
       "PeriodReportDto": {
         "type": "object",
         "properties": {
@@ -9375,6 +9450,16 @@
             ],
             "description": "Where the report stands. `open` and `locked` are written only by the period lock (FR-22); an open report whose latest validation run left nothing outstanding reads `ready_to_file` (FR-41, 182/19)."
           },
+          "validation": {
+            "nullable": true,
+            "description": "What its latest validation run came to (FR-23, FR-41), or null where it was never checked.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportValidationSummaryDto"
+              }
+            ]
+          },
           "updatedAt": {
             "type": "number",
             "description": "Unix epoch milliseconds, UTC. The report's last activity — which is how UX-6 picks the one to resume."
@@ -9383,6 +9468,7 @@
         "required": [
           "id",
           "status",
+          "validation",
           "updatedAt"
         ]
       },
@@ -9626,7 +9712,7 @@
           "rulesOn"
         ]
       },
-      "FieldAddressDto": {
+      "FindingFieldDto": {
         "type": "object",
         "properties": {
           "elementKey": {
@@ -9642,12 +9728,36 @@
             "type": "number",
             "minimum": 0,
             "description": "Position within a repeating group; 0 otherwise."
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "example": "Numărul de angajați",
+            "description": "The field’s label in the request’s language, as the step read words it; null where none is worded."
+          },
+          "memberLabel": {
+            "type": "string",
+            "nullable": true,
+            "description": "The axis member’s label, where the catalogue words one; null for an undimensioned field and for a member it does not word — a country, which a client words from its own catalogue by the member’s ISO code."
+          },
+          "modules": {
+            "example": [
+              "B8"
+            ],
+            "description": "The modules of the report’s scope that present the field, in the standard’s order; empty where none does.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "elementKey",
           "dimensionKey",
-          "ordinal"
+          "ordinal",
+          "label",
+          "memberLabel",
+          "modules"
         ]
       },
       "ValidationFindingDto": {
@@ -9669,13 +9779,13 @@
             "description": "FR-40’s verdict. A field with no finding is OK."
           },
           "field": {
-            "$ref": "#/components/schemas/FieldAddressDto"
+            "$ref": "#/components/schemas/FindingFieldDto"
           },
           "related": {
             "description": "The fields it conflicts with, or that may answer it (FR-42 item 4).",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/FieldAddressDto"
+              "$ref": "#/components/schemas/FindingFieldDto"
             }
           },
           "message": {
@@ -9733,6 +9843,30 @@
           "reasoned",
           "outstanding",
           "status"
+        ]
+      },
+      "FieldAddressDto": {
+        "type": "object",
+        "properties": {
+          "elementKey": {
+            "type": "string",
+            "example": "NumberOfEmployees"
+          },
+          "dimensionKey": {
+            "type": "string",
+            "example": "",
+            "description": "An axis member, or '' where the element is undimensioned."
+          },
+          "ordinal": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Position within a repeating group; 0 otherwise."
+          }
+        },
+        "required": [
+          "elementKey",
+          "dimensionKey",
+          "ordinal"
         ]
       },
       "ModuleRollUpDto": {
@@ -9845,6 +9979,36 @@
           "rollUp"
         ]
       },
+      "ValidationRulesDto": {
+        "type": "object",
+        "properties": {
+          "rulesOn": {
+            "description": "The day the rule set is read as at: today in the period’s zone, or the day its lock pinned.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDateDto"
+              }
+            ]
+          },
+          "ruleSet": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The rule set, `{ rules }`, as the configuration store holds it — read with @easyesg/validation’s readRuleSet, which refuses what its vocabulary cannot hold."
+          },
+          "scope": {
+            "description": "The elements a rule may read — those that apply, are in the report’s scope and are not withheld by an omission (FR-28, FR-31, FR-177). A rule naming any other is not evaluated.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "rulesOn",
+          "ruleSet",
+          "scope"
+        ]
+      },
       "ReportSubjectDto": {
         "type": "object",
         "properties": {
@@ -9913,6 +10077,16 @@
             ],
             "description": "Where the report stands. Open and locked follow the reporting period’s lock, which is their only writer (FR-22). An open report whose latest validation run left nothing outstanding reads ready to file (FR-41, 182/19) — read, never written."
           },
+          "validation": {
+            "nullable": true,
+            "description": "What its latest validation run came to (FR-41), or null where it was never checked.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportValidationSummaryDto"
+              }
+            ]
+          },
           "templateVersion": {
             "type": "string",
             "example": "2026-05-01",
@@ -9940,6 +10114,7 @@
           "reportingPeriodId",
           "scope",
           "status",
+          "validation",
           "templateVersion",
           "taxonomyVersion",
           "createdAt",
@@ -10356,7 +10531,8 @@
               "not_available",
               "not_material",
               "nil_return"
-            ]
+            ],
+            "description": "The answer’s kind: `ok` (a value, or no answer at all), `nil_return` or `not_available`. A validation verdict is a finding, never this (182/17), so the other members are not projected (task 42.1)."
           },
           "notAvailableReason": {
             "type": "string",

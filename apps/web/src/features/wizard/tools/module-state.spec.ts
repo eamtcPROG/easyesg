@@ -1,6 +1,14 @@
-import { REPORT_SCOPE, type DisclosureModuleSummary } from '@easyesg/contracts';
+import { COMPLETION_STATUS, REPORT_SCOPE, type DisclosureModuleSummary, type ModuleRollUp } from '@easyesg/contracts';
 import { describe, expect, it } from 'vitest';
-import { MODULE_GROUP, modulesInScope, moduleGroups, moduleStateOf, rollUp } from './module-state';
+import {
+  MODULE_GROUP,
+  groupCount,
+  moduleChecksOf,
+  modulesInScope,
+  moduleGroups,
+  moduleStateOf,
+  type ModuleChecks,
+} from './module-state';
 
 const summary = (overrides: Partial<DisclosureModuleSummary> = {}): DisclosureModuleSummary => ({
   module: 'B1',
@@ -20,38 +28,78 @@ const cause = (answer: string | null): DisclosureModuleSummary['applicabilityCau
   answer,
 });
 
-describe('moduleStateOf', () => {
+/** A module as the last run left it (task 41.3). */
+const checked = (module: string, status: ModuleRollUp['status'], outstanding = 0): ModuleRollUp => ({
+  module,
+  resolved: status === COMPLETION_STATUS.NOT_STARTED ? 0 : 3,
+  reasoned: 0,
+  outstanding,
+  status,
+  outstandingFields: [],
+});
+const run = (...modules: ModuleRollUp[]): ModuleChecks => ({ modules });
+
+describe('moduleStateOf (task 42.2: the last run’s roll-up)', () => {
   // Wire values pinned on purpose: these are `WIZARD_STEP_STATE`'s members, and a renamed value must break here.
-  it('reads the counts for a module that applies', () => {
-    expect(moduleStateOf(summary({ answered: 0 }))).toBe('not_started');
-    expect(moduleStateOf(summary({ answered: 3 }))).toBe('in_progress');
-    expect(moduleStateOf(summary({ answered: 5 }))).toBe('complete');
+  it('reads complete, in progress and not started from the last run, as it left them', () => {
+    const checks = run(
+      checked('B1', COMPLETION_STATUS.COMPLETE),
+      checked('B2', COMPLETION_STATUS.IN_PROGRESS, 3),
+      checked('B3', COMPLETION_STATUS.NOT_STARTED, 7),
+    );
+    expect(moduleStateOf({ summary: summary({ module: 'B1', answered: 0 }), checks })).toBe('complete');
+    expect(moduleStateOf({ summary: summary({ module: 'B2', answered: 5 }), checks })).toBe('in_progress');
+    // As the run left it (182/26): answered since, still what the run found until the next run.
+    expect(moduleStateOf({ summary: summary({ module: 'B3', answered: 2 }), checks })).toBe('not_started');
   });
 
-  it('does not call an empty module complete', () => {
-    expect(moduleStateOf(summary({ answered: 0, total: 0 }))).toBe('not_started');
+  it('reads a module no run has checked as not started with nothing answered, and not checked yet otherwise', () => {
+    expect(moduleStateOf({ summary: summary({ answered: 0 }), checks: null })).toBe('not_started');
+    expect(moduleStateOf({ summary: summary({ answered: 3 }), checks: null })).toBe('unchecked');
+    // A run that did not list this module says nothing about it.
+    expect(moduleStateOf({ summary: summary({ module: 'B4', answered: 1 }), checks: run(checked('B1', COMPLETION_STATUS.COMPLETE)) })).toBe(
+      'unchecked',
+    );
   });
 
   it('reads a module B1 has not decided yet as waiting, and one it has ruled out as not applying', () => {
-    expect(moduleStateOf(summary({ applicable: false, total: 0, applicabilityCause: cause(null) }))).toBe('waiting');
-    expect(moduleStateOf(summary({ applicable: false, total: 0, applicabilityCause: cause('12') }))).toBe(
+    const checks = run(checked('B1', COMPLETION_STATUS.NOT_STARTED));
+    expect(moduleStateOf({ summary: summary({ applicable: false, total: 0, applicabilityCause: cause(null) }), checks })).toBe(
+      'waiting',
+    );
+    expect(moduleStateOf({ summary: summary({ applicable: false, total: 0, applicabilityCause: cause('12') }), checks })).toBe(
       'inapplicable',
     );
   });
 
   it('treats a module ruled out with no single cause as not applying, never as waiting', () => {
-    expect(moduleStateOf(summary({ applicable: false, total: 0, applicabilityCause: null }))).toBe('inapplicable');
+    expect(moduleStateOf({ summary: summary({ applicable: false, total: 0, applicabilityCause: null }), checks: null })).toBe(
+      'inapplicable',
+    );
   });
 
-  it('reads the reporter’s omission before applicability, so a rule never replaces their statement', () => {
-    expect(moduleStateOf(summary({ omitted: true, answered: 5 }))).toBe('omitted');
-    expect(moduleStateOf(summary({ omitted: true, applicable: false, applicabilityCause: cause('12') }))).toBe(
-      'omitted',
-    );
+  it('reads the reporter’s omission before applicability and before the run, so neither replaces their statement', () => {
+    const checks = run(checked('B1', COMPLETION_STATUS.COMPLETE));
+    expect(moduleStateOf({ summary: summary({ omitted: true, answered: 5 }), checks })).toBe('omitted');
+    expect(
+      moduleStateOf({ summary: summary({ omitted: true, applicable: false, applicabilityCause: cause('12') }), checks: null }),
+    ).toBe('omitted');
   });
 });
 
-describe('rollUp', () => {
+describe('moduleChecksOf', () => {
+  it('is the roll-up’s modules, and nothing for a report never checked or a read that failed', () => {
+    const modules = [checked('B1', COMPLETION_STATUS.COMPLETE)];
+    // Projected to what the list reads — the outstanding fields stay S-08's.
+    expect(moduleChecksOf({ rollUp: { report: { resolved: 1, reasoned: 0, outstanding: 0, status: 'complete' }, modules } })).toEqual({
+      modules: [{ module: 'B1', status: 'complete', outstanding: 0 }],
+    });
+    expect(moduleChecksOf({ rollUp: null })).toBeNull();
+    expect(moduleChecksOf(null)).toBeNull();
+  });
+});
+
+describe('groupCount', () => {
   it('counts done out of what counts, discounting the omitted and the ruled-out but not the waiting (UX-21)', () => {
     const modules = [
       summary({ module: 'B1', answered: 5 }),
@@ -60,12 +108,29 @@ describe('rollUp', () => {
       summary({ module: 'B6', omitted: true }),
       summary({ module: 'B8', applicable: false, total: 0, applicabilityCause: cause('12') }),
     ];
+    const checks = run(checked('B1', COMPLETION_STATUS.COMPLETE), checked('B2', COMPLETION_STATUS.IN_PROGRESS, 1));
 
-    expect(rollUp(modules)).toEqual({ done: 1, counted: 3, discounted: ['B6', 'B8'], waiting: ['B5'] });
+    expect(groupCount({ modules, checks })).toEqual({
+      done: 1,
+      counted: 3,
+      discounted: ['B6', 'B8'],
+      waiting: ['B5'],
+      checked: true,
+    });
+  });
+
+  it('says no run has counted where none has checked the report', () => {
+    expect(groupCount({ modules: [summary({ answered: 5 })], checks: null })).toMatchObject({ done: 0, checked: false });
   });
 
   it('is nothing done out of nothing for an empty group', () => {
-    expect(rollUp([])).toEqual({ done: 0, counted: 0, discounted: [], waiting: [] });
+    expect(groupCount({ modules: [], checks: null })).toEqual({
+      done: 0,
+      counted: 0,
+      discounted: [],
+      waiting: [],
+      checked: false,
+    });
   });
 });
 

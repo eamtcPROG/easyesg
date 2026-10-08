@@ -152,18 +152,58 @@
     }
   },
   "validation": {
-    "required": "This question has no answer yet, and the report needs one, so it is not complete without it. Answer it, or mark it as not available and give the reason.",
-    "required_any": "None of these questions has an answer yet, and the report needs at least one of them, so it is not complete without it. Answer at least one, or mark them as not available and give the reason.",
-    "row_complete": "This row has been started but this value is still missing from it, so the row would be reported half-filled. Fill in the value, or remove the row if it should not be there.",
-    "sum": {
-      "inconsistent": "These figures add up to {parts}, which does not match their total of {total}, so the report would contradict itself. Correct the figures or the total so that they agree.",
-      "over": "These figures add up to {parts}, more than the total of {total} they are part of, so the report would contradict itself. Correct the figures or the total.",
-      "short": "These figures add up to {parts}, less than the total of {total}, so part of the total is not accounted for. Add the figures that are missing, or correct the total."
+    "required": {
+      "happened": "This question has no answer yet.",
+      "consequence": "The report needs one, so it is not complete without it.",
+      "action": "Answer it, or mark it as not available and give the reason."
     },
-    "range": "The value {value} is outside what this question accepts, so it cannot be reported as it stands. Check the figure and enter one within the accepted range.",
-    "url": "The address “{value}” is not a complete web address, so a reader could not follow it. Enter the full address, beginning with https:// or http://.",
-    "exclusive": "This answer leaves no room for the values entered in the related questions, so the report would say two things that cannot both be true. Change the answer, or clear the related values.",
-    "year_over_year": "This figure went from {prior} in the previous period to {current} now, a change of {change}, which is larger than usual from one year to the next. A large change may be correct, but a reader will question it. Check the figure, and if it is right, explain the change in the report."
+    "required_any": {
+      "happened": "None of these questions has an answer yet.",
+      "consequence": "The report needs at least one of them, so it is not complete without it.",
+      "action": "Answer at least one, or mark them as not available and give the reason."
+    },
+    "row_complete": {
+      "happened": "This row has been started, but this value is still missing from it.",
+      "consequence": "The row would be reported half-filled.",
+      "action": "Fill in the value, or remove the row if it should not be there."
+    },
+    "sum": {
+      "inconsistent": {
+        "happened": "These figures add up to {parts}, which does not match their total of {total}.",
+        "consequence": "The report would contradict itself.",
+        "action": "Correct the figures or the total so that they agree."
+      },
+      "over": {
+        "happened": "These figures add up to {parts}, more than the total of {total} they are part of.",
+        "consequence": "The report would contradict itself.",
+        "action": "Correct the figures or the total."
+      },
+      "short": {
+        "happened": "These figures add up to {parts}, less than the total of {total}.",
+        "consequence": "Part of the total is not accounted for.",
+        "action": "Add the figures that are missing, or correct the total."
+      }
+    },
+    "range": {
+      "happened": "The value {value} is outside what this question accepts.",
+      "consequence": "It cannot be reported as it stands.",
+      "action": "Check the figure and enter one within the accepted range."
+    },
+    "url": {
+      "happened": "The address “{value}” is not a complete web address.",
+      "consequence": "A reader could not follow it.",
+      "action": "Enter the full address, beginning with https:// or http://."
+    },
+    "exclusive": {
+      "happened": "This answer leaves no room for the values entered in the related questions.",
+      "consequence": "The report would say two things that cannot both be true.",
+      "action": "Change the answer, or clear the related values."
+    },
+    "year_over_year": {
+      "happened": "This figure went from {prior} in the previous period to {current} now, a change of {change}, which is larger than usual from one year to the next.",
+      "consequence": "A large change may be correct, but a reader will question it.",
+      "action": "Check the figure, and if it is right, explain the change in the report."
+    }
   },
   "identity": {
     "registration": {

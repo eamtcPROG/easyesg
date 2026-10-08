@@ -239,3 +239,12 @@ export {
   meterExtent,
   type EntitlementGateProps,
 } from './domain/entitlement-gate';
+// S-08's parts and §11.5's completeness meter (task 42.2) — the panel's frame, a module's group, a finding, where the
+// panel is docked and the count that stands in for it below `wide`.
+export { CompletenessMeter, type CompletenessMeterProps } from './domain/completeness-meter';
+export { FINDING_WEIGHT, type FindingWeight } from './domain/validation-vocabulary';
+export { ValidationPanel, type ValidationPanelProps } from './domain/validation-panel';
+export { ValidationGroup, type ValidationGroupProps } from './domain/validation-group';
+export { ValidationFinding, type ValidationFindingProps } from './domain/validation-finding';
+export { ValidationDock } from './domain/validation-dock';
+export { ValidationCountBar, type ValidationCountBarProps } from './domain/validation-count-bar';

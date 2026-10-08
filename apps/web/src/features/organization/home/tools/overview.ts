@@ -100,6 +100,11 @@ export interface OverviewRow {
   readonly reportId: string | null;
   /** Epoch-ms (OQ-50). The report's last activity, and how *where did I leave off* is chosen. */
   readonly lastActivity: number | null;
+  /**
+   * What the report's last validation run came to (task 42.2; FR-23 AC-7) — `null` where no report was opened or none
+   * has checked it, which the row tells apart by `reportId`.
+   */
+  readonly validation: NonNullable<ReportingPeriod['report']>['validation'];
 }
 
 const standingOf = (period: ReportingPeriod): OverviewStanding =>
@@ -143,6 +148,7 @@ export const toOverviewRows = (input: {
       periodLocked,
       reportId: period.report?.id ?? null,
       lastActivity: period.report?.updatedAt ?? null,
+      validation: period.report?.validation ?? null,
     };
   });
 

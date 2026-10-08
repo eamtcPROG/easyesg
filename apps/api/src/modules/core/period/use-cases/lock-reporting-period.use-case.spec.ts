@@ -89,7 +89,13 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
 
     it('withdraws its report’s outstanding notice and every lead time’s deadline notice, on its own transaction (task 51.2)', async () => {
       const withReport = aPeriod({
-        report: { id: '00000000-0000-0000-0000-0000000000d1', status: 'open', readyToFile: false, updatedAt: NOW },
+        report: {
+          id: '00000000-0000-0000-0000-0000000000d1',
+          status: 'open',
+          readyToFile: false,
+          validation: null,
+          updatedAt: NOW,
+        },
       });
       const { useCase, cancelled } = build([withReport]);
       await useCase.lock({ periodId: withReport.id, actorId: ACTOR, organizationId: ORG });

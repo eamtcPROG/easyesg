@@ -1,5 +1,5 @@
 import { CONDITION_KIND, RULE_KIND, elementsOf, type FieldSelector, type Rule } from '@easyesg/validation';
-import { isWordedInEveryLocale } from '@api/app/messages/committed-catalogues';
+import { isWordedAsFindingInEveryLocale } from '@api/app/messages/committed-catalogues';
 import type { ConfigurationHistory } from '@api/infrastructure/configuration/configuration-history.service';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { TaxonomyRegistryService } from '@api/modules/platform/taxonomy/services/taxonomy-registry.service';
@@ -35,8 +35,8 @@ describe('the shipped validation rule set', () => {
     expect(rules.length).toBeGreaterThan(0);
   });
 
-  it('is one the configuration store would publish: readable, and every message worded in every locale', () => {
-    expect(ruleSetRefusal({ payload: shipped?.payload, worded: isWordedInEveryLocale })).toBeNull();
+  it('is one the configuration store would publish: readable, and every message worded in its three parts in every locale', () => {
+    expect(ruleSetRefusal({ payload: shipped?.payload, wordedAsFinding: isWordedAsFindingInEveryLocale })).toBeNull();
   });
 
   it('carries 182/28’s one year-over-year rule at its starting proportion, ±50%', () => {

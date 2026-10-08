@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { VERDICT, type FieldAddress, type Finding, type Verdict } from '@easyesg/validation';
+import { VERDICT, type FieldAddress, type RuleSet, type Verdict } from '@easyesg/validation';
 import type { EpochMillis } from '@api/contracts/types/time';
 import { LegalDateDto } from '@api/modules/core/period/dto/reporting-period.dto';
 import {
@@ -10,7 +10,13 @@ import {
   type ModuleRollUp,
   type RollUp,
 } from '../models/roll-up.model';
-import type { ValidationReading, ValidationRun } from '../models/validation-run.model';
+import type {
+  FieldPlace,
+  NamedValidation,
+  PlacedFinding,
+  ValidationRules,
+  ValidationRun,
+} from '../models/validation-run.model';
 
 const VERDICTS = Object.values(VERDICT);
 const STATUSES = Object.values(COMPLETION_STATUS);
@@ -34,6 +40,44 @@ export class FieldAddressDto implements FieldAddress {
 }
 
 /**
+ * A finding's field, named and placed (task 42.2; FR-42, S-08) — the address, the label and the member's in the
+ * reader's locale, and the modules that present it, so a reader can name a field in a module they have not opened and
+ * reach the step that answers it.
+ */
+export class FindingFieldDto extends FieldAddressDto {
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: 'Numărul de angajați',
+    description: 'The field’s label in the request’s language, as the step read words it; null where none is worded.',
+  })
+  readonly label: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description:
+      'The axis member’s label, where the catalogue words one; null for an undimensioned field and for a member it ' +
+      'does not word — a country, which a client words from its own catalogue by the member’s ISO code.',
+  })
+  readonly memberLabel: string | null;
+
+  @ApiProperty({
+    type: [String],
+    example: ['B8'],
+    description: 'The modules of the report’s scope that present the field, in the standard’s order; empty where none does.',
+  })
+  readonly modules: string[];
+
+  constructor(place: FieldPlace) {
+    super(place);
+    this.label = place.label;
+    this.memberLabel = place.memberLabel;
+    this.modules = [...place.modules];
+  }
+}
+
+/**
  * What a rule says about a field (FR-40, FR-42). **Its wording is not here**: `message` is a catalogue key and `params`
  * the values its wording quotes, decimals as canonical text and an address verbatim (OQ-43, NFR-26) — so the same
  * finding reads in any locale, and the browser's inline verdict and this one are the same bytes (task 40.3).
@@ -45,11 +89,11 @@ export class ValidationFindingDto {
   @ApiProperty({ enum: VERDICTS, description: 'FR-40’s verdict. A field with no finding is OK.' })
   readonly verdict: Verdict;
 
-  @ApiProperty({ type: FieldAddressDto })
-  readonly field: FieldAddressDto;
+  @ApiProperty({ type: FindingFieldDto })
+  readonly field: FindingFieldDto;
 
-  @ApiProperty({ type: [FieldAddressDto], description: 'The fields it conflicts with, or that may answer it (FR-42 item 4).' })
-  readonly related: FieldAddressDto[];
+  @ApiProperty({ type: [FindingFieldDto], description: 'The fields it conflicts with, or that may answer it (FR-42 item 4).' })
+  readonly related: FindingFieldDto[];
 
   @ApiProperty({ example: 'validation.required', description: 'The catalogue key its wording is resolved by.' })
   readonly message: string;
@@ -61,11 +105,11 @@ export class ValidationFindingDto {
   })
   readonly params: Record<string, string>;
 
-  constructor(finding: Finding) {
+  constructor(finding: PlacedFinding) {
     this.rule = finding.rule;
     this.verdict = finding.verdict;
-    this.field = new FieldAddressDto(finding.field);
-    this.related = finding.related.map((address) => new FieldAddressDto(address));
+    this.field = new FindingFieldDto(finding.field);
+    this.related = finding.related.map((place) => new FindingFieldDto(place));
     this.message = finding.message;
     this.params = { ...finding.params };
   }
@@ -164,9 +208,48 @@ export class ValidationDto {
   })
   readonly rollUp: RollUpDto | null;
 
-  constructor(reading: ValidationReading) {
+  constructor(reading: NamedValidation) {
     this.run = reading.run === null ? null : new ValidationRunDto(reading.run);
     this.findings = reading.findings.map((finding) => new ValidationFindingDto(finding));
     this.rollUp = reading.rollUp === null ? null : new RollUpDto(reading.rollUp);
+  }
+}
+
+/**
+ * What the browser evaluates inline (task 42.1; FR-40 item 5, OQ-49; §12.5.6's task-42 row (1)): the rules a run would
+ * read now, and the elements of the report's scope as a run computes them.
+ *
+ * **The rule set crosses as the configuration store holds it**, an object the wire describes no further: its vocabulary
+ * is `@easyesg/validation`'s, and the browser admits it through that package's own `readRuleSet` — the one reader a rule
+ * set is read by (task 40.1) — rather than through a second description of eight kinds here that could drift from it.
+ */
+export class ValidationRulesDto {
+  @ApiProperty({
+    type: LegalDateDto,
+    description: 'The day the rule set is read as at: today in the period’s zone, or the day its lock pinned.',
+  })
+  readonly rulesOn: LegalDateDto;
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: true,
+    description:
+      'The rule set, `{ rules }`, as the configuration store holds it — read with @easyesg/validation’s readRuleSet, ' +
+      'which refuses what its vocabulary cannot hold.',
+  })
+  readonly ruleSet: RuleSet;
+
+  @ApiProperty({
+    type: [String],
+    description:
+      'The elements a rule may read — those that apply, are in the report’s scope and are not withheld by an omission ' +
+      '(FR-28, FR-31, FR-177). A rule naming any other is not evaluated.',
+  })
+  readonly scope: string[];
+
+  constructor(rules: ValidationRules) {
+    this.rulesOn = Object.assign(new LegalDateDto(), rules.rulesOn);
+    this.ruleSet = rules.ruleSet;
+    this.scope = [...rules.scope];
   }
 }

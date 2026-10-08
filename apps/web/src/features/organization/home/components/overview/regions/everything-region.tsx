@@ -19,8 +19,9 @@ import styles from '../../styles/home.module.css';
  * siblings: `everythingRows` is FR-23's answer and belongs with the region that answers it, not in
  * the section that composes them. The rows are already dated — the clock stays in the section.
  *
- * **Completion and validation status are refused, not drawn empty** — the roll-up is task 41.3's and
- * findings are task 40's, exactly as S-06 refused the same two columns.
+ * **Completion and validation status are drawn since task 42.2** (FR-23 AC-7): the standing reads readiness, and each
+ * row's completion is the last run's summary, worded by `shared/report-completion.tsx` as S-06's column is. Until then
+ * they were refused rather than drawn empty, as S-06 refused the same two columns.
  */
 export async function EverythingRegion({
   rows,

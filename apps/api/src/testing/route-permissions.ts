@@ -408,8 +408,10 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'PUT /reports/:id/calculator/sources/:sourceId': WRITING_MEMBERS,
   'DELETE /reports/:id/calculator/sources/:sourceId': WRITING_MEMBERS,
   'POST /reports/:id/calculator/runs': WRITING_MEMBERS,
-  // Task 41.2: every member reads what the last run found, and an editor or the OA runs one (182/22).
+  // Task 41.2: every member reads what the last run found, and an editor or the OA runs one (182/22) — and since task
+  // 42.1 every member reads the rules a run would read, which is how the browser evaluates inline.
   'GET /reports/:id/validation': ALL_MEMBERS,
+  'GET /reports/:id/validation/rules': ALL_MEMBERS,
   'POST /reports/:id/validation/runs': WRITING_MEMBERS,
   // A recorded run computed again against its own factor set (task 38.4; UX-42, NFR-19) — a read, so every member's.
   'GET /reports/:id/calculator/runs/:runId': ALL_MEMBERS,

@@ -1,5 +1,6 @@
 import { evaluateRules } from '@easyesg/validation';
 import type { Clock } from '@api/contracts/clock.port';
+import type { LegalDate } from '@api/contracts/types/time';
 import { ReportNotFoundError } from '@api/modules/core/disclosure/errors/report.errors';
 import { ruleSetDate } from '../domain/rule-set-date';
 import { findingsInScope } from '../domain/findings-in-scope';
@@ -10,13 +11,17 @@ import type { PriorComparables } from '../interfaces/prior-comparables.interface
 import type { ValidationReports, ValidationReport } from '../interfaces/validation-reports.interface';
 import type { RuleSetInForce, ValidationRuleSets } from '../interfaces/validation-rule-sets.interface';
 import type { ValidationStore } from '../interfaces/validation-store.interface';
-import type { ValidationReading } from '../models/validation-run.model';
+import type { ValidationReading, ValidationRules } from '../models/validation-run.model';
 
 export interface RunValidationCommand {
   readonly reportId: string;
 }
 
 export interface ReadValidationQuery {
+  readonly reportId: string;
+}
+
+export interface ReadValidationRulesQuery {
   readonly reportId: string;
 }
 
@@ -35,6 +40,10 @@ export interface ReadValidationQuery {
  *
  * **When it runs is the caller's** — an explicit run here, and an export request (47.4) and a notice's schedule (51.2)
  * later (182/26) — so it takes no request context and branches on no caller.
+ *
+ * **And the rules a run would read, for the browser to evaluate inline** (task 42.1; OQ-49; §12.5.6's task-42 row (1)):
+ * the same rule set and the same scope a run reads now, by the same two private reads, so the inline verdict and the
+ * next run's cannot be the interpreter's over different rules or a different shape of the report.
  */
 export class RunValidation {
   constructor(
@@ -48,10 +57,7 @@ export class RunValidation {
 
   async run(command: RunValidationCommand): Promise<ValidationReading> {
     const report = await this.found(command.reportId);
-    const rulesOn = {
-      date: ruleSetDate({ lockedAt: report.lockedAt, timezone: report.timezone, now: this.now() }),
-      timezone: report.timezone,
-    };
+    const rulesOn = this.rulesOnFor(report);
     const rules = await this.rulesFor({ report, on: rulesOn.date });
     if (rules === null) throw new ValidationRulesUnavailableError();
 
@@ -70,18 +76,38 @@ export class RunValidation {
     });
     // The report was found above in this transaction, so the run row was written; a null is a vanished report.
     if (run === null) throw new ReportNotFoundError();
-    return { run, findings, rollUp: counted };
+    return { run, findings, rollUp: counted, placedIn: scope, taxonomyVersion: report.taxonomyVersion };
+  }
+
+  async rules(query: ReadValidationRulesQuery): Promise<ValidationRules> {
+    const report = await this.found(query.reportId);
+    const rulesOn = this.rulesOnFor(report);
+    const rules = await this.rulesFor({ report, on: rulesOn.date });
+    if (rules === null) throw new ValidationRulesUnavailableError();
+    const { scope } = await this.scopes.evaluationScope({ reportId: query.reportId });
+    return { rulesOn, ruleSet: rules.ruleSet, scope: [...scope.keys()] };
   }
 
   async read(query: ReadValidationQuery): Promise<ValidationReading> {
-    await this.found(query.reportId);
+    const report = await this.found(query.reportId);
     const stored = await this.store.read({ reportId: query.reportId });
-    if (stored === null) return { run: null, findings: [], rollUp: null };
+    const { taxonomyVersion } = report;
+    if (stored === null) return { run: null, findings: [], rollUp: null, placedIn: new Map(), taxonomyVersion };
     const { scope } = await this.scopes.evaluationScope({ reportId: query.reportId });
     return {
       run: stored.run,
       findings: findingsInScope({ findings: stored.findings, scope }),
       rollUp: stored.rollUp,
+      placedIn: scope,
+      taxonomyVersion,
+    };
+  }
+
+  /** The day the rule set is read as at, with the zone that settles it: the lock's day, or today (FR-73 item 9). */
+  private rulesOnFor(report: ValidationReport): LegalDate {
+    return {
+      date: ruleSetDate({ lockedAt: report.lockedAt, timezone: report.timezone, now: this.now() }),
+      timezone: report.timezone,
     };
   }
 

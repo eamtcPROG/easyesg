@@ -58,7 +58,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-25 — The reports list
 
-**Status.** Partial — delivered 31.3, 32.2, 32.2.1, 32.2.2, 40 (the interpreter the summary will read) · remaining 42.2 (completion and validation summary, whose producer 41.3 built)
+**Status.** Built — delivered 31.3, 32.2, 32.2.1, 32.2.2, 40 (the interpreter the summary reads), 42.2 (completion and validation summary: the last run's, on `GET /reports`)
 
 **Obligation.** The system shall list the reports of the active organization, each with its entity, period, scope, status and last activity and its completion and validation summary, showing a view-only member the same entries without edit affordances.
 
@@ -71,7 +71,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Behaviour.**
 1. Each row answers its subject (entity name, period year and dates), resolved server-side rather than assembled by the screen (task-32.2 row).
 2. Rights are derived per request from the member's role, the period's state and the entity. Nothing is set per report (OQ-30).
-3. The completion and validation columns are **refused until their producers exist** (41.3 and 40/41), not drawn as *"not yet available"* (task-32.2 row).
+3. The completion column is **the last run's summary** since task 42.2 — modules complete of those counted, fields outstanding, or *not checked yet* — carried by `GET /reports` beside readiness, which the status column reads (§12.5.6's task-42 row (f)). Until then it was refused rather than drawn as *"not yet available"* (task-32.2 row).
 4. Last activity shows the instant without the person, until a read serving UX-68 exists (task-32.2.2 row).
 5. A deleted report (FR-210) is not listed.
 
@@ -80,7 +80,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Acceptance criteria.**
 - **AC-1** Given reports in the active organization, then each is listed with entity, period dates, scope and status. *(source: FR text; §12.5.6 task-32.2 row)*
 - **AC-2** Given a view-only member, then the same entries are listed and no create or edit control is offered. *(source: FR text; UC-17)*
-- **AC-3** Given validation and completion have run, then each entry shows its completion and validation summary. *(source: FR text)* The api answers both since 41.3; drawn by 42.2 (§12.5.6's task-41 row (7)).
+- **AC-3** Given validation and completion have run, then each entry shows its completion and validation summary. *(source: FR text)* Met since 42.2 (§12.5.6's task-41 row (7), task-42 row (f)).
 
 **History.**
 - 31 Aug 2026 · project owner · rows answer their subject; the summary columns are refused until their producers exist · §12.5.6 task-32.2 rows

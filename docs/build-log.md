@@ -29148,3 +29148,408 @@ its row ran, one suite at a time, with no dev server running.
 - **Not run:** `openapi:check` (no controller or DTO changed); the browser suite, which is not in `apps/api`'s row
   and reads verification tokens from the outbox by event type, never by key; and `gates:clean` with the review
   agents, which wait for Stage 2's end. Task 206 is not its last row.
+
+## Task 42.1 — Each field's verdict where it is answered, live, and OQ-49 closed · 2026-10-08
+
+S-07's fields now carry FR-40's verdicts. **The browser evaluates every rule the open step can evaluate whole**, with
+the api's own interpreter, over the answers the wizard holds: served, then acknowledged, then unacknowledged. A verdict
+therefore appears and clears as the reporter leaves a field, before any run. **The last run answers the rules that
+reach into another module**, such as B8's split against B1's headcount, and a field shows the most severe of the two.
+The marker reads the verdict first. The field's message box carries the finding's three parts, worded in the reader's
+locale from the shared catalogue. The step read no longer projects `missing` onto every blank.
+
+### Decided before building
+
+Task 42's one batch of four was asked before anything was built. The owner took the recommended option each time, and
+all four are recorded in `architecture.md` §12.5.6's new task-42 row:
+- **(1) Live where the step can, the last run otherwise.** OQ-49 closes on it. Its premise did not hold in the wizard:
+  the controls are not `react-hook-form` fields (task 35.2's row), so a verdict is a prop computed from the reducer's
+  answers. There is no `setError` and no resolver. The assumption OQ-49 carried still stands for any other form.
+- **(2) The browser words every finding, and a message is three leaves**: `happened`, `consequence`, `action`.
+- **(3) *Not checked yet* before the first run.** That is 42.2's to draw.
+- **(4) The task reaches the api, the contract, the shared catalogue and the design system.** Task 42's Scope column
+  now says so.
+
+FR-40 items 5 and 6, FR-41 items 9 and 10, and S-07's and S-08's amendments were written before the code.
+
+### How it is cut
+
+- **The api**:
+  - `GET /reports/{id}/validation/rules` answers the rules a run would read now: the set in force in the period's
+    zone, or the lock's pin. It also answers the day they are read as at, and the elements of the report's scope.
+  - It is `RunValidation.rules`, the third method beside the run and the read, through the same two private reads.
+    So the inline verdict and the next run's are the interpreter's over the same rules and the same scope.
+  - The rule set crosses as an opaque object. The browser admits it with the package's `readRuleSet`, the one reader
+    a rule set is read by, never a cast.
+  - The step read projects a field's stored answer kind only, and a field with no answer reads `ok`.
+    `DISCLOSURE_STATE.MISSING` stays as the `CHECK`'s frozen history.
+- **`@easyesg/validation`**:
+  - `finding-message.ts` declares the three parts (`FINDING_MESSAGE_PART`) and `wordsFindingMessage`: exactly the
+    three leaves beneath the key, and nothing else.
+  - `VERDICT_SEVERITY` is now exported, so the browser sorts by the interpreter's own order.
+- **The shared catalogue's `validation` namespace is ten nodes of three leaves in each locale**, re-cut from the
+  one-string messages at their existing joints. Each locale was edited in its own words; nothing was translated.
+  - The publication rule now asks `isWordedAsFindingInEveryLocale`, which replaces `isWordedInEveryLocale`, so the
+    seed meets the shape too.
+- **The web**:
+  - The message loader reads the shared `validation` namespace beside the app's own, never copied, and `global.d.ts`
+    types it.
+  - `server/data/validation.ts` holds the two reads, each degrading to `null`, since validation is never a
+    precondition of answering.
+  - Five pure tools, each with a spec:
+    - `answersHeld` and `servedAnswers`;
+    - `stepFindings`, which decides live or last run per rule;
+    - `findingsByField`;
+    - `findingWords`, the one place a rule's data key meets the typed catalogue — asked with `has`, decimals formatted
+      with `exact`, an address quoted verbatim.
+  - `ValidationProvider`, inside `AutosaveProvider`, runs the interpreter when the held answers move.
+  - `StepField` reads its findings from it. `FindingMessages` renders them.
+  - `markerFor` takes one object now, with the verdict first.
+
+### The calls taken in the build, and why each holds
+
+- **A rule is live or the last run's, never both.** `stepFindings` drops a last-run finding only where the browser
+  evaluated its rule. A live answer therefore replaces the run's word about that rule rather than sitting beside a
+  stale copy.
+- **A rule's scope in the browser is the report's scope intersected with the step's elements.** That is the
+  interpreter's own *a rule naming an element outside the scope is not evaluated*. Handing it the whole report's scope
+  would evaluate B8's sum with B1's headcount absent.
+- **The provider takes the served answers projected on the server**, not the step's fields. The convention pass found
+  the first draft passing `read.step.fields` to the provider beside the labelled copy `StepFields` gets, so the
+  step's fields, options lists included, crossed the RSC boundary twice (`server-dedup-props`).
+- **A finding outranks every provenance marker.** A calculated B3 figure that moved beyond the year's proportion
+  reads *Inconsistent*, and the computed-figure control beside it still says where the figure came from.
+- **The marker words are unchanged.** `missing` stays *De completat* / *To answer*, authored for this marker, rather
+  than the artboard's *Not answered*, which no catalogue holds.
+
+### Found in passing
+
+- **`pnpm e2e` failed `outbox.e2e-spec.ts` on a row nothing in this task wrote.** It was task 51.2's: `pnpm e2e:worker`
+  boots the worker, whose scheduler writes the day's `validation.report_notice_sweep` row once 07:00 in Chișinău has
+  passed. The boot closes before draining it. Task 206's close ran `e2e` before `e2e:worker`, so its row sat pending in
+  the test stack until this task's `e2e` named it a stray.
+  - **Fixed where the row is made**: the worker boot spec removes the sweep row its boot wrote, scoped by its own start
+    (`deleteScheduledRuns`, `deleteFactorSetReplacements`' shape).
+  - **Proven both ways**: the leftover row deleted, `e2e:worker` left none; with the cleanup line removed it left one;
+    restored. The outbox suite then passed alone, 12 of 12.
+  - **Searched for the shape**: every `@RunsDaily`. There is one.
+- **FR-46's status still named 41.1 as remaining**, and its AC-6 and AC-7 still said *unmet until 41.1*, though 41.1
+  closed today. FR-46 is Built with 42.1, and both lines are corrected.
+- **The web's vitest alias for `@easyesg/i18n` caught the catalogue subpath** and sent it into `src/index.ts`. A more
+  specific alias for `@easyesg/i18n/catalogues`, listed first, fixes it.
+
+### Skills, read against the diff
+
+- `nestjs-best-practices`:
+  - One method on the existing use case, behind the service, with a thin controller route.
+  - The route is in `route-permissions.ts`, read by every member like the findings (182/22).
+  - The refusals are the run's existing `DomainError`s.
+  - **No entitlement gate**, recorded as its neighbours' deferral to task 54.
+- `one-idea-per-file`:
+  - Each tool is one idea with its spec. `findingsByField` was split out of `step-findings.ts` when the pass found
+    two ideas there.
+  - `finding-message.ts`'s docblock counted its outside readers ("three readers"). It now names them without a
+    number (`reason-docblock-carries-the-why`).
+- `one-kind-per-folder`: every new file lands in a files-only folder (`tools/`, `providers/`, `fields/field/`,
+  `server/data/`). The `validation` namespace has one reader, so it is not a shared constant yet; 42.2 adds the second.
+- `vercel-react-best-practices`:
+  - The two reads sit in the section's existing `Promise.all` (`async-parallel`).
+  - The provider's value, `findingsOf` and the verdict map are memoized by hand, since `reactCompiler` is off.
+  - `server-dedup-props` is above.
+  - `FindingMessages` has no directive, being drawn inside a client boundary.
+- `vercel-composition-patterns` was considered and not opened. The two components added take data props and no
+  boolean: `FindingMessages` takes the findings, and `ValidationProvider` its four inputs and children. No existing
+  component grew a prop, and the skill's trigger is a boolean added per screen. `markerFor` is a function, converted
+  from three positional parameters to one object.
+
+### Proven to bite
+
+Every mutation below was restored afterwards.
+- **Five, all red:**
+  - the last run's findings kept beside the live ones (`stepFindings`, 1 red);
+  - unacknowledged answers ignored (`answersHeld`, 3 red);
+  - the verdict not read first (`markerFor`, 1 red);
+  - a one-sentence leaf accepted as a finding's message (`wordsFindingMessage`, 2 red);
+  - the step read projecting `missing` again (`wizard.e2e-spec.ts`, 5 red).
+- **The scheduler's cleanup**: removed, `e2e:worker` left the row; restored, it left none.
+
+### Gates
+
+The change reaches `packages/validation`, `packages/i18n`, `packages/contracts` (regenerated), `apps/api` (a
+controller, a DTO and the step read) and `apps/web`, so every dependent's row ran, one suite at a time, with no dev
+server running.
+- `pnpm lint`. It found two unnecessary assertions in a spec and an unbound `has`, all fixed.
+- Typecheck in `validation`, `i18n`, `contracts`, `api`, `web` and `admin`.
+- Unit suites:
+  - validation 171;
+  - i18n 130;
+  - api 2,016;
+  - web 1,599, and after the convention pass's two changes, the wizard's tools again (143);
+  - admin 298.
+- `pnpm openapi:check`, once the regenerated contract was staged.
+- `pnpm routes:check`.
+- `pnpm docs:check`: 48 claims. It found the path count (119) and the web's client-module count (202).
+- `pnpm e2e`: 65 of 66 suites. `outbox.e2e-spec.ts` failed on the stray above, then passed alone once fixed. A run
+  measured 24 ms.
+- `pnpm e2e:worker`: 13 of 13, before and after the fix.
+- `pnpm e2e:web`, all three projects: 321 of 321, the two new journeys among them.
+  - After `server-dedup-props`' change the bundles were rebuilt, and `validation.spec.ts`, `wizard.spec.ts` and
+    `autosave.spec.ts` passed, 33 of 33.
+  - The server printed only digest `2667547900`, and a calculator journey's deliberate missing revision.
+- **Not run:** `migrations:check`, since no migration was added. The review agents and `gates:clean` wait for Stage 2's
+  end.
+
+## Task 42.2 — S-08, the lists that read the run, and a payload cycle that held a step unrendered · 2026-10-08
+
+S-08 is built. *Check my report* sends what the wizard holds unsent, runs, and refreshes the step. The panel lists the
+last run's findings by module, in the words the field shows, under the completeness meter's three counts; a finding the
+answers held now no longer raise stays in view, weighed *cleared since the last check*. **Docked beside the step from
+90rem**, and below it a count at the step's foot raises the same panel as a sheet. S-07's module list, its heading and
+S-09's list read the run's roll-up, and before a first run say *not checked yet*; task 179.1's count in the browser is
+gone. S-06's completion column and S-05's filings draw the run's *n of m modules complete*.
+
+### Decided before building
+
+Nothing new was asked: 42.2 builds on task 42's batch of four, recorded as `architecture.md` §12.5.6's task-42 row
+(1) … (4), and its derived items (b), (c), (d), (e) and (f). What the build settled is in the row's *As built (42.2)*.
+
+### How it is cut
+
+- **The api**:
+  - `NameFindings` names each finding and each field it relates to: the field's label and a member's from the
+    catalogue of the version the report pins, the modules from the scope the run read. It is composed by the service
+    after the run or the read, in the HTTP process only, so the worker's scheduled run (51.2) is unchanged.
+  - `GET /reports` and `GET /periods` carry `validation: { modulesComplete, modulesCounted, outstanding } | null`,
+    joined by `validationSummaryOf` beside `readyToFileOf` from the same run rows.
+  - `ReportValidationSummaryDto` has a file of its own: `report.dto.ts` and `reporting-period.dto.ts` each needed it,
+    and declared in either it made an import cycle.
+- **`packages/ui`** — six inventory components, each with its states: `CompletenessMeter` (§11.5), `ValidationPanel`,
+  `ValidationGroup`, `ValidationFinding`, `ValidationDock` and `ValidationCountBar`; `FINDING_WEIGHT` in a
+  directive-free vocabulary module; `DIALOG_SIZE.SHEET`; the step list's seventh state, `WIZARD_STEP_STATE.UNCHECKED`,
+  with its dashed-circle mark.
+- **The web**:
+  - `ValidationSection` is the shell's `panel` slot. It holds what both placements share — the run in flight
+    (`useCheckReport` over `checkReducer`), the filter, the sheet — and draws `PanelBody` in the dock and in the sheet.
+  - The run is `runValidationAction`, a Server Action; a success refreshes the step inside the same transition, so the
+    panel stays busy until the list, the heading and the panel have all redrawn.
+  - The list's state is `moduleStateOf({ summary, checks })` over `moduleChecksOf(validation)`, read once in the
+    section and handed to the list, the switcher and the heading.
+  - `ReportCompletion` in `shared/`, read by S-05 and S-06.
+  - Pure tools, each with its spec: `panelFindings`, `checkReducer`, `findingWeight`, `fieldDetail`.
+
+### The calls taken in the build, and why each holds
+
+- **The provider holds the run, and the panel reads it from there.** The convention pass found the section receiving
+  `validation` as a prop beside the provider that already held it — the run crossing the client boundary twice
+  (`server-dedup-props`).
+- **The filter is the section's state, not an address.** It is a glance at a list, not a state anyone links to; UX-4
+  binds addressable states, and row (g)'s *As built* records it.
+- **One run control.** The bar's *Check my report · 3* is not drawn: the control sits where the counts it refreshes are.
+
+### Found in passing
+
+- **A default the step showed was verdicted *missing* until the arrival commit landed** — found by S-08's own journey,
+  whose first draft picked the basis question. An editable step commits every outstanding default as it opens; the
+  browser evaluated the served answers without it, in the server's HTML too. `servedAnswers` now overlays the same
+  `outstandingDefaults(askedFields(…))` the commit uses, except on a read-only step. Recorded in row (g)'s *As built*.
+  The two journeys moved to turnover, which has no default.
+- **A navigation to a step never committed, and a full load of one never hydrated, with no error anywhere.** It
+  surfaced as four journeys: S-09's hand-back to B3 and a B3 override that never landed, and B8's and B10's fills that
+  sent nothing. Each read like a hydration race, and waits for hydration in B8's and B10's journeys were the first
+  remedy tried — wrong, and reverted.
+  - **Measured, not reasoned.** The trace: the action answered, B3's payload arrived complete, and the URL never moved.
+    A CPU profile of the stuck page: 2,208 of 2,214 samples idle. B3's payload replayed with the router's own headers:
+    complete in 142 ms, every row present. A navigation by the module list from a fresh B1 hung the same way; B1 to B2
+    landed.
+  - **Bisected** with request-time toggles in the step's Server Component, two builds and seven runs: the panel off,
+    all three toggles off, the provider's inputs off together, then each of its four inputs off alone. Every single
+    input off still hung, and with no rules the provider computed nothing — so it was the payload's shape, not anything
+    evaluated.
+  - **The cause**: the step built one `<ModuleRail>` and placed it twice, so the shell's Flight row referred to itself
+    through the list's lazy row. *Not checked yet*'s mark is a lucide icon whose `iconNode` is a module-level array,
+    drawn in the heading and on the current module's row; Flight wrote it once and referred to it from the list's row
+    back into the shell's. The browser's Flight client waited on that cycle forever. **It needed both halves**: the list
+    placed twice, and an object the list's row shares with the shell's — B2, with nothing answered, wears no glyph and
+    landed. Where Flight cuts rows moved with the payload too: with the provider's inputs emptied, B3 landed with the
+    same glyph, which is why no one input was the cause.
+  - **The fix**: the list is two elements, `rail()` called twice, in `wizard-step.tsx` and `calculator-step.tsx`.
+    Building the glyph per render was tried first and did not help — the `iconNode` is still shared — and was reverted.
+    The rule is about the placement, so it is written as a trap in `apps/web/CLAUDE.md`.
+  - **Searched for the shape**: every Server Component under `apps/web/src` and `packages/ui/src` for an element
+    constant placed more than once, the search first proven to find the original. None; the global tier's two
+    switchers are already two elements.
+  - **Proven**: with one element placed twice the hand-back hung on every run — the calculator journey three times in a
+    row with a 120-second timeout, and the probe in each of its runs — and with two elements both navigations landed.
+    The calculator journey's hand-back is its guard in the suite.
+
+### Skills, read against the diff
+
+- `vercel-react-best-practices`:
+  - `server-dedup-props`, twice: the section was given the run as a prop beside the provider holding it, and the module
+    list's checks were read from a second copy; both now come from one read.
+  - `async-parallel`: the run is read in the step's and S-09's existing `Promise.all`.
+  - The panel's grouping is memoized, being its most expensive derivation and feeding both placements; the panel's line
+    under its heading is derived during render, never stored.
+  - The section keeps the filter, the sheet and the run apart rather than in one reducer: three values moved by
+    separate events, which is the root's *a single `useState` is still right* case.
+- `one-idea-per-file`: each of §8.1's arms the panel draws is a file in `states/`, each tool its own with a spec, and
+  `PanelBody` picks the arm once.
+- `one-kind-per-folder`: `components/panel/` holds folders only — `filters/`, `findings/`, `run/`, `section/`, `shared/`,
+  `states/` — and `shared/`'s file states its admission test.
+- `vercel-composition-patterns`: `ValidationPanel` takes slots — `action`, `meter`, `filters`, children — rather than a
+  boolean per screen; the dock and the count bar are seats, not variants of the panel.
+- `nestjs-best-practices`: `NameFindings` is a use case behind the service and provided in HTTP mode alone; the list
+  reads join one more SQL fragment beside readiness rather than a second query.
+
+### Proven to bite
+
+- **The arrival defaults**: with the overlay removed, `answers-held.spec.ts`'s new case is red; restored, 7 of 7.
+- **The Flight cycle**: above — with one element placed twice, every run hung; with two, every navigation landed.
+
+### Gates
+
+The change reaches `packages/ui`, `packages/contracts`, `apps/api` (a use case, a controller's DTO, two list reads) and
+`apps/web`, so every dependent's row ran, one suite at a time, with no dev server running.
+- `pnpm lint` and the workspace typecheck.
+- Unit suites: api 2,019; ui 460; web 1,624, then 1,626 with the arrival-defaults cases; admin 298.
+- `pnpm openapi:check`, `pnpm routes:check`, and `pnpm docs:check` — 48 claims, which found the web's client modules
+  (204), the design system's components (80), exports (89) and vocabularies (thirteen).
+- `pnpm e2e`: 65 of 66, `periods.e2e-spec.ts` failing on its exact shape, which now carries `validation: null`; then
+  that suite 33 of 33 and the validation suite 22 of 22. `pnpm e2e:worker`: 13 of 13.
+- `pnpm e2e:web`, all three projects: 319 of 324, the five failures the two defects above; then 323 of 324, the last
+  being S-06's completion sentence, fixed in 42.3's run.
+
+## Task 42.3 — A finding is its field's address, landed with focus · 2026-10-08
+
+Every finding on S-08, and every field one conflicts with, links to the field's address: its step's, with the field's
+anchor. Opened, shared, reloaded or followed, the address lands focus in the field's control, with the finding's three
+parts beside it. FR-42 is Built, AC-1 … AC-5 met.
+
+### Decided before building
+
+Nothing new: row (g) of `architecture.md` §12.5.6's task-42 row had already settled it — *a finding's address is its
+step's with the field's anchor*, landing on the step with focus in the field's control, an inconsistency linking the
+field it conflicts with. What the build settled is the row's new *As built (42.3)*.
+
+### How it is cut
+
+- **`fieldAnchor` and `fieldHref`** (`tools/field-anchor.ts`, with its spec). The anchor is the id the field's visible
+  label already carried, `StepField`'s private `labelIdFor`, moved out so the finding's address and the field are one
+  function: the field's natural key, the queue's own `writeKey`, made safe for an id. No anchor changed.
+- **`FieldFocus`** (`components/fields/focus/`), a Client Component that draws nothing: as the step mounts and on every
+  `hashchange`, `focusField` finds the group the anchor's label names, scrolls it to the centre of its region, and
+  focuses the checked option of a choice, else the first control, else the group itself, made focusable for that and
+  never a tab stop, where a derived figure has no control. `focusField` has a jsdom spec of four cases.
+- **`FindingLink`** (`panel/findings/`): on another step, the field's address through `StepLink`, a step change like any
+  other; on the open step, the fragment alone, a plain anchor the browser follows in place.
+- **`FindingFollowContext`** (`panel/shared/`): the open step and the sheet's close, provided by `ValidationSection`
+  around both placements, so the link three components down needs neither threaded through the body and the groups.
+
+### The calls taken in the build, and why each holds
+
+- **The address decides, never the link that was pressed.** Next's router follows a hash-only `push` with no event a
+  component can hear, so a same-step finding through the router would land on a fragment nothing reacts to. A plain
+  anchor is the browser's own fragment navigation: the address changes, a history entry is made, and `hashchange` fires.
+  So every route to a field — a step change, a fragment, a shared or reloaded address — is one mechanism, and opening the
+  address is its test.
+- **A finding followed from the sheet closes it first.** The sheet is modal, and its trap would hold focus inside it.
+  The link tells the section on a plain click, React commits the close before the browser's default action, and
+  `hashchange` then lands focus in a page with no trap.
+- **No hand-back of focus to stop.** I first gave `Dialog` an `onCloseAutoFocus` passthrough, to keep Radix from
+  returning focus to the count that raised the sheet. Its spec's control half failed: with no prop, focus went to
+  `body`, not the opener. Radix's modal content always cancels the focus scope's return and focuses `triggerRef`, which
+  only `Dialog.Trigger` sets, and no caller of the design system's `Dialog` uses one. The passthrough was reverted. The
+  gap it exposes — no `Dialog` returns focus to its opener, nine callers in both apps — is outside task 42, and was raised
+  as a task of its own rather than fixed in passing.
+
+### Found in passing
+
+- **S-06's completion sentence was a bare text node beside the outstanding count**, so the cell read as one run of text
+  and an anchored match could not find the sentence — the S-08 journey's last assertion, never reached before 42.2's
+  fixes. The sentence is its own element now; the layout is unchanged, `.words` being a flex column already.
+
+### Skills, read against the diff
+
+- `one-idea-per-file`: the anchor (pure, `tools/`), the DOM landing (`focusField`, with its spec), the effect that runs it,
+  the link, and the context are one file each. `focusField` is imperative DOM, kept beside its component rather than in
+  `tools/`, which holds what is pure.
+- `one-kind-per-folder`: `components/fields/` gains a folder, `focus/`; `panel/shared/`'s new file states its admission
+  test — read by `section/` and `findings/`.
+- `vercel-react-best-practices`: one global listener per mounted step, removed on unmount (`client-event-listeners`); the
+  context value memoized and `onFollow` stable, `reactCompiler` being off.
+- `vercel-composition-patterns`: no component grew a boolean. `FindingLink` takes the address's parts; the open step
+  comes from context rather than a prop through two components that have no use for it.
+
+### Proven to bite
+
+- **`FieldFocus` removed from the step**, the web rebuilt: both of 42.3's journeys red — the field never takes focus —
+  and the other five of the spec green; restored and rebuilt, 7 of 7.
+- **`focusField`'s spec**, three mutations, each turning exactly its own case red, 1 of 4: the scroll removed, the
+  checked option's preference removed, and the group's fallback removed. The fourth case, a fragment naming no field,
+  was not mutated.
+
+### Gates
+
+The change reaches `apps/web` alone — `packages/ui`'s `Dialog` was changed and then restored to its committed form — so
+the web's row ran, with the task's closing run in 42.4 covering every row.
+- Web unit suite: 1,782, the anchor's, `focusField`'s and the text scan's cases among them.
+- `pnpm e2e:web`, all three projects: 326 of 326, the two new journeys among them.
+
+## Task 42.4 — Every finding's text held to its three parts and to no internal identifier; task 42 closes · 2026-10-08
+
+NFR-79's shape and the user-facing-text rule are tests now, not review notes. FR-40 is Built, AC-7 met.
+
+### How it is cut
+
+- **The shape, over the whole namespace** (`apps/api/src/app/messages/committed-catalogues.spec.ts`): every leaf under
+  `validation` in every committed catalogue is one of a message's three parts, and every message is worded in all three
+  in every locale. Publication already held a rule set to the messages *it* names; this holds the ones no seeded rule
+  names yet. Beside the predicate, because that module already reads every locale's shared catalogue.
+- **The text, as a reader sees it** (`apps/web/src/test/finding-text.spec.ts`): every finding the shared rule corpus
+  produces, worded by `findingWords` from the shared catalogue in ro, en and ru, must be three non-blank sentences with
+  no internal identifier — `findInternalIdentifiers`' shapes, and as declared terms every rule id, element and member
+  key the corpus declares, every verdict, and the message key. A placeholder with no value throws. **The corpus must
+  word every message the catalogue holds**, so a message added without a case fails the coverage case.
+
+### The calls taken in the build, and why each holds
+
+- **Every identifier the corpus declares is forbidden in every finding**, not only its own case's. The first draft
+  forbade each case's own: a mutation adding *(Turnover)* to an English message turned 5 findings red, only those whose
+  case declares `Turnover`, though all 14 *required* findings would show it.
+- **A value the reader gave is taken out before the scan.** Widened, the scan failed every address finding, on the
+  unmutated catalogues: a corpus member key `MD` matched the `.md` of a quoted address, case-insensitively. FR-40 AC-13
+  quotes the address verbatim on purpose, and it is the reader's text, not the platform's.
+
+### Proven to bite
+
+Every mutation was made to a copy and restored, each catalogue compared byte for byte with its backup afterwards.
+- **The shape**: a fourth part under a Russian message and an English message flattened to one sentence — 4 of 7 red,
+  the strays in both locales, the every-message case and the predicate's own.
+- **The text**: an element key in an English sentence, a snake_case token in a Russian one, and a Romanian message no
+  case produces — 16 red with the per-case terms (5 en, 10 ru, the coverage case); widened, the English mutation alone
+  turned all 14 *required* findings red.
+
+### Gates — task 42's close
+
+A task close, not a Stage's: Stage 2 keeps its other rows (191, 94, 95, 133, 186 … 189), so `gates:clean` and the three
+review agents wait for its end. Every row task 42 reaches ran, one suite at a time, with no dev server running.
+- `pnpm lint` and the workspace typecheck, after the last edit.
+- Unit suites: validation 171; i18n 130; api 2,023, the catalogue-wide shape's four cases among them; ui 460; web 1,782;
+  admin 298. `packages/contracts` has no suite: its proofs are its typecheck and `openapi:check`.
+- `pnpm openapi:check`, `pnpm routes:check`, and `pnpm docs:check` — 48 claims, which found the archive's counts (145
+  numbers, 258 rows) once the row had moved.
+- `pnpm e2e`: 66 of 66 suites, 1,654 tests. `pnpm e2e:worker`: 13 of 13.
+- `pnpm e2e:web`, all three projects: 326 of 326. The server printed only digest `2667547900` and a calculator
+  journey's deliberate missing revision.
+- **Not run:** `migrations:check`, since task 42 adds no migration; `gates:clean` and the review agents, which are
+  Stage 2's end.
+
+### Found in passing, and raised rather than fixed
+
+- **The design system's `Dialog` returns focus to nothing on close** (42.3, above): nine callers in both apps, a
+  WCAG 2.4.3 gap that predates task 42. Raised as its own task with the measurement, the callers and S-08's constraint.
+- **Three stale claims corrected where they were met**: `apps/api/CLAUDE.md`'s *Not live* still listed validation's
+  screens and 51.2's notices, which closed earlier today; Part 4's header said `core/validation` was an empty shell
+  and the contract had no validation path; `apps/web/CLAUDE.md` listed the calculator and validation among the
+  addresses not yet available.
+

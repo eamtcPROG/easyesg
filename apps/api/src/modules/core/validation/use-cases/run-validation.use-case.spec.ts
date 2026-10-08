@@ -61,7 +61,14 @@ const build = (over: { report?: Partial<ValidationReport> | null; values?: Field
       Promise.resolve(
         over.report === null
           ? null
-          : { reportId: REPORT, lockedAt: null, ruleSetPin: null, timezone: 'Europe/Chisinau', ...over.report },
+          : {
+              reportId: REPORT,
+              lockedAt: null,
+              ruleSetPin: null,
+              timezone: 'Europe/Chisinau',
+              taxonomyVersion: '2026-05-01',
+              ...over.report,
+            },
       ),
   };
   const scopes: EvaluationScopes = { evaluationScope: () => Promise.resolve({ values, scope, modules: ['B1'] }) };
@@ -161,10 +168,55 @@ describe('RunValidation (UC-40)', () => {
     await expect(useCase.read({ reportId: REPORT })).rejects.toThrow(ReportNotFoundError);
   });
 
+  describe('reading the rules a run would read (task 42.1; OQ-49)', () => {
+    it('answers today’s set, the day it is read as at, and the scope’s elements, storing nothing', async () => {
+      const { useCase, store, asked } = build();
+      const rules = await useCase.rules({ reportId: REPORT });
+
+      expect(rules.ruleSet).toBe(TODAY_SET);
+      expect(rules.rulesOn).toEqual({ date: '2027-03-10', timezone: 'Europe/Chisinau' });
+      expect([...rules.scope].sort()).toEqual(['Assets', 'Turnover']);
+      expect(asked).toEqual(['on 2027-03-10']);
+      // A read: nothing is evaluated or written.
+      expect(store.stored).toBeNull();
+    });
+
+    it('answers the set a locked report’s lock pinned, as a run reads it (FR-73 item 9)', async () => {
+      const { useCase, asked } = build({ report: { lockedAt: new Date('2026-12-15T10:00:00Z'), ruleSetPin: 1 } });
+      const rules = await useCase.rules({ reportId: REPORT });
+      expect(asked).toEqual(['pinned 1']);
+      expect(rules.ruleSet).toBe(PINNED_SET);
+      expect(rules.rulesOn.date).toBe('2026-12-15');
+    });
+
+    it('answers the scope as it stands, narrowed when the report’s shape narrows (182/26)', async () => {
+      const { useCase, narrow } = build();
+      narrow(['Assets']);
+      expect((await useCase.rules({ reportId: REPORT })).scope).toEqual(['Assets']);
+    });
+
+    it('refuses where no rule set can be read, as a run does — never an empty set (task-41 row (d))', async () => {
+      const { useCase, unreadable } = build();
+      unreadable();
+      await expect(useCase.rules({ reportId: REPORT })).rejects.toThrow(ValidationRulesUnavailableError);
+    });
+
+    it('answers 404 for a report outside the bound organization', async () => {
+      const { useCase } = build({ report: null });
+      await expect(useCase.rules({ reportId: REPORT })).rejects.toThrow(ReportNotFoundError);
+    });
+  });
+
   describe('reading the findings', () => {
     it('answers no run and no findings for a report never validated', async () => {
       const { useCase } = build();
-      expect(await useCase.read({ reportId: REPORT })).toEqual({ run: null, findings: [], rollUp: null });
+      expect(await useCase.read({ reportId: REPORT })).toEqual({
+        run: null,
+        findings: [],
+        rollUp: null,
+        placedIn: new Map(),
+        taxonomyVersion: '2026-05-01',
+      });
     });
 
     it('answers the last run as it left it, though the field was answered since (FR-43 AC-8)', async () => {

@@ -404,7 +404,12 @@ export class DisclosureFieldDto {
   })
   readonly currency: string | null;
 
-  @ApiProperty({ enum: STATES })
+  @ApiProperty({
+    enum: STATES,
+    description:
+      'The answer’s kind: `ok` (a value, or no answer at all), `nil_return` or `not_available`. A validation verdict ' +
+      'is a finding, never this (182/17), so the other members are not projected (task 42.1).',
+  })
   readonly state: DisclosureState;
 
   @ApiProperty({ nullable: true, type: String })

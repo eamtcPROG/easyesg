@@ -63,6 +63,10 @@
   background: var(--module-state-reasoned);
 }
 
+.segment[data-state='unchecked'] {
+  background: var(--state-pending);
+}
+
 .note {
   margin: 0;
   color: var(--text-muted);

@@ -32,6 +32,7 @@ const aReport = (over: Partial<Report> = {}): Report => ({
   reportingPeriodId: 'period-2026',
   scope: 'basic',
   status: REPORT_STATUS.OPEN,
+  validation: null,
   templateVersion: '2026-05-01',
   taxonomyVersion: '2026-05-01',
   createdAt: 1_000,

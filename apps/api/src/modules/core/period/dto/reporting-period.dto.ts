@@ -20,6 +20,7 @@ import {
   statusAsRead,
   type ReportStatus,
 } from '@api/modules/core/disclosure/models/report.model';
+import { ReportValidationSummaryDto } from '@api/modules/core/disclosure/dto/report-validation-summary.dto';
 import type {
   PeriodReopening,
   PeriodReport,
@@ -164,6 +165,13 @@ export class PeriodReportDto {
   readonly status: ReportStatus;
 
   @ApiProperty({
+    type: ReportValidationSummaryDto,
+    nullable: true,
+    description: 'What its latest validation run came to (FR-23, FR-41), or null where it was never checked.',
+  })
+  readonly validation: ReportValidationSummaryDto | null;
+
+  @ApiProperty({
     type: Number,
     description: `${EPOCH_MILLIS} The report's last activity — which is how UX-6 picks the one to resume.`,
   })
@@ -173,6 +181,7 @@ export class PeriodReportDto {
     this.id = report.id;
     // Readiness is read, never stored (task 41.3): the same rule the report's own read applies.
     this.status = statusAsRead(report);
+    this.validation = report.validation === null ? null : new ReportValidationSummaryDto(report.validation);
     // OQ-50's conversion, at the boundary that owns it — beside `createdAt`/`updatedAt` below and
     // deliberately not beside the period's own calendar boundaries, which stay calendar dates.
     this.updatedAt = report.updatedAt.getTime();

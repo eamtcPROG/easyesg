@@ -46,3 +46,9 @@
   background: var(--surface-sunken);
   color: var(--text-muted);
 }
+
+/* Answered and not yet checked (task 42.2): the pending role, which the cascade gives to work not yet settled. */
+.mark[data-state='unchecked'] {
+  background: var(--state-pending-tint);
+  color: var(--state-pending);
+}

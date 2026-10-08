@@ -1,5 +1,5 @@
 import type { LegalDate } from '@api/contracts/types/time';
-import type { ReportStatus } from '@api/modules/core/disclosure/models/report.model';
+import type { ReportStatus, ReportValidationSummary } from '@api/modules/core/disclosure/models/report.model';
 
 /**
  * The reporting period (FR-21, FR-45, FR-66; UC-56).
@@ -96,6 +96,8 @@ export interface PeriodReport {
   readonly status: ReportStatus;
   /** Whether its latest validation run left nothing outstanding (task 41.3) — the report's own `readyToFile`. */
   readonly readyToFile: boolean;
+  /** What its latest validation run came to (task 42.2) — the report's own `validation`, `null` where never checked. */
+  readonly validation: ReportValidationSummary | null;
   /**
    * When the report was last written — an instant, converted at the DTO boundary (OQ-50).
    *

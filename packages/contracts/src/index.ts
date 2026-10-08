@@ -276,6 +276,24 @@ export type CalcLatestRun = components['schemas']['CalcLatestRunDto'];
 export type CalcRun = components['schemas']['CalcRunDto'];
 /** The figures B3 took from the calculator — the latest run, for S-07's B3 fields (task 39.3; UX-43). */
 export type CalcFigures = components['schemas']['CalcFiguresDto'];
+// Validation — the last run, its findings and roll-up, and the rules the browser evaluates inline (tasks 41, 42).
+export { COMPLETION_STATUS, COMPLETION_STATUS_MIRRORS_WIRE, type CompletionStatus } from './validation';
+/** What the last run found and came to, as it left it (FR-40 … FR-43; 182/26) — `run` null for a report never checked. */
+export type Validation = components['schemas']['ValidationDto'];
+export type ValidationFinding = components['schemas']['ValidationFindingDto'];
+/** A finding's field named and placed — its label, its member's, and the modules presenting it (task 42.2). */
+export type FindingField = components['schemas']['FindingFieldDto'];
+/** What a report's last run came to, as S-06's and S-05's lists draw it — `null` on the report where never checked. */
+export type ReportValidationSummary = components['schemas']['ReportValidationSummaryDto'];
+/** A module's counts and its outstanding fields, or the report's counts (FR-41; 182/18) — never a percentage. */
+export type ValidationRollUp = components['schemas']['RollUpDto'];
+export type ModuleRollUp = components['schemas']['ModuleRollUpDto'];
+export type ValidationCounts = components['schemas']['CountsDto'];
+/**
+ * The rules a run would read now and the report's scope (task 42.1; OQ-49). `ruleSet` is opaque on the wire: admit it
+ * with `@easyesg/validation`'s `readRuleSet`, never a cast.
+ */
+export type ValidationRules = components['schemas']['ValidationRulesDto'];
 /** The prior-period comparative (task 34.3; UC-45, FR-46). */
 export type PriorPeriodComparatives = components['schemas']['PriorPeriodResponseDto'];
 

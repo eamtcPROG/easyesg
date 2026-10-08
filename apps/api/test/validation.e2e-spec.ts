@@ -9,6 +9,7 @@ import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { configureHttpApp } from '../src/main.http';
 import { ConfigurationPublisher } from '../src/infrastructure/configuration/configuration-publisher.service';
 import { ConfigurationStore } from '../src/infrastructure/configuration/configuration-store.service';
+import { RULE_SET_READ, readRuleSet } from '@easyesg/validation';
 import { DISCLOSURE_STATE } from '../src/modules/core/disclosure/models/disclosure-value.model';
 import { OMITTED_DISCLOSURES_ELEMENT } from '../src/modules/core/disclosure/models/omission.model';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
@@ -28,11 +29,16 @@ interface Address {
   dimensionKey: string;
   ordinal: number;
 }
+interface Place extends Address {
+  label: string | null;
+  memberLabel: string | null;
+  modules: string[];
+}
 interface Finding {
   rule: string;
   verdict: string;
-  field: Address;
-  related: Address[];
+  field: Place;
+  related: Place[];
   message: string;
   params: Record<string, string>;
 }
@@ -70,6 +76,7 @@ describe('validation runs and their findings (task 41.2)', () => {
 
   const http = () => request(app.getHttpServer());
   const objectOf = <T>(body: unknown): T => (body as { object: T }).object;
+  const objectsOf = <T>(body: unknown): T[] => (body as { objects: T[] }).objects;
   const rulesOf = (validation: Validation): string[] => validation.findings.map((finding) => finding.rule);
 
   const openReport = async (year: number): Promise<{ periodId: string; reportId: string }> => {
@@ -170,7 +177,9 @@ describe('validation runs and their findings (task 41.2)', () => {
     expect(ran.findings.find((finding) => finding.rule === 'b1-turnover')).toEqual({
       rule: 'b1-turnover',
       verdict: 'missing',
-      field: { elementKey: 'Turnover', dimensionKey: '', ordinal: 0 },
+      // Named and placed for the reader since task 42.2 — the step read's label, in the request's (source) locale, and
+      // the module that presents it, so S-08 names a field in a module the browser has not read.
+      field: { elementKey: 'Turnover', dimensionKey: '', ordinal: 0, label: 'Cifra de afaceri', memberLabel: null, modules: ['B1'] },
       related: [],
       message: 'validation.required',
       params: {},
@@ -360,6 +369,41 @@ describe('validation runs and their findings (task 41.2)', () => {
       ]);
     });
 
+    /**
+     * S-06's and S-05's completion columns (task 42.2; FR-23 AC-7, FR-25 AC-3; §12.5.6's task-42 row (f)): the list reads
+     * carry the run's own summary, the same counts the roll-up states, and none for a report never checked.
+     */
+    it('carries the last run’s summary on the report list and the period, as the roll-up counts it — and none before a run', async () => {
+      interface Summary {
+        modulesComplete: number;
+        modulesCounted: number;
+        outstanding: number;
+      }
+      const listed = async (reportId: string): Promise<Summary | null | undefined> =>
+        objectsOf<{ id: string; validation: Summary | null }>(
+          (await http().get('/api/v1/reports').set(editor.authorization).expect(200)).body,
+        ).find((report) => report.id === reportId)?.validation;
+      const ofPeriod = async (periodId: string): Promise<Summary | null | undefined> =>
+        objectOf<{ report: { validation: Summary | null } | null }>((await http().get(`/api/v1/periods/${periodId}`)
+          .set(editor.authorization).expect(200)).body).report?.validation;
+
+      const { periodId, reportId } = await openReport(2026);
+      expect(await listed(reportId)).toBeNull();
+      expect(await ofPeriod(periodId)).toBeNull();
+
+      await makeComplete(reportId);
+      const { rollUp } = await run(reportId);
+      const expected: Summary = {
+        modulesComplete: (rollUp?.modules ?? []).filter((module) => module.status === 'complete').length,
+        modulesCounted: rollUp?.modules.length ?? -1,
+        outstanding: rollUp?.report.outstanding ?? -1,
+      };
+      // Every Basic module but B1 omitted, and B1 reasoned whole: one module counted, and it complete.
+      expect(expected).toEqual({ modulesComplete: 1, modulesCounted: 1, outstanding: 0 });
+      expect(await listed(reportId)).toEqual(expected);
+      expect(await ofPeriod(periodId)).toEqual(expected);
+    });
+
     it('reads ready to file once a run leaves nothing outstanding, on the report and on its period (AC-8)', async () => {
       const { periodId, reportId } = await openReport(2026);
       await makeComplete(reportId);
@@ -405,6 +449,56 @@ describe('validation runs and their findings (task 41.2)', () => {
       await run(reportId);
       await http().post(`/api/v1/periods/${periodId}/lock`).set(admin.authorization).expect(200);
       expect(await statusOf(reportId)).toBe('locked');
+    });
+  });
+
+  /**
+   * The rules a run would read, for the browser to evaluate inline (task 42.1; OQ-49; §12.5.6's task-42 row (1)): the
+   * seeded set the package's own reader admits, the day it is read as at, and the report's scope — narrowed by an
+   * omission as a run's is — read by every member and storing nothing.
+   */
+  describe('the rules a run would read (task 42.1)', () => {
+    interface Rules {
+      rulesOn: { date: string; timezone: string };
+      ruleSet: unknown;
+      scope: string[];
+    }
+    const rules = async (reportId: string, as: SignedInAccount = editor): Promise<Rules> =>
+      objectOf<Rules>((await http().get(`/api/v1/reports/${reportId}/validation/rules`)
+        .set(as.authorization).expect(200)).body);
+
+    it('answers the seeded set, which the package’s reader admits, today’s day and the scope, storing no run', async () => {
+      const { reportId } = await openReport(2026);
+      const read = await rules(reportId);
+
+      const admitted = readRuleSet(read.ruleSet);
+      expect(admitted.outcome).toBe(RULE_SET_READ.READ);
+      const ids = admitted.outcome === RULE_SET_READ.READ ? admitted.ruleSet.rules.map((rule) => rule.id) : [];
+      expect(ids).toContain('b1-turnover');
+      expect(read.rulesOn).toEqual({ date: todayInChisinau(), timezone: CHISINAU });
+      // The run on a new report raises b1-turnover, so its element is in the scope the browser is handed.
+      expect(read.scope).toContain('Turnover');
+      // A read: no run was stored.
+      expect((await http().get(`/api/v1/reports/${reportId}/validation`).set(editor.authorization).expect(200)).body)
+        .toMatchObject({ object: { run: null } });
+    });
+
+    it('narrows the scope as a run’s narrows, when a section is declared omitted (FR-31 AC-3)', async () => {
+      const { reportId } = await openReport(2026);
+      await write(reportId, [
+        {
+          elementKey: OMITTED_DISCLOSURES_ELEMENT,
+          valueText: 'vsme:B1BasisForPreparationAndOtherUndertakingSGeneralInformationMember',
+          state: DISCLOSURE_STATE.OK,
+        },
+      ]);
+      expect((await rules(reportId)).scope).not.toContain('Turnover');
+    });
+
+    it('is read by a view-only member, and answers 404 for a report the organization does not hold', async () => {
+      const { reportId } = await openReport(2026);
+      expect((await rules(reportId, viewer)).scope.length).toBeGreaterThan(0);
+      await http().get(`/api/v1/reports/${randomUUID()}/validation/rules`).set(editor.authorization).expect(404);
     });
   });
 

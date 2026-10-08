@@ -1092,7 +1092,8 @@
         "activity": "Last activity",
         "pin": "Version",
         "template": "Template",
-        "taxonomy": "Taxonomy"
+        "taxonomy": "Taxonomy",
+        "completion": "Completion"
       },
       "scope": {
         "basic": "VSME Basic",
@@ -1367,7 +1368,8 @@
           "notStarted": "Not started",
           "omitted": "Omitted",
           "waiting": "Waits on your B1 answers",
-          "inapplicable": "Does not apply"
+          "inapplicable": "Does not apply",
+          "unchecked": "Not checked yet"
         },
         "all": "All modules",
         "more": "{count, plural, one {One more module} other {# more modules}}",
@@ -1582,6 +1584,64 @@
           "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "How many employees fall under a collective agreement. The share is worked out against the employee count reported in B1.",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "How many employees left during the period, for any reason."
         }
+      },
+      "panel": {
+        "title": "Report check",
+        "checked": "Last checked {when}",
+        "unchecked": "Not checked yet",
+        "running": "Checking the report…",
+        "run": "Check my report",
+        "sendingFirst": "Sending your changes first…",
+        "blocked": {
+          "title": "The report cannot be checked yet",
+          "body": "Some changes have not been sent, so a check would not see them. Reconnect or try sending them again, then check the report."
+        },
+        "unreadable": {
+          "title": "The last check could not be read",
+          "body": "The last check’s findings could not be read, so none are listed here. Your fields still show their state as you answer them; reload the page in a few minutes."
+        },
+        "runFailed": {
+          "title": "The report could not be checked",
+          "body": "No answer came back from the server, so what is shown below is the previous check. Try again in a few minutes."
+        },
+        "legend": {
+          "resolved": "Answered: {count}",
+          "reasoned": "Not available, with reason: {count}",
+          "outstanding": "Outstanding: {count}"
+        },
+        "filters": {
+          "label": "Which findings to show",
+          "all": "All ({count})",
+          "mustFix": "Must fix ({count})",
+          "review": "Review ({count})"
+        },
+        "weight": {
+          "mustFix": "Must fix",
+          "review": "Review",
+          "cleared": "Cleared since the last check"
+        },
+        "groupCount": "{count, plural, one {# finding} other {# findings}}",
+        "goToField": "Go to the field",
+        "goToRelated": "Go to {module}",
+        "row": "Row {position}",
+        "empty": {
+          "unchecked": {
+            "title": "No check yet",
+            "body": "The report has not been checked, so what it still lacks is not known. Check the report to see what is left to do.",
+            "reader": "The report has not been checked, so what it still lacks is not known. An editor or the organization’s administrator can check it."
+          },
+          "clear": {
+            "title": "Nothing outstanding",
+            "body": "Every field the report asks has an answer or a reason. The report can be filed; export was available throughout."
+          },
+          "filtered": "No findings of this kind in the last check."
+        },
+        "count": {
+          "findings": "Must fix: {mustFix} · Review: {review}",
+          "unchecked": "Not checked yet",
+          "clear": "Nothing outstanding"
+        },
+        "sheetClose": "Close the report check"
       }
     },
     "calculator": {
@@ -1915,6 +1975,11 @@
           "body": "We could not reach the service, so the figure is as it was. Try again in a few minutes."
         }
       }
+    },
+    "completion": {
+      "modules": "{done} of {counted} modules complete",
+      "outstanding": "Outstanding: {count}",
+      "unchecked": "Not checked yet"
     }
   },
   "supportAccess": {

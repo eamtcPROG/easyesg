@@ -692,6 +692,8 @@ describe('reporting periods (UC-56)', () => {
         // touches a report — which is precisely when the resume answer starts to matter. Comparing
         // against `GET /reports/{id}`'s own value is what ties them.
         updatedAt: report.updatedAt,
+        // Never checked, so nothing to summarise (task 42.2): `null`, not counts of zero — *not checked yet* on S-05.
+        validation: null,
       });
       expect(byPeriod.get(untouched.id)).toBeNull();
     });

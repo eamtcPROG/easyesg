@@ -1092,7 +1092,8 @@
         "activity": "Ultima activitate",
         "pin": "Versiunea",
         "template": "Șablon",
-        "taxonomy": "Taxonomie"
+        "taxonomy": "Taxonomie",
+        "completion": "Completare"
       },
       "scope": {
         "basic": "VSME Basic",
@@ -1367,7 +1368,8 @@
           "notStarted": "Neînceput",
           "omitted": "Omis",
           "waiting": "Așteaptă răspunsurile din B1",
-          "inapplicable": "Nu se aplică"
+          "inapplicable": "Nu se aplică",
+          "unchecked": "Neverificat încă"
         },
         "all": "Toate modulele",
         "more": "{count, plural, one {Încă un modul} few {Încă # module} other {Încă # de module}}",
@@ -1582,6 +1584,64 @@
           "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Câți dintre angajați intră sub un contract colectiv de muncă. Ponderea se calculează față de numărul de angajați declarat la B1.",
           "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Câți angajați au încetat raporturile de muncă pe parcursul perioadei, indiferent de motiv."
         }
+      },
+      "panel": {
+        "title": "Verificarea raportului",
+        "checked": "Ultima verificare: {when}",
+        "unchecked": "Raportul nu a fost încă verificat",
+        "running": "Se verifică raportul…",
+        "run": "Verificați raportul",
+        "sendingFirst": "Se trimit mai întâi modificările dumneavoastră…",
+        "blocked": {
+          "title": "Raportul nu poate fi verificat încă",
+          "body": "Unele modificări nu au fost încă trimise, așa că verificarea nu le-ar vedea. Reconectați-vă sau încercați din nou trimiterea, apoi verificați raportul."
+        },
+        "unreadable": {
+          "title": "Ultima verificare nu a putut fi citită",
+          "body": "Nu am reușit să citim ce a găsit ultima verificare, așa că aici nu apare nicio constatare. Câmpurile își arată în continuare starea pe măsură ce le completați; reîncărcați pagina peste câteva minute."
+        },
+        "runFailed": {
+          "title": "Raportul nu a putut fi verificat",
+          "body": "Nu am primit răspuns de la server, așa că rezultatul de mai jos este cel al verificării anterioare. Încercați din nou peste câteva minute."
+        },
+        "legend": {
+          "resolved": "Cu răspuns: {count}",
+          "reasoned": "Indisponibile, cu motiv: {count}",
+          "outstanding": "De rezolvat: {count}"
+        },
+        "filters": {
+          "label": "Ce constatări se arată",
+          "all": "Toate ({count})",
+          "mustFix": "De corectat ({count})",
+          "review": "De revizuit ({count})"
+        },
+        "weight": {
+          "mustFix": "De corectat",
+          "review": "De revizuit",
+          "cleared": "Rezolvat de la ultima verificare"
+        },
+        "groupCount": "{count, plural, one {o constatare} few {# constatări} other {# de constatări}}",
+        "goToField": "Mergeți la câmp",
+        "goToRelated": "Mergeți la {module}",
+        "row": "Rândul {position}",
+        "empty": {
+          "unchecked": {
+            "title": "Nicio verificare încă",
+            "body": "Raportul nu a fost încă verificat, așa că nu se știe ce lipsește din el. Verificați raportul pentru a vedea ce rămâne de completat.",
+            "reader": "Raportul nu a fost încă verificat, așa că nu se știe ce lipsește din el. Un editor sau administratorul organizației îl poate verifica."
+          },
+          "clear": {
+            "title": "Nimic de rezolvat",
+            "body": "Fiecare câmp cerut de raport are un răspuns sau un motiv. Raportul poate fi depus; exportul a fost disponibil tot timpul."
+          },
+          "filtered": "Nicio constatare de acest fel la ultima verificare."
+        },
+        "count": {
+          "findings": "De corectat: {mustFix} · De revizuit: {review}",
+          "unchecked": "Raportul nu a fost încă verificat",
+          "clear": "Nimic de rezolvat"
+        },
+        "sheetClose": "Închideți verificarea raportului"
       }
     },
     "calculator": {
@@ -1915,6 +1975,11 @@
           "body": "Nu am putut contacta serviciul, așa că cifra a rămas cum era. Încercați din nou peste câteva minute."
         }
       }
+    },
+    "completion": {
+      "modules": "{done} din {counted} module finalizate",
+      "outstanding": "De rezolvat: {count}",
+      "unchecked": "Neverificat încă"
     }
   },
   "supportAccess": {
