@@ -46,7 +46,7 @@ describe('DeliverLinkNotice (task 50.1.4)', () => {
 
   const ANA = '11111111-1111-4111-8111-111111111111';
   const ORGANIZATION = '44444444-4444-4444-8444-444444444444';
-  const KEY = 'identity.invitation.issued:invitation-1:1790726400000';
+  const KEY = 'identity.invitation.issued/invitation-1/1790726400000';
 
   const invitation: DeliverNoticeCommand = {
     issuanceKey: KEY,

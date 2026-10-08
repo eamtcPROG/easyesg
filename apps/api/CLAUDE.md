@@ -1151,8 +1151,15 @@ fails the build otherwise.
 …)` on the request's own runner, so the effect commits with the state change or not at all. The
 dispatcher on the worker is the sole queue producer (§6.7).
 
-Three things about it that are load-bearing:
+Four things about it that are load-bearing:
 
+- **The key is a BullMQ job id, so it may not be empty, hold a `:` or be a bare number** (task 206; §12.5.6's
+  task-206 row). BullMQ refuses the second and third — a three-part colon key only by a legacy exception its source
+  marks for removal — and reads an empty id as none, giving the job a counter and skipping its duplicate check. Both
+  writers refuse such a key where it is made (`queueable-key.ts`) and `outbox_event_key_queueable` refuses it at the
+  table; separate a natural key's parts with `/`. **A row the queue refuses anyway is charged alone**: the dispatcher
+  catches each enqueue, gives that row its attempt and `last_error` in the claiming transaction and dispatches the
+  rest, and a failure outside the enqueue charges nothing — every claimed row returns to pending and is re-emitted.
 - **Enqueue, then mark dispatched — never the reverse.** Both inside one transaction. A crash
   between marking and enqueueing loses the row silently; a crash between enqueueing and committing
   re-emits it, which is at-least-once. The idempotency key is BullMQ's `jobId`, so the duplicate is
@@ -1275,9 +1282,8 @@ row once (`writeOutboxEventOnce`, keyed `<job>/<day>`), which the dispatcher que
 things to know:
 
 - **A day no worker runs is missed, not caught up** — NFR-93's heartbeat is meant to notice it.
-- **An outbox key becomes a BullMQ job id, and BullMQ refuses a `:` in one** but in its three-part legacy form — refused
-  at the dispatcher, where it fails the whole batch and every notice behind it. `writeOutboxEventOnce` refuses a colon
-  where the key is made; key with `/`.
+- **An outbox key becomes a BullMQ job id**, so key with `/` — a `:` is refused by both writers and by the table (task
+  206; "The outbox" above).
 - **The ticker refuses to boot** on a slot it could not keep or a `@RunsDaily` no `@HandlesJob` routes, and the worker's
   boot proof asserts what it schedules — a deleted `@RunsDaily` otherwise resolves everything and starts nothing.
 

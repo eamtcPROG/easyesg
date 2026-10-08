@@ -14,6 +14,7 @@ import {
   moveProfileToOrganizations,
 } from '../src/infrastructure/persistence/migrations/1791417600000-profile-on-entity';
 import { backfillVersionWindows } from '../src/infrastructure/persistence/migrations/1791504000000-configuration-version-window';
+import { rewriteColonKeys } from '../src/infrastructure/persistence/migrations/1792540800000-outbox-key-queueable';
 import { connectAs } from './support/database';
 
 /**
@@ -525,6 +526,34 @@ describe('the migrations’ data steps, against rows (task 164)', () => {
       await expect(
         runner.query(`UPDATE config.entry_version SET validity = NULL WHERE kind = 'data_steps' AND revision = 2`),
       ).rejects.toThrow(/immutable/);
+    });
+  });
+
+  it('task 206’s rewrite gives every colon key the slash, pending or dispatched, and leaves the rest', async () => {
+    await inRolledBack(async (runner) => {
+      // The table as it was before the step: no constraint, so the keys the producers wrote until then can be seeded.
+      await runner.query(`ALTER TABLE audit.outbox_event DROP CONSTRAINT outbox_event_key_queueable`);
+      const suffix = randomUUID();
+      const seed = (key: string, dispatched: boolean) =>
+        runner.query(
+          `INSERT INTO audit.outbox_event (event_type, idempotency_key, dispatched_at)
+           VALUES ('data_steps', $1, CASE WHEN $2 THEN now() END)`,
+          [key, dispatched],
+        );
+      await seed(`identity.invitation.issued:${suffix}:1790726400000`, false);
+      await seed(`identity.email_verification.requested:${suffix}:1790726400000`, true);
+      await seed(`validation.report_notice_sweep/${suffix}`, false);
+
+      await rewriteColonKeys(runner);
+
+      const rows = (await runner.query(
+        `SELECT idempotency_key FROM audit.outbox_event WHERE event_type = 'data_steps' ORDER BY idempotency_key`,
+      )) as { idempotency_key: string }[];
+      expect(rows.map((row) => row.idempotency_key)).toEqual([
+        `identity.email_verification.requested/${suffix}/1790726400000`,
+        `identity.invitation.issued/${suffix}/1790726400000`,
+        `validation.report_notice_sweep/${suffix}`,
+      ]);
     });
   });
 });

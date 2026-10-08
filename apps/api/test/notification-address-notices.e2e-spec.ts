@@ -127,7 +127,7 @@ describe('the four address notices, recorded (task 50.1.4)', () => {
     )) as DeliveryRow[];
 
   it('records an account’s verification as a platform notice, its link sealed and the account its recipient', async () => {
-    const key = `${EMAIL_VERIFICATION_REQUESTED}:${ana}:${Date.now()}`;
+    const key = `${EMAIL_VERIFICATION_REQUESTED}/${ana}/${Date.now()}`;
     const [message] = await handle({
       build: (delivery) => new VerificationEmailHandler(delivery),
       jobName: EMAIL_VERIFICATION_REQUESTED,
@@ -156,7 +156,7 @@ describe('the four address notices, recorded (task 50.1.4)', () => {
   });
 
   it("records an organization's invitation in that organization, the invitee named by address", async () => {
-    const key = `${INVITATION_ISSUED}:${randomUUID()}:${Date.now()}`;
+    const key = `${INVITATION_ISSUED}/${randomUUID()}/${Date.now()}`;
     const [message] = await handle({
       build: (delivery) => new InvitationEmailHandler(delivery),
       jobName: INVITATION_ISSUED,
@@ -187,7 +187,7 @@ describe('the four address notices, recorded (task 50.1.4)', () => {
   });
 
   it("records an operator's invitation as a platform notice, linked to the console", async () => {
-    const key = `${ADMIN_INVITATION_ISSUED}:${randomUUID()}:${Date.now()}`;
+    const key = `${ADMIN_INVITATION_ISSUED}/${randomUUID()}/${Date.now()}`;
     const [message] = await handle({
       build: (delivery) => new AdminInvitationEmailHandler(delivery),
       jobName: ADMIN_INVITATION_ISSUED,
@@ -219,14 +219,14 @@ describe('the four address notices, recorded (task 50.1.4)', () => {
       email: `${SUITE}-again@example.md`,
       token: 'admin-token-2',
     };
-    const first = `${ADMIN_INVITATION_ISSUED}:${payload.invitationId}:1`;
+    const first = `${ADMIN_INVITATION_ISSUED}/${payload.invitationId}/1`;
     const build = (delivery: ReturnType<typeof linkNoticeDelivery>) => new AdminInvitationEmailHandler(delivery);
 
     await handle({ build, jobName: ADMIN_INVITATION_ISSUED, key: first, payload, provider });
     await handle({ build, jobName: ADMIN_INVITATION_ISSUED, key: first, payload, provider });
     expect(provider.sent).toHaveLength(1);
 
-    const resend = `${ADMIN_INVITATION_ISSUED}:${payload.invitationId}:2`;
+    const resend = `${ADMIN_INVITATION_ISSUED}/${payload.invitationId}/2`;
     await handle({ build, jobName: ADMIN_INVITATION_ISSUED, key: resend, payload: { ...payload, token: 'admin-token-3' }, provider });
     expect(provider.sent.map((message) => message.params.link)).toEqual([
       `${CONSOLE}/invitation/admin-token-2`,

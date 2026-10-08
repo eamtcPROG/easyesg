@@ -13,7 +13,7 @@ const NOTICE_NAMESPACE = Buffer.from('6f1a2c3e8b5d4e7f9a0b1c2d3e4f5a6b', 'hex');
  *
  * **A key that is a UUID is the id** — `raise()`'s outbox keys are, which is row (3)'s *the record adopts the key*.
  * **A key that is not one is named into one**: a notice delivered from its producer's own event carries that store's
- * natural key (`identity.email_verification.requested:<account>:<expiry>`), and the column is a `uuid`. The name
+ * natural key (`identity.email_verification.requested/<account>/<expiry>`), and the column is a `uuid`. The name
  * is hashed the way RFC 9562's version 5 hashes it — SHA-1 over namespace and name, the version and variant bits
  * set — so the same key always answers the same id, which is what lets a redelivered job find its notice and send
  * nothing twice.

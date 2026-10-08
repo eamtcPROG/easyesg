@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { QueryRunner } from 'typeorm';
 import { requestContext } from '../persistence/request-context';
+import { assertQueueableKey } from './queueable-key';
 
 /**
  * Writes an outbox row **on the caller's QueryRunner**, which is the entire point (P-8, AD-6).
@@ -27,6 +28,10 @@ export interface OutboxEvent {
    * business action produce the same key and the second is discarded rather than duplicated.
    * Defaulting to a random value is correct only when the caller has nothing better: it makes the
    * row unique but deduplicates nothing.
+   *
+   * **It becomes the queue's job id**, so it may not be empty, hold a `:` or be a bare number — both writers refuse
+   * one (`queueable-key.ts`), and so does the table. Separate a natural key's parts with `/`, and name a number's
+   * kind beside it: `invoice/2026-0001`, never `20260001`.
    */
   idempotencyKey?: string;
 }
@@ -39,6 +44,8 @@ export async function writeOutboxEvent(
     event.organizationId === undefined ? (requestContext()?.organizationId ?? null) : event.organizationId;
 
   const idempotencyKey = event.idempotencyKey ?? randomUUID();
+  // Refused where the key is made, so the producer's own transaction fails rather than a dispatcher batch (task 206).
+  assertQueueableKey(idempotencyKey);
 
   // No `RETURNING`, deliberately. **RETURNING requires SELECT privilege on the columns it names**,
   // and `esg_app` holds INSERT alone — which is the grant that stands in for row-level security on
@@ -69,11 +76,8 @@ export async function writeOutboxEventOnce(
   queryRunner: QueryRunner,
   event: OutboxEvent & { readonly idempotencyKey: string },
 ): Promise<boolean> {
-  // The key becomes the BullMQ job id, and BullMQ refuses a `:` in one but in its three-part legacy form — refused
-  // at the dispatcher, where the whole batch fails with it. Refused here instead, where the key is made (task 51.2).
-  if (event.idempotencyKey.includes(':')) {
-    throw new Error(`An outbox key may not contain ':' — it becomes a queue job id: ${event.idempotencyKey}`);
-  }
+  // As `writeOutboxEvent` refuses it, and for its reason (task 51.2 refused the colon here first; task 206).
+  assertQueueableKey(event.idempotencyKey);
   const organizationId =
     event.organizationId === undefined ? (requestContext()?.organizationId ?? null) : event.organizationId;
   const written = (await queryRunner.query(

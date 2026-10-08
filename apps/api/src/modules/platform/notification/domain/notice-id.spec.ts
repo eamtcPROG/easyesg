@@ -2,7 +2,7 @@ import { noticeIdFor } from './notice-id';
 
 /** A notice's id from its issuance's key (task 50.1.4). */
 describe('noticeIdFor (task 50.1.4)', () => {
-  const natural = 'identity.email_verification.requested:0192f000-0000-7000-8000-000000000001:1790726400000';
+  const natural = 'identity.email_verification.requested/0192f000-0000-7000-8000-000000000001/1790726400000';
 
   it('adopts a key that is already a UUID', () => {
     expect(noticeIdFor('0192F000-0000-7000-8000-00000000000A')).toBe('0192f000-0000-7000-8000-00000000000a');

@@ -8,7 +8,7 @@ import { VerificationEmailHandler } from './verification-email.handler';
  * kept in the clear. `registration.e2e-spec.ts` drives it over a real outbox row and the real delivery.
  */
 describe('VerificationEmailHandler (task 50.1.4)', () => {
-  const context = { jobId: 'identity.email_verification.requested:account-1:1790726400000' } as JobContext;
+  const context = { jobId: 'identity.email_verification.requested/account-1/1790726400000' } as JobContext;
   const payload = {
     accountId: 'account-1',
     email: 'ana@example.md',

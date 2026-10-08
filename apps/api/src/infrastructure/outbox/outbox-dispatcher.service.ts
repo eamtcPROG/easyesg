@@ -2,14 +2,10 @@ import { Injectable, Logger, type OnApplicationShutdown, type OnModuleInit } fro
 import { InjectQueue } from '@nestjs/bullmq';
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { Queue } from 'bullmq';
-import type { DataSource } from 'typeorm';
+import type { DataSource, QueryRunner } from 'typeorm';
 import { CORE_DATA_SOURCE } from '../persistence/data-source';
 import { OUTBOX_QUEUE } from '../queue/queue.constants';
-import {
-  DISPATCH_BATCH_SIZE,
-  DISPATCH_INTERVAL_MS,
-  MAX_DISPATCH_ATTEMPTS,
-} from './outbox.constants';
+import { DISPATCH_BATCH_SIZE, DISPATCH_INTERVAL_MS, MAX_DISPATCH_ATTEMPTS } from './outbox.constants';
 
 interface PendingEvent {
   id: string;
@@ -39,6 +35,12 @@ interface PendingEvent {
  *
  * `SKIP LOCKED` is what lets more than one worker run: each claims a disjoint batch instead of
  * queueing behind the same rows.
+ *
+ * **A row the queue refuses is charged alone, and the rest of its batch is dispatched** (task 206; §12.5.6's task-206
+ * row (4)). Until then one refused `add` failed the batch and every row in it wore the attempt, so a row that could
+ * never be enqueued took its neighbours past `MAX_DISPATCH_ATTEMPTS` with it. A Redis outage does not take this path:
+ * the connection's `maxRetriesPerRequest: null` makes `add` wait for Redis rather than throw, so a throw is the queue
+ * refusing that job.
  */
 /**
  * NFR-107's bounded retry, as job options (task 51.4; §12.5.6's task-51.4 row).
@@ -129,61 +131,68 @@ export class OutboxDispatcher implements OnModuleInit, OnApplicationShutdown {
         return 0;
       }
 
+      const enqueued: string[] = [];
       for (const event of pending) {
-        await this.queue.add(
-          event.event_type,
-          // The organization travels with the job: §7.6 has the worker set tenant context from the
-          // job payload's organization, since a consumer has no request to read it from. So does the
-          // row's own time (task 50.1.3): when the transaction behind the job began, on the database's
-          // clock, in epoch microseconds — which a consumer needs to order two jobs that parallel
-          // workers may take in either order (§12.5.6's task-50.1 row (12)), and which milliseconds
-          // would tie inside one millisecond.
-          {
-            ...event.payload,
-            organizationId: event.organization_id,
-            occurredAtMicros: Number(event.occurred_micros),
-          },
-          { jobId: event.idempotency_key, ...DELIVERY_RETRY },
+        try {
+          await this.enqueue(event);
+          enqueued.push(event.id);
+        } catch (refusal) {
+          await this.chargeRefusal({ queryRunner, event, refusal });
+        }
+      }
+
+      if (enqueued.length > 0) {
+        await queryRunner.query(
+          `UPDATE audit.outbox_event SET dispatched_at = now() WHERE id = ANY($1::uuid[])`,
+          [enqueued],
         );
       }
 
-      await queryRunner.query(
-        `UPDATE audit.outbox_event SET dispatched_at = now() WHERE id = ANY($1::uuid[])`,
-        [pending.map((event) => event.id)],
-      );
-
       await queryRunner.commitTransaction();
-      return pending.length;
+      return enqueued.length;
     } catch (error) {
+      // Nothing is charged here: a failure outside the enqueue is the database's, not any row's, and every row
+      // claimed returns to pending to be re-emitted on the next pass, which the job id deduplicates.
       await queryRunner.rollbackTransaction();
-      await this.recordFailure(error);
       throw error;
     } finally {
       await queryRunner.release();
     }
   }
 
+  private async enqueue(event: PendingEvent): Promise<void> {
+    await this.queue.add(
+      event.event_type,
+      // The organization travels with the job: §7.6 has the worker set tenant context from the
+      // job payload's organization, since a consumer has no request to read it from. So does the
+      // row's own time (task 50.1.3): when the transaction behind the job began, on the database's
+      // clock, in epoch microseconds — which a consumer needs to order two jobs that parallel
+      // workers may take in either order (§12.5.6's task-50.1 row (12)), and which milliseconds
+      // would tie inside one millisecond.
+      {
+        ...event.payload,
+        organizationId: event.organization_id,
+        occurredAtMicros: Number(event.occurred_micros),
+      },
+      { jobId: event.idempotency_key, ...DELIVERY_RETRY },
+    );
+  }
+
   /**
-   * Counts the attempt in a **separate** transaction, because the one that failed has been rolled
-   * back and would discard the count with everything else. Without it a permanently failing row
-   * retries forever at one second, and `MAX_DISPATCH_ATTEMPTS` never arrives.
-   *
-   * It is deliberately coarse: the batch failed, so every row in it wears the attempt. Attributing
-   * the failure to the one row that caused it would mean dispatching one at a time.
+   * Counts the refused row's attempt **in the claiming transaction**, which commits with the rows the queue took, and
+   * leaves it pending — so it retries alone, and after `MAX_DISPATCH_ATTEMPTS` stops, with `last_error` saying why,
+   * rather than retrying for ever at one second behind every healthy row.
    */
-  private async recordFailure(error: unknown): Promise<void> {
-    const message = error instanceof Error ? error.message : String(error);
-    try {
-      await this.dataSource.query(
-        `UPDATE audit.outbox_event
-            SET attempts = attempts + 1, last_error = $1
-          WHERE id IN (SELECT id FROM audit.outbox_event
-                        WHERE dispatched_at IS NULL AND attempts < $2
-                        ORDER BY occurred_at LIMIT $3)`,
-        [message.slice(0, 1000), MAX_DISPATCH_ATTEMPTS, DISPATCH_BATCH_SIZE],
-      );
-    } catch (bookkeepingError) {
-      this.logger.error('Could not record an outbox failure', bookkeepingError as Error);
-    }
+  private async chargeRefusal(input: {
+    readonly queryRunner: QueryRunner;
+    readonly event: PendingEvent;
+    readonly refusal: unknown;
+  }): Promise<void> {
+    const message = input.refusal instanceof Error ? input.refusal.message : String(input.refusal);
+    this.logger.warn(`${input.event.event_type} ${input.event.idempotency_key} was not enqueued: ${message}`);
+    await input.queryRunner.query(
+      `UPDATE audit.outbox_event SET attempts = attempts + 1, last_error = $2 WHERE id = $1`,
+      [input.event.id, message.slice(0, 1000)],
+    );
   }
 }

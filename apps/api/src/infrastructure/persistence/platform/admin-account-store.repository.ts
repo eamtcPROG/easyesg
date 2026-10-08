@@ -292,7 +292,7 @@ class AdminAccountTransactionAdapter implements AdminAccountTransaction {
       // A platform event, bound to no organization — and the key carries the expiry, so a resend is new
       // work to the queue rather than a duplicate of the issue it replaced.
       organizationId: null,
-      idempotencyKey: `${ADMIN_INVITATION_ISSUED}:${input.event.invitationId}:${input.expiresAt.getTime()}`,
+      idempotencyKey: `${ADMIN_INVITATION_ISSUED}/${input.event.invitationId}/${input.expiresAt.getTime()}`,
     });
   }
 }

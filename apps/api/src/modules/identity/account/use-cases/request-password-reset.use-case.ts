@@ -109,7 +109,7 @@ export class RequestPasswordReset {
       payload: { ...payload },
       // The verification flow's natural key, for the same two-directional reason: a re-emitted
       // row after a dispatcher crash dedupes, a genuine reissue has a later expiry and sends.
-      idempotencyKey: `${PASSWORD_RESET_REQUESTED}:${recipient.accountId}:${token.expiresAt.getTime()}`,
+      idempotencyKey: `${PASSWORD_RESET_REQUESTED}/${recipient.accountId}/${token.expiresAt.getTime()}`,
     });
   }
 }

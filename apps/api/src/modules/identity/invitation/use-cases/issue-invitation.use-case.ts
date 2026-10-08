@@ -187,6 +187,6 @@ export async function emitInvitationEmail(
     // key, which is the behaviour that matters in both directions. It is the same construction
     // `issueVerificationChallenge` uses, and it works here for the same reason: the expiry moves
     // with every issuance and with nothing else.
-    idempotencyKey: `${INVITATION_ISSUED}:${invitation.id}:${invitation.expiresAt.getTime()}`,
+    idempotencyKey: `${INVITATION_ISSUED}/${invitation.id}/${invitation.expiresAt.getTime()}`,
   });
 }

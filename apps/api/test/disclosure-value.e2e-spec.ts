@@ -43,6 +43,12 @@ import {
 
 const ORG = '01930000-0000-7000-8000-0000000000d1';
 const OTHER_ORG = '01930000-0000-7000-8000-0000000000d2';
+/**
+ * The cascade case's own organization, locked and then deleted. Its lock writes withdrawals the deletion does not take —
+ * the outbox carries no foreign key — so `afterAll` cleans it with the other two (task 206, found when the outbox suite
+ * drew the order that ran it after this one).
+ */
+const CASCADE_ORG = '01930000-0000-7000-8000-0000000000d3';
 
 /**
  * Every address this suite registers, including the one created inside a test.
@@ -211,7 +217,7 @@ describe('the disclosure value store (task 34.1)', () => {
   }, 60_000);
 
   afterAll(async () => {
-    await deleteNoticeWithdrawalsOf({ owner, organizationIds: [ORG, OTHER_ORG] });
+    await deleteNoticeWithdrawalsOf({ owner, organizationIds: [ORG, OTHER_ORG, CASCADE_ORG] });
     for (const org of [ORG, OTHER_ORG]) {
       await asOrganization(owner, org, (run) =>
         run(`DELETE FROM core.organization WHERE id = $1`, [org]),
@@ -716,7 +722,7 @@ describe('the disclosure value store (task 34.1)', () => {
       // would be closed by breaking something worse and nothing here would have noticed.
       //
       // Its own organization, locked, then deleted at the root of the chain.
-      const org = '01930000-0000-7000-8000-0000000000d3';
+      const org = CASCADE_ORG;
       await asOrganization(owner, org, (run) =>
         run(`DELETE FROM core.organization WHERE id = $1`, [org]),
       );

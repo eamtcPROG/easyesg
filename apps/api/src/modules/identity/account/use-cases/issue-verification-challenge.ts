@@ -50,6 +50,6 @@ export async function issueVerificationChallenge(
     // dispatcher crash carries the same key and is discarded by the queue rather than sending a
     // second email — while a genuine reissue (OQ-55) has a later expiry and is therefore a
     // different key, which is the behaviour that matters in both directions.
-    idempotencyKey: `${EMAIL_VERIFICATION_REQUESTED}:${account.id}:${token.expiresAt.getTime()}`,
+    idempotencyKey: `${EMAIL_VERIFICATION_REQUESTED}/${account.id}/${token.expiresAt.getTime()}`,
   });
 }

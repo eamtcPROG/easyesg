@@ -2,6 +2,7 @@ import { Queue } from 'bullmq';
 import { DataSource, QueryRunner } from 'typeorm';
 import { OutboxDispatcher } from '../src/infrastructure/outbox/outbox-dispatcher.service';
 import { writeOutboxEvent } from '../src/infrastructure/outbox/outbox-writer';
+import { isQueueableKey } from '../src/infrastructure/outbox/queueable-key';
 import { OUTBOX_QUEUE } from '../src/infrastructure/queue/queue.constants';
 
 /**
@@ -63,12 +64,31 @@ const connect = async (userKey: string, passwordKey: string, applicationName: st
   return dataSource;
 };
 
-/** Records what was enqueued and then fails, which is the crash window this suite exists for. */
-const failingQueue = (recorded: string[]) =>
+/**
+ * A connection whose mark fails — the statement after the enqueue — which is the crash window this suite exists for:
+ * the job has reached the queue and the transaction has not committed. The dispatcher reads nothing else from its
+ * `DataSource`, so this is the whole of what it is handed.
+ */
+const crashingAtMark = (dataSource: DataSource): DataSource =>
+  ({
+    createQueryRunner: () => {
+      const runner = dataSource.createQueryRunner();
+      const query = runner.query.bind(runner);
+      runner.query = ((sql: string, parameters?: unknown[]) =>
+        sql.includes('SET dispatched_at')
+          ? Promise.reject(new Error('the worker died before its commit'))
+          : query(sql, parameters)) as QueryRunner['query'];
+      return runner;
+    },
+  }) as unknown as DataSource;
+
+/** Refuses one job id, as BullMQ refuses a key it cannot take, and records and takes every other. */
+const refusingQueue = (refused: string, recorded: string[]) =>
   ({
     add: (name: string, _data: unknown, options: { jobId: string }) => {
-      recorded.push(options.jobId);
-      return Promise.reject(new Error('redis went away mid-dispatch'));
+      if (options.jobId === refused) return Promise.reject(new Error('Custom Id cannot contain :'));
+      recorded.push(`${name}:${options.jobId}`);
+      return Promise.resolve({ id: options.jobId });
     },
   }) as unknown as Queue;
 
@@ -293,16 +313,14 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
     it('leaves the row pending when the dispatch fails after enqueueing', async () => {
       await seed('export-crash');
       const reached: string[] = [];
-      const dispatcher = new OutboxDispatcher(owner, failingQueue(reached));
+      const dispatcher = new OutboxDispatcher(crashingAtMark(owner), recordingQueue(reached));
 
-      await expect(dispatcher.dispatchBatch()).rejects.toThrow(/redis went away/);
+      await expect(dispatcher.dispatchBatch()).rejects.toThrow(/died before its commit/);
 
-      expect(reached).toEqual(['export-crash']);
-      const rows = await pending();
-      expect(rows.map((r) => r.idempotency_key)).toEqual(['export-crash']);
-      // The attempt is counted in its own transaction — the failed one was rolled back and would
-      // have discarded the count with everything else, so MAX_DISPATCH_ATTEMPTS would never arrive.
-      expect(rows[0].attempts).toBe(1);
+      expect(reached).toEqual(['report.export.requested:export-crash']);
+      // Pending, and charged nothing (task 206): the failure was after the enqueue, so it is no row's, and the next
+      // pass re-emits the row under the same job id — which the case below shows the queue discarding.
+      expect(await pending()).toEqual([{ idempotency_key: 'export-crash', attempts: 0 }]);
     });
 
     it('re-emits it on the next pass, and the queue discards the duplicate', async () => {
@@ -314,8 +332,9 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
       const dispatcher = new OutboxDispatcher(owner, queue);
       expect(await dispatcher.dispatchBatch()).toBe(1);
 
-      // Put it back as though the commit had never happened, then dispatch again.
-      await owner.query(`UPDATE audit.outbox_event SET dispatched_at = NULL`);
+      // Put it back as though the commit had never happened, then dispatch again. Scoped like the cleanup above
+      // (task 206): unscoped, this reopened every row other suites had left dispatched in a long-lived test stack.
+      await owner.query(`UPDATE audit.outbox_event SET dispatched_at = NULL WHERE organization_id = $1`, [ORGANIZATION]);
       expect(await dispatcher.dispatchBatch()).toBe(1);
 
       const counts = await queue.getJobCounts('waiting', 'delayed', 'active');
@@ -324,13 +343,100 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
 
     it('stops retrying a row that has exhausted its attempts, rather than blocking the queue', async () => {
       await seed('poisonous');
-      await owner.query(`UPDATE audit.outbox_event SET attempts = 10`);
+      await owner.query(`UPDATE audit.outbox_event SET attempts = 10 WHERE organization_id = $1`, [ORGANIZATION]);
 
       const dispatcher = new OutboxDispatcher(owner, recordingQueue([]));
       expect(await dispatcher.dispatchBatch()).toBe(0);
       // Still pending and still visible: NFR-71 wants a tracked exception with an owner, not a row
       // that quietly disappears or one that retries for ever behind every healthy job.
       expect((await pending()).map((r) => r.idempotency_key)).toEqual(['poisonous']);
+    });
+
+    /**
+     * Task 206 (§12.5.6's task-206 row (4)). One refused row failed the whole batch until then, and every row in it wore
+     * the attempt, so after ten passes its neighbours stopped being retried too — an unrelated notice dropped for
+     * sharing a batch. Removing the per-row catch fails this case three ways: the batch rejects, nothing is
+     * dispatched, and both neighbours are charged.
+     */
+    it('charges the row the queue refuses, alone, and dispatches the rest of its batch', async () => {
+      await seed('export-before');
+      await seed('export-refused');
+      await seed('export-after');
+      const recorded: string[] = [];
+
+      expect(await new OutboxDispatcher(owner, refusingQueue('export-refused', recorded)).dispatchBatch()).toBe(2);
+
+      expect(recorded).toEqual(['report.export.requested:export-before', 'report.export.requested:export-after']);
+      expect(await pending()).toEqual([{ idempotency_key: 'export-refused', attempts: 1 }]);
+      const [refused] = await owner.query<{ last_error: string }[]>(
+        `SELECT last_error FROM audit.outbox_event WHERE idempotency_key = 'export-refused'`,
+      );
+      expect(refused.last_error).toBe('Custom Id cannot contain :');
+    });
+  });
+
+  /**
+   * The key rule's two copies, held to each other and to the queue (task 206; §12.5.6's task-206 row (2)). The writers
+   * ask `isQueueableKey`; the table asks `outbox_event_key_queueable`; BullMQ is what both stand in front of. Each key
+   * below runs through all three, so a copy edited alone, or a BullMQ release that stops taking a key the rule admits,
+   * fails here rather than at a dispatcher on a weekend.
+   */
+  describe('a key the queue will take (task 206)', () => {
+    const KEYS = [
+      'identity.email_verification.requested/0192f000-0000-7000-8000-000000000001/1790726400000',
+      'validation.report_notice_sweep/2026-10-09',
+      '0192f000-0000-7000-8000-000000000001',
+      'invoice/0042',
+      'identity.invitation.issued:invitation-1:1790726400000',
+      'validation.report_notice_sweep:2026-10-09',
+      '42',
+      '-42',
+      '0042',
+      '',
+    ];
+
+    /** Inserted past the writers, which would refuse first, inside a transaction that is always rolled back. */
+    const tableTakes = async (key: string): Promise<boolean> => {
+      const runner = owner.createQueryRunner();
+      await runner.connect();
+      await runner.startTransaction();
+      try {
+        await runner.query(
+          `INSERT INTO audit.outbox_event (organization_id, event_type, idempotency_key)
+           VALUES ($1, 'report.export.requested', $2)`,
+          [ORGANIZATION, key],
+        );
+        return true;
+      } catch (error) {
+        // Only this constraint counts as a refusal; any other failure is the test's and is thrown.
+        if (error instanceof Error && error.message.includes('outbox_event_key_queueable')) return false;
+        throw error;
+      } finally {
+        await runner.rollbackTransaction();
+        await runner.release();
+      }
+    };
+
+    it('is refused by the table exactly where the writers refuse it', async () => {
+      const verdicts: Record<string, { writers: boolean; table: boolean }> = {};
+      for (const key of KEYS) verdicts[key] = { writers: isQueueableKey(key), table: await tableTakes(key) };
+
+      for (const [key, { writers, table }] of Object.entries(verdicts)) expect({ key, table }).toEqual({ key, table: writers });
+      // Both outcomes occur, or agreement would prove nothing.
+      expect(new Set(Object.values(verdicts).map(({ writers }) => writers))).toEqual(new Set([true, false]));
+    });
+
+    /**
+     * A real queue, because which ids BullMQ takes is its behaviour, not a stub's. "Takes" means the job exists under
+     * the key itself: an empty id is not refused but replaced by a counter, which is the deduplication lost.
+     */
+    it('is one every key the rule admits is taken under, by the queue', async () => {
+      const admitted = KEYS.filter(isQueueableKey);
+      expect(admitted.length).toBeGreaterThan(0);
+      for (const key of admitted) {
+        const job = await queue.add('report.export.requested', {}, { jobId: key });
+        expect({ key, id: job.id }).toEqual({ key, id: key });
+      }
     });
   });
 

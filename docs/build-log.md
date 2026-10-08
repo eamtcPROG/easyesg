@@ -29031,3 +29031,120 @@ All four sub-steps are done. The row moved into `archived_tasks.md` under Phase 
   - 42.2 words S-08's platform run;
   - 200, 163 and 65.1 take the scheduler;
   - the new outbox-key task decides the identity keys.
+
+## Task 206 — An outbox key the queue will take, and a refused row charged alone · 2026-10-08
+
+Task 51.2 found that BullMQ 6.0.9 refuses a job id holding a `:` unless it splits into exactly three parts, and fixed
+only its own keys. Two latent faults were left:
+- **four identity producers** — verification, a password reset, an invitation and an operator's invitation — wrote
+  `<event>:<id>:<expiry>` and passed only by that three-part exception, which BullMQ's own source marks for removal in
+  its next breaking release. A major bump would have stopped every one of those emails with every gate green;
+- **the dispatcher failed a whole batch on one refused row** and charged the attempt to every row in it, so after ten
+  passes an unrelated notice sharing the batch was never retried.
+
+Now the four keys are spelled with `/`; both writers and the table refuse a key the queue cannot take; and the
+dispatcher charges the refused row alone and dispatches the rest.
+
+### Decided before building
+
+Two batches, in §12.5.6's task-206 row: three questions, then the one the owner's CHECK raised. Every answer was the
+recommended option but (2)'s.
+- **(1) The four keys take `/`**, 51.2's separator. Safe for rows in flight, checked rather than assumed: the
+  dispatcher reads each row's stored key back, a queued job keeps its id, each key is one issuance (it carries the
+  token's expiry), and nothing cancels a notice by these keys. *Declined:* keeping the colons; a random key.
+- **(2) Both writers and the database refuse** (the owner's choice over the recommended writers-only). One predicate,
+  `queueable-key.ts`, and `outbox_event_key_queueable` restating it.
+- **(3) Existing colon keys are rewritten to `/`, then the CHECK is validated.** A `NOT VALID` constraint still checks
+  every `UPDATE`, so a pending colon row would have failed the dispatcher's mark and wedged its batch.
+- **(4) The refused row is charged alone, in the claiming transaction**, and the batch-wide `recordFailure` is gone.
+- **Derived from the sources:**
+  - the email channel's `<notice>:<recipient>` key is an SMTP header, not a job id, and is unchanged;
+  - a row past `MAX_DISPATCH_ATTEMPTS` is still read by nobody — NFR-71's owner is operations', not this row's;
+  - **an empty key is refused with the other two** (row (c)). Found reading BullMQ's `addStandardJob`: an empty job id
+    is replaced by a counter and the duplicate check is skipped, so a re-emitted row would run twice. Measured too — a
+    mutation admitting it got the job id `"5"` back from a real queue.
+
+### The calls taken in the build, and why each holds
+
+- **The predicate is stricter than BullMQ on purpose.** It refuses any run of digits, leading zeros included, where
+  BullMQ refuses only what `parseInt` round-trips. The rule is one a reader can hold, and a natural key that is a bare
+  number should name its kind (`invoice/0042`).
+- **A Redis outage does not reach the per-row charge.** The connection's `maxRetriesPerRequest: null` makes `add` wait
+  for Redis rather than throw, so a throw is the queue refusing that job. That is what makes charging per row honest
+  rather than a way to spread an outage's cost over every row.
+- **A failure outside the enqueue charges nothing.** Every claimed row returns to pending and is re-emitted under the
+  same job id. The batch-wide charge existed so a permanently failing row would stop; once a failing row is charged
+  alone, the only rows it could still reach are ones a database failure caught.
+- **T-5's crash case needed a new double.** It simulated the crash as a throwing `add`, which is now a refusal and is
+  charged. `crashingAtMark` fails the statement after the enqueue instead, which is the window the case is about, and
+  the row is asserted pending with **no** attempt charged.
+- **Two copies of one rule, held together by a case.** `outbox.e2e-spec.ts` runs ten keys through the predicate and
+  through an insert past the writers, and requires the same verdict. It enqueues every key the predicate admits on a
+  real queue and requires the job to exist under the key itself.
+
+### Found in passing
+
+- **`disclosure-value.e2e-spec.ts` left a lock's withdrawals behind** (51.2's cleanup, incomplete). Its cascade case
+  creates organization `…d3`, locks a period and deletes the organization. The outbox has no foreign key, so four
+  `platform.notification.cancelled` rows outlived it, and `afterAll` cleaned only `ORG` and `OTHER_ORG`. It surfaced
+  now only because jest's order is not fixed: the first full run put the outbox suite after it, and the outbox suite's
+  stray check failed all 12 of its cases on those rows. `CASCADE_ORG` is cleaned with the other two, and the failing
+  order was reproduced and passes: disclosure-value alone left 0 pending rows, then the outbox suite ran.
+- **The outbox suite reopened other suites' rows.** Two cases wrote with no `WHERE`: *re-emits* set
+  `dispatched_at = NULL` and *poisonous* set `attempts = 10`, across the whole table. On a long-lived test stack that
+  revived 51.2's sweep row from 15:55 UTC: first re-dispatched beside the suite's own row (one failure), then reopened
+  at ten attempts, where nothing would claim it, as a permanent stray (five failures on the next run). Both writes are
+  scoped to the suite's organization now, the 27 Aug fix to the same file's `DELETE` carried to its two `UPDATE`s. The
+  stale row went with `pnpm test:down`, the documented remedy, and two back-to-back runs then passed 12 of 12. CI never
+  sees either: its database is fresh.
+- **The unit suite printed "A worker process has failed to exit gracefully".** It does not come from the specs this task
+  added, which are pure and start no timer; recorded, not chased.
+
+### Searched for the shape
+
+- **Every `idempotencyKey`** in `apps/api/src`: the four keys changed; the ticker and the sweep fan-out already used
+  `/`; `raise()` and `cancel()` take a random key and carry the subject in the payload; the email channel's
+  `<notice>:<recipient>` is a header (row (a)).
+- **Every `INSERT INTO audit.outbox_event`** outside the writer: none in `src`, so the writers are the only producers
+  and the CHECK guards the rest.
+- **Every `jobId`** passed to BullMQ: the dispatcher's alone.
+- **Every test input spelling the old form**: the register spec's key pin, the address-notices e2e's five keys, the
+  verification-handler, link-notice and sweep-handler specs, and `noticeIdFor`'s example — all moved to `/`.
+  `noticeIdFor`'s namespace pin uses `'a'` and was untouched.
+- **Every locking suite's organizations against its withdrawal cleanup**: only disclosure-value's `…d3` was missing;
+  the other ids that appear in `periods` and `reports` are entities, periods and reports.
+
+### Proven to bite
+
+Each mutation was restored afterwards, and each file was compared byte for byte with its backup.
+- **`assertQueueableKey` removed from `writeOutboxEvent`:** the writer spec red on the colon and the empty key.
+- **The predicate admitting an empty key:** its spec red; the table-agreement case red; the queue case red, with
+  BullMQ answering the job id `"5"`.
+- **The dispatcher rethrowing instead of charging:** the refused-row case red.
+- **The data step made a no-op:** its case red.
+
+### Skills read against the diff
+
+`nestjs-best-practices`: `error-handle-async-errors` met (the per-row catch logs at `warn` and records `last_error`;
+`tick` still never rethrows); `db-use-transactions` met (the charge and the mark commit together);
+`error-throw-http-exceptions` declined as the root file declines it — a bad key is a programming defect in
+infrastructure, so `assertQueueableKey` throws a plain `Error`. `one-idea-per-file`: the predicate is pure, so it is
+its own file with its spec beside it (`pure-logic-leaves-the-component`), and the dispatcher's enqueue and its charge
+are private methods of one behaviour (`file-one-behaviour-api`).
+
+### Gates
+
+The change reaches `apps/api` only — a migration, the outbox writer, the worker's dispatcher and four producers — so
+its row ran, one suite at a time, with no dev server running.
+- `pnpm lint`; `pnpm --filter @easyesg/api typecheck`.
+- `pnpm --filter @easyesg/api test`: 243 suites, 2,010 tests.
+- `pnpm migrations:check`: applied, reverted and re-applied on the test stack; applied on the dev stack, whose colon
+  keys were rewritten and the CHECK validated; 61 invariant cases on each.
+- `pnpm e2e`: 66 suites, 1,644 tests, on the second run. The first failed only `outbox.e2e-spec.ts`, all 12 of its cases on
+  the stray precondition (*Found in passing*). The servers logged five `WARN`s, each a case's own subject — two suppressed
+  addresses, a hard bounce, a recipient with no account, and the refused key — and no unhandled rejection.
+- `pnpm e2e:worker`: 13 of 13, with nothing logged at `error` and no *Outbox dispatch failed*.
+- `pnpm docs:check`: 48 claims. It found the five counts the row's move changed.
+- **Not run:** `openapi:check` (no controller or DTO changed); the browser suite, which is not in `apps/api`'s row
+  and reads verification tokens from the outbox by event type, never by key; and `gates:clean` with the review
+  agents, which wait for Stage 2's end. Task 206 is not its last row.

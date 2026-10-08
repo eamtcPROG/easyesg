@@ -89,7 +89,7 @@ describe('RegisterAccount (UC-01, FR-1)', () => {
     it('carries a natural idempotency key, so a redelivered job sends one email', async () => {
       const account = await register();
       expect(store.effects[0].idempotencyKey).toBe(
-        `${EMAIL_VERIFICATION_REQUESTED}:${account.id}:${store.tokens[0].expiresAt.getTime()}`,
+        `${EMAIL_VERIFICATION_REQUESTED}/${account.id}/${store.tokens[0].expiresAt.getTime()}`,
       );
     });
 
