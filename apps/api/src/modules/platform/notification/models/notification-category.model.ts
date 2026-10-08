@@ -45,4 +45,23 @@ export interface NotificationCategoryBehaviour {
   /** Never empty and never repeating: a category that travels nowhere is not a notice. */
   readonly channels: readonly NotificationChannel[];
   readonly classification: NotificationClassification;
+  /**
+   * FR-164's repeat interval, in days — only on the category whose cadence is `repeat_interval` (task 51.2;
+   * `CADENCE_OF_CATEGORY`).
+   */
+  readonly repeatIntervalDays?: number;
+  /**
+   * FR-165's lead times, in days before a due date, each its own notice — only on the category whose cadence is
+   * `lead_times`. Held longest first, the order a countdown runs in.
+   */
+  readonly leadTimesDays?: readonly number[];
 }
+
+/**
+ * The longest a cadence may run, in days: a year. A repeat or a lead time beyond it would outlast the reporting period it
+ * is about, so a value past it is a typing slip, refused at the console and by the reader alike.
+ */
+export const CADENCE_MAX_DAYS = 365;
+
+/** At most as many lead times as a countdown can usefully hold — one a week for a quarter. */
+export const CADENCE_MAX_LEAD_TIMES = 12;

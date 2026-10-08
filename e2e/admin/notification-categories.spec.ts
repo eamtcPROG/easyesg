@@ -27,24 +27,30 @@ const OPERATOR = `${RUN_PREFIX}-pa@easyesg.md`;
 const PASSWORD = 'Parola123!';
 const TOTP_SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
 const REMINDER = 'reporting.manual_reminder';
+/** FR-164's notice (task 51.2), the category whose repeat interval the second journey edits. */
+const OUTSTANDING = 'reporting.outstanding_report';
+const CADENCE_OPERATOR = `${RUN_PREFIX}-cadence@easyesg.md`;
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 /** The developer's own reminder settings, put back after the suite (task 172); each case still starts from the seed. */
 let reminderSlot: SlotSnapshot | undefined;
+let outstandingSlot: SlotSnapshot | undefined;
 
 test.beforeAll(async () => {
   reminderSlot = await snapshotNotificationCategory(REMINDER);
+  outstandingSlot = await snapshotNotificationCategory(OUTSTANDING);
 });
 
 test.afterAll(async () => {
   if (reminderSlot !== undefined) await restoreSlot(reminderSlot);
+  if (outstandingSlot !== undefined) await restoreSlot(outstandingSlot);
   await cleanupOperators(RUN_PREFIX);
 });
 
 /** UC-68 through A-01's two steps. */
-async function signIn(page: Page): Promise<void> {
+async function signIn(page: Page, operator = OPERATOR): Promise<void> {
   await page.goto('/sign-in');
-  await page.getByLabel('Adresa de e-mail').fill(OPERATOR);
+  await page.getByLabel('Adresa de e-mail').fill(operator);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Continuați' }).click();
   await page.getByLabel('Cod de verificare').fill(currentTotpCode(TOTP_SECRET));
@@ -136,4 +142,52 @@ test('an operator stops the reminder travelling in-app past a disclosure, and re
   await expect(mine.filter({ hasText: 'A readus setările anterioare ale unei categorii de notificări' })).toContainText(
     'Mementouri',
   );
+});
+
+/**
+ * FR-173 AC-11 (task 51.2): a repeat interval is edited and published as configuration, with no release — the field the
+ * record offers only on the category that keeps one, the disclosure naming *when* recipients will hear, and the revert
+ * restoring the interval as well as the channels.
+ */
+test('an operator makes the outstanding-report notice repeat fortnightly past a disclosure, and reverts it', async ({ page }) => {
+  await restoreNotificationCategorySeed(OUTSTANDING);
+  provisionOperator({
+    email: CADENCE_OPERATOR,
+    password: PASSWORD,
+    totpSecret: TOTP_SECRET,
+    role: OPERATOR_ROLE.PLATFORM_ADMINISTRATOR,
+  });
+  await signIn(page, CADENCE_OPERATOR);
+  await page
+    .getByRole('navigation', { name: 'Secțiunile consolei' })
+    .getByRole('link', { name: 'Categorii de notificări' })
+    .click();
+  await page.waitForURL('**/notification-templates');
+
+  await page.getByRole('button', { name: 'Editați Câmpuri de completat', exact: true }).click();
+  const record = page.getByRole('dialog', { name: 'Câmpuri de completat', exact: true });
+  await expect(record.getByText('La fiecare 7 zile, cât timp raportul are câmpuri de completat')).toBeVisible();
+  const interval = record.getByLabel('Se repetă la fiecare (zile)');
+  await expect(interval).toHaveValue('7');
+  // Only the category that repeats offers the interval; it has no lead times to edit.
+  await expect(record.getByLabel('Zile înainte de termen')).toHaveCount(0);
+  await expectNoAxeViolations(page);
+
+  await interval.fill('14');
+  await record.getByRole('button', { name: 'Previzualizați și publicați' }).click();
+  const publish = page.getByRole('alertdialog');
+  await expect(publish.getByText(/notificarea se va repeta la fiecare 14 zile\./u)).toBeVisible();
+  await publish.getByRole('button', { name: 'Publicați', exact: true }).click();
+  await expect(record.getByText('La fiecare 14 zile, cât timp raportul are câmpuri de completat')).toBeVisible();
+
+  await page
+    .getByRole('status')
+    .filter({ hasText: 'Setările sunt în vigoare' })
+    .getByRole('button', { name: 'Reveniți la setările anterioare' })
+    .click();
+  const revert = page.getByRole('alertdialog');
+  await expect(revert.getByText(/notificarea se va repeta la fiecare 7 zile\./u)).toBeVisible();
+  await revert.getByRole('button', { name: 'Reveniți', exact: true }).click();
+  await expect(record.getByText('La fiecare 7 zile, cât timp raportul are câmpuri de completat')).toBeVisible();
+  await expect(interval).toHaveValue('7');
 });

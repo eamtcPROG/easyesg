@@ -40,6 +40,8 @@ import {
   unsubscribeTokens,
 } from './support/notification-store';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { DisclosureLabelService } from '../src/modules/platform/localization/services/disclosure-label.service';
+import { NoticeParamsService } from '../src/modules/platform/notification/services/notice-params.service';
 
 /**
  * A factor set validated at publication, and FR-166's factor notice when one is replaced — on the stack (tasks 37.3,
@@ -344,7 +346,11 @@ describe('the factor set at publication and its replacement notice (tasks 37.3, 
     const handler = new NotificationRaisedHandler(
       new DeliverNotification(
         new NotificationRecipientsRepository(worker),
-        new EmailChannelService({ send: () => Promise.resolve({}) }, suppressionStore(worker)),
+        new EmailChannelService(
+          { send: () => Promise.resolve({}) },
+          suppressionStore(worker),
+          new NoticeParamsService(new DisclosureLabelService()),
+        ),
         new CategoryChannels(new NotificationCategoryCatalog(categories)),
         notificationStore(worker),
         'https://app.easyesg.md',

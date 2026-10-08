@@ -1,4 +1,7 @@
 import type { Clock } from '@api/contracts/clock.port';
+import type { NotificationCadences } from '@api/contracts/notification-cadence.port';
+import { NOTIFICATION_CATEGORY, type NotificationPort } from '@api/contracts/notification.port';
+import { outstandingReportSubject, reportDeadlineSubject } from '@api/contracts/report-notices';
 import { calendarDateIn } from '@api/contracts/types/time';
 import { ValidationRulesUnavailableError } from '@api/modules/core/validation/errors/validation.errors';
 import type { ValidationRuleSets } from '@api/modules/core/validation/interfaces/validation-rule-sets.interface';
@@ -13,6 +16,8 @@ export interface LockPeriodCommand {
   readonly periodId: string;
   /** From the request context, never from the body — see `PeriodService`. */
   readonly actorId: string | null;
+  /** The organization the lock withdraws its notices in (task 51.2) — the request's, like the actor. */
+  readonly organizationId: string;
 }
 export interface ReopenPeriodCommand {
   readonly periodId: string;
@@ -47,6 +52,8 @@ export class LockReportingPeriod {
     private readonly store: ReportingPeriodStore,
     private readonly now: Clock,
     private readonly ruleSets: ValidationRuleSets,
+    private readonly notifications: NotificationPort,
+    private readonly cadences: NotificationCadences,
   ) {}
 
   async lock(command: LockPeriodCommand): Promise<ReportingPeriod> {
@@ -62,7 +69,32 @@ export class LockReportingPeriod {
 
     const locked = await this.store.lock({ ...command, at, ruleSetRevision: inForce.revision });
     if (!locked) throw new PeriodNotFoundError();
+    await this.withdrawNotices({ organizationId: command.organizationId, period: locked });
     return locked;
+  }
+
+  /**
+   * FR-167 and 182/134's *period locked*: a lock clears the condition both FR-164's and FR-165's notices watch, so it
+   * withdraws them **on its own transaction**, unconditionally (§12.5.6's task-51.2 row (4)). The outstanding-report
+   * notice is the period's report's; the deadline notices are one per lead time, named by the lead times in force — one a
+   * publication has since removed is not named, and stays in its recipients' centres until they dismiss it.
+   */
+  private async withdrawNotices(input: { readonly organizationId: string; readonly period: ReportingPeriod }): Promise<void> {
+    const { organizationId, period } = input;
+    if (period.report !== null) {
+      await this.notifications.cancel({
+        categoryKey: NOTIFICATION_CATEGORY.OUTSTANDING_REPORT,
+        organizationId,
+        subjectRef: outstandingReportSubject(period.report.id),
+      });
+    }
+    for (const leadTimeDays of this.cadences.leadTimesDays({ categoryKey: NOTIFICATION_CATEGORY.REPORT_DEADLINE }) ?? []) {
+      await this.notifications.cancel({
+        categoryKey: NOTIFICATION_CATEGORY.REPORT_DEADLINE,
+        organizationId,
+        subjectRef: reportDeadlineSubject({ periodId: period.id, leadTimeDays }),
+      });
+    }
   }
 
   async reopen(command: ReopenPeriodCommand): Promise<ReportingPeriod> {

@@ -120,6 +120,24 @@ export const deleteFactorSetReplacements = async (input: {
  * so a suite making such writes owes this in its `afterAll`, or `outbox.e2e-spec.ts` names its rows as strays. Scoped
  * by the suite's own organizations, never a sweep.
  */
+/**
+ * Removes the notice withdrawals a suite's writes committed (task 51.2). Since FR-164's and FR-165's notices exist, a
+ * period's lock withdraws them, and a write that answers the last listed field withdraws one — each a
+ * `platform.notification.cancelled` outbox row, which no worker drains in an api e2e run. So a suite that locks a period
+ * or writes after a validation run owes this in its `afterAll`, or `outbox.e2e-spec.ts` names its rows as strays. Scoped
+ * by the suite's own organizations, never a sweep — `deleteHintsOf`'s shape for the same reason.
+ */
+export const deleteNoticeWithdrawalsOf = async (input: {
+  /** A connection as `esg_migrator` — the only role holding DELETE on `audit.outbox_event`. */
+  readonly owner: DataSource;
+  readonly organizationIds: readonly string[];
+}): Promise<void> => {
+  await input.owner.query(
+    `DELETE FROM audit.outbox_event WHERE event_type = 'platform.notification.cancelled' AND organization_id = ANY($1::uuid[])`,
+    [[...input.organizationIds]],
+  );
+};
+
 export const deleteHintsOf = async (input: {
   /** A connection as `esg_migrator` — the only role holding DELETE on `audit.outbox_event`. */
   readonly owner: DataSource;

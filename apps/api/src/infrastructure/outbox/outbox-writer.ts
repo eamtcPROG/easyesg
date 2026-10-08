@@ -53,3 +53,35 @@ export async function writeOutboxEvent(
 
   return idempotencyKey;
 }
+
+/**
+ * Writes an outbox row **unless one with its idempotency key already exists**, and says which (task 51.2).
+ *
+ * For work that is decided more than once by design rather than by accident: a scheduled slot that every worker
+ * replica opens (`ScheduleTicker`), and a sweep's fan-out that a retry writes again. The key is the natural one — the
+ * job and its day, the period and its day — so the second decision is the same row and is discarded, where
+ * `writeOutboxEvent`'s plain `INSERT` would fail the caller's transaction on the unique key.
+ *
+ * `esg_worker` holds `SELECT` on the table, which the conflict check needs; `esg_app` holds `INSERT` alone and has no
+ * caller here, every caller being a worker deciding on a schedule.
+ */
+export async function writeOutboxEventOnce(
+  queryRunner: QueryRunner,
+  event: OutboxEvent & { readonly idempotencyKey: string },
+): Promise<boolean> {
+  // The key becomes the BullMQ job id, and BullMQ refuses a `:` in one but in its three-part legacy form — refused
+  // at the dispatcher, where the whole batch fails with it. Refused here instead, where the key is made (task 51.2).
+  if (event.idempotencyKey.includes(':')) {
+    throw new Error(`An outbox key may not contain ':' — it becomes a queue job id: ${event.idempotencyKey}`);
+  }
+  const organizationId =
+    event.organizationId === undefined ? (requestContext()?.organizationId ?? null) : event.organizationId;
+  const written = (await queryRunner.query(
+    `INSERT INTO audit.outbox_event (organization_id, event_type, payload, idempotency_key)
+     VALUES ($1, $2, $3::jsonb, $4)
+     ON CONFLICT (idempotency_key) DO NOTHING
+     RETURNING idempotency_key`,
+    [organizationId, event.eventType, JSON.stringify(event.payload), event.idempotencyKey],
+  )) as { idempotency_key: string }[];
+  return written.length > 0;
+}

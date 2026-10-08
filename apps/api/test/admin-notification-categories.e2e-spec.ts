@@ -39,14 +39,22 @@ const PATH = '/api/v1/admin/notification-categories';
 const SEEDED = JSON.parse(
   readFileSync(resolve(__dirname, `../../../config/seed/notification-category.${REMINDER}.json`), 'utf8'),
 ) as Record<string, unknown>;
+/** FR-164's notice (task 51.2): the category that keeps a repeat interval, which A-17 publishes with its cadence. */
+const OUTSTANDING = 'reporting.outstanding_report';
+const OUTSTANDING_SEEDED = JSON.parse(
+  readFileSync(resolve(__dirname, `../../../config/seed/notification-category.${OUTSTANDING}.json`), 'utf8'),
+) as Record<string, unknown>;
 
 interface ConsoleCategory {
   categoryKey: string;
   mandatory: boolean;
   addressNotice: boolean;
+  cadence: string | null;
   inForce: {
     channels: string[] | null;
     classification: string | null;
+    repeatIntervalDays?: number;
+    leadTimesDays?: number[];
     revision: number;
     publishedBy: string | null;
     previousRevision: number | null;
@@ -93,6 +101,8 @@ describe('notification categories from the console (A-17; task 67.10)', () => {
 
   /** What the developer's store held for the reminder before this suite — put back afterwards (task 172). */
   let reminderSlot: SlotSnapshot | undefined;
+  /** And for the outstanding-report notice, whose cadence a case publishes (task 51.2). */
+  let outstandingSlot: SlotSnapshot | undefined;
 
   beforeAll(async () => {
     await initialiseCatalogue();
@@ -106,6 +116,7 @@ describe('notification categories from the console (A-17; task 67.10)', () => {
     configureHttpApp(app);
     await app.init();
     reminderSlot = await snapshotSlot(app, { kind: NOTIFICATION_CATEGORY_CONFIG_KIND, scope: REMINDER });
+    outstandingSlot = await snapshotSlot(app, { kind: NOTIFICATION_CATEGORY_CONFIG_KIND, scope: OUTSTANDING });
 
     platform = await signInOperator({
       server: app.getHttpServer(),
@@ -122,6 +133,7 @@ describe('notification categories from the console (A-17; task 67.10)', () => {
     // The state each case starts from is the seed; what the suite leaves is what it found (task 172) — an operator's
     // own publication of the reminder survives this run, as it survives `config:seed`.
     if (app !== undefined && reminderSlot !== undefined) await restoreSlot(app, reminderSlot, SEEDED);
+    if (app !== undefined && outstandingSlot !== undefined) await restoreSlot(app, outstandingSlot, OUTSTANDING_SEEDED);
     await owner?.query(`DELETE FROM notification.preference WHERE account_id = $1`, [ana?.accountId]);
     if (owner !== undefined) {
       await cleanupSignedInAccounts({ owner });
@@ -142,7 +154,21 @@ describe('notification categories from the console (A-17; task 67.10)', () => {
       REMINDER,
       // FR-166's report-update notice (task 37.3).
       'reporting.report_update',
+      // FR-164's and FR-165's notices (task 51.2).
+      OUTSTANDING,
+      'reporting.report_deadline',
     ]);
+    // Which cadence each keeps is code's, said to the console so it offers the right field (task 51.2).
+    expect(read.map((category) => [category.categoryKey, category.cadence])).toEqual(
+      expect.arrayContaining([
+        [REMINDER, null],
+        [OUTSTANDING, 'repeat_interval'],
+        ['reporting.report_deadline', 'lead_times'],
+      ]),
+    );
+    expect(read.find((category) => category.categoryKey === 'reporting.report_deadline')?.inForce).toMatchObject({
+      leadTimesDays: [14, 7, 1],
+    });
     expect(read.find((category) => category.categoryKey === 'identity.password_reset')).toMatchObject({
       mandatory: true,
       addressNotice: true,
@@ -256,6 +282,27 @@ describe('notification categories from the console (A-17; task 67.10)', () => {
     await asPlatform(http().post(`${PATH}/reporting.unknown/preview`))
       .send({ channels: ['email'], classification: 'optional' })
       .expect(404);
+  });
+
+  it('publishes a repeat interval on the category that keeps one, and refuses one missing or misplaced (task 51.2)', async () => {
+    const outstanding = async () => (await categories()).find((category) => category.categoryKey === OUTSTANDING);
+    const before = await outstanding();
+    const behaviour = { channels: ['in_app', 'email'], classification: 'optional' };
+
+    const missing = await publish({ ...behaviour, expectedRevision: before?.inForce?.revision }, OUTSTANDING).expect(400);
+    expect(problemType(missing)).toBe(problemTypeUri(ProblemType.ValidationFailed));
+    const misplaced = await publish({
+      ...behaviour,
+      repeatIntervalDays: 7,
+      leadTimesDays: [7],
+      expectedRevision: before?.inForce?.revision,
+    }, OUTSTANDING).expect(400);
+    expect(problemType(misplaced)).toBe(problemTypeUri(ProblemType.ValidationFailed));
+    await publish({ ...behaviour, repeatIntervalDays: 0, expectedRevision: before?.inForce?.revision }, OUTSTANDING).expect(400);
+
+    // A move of the interval alone is a change, not *unchanged* (`sameBehaviour` compares the cadence).
+    await publish({ ...behaviour, repeatIntervalDays: 14, expectedRevision: before?.inForce?.revision }, OUTSTANDING).expect(201);
+    expect((await outstanding())?.inForce).toMatchObject({ ...behaviour, repeatIntervalDays: 14 });
   });
 
   it('reverts in one step to the behaviour before, as a new revision, and logs the revert', async () => {

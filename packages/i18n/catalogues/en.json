@@ -354,6 +354,26 @@
           "body": "The set {setLabel} has been replaced by {newSetLabel}. Recalculate the emissions so that the figures use the factors in force.",
           "action": "{reach, select, one {Open the calculator} other {Open your reports}}"
         }
+      },
+      "outstanding_report": {
+        "name": "Fields still to complete",
+        "subject": "The {entityName} report for {fiscalYear} has {count, plural, one {# field} other {# fields}} still to complete",
+        "body": "Hello,\n\nThe sustainability report of {entityName} for {fiscalYear} still has {count, plural, one {# field} other {# fields}} to complete or correct:\n\n{fields}\n\nWhile they stay open, the report is not ready to file. Open it here:\n\n{link}\n\nIf anything is still left, we will remind you again in {intervalDays, plural, one {# day} other {# days}}. You are receiving this because you can edit your organization’s reports.",
+        "in_app": {
+          "title": "The {entityName} report for {fiscalYear} has {count, plural, one {# field} other {# fields}} still to complete",
+          "body": "To complete or correct: {fields}.",
+          "action": "Open the report"
+        }
+      },
+      "report_deadline": {
+        "name": "Filing deadlines",
+        "subject": "{daysRemaining, plural, one {# day} other {# days}} left to file the {entityName} report for {fiscalYear}",
+        "body": "Hello,\n\nThe sustainability report of {entityName} for {fiscalYear} is due on {dueDate} — {daysRemaining, plural, one {# day} other {# days}} from today.\n\n{started, select, no {The report has not been started yet.} other {{outstanding, plural, one {# field is} other {# fields are}} still to complete or correct.}}\n\nOpen the report here:\n\n{link}\n\nYou are receiving this because you can edit your organization’s reports.",
+        "in_app": {
+          "title": "{daysRemaining, plural, one {# day} other {# days}} left to file the {entityName} report for {fiscalYear}",
+          "body": "It is due on {dueDate}. {started, select, no {The report has not been started yet.} other {{outstanding, plural, one {# field is} other {# fields are}} still to complete or correct.}}",
+          "action": "Open the report"
+        }
       }
     },
     "unsubscribe": {
@@ -429,7 +449,9 @@
         "mandatory_classification": "People must always receive this category, so it cannot become one they can switch off, and nothing was published. Keep it as a category nobody can switch off.",
         "mandatory_without_email": "People must always receive this category, and only email reaches them without their signing in, so it cannot be published without email. Keep email among its channels.",
         "address_notice_in_app": "This notice is sent to an address with a link only its recipient can use, and inside the application that link could not be opened, so it cannot be sent in the application. Send it by email alone.",
-        "wording_missing": "One of the channels chosen has no wording for this category in every language, so nothing was published. Remove that channel; its wording arrives with a new release of the application."
+        "wording_missing": "One of the channels chosen has no wording for this category in every language, so nothing was published. Remove that channel; its wording arrives with a new release of the application.",
+        "cadence_missing": "This category is sent on a schedule — at a repeat interval, or a number of days before a due date — and the publication does not include it, so nothing was published. Fill it in and publish again.",
+        "cadence_not_kept": "This category is sent neither at a repeat interval nor a number of days before a due date, so nothing was published. Remove those values."
       }
     }
   }

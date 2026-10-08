@@ -54,4 +54,30 @@ describe('publicationConsequences (task 67.10)', () => {
       }),
     ).toEqual([{ kind: 'channel_added', channel: 'email', stayingOff: 0 }]);
   });
+
+  it('names a moved repeat interval or moved lead times, which change when recipients hear (task 51.2)', () => {
+    const counting = { channels: [NOTIFICATION_CHANNEL.IN_APP], classification: NOTIFICATION_CLASSIFICATION.OPTIONAL };
+    const none = { byChannel: { in_app: 0, email: 0 }, people: 0 };
+    expect(
+      publicationConsequences({
+        current: { ...counting, repeatIntervalDays: 7 },
+        proposed: { ...counting, repeatIntervalDays: 14 },
+        switchOffs: none,
+      }),
+    ).toEqual([{ kind: 'repeat_interval_changed', repeatIntervalDays: 14 }]);
+    expect(
+      publicationConsequences({
+        current: { ...counting, leadTimesDays: [14, 7, 1] },
+        proposed: { ...counting, leadTimesDays: [7, 1] },
+        switchOffs: none,
+      }),
+    ).toEqual([{ kind: 'lead_times_changed', leadTimesDays: [7, 1] }]);
+    expect(
+      publicationConsequences({
+        current: { ...counting, leadTimesDays: [14, 7, 1] },
+        proposed: { ...counting, leadTimesDays: [1, 7, 14] },
+        switchOffs: none,
+      }),
+    ).toEqual([]);
+  });
 });

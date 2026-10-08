@@ -314,7 +314,14 @@ test.describe('S-26 — the notification centre', () => {
 
     await page.goto('/notifications');
     const categories = page.getByRole('list', { name: 'Categoria' });
-    await expect(categories.getByRole('link')).toHaveText(['Toate categoriile', 'Mementouri', 'Actualizări ale rapoartelor']);
+    // Every category that travels in-app, read from the reader's preferences — FR-164's and FR-165's since task 51.2.
+    await expect(categories.getByRole('link')).toHaveText([
+      'Toate categoriile',
+      'Mementouri',
+      'Actualizări ale rapoartelor',
+      'Câmpuri de completat',
+      'Termene de depunere',
+    ]);
     await expect(categories.getByRole('link', { name: 'Toate categoriile' })).toHaveAttribute('aria-current', 'page');
 
     // The update is read, so on the unread tab its category holds nothing — and says so, with the way back.

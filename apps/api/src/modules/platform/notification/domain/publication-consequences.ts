@@ -45,5 +45,17 @@ export const publicationConsequences = (input: {
       });
     }
   }
+
+  // A cadence that moves changes when recipients hear, which *nothing changes for recipients* would deny (task 51.2).
+  const { repeatIntervalDays, leadTimesDays } = proposed;
+  if (repeatIntervalDays !== undefined && repeatIntervalDays !== current?.repeatIntervalDays) {
+    consequences.push({ kind: PUBLICATION_CONSEQUENCE.REPEAT_INTERVAL_CHANGED, repeatIntervalDays });
+  }
+  if (leadTimesDays !== undefined && !sameDays(leadTimesDays, current?.leadTimesDays ?? [])) {
+    consequences.push({ kind: PUBLICATION_CONSEQUENCE.LEAD_TIMES_CHANGED, leadTimesDays });
+  }
   return consequences;
 };
+
+const sameDays = (a: readonly number[], b: readonly number[]): boolean =>
+  a.length === b.length && a.every((day) => b.includes(day));

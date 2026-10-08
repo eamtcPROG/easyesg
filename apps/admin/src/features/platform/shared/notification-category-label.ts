@@ -17,4 +17,6 @@ export const NOTIFICATION_CATEGORY_LABEL = {
   [NOTIFICATION_CATEGORY.ADMIN_INVITATION]: 'adminInvitation',
   [NOTIFICATION_CATEGORY.MANUAL_REMINDER]: 'manualReminder',
   [NOTIFICATION_CATEGORY.REPORT_UPDATE]: 'reportUpdate',
+  [NOTIFICATION_CATEGORY.OUTSTANDING_REPORT]: 'outstandingReport',
+  [NOTIFICATION_CATEGORY.REPORT_DEADLINE]: 'reportDeadline',
 } as const satisfies Record<NotificationCategoryKey, string>;

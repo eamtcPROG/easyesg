@@ -5,6 +5,7 @@ import type { NotificationCategoryKey } from '@api/contracts/notification.port';
 import { NOTIFICATION_SPECIMEN } from '@api/contracts/notification-specimens';
 import type { CategoryWording, RenderedCategoryWording } from '../interfaces/category-wording.interface';
 import { NOTIFICATION_CHANNEL, type NotificationChannel } from '../models/notification-category.model';
+import { NoticeParamsService } from './notice-params.service';
 
 /**
  * `CATEGORY_WORDING` over the committed catalogues (task 67.10; OQ-43) — the one place A-17 reads a category's words.
@@ -16,16 +17,20 @@ import { NOTIFICATION_CHANNEL, type NotificationChannel } from '../models/notifi
  */
 @Injectable()
 export class CategoryWordingService implements CategoryWording {
+  constructor(private readonly params: NoticeParamsService) {}
+
   worded(query: { readonly categoryKey: NotificationCategoryKey; readonly channel: NotificationChannel }): boolean {
     const keys = query.channel === NOTIFICATION_CHANNEL.EMAIL ? EMAIL_KEYS : IN_APP_KEYS;
     return LOCALES.every((locale) =>
-      keys.every((part) => translate(locale, `notification.${query.categoryKey}.${part}`, specimenOf(query.categoryKey))),
+      keys.every((part) =>
+        translate(locale, `notification.${query.categoryKey}.${part}`, this.specimen({ categoryKey: query.categoryKey, locale })),
+      ),
     );
   }
 
   render(query: { readonly categoryKey: NotificationCategoryKey; readonly locale: Locale }): RenderedCategoryWording {
     const words = (part: string) =>
-      translate(query.locale, `notification.${query.categoryKey}.${part}`, specimenOf(query.categoryKey));
+      translate(query.locale, `notification.${query.categoryKey}.${part}`, this.specimen(query));
     const [subject, body] = [words('subject'), words('body')];
     const [title, inAppBody, action] = [words('in_app.title'), words('in_app.body'), words('in_app.action')];
     const name = words('name');
@@ -39,9 +44,12 @@ export class CategoryWordingService implements CategoryWording {
         : { inApp: { title, body: inAppBody, ...(action === undefined ? {} : { action }) } }),
     };
   }
+
+  /** The category's specimen as the locale's reader would meet it — a field list named, a date written (task 51.2). */
+  private specimen(query: { readonly categoryKey: NotificationCategoryKey; readonly locale: Locale }): Record<string, unknown> {
+    return this.params.forLocale({ params: NOTIFICATION_SPECIMEN[query.categoryKey], locale: query.locale });
+  }
 }
 
 const EMAIL_KEYS = ['subject', 'body'] as const;
 const IN_APP_KEYS = ['name', 'in_app.title', 'in_app.body'] as const;
-
-const specimenOf = (categoryKey: NotificationCategoryKey): Record<string, unknown> => ({ ...NOTIFICATION_SPECIMEN[categoryKey] });

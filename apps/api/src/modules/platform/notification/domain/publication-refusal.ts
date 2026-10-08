@@ -1,4 +1,10 @@
-import { ADDRESS_NOTICE_CATEGORIES, MANDATORY_NOTIFICATION_CATEGORIES, type NotificationCategoryKey } from '@api/contracts/notification.port';
+import {
+  ADDRESS_NOTICE_CATEGORIES,
+  CADENCE_OF_CATEGORY,
+  MANDATORY_NOTIFICATION_CATEGORIES,
+  NOTIFICATION_CADENCE,
+  type NotificationCategoryKey,
+} from '@api/contracts/notification.port';
 import {
   NOTIFICATION_CHANNEL,
   NOTIFICATION_CLASSIFICATION,
@@ -32,6 +38,21 @@ export const publicationRefusal = (input: {
   }
   if (ADDRESS_NOTICE_CATEGORIES.has(categoryKey) && behaviour.channels.includes(NOTIFICATION_CHANNEL.IN_APP)) {
     return PUBLICATION_REFUSAL.ADDRESS_NOTICE_IN_APP;
+  }
+  const kept = CADENCE_OF_CATEGORY[categoryKey];
+  const repeats = behaviour.repeatIntervalDays !== undefined;
+  const countsDown = behaviour.leadTimesDays !== undefined;
+  if (
+    (repeats && kept !== NOTIFICATION_CADENCE.REPEAT_INTERVAL) ||
+    (countsDown && kept !== NOTIFICATION_CADENCE.LEAD_TIMES)
+  ) {
+    return PUBLICATION_REFUSAL.CADENCE_NOT_KEPT;
+  }
+  if (
+    (kept === NOTIFICATION_CADENCE.REPEAT_INTERVAL && !repeats) ||
+    (kept === NOTIFICATION_CADENCE.LEAD_TIMES && !countsDown)
+  ) {
+    return PUBLICATION_REFUSAL.CADENCE_MISSING;
   }
   if (!behaviour.channels.every((channel) => input.worded(channel))) return PUBLICATION_REFUSAL.WORDING_MISSING;
   return null;

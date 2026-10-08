@@ -1,4 +1,4 @@
-import type { NotificationCategoryKey } from '@api/contracts/notification.port';
+import type { NotificationCadence, NotificationCategoryKey } from '@api/contracts/notification.port';
 import type { NotificationCategoryBehaviour, NotificationChannel } from './notification-category.model';
 
 /**
@@ -12,6 +12,8 @@ export interface ConsoleCategory {
   readonly mandatory: boolean;
   /** Code's `ADDRESS_NOTICE_CATEGORIES`: in-app refused. */
   readonly addressNotice: boolean;
+  /** Code's `CADENCE_OF_CATEGORY`: the cadence the category keeps, which A-17 offers to edit; `null` where none (task 51.2). */
+  readonly cadence: NotificationCadence | null;
   /** `null` where nothing is in force — a category whose artefact was never published. */
   readonly inForce: CategoryInForce | null;
   /** How many people switched it off, per channel and in all — what a publication's disclosure counts. */
@@ -52,6 +54,13 @@ export const PUBLICATION_REFUSAL = {
   ADDRESS_NOTICE_IN_APP: 'address_notice_in_app',
   /** A channel whose wording a catalogue does not carry — `renderEmail` would throw at the send. */
   WORDING_MISSING: 'wording_missing',
+  /**
+   * A category that keeps a cadence published without it (task 51.2) — its producer would have no interval to repeat
+   * at or no lead time to count down to.
+   */
+  CADENCE_MISSING: 'cadence_missing',
+  /** A repeat interval or lead times on a category that keeps no such cadence — a value no producer would read. */
+  CADENCE_NOT_KEPT: 'cadence_not_kept',
 } as const;
 
 export type PublicationRefusal = (typeof PUBLICATION_REFUSAL)[keyof typeof PUBLICATION_REFUSAL];
@@ -69,6 +78,10 @@ export const PUBLICATION_CONSEQUENCE = {
   CHANNEL_REMOVED: 'channel_removed',
   /** A channel it will travel on — everyone it reaches, except those who switched it off there before. */
   CHANNEL_ADDED: 'channel_added',
+  /** Its notice repeats at another interval — *when* recipients hear changes, though not who or where (task 51.2). */
+  REPEAT_INTERVAL_CHANGED: 'repeat_interval_changed',
+  /** Its notice counts down at other lead times — each its own notice, so how many arrive changes too (task 51.2). */
+  LEAD_TIMES_CHANGED: 'lead_times_changed',
 } as const;
 
 export type PublicationConsequenceKind = (typeof PUBLICATION_CONSEQUENCE)[keyof typeof PUBLICATION_CONSEQUENCE];
@@ -82,4 +95,6 @@ export type PublicationConsequence =
       readonly channel: NotificationChannel;
       /** People who switched it off on this channel before, whose choice holds again (task 52.1 row (4)). */
       readonly stayingOff: number;
-    };
+    }
+  | { readonly kind: typeof PUBLICATION_CONSEQUENCE.REPEAT_INTERVAL_CHANGED; readonly repeatIntervalDays: number }
+  | { readonly kind: typeof PUBLICATION_CONSEQUENCE.LEAD_TIMES_CHANGED; readonly leadTimesDays: readonly number[] };

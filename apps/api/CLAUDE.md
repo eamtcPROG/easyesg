@@ -16,7 +16,7 @@ since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the 
 producer through `raise()` since 50.3, UC-175's reminder, and each person's preferences, honoured at dispatch, with FR-169's
 one-click unsubscribe since task 52, the calculator since tasks 37 … 39, and validation's rule set, run, findings and
 roll-up since task 41, over `@easyesg/validation`'s interpreter, and NFR-87's version-pinned suite over both since
-task 201; validation's screens, export, billing, the console's
+task 201, and FR-164's and FR-165's notices on the worker's first scheduled job since task 51.2; validation's screens, export, billing, the console's
 screens, edge and deploy, the public tier and the Comprehensive Module are not. `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
@@ -531,6 +531,15 @@ Four things to know before touching it:
   period reads join `readyToFileOf` (`persistence/core/report-readiness.ts`) into a `readyToFile` flag, and the DTOs
   turn it into the status through `statusAsRead`. Anything that decides on a report's status — the reminder, the lock
   — must keep reading the stored one.
+- **FR-164's and FR-165's notices are raised by a check that is a validation run** (task 51.2; §12.5.6's task-51.2
+  row). The day's sweep (`validation.report_notice_sweep`) reads the open periods of active entities **unbound** —
+  `NOTICE_DIRECTORY`, on the `DataSource`, through the `*_worker_directory_select` policies — and schedules one
+  `validation.report_notice_check` per period owing one; the check binds its organization through `TENANT_WORK` and
+  runs `RunValidation` on the worker, stored with no person, which is why the wizard's read, the prior period's values
+  and the run are registered in both modes. **A write withdraws the outstanding notice** (`ClearOutstandingNotice`,
+  composed in `WizardService.write`) when nothing the last run listed is left, and **a lock withdraws both**
+  (`LockReportingPeriod`) — the keys are `contracts/report-notices.ts`'s, which all three spell from. A notice's
+  field list and due date are params the notification module renders per reader (`NoticeParamsService`).
 - **A pinned version's figures are held by `version-pinned.spec.ts`, one in each of `core/calculator` and
   `core/validation`** (task 201, NFR-87; §12.5.6's task-201 row). They re-evaluate every run and report kept in
   `config/version-pinned/` against its own kept set, through `ReadCalcRun` and through `ValidationRuleSetCatalog.pinned`
@@ -1255,6 +1264,22 @@ claims a job name by marking a provider `@HandlesJob('<event_type>')`, and it is
   dropping it silently is the loss the outbox exists to prevent. A failed job is visible and
   re-runnable.
 - Consumers run on the worker entrypoint only, like the dispatcher.
+
+### Scheduling a daily job
+
+**A scheduled run starts as an outbox row** (task 51.2; §12.5.6's task-51.2 row (1)), so P-6's *the outbox is the only
+producer* stays literal. Put `@RunsDaily({ at: 'HH:MM', timezone })` beside the handler's `@HandlesJob`; the worker's
+`ScheduleTicker` (`infrastructure/schedule/`) finds it, and from the slot until midnight in that zone writes the day's
+row once (`writeOutboxEventOnce`, keyed `<job>/<day>`), which the dispatcher queues like any event. The handler reads
+`occurredAtMicros` as the moment it runs *for*, so a retry after midnight still does the day it was scheduled. Three
+things to know:
+
+- **A day no worker runs is missed, not caught up** — NFR-93's heartbeat is meant to notice it.
+- **An outbox key becomes a BullMQ job id, and BullMQ refuses a `:` in one** but in its three-part legacy form — refused
+  at the dispatcher, where it fails the whole batch and every notice behind it. `writeOutboxEventOnce` refuses a colon
+  where the key is made; key with `/`.
+- **The ticker refuses to boot** on a slot it could not keep or a `@RunsDaily` no `@HandlesJob` routes, and the worker's
+  boot proof asserts what it schedules — a deleted `@RunsDaily` otherwise resolves everything and starts nothing.
 
 ### Adding a configuration artefact
 

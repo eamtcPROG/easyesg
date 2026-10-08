@@ -16,7 +16,7 @@ import {
   VALIDATION_RULE_SET_CONFIG_KIND,
   VALIDATION_RULE_SET_CONFIG_SCOPE,
 } from '../src/modules/core/validation/constants/validation.constants';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 const ORG = '01930000-0000-7000-8000-0000000000a4';
@@ -143,6 +143,7 @@ describe('validation runs and their findings (task 41.2)', () => {
   }, 180_000);
 
   afterAll(async () => {
+    await deleteNoticeWithdrawalsOf({ owner, organizationIds: [ORG] });
     await cleanupSignedInAccounts({ owner });
     await removeFixtures();
     await app?.close();

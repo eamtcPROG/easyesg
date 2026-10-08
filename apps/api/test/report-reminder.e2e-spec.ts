@@ -23,6 +23,8 @@ import { DeliverNotification } from '../src/modules/platform/notification/use-ca
 import { asOrganization, connectAs } from './support/database';
 import { asJob, deleteNotificationsOf, notificationStore, optOuts, unsubscribeTokens, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { DisclosureLabelService } from '../src/modules/platform/localization/services/disclosure-label.service';
+import { NoticeParamsService } from '../src/modules/platform/notification/services/notice-params.service';
 
 /**
  * UC-175's manual reminder, end to end on the stack (task 50.3; `architecture.md` §12.5.6's task-50.3 row): an
@@ -115,7 +117,11 @@ describe('the manual reminder (UC-175, task 50.3)', () => {
     const handler = new NotificationRaisedHandler(
       new DeliverNotification(
         new NotificationRecipientsRepository(worker),
-        new EmailChannelService(email, suppressionStore(worker)),
+        new EmailChannelService(
+          email,
+          suppressionStore(worker),
+          new NoticeParamsService(new DisclosureLabelService()),
+        ),
         new CategoryChannels(new NotificationCategoryCatalog(store)),
         notificationStore(worker),
         'https://app.easyesg.md',

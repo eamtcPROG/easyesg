@@ -8,7 +8,7 @@ import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import { PROBLEM_BASE_URI } from '../src/app/filters/problem-types';
 import { configureHttpApp } from '../src/main.http';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
 import {
   cleanupSignedInAccounts,
   signInFreshAccount,
@@ -147,6 +147,7 @@ describe('reporting periods (UC-56)', () => {
   }, 180_000);
 
   afterAll(async () => {
+    await deleteNoticeWithdrawalsOf({ owner, organizationIds: [ORG, OTHER_ORG] });
     await cleanupSignedInAccounts({ owner });
     for (const organization of [ORG, OTHER_ORG]) {
       await asOrganization(owner, organization, (run) =>

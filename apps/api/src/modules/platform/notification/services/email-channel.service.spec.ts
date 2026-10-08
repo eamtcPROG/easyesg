@@ -9,6 +9,8 @@ import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
 import { FakeSuppressionStore } from '@api/testing/fake-suppression-store';
 import { DELIVERY_OUTCOME } from '../models/notification-record.model';
 import { EmailChannelService } from './email-channel.service';
+import { DisclosureLabelService } from '@api/modules/platform/localization/services/disclosure-label.service';
+import { NoticeParamsService } from '@api/modules/platform/notification/services/notice-params.service';
 
 /**
  * The one caller of `EmailPort` (tasks 49.2, 49.3): the category's own wording unless a second is named —
@@ -38,7 +40,7 @@ describe('EmailChannelService (task 49.3)', () => {
   const base = { to: 'ana@example.md', locale: 'ro', params: { link: 'x' }, idempotencyKey: 'k' } as const;
 
   const suppression = () => new FakeSuppressionStore();
-  const channel = (port: EmailPort, store = suppression()) => new EmailChannelService(port, store);
+  const channel = (port: EmailPort, store = suppression()) => new EmailChannelService(port, store, new NoticeParamsService(new DisclosureLabelService()));
 
   it("hands the provider the category's key as the wording, and everything else unchanged", async () => {
     const provider = new RecordingEmailPort();

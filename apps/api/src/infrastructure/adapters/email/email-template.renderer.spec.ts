@@ -25,6 +25,12 @@ describe('email template rendering (OQ-43)', () => {
   };
   /** FR-166's report-update notice (task 37.3): the two sets it names, and how many reports it reaches. */
   const REPORT_UPDATE = { reach: 'one', setLabel: '2026.1', newSetLabel: '2026.2' };
+  /**
+   * FR-164's and FR-165's notices (task 51.2), as the adapter receives them: the field list and the due date already
+   * written in the recipient's language by the notification module, which this adapter never sees in their stored form.
+   */
+  const OUTSTANDING = { count: 3, intervalDays: 7, fields: 'B1: Cifra de afaceri și Active; B3: Consumul total de energie' };
+  const DEADLINE = { dueDate: '30 mai 2027', daysRemaining: 7, started: 'yes', outstanding: 4 };
 
   it.each(LOCALES)('renders the verification template in %s', (locale: Locale) => {
     const { subject, body } = renderEmail({ locale, templateKey: NOTIFICATION_CATEGORY.EMAIL_VERIFICATION, params });
@@ -45,7 +51,7 @@ describe('email template rendering (OQ-43)', () => {
       const { body } = renderEmail({
         locale,
         templateKey: wording,
-        params: { ...params, organizationName: 'Brutăria', ...REMINDER, ...REPORT_UPDATE },
+        params: { ...params, organizationName: 'Brutăria', ...REMINDER, ...REPORT_UPDATE, ...OUTSTANDING, ...DEADLINE },
       });
 
       expect(body).toContain(params.link);

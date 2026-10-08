@@ -1,8 +1,14 @@
 import { Logger } from '@nestjs/common';
-import { MANDATORY_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
+import {
+  MANDATORY_NOTIFICATION_CATEGORIES,
+  NOTIFICATION_CATEGORY,
+  isNotificationCategoryKey,
+} from '@api/contracts/notification.port';
 import type { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-configuration-store';
 import { NOTIFICATION_CATEGORY_CONFIG_KIND } from '../constants/notification-category.constants';
+import { readNotificationCategory } from '../domain/notification-category';
+import { publicationRefusal } from '../domain/publication-refusal';
 import { NotificationCategoryCatalog } from './notification-category-catalog.service';
 
 /**
@@ -118,6 +124,37 @@ describe('NotificationCategoryCatalog (task 49.1)', () => {
         classification: 'optional',
       });
       expect(logged).toEqual([]);
+    });
+
+    // FR-164's and FR-165's cadence, the owner's numbers (182/131, 182/132): every seven days while anything is
+    // outstanding, and fourteen, seven and one day before a due date, each its own notice. Read through the port the
+    // producers read them through.
+    it('reads the outstanding-report notice as repeating every 7 days, and the deadline notice at 14, 7 and 1 days', () => {
+      const catalog = new NotificationCategoryCatalog(seedConfigurationStore(readSeedEntries()));
+
+      expect(catalog.repeatIntervalDays({ categoryKey: NOTIFICATION_CATEGORY.OUTSTANDING_REPORT })).toBe(7);
+      expect(catalog.leadTimesDays({ categoryKey: NOTIFICATION_CATEGORY.REPORT_DEADLINE })).toEqual([14, 7, 1]);
+      expect(catalog.behaviourOf({ categoryKey: NOTIFICATION_CATEGORY.OUTSTANDING_REPORT })).toMatchObject({
+        channels: ['in_app', 'email'],
+        classification: 'optional',
+      });
+      expect(catalog.leadTimesDays({ categoryKey: NOTIFICATION_CATEGORY.MANUAL_REMINDER })).toBeNull();
+      expect(logged).toEqual([]);
+    });
+
+    // The store publishes a category's seed with no rule of its own (`configuration-kind-rules.ts` keys none), so this
+    // is where a seeded cadence missing, or given to a category that keeps none, is refused (task 51.2).
+    it('ships no category A-17’s rules would refuse, its cadence included', () => {
+      for (const entry of shipped) {
+        const behaviour = readNotificationCategory(entry.payload);
+        const categoryKey = entry.scope;
+        expect({ categoryKey, readable: behaviour !== null }).toEqual({ categoryKey, readable: true });
+        if (behaviour === null || !isNotificationCategoryKey(categoryKey)) continue;
+        expect({ categoryKey, refusal: publicationRefusal({ categoryKey, behaviour, worded: () => true }) }).toEqual({
+          categoryKey,
+          refusal: null,
+        });
+      }
     });
 
     // **A category arrives with its producer** (§12.5.6's task-49.1 row (1)): an artefact whose scope no code

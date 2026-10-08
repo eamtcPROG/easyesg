@@ -35,6 +35,8 @@ export const NOTIFICATION_CATEGORY = {
   ADMIN_INVITATION: 'platform.admin_invitation',
   MANUAL_REMINDER: 'reporting.manual_reminder',
   REPORT_UPDATE: 'reporting.report_update',
+  OUTSTANDING_REPORT: 'reporting.outstanding_report',
+  REPORT_DEADLINE: 'reporting.report_deadline',
 } as const;
 
 export type NotificationCategoryKey = (typeof NOTIFICATION_CATEGORY)[keyof typeof NOTIFICATION_CATEGORY];
@@ -71,6 +73,19 @@ export const NOTIFICATION_CLASSIFICATION_MIRRORS_WIRE: SameSet<
 > = true;
 
 /**
+ * The cadence a category keeps, where it keeps one (task 51.2; FR-173) — the api's `NOTIFICATION_CADENCE`. A-17 offers a
+ * repeat interval or lead times only to the category whose cadence names it.
+ */
+export const NOTIFICATION_CADENCE = { REPEAT_INTERVAL: 'repeat_interval', LEAD_TIMES: 'lead_times' } as const;
+
+export type NotificationCadence = (typeof NOTIFICATION_CADENCE)[keyof typeof NOTIFICATION_CADENCE];
+
+export const NOTIFICATION_CADENCE_MIRRORS_WIRE: SameSet<
+  NotificationCadence,
+  NonNullable<components['schemas']['ConsoleCategoryResponseDto']['cadence']>
+> = true;
+
+/**
  * What a publication changes for recipients (task 67.10; UX-123's scope disclosure) — the api's
  * `PUBLICATION_CONSEQUENCE`, which A-17 words one sentence per kind.
  */
@@ -79,6 +94,8 @@ export const CATEGORY_CONSEQUENCE = {
   BECOMES_SWITCHABLE: 'becomes_switchable',
   CHANNEL_REMOVED: 'channel_removed',
   CHANNEL_ADDED: 'channel_added',
+  REPEAT_INTERVAL_CHANGED: 'repeat_interval_changed',
+  LEAD_TIMES_CHANGED: 'lead_times_changed',
 } as const;
 
 export type CategoryConsequenceKind = (typeof CATEGORY_CONSEQUENCE)[keyof typeof CATEGORY_CONSEQUENCE];

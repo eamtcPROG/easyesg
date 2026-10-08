@@ -11,6 +11,7 @@ import { PersistenceModule } from './infrastructure/persistence/persistence.modu
 import { ConfigurationStoreModule } from './infrastructure/configuration/configuration.module';
 import { QueueModule } from './infrastructure/queue/queue.module';
 import { OutboxModule } from './infrastructure/outbox/outbox.module';
+import { ScheduleModule } from './infrastructure/schedule/schedule.module';
 import { HealthController } from './infrastructure/observability/health.controller';
 import { CoreModule } from './modules/core/core.module';
 import { IdentityModule } from './modules/identity/identity.module';
@@ -85,6 +86,7 @@ const requestPipeline: Provider[] = [
     ConfigurationStoreModule,
     QueueModule,
     OutboxModule,
+    ScheduleModule,
     IdentityModule,
     CoreModule,
     BillingModule,

@@ -11,7 +11,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 **What a notice is, and who it reaches.** A producer raises a notice through the one mechanism FR-157 requires and names its recipients by account. The notification module resolves each recipient's address and email language when it sends, and checks nothing about membership or standing at dispatch: the producer named the recipients, and that is where the decision belongs (`architecture.md` §12.5.6's task-49.3 row (4)). The four notices that carry a token in their link (verification, reset and both invitations) take the same path, and a recipient who holds no account, an invitee, is recorded by the address the email went to (task-50.1 rows (14), (16)). **Every member of an organization, in any role, has a centre** and reads and clears only their own notices; no plan or entitlement gates it (task 50.1.2). Only the Organization Administrator sends a manual reminder (UC-175).
 
-**Where the requirement set stands.** The mechanism is built end to end: dispatch (task 49), the record and a delivery per recipient and channel (50.1), the centre and its unread count (50.2), delivery evidence, suppression and retry (51.4), preferences and the one-click unsubscribe (52), the console editor (67.10), and the live count over the socket (AD-15, tasks 146 … 150). One producer is built, the administrator's reminder (50.3), beside the four address notices. The producers that watch a condition (FR-164, FR-165), the three report-update notices (FR-166) and retention of delivery evidence (task 163) are not.
+**Where the requirement set stands.** The mechanism is built end to end: dispatch (task 49), the record and a delivery per recipient and channel (50.1), the centre and its unread count (50.2), delivery evidence, suppression and retry (51.4), preferences and the one-click unsubscribe (52), the console editor (67.10), and the live count over the socket (AD-15, tasks 146 … 150). Four producers are built beside the four address notices: the administrator's reminder (50.3), the factor half of the report-update notice (37.3), and the two that watch a condition, the outstanding-report and deadline notices (FR-164, FR-165; 51.2), which a daily sweep on the worker raises. The report-update notice's other two halves (67.7, 67.8) and retention of delivery evidence (task 163) are not.
 
 *On numbering.* FR-160 … FR-173 mean the notification requirements and nothing else. The deferred set that once shared those identifiers was renumbered FR-176 … FR-189 on 18 Aug 2026 (index §2.2 rule 3, OQ-1 closed).
 
@@ -188,7 +188,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 ### FR-164 — The outstanding-report notice
 
-**Status.** Not started — delivered 41.3 (the roll-up whose outstanding fields it names) · remaining 51.2
+**Status.** Built — delivered 41.3 (the roll-up whose outstanding fields it names), 51.2
 
 **Obligation.** The system shall raise a notice, at a configured repeat interval while a reporting period is open, where mandatory disclosures remain unanswered or validation findings unresolved, naming the specific modules and fields outstanding rather than reporting only that the report is incomplete.
 
@@ -205,28 +205,30 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 2. The notice repeats at a configured interval and stops when the condition clears. There is no escalation chain and no per-notice assignment (index §3.30 preamble; `use_cases.md` §4.3).
 3. A section declared omitted as classified or sensitive satisfies validation and is discounted in completion, so it is not outstanding (FR-31; `use_cases.md` UC-38).
 4. **A notice's content is fixed when it opens.** When the outstanding fields change between checks, the producer cancels the open notice and raises again, because a raise folded into an open notice only adds recipients (§12.5.6 task-50.1 row (18); task 51.2).
-5. The category is registered by task 51.2, which waits for task 41.3's completion status and decides the repeat interval (task-49.1 row (6)). It is the first producer on the worker (task-49.3 row (3)).
-6. The Organization Administrator's own view of what is outstanding is the status overview of FR-23, not this notice.
+5. The category is `reporting.outstanding_report`, registered by task 51.2. **It is checked every repeat interval per report** — on the days a whole interval after the report was created, counted in its period's zone — **by a validation run stored as the platform's**, and a check that finds something outstanding replaces the open notice with one naming the current list (§12.5.6's task-51.2 row (2), (3)). The day's sweep runs on the worker at 07:00 in Chișinău, started by the outbox like any job (row (1)). An archived entity's periods are left out (row (7)).
+6. The fields are named by their labels in each reader's language, grouped by module, never by their keys (row's as-built note).
+7. The Organization Administrator's own view of what is outstanding is the status overview of FR-23, not this notice.
 
 **Configuration-held values.** The repeat interval is **7 days**, held in the category's behaviour (FR-173) once the category has one (task-49.1 row (3)), so changing it is a publication and not a release (§12.5.6 task-182 notifications row, 182/131). The owner set the value the same day (§12.5.6 task-182 starting-values row).
 
 **Boundaries.** Cancelling it when the condition clears is FR-167's. Once edit access can be held through an advisor relationship the same notice reaches the advisor, with no new category (task 121.2). The manual reminder, which is not this notice, is FR-173's.
 
 **Acceptance criteria.**
-- **AC-1** Given an open period with outstanding mandatory disclosures or unresolved findings, then a notice naming the specific modules and fields is raised to the members with edit access. *(source: FR text; UC-169)* Unmet until 41.3 and 51.2.
-- **AC-2** Given the condition still holds after the configured interval, then the notice is raised again at that interval. *(source: FR text; UC-169; §12.5.6 task-182 notifications row, 182/131)* Unmet until 51.2. The interval is 7 days.
-- **AC-3** Given the set of outstanding fields changes between checks, then the open notice is cancelled and a notice naming the new set is raised. *(source: §12.5.6 task-50.1 row (18); task 51.2)* Unmet until 51.2.
-- **AC-4** Given a view-only member, then they receive no outstanding-report notice. *(source: FR text, "the users with edit access")* Unmet until 51.2.
-- **AC-5** Given a section declared omitted as classified or sensitive, then it is not named as outstanding. *(source: FR-31; UC-38)* Unmet until 51.2; the roll-up leaves the section out since 41.3.
+- **AC-1** Given an open period with outstanding mandatory disclosures or unresolved findings, then a notice naming the specific modules and fields is raised to the members with edit access. *(source: FR text; UC-169)*
+- **AC-2** Given the condition still holds after the configured interval, then the notice is raised again at that interval. *(source: FR text; UC-169; §12.5.6 task-182 notifications row, 182/131)* The interval is 7 days.
+- **AC-3** Given the set of outstanding fields changes between checks, then the open notice is cancelled and a notice naming the new set is raised. *(source: §12.5.6 task-50.1 row (18); task 51.2)* Every check replaces the open notice (§12.5.6's task-51.2 row (2)).
+- **AC-4** Given a view-only member, then they receive no outstanding-report notice. *(source: FR text, "the users with edit access")*
+- **AC-5** Given a section declared omitted as classified or sensitive, then it is not named as outstanding. *(source: FR-31; UC-38)* The roll-up leaves the section out since 41.3, and the notice names the roll-up's list.
 
 **History.**
 - 21 Sep 2026 · project owner · task 49.1 · the producer is task 51.2, which waits for task 41.3; the repeat interval is decided there · §12.5.6 task-49.1 row (6)
 - 5 Oct 2026 · project owner · the repeat interval is 7 days, one configuration value · §12.5.6 task-182 notifications row (182/131)
 - 5 Oct 2026 · project owner · starting value set (182/131) · §12.5.6 task-182 starting-values row
+- 8 Oct 2026 · project owner · task 51.2 · checked every interval per report by a stored validation run, replaced whole; an outbox-started daily sweep; archived entities left out · §12.5.6's task-51.2 row
 
 ### FR-165 — The deadline notice
 
-**Status.** Not started — delivered 41.3 (the roll-up whose outstanding fields it names) · remaining 51.2
+**Status.** Built — delivered 41.3 (the roll-up whose outstanding fields it names), 51.2
 
 **Obligation.** The system shall raise a deadline notice at each configured lead time before a period's due date stating the date, days remaining and current completion state, and shall raise none where the report is already complete and validated.
 
@@ -243,22 +245,23 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 2. **Where the report is already complete and validated nothing is sent** (UC-170 alternate flow; BR-NOT-4).
 3. A period with no due date has nothing to count down to (UC-56).
 4. A locked period cancels an outstanding deadline notice (FR-167).
-5. The category is registered by task 51.2, which decides the lead times (task-49.1 row (6)).
+5. The category is `reporting.report_deadline`, registered by task 51.2. A notice is raised on the day the days remaining equal a lead time, after a validation run stored as the platform's; a check that finds the report ready to file raises none and withdraws the open ones; a period with no report yet reads as not started (§12.5.6's task-51.2 row (d)). An archived entity's periods are left out (row (7)). The due date is written as each reader's language writes a date, never moved by a zone (NFR-34).
 
 **Configuration-held values.** The lead times are **14, 7 and 1 days** before the due date, held in the category's behaviour (FR-173) once the category has one. **Each lead time is its own notice**: its subject names the period and the lead time, because a notice's content is fixed when it opens and the days remaining differ at each step (§12.5.6 task-182 notifications row, 182/132). **Days remaining** is whole calendar days from today's date, read in the due date's own timezone, to the due date, and negative when overdue; the advisor board counts the same way (§12.5.6 task-182 notifications row, 182/133).
 
 **Boundaries.** The completion state the notice states, and the test of *complete and validated*, are task 41.3's. Standalone completion dashboards are deferred (FR-178).
 
 **Acceptance criteria.**
-- **AC-1** Given a period with a due date, then a notice is raised at each configured lead time, carrying the date, the days remaining and the completion state. *(source: FR text; UC-170; §12.5.6 task-182 notifications row, 182/132)* Unmet until 41.3 and 51.2. The lead times are 14, 7 and 1 days, each its own notice.
-- **AC-2** Given the report is complete and validated, then no deadline notice is raised. *(source: FR text; BR-NOT-4)* Unmet until 51.2; readiness is read from the roll-up since 41.3.
-- **AC-3** Given a period with no due date, then no deadline notice is raised. *(source: UC-170 precondition; FR-21)* Unmet until 51.2.
-- **AC-4** Given a deadline notice is outstanding, when the period is locked, then it is cancelled. *(source: FR-167)* Unmet until 51.2.
-- **AC-5** Given a due date, then the days remaining a notice states are the whole calendar days from today's date, read in the due date's timezone, to the due date, so a due date that is today reads 0 and a past one reads negative. *(source: §12.5.6 task-182 notifications row, 182/133)* Unmet until 51.2.
+- **AC-1** Given a period with a due date, then a notice is raised at each configured lead time, carrying the date, the days remaining and the completion state. *(source: FR text; UC-170; §12.5.6 task-182 notifications row, 182/132)* The lead times are 14, 7 and 1 days, each its own notice.
+- **AC-2** Given the report is complete and validated, then no deadline notice is raised. *(source: FR text; BR-NOT-4)* Readiness is the check's own run's.
+- **AC-3** Given a period with no due date, then no deadline notice is raised. *(source: UC-170 precondition; FR-21)*
+- **AC-4** Given a deadline notice is outstanding, when the period is locked, then it is cancelled. *(source: FR-167)*
+- **AC-5** Given a due date, then the days remaining a notice states are the whole calendar days from today's date, read in the due date's timezone, to the due date, so a due date that is today reads 0 and a past one reads negative. *(source: §12.5.6 task-182 notifications row, 182/133)*
 
 **History.**
 - 21 Sep 2026 · project owner · task 49.1 · the producer is task 51.2, which waits for task 41.3; the lead times are decided there · §12.5.6 task-49.1 row (6)
 - 5 Oct 2026 · project owner · lead times of 14, 7 and 1 days, each its own notice; days remaining counted in calendar days in the due date's timezone · §12.5.6 task-182 notifications row (182/132, 182/133)
+- 8 Oct 2026 · project owner · task 51.2 · raised on the lead day after a stored validation run; none for a report ready to file; archived entities left out · §12.5.6's task-51.2 row
 
 ### FR-166 — The report-update notice
 
@@ -298,7 +301,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 ### FR-167 — Cancel when the condition clears; deduplicate on category and subject
 
-**Status.** Partial — delivered 50.1.1, 50.1.3 · remaining 51.2 (the producers whose conditions clear)
+**Status.** Built — delivered 50.1.1, 50.1.3, 51.2 (the producers whose conditions clear)
 
 **Obligation.** The system shall cancel an outstanding notice and stop its repetition as soon as its condition clears — the disclosure supplied, the section declared omitted as classified or sensitive, the period locked — and shall deduplicate on category and subject so that a repeatedly evaluated condition produces one notice rather than one per evaluation.
 
@@ -329,7 +332,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 - **AC-4** Given a cancellation processed before the raise it cancels, then the raise opens nothing and delivers nothing. *(source: §12.5.6 task-50.1 row (12))*
 - **AC-5** Given a cancelled notice, when its key is raised later, then a new notice opens. *(source: §12.5.6 task-50.1 row (6))*
 - **AC-6** Given a manual reminder, when its report's period locks, then the reminder stays in the recipient's centre. *(source: §12.5.6 task-50.3 row (7))*
-- **AC-7** Given the disclosure is supplied, the section declared omitted as classified or sensitive, or the period locked, then the outstanding-report and deadline notices are cancelled and repetition stops. *(source: FR text; §12.5.6 task-182 notifications row, 182/134)* Unmet until 51.2. The write path cancels in its own transaction, and the schedule is the backstop.
+- **AC-7** Given the disclosure is supplied, the section declared omitted as classified or sensitive, or the period locked, then the outstanding-report and deadline notices are cancelled and repetition stops. *(source: FR text; §12.5.6 task-182 notifications row, 182/134)* The write path cancels in its own transaction, and the schedule is the backstop. *Disclosure supplied* and *section declared omitted* withdraw the outstanding-report notice when nothing the last run listed is left (§12.5.6's task-51.2 row (4)); a lock withdraws both notices unconditionally.
 - **AC-8** Given one unchanged condition evaluated repeatedly, then it yields one notification, not one per evaluation. *(source: FR text; §12.5.6 task-50.1 row (6))*
 
 **History.**
@@ -337,10 +340,11 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 - 22 Sep 2026 · project owner · task 50.1.3 · a cancellation outlives its notice and names the raise's key · §12.5.6 task-50.1 rows (12), (13)
 - 22 Sep 2026 · project owner · task 50.3 · a manual reminder is not a watcher and is not cancelled by a lock · §12.5.6 task-50.3 row (7)
 - 5 Oct 2026 · project owner · the write that clears a condition cancels in its own transaction, the schedule being the backstop · §12.5.6 task-182 notifications row (182/134)
+- 8 Oct 2026 · project owner · task 51.2 · a write withdraws the outstanding notice when nothing listed remains, judged against the last run with nothing evaluated; a lock withdraws both · §12.5.6's task-51.2 row (4)
 
 ### FR-173 — Category behaviour as configuration; the manual reminder
 
-**Status.** Partial — delivered 49.1, 49.3, 50.3, 51.3, 52.2.2, 67.10 · remaining 51.2 (lead times and the repeat interval, which no category has yet)
+**Status.** Built — delivered 49.1, 49.3, 50.3, 51.2 (lead times and the repeat interval, edited on A-17), 51.3, 52.2.2, 67.10
 
 **Obligation.** The system shall hold the notification category catalogue's behaviour — default channels, transactional-or-optional classification, deadline lead times, repeat interval — as publishable configuration, so that tuning a notice needs no release, with its per-locale subject and body wording shipped in the release that raises it. The classification of a **mandatory system category** — security, account, invoice delivery, payment failure, service restriction, the advisor access notices (FR-203), and the identity notices registered under them — is declared in code, so no artefact can make one optional and an unreadable one still sends by email. An optional category's classification stays configuration.
 
@@ -356,8 +360,8 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 **Behaviour.** *The catalogue*
 1. **One artefact per category**, kind `notification_category`, scoped by the category key, so A-17 publishes and reverts one category in one action and each category's history reads alone (task-49.1 row (2); NFR-85).
-2. **A category is registered by the task that first raises it.** A category cannot exist unless code raises it, so a catalogue row with no producer is behaviour nothing exhibits (task-49.1 row (1)). The keys are a closed vocabulary in `contracts/notification.port.ts`. Five are registered: `identity.email_verification`, `identity.password_reset`, `identity.invitation` and `platform.admin_invitation` (each email-only and transactional), and `reporting.manual_reminder` (in-app and email, optional).
-3. **Cadence is not modelled until a category has one.** Lead times and the repeat interval arrive with the task that raises the notice that needs them (task-49.1 row (3)).
+2. **A category is registered by the task that first raises it.** A category cannot exist unless code raises it, so a catalogue row with no producer is behaviour nothing exhibits (task-49.1 row (1)). The keys are a closed vocabulary in `contracts/notification.port.ts`. Eight are registered: `identity.email_verification`, `identity.password_reset`, `identity.invitation` and `platform.admin_invitation` (each email-only and transactional), and `reporting.manual_reminder`, `reporting.report_update` (37.3), `reporting.outstanding_report` and `reporting.report_deadline` (51.2), each in-app and email, optional.
+3. **Cadence is modelled where a category has one** (task-49.1 row (3); task 51.2): `repeatIntervalDays` on the outstanding-report notice and `leadTimesDays` on the deadline notice, part of the behaviour published and reverted on A-17. **Which category keeps which is code's** (`CADENCE_OF_CATEGORY`), so a publication that drops a category's cadence, or gives one to a category that keeps none, is refused (§12.5.6's task-51.2 row (5)).
 4. **The reader fails closed.** A mandatory category whose artefact is absent or refused still goes by email, the floor, with the revision named at `error`. An optional category's job fails, lands in the queue's failed set and sends on nothing (task-49.3 row (2)).
 5. A publication reaches a replica on its next poll, with no redeploy (task 49.1).
 
@@ -366,8 +370,8 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 *A-17*
 7. The console lists every category with its behaviour in force, whether code declares it mandatory, and how many people switched it off per channel. Each category's wording is shown rendered with a specimen, read-only (task 67.10 row (1)).
-8. **Rules the platform enforces on publish and on revert**: a mandatory category is `transactional`; a mandatory category travels by email; the four address notices refuse in-app; and a channel whose wording is missing from any catalogue is refused (task-67.10 row; task-50.1 row (20)).
-9. **A publication discloses what changes for recipients** before it is made (UX-123): optional made transactional overrides the switch-offs of N people; a channel removed reaches nobody on it; a channel added reaches everyone, those who switched it off there staying off (task-67.10 row (2)). The preview writes nothing.
+8. **Rules the platform enforces on publish and on revert**: a mandatory category is `transactional`; a mandatory category travels by email; the four address notices refuse in-app; a channel whose wording is missing from any catalogue is refused (task-67.10 row; task-50.1 row (20)); and a category's cadence is present exactly where code declares one (task 51.2).
+9. **A publication discloses what changes for recipients** before it is made (UX-123): optional made transactional overrides the switch-offs of N people; a channel removed reaches nobody on it; a channel added reaches everyone, those who switched it off there staying off (task-67.10 row (2)); and a moved repeat interval or moved lead times changes when they hear (task 51.2). The preview writes nothing.
 10. **A publication carries the revision it was made against.** A revert is one step: the revision before the one in force, published again, refused where it would break a rule above. Each write is audited naming the configuration version it put in force (task-67.10 row).
 
 *The manual reminder (UC-175)*
@@ -379,14 +383,14 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 16. The reminder's producer lives in `core/disclosure`, which owns the report, and raises on the request's own transaction (row (6)).
 
 **Refusals.**
-- *A-17:* a rule above forbids the behaviour → 400 `validation-failed` (`platform.notification.category_refused.<reason>`: `mandatory_classification`, `mandatory_without_email`, `address_notice_in_app`, `wording_missing`) · a newer revision is in force → 409 `notification-category-changed` · the change is what is in force, or nothing to revert to → 409 `conflict` (`platform.notification.category_unchanged`, `…category_nothing_to_revert`) · unknown category → 404 `not-found` · not a Platform Administrator → 403 `insufficient-role` · no session → 401.
+- *A-17:* a rule above forbids the behaviour → 400 `validation-failed` (`platform.notification.category_refused.<reason>`: `mandatory_classification`, `mandatory_without_email`, `address_notice_in_app`, `wording_missing`, `cadence_missing`, `cadence_not_kept`) · a newer revision is in force → 409 `notification-category-changed` · the change is what is in force, or nothing to revert to → 409 `conflict` (`platform.notification.category_unchanged`, `…category_nothing_to_revert`) · unknown category → 404 `not-found` · not a Platform Administrator → 403 `insufficient-role` · no session → 401.
 - *Reminder:* not an Organization Administrator → 403 `insufficient-role` · unknown report, or no active member holds that membership → 404 (`core.report.reminder_recipient_not_found`) · the report is no longer open → 409 `conflict` (`core.report.reminder_not_outstanding`) · the membership is the sender's own → 409 `conflict` (`core.report.reminder_to_self`) · a note over 500 characters → 400 `validation-failed` (request DTO).
 
 **Effects.** A reminder is accepted (202) and delivered by the worker. The categories' publications are audited (A-08).
 
-**Configuration-held values.** `config/seed/notification-category.<key>.json` per category: `channels` and `classification`. The wording is not configuration. The mandatory set (`MANDATORY_NOTIFICATION_CATEGORIES`), the operator-only set and the address-notice set are code.
+**Configuration-held values.** `config/seed/notification-category.<key>.json` per category: `channels` and `classification`, and `repeatIntervalDays` (7, the outstanding-report notice) or `leadTimesDays` (14, 7 and 1, the deadline notice) where the category keeps one. The wording is not configuration. The mandatory set (`MANDATORY_NOTIFICATION_CATEGORIES`), the operator-only set and the address-notice set are code.
 
-**Boundaries.** Whether any plan limits a reminder is task 54's, with the rest of the report controller's keys. An operator invitation reaches console operators alone and is not offered to tenant accounts (task-52.1 row (3)). Deadline lead times and the repeat interval are edited on A-17 only once a category has them, which is task 51.2's.
+**Boundaries.** Whether any plan limits a reminder is task 54's, with the rest of the report controller's keys. An operator invitation reaches console operators alone and is not offered to tenant accounts (task-52.1 row (3)). Deadline lead times and the repeat interval are edited on A-17 since task 51.2, on the two categories that keep them.
 
 **Acceptance criteria.**
 - **AC-1** Given a category's channels or classification changed and published in A-17, then the next notice raised follows the new behaviour with no deployment. *(source: FR text; §12.5.6 task-49.1 row; NFR-85)*
@@ -399,7 +403,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 - **AC-8** Given two reminders to one member about one report, then they are two notices, each carrying its own note. *(source: §12.5.6 task-50.3 row (3))*
 - **AC-9** Given a reminder to the sender, to a person who is not an active member, or about a report no longer open, then it is refused and nothing is raised. *(source: §12.5.6 task-50.3 row (1), (4))*
 - **AC-10** Given a user who is not an Organization Administrator, when they send a reminder, then the answer is 403. *(source: UC-175; `reports.controller.ts` `@RequiresRole`)*
-- **AC-11** Given a category with a deadline lead time or a repeat interval, then both are edited and published as configuration with no deployment. *(source: FR text; UC-176 step 1)* Unmet until 51.2.
+- **AC-11** Given a category with a deadline lead time or a repeat interval, then both are edited and published as configuration with no deployment. *(source: FR text; UC-176 step 1)* On A-17 since task 51.2.
 
 **History.**
 - 19 Aug 2026 · architecture OQ-43 · template wording moved into the message catalogues; a new notice always arrives with a release because code must call `raise()` with its key, and what an operator tunes without a release is the behaviour · `architecture.md` OQ-43
@@ -408,6 +412,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 - 22 Sep 2026 · project owner · task 50.3 · UC-175 amended: the reminder is about a report the administrator picks, to any active member but the sender, each press its own notice · §12.5.6 task-50.3 row; `use_cases.md` UC-175
 - 23 Sep 2026 · project owner · task 67.10 · A-17: the rules enforced on publish and revert, the consequence disclosure, the revision carried · §12.5.6 task-67.10 row
 - 28 Sep 2026 · project owner · the reminder is a dialogue over S-16's list · §12.5.6 task-50.3 row (5) as amended; `design_spec.md` S-16
+- 8 Oct 2026 · project owner · task 51.2 · cadence published on A-17, its presence held to the category by code; a moved cadence disclosed as changing when recipients hear · §12.5.6's task-51.2 row (5)
 
 ## 2. Notification delivery (index §3.31)
 

@@ -771,7 +771,9 @@
         "invitation": "Invitații în organizații",
         "adminInvitation": "Invitații în consola de administrare",
         "manualReminder": "Mementouri",
-        "reportUpdate": "Actualizări ale rapoartelor"
+        "reportUpdate": "Actualizări ale rapoartelor",
+        "outstandingReport": "Câmpuri de completat",
+        "reportDeadline": "Termene de depunere"
       },
       "channels": {
         "in_app": "În aplicație",
@@ -814,7 +816,11 @@
         "changedWithoutOperator": "Configurarea inițială, {time}",
         "neverChanged": "Nimic publicat",
         "unreadableNote": "Setările în vigoare pentru această categorie nu pot fi citite, așa că platforma nu le aplică. Publicați setări noi pentru ea.",
-        "fixed": "Canalele și clasificarea acestei categorii sunt stabilite de platformă, așa că nu se modifică aici."
+        "fixed": "Canalele și clasificarea acestei categorii sunt stabilite de platformă, așa că nu se modifică aici.",
+        "repeatInterval": "Se repetă",
+        "repeatEvery": "{days, plural, one {La fiecare zi} few {La fiecare # zile} other {La fiecare # de zile}}, cât timp raportul are câmpuri de completat",
+        "leadTimes": "Înainte de termen",
+        "leadTimesValue": "Cu {days} zile înainte de termenul de depunere, câte o notificare"
       },
       "form": {
         "title": "Setările",
@@ -833,7 +839,13 @@
         },
         "classificationFixed": "Destinatarii nu o pot dezactiva: platforma o trimite întotdeauna.",
         "preview": "Previzualizați și publicați",
-        "reset": "Renunțați la modificări"
+        "reset": "Renunțați la modificări",
+        "repeatIntervalLabel": "Se repetă la fiecare (zile)",
+        "repeatIntervalHelp": "Cât timp raportul are câmpuri de completat, notificarea se trimite din nou după acest număr de zile.",
+        "repeatIntervalInvalid": "Intervalul nu este un număr întreg de zile, așa că setările nu pot fi publicate. Introduceți un număr de zile, de exemplu 7.",
+        "leadTimesLabel": "Zile înainte de termen",
+        "leadTimesHelp": "Câte zile înainte de termenul de depunere pleacă fiecare notificare. Separați-le prin virgulă, de exemplu 14, 7, 1.",
+        "leadTimesInvalid": "Zilele nu sunt numere întregi diferite, separate prin virgulă, așa că setările nu pot fi publicate. Introduceți, de exemplu, 14, 7, 1."
       },
       "wording": {
         "title": "Textul mesajelor",
@@ -850,7 +862,9 @@
       },
       "revert": {
         "note": "Setările anterioare: {channels}; {classification}.",
-        "action": "Reveniți la setările anterioare"
+        "action": "Reveniți la setările anterioare",
+        "repeatInterval": "Intervalul de repetare anterior: {days, plural, one {o zi} few {# zile} other {# de zile}}.",
+        "leadTimes": "Zilele anterioare înainte de termen: {days}."
       },
       "menu": {
         "revert": "Reveniți la setările anterioare…"
@@ -869,7 +883,9 @@
           "switch_offs_overridden": "{people, plural, =0 {Nimeni nu a dezactivat-o până acum, iar de acum nimeni nu o mai poate dezactiva.} one {# persoană a dezactivat-o și o va primi din nou, fără să o mai poată dezactiva.} few {# persoane au dezactivat-o și o vor primi din nou, fără să o mai poată dezactiva.} other {# de persoane au dezactivat-o și o vor primi din nou, fără să o mai poată dezactiva.}}",
           "becomes_switchable": "Destinatarii o vor putea dezactiva din profilul lor.",
           "channel_removed": "Nu se mai trimite {channel}.",
-          "channel_added": "Se trimite și {channel}{stayingOff, plural, =0 {.} one {, cu excepția unei persoane care a dezactivat acest canal.} few {, cu excepția a # persoane care au dezactivat acest canal.} other {, cu excepția a # de persoane care au dezactivat acest canal.}}"
+          "channel_added": "Se trimite și {channel}{stayingOff, plural, =0 {.} one {, cu excepția unei persoane care a dezactivat acest canal.} few {, cu excepția a # persoane care au dezactivat acest canal.} other {, cu excepția a # de persoane care au dezactivat acest canal.}}",
+          "repeat_interval_changed": "Cât timp raportul are câmpuri de completat, notificarea se va repeta la fiecare {days, plural, one {zi} few {# zile} other {# de zile}}.",
+          "lead_times_changed": "Notificările vor pleca cu {days} zile înainte de termenul de depunere, câte una pentru fiecare."
         },
         "nothingChanges": "Pentru destinatari nu se schimbă nimic: aceleași persoane o primesc pe aceleași canale.",
         "retained": "Textul mesajelor nu se schimbă, iar notificările deja trimise rămân la destinatari. Setările au efect în câteva secunde, iar după publicare puteți reveni la cele de acum într-un singur pas."

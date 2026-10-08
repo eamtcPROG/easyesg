@@ -3,12 +3,10 @@ import type { ReportUpdateAudience } from '@api/modules/core/calculator/interfac
 import type { FactorSetPin } from '@api/modules/core/calculator/models/factor-set.model';
 import type { AffectedReport } from '@api/modules/core/calculator/models/report-update.model';
 import { REPORT_STATUS } from '@api/modules/core/disclosure/models/report.model';
-import { MEMBERSHIP_ROLE, MEMBERSHIP_STATUS } from '@api/modules/identity/membership/models/membership.model';
 import { TenantRepository } from '../tenant-repository';
+import { editAudience } from './edit-audience';
 
 /** The roles that hold edit access — who a report-update notice reaches (182/135). */
-const EDIT_ROLES: readonly string[] = [MEMBERSHIP_ROLE.EDITOR, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR];
-
 /**
  * `REPORT_UPDATE_AUDIENCE` (task 37.3) — one organization's affected reports and its editors, **on the transaction
  * `TENANT_WORK` bound to it**, so row-level security scopes both reads to that organization and nothing here names it.
@@ -42,11 +40,7 @@ export class ReportUpdateAudienceRepository extends TenantRepository<never> impl
     return rows.map((row) => ({ reportId: row.id, entityName: row.entity_name, fiscalYear: row.fiscal_year }));
   }
 
-  async editors(): Promise<readonly string[]> {
-    const rows = await this.manager.query<{ account_id: string }[]>(
-      `SELECT account_id FROM identity.membership WHERE status = $1 AND role = ANY($2::text[]) ORDER BY account_id`,
-      [MEMBERSHIP_STATUS.ACTIVE, EDIT_ROLES],
-    );
-    return rows.map((row) => row.account_id);
+  editors(): Promise<readonly string[]> {
+    return editAudience(this.manager);
   }
 }

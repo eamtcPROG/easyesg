@@ -5,6 +5,8 @@ import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-confi
 import { NOTIFICATION_CHANNEL } from '../models/notification-category.model';
 import { NotificationCategoryCatalog } from './notification-category-catalog.service';
 import { CategoryWordingService } from './category-wording.service';
+import { DisclosureLabelService } from '@api/modules/platform/localization/services/disclosure-label.service';
+import { NoticeParamsService } from '@api/modules/platform/notification/services/notice-params.service';
 
 /**
  * A-17's wording, rendered with each category's specimen (task 67.10; §12.5.6's task-67.10 row (1)).
@@ -19,7 +21,7 @@ const texts = (value: unknown): string[] =>
   typeof value === 'string' ? [value] : typeof value === 'object' && value !== null ? Object.values(value).flatMap(texts) : [];
 
 describe('CategoryWordingService (task 67.10)', () => {
-  const wording = new CategoryWordingService();
+  const wording = new CategoryWordingService(new NoticeParamsService(new DisclosureLabelService()));
   const catalog = new NotificationCategoryCatalog(seedConfigurationStore(readSeedEntries()));
 
   beforeAll(initialiseCatalogue);

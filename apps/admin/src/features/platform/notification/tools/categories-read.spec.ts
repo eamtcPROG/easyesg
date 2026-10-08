@@ -6,6 +6,7 @@ const REMINDER: ConsoleCategory = {
   categoryKey: 'reporting.manual_reminder',
   mandatory: false,
   addressNotice: false,
+  cadence: null,
   inForce: null,
   switchOffs: { inApp: 0, email: 0, people: 0 },
   wording: [],

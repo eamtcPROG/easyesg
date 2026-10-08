@@ -354,6 +354,26 @@
           "body": "Setul {setLabel} a fost înlocuit de {newSetLabel}. Recalculați emisiile pentru ca cifrele să folosească factorii în vigoare.",
           "action": "{reach, select, one {Deschideți calculatorul} other {Deschideți rapoartele}}"
         }
+      },
+      "outstanding_report": {
+        "name": "Câmpuri de completat",
+        "subject": "Raportul {entityName} pentru {fiscalYear} are {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat",
+        "body": "Bună ziua,\n\nRaportul de durabilitate al {entityName} pentru {fiscalYear} are încă {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat sau de corectat:\n\n{fields}\n\nCât timp rămân deschise, raportul nu este gata de depus. Deschideți-l de aici:\n\n{link}\n\nDacă mai rămâne ceva de completat, vă vom aminti din nou peste {intervalDays, plural, one {o zi} few {# zile} other {# de zile}}. Primiți acest mesaj pentru că puteți edita rapoartele organizației.",
+        "in_app": {
+          "title": "Raportul {entityName} pentru {fiscalYear} are {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat",
+          "body": "De completat sau de corectat: {fields}.",
+          "action": "Deschideți raportul"
+        }
+      },
+      "report_deadline": {
+        "name": "Termene de depunere",
+        "subject": "{daysRemaining, plural, one {Mai este o zi} few {Mai sunt # zile} other {Mai sunt # de zile}} până la termenul raportului {entityName} pentru {fiscalYear}",
+        "body": "Bună ziua,\n\nRaportul de durabilitate al {entityName} pentru {fiscalYear} trebuie depus până la {dueDate} — {daysRemaining, plural, one {mai este o zi} few {mai sunt # zile} other {mai sunt # de zile}}.\n\n{started, select, no {Raportul nu a fost început încă.} other {Mai {outstanding, plural, one {este un câmp} few {sunt # câmpuri} other {sunt # de câmpuri}} de completat sau de corectat.}}\n\nDeschideți raportul de aici:\n\n{link}\n\nPrimiți acest mesaj pentru că puteți edita rapoartele organizației.",
+        "in_app": {
+          "title": "{daysRemaining, plural, one {Mai este o zi} few {Mai sunt # zile} other {Mai sunt # de zile}} până la termenul raportului {entityName} pentru {fiscalYear}",
+          "body": "Termenul este {dueDate}. {started, select, no {Raportul nu a fost început încă.} other {Mai {outstanding, plural, one {este un câmp} few {sunt # câmpuri} other {sunt # de câmpuri}} de completat sau de corectat.}}",
+          "action": "Deschideți raportul"
+        }
       }
     },
     "unsubscribe": {
@@ -429,7 +449,9 @@
         "mandatory_classification": "Această categorie trebuie primită întotdeauna, așa că nu poate deveni una pe care destinatarii o pot dezactiva și nu s-a publicat nimic. Păstrați-o ca o categorie pe care nimeni nu o poate dezactiva.",
         "mandatory_without_email": "Această categorie trebuie primită întotdeauna, iar doar e-mailul ajunge la destinatari fără ca aceștia să se conecteze, așa că nu poate fi publicată fără e-mail. Păstrați e-mailul printre canalele ei.",
         "address_notice_in_app": "Această notificare este trimisă la o adresă, cu un link pe care doar destinatarul îl poate folosi, iar în aplicație linkul nu ar putea fi deschis, așa că nu poate fi trimisă în aplicație. Trimiteți-o doar prin e-mail.",
-        "wording_missing": "Unul dintre canalele alese nu are textul acestei categorii în toate limbile, așa că nu s-a publicat nimic. Eliminați acel canal; textul lui sosește odată cu o versiune nouă a aplicației."
+        "wording_missing": "Unul dintre canalele alese nu are textul acestei categorii în toate limbile, așa că nu s-a publicat nimic. Eliminați acel canal; textul lui sosește odată cu o versiune nouă a aplicației.",
+        "cadence_missing": "Această categorie se trimite după un calendar — la un interval de repetare sau cu un număr de zile înaintea termenului — iar publicarea nu îl include, așa că nu s-a publicat nimic. Completați-l și publicați din nou.",
+        "cadence_not_kept": "Această categorie nu se trimite la un interval de repetare și nici cu zile înaintea unui termen, așa că nu s-a publicat nimic. Eliminați aceste valori."
       }
     }
   }

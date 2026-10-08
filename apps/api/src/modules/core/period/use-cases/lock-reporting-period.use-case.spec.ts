@@ -1,3 +1,4 @@
+import type { CancelNotificationCommand, NotificationPort } from '@api/contracts/notification.port';
 import { OpenReportingPeriod } from './open-reporting-period.use-case';
 import { LockReportingPeriod } from './lock-reporting-period.use-case';
 import { FakeReportingEntityStore } from '@api/modules/core/entity/testing/entity.fakes';
@@ -30,6 +31,7 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
   const NOW = new Date('2026-08-30T09:00:00.000Z');
   const LATER = new Date('2026-08-30T10:00:00.000Z');
   const ACTOR = '00000000-0000-0000-0000-0000000000f1';
+  const ORG = '00000000-0000-0000-0000-0000000000a1';
 
   /** The rule set a lock pins (task 41.1): revision 7 is in force, and the days it was asked about are kept. */
   const IN_FORCE: RuleSetInForce = { ruleSet: { rules: [] }, revision: 7 };
@@ -45,6 +47,14 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
       pinned: () => Promise.resolve(null),
     };
     let now = NOW;
+    const cancelled: CancelNotificationCommand[] = [];
+    const notifications: NotificationPort = {
+      raise: () => Promise.reject(new Error('A lock raises nothing')),
+      cancel: (command) => {
+        cancelled.push(command);
+        return Promise.resolve();
+      },
+    };
     return {
       store,
       askedOn,
@@ -54,7 +64,11 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
       at: (instant: Date) => {
         now = instant;
       },
-      useCase: new LockReportingPeriod(store, () => now, ruleSets),
+      cancelled,
+      useCase: new LockReportingPeriod(store, () => now, ruleSets, notifications, {
+        repeatIntervalDays: () => 7,
+        leadTimesDays: () => [14, 7, 1],
+      }),
       edit: new OpenReportingPeriod(
         store,
         new FakeReportingEntityStore(),
@@ -67,17 +81,51 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
   describe('locking (UC-57)', () => {
     it('records when and by whom', async () => {
       const { useCase } = build();
-      const locked = await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR });
+      const locked = await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR, organizationId: ORG });
 
       expect(locked.lockedAt).toEqual(NOW);
       expect(locked.lockedBy).toBe(ACTOR);
     });
 
+    it('withdraws its report’s outstanding notice and every lead time’s deadline notice, on its own transaction (task 51.2)', async () => {
+      const withReport = aPeriod({
+        report: { id: '00000000-0000-0000-0000-0000000000d1', status: 'open', readyToFile: false, updatedAt: NOW },
+      });
+      const { useCase, cancelled } = build([withReport]);
+      await useCase.lock({ periodId: withReport.id, actorId: ACTOR, organizationId: ORG });
+
+      expect(cancelled).toEqual([
+        {
+          categoryKey: 'reporting.outstanding_report',
+          organizationId: ORG,
+          subjectRef: 'report:00000000-0000-0000-0000-0000000000d1:outstanding',
+        },
+        ...[14, 7, 1].map((lead) => ({
+          categoryKey: 'reporting.report_deadline',
+          organizationId: ORG,
+          subjectRef: `period:${withReport.id}:deadline:${lead}`,
+        })),
+      ]);
+    });
+
+    it('withdraws only the deadline notices of a period with no report, and nothing when refused', async () => {
+      const { useCase, cancelled } = build();
+      await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR, organizationId: ORG });
+      expect(cancelled.map((command) => command.categoryKey)).toEqual([
+        'reporting.report_deadline',
+        'reporting.report_deadline',
+        'reporting.report_deadline',
+      ]);
+
+      await expect(useCase.lock({ periodId: aPeriod().id, actorId: ACTOR, organizationId: ORG })).rejects.toThrow();
+      expect(cancelled).toHaveLength(3);
+    });
+
     it('refuses a period that is already locked, because the screen is stale', async () => {
       const { useCase } = build();
-      await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR });
+      await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR, organizationId: ORG });
 
-      await expect(useCase.lock({ periodId: aPeriod().id, actorId: ACTOR })).rejects.toThrow(
+      await expect(useCase.lock({ periodId: aPeriod().id, actorId: ACTOR, organizationId: ORG })).rejects.toThrow(
         PeriodLockStateError,
       );
     });
@@ -86,7 +134,7 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
       const { useCase, askedOn, at } = build();
       // 22:30 UTC on 30 August is already the 31st in Chișinău, the period's zone.
       at(new Date('2026-08-30T22:30:00.000Z'));
-      const locked = await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR });
+      const locked = await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR, organizationId: ORG });
 
       expect(askedOn).toEqual(['2026-08-31']);
       expect(locked.lockedRuleSetRevision).toBe(7);
@@ -94,7 +142,7 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
 
     it('refuses the lock, and leaves the period open, where no rule set can be read', async () => {
       const { useCase, store } = build([aPeriod()], null);
-      await expect(useCase.lock({ periodId: aPeriod().id, actorId: ACTOR })).rejects.toThrow(
+      await expect(useCase.lock({ periodId: aPeriod().id, actorId: ACTOR, organizationId: ORG })).rejects.toThrow(
         ValidationRulesUnavailableError,
       );
       expect((await store.findPeriod({ periodId: aPeriod().id }))?.lockedAt).toBeNull();
@@ -103,7 +151,7 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
     it('refuses a period that does not exist in the bound organization', async () => {
       const { useCase } = build();
       await expect(
-        useCase.lock({ periodId: '00000000-0000-0000-0000-0000000000ff', actorId: ACTOR }),
+        useCase.lock({ periodId: '00000000-0000-0000-0000-0000000000ff', actorId: ACTOR, organizationId: ORG }),
       ).rejects.toThrow(PeriodNotFoundError);
     });
   });
@@ -116,7 +164,7 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
   describe('a locked period takes no writes', () => {
     it('refuses an edit to the shell, the administrator’s included', async () => {
       const { useCase, edit } = build();
-      await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR });
+      await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR, organizationId: ORG });
 
       await expect(
         edit.update({
@@ -128,7 +176,7 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
 
     it('admits the same edit once the period is reopened', async () => {
       const { useCase, edit } = build();
-      await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR });
+      await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR, organizationId: ORG });
       await useCase.reopen({ periodId: aPeriod().id, reason: 'corectare', actorId: ACTOR });
 
       const updated = await edit.update({
@@ -142,7 +190,7 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
   describe('reopening (UC-58)', () => {
     it('clears the lock and records who, when and why', async () => {
       const { useCase, advance } = build();
-      await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR });
+      await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR, organizationId: ORG });
       advance();
 
       const reopened = await useCase.reopen({
@@ -176,7 +224,7 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
     it('keeps every reopening, most recent first', async () => {
       const { useCase } = build();
       for (const reason of ['prima corectare', 'a doua corectare']) {
-        await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR });
+        await useCase.lock({ periodId: aPeriod().id, actorId: ACTOR, organizationId: ORG });
         await useCase.reopen({ periodId: aPeriod().id, reason, actorId: ACTOR });
       }
 

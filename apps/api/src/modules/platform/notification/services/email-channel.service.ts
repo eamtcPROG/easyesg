@@ -8,6 +8,7 @@ import {
   type SuppressionStore,
 } from '../interfaces/suppression-store.interface';
 import { DELIVERY_OUTCOME } from '../models/notification-record.model';
+import { NoticeParamsService } from './notice-params.service';
 
 /**
  * The one caller of `EmailPort` (tasks 49.2, 49.3). It decides nothing about channels — its callers have —
@@ -39,6 +40,7 @@ export class EmailChannelService implements EmailChannel {
   constructor(
     @Inject(EMAIL_PORT) private readonly email: EmailPort,
     @Inject(SUPPRESSION_STORE) private readonly suppression: SuppressionStore,
+    private readonly params: NoticeParamsService,
   ) {}
 
   async send(email: NotificationEmail): Promise<EmailChannelResult> {
@@ -54,7 +56,8 @@ export class EmailChannelService implements EmailChannel {
         to: email.to,
         locale: email.locale,
         templateKey: email.templateKey ?? email.categoryKey,
-        params: email.params,
+        // A field list named and a date written in the recipient's language (task 51.2), before the adapter's ICU.
+        params: this.params.forLocale({ params: email.params, locale: email.locale }),
         idempotencyKey: email.idempotencyKey,
         unsubscribe: email.unsubscribe,
       });

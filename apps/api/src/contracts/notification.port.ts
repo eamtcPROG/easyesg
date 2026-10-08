@@ -37,6 +37,16 @@ export const NOTIFICATION_CATEGORY = {
    * email, so not among the mandatory set below.
    */
   REPORT_UPDATE: 'reporting.report_update',
+  /**
+   * FR-164's outstanding-report notice (task 51.2): an open report's outstanding fields, by module, to the members with
+   * edit access, re-raised every repeat interval while anything is outstanding. **Optional**, in-app and email.
+   */
+  OUTSTANDING_REPORT: 'reporting.outstanding_report',
+  /**
+   * FR-165's deadline notice (task 51.2): a period's due date, the days remaining and the report's completion state, at
+   * each lead time, each its own notice (182/132). **Optional**, in-app and email.
+   */
+  REPORT_DEADLINE: 'reporting.report_deadline',
 } as const;
 
 export type NotificationCategoryKey = (typeof NOTIFICATION_CATEGORY)[keyof typeof NOTIFICATION_CATEGORY];
@@ -85,6 +95,29 @@ export const ADDRESS_NOTICE_CATEGORIES: ReadonlySet<NotificationCategoryKey> = n
   NOTIFICATION_CATEGORY.INVITATION,
   NOTIFICATION_CATEGORY.ADMIN_INVITATION,
 ]);
+
+/**
+ * The two cadences a category can keep (task 51.2; FR-173): a **repeat interval**, the days between raises of a notice
+ * whose condition still holds (FR-164), and **lead times**, the days before a due date at which a notice is raised
+ * (FR-165). Each is configuration in the category's artefact, published on A-17 like its channels.
+ */
+export const NOTIFICATION_CADENCE = {
+  REPEAT_INTERVAL: 'repeat_interval',
+  LEAD_TIMES: 'lead_times',
+} as const;
+
+export type NotificationCadence = (typeof NOTIFICATION_CADENCE)[keyof typeof NOTIFICATION_CADENCE];
+
+/**
+ * Which category keeps which cadence — declared in code beside the mandatory set, for its reason: **the producer that
+ * reads a cadence is code**, so whether a category has one is not something a publication can change. A-17 refuses a
+ * publication that drops a category's cadence or gives one to a category that keeps none (task 51.2). Whoever adds a
+ * category decides here too; a category with no entry keeps no cadence.
+ */
+export const CADENCE_OF_CATEGORY: Readonly<Partial<Record<NotificationCategoryKey, NotificationCadence>>> = {
+  [NOTIFICATION_CATEGORY.OUTSTANDING_REPORT]: NOTIFICATION_CADENCE.REPEAT_INTERVAL,
+  [NOTIFICATION_CATEGORY.REPORT_DEADLINE]: NOTIFICATION_CADENCE.LEAD_TIMES,
+};
 
 export interface RaiseNotificationCommand {
   /** Category from the configuration-held catalogue (FR-173). */

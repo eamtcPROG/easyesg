@@ -6,6 +6,8 @@ import type { ListNotifications } from '../use-cases/list-notifications.use-case
 import type { MarkAllNotificationsRead } from '../use-cases/mark-all-notifications-read.use-case';
 import type { MarkNotificationRead } from '../use-cases/mark-notification-read.use-case';
 import { NotificationCentreService } from './notification-centre.service';
+import { DisclosureLabelService } from '@api/modules/platform/localization/services/disclosure-label.service';
+import { NoticeParamsService } from './notice-params.service';
 
 jest.mock('@api/app/messages/catalogue', () => ({ translate: jest.fn() }));
 
@@ -36,6 +38,7 @@ describe('NotificationCentreService (tasks 50.1.2, 50.2.1)', () => {
       {} as MarkAllNotificationsRead,
       // The list reads; it hints nothing (task 148).
       { hint: () => Promise.resolve() },
+      new NoticeParamsService(new DisclosureLabelService()),
     );
   const query = { readState: null, categories: [], newestFirst: true, skip: 0, take: 25 };
   const translated = jest.mocked(translate);

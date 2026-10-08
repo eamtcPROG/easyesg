@@ -1,6 +1,6 @@
 import { CATEGORY_CONSEQUENCE, type CategoryConsequence } from '@easyesg/contracts';
 import { ConsequenceDialogue } from '@easyesg/ui';
-import { useTranslations } from 'use-intl';
+import { useFormatter, useTranslations } from 'use-intl';
 import { NOTIFICATION_CATEGORY_LABEL } from '~/features/platform/shared/notification-category-label';
 import { CATEGORY_CONTROL, type CategoryAction } from '../../../tools/category-action-state';
 
@@ -8,7 +8,8 @@ import { CATEGORY_CONTROL, type CategoryAction } from '../../../tools/category-a
  * UX-123's scope disclosure and confirmation (task 67.10; FR-163, UX-65, UX-70) — the category named, and **one
  * sentence per consequence the api previewed**: the people whose choice to switch it off stops counting, that
  * recipients may now switch it off, a channel it stops travelling on, and a channel it starts on with the people who
- * stay switched off there (§12.5.6's task-67.10 row (2)). **The api computes them**, from the switch-offs it holds; the
+ * stay switched off there (§12.5.6's task-67.10 row (2)) — and since task 51.2 a moved repeat interval or lead times,
+ * which change when recipients hear. **The api computes them**, from the switch-offs it holds; the
  * console only words them, so what is disclosed is what the publication will do.
  *
  * The consequence renders inside one paragraph, so the sentences are joined rather than listed.
@@ -27,6 +28,7 @@ export function CategoryConfirmation({
   const t = useTranslations('platform.notificationCategories.confirm');
   const tCategories = useTranslations('platform.notificationCategories.categories');
   const tChannels = useTranslations('platform.notificationCategories.channelPhrase');
+  const format = useFormatter();
   const name = confirming === null ? '' : tCategories(NOTIFICATION_CATEGORY_LABEL[confirming.action.categoryKey]);
   const reverting = confirming?.action.control === CATEGORY_CONTROL.REVERT;
 
@@ -46,6 +48,16 @@ export function CategoryConfirmation({
           : t('consequences.channel_added', {
               channel: tChannels(consequence.channel),
               stayingOff: consequence.stayingOff ?? 0,
+            });
+      case CATEGORY_CONSEQUENCE.REPEAT_INTERVAL_CHANGED:
+        return consequence.repeatIntervalDays === undefined
+          ? ''
+          : t('consequences.repeat_interval_changed', { days: consequence.repeatIntervalDays });
+      case CATEGORY_CONSEQUENCE.LEAD_TIMES_CHANGED:
+        return consequence.leadTimesDays === undefined
+          ? ''
+          : t('consequences.lead_times_changed', {
+              days: format.list(consequence.leadTimesDays.map(String), 'enumeration'),
             });
     }
   };

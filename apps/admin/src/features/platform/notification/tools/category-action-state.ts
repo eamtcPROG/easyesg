@@ -44,7 +44,14 @@ export const revertActionOf = (category: ConsoleCategory): CategoryAction | null
   return {
     control: CATEGORY_CONTROL.REVERT,
     categoryKey: category.categoryKey,
-    behaviour: { channels: [...inForce.previous.channels], classification: inForce.previous.classification },
+    // The cadence travels with it (task 51.2): a preview of the category's previous behaviour without it is refused as
+    // missing one, by the rule the api holds every publication to.
+    behaviour: {
+      channels: [...inForce.previous.channels],
+      classification: inForce.previous.classification,
+      ...(inForce.previous.repeatIntervalDays === undefined ? {} : { repeatIntervalDays: inForce.previous.repeatIntervalDays }),
+      ...(inForce.previous.leadTimesDays === undefined ? {} : { leadTimesDays: [...inForce.previous.leadTimesDays] }),
+    },
     expectedRevision: inForce.revision,
   };
 };

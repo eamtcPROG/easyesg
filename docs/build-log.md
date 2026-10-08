@@ -28876,3 +28876,158 @@ entrypoint's code changed. It ran per the `apps/api` row, one suite at a time, w
 - **Not run:** `pnpm e2e:worker` (no consumer changed), `pnpm openapi:check` (no controller or DTO), `pnpm
   migrations:check` (no migration). The review agents and `gates:clean` wait for Stage 2's end, since task 201 is not
   its last row.
+
+## Task 51.2 — The outstanding-report and deadline notices, on the worker's first scheduled job; task 51 closes · 2026-10-08
+
+FR-164 and FR-165 are raised. Each day at 07:00 Chișinău time the worker sweeps every open period of an active entity.
+Each period that owes a check gets its own job, which runs a validation run stored as the platform's and then raises or
+withdraws the two notices to the members with edit access:
+
+- the outstanding-report notice, every 7 days per report, naming the outstanding fields by module in the reader's
+  language;
+- the deadline notice, 14, 7 and 1 days before the due date, with the date, the days remaining and how far the report
+  has come.
+
+The write that answers the last listed field withdraws the outstanding notice, and a lock withdraws both. A-17 edits
+the interval and the lead times. The scheduler is new infrastructure, which tasks 200, 163, 65.1 and 60.6 will reuse.
+With 51.1, 51.3 and 51.4 done, task 51 closes and moves under Phase 6.
+
+### Decided before and during building
+
+One batch of six, each answered with the recommended option, and one question asked during the build. All are in
+§12.5.6's task-51.2 row:
+- **(1) A scheduled run starts as an outbox row**, P-6 kept literal. *Declined:* BullMQ's job scheduler.
+- **(2) Checked every 7 days per report, re-raised whole.** No state is kept, and a working reporter hears at most once
+  a week. *Declined:* a daily check reading the open notice back.
+- **(3) The check's run is stored as the platform's**, so the notice and S-08 name the same fields.
+- **(4) A write withdraws the outstanding notice when nothing listed remains**, judged against the last run with
+  nothing evaluated, so 182/26 stands. A lock withdraws both notices unconditionally.
+- **(5) Cadence is edited on A-17 within 51.2**, api and console; task 51 widens to `admin`.
+- **(6) The trial-expiry notice's lead time is 7 days, one notice.** FR-93 records the number; task 60.6 registers it.
+- **(7) An archived entity's periods are left out** (asked during the build).
+- **Derived from the sources:**
+  - the audience is the members with edit access, read by one query now shared with FR-166's notice;
+  - both categories are optional, in-app and email;
+  - every existing category already travelled the outbox, so 51.2's first clause was met before it.
+
+### The calls taken in the build, and why each holds
+
+- **The sweep fans out.** One check row per period, keyed by the period and the day, so one period's failure retries
+  alone and a retried sweep writes nothing twice. Each check counts its days from the moment the slot opened, so a
+  retry after midnight still checks the day it was scheduled for.
+- **The outstanding notice is withdrawn and raised in two transactions.** A cancellation and a raise of one key cannot
+  share a transaction (FR-167's boundary).
+- **The residual window.** A check that dies after its raise commits but before its job is acknowledged would, on
+  retry, withdraw that notice and raise it again: one duplicate email in a narrow crash window, recorded rather than
+  machined away.
+- **Validation runs on the worker through the request tier's own classes.**
+  - The wizard's read and everything under it, the prior period's values and `RunValidation` are registered in both
+    modes.
+  - `EVALUATION_SCOPES` reads `ReadWizardStep` directly in both modes. That left `WizardService.evaluationScope` with
+    no reader, so it went.
+  - The migration grants `esg_worker` the run's writes on its three tables and adds three directory policies, task
+    37.3's precedent: the period, the report and the entity, readable only while nothing is bound.
+- **A field list and a date are notice params the notification module renders per reader.**
+  - FR-164 names fields, the centre renders at read and the email at send, each in its recipient's language, so a key
+    has to stay a key until then.
+  - A param may hold a field list (element keys by module, with the report's taxonomy version) or a calendar date, and
+    `NoticeParamsService` expands both before ICU for the centre, the email and A-17's specimen alike.
+  - A field with no label is left out rather than printed by its key.
+  - The date is written from its calendar day in UTC, so no zone moves it.
+- **The write's withdrawal** is `ClearOutstandingNotice`, composed after the ordinary write in `WizardService.write`.
+  - A listed field counts as answered when its row's `updated_at` follows the run's `evaluated_at`. That is what keeps a
+    field held by a consistency finding, answered before the run, from clearing on a write that never touched it.
+  - The scope is computed only for a write to B1's omission list.
+- **A-17**
+  - The stored payload had been rebuilt as `{channels, classification}` and would have dropped a published cadence. It
+    now keeps it.
+  - A cadence missing, or given to a category that keeps none, is refused (`cadence_missing`, `cadence_not_kept`).
+  - Sameness compares the cadence, so an interval-only change is not refused as unchanged.
+  - **The preview names a moved cadence** (`repeat_interval_changed`, `lead_times_changed`). Without it the disclosure
+    would have read *nothing changes for recipients* over a change to when they hear, which UX-123 forbids.
+  - A revert's preview carries the previous cadence; without it the preview is refused as missing one.
+- **Wording**
+  - Authored in ro, en and ru, formal, NFR-79's three parts in each email.
+  - The deadline notice's state is a one-word select (`started`): the identifier gate refused `not_started` as a
+    snake_case token in a message, select key or not.
+
+### Found in passing
+
+- **The scheduler's first key would have stopped every notice on the platform.**
+  - The browser suite's worker logged *Outbox dispatch failed* every second. BullMQ refuses a `:` in a custom job id
+    unless the id has exactly three parts, and the sweep's `job:day` had two.
+  - The dispatcher fails a whole batch on one bad row and charges the attempt to every row in it, so the innocent
+    notices beside it would have been abandoned after ten tries.
+  - No assertion anywhere was red; the run passed 27 of 27. The worker's own boot proof had booted the same ticker,
+    and nothing reads its log.
+  - The keys are `/`-separated now, and `writeOutboxEventOnce` refuses a colon where the key is made.
+- **Four identity producers' keys pass only by BullMQ's three-part exception**, which its own source says the next
+  breaking release removes. Raised as its own task rather than changed here: a key's spelling for rows already in
+  flight is a decision.
+- **A lock now writes withdrawals, which seven suites had no reason to clean.** The first full `pnpm e2e` failed only
+  `outbox.e2e-spec.ts`, whose stray check named over a hundred `platform.notification.cancelled` rows. The suites were
+  calculator, disclosure-value, periods, reports, report-snapshot, validation and wizard: they lock periods and delete
+  their organizations, and the outbox carries no foreign key to take the rows with them.
+  - `deleteNoticeWithdrawalsOf` now runs in each `afterAll`, scoped by the suite's own organizations, as task 148's
+    `deleteHintsOf` is.
+  - The lock itself stays unconditional: guarding it on a due date would leave a deadline notice whose due date was
+    cleared afterwards open for good.
+- **S-26's category filter offers the two categories with no change to S-26**, as the task-50.2 row (7) says it would.
+  Its browser test held the list to the old three, and was extended.
+- **The worker's boot proof routed nine jobs and missed `calculator.factor_set_replaced`** (task 37.3). It probes all ten
+  now, and asserts what the ticker schedules.
+- **A stale lint cache.** After the contracts gained `NOTIFICATION_CADENCE`, `pnpm lint` kept reporting the console's
+  files as unresolved: their bytes had not changed, and the types they read had. This is the root `CLAUDE.md`'s
+  recorded trap. A run without the cache was clean, and the cache was cleared.
+
+### Searched for the shape
+
+- **Every `@HandlesJob`** against the boot proof's list, which found the missing factor job.
+- **Every outbox `idempotencyKey`** for a colon, which found the four identity keys, raised.
+- **Every category enumeration** that a new category moves:
+  - S-27's offered list and its e2e;
+  - A-17's e2e;
+  - the console's label map, which the build forces;
+  - the email renderer's spec, which feeds each category its params;
+  - the catalogue spec, which holds the seed to A-17's rules.
+
+### Proven to bite
+
+Each mutation was restored afterwards.
+- **The outstanding raise moved into the cancellation's transaction:** the check's spec red.
+- **"Since the run" dropped from the clearance rule:** its spec red on the field answered before the run.
+- **The lock's withdrawal removed:** two lock specs red.
+- **The directory's archived filter defeated:** the notices e2e red on the directory case.
+
+### Gates
+
+The change reaches `apps/api` (a migration, DTOs, a consumer and two worker jobs), `apps/admin`, `packages/contracts`
+(regenerated) and `packages/i18n`. So every dependent's row ran, one suite at a time, with no dev server running.
+- **`pnpm lint`, cold.** The stale cache above was cleared, and a cold whole-repo lint ran out of this machine's
+  default heap twice (`FATAL ERROR … heap out of memory`). With `NODE_OPTIONS=--max-old-space-size=6144` it passed with
+  nothing reported. *Recorded rather than smoothed over:* an earlier "clean" cold run in this task was that same OOM,
+  missed by a lowercase grep.
+- Typecheck in `api`, `admin`, `web`, `contracts` and `i18n`.
+- Unit suites: api 1,994, web 1,583, admin 298, i18n 130.
+- `pnpm docs:check` (48 claims). It found the seed count, 28 to 30.
+- `pnpm openapi:check`, rerun with the regenerated contract staged, since it diffs against the index.
+- `pnpm routes:check`.
+- `pnpm migrations:check`: 61 cases on each stack.
+- `pnpm e2e`: 66 suites, 1,640 tests, on the second run. The first failed only on the strays above. The new
+  `report-notices.e2e-spec.ts` passed 10 of 10.
+- `pnpm e2e:worker`: 13 of 13. It now routes all ten jobs and asserts the sweep's schedule.
+- `pnpm e2e:web`, all three projects: 319 of 319, on the second run (the first held S-26's list to three).
+  - The servers logged only the UX-44 journey's deliberate `revision 999999`, and Next's client-abandoned stream 20
+    times, both recorded before (13 Sep; task 41.3).
+  - No *Outbox dispatch failed* after the key fix.
+- **Not run:** `gates:clean` and the review agents, which wait for Stage 2's end. Task 51 is not its last row.
+
+### Task 51 closes
+
+All four sub-steps are done. The row moved into `archived_tasks.md` under Phase 6, in a second, one-row table, as 37 …
+41 did under Phase 4.
+- **Left to others, each on its own row:**
+  - task 60.6 registers the trial-expiry category with its 7 days;
+  - 42.2 words S-08's platform run;
+  - 200, 163 and 65.1 take the scheduler;
+  - the new outbox-key task decides the identity keys.

@@ -1,6 +1,8 @@
 import { Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
+import { NOTIFICATION_CADENCES, type NotificationCadences } from '@api/contracts/notification-cadence.port';
+import { NOTIFICATION_PORT, type NotificationPort } from '@api/contracts/notification.port';
 import { TAXONOMY_REGISTRY, type TaxonomyRegistry } from '@api/contracts/taxonomy-registry.port';
 import { ReportingEntityStoreRepository } from '@api/infrastructure/persistence/core/reporting-entity-store.repository';
 import { ReportingPeriodStoreRepository } from '@api/infrastructure/persistence/core/reporting-period-store.repository';
@@ -8,6 +10,7 @@ import {
   REPORTING_ENTITY_STORE,
   type ReportingEntityStore,
 } from '@api/modules/core/entity/interfaces/reporting-entity-store.interface';
+import { NotificationModule } from '@api/modules/platform/notification/notification.module';
 import { TaxonomyModule } from '@api/modules/platform/taxonomy/taxonomy.module';
 import {
   VALIDATION_RULE_SETS,
@@ -61,9 +64,14 @@ const httpProviders: Provider[] = [
   { provide: CLOCK, useValue: () => new Date() },
   {
     provide: LockReportingPeriod,
-    inject: [REPORTING_PERIOD_STORE, CLOCK, VALIDATION_RULE_SETS],
-    useFactory: (store: ReportingPeriodStore, now: Clock, ruleSets: ValidationRuleSets) =>
-      new LockReportingPeriod(store, now, ruleSets),
+    inject: [REPORTING_PERIOD_STORE, CLOCK, VALIDATION_RULE_SETS, NOTIFICATION_PORT, NOTIFICATION_CADENCES],
+    useFactory: (
+      store: ReportingPeriodStore,
+      now: Clock,
+      ruleSets: ValidationRuleSets,
+      notifications: NotificationPort,
+      cadences: NotificationCadences,
+    ) => new LockReportingPeriod(store, now, ruleSets, notifications, cadences),
   },
   {
     provide: OpenReportingPeriod,
@@ -78,7 +86,8 @@ const httpProviders: Provider[] = [
 ];
 
 @Module({
-  imports: [TaxonomyModule, ValidationModule],
+  // `NotificationModule` for the notices a lock withdraws (task 51.2).
+  imports: [TaxonomyModule, ValidationModule, NotificationModule],
   controllers: mode === APP_MODE.WORKER ? [] : [PeriodsController],
   providers: mode === APP_MODE.WORKER ? [] : httpProviders,
 })

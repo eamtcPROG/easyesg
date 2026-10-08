@@ -35,6 +35,12 @@ export function CategoryRevert({
           ),
           classification: t(`classification.${previous.classification}`),
         })}
+        {previous.repeatIntervalDays === undefined ? null : (
+          <> {t('revert.repeatInterval', { days: previous.repeatIntervalDays })}</>
+        )}
+        {previous.leadTimesDays === undefined ? null : (
+          <> {t('revert.leadTimes', { days: format.list(previous.leadTimesDays.map(String), 'enumeration') })}</>
+        )}
       </p>
       <div>
         <Button

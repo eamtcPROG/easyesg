@@ -1,6 +1,6 @@
-import { NOTIFICATION_CLASSIFICATION, type ConsoleCategory } from '@easyesg/contracts';
+import { NOTIFICATION_CADENCE, NOTIFICATION_CLASSIFICATION, type ConsoleCategory } from '@easyesg/contracts';
 import { BUTTON_VARIANT, Button, Fieldset } from '@easyesg/ui';
-import { FormCheckbox, FormSelect, FormSummary } from '@easyesg/ui/forms';
+import { FormCheckbox, FormSelect, FormSummary, FormTextField } from '@easyesg/ui/forms';
 import { useId, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'use-intl';
@@ -8,6 +8,8 @@ import {
   behaviourFieldsOf,
   behaviourRequestOf,
   editableControlsOf,
+  readLeadTimes,
+  readRepeatInterval,
   type CategoryBehaviourFields,
 } from '../../../tools/category-behaviour';
 import { CATEGORY_CONTROL, type CategoryAction } from '../../../tools/category-action-state';
@@ -18,8 +20,9 @@ import { CATEGORY_CONTROL, type CategoryAction } from '../../../tools/category-a
  * what the change does before it does it.
  *
  * **A control code fixes is shown fixed, with its reason** (§5.2 A-17 as amended 21 Sep 2026) — read from the api's
- * `mandatory` and `addressNotice`, never re-derived here. **Only the field-level check lives here**: at least one
- * channel. Whether a channel has its words in every language is the api's judgement, and arrives as a refusal worded
+ * `mandatory` and `addressNotice`, never re-derived here. **Only the field-level checks live here**: at least one
+ * channel, and a cadence's shape — **offered only on the category whose cadence code declares** (`category.cadence`,
+ * task 51.2): FR-164's repeat interval, or FR-165's lead times. Whether a channel has its words in every language is the api's judgement, and arrives as a refusal worded
  * by the api. **Publish is offered once something changed**, since the api refuses a behaviour identical to what is in
  * force.
  */
@@ -55,7 +58,7 @@ export function CategoryBehaviourForm({
     onPreview({
       control: CATEGORY_CONTROL.PUBLISH,
       categoryKey: category.categoryKey,
-      behaviour: behaviourRequestOf(fields),
+      behaviour: behaviourRequestOf({ fields, cadence: category.cadence }),
       expectedRevision: category.inForce?.revision ?? 0,
     });
   });
@@ -96,6 +99,26 @@ export function CategoryBehaviourForm({
         ) : (
           <p className="t-body">{t('classificationFixed')}</p>
         )}
+
+        {category.cadence === NOTIFICATION_CADENCE.REPEAT_INTERVAL ? (
+          <FormTextField
+            control={control}
+            name="repeatIntervalDays"
+            label={t('repeatIntervalLabel')}
+            help={t('repeatIntervalHelp')}
+            inputMode="numeric"
+            rules={{ validate: (text) => readRepeatInterval(text) !== null || t('repeatIntervalInvalid') }}
+          />
+        ) : null}
+        {category.cadence === NOTIFICATION_CADENCE.LEAD_TIMES ? (
+          <FormTextField
+            control={control}
+            name="leadTimesDays"
+            label={t('leadTimesLabel')}
+            help={t('leadTimesHelp')}
+            rules={{ validate: (text) => readLeadTimes(text) !== null || t('leadTimesInvalid') }}
+          />
+        ) : null}
 
         <div className="flex flex-wrap gap-[var(--space-3)]">
           <Button type="submit" busy={busy} disabled={busy || !formState.isDirty}>

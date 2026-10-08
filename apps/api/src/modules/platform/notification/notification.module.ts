@@ -4,6 +4,8 @@ import { PushHintOutboxRepository } from '@api/infrastructure/persistence/platfo
 import { Module, type Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import configuration, { APP_MODE, type AppConfig } from '@api/config/configuration';
+import { NOTIFICATION_CADENCES } from '@api/contracts/notification-cadence.port';
+import { LocalizationModule } from '@api/modules/platform/localization/localization.module';
 import { NOTIFICATION_PORT } from '@api/contracts/notification.port';
 import { NOTICE_APPLICATION, NOTIFICATION_DELIVERY } from '@api/contracts/notification-delivery.port';
 import { NOTIFICATION_RECIPIENTS, type NotificationRecipientsPort } from '@api/contracts/notification-recipients.port';
@@ -48,6 +50,7 @@ import { CategoryChannels } from './services/category-channels.service';
 import { EmailChannelService } from './services/email-channel.service';
 import { NotificationCategoryCatalog } from './services/notification-category-catalog.service';
 import { NotificationCentreService } from './services/notification-centre.service';
+import { NoticeParamsService } from './services/notice-params.service';
 import { NotificationDeliveryService } from './services/notification-delivery.service';
 import { NotificationPreferencesService } from './services/notification-preferences.service';
 import { NotificationUnsubscribeService } from './services/notification-unsubscribe.service';
@@ -113,6 +116,9 @@ const unsubscribeTokens: Provider = {
  * Since task 37.3 the worker raises too, so the port is here as well as on the request tier.
  */
 const workerProviders: Provider[] = [
+  NoticeParamsService,
+  // Task 51.2's port: the cadence a producer keeps, answered by the catalogue every category is read through.
+  { provide: NOTIFICATION_CADENCES, useExisting: NotificationCategoryCatalog },
   unsubscribeTokens,
   // AD-15's hints for the in-app deliveries and withdrawals this module writes (task 148). Its own instance: importing
   // `PushModule` would close a module cycle through the session module.
@@ -284,6 +290,9 @@ const consoleProviders: Provider[] = [
  * task 52.1 the person's preferences, which bind no tenant because they follow the person.
  */
 const httpProviders: Provider[] = [
+  NoticeParamsService,
+  // The writes that clear a condition cancel by its lead times (task 51.2), so the request side reads them too.
+  { provide: NOTIFICATION_CADENCES, useExisting: NotificationCategoryCatalog },
   { provide: NOTIFICATION_PORT, useClass: NotificationOutboxRepository },
   { provide: NOTIFICATION_CENTRE_STORE, useClass: NotificationCentreStoreRepository },
   ...centreUseCases,
@@ -309,12 +318,17 @@ const httpProviders: Provider[] = [
  * one for the invitation email on the worker.
  */
 @Module({
-  imports: mode === APP_MODE.WORKER ? [EmailModule] : [],
+  // `LocalizationModule` for the disclosure labels a field list is named by (task 51.2), in both modes: the centre
+  // renders at read, the email at send.
+  imports: mode === APP_MODE.WORKER ? [EmailModule, LocalizationModule] : [LocalizationModule],
   controllers:
     mode === APP_MODE.WORKER
       ? []
       : [NotificationCentreController, NotificationPreferencesController, NotificationUnsubscribeController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
-  exports: mode === APP_MODE.WORKER ? [NOTIFICATION_DELIVERY, NOTIFICATION_PORT] : [NOTIFICATION_PORT, CategoryConsoleService],
+  exports:
+    mode === APP_MODE.WORKER
+      ? [NOTIFICATION_DELIVERY, NOTIFICATION_PORT, NOTIFICATION_CADENCES]
+      : [NOTIFICATION_PORT, NOTIFICATION_CADENCES, CategoryConsoleService],
 })
 export class NotificationModule {}

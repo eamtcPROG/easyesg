@@ -395,11 +395,13 @@ export type IdentityProviderPublication = components['schemas']['IdentityProvide
 // UC-176; task 67.10).
 export {
   CATEGORY_CONSEQUENCE,
+  NOTIFICATION_CADENCE,
   NOTIFICATION_CATEGORY,
   NOTIFICATION_CHANNEL,
   NOTIFICATION_CLASSIFICATION,
   isNotificationCategoryKey,
   type CategoryConsequenceKind,
+  type NotificationCadence,
   type NotificationCategoryKey,
   type NotificationChannel,
   type NotificationClassification,

@@ -6,8 +6,10 @@ import { NotificationRecipientsRepository } from '@api/infrastructure/persistenc
 import { NotificationPreferenceStoreRepository } from '@api/infrastructure/persistence/platform/notification-preference-store.repository';
 import { NotificationStoreRepository } from '@api/infrastructure/persistence/platform/notification-store.repository';
 import { SuppressionStoreRepository } from '@api/infrastructure/persistence/platform/suppression-store.repository';
+import { DisclosureLabelService } from '@api/modules/platform/localization/services/disclosure-label.service';
 import { NOTIFICATION_CHANNEL } from '@api/modules/platform/notification/models/notification-category.model';
 import { EmailChannelService } from '@api/modules/platform/notification/services/email-channel.service';
+import { NoticeParamsService } from '@api/modules/platform/notification/services/notice-params.service';
 import { NotificationDeliveryService } from '@api/modules/platform/notification/services/notification-delivery.service';
 import { DeliverLinkNotice } from '@api/modules/platform/notification/use-cases/deliver-link-notice.use-case';
 import { required } from './database';
@@ -53,7 +55,11 @@ export const linkNoticeDelivery = (input: {
   new NotificationDeliveryService(
     new DeliverLinkNotice(
       new NotificationRecipientsRepository(input.worker),
-      new EmailChannelService(input.provider, suppressionStore(input.worker)),
+      new EmailChannelService(
+        input.provider,
+        suppressionStore(input.worker),
+        new NoticeParamsService(new DisclosureLabelService()),
+      ),
       { channelsFor: () => [NOTIFICATION_CHANNEL.EMAIL] },
       notificationStore(input.worker),
       { web: input.webOrigin, console: input.consoleOrigin ?? 'http://localhost:3200' },

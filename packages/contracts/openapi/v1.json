@@ -3447,7 +3447,7 @@
             "name": "filters",
             "required": false,
             "in": "query",
-            "description": "Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder, reporting.report_update. A value outside these, or a field this route does not define, is ignored rather than refused.",
+            "description": "Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder, reporting.report_update, reporting.outstanding_report, reporting.report_deadline. A value outside these, or a field this route does not define, is ignored rather than refused.",
             "schema": {}
           }
         ],
@@ -6883,7 +6883,9 @@
                 "identity.invitation",
                 "platform.admin_invitation",
                 "reporting.manual_reminder",
-                "reporting.report_update"
+                "reporting.report_update",
+                "reporting.outstanding_report",
+                "reporting.report_deadline"
               ],
               "type": "string"
             }
@@ -6969,7 +6971,9 @@
                 "identity.invitation",
                 "platform.admin_invitation",
                 "reporting.manual_reminder",
-                "reporting.report_update"
+                "reporting.report_update",
+                "reporting.outstanding_report",
+                "reporting.report_deadline"
               ],
               "type": "string"
             }
@@ -7061,7 +7065,9 @@
                 "identity.invitation",
                 "platform.admin_invitation",
                 "reporting.manual_reminder",
-                "reporting.report_update"
+                "reporting.report_update",
+                "reporting.outstanding_report",
+                "reporting.report_deadline"
               ],
               "type": "string"
             }
@@ -10730,7 +10736,9 @@
               "identity.invitation",
               "platform.admin_invitation",
               "reporting.manual_reminder",
-              "reporting.report_update"
+              "reporting.report_update",
+              "reporting.outstanding_report",
+              "reporting.report_deadline"
             ],
             "description": "What kind of notice this is — a key for the client to act on, never text to show."
           },
@@ -10820,7 +10828,9 @@
               "identity.invitation",
               "platform.admin_invitation",
               "reporting.manual_reminder",
-              "reporting.report_update"
+              "reporting.report_update",
+              "reporting.outstanding_report",
+              "reporting.report_deadline"
             ],
             "description": "The category — a key for the client to act on, never text to show."
           },
@@ -10872,7 +10882,9 @@
               "identity.invitation",
               "platform.admin_invitation",
               "reporting.manual_reminder",
-              "reporting.report_update"
+              "reporting.report_update",
+              "reporting.outstanding_report",
+              "reporting.report_deadline"
             ],
             "description": "The category — a key for the client to act on, never text to show."
           },
@@ -10894,7 +10906,7 @@
         "type": "object",
         "properties": {
           "switchedOff": {
-            "maxItems": 12,
+            "maxItems": 16,
             "description": "Every pair the person has switched off, among those the read offers; every offered pair not named is switched on. A pair the read does not offer — a mandatory category, or a channel the category does not travel on — refuses the whole write. Empty switches everything on.",
             "type": "array",
             "items": {
@@ -10926,7 +10938,9 @@
               "identity.invitation",
               "platform.admin_invitation",
               "reporting.manual_reminder",
-              "reporting.report_update"
+              "reporting.report_update",
+              "reporting.outstanding_report",
+              "reporting.report_deadline"
             ],
             "description": "The category the link is about — a key to act on, never text to show. Absent when unusable."
           },
@@ -12756,7 +12770,9 @@
               "identity.invitation",
               "platform.admin_invitation",
               "reporting.manual_reminder",
-              "reporting.report_update"
+              "reporting.report_update",
+              "reporting.outstanding_report",
+              "reporting.report_deadline"
             ],
             "nullable": true,
             "description": "The notification category, where the target is a category’s configuration version (task 67.10)."
@@ -13068,6 +13084,17 @@
               "transactional",
               "optional"
             ]
+          },
+          "repeatIntervalDays": {
+            "type": "integer",
+            "description": "Present only on a category that repeats."
+          },
+          "leadTimesDays": {
+            "description": "Longest first; only on a category that counts down.",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
           }
         },
         "required": [
@@ -13098,6 +13125,17 @@
             ],
             "nullable": true,
             "description": "Null where the artefact cannot be read."
+          },
+          "repeatIntervalDays": {
+            "type": "integer",
+            "description": "Present only on a category that repeats, and readable."
+          },
+          "leadTimesDays": {
+            "description": "Longest first; present only on a category that counts down, and readable.",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
           },
           "revision": {
             "type": "integer"
@@ -13238,7 +13276,9 @@
               "identity.invitation",
               "platform.admin_invitation",
               "reporting.manual_reminder",
-              "reporting.report_update"
+              "reporting.report_update",
+              "reporting.outstanding_report",
+              "reporting.report_deadline"
             ],
             "description": "A key for the console to act on, never text to show."
           },
@@ -13249,6 +13289,15 @@
           "addressNotice": {
             "type": "boolean",
             "description": "A notice sent to an address with a token in its link: it never travels in-app."
+          },
+          "cadence": {
+            "type": "string",
+            "enum": [
+              "repeat_interval",
+              "lead_times"
+            ],
+            "nullable": true,
+            "description": "The cadence code declares the category keeps, which its publication must carry; null where none."
           },
           "inForce": {
             "nullable": true,
@@ -13275,6 +13324,7 @@
           "categoryKey",
           "mandatory",
           "addressNotice",
+          "cadence",
           "inForce",
           "switchOffs",
           "wording"
@@ -13289,7 +13339,9 @@
               "switch_offs_overridden",
               "becomes_switchable",
               "channel_removed",
-              "channel_added"
+              "channel_added",
+              "repeat_interval_changed",
+              "lead_times_changed"
             ]
           },
           "people": {
@@ -13306,6 +13358,17 @@
           "stayingOff": {
             "type": "integer",
             "description": "People who switched it off on the channel added before, whose choice holds again."
+          },
+          "repeatIntervalDays": {
+            "type": "integer",
+            "description": "The repeat interval it would keep, in days (task 51.2)."
+          },
+          "leadTimesDays": {
+            "description": "The lead times it would keep, in days before a due date, longest first (task 51.2).",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
           }
         },
         "required": [
@@ -13350,6 +13413,21 @@
               "optional"
             ],
             "description": "Whether a recipient may switch it off (FR-163)."
+          },
+          "repeatIntervalDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "description": "Days between repeats of a notice whose condition still holds — only for a category that repeats (FR-164)."
+          },
+          "leadTimesDays": {
+            "minItems": 1,
+            "maxItems": 12,
+            "description": "Days before a due date at which a notice is raised, each its own notice — only for a category that counts down (FR-165).",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
           }
         },
         "required": [
@@ -13397,6 +13475,21 @@
               "optional"
             ],
             "description": "Whether a recipient may switch it off (FR-163)."
+          },
+          "repeatIntervalDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "description": "Days between repeats of a notice whose condition still holds — only for a category that repeats (FR-164)."
+          },
+          "leadTimesDays": {
+            "minItems": 1,
+            "maxItems": 12,
+            "description": "Days before a due date at which a notice is raised, each its own notice — only for a category that counts down (FR-165).",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
           },
           "expectedRevision": {
             "type": "integer",

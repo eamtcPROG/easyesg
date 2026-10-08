@@ -12,7 +12,7 @@ import {
   REPORT_SCOPE,
   REPORT_STATUS,
 } from '../src/modules/core/disclosure/models/report.model';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
 import {
   cleanupSignedInAccounts,
   signInFreshAccount,
@@ -158,6 +158,7 @@ describe('reports (UC-17, UC-18)', () => {
   }, 180_000);
 
   afterAll(async () => {
+    await deleteNoticeWithdrawalsOf({ owner, organizationIds: [ORG] });
     await cleanupSignedInAccounts({ owner });
     await asOrganization(owner, ORG, (run) =>
       run(`DELETE FROM core.organization WHERE id = $1`, [ORG]),

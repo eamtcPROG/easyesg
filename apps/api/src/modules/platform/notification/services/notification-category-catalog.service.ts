@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { NotificationCadences } from '@api/contracts/notification-cadence.port';
 import { MANDATORY_NOTIFICATION_CATEGORIES, type NotificationCategoryKey } from '@api/contracts/notification.port';
 import { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import { NOTIFICATION_CATEGORY_CONFIG_KIND } from '../constants/notification-category.constants';
@@ -28,7 +29,7 @@ import {
  * mandatory floor.
  */
 @Injectable()
-export class NotificationCategoryCatalog {
+export class NotificationCategoryCatalog implements NotificationCadences {
   private readonly logger = new Logger(NotificationCategoryCatalog.name);
 
   constructor(private readonly configurationStore: ConfigurationStore) {}
@@ -50,7 +51,7 @@ export class NotificationCategoryCatalog {
     const behaviour = readNotificationCategory(entry.payload);
     if (behaviour === null) {
       this.logger.error(
-        `Configuration entry ${artefact} (revision ${entry.revision}) is malformed — it needs a non-empty list of distinct channels and a classification; the category has no behaviour until it is replaced`,
+        `Configuration entry ${artefact} (revision ${entry.revision}) is malformed — it needs a non-empty list of distinct channels, a classification, and any cadence in whole days within a year; the category has no behaviour until it is replaced`,
       );
       return null;
     }
@@ -64,5 +65,15 @@ export class NotificationCategoryCatalog {
       return null;
     }
     return behaviour;
+  }
+
+  /** `NOTIFICATION_CADENCES`' repeat interval: the behaviour's, where it can be read and keeps one (task 51.2). */
+  repeatIntervalDays(query: { readonly categoryKey: NotificationCategoryKey }): number | null {
+    return this.behaviourOf(query)?.repeatIntervalDays ?? null;
+  }
+
+  /** `NOTIFICATION_CADENCES`' lead times, longest first, where they can be read. */
+  leadTimesDays(query: { readonly categoryKey: NotificationCategoryKey }): readonly number[] | null {
+    return this.behaviourOf(query)?.leadTimesDays ?? null;
   }
 }

@@ -36,6 +36,40 @@ describe('publicationRefusal (task 67.10)', () => {
     expect(publicationRefusal({ categoryKey, behaviour: { channels, classification }, worded: all })).toBe(refusal);
   });
 
+  it('admits each cadence on the category that keeps it (task 51.2)', () => {
+    expect(
+      publicationRefusal({
+        categoryKey: NOTIFICATION_CATEGORY.OUTSTANDING_REPORT,
+        behaviour: { channels: [IN_APP, EMAIL], classification: OPTIONAL, repeatIntervalDays: 7 },
+        worded: all,
+      }),
+    ).toBeNull();
+    expect(
+      publicationRefusal({
+        categoryKey: NOTIFICATION_CATEGORY.REPORT_DEADLINE,
+        behaviour: { channels: [IN_APP, EMAIL], classification: OPTIONAL, leadTimesDays: [14, 7, 1] },
+        worded: all,
+      }),
+    ).toBeNull();
+  });
+
+  it.each([
+    ['a repeating category without its interval', NOTIFICATION_CATEGORY.OUTSTANDING_REPORT, {}, 'cadence_missing'],
+    ['a counting-down category without its lead times', NOTIFICATION_CATEGORY.REPORT_DEADLINE, {}, 'cadence_missing'],
+    [
+      'lead times on the repeating category',
+      NOTIFICATION_CATEGORY.OUTSTANDING_REPORT,
+      { repeatIntervalDays: 7, leadTimesDays: [7] },
+      'cadence_not_kept',
+    ],
+    ['an interval on the counting-down category', NOTIFICATION_CATEGORY.REPORT_DEADLINE, { repeatIntervalDays: 7 }, 'cadence_not_kept'],
+    ['an interval on a category that keeps no cadence', NOTIFICATION_CATEGORY.MANUAL_REMINDER, { repeatIntervalDays: 7 }, 'cadence_not_kept'],
+  ] as const)('refuses %s (task 51.2)', (_case, categoryKey, cadence, refusal) => {
+    expect(
+      publicationRefusal({ categoryKey, behaviour: { channels: [IN_APP], classification: OPTIONAL, ...cadence }, worded: all }),
+    ).toBe(refusal);
+  });
+
   it('refuses a channel a catalogue has no wording for', () => {
     expect(
       publicationRefusal({

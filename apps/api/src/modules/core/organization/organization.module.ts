@@ -78,9 +78,14 @@ const httpProviders: Provider[] = [
 
 @Module({
   controllers: mode === APP_MODE.WORKER ? [] : [OrganizationsController, OrganizationController],
-  providers: mode === APP_MODE.WORKER ? [] : httpProviders,
+  // The vocabulary on the worker too since task 51.2: a scheduled check evaluates a report's scope there, and the wizard's
+  // read that computes it names members through this port. An adapter over the configuration store, registered in both.
+  providers:
+    mode === APP_MODE.WORKER
+      ? [{ provide: ORGANIZATION_VOCABULARY, useClass: OrganizationVocabularyService }]
+      : httpProviders,
   // The vocabulary port, for the wizard (task 91.1): NACE members named in the platform's own
   // Romanian and Russian, and the countries the platform registers as ISO 3166's members.
-  exports: mode === APP_MODE.WORKER ? [] : [ORGANIZATION_VOCABULARY],
+  exports: [ORGANIZATION_VOCABULARY],
 })
 export class OrganizationModule {}

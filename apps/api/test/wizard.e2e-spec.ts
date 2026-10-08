@@ -15,7 +15,7 @@ import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membe
 import { DISCLOSURE_APPLICABILITY_CONFIG_KIND } from '../src/modules/core/disclosure/constants/disclosure.constants';
 import { DISCLOSURE_STATE } from '../src/modules/core/disclosure/models/disclosure-value.model';
 import { TAXONOMY_STANDARD } from '../src/modules/platform/taxonomy/constants/taxonomy.constants';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
 import {
   cleanupSignedInAccounts,
   signInFreshAccount,
@@ -156,6 +156,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
   }, 180_000);
 
   afterAll(async () => {
+    await deleteNoticeWithdrawalsOf({ owner, organizationIds: [ORG] });
     await cleanupSignedInAccounts({ owner });
     await removeFixtures();
     await app?.close();

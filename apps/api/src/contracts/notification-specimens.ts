@@ -1,3 +1,4 @@
+import type { NoticeParam } from './notice-params';
 import { NOTIFICATION_CATEGORY, type NotificationCategoryKey } from './notification.port';
 
 /** The organization and entity every specimen names, so the console's examples read as one business. */
@@ -11,9 +12,10 @@ const SPECIMEN_ENTITY = 'Brutăria Lina SRL';
  * category's producer brings its example with it, as it brings its wording. **Beside the vocabulary**, in the one
  * surface the producers share, for the reason `NOTIFICATION_CATEGORY` is here. Each specimen names every placeholder
  * its category's wording uses, and `notification-wording.spec.ts` holds it to that in every locale. The values are
- * examples, not data: a name, an entity, a link that goes nowhere.
+ * examples, not data: a name, an entity, a link that goes nowhere — and, since task 51.2, a field list and a date, which
+ * the console renders in each locale as a recipient would read them (`NoticeParam`).
  */
-export const NOTIFICATION_SPECIMEN: Readonly<Record<NotificationCategoryKey, Readonly<Record<string, string>>>> = {
+export const NOTIFICATION_SPECIMEN: Readonly<Record<NotificationCategoryKey, Readonly<Record<string, NoticeParam>>>> = {
   [NOTIFICATION_CATEGORY.EMAIL_VERIFICATION]: { link: specimenLink('verify?token=…') },
   [NOTIFICATION_CATEGORY.PASSWORD_RESET]: { link: specimenLink('reset?token=…') },
   [NOTIFICATION_CATEGORY.INVITATION]: { link: specimenLink('invitation/…'), organizationName: SPECIMEN_ENTITY },
@@ -34,6 +36,33 @@ export const NOTIFICATION_SPECIMEN: Readonly<Record<NotificationCategoryKey, Rea
     newSetLabel: '2026.2',
     entityName: SPECIMEN_ENTITY,
     fiscalYear: '2026',
+  },
+  // Three fields in two modules: enough to show the list's shape, the module and its fields' labels.
+  [NOTIFICATION_CATEGORY.OUTSTANDING_REPORT]: {
+    link: specimenLink('reports/…'),
+    entityName: SPECIMEN_ENTITY,
+    fiscalYear: '2026',
+    count: 3,
+    intervalDays: 7,
+    fields: {
+      fieldList: {
+        taxonomyVersion: '2026-05-01',
+        modules: [
+          { module: 'B1', elementKeys: ['Turnover', 'NumberOfEmployees'] },
+          { module: 'B3', elementKeys: ['TotalEnergyConsumption'] },
+        ],
+      },
+    },
+  },
+  // A week before the due date, the report begun: the wording's fuller arm, which counts what is left.
+  [NOTIFICATION_CATEGORY.REPORT_DEADLINE]: {
+    link: specimenLink('reports/…'),
+    entityName: SPECIMEN_ENTITY,
+    fiscalYear: '2026',
+    dueDate: { calendarDate: '2027-05-30' },
+    daysRemaining: 7,
+    started: 'yes',
+    outstanding: 4,
   },
 };
 

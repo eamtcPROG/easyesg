@@ -61,7 +61,10 @@ export class PeriodService {
   }
 
   lock(input: { readonly periodId: string }): Promise<ReportingPeriod> {
-    return this.lockPeriod.lock({ ...input, actorId: this.actorId });
+    const organizationId = requestContext()?.organizationId;
+    // The tenant transaction has bound it before a controller runs; its absence is not a refusal to word.
+    if (organizationId === undefined) throw new Error('A period was locked with no organization bound');
+    return this.lockPeriod.lock({ ...input, actorId: this.actorId, organizationId });
   }
 
   reopen(input: { readonly periodId: string; readonly reason: string }): Promise<ReportingPeriod> {

@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PRESENTATION_PRECISION, type PresentationPrecision } from '@api/contracts/presentation-precision.port';
 
-import { requestLocale } from '@api/infrastructure/persistence/request-context';
+import { requestContext, requestLocale } from '@api/infrastructure/persistence/request-context';
 import type { DisclosureValue } from '../models/disclosure-value.model';
-import type { ReportEvaluationScope } from '../models/evaluation-scope';
 import type { DisclosureModuleSummary, PresentedDisclosureStep } from '../models/wizard-step.model';
+import { ClearOutstandingNotice } from '../use-cases/clear-outstanding-notice.use-case';
 import { ReadWizardStep } from '../use-cases/read-wizard-step.use-case';
 import {
   WriteDerivationInputs,
@@ -30,6 +30,7 @@ export class WizardService {
     private readonly writes: WriteDisclosureValues,
     private readonly derivationWrites: WriteDerivationInputs,
     @Inject(PRESENTATION_PRECISION) private readonly precision: PresentationPrecision,
+    private readonly clearance: ClearOutstandingNotice,
   ) {}
 
   modules(query: { readonly reportId: string }): Promise<readonly DisclosureModuleSummary[]> {
@@ -47,16 +48,25 @@ export class WizardService {
     return { ...step, precision: this.precision.places() };
   }
 
-  /** What a validation run evaluates over (task 41.2) — `core/validation` reads it through its own port. */
-  evaluationScope(query: { readonly reportId: string }): Promise<ReportEvaluationScope> {
-    return this.reads.evaluationScope(query);
-  }
-
-  write(command: {
+  /**
+   * The ordinary write, then — **on the same transaction** — FR-164's notice withdrawn if the write answered the last of
+   * what it listed (task 51.2; 182/134). Two flows composed here rather than one use case doing both: what a write admits
+   * is `WriteDisclosureValues`' rule, and whether it cleared a notice is `ClearOutstandingNotice`'s.
+   */
+  async write(command: {
     readonly reportId: string;
     readonly values: readonly DisclosureValueInput[];
   }): Promise<DisclosureValue[]> {
-    return this.writes.write(command);
+    const written = await this.writes.write(command);
+    const organizationId = requestContext()?.organizationId;
+    // The tenant transaction has bound it before a controller runs; its absence is not a refusal to word.
+    if (organizationId === undefined) throw new Error('A disclosure was written with no organization bound');
+    await this.clearance.execute({
+      reportId: command.reportId,
+      organizationId,
+      writtenElements: command.values.map((value) => value.elementKey),
+    });
+    return written;
   }
 
   writeDerivationInputs(command: {

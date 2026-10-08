@@ -39,7 +39,8 @@ and are not kept once their view unmounts — their key root is separate so inva
 and who a disable reaches, whether the server holds its secret and where that is set (never the secret), its enable
 or disable, and its connection form. **The form is keyed by the revision it opened on**, so a save — or a colleague's,
 which the api refuses this one over — remounts it with the values in force. **A-17, notification categories, since
-task 67.10**, in `features/platform/notification/` — each category's channels and classification, published through
+task 67.10**, in `features/platform/notification/` — each category's channels and classification, and since task 51.2 the
+repeat interval or lead times of the two categories that keep one (`category.cadence` says which), published through
 UX-123's preview, disclosure and confirmation and reverted from the result in one step, with its words in every language
 read-only. **A revert is previewed exactly as a publication is**, against the behaviour the read says it restores, and a
 control code fixes is drawn fixed with its reason rather than offered. Its category names are

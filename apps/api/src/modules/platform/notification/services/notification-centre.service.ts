@@ -17,6 +17,7 @@ import { DismissNotification } from '../use-cases/dismiss-notification.use-case'
 import { ListNotifications } from '../use-cases/list-notifications.use-case';
 import { MarkAllNotificationsRead } from '../use-cases/mark-all-notifications-read.use-case';
 import { MarkNotificationRead } from '../use-cases/mark-notification-read.use-case';
+import { NoticeParamsService } from './notice-params.service';
 
 /**
  * The Nest-aware seam between the centre's controller and its use cases (task 50.1.2), and **where a notice becomes
@@ -40,6 +41,7 @@ export class NotificationCentreService {
     private readonly dismissNotification: DismissNotification,
     private readonly markAllNotificationsRead: MarkAllNotificationsRead,
     @Inject(PUSH_HINTS) private readonly hints: PushHints,
+    private readonly params: NoticeParamsService,
   ) {}
 
   /**
@@ -65,7 +67,9 @@ export class NotificationCentreService {
     const page = await this.listNotifications.execute(query);
     const locale = requestLocale();
     return {
-      items: page.entries.map((entry) => inWords({ entry, locale })),
+      items: page.entries.map((entry) =>
+        inWords({ entry: { ...entry, params: this.params.forLocale({ params: entry.params, locale }) }, locale }),
+      ),
       matched: page.matched,
       total: page.total,
     };

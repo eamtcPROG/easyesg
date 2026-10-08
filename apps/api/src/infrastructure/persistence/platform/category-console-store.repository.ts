@@ -13,7 +13,10 @@ import type {
   StoredCategory,
   StoredSwitchOffs,
 } from '@api/modules/platform/notification/interfaces/category-console-store.interface';
-import { isNotificationChannel } from '@api/modules/platform/notification/models/notification-category.model';
+import {
+  isNotificationChannel,
+  type NotificationCategoryBehaviour,
+} from '@api/modules/platform/notification/models/notification-category.model';
 import { CORE_DATA_SOURCE } from '../data-source';
 
 /**
@@ -97,7 +100,9 @@ export class CategoryConsoleStoreRepository implements CategoryConsoleStore {
       .publish({
         kind: NOTIFICATION_CATEGORY_CONFIG_KIND,
         scope: command.categoryKey,
-        payload: { channels: [...command.behaviour.channels], classification: command.behaviour.classification },
+        // Every member of the behaviour, cadence included (task 51.2): a payload rebuilt from the two members A-17 first
+        // edited would publish over a category's cadence and drop it.
+        payload: behaviourPayload(command.behaviour),
         actorId: command.operatorId,
         expectedRevision: command.expectedRevision,
       })
@@ -118,3 +123,11 @@ interface InForceRow {
   published_by: string | null;
   previous_payload: Record<string, unknown> | null;
 }
+
+/** A behaviour as the artefact spells it, its cadence present only where the category keeps one. */
+const behaviourPayload = (behaviour: NotificationCategoryBehaviour): Record<string, unknown> => ({
+  channels: [...behaviour.channels],
+  classification: behaviour.classification,
+  ...(behaviour.repeatIntervalDays === undefined ? {} : { repeatIntervalDays: behaviour.repeatIntervalDays }),
+  ...(behaviour.leadTimesDays === undefined ? {} : { leadTimesDays: [...behaviour.leadTimesDays] }),
+});

@@ -1,4 +1,9 @@
-import { ADDRESS_NOTICE_CATEGORIES, MANDATORY_NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
+import {
+  ADDRESS_NOTICE_CATEGORIES,
+  CADENCE_OF_CATEGORY,
+  MANDATORY_NOTIFICATION_CATEGORIES,
+  NOTIFICATION_CATEGORY,
+} from '@api/contracts/notification.port';
 import { readNotificationCategory } from '../domain/notification-category';
 import type { CategoryConsoleStore } from '../interfaces/category-console-store.interface';
 import type { ConsoleCategory } from '../models/category-console.model';
@@ -26,6 +31,7 @@ export class ListConsoleCategories {
         categoryKey,
         mandatory: MANDATORY_NOTIFICATION_CATEGORIES.has(categoryKey),
         addressNotice: ADDRESS_NOTICE_CATEGORIES.has(categoryKey),
+        cadence: CADENCE_OF_CATEGORY[categoryKey] ?? null,
         inForce:
           stored === undefined
             ? null

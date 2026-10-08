@@ -129,6 +129,25 @@ describe('notification preferences (UC-168, FR-163)', () => {
           { channel: 'email', enabled: true },
         ],
       },
+      // FR-164's and FR-165's notices (task 51.2): optional, in-app and by email.
+      {
+        categoryKey: 'reporting.outstanding_report',
+        categoryName: 'Câmpuri de completat',
+        mandatory: false,
+        channels: [
+          { channel: 'in_app', enabled: true },
+          { channel: 'email', enabled: true },
+        ],
+      },
+      {
+        categoryKey: 'reporting.report_deadline',
+        categoryName: 'Termene de depunere',
+        mandatory: false,
+        channels: [
+          { channel: 'in_app', enabled: true },
+          { channel: 'email', enabled: true },
+        ],
+      },
     ]);
   });
 

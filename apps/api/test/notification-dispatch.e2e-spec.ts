@@ -16,6 +16,8 @@ import { NotificationCategoryCatalog } from '../src/modules/platform/notificatio
 import { DeliverNotification } from '../src/modules/platform/notification/use-cases/deliver-notification.use-case';
 import { connectAs } from './support/database';
 import { asJob, deleteNotificationsOf, notificationStore, optOuts, unsubscribeTokens, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
+import { DisclosureLabelService } from '../src/modules/platform/localization/services/disclosure-label.service';
+import { NoticeParamsService } from '../src/modules/platform/notification/services/notice-params.service';
 
 /**
  * **A notification raised and dispatched by category through the outbox** — task 49.3's expected result, over the
@@ -169,7 +171,11 @@ describe('a notification raised and dispatched by category (task 49.3)', () => {
     const handler = new NotificationRaisedHandler(
       new DeliverNotification(
         new NotificationRecipientsRepository(worker),
-        new EmailChannelService(provider, suppressionStore(worker)),
+        new EmailChannelService(
+          provider,
+          suppressionStore(worker),
+          new NoticeParamsService(new DisclosureLabelService()),
+        ),
         new CategoryChannels(new NotificationCategoryCatalog(store)),
         notificationStore(worker),
         'https://app.easyesg.md',

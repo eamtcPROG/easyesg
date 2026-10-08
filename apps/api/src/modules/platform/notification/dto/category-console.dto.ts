@@ -1,7 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ArrayMaxSize, ArrayMinSize, ArrayUnique, IsIn, IsInt, Min } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, ArrayUnique, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { LOCALES, type Locale } from '@easyesg/i18n';
-import { NOTIFICATION_CATEGORY, type NotificationCategoryKey } from '@api/contracts/notification.port';
+import {
+  NOTIFICATION_CADENCE,
+  NOTIFICATION_CATEGORY,
+  type NotificationCadence,
+  type NotificationCategoryKey,
+} from '@api/contracts/notification.port';
 import type { EpochMillis } from '@api/contracts/types/time';
 import type { RenderedCategoryWording } from '../interfaces/category-wording.interface';
 import {
@@ -11,6 +16,8 @@ import {
   type PublicationConsequenceKind,
 } from '../models/category-console.model';
 import {
+  CADENCE_MAX_DAYS,
+  CADENCE_MAX_LEAD_TIMES,
   NOTIFICATION_CHANNEL,
   NOTIFICATION_CLASSIFICATION,
   type NotificationCategoryBehaviour,
@@ -38,7 +45,50 @@ export class CategoryBehaviourRequestDto {
   @ApiProperty({ enum: CLASSIFICATIONS, description: 'Whether a recipient may switch it off (FR-163).' })
   @IsIn(CLASSIFICATIONS)
   classification!: NotificationClassification;
+
+  @ApiProperty({
+    type: 'integer',
+    required: false,
+    minimum: 1,
+    maximum: CADENCE_MAX_DAYS,
+    description: 'Days between repeats of a notice whose condition still holds — only for a category that repeats (FR-164).',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(CADENCE_MAX_DAYS)
+  repeatIntervalDays?: number;
+
+  @ApiProperty({
+    type: 'integer',
+    isArray: true,
+    required: false,
+    minItems: 1,
+    maxItems: CADENCE_MAX_LEAD_TIMES,
+    description:
+      'Days before a due date at which a notice is raised, each its own notice — only for a category that counts down ' +
+      '(FR-165).',
+  })
+  @IsOptional()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(CADENCE_MAX_LEAD_TIMES)
+  @ArrayUnique()
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(CADENCE_MAX_DAYS, { each: true })
+  leadTimesDays?: number[];
 }
+
+/**
+ * The behaviour a request asks for, its cadence carried only where it was sent (task 51.2) — so a publication that omits
+ * one is refused as missing by the category's rule, rather than published as `undefined`.
+ */
+export const requestedBehaviour = (body: CategoryBehaviourRequestDto): NotificationCategoryBehaviour => ({
+  channels: body.channels,
+  classification: body.classification,
+  ...(body.repeatIntervalDays === undefined ? {} : { repeatIntervalDays: body.repeatIntervalDays }),
+  ...(body.leadTimesDays === undefined ? {} : { leadTimesDays: [...body.leadTimesDays].sort((a, b) => b - a) }),
+});
 
 export class CategoryPublicationRequestDto extends CategoryBehaviourRequestDto {
   @ApiProperty({
@@ -88,11 +138,24 @@ export class CategoryConsequenceResponseDto {
   })
   stayingOff?: number;
 
+  @ApiProperty({ type: 'integer', required: false, description: 'The repeat interval it would keep, in days (task 51.2).' })
+  repeatIntervalDays?: number;
+
+  @ApiProperty({
+    type: 'integer',
+    isArray: true,
+    required: false,
+    description: 'The lead times it would keep, in days before a due date, longest first (task 51.2).',
+  })
+  leadTimesDays?: number[];
+
   constructor(consequence: PublicationConsequence) {
     this.kind = consequence.kind;
     if ('people' in consequence) this.people = consequence.people;
     if ('channel' in consequence) this.channel = consequence.channel;
     if ('stayingOff' in consequence) this.stayingOff = consequence.stayingOff;
+    if ('repeatIntervalDays' in consequence) this.repeatIntervalDays = consequence.repeatIntervalDays;
+    if ('leadTimesDays' in consequence) this.leadTimesDays = [...consequence.leadTimesDays];
   }
 }
 
@@ -156,9 +219,17 @@ class CategoryBehaviourDto {
   @ApiProperty({ enum: CLASSIFICATIONS })
   classification: NotificationClassification;
 
+  @ApiProperty({ type: 'integer', required: false, description: 'Present only on a category that repeats.' })
+  repeatIntervalDays?: number;
+
+  @ApiProperty({ type: 'integer', isArray: true, required: false, description: 'Longest first; only on a category that counts down.' })
+  leadTimesDays?: number[];
+
   constructor(behaviour: NotificationCategoryBehaviour) {
     this.channels = [...behaviour.channels];
     this.classification = behaviour.classification;
+    if (behaviour.repeatIntervalDays !== undefined) this.repeatIntervalDays = behaviour.repeatIntervalDays;
+    if (behaviour.leadTimesDays !== undefined) this.leadTimesDays = [...behaviour.leadTimesDays];
   }
 }
 
@@ -168,6 +239,17 @@ class CategoryInForceDto {
 
   @ApiProperty({ enum: CLASSIFICATIONS, nullable: true, description: 'Null where the artefact cannot be read.' })
   classification: NotificationClassification | null;
+
+  @ApiProperty({ type: 'integer', required: false, description: 'Present only on a category that repeats, and readable.' })
+  repeatIntervalDays?: number;
+
+  @ApiProperty({
+    type: 'integer',
+    isArray: true,
+    required: false,
+    description: 'Longest first; present only on a category that counts down, and readable.',
+  })
+  leadTimesDays?: number[];
 
   @ApiProperty({ type: 'integer' })
   revision: number;
@@ -193,6 +275,8 @@ class CategoryInForceDto {
   constructor(inForce: NonNullable<ConsoleCategory['inForce']>) {
     this.channels = inForce.behaviour === null ? null : [...inForce.behaviour.channels];
     this.classification = inForce.behaviour?.classification ?? null;
+    if (inForce.behaviour?.repeatIntervalDays !== undefined) this.repeatIntervalDays = inForce.behaviour.repeatIntervalDays;
+    if (inForce.behaviour?.leadTimesDays !== undefined) this.leadTimesDays = [...inForce.behaviour.leadTimesDays];
     this.revision = inForce.revision;
     this.publishedAt = inForce.publishedAt === null ? null : inForce.publishedAt.getTime();
     this.publishedBy = inForce.publishedBy;
@@ -222,6 +306,13 @@ export class ConsoleCategoryResponseDto {
   @ApiProperty({ description: 'A notice sent to an address with a token in its link: it never travels in-app.' })
   addressNotice: boolean;
 
+  @ApiProperty({
+    enum: Object.values(NOTIFICATION_CADENCE),
+    nullable: true,
+    description: 'The cadence code declares the category keeps, which its publication must carry; null where none.',
+  })
+  cadence: NotificationCadence | null;
+
   @ApiProperty({ type: CategoryInForceDto, nullable: true, description: 'Null where nothing is in force.' })
   inForce: CategoryInForceDto | null;
 
@@ -238,6 +329,7 @@ export class ConsoleCategoryResponseDto {
     this.categoryKey = category.categoryKey;
     this.mandatory = category.mandatory;
     this.addressNotice = category.addressNotice;
+    this.cadence = category.cadence;
     this.inForce = category.inForce === null ? null : new CategoryInForceDto(category.inForce);
     this.switchOffs = {
       inApp: category.switchOffs.byChannel.in_app,

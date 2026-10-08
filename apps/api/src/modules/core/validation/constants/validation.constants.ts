@@ -11,3 +11,18 @@ import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxo
 export const VALIDATION_RULE_SET_CONFIG_KIND = 'validation_rule_set';
 
 export const VALIDATION_RULE_SET_CONFIG_SCOPE = TAXONOMY_STANDARD.VSME;
+
+/**
+ * The day's sweep of open periods for FR-164's and FR-165's notices (task 51.2) — a job `ScheduleTicker` starts as an
+ * outbox row each day, at the slot below, which then schedules one check per period that owes one.
+ */
+export const REPORT_NOTICE_SWEEP = 'validation.report_notice_sweep';
+
+/** One period's check: a validation run, then the notices it owes (task 51.2). Its own job, so one period's failure retries alone. */
+export const REPORT_NOTICE_CHECK = 'validation.report_notice_check';
+
+/**
+ * When the sweep runs: **07:00 on Chișinău's wall clock** (§12.5.6's task-51.2 row (1)) — at the start of a working day
+ * in the zone every organization the platform serves keeps, so a notice is read in the morning rather than overnight.
+ */
+export const REPORT_NOTICE_SLOT = { at: '07:00', timezone: 'Europe/Chisinau' } as const;

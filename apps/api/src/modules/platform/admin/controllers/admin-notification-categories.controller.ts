@@ -11,6 +11,7 @@ import {
   CategoryPublicationResponseDto,
   CategoryReversionRequestDto,
   ConsoleCategoryResponseDto,
+  requestedBehaviour,
 } from '@api/modules/platform/notification/dto/category-console.dto';
 import { CategoryConsoleService } from '@api/modules/platform/notification/services/category-console.service';
 import { RequiresAdminRole } from '../decorators/requires-admin-role.decorator';
@@ -105,7 +106,7 @@ export class AdminNotificationCategoriesController {
     @Body() body: CategoryBehaviourRequestDto,
   ): Promise<CategoryPreviewResponseDto> {
     return new CategoryPreviewResponseDto(
-      await this.categories.preview({ category, behaviour: { channels: body.channels, classification: body.classification } }),
+      await this.categories.preview({ category, behaviour: requestedBehaviour(body) }),
     );
   }
 
@@ -132,7 +133,7 @@ export class AdminNotificationCategoriesController {
     return new CategoryPublicationResponseDto(
       await this.categories.publish({
         category,
-        behaviour: { channels: body.channels, classification: body.classification },
+        behaviour: requestedBehaviour(body),
         expectedRevision: body.expectedRevision,
       }),
     );

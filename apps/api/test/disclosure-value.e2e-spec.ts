@@ -19,7 +19,7 @@ import {
 import { ReportNotEditableError } from '../src/modules/core/disclosure/errors/report.errors';
 import { DISCLOSURES } from '@easyesg/vsme';
 import { DisclosureFacade } from '../src/modules/core/disclosure/services/disclosure-facade.service';
-import { asOrganization, connectAs } from './support/database';
+import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
 import {
   cleanupSignedInAccounts,
   signInFreshAccount,
@@ -211,6 +211,7 @@ describe('the disclosure value store (task 34.1)', () => {
   }, 60_000);
 
   afterAll(async () => {
+    await deleteNoticeWithdrawalsOf({ owner, organizationIds: [ORG, OTHER_ORG] });
     for (const org of [ORG, OTHER_ORG]) {
       await asOrganization(owner, org, (run) =>
         run(`DELETE FROM core.organization WHERE id = $1`, [org]),

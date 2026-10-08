@@ -26,6 +26,19 @@ export function CategoryFacts({ category }: { readonly category: ConsoleCategory
       <dt className="text-[var(--text-muted)]">{t('classification')}</dt>
       <dd>{inForce?.classification == null ? t('unknown') : <ClassificationChip classification={inForce.classification} />}</dd>
 
+      {inForce?.repeatIntervalDays === undefined ? null : (
+        <>
+          <dt className="text-[var(--text-muted)]">{t('repeatInterval')}</dt>
+          <dd>{t('repeatEvery', { days: inForce.repeatIntervalDays })}</dd>
+        </>
+      )}
+      {inForce?.leadTimesDays === undefined ? null : (
+        <>
+          <dt className="text-[var(--text-muted)]">{t('leadTimes')}</dt>
+          <dd>{t('leadTimesValue', { days: format.list(inForce.leadTimesDays.map(String), 'enumeration') })}</dd>
+        </>
+      )}
+
       {category.mandatory || category.addressNotice ? (
         <>
           <dt className="text-[var(--text-muted)]">{t('declared')}</dt>

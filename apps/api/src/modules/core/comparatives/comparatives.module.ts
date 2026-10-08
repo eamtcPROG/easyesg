@@ -32,13 +32,13 @@ import { ReadPriorPeriodValues } from './use-cases/read-prior-period-values.use-
  * draws when it *does* re-provide a store — a repository is a stateless adapter over the request
  * transaction, and a registry is not.
  *
- * **Nothing here is registered on the worker.** No outbox job routes to this module; a comparative
- * is read in a request or not at all.
+ * **On the worker, the prior period's read alone** (task 51.2): a scheduled check is a validation run, whose
+ * year-over-year rule reads it. No outbox job routes to this module.
  */
 const { mode } = configuration();
 
-const httpProviders: Provider[] = [
-  ComparativesService,
+/** The prior period's values — the request tier's read, and since task 51.2 a scheduled check's on the worker. */
+const priorValueProviders: Provider[] = [
   { provide: PRIOR_PERIOD_STORE, useClass: PriorPeriodStoreRepository },
   {
     provide: ReadPriorPeriodValues,
@@ -48,12 +48,15 @@ const httpProviders: Provider[] = [
   },
 ];
 
+const httpProviders: Provider[] = [ComparativesService, ...priorValueProviders];
+
 @Module({
   imports: [TaxonomyModule],
   controllers: mode === APP_MODE.WORKER ? [] : [ComparativesController],
-  providers: mode === APP_MODE.WORKER ? [] : httpProviders,
+  providers: mode === APP_MODE.WORKER ? priorValueProviders : httpProviders,
   // Since task 41.2: a validation run's year-over-year rule compares against the prior period's comparable values
-  // (FR-46 item 3), read through this module's own use case so FR-45's linkage is resolved in one place.
-  exports: mode === APP_MODE.WORKER ? [] : [ReadPriorPeriodValues],
+  // (FR-46 item 3), read through this module's own use case so FR-45's linkage is resolved in one place — and since
+  // task 51.2 on the worker too, where a scheduled check runs one.
+  exports: [ReadPriorPeriodValues],
 })
 export class ComparativesModule {}

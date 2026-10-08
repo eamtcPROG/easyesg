@@ -28,6 +28,7 @@ describe('A-17’s publication state (task 67.10)', () => {
       categoryKey: 'reporting.manual_reminder' as const,
       mandatory: false,
       addressNotice: false,
+      cadence: null,
       switchOffs: { inApp: 0, email: 0, people: 0 },
       wording: [],
       inForce: {
@@ -48,6 +49,24 @@ describe('A-17’s publication state (task 67.10)', () => {
     });
     expect(revertActionOf({ ...category, inForce: { ...category.inForce, previous: null } })).toBeNull();
     expect(revertActionOf({ ...category, inForce: null })).toBeNull();
+
+    // A category that counts down reverts to its earlier lead times as well (task 51.2) — previewed without them, the
+    // api would refuse the behaviour as missing its cadence.
+    const counting = {
+      ...category,
+      categoryKey: 'reporting.report_deadline' as const,
+      cadence: 'lead_times' as const,
+      inForce: {
+        ...category.inForce,
+        leadTimesDays: [14, 7],
+        previous: { channels: ['in_app' as const, 'email' as const], classification: 'optional' as const, leadTimesDays: [14, 7, 1] },
+      },
+    };
+    expect(revertActionOf(counting)?.behaviour).toEqual({
+      channels: ['in_app', 'email'],
+      classification: 'optional',
+      leadTimesDays: [14, 7, 1],
+    });
   });
 
   it('walks preview → disclosure → confirm → progress → result', () => {

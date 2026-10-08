@@ -22,4 +22,15 @@ describe('sameBehaviour (task 67.10)', () => {
   ] as const)('tells %s apart', (_case, other) => {
     expect(sameBehaviour({ channels: [IN_APP, EMAIL], classification: OPTIONAL }, other)).toBe(false);
   });
+
+  it('reads lead times in another order as the same, and tells a moved cadence apart (task 51.2)', () => {
+    const counting = { channels: [IN_APP], classification: OPTIONAL, leadTimesDays: [14, 7, 1] } as const;
+    expect(sameBehaviour(counting, { ...counting, leadTimesDays: [1, 7, 14] })).toBe(true);
+    expect(sameBehaviour(counting, { ...counting, leadTimesDays: [14, 7] })).toBe(false);
+    expect(sameBehaviour(counting, { channels: [IN_APP], classification: OPTIONAL })).toBe(false);
+
+    const repeating = { channels: [IN_APP], classification: OPTIONAL, repeatIntervalDays: 7 } as const;
+    expect(sameBehaviour(repeating, { ...repeating, repeatIntervalDays: 14 })).toBe(false);
+    expect(sameBehaviour(repeating, { channels: [IN_APP], classification: OPTIONAL })).toBe(false);
+  });
 });

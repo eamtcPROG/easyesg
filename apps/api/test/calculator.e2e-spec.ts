@@ -12,7 +12,7 @@ import { ConfigurationPublisher } from '../src/infrastructure/configuration/conf
 import { ConfigurationStore } from '../src/infrastructure/configuration/configuration-store.service';
 import { EMISSION_FACTOR_SET_CONFIG_KIND } from '../src/modules/core/calculator/constants/calculator.constants';
 import { DISCLOSURE_ORIGIN, DISCLOSURE_STATE } from '../src/modules/core/disclosure/models/disclosure-value.model';
-import { asOrganization, connectAs, databaseNow, deleteFactorSetReplacements } from './support/database';
+import { asOrganization, connectAs, databaseNow, deleteFactorSetReplacements, deleteNoticeWithdrawalsOf } from './support/database';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 const ORG = '01930000-0000-7000-8000-0000000000c8';
@@ -162,6 +162,7 @@ describe('the calculator’s lines and runs (task 38.1)', () => {
   }, 180_000);
 
   afterAll(async () => {
+    await deleteNoticeWithdrawalsOf({ owner, organizationIds: [ORG] });
     await cleanupSignedInAccounts({ owner });
     await removeFixtures();
     // The correction this suite publishes and reverts announces two replacements, which no worker drains here.

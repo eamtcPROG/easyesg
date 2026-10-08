@@ -5,6 +5,9 @@ import { APP_MODE } from '../src/config/configuration';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
 import type { Job } from 'bullmq';
 import { OutboxConsumer } from '../src/infrastructure/queue/outbox-consumer';
+import { ScheduleTicker } from '../src/infrastructure/schedule/schedule-ticker.service';
+import { FACTOR_SET_REPLACED } from '../src/modules/core/calculator/constants/calculator.constants';
+import { REPORT_NOTICE_CHECK, REPORT_NOTICE_SWEEP } from '../src/modules/core/validation/constants/validation.constants';
 import { EMAIL_VERIFICATION_REQUESTED, PASSWORD_RESET_REQUESTED } from '../src/modules/identity/account/constants/account.constants';
 import { INVITATION_ISSUED } from '../src/modules/identity/invitation/constants/invitation.constants';
 import { AuthGuard } from '../src/modules/identity/session/guards/auth.guard';
@@ -94,10 +97,25 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
       ADMIN_INVITATION_ISSUED,
       // Task 148: a request-tier hint, published by the worker as the outbox drains.
       PUSH_HINT_EVENT,
+      // Task 37.3's factor notice — routed since then, and missing from this list until task 51.2 found it.
+      FACTOR_SET_REPLACED,
+      // Task 51.2: the day's sweep, and one period's check.
+      REPORT_NOTICE_SWEEP,
+      REPORT_NOTICE_CHECK,
     ])('routes %s to its handler', async (name) => {
       const job = { id: 'boot-probe', name, data: {}, attemptsMade: 0 } as unknown as Job<Record<string, unknown>>;
 
       await expect(app.get(OutboxConsumer, { strict: false }).process(job)).rejects.toThrow(/payload/);
+    });
+
+    /**
+     * **Every daily job is scheduled** (task 51.2): the routing probe above proves a job reaches its handler once its
+     * row exists, and this proves the row is written — a `@RunsDaily` line deleted resolves everything and starts nothing.
+     */
+    it('schedules the notices’ sweep daily at 07:00 in Chișinău', () => {
+      expect(app.get(ScheduleTicker, { strict: false }).scheduled()).toEqual([
+        { jobName: REPORT_NOTICE_SWEEP, slot: { at: '07:00', timezone: 'Europe/Chisinau' } },
+      ]);
     });
   } else {
     it('provides AuthGuard, which is what the pipeline binds by useExisting', () => {

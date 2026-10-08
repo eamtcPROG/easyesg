@@ -30,6 +30,8 @@ describe('offeredPreferences (task 52.1)', () => {
       'identity.invitation',
       'reporting.manual_reminder',
       'reporting.report_update',
+      'reporting.outstanding_report',
+      'reporting.report_deadline',
     ]);
   });
 
