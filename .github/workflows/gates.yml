@@ -5,13 +5,14 @@
 # a gate means adding a root script and one line.
 #
 # The split between the two jobs is a property worth keeping visible rather than a scheduling
-# convenience: eleven gates run anywhere and four need the stack. A lint error should not wait on a
+# convenience: thirteen gates run anywhere and four need the stack. A lint error should not wait on a
 # database it has no use for.
 #
 # That sentence read "eight gates run anywhere, and one cannot" until 7 Sep 2026, having been true
 # when it was written and drifted silently since — the same shape as task 90's `facade:check`, in
-# the prose rather than in the steps. Both counts are checkable by reading: `hermetic` runs eleven
-# gates and nothing else, `database` runs four (`migrations:check` and the three e2e suites) around
+# the prose rather than in the steps. It then said eleven, and drifted again: task 205 found it two
+# short of the job it describes, while the root CLAUDE.md had said thirteen. Both counts are
+# checkable by reading: `hermetic` runs thirteen gates and nothing else, `database` runs four (`migrations:check` and the three e2e suites) around
 # the stack setup that is not a gate, and the two concatenate to the `pnpm gates` chain in order.
 #
 # THE JOBS RUN IN PARALLEL ON PURPOSE. The obvious change is `needs: hermetic` on the database job,
@@ -92,7 +93,12 @@ jobs:
       # across four files, three of them wrong on the day they were written. Hermetic and
       # sub-second — it reads files and counts.
       - run: pnpm docs:check
-      - run: pnpm test
+
+      # The unit suites, every one with coverage on, then NFR-88's per-component floors — read from
+      # architecture.md §12.5.6's table by `tools/check-coverage.mjs` (task 205). It is `pnpm test`
+      # plus the measurement, in `pnpm test`'s place, so no suite runs twice; the billing-off job
+      # below keeps plain `pnpm test`, since the floors do not change with billing switched off.
+      - run: pnpm test:coverage
       - run: pnpm boundaries
 
       # Asserts each boundary rule still REJECTS a real violation. A rule that matches nothing looks

@@ -11,5 +11,7 @@
     // happens to be visible" — same reasoning as apps/api, opposite conclusion.
     "types": []
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  // `vitest.config.ts` is in the program for the reason packages/ui gives: type-aware lint resolves
+  // files through the tsconfig. The build configs set their own `include`, so it is never emitted.
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.ts"]
 }

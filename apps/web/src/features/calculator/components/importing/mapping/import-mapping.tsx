@@ -13,7 +13,7 @@ import { importView } from '../../../tools/import-view';
 import { CALCULATOR_MESSAGES } from '../../shared/calculator-messages';
 import { useCalculatorWords } from '../../shared/use-calculator-words';
 import styles from '../../styles/calculator.module.css';
-import type { ImportedLines } from '../section/import-panel';
+import type { ImportedLines } from '../shared/imported-lines';
 import { IMPORT_MESSAGES } from '../shared/import-messages';
 import { ImportColumnChoices } from './import-column-choices';
 import { ImportReport } from './import-report';

@@ -70,6 +70,7 @@ catalog:
   '@types/supertest': 7.2.1
   '@types/ws': 8.18.1
   '@vitejs/plugin-react': 6.0.5
+  '@vitest/coverage-v8': 4.1.10
   'bullmq': 6.0.9
   'class-transformer': 0.5.1
   'class-validator': 0.15.1

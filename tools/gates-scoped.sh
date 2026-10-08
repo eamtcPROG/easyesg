@@ -148,7 +148,10 @@ phase() { LABELS+=("$1"); COMMANDS+=("$2"); }
 
 phase boundaries "pnpm boundaries"
 
-[ -n "$SELECTED" ] && phase units "pnpm -r --filter '...[$BASE]' test"
+# `pnpm test:coverage`'s scoped form (task 205): the affected suites with coverage on, then NFR-88's
+# floors over what ran — `--partial` names the workspaces it did not and computes no project-wide
+# figure. The reset first is `pretest:coverage`'s, so a summary an earlier run left cannot be read.
+[ -n "$SELECTED" ] && phase units "node tools/check-coverage.mjs --reset && pnpm -r --filter '...[$BASE]' test --coverage && node tools/check-coverage.mjs --partial"
 if selected /apps/api; then
   phase openapi-check "pnpm openapi:check"
 fi

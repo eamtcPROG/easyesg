@@ -28224,3 +28224,154 @@ running.
   printed only digest `2667547900`, the abandoned-stream line `apps/web/CLAUDE.md` records, 16 times.
 - **Not run:** `pnpm e2e:worker` (no consumer changed), `openapi:check` (no controller or DTO) and `migrations:check`
   (no migration). The review agents and `gates:clean` wait for Stage 2's end; task 40 is not its last row.
+
+## Task 205 — NFR-88's coverage gate, per component, read from the floors table; task 205 closes · 2026-10-08
+
+NFR-88's floors are measured now. `pnpm test:coverage` runs every unit suite with coverage on and then
+`tools/check-coverage.mjs`, and it takes `pnpm test`'s place in the `gates` chain and in CI's `hermetic` job. The
+checker reads each floor and the path it is measured over from `architecture.md` §12.5.6's table. It holds the two
+components that exist to theirs: the emissions calculator (`domain/`) and the validation engine (`src/rules/`). It
+prints the project-wide figure beside them, reported but not enforced. On the closing tree:
+
+| Component | Floor | Lines | Branches |
+| --- | --- | --- | --- |
+| Emissions calculator | 95/90 | 100.00% (621/621) | 97.38% (149/153) |
+| Validation engine | 95/90 | 100.00% (287/287) | 97.58% (363/372) |
+| Project-wide | 80, reported | 71.76% (58,875/82,034) | 66.05% (7,455/11,286) |
+
+### Decided before building
+
+Found at task 40's close and raised in one batch of four, each answered with the recommended option. §12.5.6's
+task-205 row holds the decisions:
+
+1. **Task 205, at the head of Stage 2**, whose two components are the measurable ones.
+2. **Two floors enforced; the project-wide 80% reported.** Enforced, it would make the gate red from its first
+   commit. Tasks 54, 57 and 61 each fill in their component's path at their close, and their rows now say so.
+3. **One root checker over json-summaries**, not each runner's thresholds. Measured in the runners' source before
+   asking: Jest's path threshold fails on a path matching nothing but takes those files out of `global`. Vitest's
+   glob threshold passes a pattern matching nothing silently.
+4. **Raised again rather than built.** The owner first chose a separate `coverage:check` reading what `pnpm test` had
+   left. Re-reading the root `CLAUDE.md` before building found that it breaks *a gate must not depend on state a
+   previous command left behind*. The batch should have named that rule. The second answer, `test:coverage` in
+   `pnpm test`'s place, keeps both properties: it runs on its own, and no suite runs twice.
+
+### How it is cut
+
+- `tools/check-coverage.mjs`: one script, like `docs:check`.
+  - It reads the floors table and the workspaces from `pnpm-workspace.yaml`'s globs, then sums each runner's
+    json-summary by repository path. It never averages a percentage.
+  - It has three modes. With no argument it is the gate. `--reset` is `pretest:coverage`'s, so a summary this run
+    did not write is never read. `--partial` is `gates:scoped`'s: it names the workspaces that did not run and
+    computes no project-wide figure.
+- **Each runner only writes a summary.** `apps/api/jest.config.cjs` gains the v8 provider and a json-summary
+  reporter, inert without `--coverage`.
+  - The six Vitest workspaces carry the same coverage block. `packages/{validation,i18n,vsme}` had no config, and
+    each now has one, inside its tsconfig program the way `packages/ui`'s is.
+  - `packages/ui`, `apps/web` and `apps/admin` had named `provider: 'v8'` since August with the package never
+    installed: dead configuration that `--coverage` would have failed on.
+- **`@vitest/coverage-v8` 4.1.10**, through the catalog. It must equal the Vitest pin, so its §12.1 entry sits in
+  the Vitest row.
+
+### The calls taken in the build, and why each holds
+
+- **The floors table gained a *Measured over* column, and the checker reads it.** A second copy of 95/90 in a
+  script would be free to drift from the specification, which is `docs:check`'s own design rule.
+  - A *not built — task N* row is refused once task N has left `docs/task.md`. That turns the amendments to 54, 57
+    and 61 into a check rather than a memory. It does not declare the three components measured, which the owner
+    declined; it names who owes the path.
+- **A source file under a measured path that no summary names is refused.** Vitest 4 reports only the files a test
+  loaded unless `coverage.include` is set (Context7, Vitest 4.1 docs). Without `include`, a new rules file with no
+  spec would vanish from its component rather than count against it. This makes the setting load-bearing.
+- **Jest and Vitest disagree about an unloaded file, measured.** A 54-line file no test loads added 54 lines to the
+  calculator under Jest's v8 provider but only one branch. Vitest added that file's branches in full. So in
+  `apps/api` it is the line floor that catches untested new code. Recorded in the task-205 row rather than worked
+  around.
+- **`pnpm -r test --coverage` forwards the flag to every workspace's own script**, so `apps/api`'s `pretest` still
+  builds the three packages. Verified before relying on it. A per-workspace `test:coverage` script would have needed
+  a `pre` hook of its own.
+
+### Found in passing
+
+- **`gates.yml`'s header said *eleven gates run anywhere*; the `hermetic` job runs thirteen.** The root `CLAUDE.md`
+  says thirteen. It is the same drift the header already records once, from 7 Sep, and it is corrected in the edit
+  that touched that job.
+- **The §12.1 Vitest pin is behind.** The registry's `latest` was 5.0.3 and the newest 4.x 4.1.11 on 8 Oct 2026.
+  Recorded in the row for the quarterly review and not moved: the provider must equal the pin, and moving a pin
+  needs its own rationale.
+- **NFR-88's *including property-based tests* has no task**, and no §12.1 pin serves it. Recorded in the task-205
+  row as outside it.
+- `corpus.spec.ts`'s docblock said nothing measured its floor; it now says what does.
+
+### Skills, read against the diff
+
+- `closing-a-task`: loaded before the close.
+- `one-idea-per-file`: its rules name `apps/api`, `apps/web`, `apps/admin` and `packages/ui`'s source, and the
+  checker is under `tools/`. It follows the `tools/*.mjs` shape instead: one script whose judgement (`evaluate`) is
+  pure over its inputs, which is what lets the proof run it on doctored copies.
+- `nestjs-best-practices`, `vercel-react-best-practices` and `vercel-composition-patterns`: the diff adds no
+  production code, so none applies.
+
+### Proven to bite
+
+- **On every run, in memory.** For each measured floor, copies of the real summaries are doctored four ways: its
+  lines one short of the floor, its branches one short, its files removed, and one of its files dropped. Each copy
+  must be refused, and so must a *not built* row naming a closed task. With `apps/api`'s summary withheld,
+  `--partial` first ran these proofs against the calculator anyway and reported them inert. Fixed by scoping both
+  the verdict and the proof to what ran (`ranHere`).
+- **On the real tree, each step restored afterwards:**
+  - An untested file of 25 `if`/`else` pairs under the calculator's `domain/`, and one of 12 under `src/rules/`. The lines
+    floor refused both, at 92.00% and 91.69%, and the checker exited 1.
+  - A 40-ternary file in `src/rules/` whose spec takes only the true arms: lines 100%, branches 89.15%. The branch
+    floor alone refused it.
+  - `apps/admin`'s summary withheld: refused by name, pointing at `pnpm test:coverage`.
+  - An unknown argument exits 2.
+
+### Gates
+
+Run in a cloud container rather than on the 8 GB host: Node 26.7.0 was fetched into a scratch directory and the
+Docker daemon started by hand. The timings below are that machine's.
+
+- `pnpm test:coverage` in full, run twice, the second time on the closing tree; the first took 5 m 41 s. Every
+  suite green — api 1,792, web 1,578, ui 451, admin 296, validation 160, i18n 130 — and the table above.
+- `pnpm lint`; `typecheck` in all seven workspaces whose configuration changed; `pnpm docs:check`, 48 claims (the
+  archive is now 140 numbers and 253 rows); `pnpm routes:check`.
+- `pnpm e2e`: 64 suites, 1,593 tests. Nothing in the log was unhandled and there were no dependency errors.
+- **Not run:**
+  - `pnpm e2e:web`: the front ends' change is a Vitest config, inert without `--coverage`, and cannot reach a
+    browser journey.
+  - `e2e:worker` (no consumer), `openapi:check` (no controller or DTO) and `migrations:check` (no migration).
+  - The review agents and `gates:clean`, which wait for Stage 2's end; task 205 is not its last row.
+
+### Found by CI on the pull request
+
+PR #1's first run failed two jobs, each at a step `dev`'s own run 53 (`f878cabc`) fails at too. Each was reproduced
+locally, and each fix proven on a copy of `dev` before it was pushed here, at the owner's choice:
+
+- **`config:seed` loaded `@easyesg/i18n`'s CommonJS build that nothing had built.** CI's *Seed configuration, twice*
+  step runs it on a fresh checkout, and the seed answered `Cannot find module …/@easyesg/i18n/dist/cjs/index.js`.
+  Locally it passed only because an earlier command had left `dist/` behind: the root `CLAUDE.md`'s *a gate must not
+  depend on state a previous command left behind*. `preconfig:seed` now builds the three packages, the line `pretest`
+  already carries. Reproduced by deleting the three `dist/` directories and seeding; with the hook, the same seeds.
+  **Searched for the shape:** every `apps/api` script that loads a package's build. `test`, `test:e2e`, `test:worker`,
+  `openapi:emit` and `admin:provision` each build first, and the migration and the provisioning entrypoint name
+  `@easyesg/` only in comments. `pretest:e2e` and `pretest:worker` now build the packages twice, once more through
+  `test:stack`'s seed — seconds, and accepted rather than a hook that trusts its caller.
+- **`pnpm boundaries` refused a cycle task 204.2 left in S-09's import.** `import-mapping.tsx` imported the
+  `ImportedLines` type back from `import-panel.tsx`, which renders it (`no-circular`). The type now lives in
+  `importing/shared/imported-lines.ts`, the leaf that admits what more than one of `importing/`'s folders reads, and
+  its three readers import it there. A type-only move, erased at compile, so no browser journey can see it: proven
+  by `pnpm boundaries` (no violations), the web typecheck and lint, and the web's 1,578 unit tests.
+- **`apps/api`'s `test:cov` is gone.** The search above found it in the same shape — `jest --coverage` with no
+  package build and no `NODE_OPTIONS`, so on a fresh checkout it failed before measuring anything — and nothing ran
+  it. With `pnpm test:coverage` in place it was a second, broken way to measure the api, which is task 205's subject.
+- **The second run reached `pnpm e2e:web`, which no CI run had reached since 1 Oct 2026** — every run since stopped
+  at the seed — and one of 318 failed: A-08's record, scanned by axe as it opened, read its muted lede at 4.25:1.
+  Neither colour axe reported is a token: the text's token is `#65717C` and the page ground `#F4F6F8`, so both were
+  blends — the dialogue was still fading in. At rest the lede sits on `--surface-raised` and passes. The rule was
+  already written, in `e2e/web/support/animations.ts` (28 Sep 2026): *every finite animation on the page settles
+  before a check that measures what is painted*. `admin-accounts.spec.ts` now settles before each scan, as
+  `organization-register.spec.ts` does. **Not reproduced locally**: this container's Chromium is revision 1194 and
+  Playwright 1.62.1 drives 1234, and the failure is a race; CI is the proof. **Searched for the shape, not fixed
+  here:** seven more specs scan with axe and never settle — `session`, `credentials`, `identity-providers`,
+  `notification-categories` and `support-access` in the console, `unsubscribe` and `profile` in the tenant app —
+  each a race of the same kind wherever its scan lands on something still animating.

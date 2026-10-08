@@ -47,8 +47,18 @@ export default defineConfig({
     // harness, not slack for the code: a genuine hang still fails.
     testTimeout: 30_000,
     include: ['src/**/*.spec.{ts,tsx}'],
-    // Project-wide floor is 80% (§12.5.6). None of the five components carrying a higher floor
-    // is front-end; those live in apps/api and packages/validation.
-    coverage: { provider: 'v8', reportsDirectory: './coverage' },
+    // Counted only toward the project-wide figure, which §12.5.6 reports beside NFR-88's
+    // per-component floors and does not yet enforce (task 205). None of the five components
+    // carrying a floor is front-end; those live in apps/api and packages/validation.
+    //
+    // Off unless `--coverage` is passed, which only `pnpm test:coverage` does; the json-summary is
+    // what `tools/check-coverage.mjs` reads. `include` is what makes a source file no spec imports
+    // count as uncovered — without it Vitest 4 reports only the files a test loaded.
+    coverage: {
+      provider: 'v8',
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      reporter: ['json-summary', 'text-summary'],
+    },
   },
 });
