@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
+  carriedTrailOf,
   cleanupAccounts,
   cleanupOrganizations,
   disclosureValueOf,
@@ -1628,4 +1629,25 @@ test('last year’s value shows beside this year’s, and carries forward marked
   await expect(
     page.getByRole('group', { name: 'Consumul total de energie' }).getByRole('button', { name: 'Preluați valoarea' }),
   ).toHaveCount(0);
+
+  // **FR-47 item 4's confirm** (task 191; UX-32 as amended, 182/29): a value read and found right is confirmed without
+  // retyping. The note says what the mark means, beside the act that clears it.
+  const carried = page.getByRole('group', { name: 'Consumul total de energie' });
+  await expect(carried.getByText(/^Valoarea a fost preluată din perioada anterioară/u)).toHaveCount(1);
+  const confirm = carried.getByRole('button', { name: 'Confirmați valoarea neschimbată' });
+  await untilHydrated(confirm);
+  await confirm.click();
+
+  // Written again unchanged with the mark off, which the trail records like any write (FR-54) — and since the trail
+  // records a field only where it changed, the mark's clearing is the one update, and the value is untouched.
+  await expect
+    .poll(() => carriedTrailOf({ organizationId, reportId, elementKey: ENERGY }), { timeout: 15_000 })
+    .toEqual({ carriedForward: false, updates: [{ field: 'carried_forward', from: 'true', to: 'false' }] });
+  expect((await disclosureValueOf({ organizationId, reportId, elementKey: ENERGY }))?.valueNumeric).toBe('1240');
+
+  // The mark and the offer leave the field once the write is acknowledged, and stay gone on the next read.
+  await expect(carried.getByText('Preluat din perioada anterioară', { exact: true })).toHaveCount(0);
+  await expect(confirm).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('group', { name: 'Consumul total de energie' })).not.toContainText('Preluat');
 });

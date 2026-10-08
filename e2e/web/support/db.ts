@@ -656,6 +656,52 @@ export async function disclosureValueOf(input: {
  * holds is `comparable` — task 34.3's other two verdicts are unit-tested against the vocabulary, and
  * contriving a version skew in a browser fixture would test 34.3 rather than the screen.
  */
+
+/**
+ * **A value's carried-forward mark, and every field the trail recorded an update to** (task 191; FR-47 item 4, FR-54),
+ * in the order written. The trail records a field only where it changed (`core.capture_field_change`), so a confirm
+ * that rewrote the value unchanged reads as the mark's clearing and nothing else — which is the whole claim.
+ */
+export async function carriedTrailOf(input: {
+  readonly organizationId: string;
+  readonly reportId: string;
+  readonly elementKey: string;
+}): Promise<{
+  readonly carriedForward: boolean;
+  readonly updates: readonly { readonly field: string; readonly from: string | null; readonly to: string | null }[];
+} | null> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('app.current_org', $1, true)`, [input.organizationId]);
+    const value = await client.query<{ id: string; carried_forward: boolean }>(
+      `SELECT id, carried_forward
+         FROM core.report_disclosure_value
+        WHERE report_id = $1 AND element_key = $2 AND dimension_key = '' AND ordinal = 0`,
+      [input.reportId, input.elementKey],
+    );
+    const row = value.rows[0];
+    if (row === undefined) {
+      await client.query('COMMIT');
+      return null;
+    }
+    const trail = await client.query<{ field_name: string; old_value: string | null; new_value: string | null }>(
+      `SELECT field_name, old_value, new_value
+         FROM core.field_change
+        WHERE table_name = 'core.report_disclosure_value' AND record_id = $1 AND operation = 'UPDATE'
+        ORDER BY occurred_at, id`,
+      [row.id],
+    );
+    await client.query('COMMIT');
+    return {
+      carriedForward: row.carried_forward,
+      updates: trail.rows.map((change) => ({ field: change.field_name, from: change.old_value, to: change.new_value })),
+    };
+  } finally {
+    await client.end();
+  }
+}
 export async function seedPriorPeriod(input: {
   readonly organizationId: string;
   readonly reportId: string;

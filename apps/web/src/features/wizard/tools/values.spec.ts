@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { DisclosureField } from '@easyesg/contracts';
 import {
   BOOLEAN_CHOICE,
+  confirmedWrite,
   draftOf,
   membersOf,
   outstandingDefaults,
@@ -272,3 +273,38 @@ describe('declaring a value not available', () => {
     expect(written).not.toHaveProperty('valueNumeric');
   });
 });
+
+describe('confirming a carried value (task 191; FR-47 item 4, 182/29)', () => {
+  it('writes the stored value again, unit and all, with the mark off', () => {
+    const carried = shaped({
+      elementKey: 'TotalEnergyConsumption',
+      kind: DISCLOSURE_KIND.NUMERIC,
+      unitCode: 'utr:MWh',
+      unitCodes: ['utr:MWh'],
+      valueNumeric: '1240.5',
+      state: DISCLOSURE_STATE.OK,
+      carriedForward: true,
+    });
+    expect(confirmedWrite(carried)).toEqual({
+      elementKey: 'TotalEnergyConsumption',
+      dimensionKey: '',
+      ordinal: 0,
+      unitCode: 'utr:MWh',
+      state: DISCLOSURE_STATE.OK,
+      carriedForward: false,
+      valueNumeric: '1240.5',
+    });
+  });
+
+  it('keeps a carried no as a no — the answer, not its absence', () => {
+    const carried = shaped({
+      elementKey: 'ReportIncludesUnchangedDisclosures',
+      kind: DISCLOSURE_KIND.BOOLEAN,
+      valueBoolean: false,
+      state: DISCLOSURE_STATE.OK,
+      carriedForward: true,
+    });
+    expect(confirmedWrite(carried)).toMatchObject({ valueBoolean: false, carriedForward: false });
+  });
+});
+

@@ -1479,6 +1479,10 @@
         "fromRecord": "Din fișa companiei",
         "carried": "Preluat din perioada anterioară",
         "carryForward": "Preluați valoarea",
+        "carriedNote": {
+          "body": "Valoarea a fost preluată din perioada anterioară și nu a fost modificată. Rămâne marcată ca preluată până când o modificați sau confirmați că este în continuare valabilă.",
+          "confirm": "Confirmați valoarea neschimbată"
+        },
         "choiceEmpty": "Nimic nu corespunde căutării",
         "choiceLoading": "Se caută",
         "choicePrompt": "Începeți să scrieți pentru a căuta",

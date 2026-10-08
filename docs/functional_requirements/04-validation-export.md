@@ -351,7 +351,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-47 — Carry a prior value forward, marked
 
-**Status.** Partial — delivered 34.1, 36.14 · remaining 191 (the confirm action)
+**Status.** Built — delivered 34.1, 36.14, 191 (the confirm action)
 
 **Obligation.** The system shall allow a prior-period value to be carried forward into the current period, marking it as carried forward so that it is reviewed rather than accumulating unnoticed.
 
@@ -381,7 +381,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-4** Given a carried value, then neither export carries the mark. *(source: UC-46 note; §12.5.6 task-36.14 row)* Unmet until 44, 46.
 - **AC-5** Given a module, then no single action carries all its values. *(source: §12.5.6 task-36.14 row)*
 - **AC-6** Given a locked period, then carrying a value is refused with 409. *(source: FR-26/AC-2)*
-- **AC-7** Given a carried value, when the reporter confirms it without editing, then it is stored unchanged with the mark cleared and no longer reads as carried, and the trail records the change. *(source: §12.5.6 task-182 validation row, 182/29)* Unmet until 191.
+- **AC-7** Given a carried value, when the reporter confirms it without editing, then it is stored unchanged with the mark cleared and no longer reads as carried, and the trail records the change. *(source: §12.5.6 task-182 validation row, 182/29)* Met since 191.
 
 **History.**
 - 9 Sep 2026 · project owner · carrying forward and VSME's own unchanged-disclosure fields are both real and not alternatives; the mark is internal; the offer is on an empty field only; the bulk action is not built · §12.5.6 task-36.14 rows; UC-46's note

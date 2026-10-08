@@ -20,7 +20,7 @@ browser (`pnpm e2e:web`).
 
 **Live screens** (tasks 20 … 36; 97 … 131 for the chrome and the refactors): S-01 register and sign-in with its factor
 step and provider buttons, S-02 verify, reset and set-password, S-03 the invitation landing, S-04 create organization,
-S-05 home, S-06 reports, S-07 the wizard shell with autosave and the B1–B11 disclosure forms, S-13 entities, S-14
+S-05 home, S-06 reports, S-07 the wizard shell with autosave and the B1–B11 disclosure forms — a carried value confirmed unchanged since task 191 —, S-13 entities, S-14
 periods, S-15 organization profile, S-16 users with, since task 50.3, its reminder panel, S-09 since task 39.1 —
 invoice lines by source and site, the monthly form, every line through the wizard's queue — and since 39.2 what they
 come to, each line's derivation at its own address, *use these figures in B3* and UX-44's notice, and since 39.3 UC-34's

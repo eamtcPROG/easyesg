@@ -29626,3 +29626,66 @@ on it — one suite at a time, with no dev server running.
   journey's deliberate missing revision.
 - **Not run:** `pnpm e2e`, `pnpm e2e:worker` and `openapi:check`, since nothing in the api or the contract changed;
   `gates:clean` and the review agents, which are Stage 2's end.
+
+## Task 191 — A carried value confirmed unchanged · 2026-10-09
+
+FR-47 item 4's confirm, as settled 5 Oct 2026 (182/29): a reporter who has read a value carried forward from last year
+and found it still right confirms it without retyping, and the value is written again unchanged with the mark off.
+FR-47 is Built, AC-7 met.
+
+### Decided before building
+
+Nothing was asked. FR-47 item 4 and UX-32 as amended settle the act. **The placement is the artboard's**:
+`EasyESG Reporting Core.dc.html` draws the field's carried variant with the *carried* marker in the head and, in the
+message line, a sentence saying what the mark means followed by *Confirm unchanged*. The task row said *beside the
+carried marker*; a tracking file owns no decisions, so the artboard governs, and `design_spec.md` §6.6 now records it as
+built. Two calls taken in the build, stated rather than asked:
+- **A finding on a carried field comes first, and the note follows it** rather than giving way: the finding is what to
+  act on (42.1's order), and the confirm stays reachable for a value that is right while another field is wrong — a
+  carried split against this year's headcount, say.
+- **The note is drawn only where the act is offered**: an editable step, a value the reporter answers rather than one a
+  calculator run wrote, and nothing of the field unsent. A view-only member sees the marker alone, as the carry button
+  is already absent for them.
+
+### How it is cut
+
+- **The api needed nothing**, as the row said: the value upsert writes `carried_forward` from the write on every update,
+  with nothing that skips an identical row, and `capture_field_change` records each field that changed.
+- **`confirmedWrite`** (`tools/values.ts`, two spec cases): `writeFor` over the stored draft, which writes the flag off —
+  UX-32's *until edited*, with nothing edited.
+- **`CarriedNote`** (`components/fields/field/`): the sentence and the button, its words authored in each locale. In
+  `StepField` it is offered while `field.carriedForward` and the field is saved: once any write of the field is pending,
+  the confirm included, the mark is already on its way out.
+- **The note takes the *ok* tone** — the artboard tints it with the cascade's pine — and a declared gap keeps the
+  reasoned one.
+
+### Proven to bite
+
+- **`confirmedWrite`** with the mark kept on: both its cases red, 2 of 22; restored.
+- **The journey**: 36.14's carry-forward journey continues through the confirm and asserts the trail held exactly one
+  update to the row — `carried_forward` from `true` to `false` — so the value was rewritten unchanged, then that the mark
+  and the offer leave and stay gone on reload. With the button's press made a no-op and the web rebuilt, it failed at
+  the trail; restored.
+- `carriedTrailOf` (`e2e/web/support/db.ts`) reads the row's flag and its trail's updates in order.
+
+### Skills, read against the diff
+
+- `one-idea-per-file`: the note is its own file, and the write is a pure function with its spec.
+- `one-kind-per-folder`: the note lands in `fields/field/`, which holds files only.
+- `vercel-composition-patterns`: no boolean prop; the note takes its act and nothing else.
+- `vercel-react-best-practices`: the note is drawn inside an existing client boundary and carries no directive; the
+  client-module count is unchanged.
+
+### Gates
+
+The change reaches `apps/web` alone, and the browser suite's helpers.
+- `pnpm lint`, and the web's typecheck.
+- **The web unit suite: 1,784 — after one red run.** The first run, straight after lint and typecheck, reported one
+  failure of 1,784, and its name was not captured. Six runs after it were clean. Recorded rather than guessed at: a
+  case that fails only under load is a timing assertion until shown otherwise (`apps/web/CLAUDE.md`'s `useTransition`
+  trap), and the next red run should be read before it is rerun.
+- `pnpm docs:check`: 48 claims, which found the archive's counts (147 numbers, 260 rows) once the row had moved.
+- `pnpm e2e:web --project identity --project expansion`: 299 of 299, the extended journey among them. The server printed
+  only digest `2667547900` and a calculator journey's deliberate missing revision.
+- **Not run:** the admin project, since nothing the console draws changed; the api's suites, since the api did not;
+  `gates:clean` and the review agents, which are Stage 2's end.

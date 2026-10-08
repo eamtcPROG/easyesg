@@ -214,6 +214,21 @@ export function resumeWrite(
   };
 }
 
+/**
+ * **A carried value, confirmed: the same answer, now this year's** (task 191; FR-47 item 4, UX-32 as amended
+ * 5 Oct 2026, 182/29). A reporter who has read a value carried forward and found it still right says so without
+ * retyping it: the stored value is written again, its unit with it, and the mark goes, because `writeFor` writes every
+ * value with the flag off — UX-32's *until edited* — and this is that write with nothing edited. So the trail records
+ * the mark's clearing like any change (FR-54), and the value is left exactly as stored.
+ *
+ * A carried field always holds a value — carrying is offered on an empty field and writes one — so an empty draft
+ * clears rather than writing an empty string, as the controls do.
+ */
+export function confirmedWrite(field: DisclosureField): DisclosureValueWrite {
+  const draft = storedDraftOf(field);
+  return writeFor(field, draft === '' ? null : draft);
+}
+
 /** A field as the screen shows it once the API has acknowledged a write for it. */
 export function withCommitted(
   field: DisclosureField,

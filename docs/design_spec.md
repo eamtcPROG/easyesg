@@ -1947,7 +1947,7 @@ Eight design states, **six colour roles** — `error` and `invalid_url` share on
 
 **UX-31** Where a prior period exists, its value shall be shown adjacent to the current input at the point of entry, not in a separate comparison view (UC-45).
 
-**UX-32** Carry-forward shall be a per-field action with an optional module-level bulk action, and every carried value shall remain visibly marked as carried until edited or explicitly confirmed (UC-46). **Amended 5 Oct 2026** (project owner, task 182, 182/29): *explicitly confirmed* is a per-field confirm action on a carried value, which rewrites it unchanged with the mark cleared.
+**UX-32** Carry-forward shall be a per-field action with an optional module-level bulk action, and every carried value shall remain visibly marked as carried until edited or explicitly confirmed (UC-46). **Amended 5 Oct 2026** (project owner, task 182, 182/29): *explicitly confirmed* is a per-field confirm action on a carried value, which rewrites it unchanged with the mark cleared. **As built (task 191):** the confirm sits in the field's message line, after a sentence saying what the mark means — *carried forward from last year and not edited; it stays marked until you change it or confirm it still holds* — as `EasyESG Reporting Core.dc.html` draws the field's carried variant; it is offered where the value can be written and nothing of the field is unsent, and a finding on the same field comes first.
 
 **UX-33** A year-over-year movement beyond a configured proportional threshold shall raise an `inconsistency`, not an `error` — the movement may be real. The message shall state both values and the change.
 

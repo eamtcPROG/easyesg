@@ -23,6 +23,7 @@ import { priorDraftOf, type PriorValue } from '../../../tools/comparatives';
 import { markerFor } from '../../../tools/field-marker';
 import { TONE_OF_STATE } from '../../../tools/field-tone';
 import {
+  confirmedWrite,
   notAvailableWrite,
   resumeWrite,
   storedDraftOf,
@@ -37,6 +38,7 @@ import { DisclosureControl } from '../controls/disclosure-control';
 import { NotAvailableDeclaration } from '../controls/not-available';
 import { FIELD_MESSAGES } from '../shared/step-messages';
 import styles from '../styles/step.module.css';
+import { CarriedNote } from './carried-note';
 import { FieldUnit } from './field-unit';
 import { FindingMessages } from './finding-messages';
 
@@ -136,6 +138,12 @@ export function StepField({
           },
         })
       : { label: syncLabels[sync], tone: SYNC_TONE[sync] };
+  // FR-47 item 4's confirm (task 191): offered on a carried value the reporter writes, once nothing of it is unsent — a
+  // pending write sends the flag off already, so the mark is on its way out and the offer would be a second copy of it.
+  const carriedNote =
+    field.carriedForward && !readOnly && !calculatorFigure && sync === SAVE_STATE.SAVED ? (
+      <CarriedNote onConfirm={() => change(confirmedWrite(field))} />
+    ) : null;
   // Last year's answer in this field's own value column, or '' where it holds none there.
   const priorDraft = prior === null ? '' : priorDraftOf({ field, prior });
   const labelId = fieldAnchor(key);
@@ -229,17 +237,27 @@ export function StepField({
         // A finding first (task 42.1): its three parts are what the reader has to act on, and the same sentence S-08
         // shows for it. A declared gap holds no presence finding, so the two meet only where a declared field still
         // breaks a rule — and then the rule is the message.
+        // A carried value's note follows a finding rather than giving way to it: the finding is what to act on, and the
+        // confirm stays reachable for a value that is right while another field is not.
         verdict !== null ? (
-          <FindingMessages findings={findings} />
+          <>
+            <FindingMessages findings={findings} />
+            {carriedNote}
+          </>
         ) : field.state === DISCLOSURE_STATE.NOT_AVAILABLE ? (
           // The artboard's line over the reason (task 179.2): it is not a note to self, a reader of the export sees it.
           <>
             <span className={styles.recorded}>{tField('notAvailable.recorded')}</span>
             {field.notAvailableReason}
           </>
-        ) : undefined
+        ) : (
+          (carriedNote ?? undefined)
+        )
       }
-      messageTone={verdict !== null ? TONE_OF_STATE[verdict] : FIELD_TONE.REASONED}
+      // The carried note alone takes the tone the artboard tints it with; a declared gap keeps the reasoned one.
+      messageTone={
+        verdict !== null ? TONE_OF_STATE[verdict] : carriedNote !== null ? FIELD_TONE.OK : FIELD_TONE.REASONED
+      }
       // **UX-15's declaration, live since task 36.5.** This slot carried `null` from task 35.2 with
       // task 36.13 named as its owner — the field-level half is built here for every module, and
       // UC-30's *section* exclusion remains 36.13's (a different act, with storage FR-31 has not

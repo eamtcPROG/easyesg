@@ -1479,6 +1479,10 @@
         "fromRecord": "From the company record",
         "carried": "Carried from the prior period",
         "carryForward": "Carry forward",
+        "carriedNote": {
+          "body": "Carried forward from last year and not edited. It stays marked as carried until you change it or confirm it still holds.",
+          "confirm": "Confirm unchanged"
+        },
         "choiceEmpty": "Nothing matches that search",
         "choiceLoading": "Searching",
         "choicePrompt": "Start typing to search",
