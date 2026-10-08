@@ -28361,3 +28361,6 @@ locally, and each fix proven on a copy of `dev` before it was pushed here, at th
   `importing/shared/imported-lines.ts`, the leaf that admits what more than one of `importing/`'s folders reads, and
   its three readers import it there. A type-only move, erased at compile, so no browser journey can see it: proven
   by `pnpm boundaries` (no violations), the web typecheck and lint, and the web's 1,578 unit tests.
+- **`apps/api`'s `test:cov` is gone.** The search above found it in the same shape — `jest --coverage` with no
+  package build and no `NODE_OPTIONS`, so on a fresh checkout it failed before measuring anything — and nothing ran
+  it. With `pnpm test:coverage` in place it was a second, broken way to measure the api, which is task 205's subject.

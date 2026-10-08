@@ -29,7 +29,6 @@
     "db:check:dev": "pnpm db:migrate && pnpm db:invariants",
     "db:invariants": "node --env-file-if-exists=.env ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json --runTestsByPath test/schema-invariants.e2e-spec.ts",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "test:cov": "jest --coverage",
     "test:e2e": "node --experimental-vm-modules --env-file-if-exists=.env --env-file=.env.test ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json --runInBand --passWithNoTests",
     "pretest:worker": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build && pnpm --filter @easyesg/vsme build && pnpm -w test:stack",
     "test:worker": "MODE=worker node --experimental-vm-modules --env-file-if-exists=.env --env-file=.env.test ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json --runInBand --runTestsByPath test/entrypoint-boot.e2e-spec.ts",
