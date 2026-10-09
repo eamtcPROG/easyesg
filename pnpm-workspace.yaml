@@ -33,6 +33,7 @@ catalog:
   '@eslint/js': 10.0.1
   '@fontsource/ibm-plex-mono': 5.3.0
   '@fontsource/onest': 5.3.0
+  '@fontsource/source-serif-4': 5.3.0
   '@nestjs/bullmq': 11.0.5
   '@nestjs/cli': 11.0.24
   '@nestjs/common': 11.1.29

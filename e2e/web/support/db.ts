@@ -838,6 +838,24 @@ export async function dropCredential(input: { readonly email: string }): Promise
  * **It fails when it revoked nothing**, because a revoke that matched no row reads, two steps later, as a
  * product that ignored an ended session rather than as a helper that did not run.
  */
+/**
+ * An account's export language (task 52.3's `identity.account.export_locale`), set apart from its interface language —
+ * S-10 opens in it (182/34; task 43.2), and a journey proving that needs the two to differ.
+ */
+export async function setExportLocale(input: { readonly email: string; readonly locale: 'ro' | 'en' | 'ru' }): Promise<void> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    const result = await client.query(`UPDATE identity.account SET export_locale = $2 WHERE lower(email) = lower($1)`, [
+      input.email,
+      input.locale,
+    ]);
+    if ((result.rowCount ?? 0) === 0) throw new Error(`No account to set the export language of: ${input.email}`);
+  } finally {
+    await client.end();
+  }
+}
+
 export async function endSessionsOf(input: { readonly email: string }): Promise<void> {
   const client = new Client(asOwner());
   await client.connect();

@@ -1,13 +1,10 @@
 'use client';
 
-import { ConsequenceDialogue, type NavLinkComponent } from '@easyesg/ui';
-import { useTranslations } from 'next-intl';
-import { useState, type ComponentProps, type MouseEvent } from 'react';
-import { Link, useRouter } from '@/i18n/navigation';
+import type { NavLinkComponent } from '@easyesg/ui';
+import type { ComponentProps, MouseEvent } from 'react';
+import { Link } from '@/i18n/navigation';
 import { isPlainClick } from '../../tools/plain-click';
-import { useAutosaveContext } from '../providers/autosave-context';
-import { useWhenSessionHeld } from '../providers/use-when-session-held';
-import { WIZARD_MESSAGES } from '../shared/wizard-messages';
+import { useLeaveGuard } from './use-leave-guard';
 
 /**
  * UX-5's single, always-visible way out — and UX-37's second half (task 35.2): *"warned again — with a chance to
@@ -25,24 +22,21 @@ import { WIZARD_MESSAGES } from '../shared/wizard-messages';
  * here, and the reader may stay. A modified click is the browser's, as a new tab leaves this page and its queue
  * standing.
  *
+ * **Since task 43.2 it is the bar's *Review the report* too**, leading to S-10: the preview reads what the server holds, so
+ * an answer still on this device is missing from it, and the same question is asked. The asking is `useLeaveGuard`'s,
+ * which the bar's ⋯ at `compact` shares.
+ *
  * **Moving between steps is not warned about**, deliberately: the queue persists across a step change and the next
  * step drains it (FR-37's *"or step change"*). Sign-out and an organization switch are UX-37's other two triggers and
  * live with their owners (`architecture.md` §12.5.6).
  */
 export function ExitLink({ href, children, className }: ComponentProps<NavLinkComponent>) {
-  const t = useTranslations(WIZARD_MESSAGES);
-  const router = useRouter();
-  const { hasUnsynced, unsynced } = useAutosaveContext();
-  const whenSessionHeld = useWhenSessionHeld();
-  const [confirming, setConfirming] = useState(false);
+  const { leave, guard } = useLeaveGuard();
 
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (!isPlainClick(event)) return;
     event.preventDefault();
-    whenSessionHeld(() => {
-      if (hasUnsynced) setConfirming(true);
-      else router.push(href);
-    });
+    leave(href);
   };
 
   return (
@@ -50,20 +44,7 @@ export function ExitLink({ href, children, className }: ComponentProps<NavLinkCo
       <Link href={href} className={className} onClick={onClick}>
         {children}
       </Link>
-      <ConsequenceDialogue
-        open={confirming}
-        title={t('leave.title')}
-        object={t('leave.object', { count: unsynced })}
-        consequence={t('leave.consequence')}
-        retained={t('leave.retained')}
-        confirmLabel={t('leave.confirm')}
-        cancelLabel={t('leave.cancel')}
-        onConfirm={() => {
-          setConfirming(false);
-          router.push(href);
-        }}
-        onCancel={() => setConfirming(false)}
-      />
+      {guard}
     </>
   );
 }

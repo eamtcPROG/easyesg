@@ -551,7 +551,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-36 — Annotate or override a computed figure
 
-**Status.** Partial — delivered 38.4 (38.5 closed inside it), 39.3, 39.4 · remaining 43.2 (the person in the preview), 44.6, 46.5 (the marker in each export)
+**Status.** Partial — delivered 38.4 (38.5 closed inside it), 39.3, 39.4, 43.2 (the person, the superseded figure and the reason in the preview, drawn by the rendering the PDF shares) · remaining 44.6, 46.5 (the marker in each export)
 
 **Obligation.** The system shall allow a computed figure to be annotated, or replaced by an externally calculated figure with a stated reason, flagging the replacement, naming on the figure the person who made it, and retaining the superseded computed figure.
 

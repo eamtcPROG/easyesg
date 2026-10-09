@@ -13,5 +13,5 @@
   // part that bites — WATCHES on this file, and exclude arrays replace rather than merge, so the
   // base exclusion alone would leave `nest start --watch` compiling prove-boundaries' transient
   // fixtures. See tsconfig.json for the full story.
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "**/testing/**", "**/__boundary_fixture.ts"]
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "**/*spec.tsx", "**/testing/**", "**/__boundary_fixture.ts"]
 }

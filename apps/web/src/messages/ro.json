@@ -1434,7 +1434,6 @@
         "export": "Exportați",
         "review": "Revizuiți raportul",
         "exportUnavailable": "Exportul nu este încă disponibil. Tot ce completați este salvat și va fi inclus în export când acesta va fi disponibil.",
-        "reviewUnavailable": "Revizuirea întregului raport nu este încă disponibilă. Între timp puteți completa și salva fiecare secțiune.",
         "unavailableSuffix": "{action} — încă nu este disponibil",
         "more": "Mai multe acțiuni pentru acest raport"
       },
@@ -2006,6 +2005,35 @@
           "title": "Cifra nu a fost modificată",
           "body": "Nu am putut contacta serviciul, așa că cifra a rămas cum era. Încercați din nou peste câteva minute."
         }
+      }
+    },
+    "preview": {
+      "title": "Previzualizarea raportului",
+      "heading": "Previzualizarea raportului",
+      "note": "Raportul așa cum îl va citi o bancă, un cumpărător sau un auditor. Nimic nu este exportat și nu se creează niciun fișier.",
+      "back": "Înapoi la raport",
+      "language": "Limba documentului",
+      "pages": "Paginile documentului",
+      "pageNames": {
+        "cover": "Coperta",
+        "contents": "Cuprins",
+        "omissions": "Omisiuni și constatări",
+        "provenance": "Proveniența"
+      },
+      "frame": "Raportul ca document",
+      "pending": "Documentul se asamblează…",
+      "refused": {
+        "title": "Doar un editor sau un administrator poate previzualiza raportul",
+        "body": "Un membru cu acces doar la vizualizare citește răspunsurile raportului și verificarea lui, nu documentul.",
+        "action": "Înapoi la raport"
+      },
+      "forbidden": {
+        "title": "Nu aveți acces la acest raport",
+        "body": "Raportul aparține unei organizații din care nu faceți parte sau accesul dumneavoastră a fost retras. Alegeți organizația potrivită din bara de sus."
+      },
+      "unreachable": {
+        "title": "Previzualizarea nu a putut fi deschisă",
+        "body": "Serviciul nu a putut fi contactat acum. Răspunsurile dumneavoastră sunt în siguranță; încercați din nou peste câteva momente."
       }
     },
     "completion": {

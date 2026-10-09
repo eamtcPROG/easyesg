@@ -30770,3 +30770,107 @@ The change reaches `apps/web`, `packages/ui` (one stylesheet) and the docs, so t
   `apps/web/CLAUDE.md` describes; the last run printed none.
 - **Skipped:** the `expansion` project after the compact work — no expansion spec reaches `/legal`, and the change since
   the full run is the legal feature's own stylesheet, its leaf and its specs.
+
+## Task 43 — the report as its document, rendered once by the api and framed on S-10 · 2026-10-10
+
+43.1 built the one rendering the preview and task 44's PDF share; 43.2 built S-10 around it. OQ-38 closed before any
+code: the api renders the document, and S-10 is a frame.
+
+### Decided before building (project owner, one batch of three, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-43 row, which closes OQ-38; amended in the same edit FR-48 behaviours
+2 and 4, S-10's layout, §4.6's Document row, and §12.1's Sass row with §12.2.
+
+- **The api renders the document** — React templates rendered to static markup behind `REPORT_DOCUMENT_RENDERER`,
+  answered by `GET /reports/{id}/preview?locale=` as `text/html`, framed by S-10; task 44's job renders the same port.
+  *Declined:* a `packages/document` rendered by both front ends from JSON, and the templates in `packages/ui`.
+- **On screen the document is page-shaped and continuous**: each page the template forces is a sheet, and S-10 moves
+  between them; line-exact breaks, page numbers and running headers are the PDF's. *Declined:* Paged.js in both.
+- **The stylesheet is plain CSS**: the repository never adopted Sass, and nothing the document needs is Sass's.
+
+### What the building settled
+
+- **The document prints what a validation run reads — stored answers** — so a default the reporter never saved is not
+  filed and not printed, and an unanswered field prints only where an unresolved finding names it (row (c)).
+- **Every module the report's scope asks has a page, which the api's e2e found** rather than the unit cases: on a fresh
+  report B6 vanished, because a module waiting on B1 reads `applicable: false` with no answer to quote, and C1 … C9
+  appeared on a Basic report, because the module list serves the whole pinned taxonomy. The assembly now filters by
+  `scopeAsks` and gives each module a standing — reported, omitted, ruled out — and `modulesToRead` is the one rule
+  the use case reads fields by, so the two cannot disagree. Recorded in row (c).
+- **The document is paper**: its palette is the cascade's light tier-1 values under their own names, copied because
+  the api does not depend on `packages/ui` and its components, and held equal to `tokens.css` by
+  `document-styles.spec.ts`; `color-scheme: light`, so a dark OS does not turn it dark. Its fonts are embedded —
+  Source Serif 4 at 400 and 600, Plex Mono at 400, Latin and Cyrillic, about 245 KB a document — so the preview and the
+  PDF read the same bytes. `@fontsource/source-serif-4` 5.3.0 joins §12.1's fonts row.
+- **One rounding**: `roundHalfUp` moved from `apps/web/src/lib/figure-format.ts` to `packages/i18n/src/figures.ts`,
+  which both read. That package's charter disclaims formatting; rounding is arithmetic, and its scope note says so.
+- **The document's words are its own** (`core.export.document.*`, three locales): the standard's module names, which
+  are not the wizard's short ones, the marks, the cover and the provenance. *Not material*, which the prototype draws,
+  is a state nothing writes and is not drawn; *no answer* is drawn for a disclosure a finding names unanswered.
+- **The override's note is drawn now** — the superseded figure, the reason and the person — by the template the PDF
+  shares, so 44.6 proves the *company estimate* marker in the PDF rather than adds it (row (c)).
+- **S-07's *Review the report* opens S-10.** No artboard says what it opens; S-07's controls list *preview; export*, and
+  S-10's entry point is S-07. It leaves by the exit's rule — an answer not yet sent is in no preview — so the exit's
+  asking became a hook, `useLeaveGuard`, which the bar's link and its ⋯ at `compact` share. `PendingAction` now draws
+  *Export* alone, and `bar.reviewUnavailable` left the three catalogues. The bar's title and meta became
+  `reportIdentity`, read by S-07's bar and S-10's.
+- **The frame runs no script**: `sandbox="allow-same-origin"` and nothing else, so `DocumentPages`' anchors can move it;
+  the document answers `Content-Security-Policy: default-src 'none'` with inline styles and data fonts, and the session
+  pass-through now forwards that header and `nosniff`. The document is loaded by the frame, never read by S-10's
+  server tier, so several hundred kilobytes do not ride the RSC payload as well.
+- **S-10 decides refusal by `mayWrite`, presentation only**: the api's 403 on the document is the authority, as S-07's
+  read-only cause is. A profile that cannot be read opens the preview in the reader's own language.
+- **`DocumentShell` takes a heading slot**: `WizardBar`'s title is a paragraph, and the screen needs its one `<h1>`.
+- **React in the api**: `react`/`react-dom` at the catalog's pins, `jsx: react-jsx`, both jest configs taking `.tsx`,
+  and a lint block giving the templates `jsx-a11y`'s rules.
+- **The browser suite found a defect older than this task**: S-07's leave question stayed open over *0 changes have
+  not been sent yet* when the answer in flight at the press landed while it asked. B1 sends the company record's
+  values as it opens, so pressing *Review the report* at once met it every time. `useLeaveGuard` now asks only while
+  something is unsent and goes where the reader asked once the queue drains — the exit's arrow gains the fix too.
+  `use-leave-guard.spec.tsx`'s drain case failed against the hook as it was.
+- **axe cannot run inside a frame that admits no script**, and the first scan hung on it: S-10 is scanned with the
+  frame excluded, and the document at its own address as a page — both clean against the WCAG set.
+
+### Proven to bite
+
+- `report-document.spec.ts` (12 cases) states every printing rule as a unit case; the module-standing case replaced
+  the one that had said a module that does not apply prints nothing, which the api's e2e showed to be wrong.
+- `document-styles.spec.ts`: `--slate-900` changed by one digit in `document.css` failed the palette case (1 of 2);
+  restored, 2 green. Its fonts case counts twelve faces, every one a data URI.
+- `use-leave-guard.spec.tsx`: the drain case failed against the hook before the fix (1 of 3); after it, 3 green.
+- `preview.e2e-spec.ts` (api, 6): the document's headers, its pages, Romanian and English layouts of one figure, the
+  never-checked and checked findings, the OA admitted, a viewer refused, a bad language refused, an unknown report 404.
+- `preview.spec.ts` (browser, 5): S-07's link into S-10, the export default over the interface language, a page
+  opened in the frame, both scans, a viewer's refusal.
+
+### Searched for the shape
+
+- **Locators that hide a duplicate**: two in this task's own first draft — `.first()` over a module name the document
+  prints twice (contents and heading) and `.last()` over two *back to the report* links — both made exact.
+- **Actions drawn ahead of their screens**: `PendingAction` and `ReportOverflow` changed together, the only two.
+- **Rounding**: `roundHalfUp` had one copy, now in `packages/i18n`; nothing else rounds a figure for a reader.
+
+### Skills read against the diff
+
+`nestjs-best-practices`: controller → service → use case, the use case framework-free and registered by `useFactory`;
+the language a `ParseEnumPipe` over the locale registry. `one-idea-per-file`: one template part per file, the
+assembly pure with its spec; *declined* separate specs for `overrideNote`, `findingText` and `moduleName`, which the
+renderer's spec reads through their output. `one-kind-per-folder`: `features/export/preview/` holds `components/` and
+`tools/`, each directory files or folders. `vercel-react-best-practices`: the section's and the read's fetches run in
+parallel; the one client leaf is the frame; nothing needed memoizing. `vercel-composition-patterns`: the archetype is
+slots, with no boolean prop.
+
+### Gates
+
+The change reaches `apps/api`, `apps/web`, `packages/ui` and `packages/i18n` (so `apps/admin` too) and the contract:
+
+- `pnpm lint`, three passes, clean; `typecheck` of `api`, `web`, `ui`, clean; `pnpm boundaries`, no violations;
+  `pnpm docs:check`, 48 claims — after it named twelve the task had moved; `pnpm openapi:check`, the contract equal to
+  the index at 120 paths.
+- Unit: `i18n` 163, `api` 262 suites / 2,143, `web` 198 files / 1,886, `ui` 66 / 488, `admin` 37 / 299.
+- `pnpm e2e` 67 suites / 1,681; `pnpm e2e:worker` 13 — `ExportModule`'s worker branch and the two exports added to the
+  calculator and validation modules boot.
+- `pnpm e2e:web` over `identity`, `expansion` and `admin`: 348 passed and S-10's two cases failed, for the two
+  findings above. After them: `preview.spec.ts` rebuilt and run, 5 passed; its S-07 case three times more, 3 passed;
+  the wizard's leave journeys — `autosave`, `wizard`, `calculator`, `reauthentication` — 42 passed. The run's 21 `⨯`
+  lines all carry digest `2667547900`, the abandoned stream `apps/web/CLAUDE.md` describes.

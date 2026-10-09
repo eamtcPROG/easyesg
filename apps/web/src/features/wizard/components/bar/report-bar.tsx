@@ -1,10 +1,10 @@
 import type { DisclosureModuleSummary, Report } from '@easyesg/contracts';
-import { BUTTON_VARIANT, WizardBar } from '@easyesg/ui';
+import { BUTTON_VARIANT, Button, WizardBar } from '@easyesg/ui';
 import { getFormatter, getTranslations } from 'next-intl/server';
-import { calendarDay } from '@/lib/legal-date';
-import { ROUTES } from '@/lib/routes';
+import { ROUTES, reportPreviewRoute } from '@/lib/routes';
 import type { ReadOnlyCause } from '@/server/data/wizard';
 import { BAR_ACTION } from '../../tools/bar-actions';
+import { reportIdentity } from '../../tools/report-identity';
 import { initialSavedAt } from '../../tools/saved-at';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import { ExitLink } from './exit-link';
@@ -40,23 +40,25 @@ export async function ReportBar({
     getTranslations('organization.reports'),
     getFormatter(),
   ]);
-  const { subject } = report;
-  const period = format.dateTimeRange(calendarDay(subject.periodStart), calendarDay(subject.periodEnd), 'calendar');
+  const { title, meta } = reportIdentity({ report, t, tReports, format });
 
   return (
     <WizardBar
       back={{ href: ROUTES.REPORTS, label: t('exit') }}
       linkComponent={ExitLink}
-      title={t('bar.title', { year: String(subject.fiscalYear), scope: report.scope })}
-      meta={t('bar.meta', { entity: subject.entityName, period, standing: tReports(`status.${report.status}`) })}
+      title={title}
+      meta={meta}
       saveState={readOnly === null ? <SaveState initialSavedAt={initialSavedAt(modules)} /> : null}
       actions={
         <>
           <PendingAction action={BAR_ACTION.EXPORT} />
-          <PendingAction action={BAR_ACTION.REVIEW} variant={BUTTON_VARIANT.PRIMARY} />
+          {/* S-10 (task 43.2), left by the exit's own rule: an answer not yet sent is in no preview until it is. */}
+          <Button asChild variant={BUTTON_VARIANT.PRIMARY}>
+            <ExitLink href={reportPreviewRoute({ reportId: report.id })}>{t('bar.review')}</ExitLink>
+          </Button>
         </>
       }
-      overflow={<ReportOverflow />}
+      overflow={<ReportOverflow reportId={report.id} />}
     />
   );
 }

@@ -97,6 +97,9 @@ export {
 } from './archetypes/content-contents';
 export { ContentPeers, type ContentPeer, type ContentPeersProps } from './archetypes/content-peers';
 export { ContentWide } from './archetypes/content-wide';
+export { DocumentShell, type DocumentShellProps } from './archetypes/document-shell';
+export { DocumentPages, type DocumentPage } from './archetypes/document-pages';
+export { DocumentFrame } from './archetypes/document-frame';
 
 export { PasswordField, type PasswordFieldProps } from './form/password-field';
 export { Select, type SelectOption, type SelectProps } from './form/select';

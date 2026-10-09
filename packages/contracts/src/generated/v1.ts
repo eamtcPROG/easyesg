@@ -1575,6 +1575,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/{id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The report as its document, without generating a file
+         * @description The whole document — cover, contents, omissions and findings, one page per module, provenance — as one HTML page with its styles and fonts inside it and no script, in the language asked for, which need not be the interface’s (FR-52). Nothing is written: no file and no export record (FR-48).
+         */
+        get: operations["PreviewController_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/support-access": {
         parameters: {
             query?: never;
@@ -8479,6 +8499,45 @@ export interface operations {
             };
             /** @description The reporting period is locked (FR-22). Or the figure is not a computed one that stands. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PreviewController_preview: {
+        parameters: {
+            query: {
+                /** @description The document’s language. */
+                locale: "ro" | "en" | "ru";
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The document. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description No language, or one the platform does not publish in, was asked for. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such report in the active organization. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

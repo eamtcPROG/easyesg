@@ -13,7 +13,7 @@ every screen. Cite them; do not re-derive them.
 Identity, organization, periods, reports, entities, the wizard with its validation, the calculator, the notification centre and
 the profile are live; preview and export, checkout and billing and the public tier are the
 fourteen addresses `AddressNotice` answers for (fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across seven route groups,
-8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (12 built),
+8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (13 built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
 browser (`pnpm e2e:web`).
@@ -27,14 +27,16 @@ come to, each line's derivation at its own address, *use these figures in B3* an
 acts — a line's tonnes replaced with a reason on S-09, and on S-07's B3 a scope replaced, explained or put back — with,
 since 39.4, the person who made each replacement named beside it, and since 204.2 its spreadsheet import — an `.xlsx` or `.csv` read in the browser by `client/spreadsheet/`, its columns and values matched, the rows it cannot read reported, each readable row queued as a typed line, S-07's fields with their verdicts where they are answered, live, since task 42.1, S-08 since 42.2 — the validation panel beside the step at `wide` and a sheet below it, *Check my report*, and the run's roll-up on S-07's list, S-05 and S-06 — with each finding an address that lands focus in its field since 42.3, S-26 notification centre
 with, since task 37.3, its category filter,
-S-27 profile, languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
+S-10 since task 43.2 — the report as its document, the api's rendering framed with no script in the account's export
+language until another is chosen, its pages opened in the frame, reached from S-07's *Review the report* — S-27 profile,
+languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
 layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
 complete your account, S-37 choose organization, S-38 unsubscribe from an email; §4.2's global tier with, since task
 83.2, the organization switcher, and the workspace tier with its drawer, and since task 67.9 UX-124's support-access
 banner across every signed-in screen, and since task 50.2.1 the band's notification bell with the unread count, polled
 every minute, and its row in the compact drawer, the bell opening the panel of the latest notices since 50.2.2. **Not
-live** beyond those fourteen addresses: the wizard's two deferred
-steps S-10 and S-11, which still return `null` under UX-5's exit control.
+live** beyond those fourteen addresses: the wizard's deferred step S-11, which still returns `null` under UX-5's exit
+control.
 
 `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must. What follows is what a reader needs in hand for each live slice, grouped by
 the seam it sits on rather than by the task that built it.
@@ -570,7 +572,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   **A domain serving ONE screen does not split per screen** — there is no second screen to split
   by — **but its root is a directory like any other** (task 132), so it holds `components/ ·
   tools/ · actions/` directly rather than files beside `components/`. Task 134 gave `periods/`,
-  `entities/`, `reports/`, `credentials/` and `wizard/` that shape, and task 75 gave it `public/`; the six unbuilt scaffolds are
+  `entities/`, `reports/`, `credentials/` and `wizard/` that shape, task 75 gave it `public/`, and task 43.2 `export/` — per screen, S-10's `preview/` its first; the five unbuilt scaffolds are
   one `index.ts` each, their empty folders gone. What this rule answers is the shape a domain grows
   into, not a shape to impose on arrival.
 
@@ -1010,7 +1012,8 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **208 files here are Client Components** (9 Oct 2026: one more since task 75 — the cookie policy's table card, which
+  **209 files here are Client Components** (10 Oct 2026: one more since task 43.2 — the wizard's leave guard,
+  `useLeaveGuard`, which the bar's *Review the report* and its ⋯ at `compact` share with the exit. 9 Oct 2026: one more since task 75 — the cookie policy's table card, which
   measures whether its table fits and, while it does not, is a region a keyboard can reach; one more since task 95 — the hook that reads which of S-07's
   applicability notes a reader dismissed, through `useSyncExternalStore`, beside the store in `client/applicability/`;
   the note and the kept-answer notice are drawn inside `StepFields` and carry no directive. 8 Oct 2026: two more since task 42.3 — the step's field focus, which lands a finding's address in its field, and the context a finding's link reads in S-08; two more since task 42.2 — S-08's section, which docks the panel and raises its sheet, and its run's hook; one more since task 42.1 — the wizard's validation provider, which runs the interpreter over the step's held answers. 7 Oct 2026: eight more since task 204.2 gave S-09 its spreadsheet import — the panel's section, its file arm, its mapping arm with the sheet, column and value choices and the report, and the notice an import leaves; six more since task 39.3 gave UC-34's acts a screen — B3's figure control on S-07, its note form and its action hook, the override form that control and a line share, a line's override, and the step's figures context; seven more since task 39.2 gave S-09 its figures — the derivation, the summary beside the step, UX-44's notice, the one-source pager, the run's hook and its refusal, and the calculator's Query hook; thirteen more since task 39.1 built S-09 — its board and site chips, the add-a-source form, the empty state, a site's lines, the line row with its figure, unit and monthly form, the two commit-on-blur fields and their hook, and the words hook its parts share. 6 Oct 2026: two more since task 203.2 — `shared/list-search.tsx`, the search S-06, S-13 and S-16 share, and S-16's search region; three more since task 190 — S-28's arrival notice, the re-authentication dialogue's recovered stage, and S-05's *not now* on the second-factor prompt. 30 Sep 2026: three more since task 179.1 drew S-07 as its artboards — the module list below `wide`, the bar's action drawn ahead of its screen, and the bar's ⋯ at `compact`; the exit and the save state moved into the bar and are counted once; one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to

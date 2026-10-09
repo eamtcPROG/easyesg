@@ -217,6 +217,9 @@ catalogs:
     '@fontsource/onest':
       specifier: 5.3.0
       version: 5.3.0
+    '@fontsource/source-serif-4':
+      specifier: 5.3.0
+      version: 5.3.0
     '@nestjs/bullmq':
       specifier: 11.0.5
       version: 11.0.5
@@ -634,6 +637,12 @@ importers:
       '@easyesg/vsme':
         specifier: workspace:*
         version: link:../../packages/vsme
+      '@fontsource/ibm-plex-mono':
+        specifier: 'catalog:'
+        version: 5.3.0
+      '@fontsource/source-serif-4':
+        specifier: 'catalog:'
+        version: 5.3.0
       '@nestjs/bullmq':
         specifier: 'catalog:'
         version: 11.0.5(@nestjs/common@11.1.29(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/core@11.1.29)(bullmq@6.0.9(ioredis@6.0.0(supports-color@10.2.2))(pg@8.23.0))
@@ -715,6 +724,12 @@ importers:
       pino-http:
         specifier: 'catalog:'
         version: 11.0.0
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.8(react@19.2.8)
       reflect-metadata:
         specifier: 'catalog:'
         version: 0.2.2
@@ -758,6 +773,12 @@ importers:
       '@types/passport-jwt':
         specifier: 'catalog:'
         version: 4.0.1
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.2.4(@types/react@19.2.18)
       '@types/supertest':
         specifier: 'catalog:'
         version: 7.2.1
@@ -1334,6 +1355,9 @@ packages:
 
   '@fontsource/onest@5.3.0':
     resolution: {integrity: sha512-+RavnZZ3Ql/CnxaOCqkRPCO2JR7Eh9WO6vwsb+bF0806Ta65No7ekm3+ye9+piadhqjQ7Dvu4cJo96RniquNFw==}
+
+  '@fontsource/source-serif-4@5.3.0':
+    resolution: {integrity: sha512-yQz8xmIgMzks8zQbpuca3UYtjxK798XCyQAGdDXmzBgvV7sdoK6d0YvE9F9kiYxORCEMRBgGZDZsSYcXj5KvwA==}
 
   '@formatjs/fast-memoize@3.1.7':
     resolution: {integrity: sha512-zXfhLpvA6T7+efdt9JLbBwZ00tT7NsBMDVnDu8rpHeNNv8KfRZAMo2gkG0k9lK/Nzc//3kJ9pImsfuJxk3KhUA==}
@@ -7875,6 +7899,8 @@ snapshots:
   '@fontsource/ibm-plex-mono@5.3.0': {}
 
   '@fontsource/onest@5.3.0': {}
+
+  '@fontsource/source-serif-4@5.3.0': {}
 
   '@formatjs/fast-memoize@3.1.7': {}
 

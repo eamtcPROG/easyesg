@@ -151,6 +151,8 @@ const workerProviders: Provider[] = [
     { provide: VALIDATION_RULE_SETS, useClass: ValidationRuleSetCatalog },
     ...(mode === APP_MODE.WORKER ? workerProviders : httpProviders),
   ],
-  exports: [VALIDATION_RULE_SETS],
+  // Since task 43.1 the run's read too: the preview prints the last run's unresolved findings (UX-119), and task 44's
+  // export on the worker will — `RunValidation` is registered in both modes.
+  exports: [VALIDATION_RULE_SETS, RunValidation],
 })
 export class ValidationModule {}

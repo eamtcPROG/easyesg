@@ -213,7 +213,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-44 — Export with unresolved findings, after a warning
 
-**Status.** Partial — delivered 41.2 (the findings an export request evaluates) · remaining 44.3, 46.1, 46.5, 47.3, 47.4. Both 44.3 and 47.3 cite this requirement, 47.3 since 182/165, and the warning is S-11's content (47.3), the api's half of it is 47.4's, and the Excel marking is 46.5's.
+**Status.** Partial — delivered 41.2 (the findings an export request evaluates), 43.2 (the preview's marks, the rendering the PDF shares) · remaining 44.3, 46.1, 46.5, 47.3, 47.4. Both 44.3 and 47.3 cite this requirement, 47.3 since 182/165, and the warning is S-11's content (47.3), the api's half of it is 47.4's, and the Excel marking is 46.5's.
 
 **Obligation.** The system shall permit export with unresolved findings after an explicit warning, marking the gaps visibly in the output rather than omitting them silently.
 
@@ -245,7 +245,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-3** Given a field not available, then the PDF states its reason. Given a section omitted, then it is named as omitted. *(source: UX-119)* Unmet until 44.3.
 - **AC-4** Given a zero, a gap and an omission, then a reader can tell all three apart in the PDF. *(source: UX-119)* Unmet until 44.3.
 - **AC-5** Given billing disabled, then the warning still appears. *(source: D-11; NFR-1; UC-42)* Unmet until 47.3.
-- **AC-6** Given the preview, then it marks the same gaps as the export. *(source: UX-45)* Unmet until 43.2.
+- **AC-6** Given the preview, then it marks the same gaps as the export. *(source: UX-45)* Met by 43.2: the preview's marks are the shared rendering's (FR-48 AC-5), which the PDF's job renders too.
 - **AC-7** Given unresolved findings and an export request that carries no acknowledgement, then it is refused, the refusal lists the unresolved findings as evaluated at the request, and no job is enqueued. *(source: §12.5.6 task-182 validation row, 182/20)* Unmet until 47.4.
 - **AC-8** Given the same request carrying an acknowledgement, then it is accepted; given no unresolved findings, then no acknowledgement is needed. *(source: §12.5.6 task-182 validation row, 182/20)* Unmet until 47.4.
 - **AC-9** Given an Excel export of a report holding a field declared not available, a section omitted and an unresolved finding, then each is marked in the template's own element where it has one and in a cell note where it has not, and none is left blank. *(source: §12.5.6 task-182 validation row, 182/30)* Unmet until 46.5.
@@ -391,7 +391,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-48 — Preview of the assembled report
 
-**Status.** Not started — remaining 43.1, 43.2 (the overriding person, which 39.4 stores, shown in the preview)
+**Status.** Partial — delivered 43.1, 43.2 · remaining 44.3 (AC-3: the preview and the export compared, once the export exists)
 
 **Obligation.** The system shall render a preview of the fully assembled report — narrative, indicator tables, comparatives — as it will appear when exported, without generating a file.
 
@@ -399,15 +399,15 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 |---|---|
 | **Actors** | An editor or the OA. A view-only member is refused (182/22). |
 | **Traces** | UC-41 · UX-45, UX-117 · AD-10 · T-13 · `architecture.md` OQ-38 · NFR-18 · FR-49 |
-| **Surfaces** | S-10 (the Document archetype) · the preview path of `architecture.md` §6.8, not yet in the contract |
+| **Surfaces** | S-10 (the Document archetype), which frames the document · `GET /reports/{id}/preview?locale=`, the document as `text/html` (`architecture.md` §12.5.6's task-43 row) |
 
 **Preconditions.** A report session (UC-41).
 
 **Behaviour.**
 1. The preview shows narrative, indicator tables and comparatives as the export will, and produces no file and no export record (UC-41).
-2. **One rendering, two consumers**: the PDF is Chromium rendering the same React templates the preview uses, so the two cannot drift (AD-10; task 43.1). Where those templates live is `architecture.md` OQ-38, open, needed before the export phase.
+2. **One rendering, two consumers**: the PDF is Chromium rendering the same React templates the preview uses, so the two cannot drift (AD-10; task 43.1). **The api renders them** (OQ-38, closed 9 Oct 2026; §12.5.6's task-43 row): the preview route answers the document, S-10 frames it, and task 44's job renders the same port for Chromium.
 3. A faithful rendering: same content, same order, same marked gaps (UX-45; FR-44).
-4. S-10 is page-shaped, paginated and print-accurate, laid out by the document system of design_spec.md §11.8 and not the interface's. It shows the override attribution markers (UX-43) and the version pin indicators.
+4. S-10 is page-shaped and print-accurate, laid out by the document system of design_spec.md §11.8 and not the interface's. **Amended 9 Oct 2026** (project owner, task 43; §12.5.6's task-43 row): every page the document forces — cover, contents, omissions and findings, one per module, provenance — is a sheet on screen, and S-10 moves between them; where a long module breaks across printed pages, the page numbers and the running header are the PDF's alone. It shows the override attribution markers (UX-43) and the version pin indicators.
 5. Because it shares the PDF's rendering, a figure rounds once, half-up, to the per-unit precision configuration holds, as the PDF does (NFR-18; §12.5.6 task-182 row (3)).
 6. The preview is built in the three live locales (task 43.2). **It opens in the account's export default** (FR-52) until an export language is chosen, and S-10 offers that choice, so that the preview is of the document the export will produce (182/34).
 
@@ -416,22 +416,23 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - View-only → 403 `insufficient-role` (182/22)
 
 **Acceptance criteria.**
-- **AC-1** Given a report, then the preview shows its narrative, indicator tables and comparatives. *(source: FR text; UC-41)* Unmet until 43.2.
-- **AC-2** Given a preview, then no file is generated and no export is recorded. *(source: FR text; UC-41)* Unmet until 43.2.
+- **AC-1** Given a report, then the preview shows its narrative, indicator tables and comparatives. *(source: FR text; UC-41)*
+- **AC-2** Given a preview, then no file is generated and no export is recorded. *(source: FR text; UC-41)*
 - **AC-3** Given the preview and the export of the same report, then content, order and marked gaps are the same. *(source: UX-45)* Unmet until 44.3.
-- **AC-4** Given an overridden figure, then the preview shows its attribution marker and the person who overrode it. *(source: UX-43; design_spec.md S-10; §12.5.6 task-182 row (4))* Unmet until 43.2; the person is stored since 39.4 (§12.5.6's task-39 row (3)).
-- **AC-5** Given the preview and the PDF, then both come from one rendering module. *(source: AD-10; task 43.1)* Unmet until 43.1.
-- **AC-6** Given each of the three locales, then a full report previews in it. *(source: task 43.2)* Unmet until 43.2.
-- **AC-7** Given the preview opened from S-07, then it is in the account's export default until another language is chosen on S-10. *(source: §12.5.6 task-182 validation row, 182/34)* Unmet until 43.2.
-- **AC-8** Given a view-only member, when a preview is requested, then it is refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)* Unmet until 43.1.
+- **AC-4** Given an overridden figure, then the preview shows its attribution marker and the person who overrode it. *(source: UX-43; design_spec.md S-10; §12.5.6 task-182 row (4))*
+- **AC-5** Given the preview and the PDF, then both come from one rendering module. *(source: AD-10; task 43.1)* Met by 43.1 for the preview; the PDF's job (44.2) renders the same port.
+- **AC-6** Given each of the three locales, then a full report previews in it. *(source: task 43.2)*
+- **AC-7** Given the preview opened from S-07, then it is in the account's export default until another language is chosen on S-10. *(source: §12.5.6 task-182 validation row, 182/34)*
+- **AC-8** Given a view-only member, when a preview is requested, then it is refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)*
 
 **History.**
+- 9 Oct 2026 · project owner · the api renders the document, S-10 frames it, and its pages are the ones the template forces · §12.5.6 task-43 row (OQ-38 closed)
 - 5 Oct 2026 · project owner · the preview opens in the account's export default · §12.5.6 task-182 validation row (182/34)
 - 5 Oct 2026 · project owner · an editor or the OA previews; a view-only member is refused · §12.5.6 task-182 validation row (182/22)
 
 ### FR-49 — The PDF
 
-**Status.** Not started — remaining 43.1, 44.1 … 44.6, 44.7 (the platform-authored-labels statement), 47.1, 47.4
+**Status.** Partial — delivered 43.1 (the rendering it shares with the preview) · remaining 44.1 … 44.6, 44.7 (the platform-authored-labels statement), 47.1, 47.4
 
 **Obligation.** The system shall generate a formatted, publication-ready PDF from stored data in the selected export language.
 

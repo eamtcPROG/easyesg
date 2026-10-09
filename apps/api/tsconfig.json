@@ -13,6 +13,9 @@
     "experimentalDecorators": true,
 
     "sourceMap": true,
+    // The report document's templates are React components rendered to static markup (task 43; §12.5.6's task-43
+    // row) — the one place this app writes JSX, at the edge behind `REPORT_DOCUMENT_RENDERER`.
+    "jsx": "react-jsx",
     // The package root, not ./src, so that test/ is inside the program — `./src` puts it outside
     // and TypeScript refuses (TS6059), which would force a second tsconfig just to type-check it
     // and in turn hide test/ from ESLint's project service, since that discovers `tsconfig.json`
@@ -46,7 +49,7 @@
     // using the alias.
     "paths": { "@api/*": ["./src/*"] }
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts"],
   // `__boundary_fixture.ts` is prove-boundaries' transient violation file, written INTO src and
   // deleted seconds later. It must never join a tsc program: `nest start --watch` compiles every
   // program file, and the api-not-to-contracts-package fixture deliberately imports outside

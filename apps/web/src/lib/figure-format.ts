@@ -1,3 +1,4 @@
+import { roundHalfUp } from '@easyesg/i18n';
 import type { useFormatter } from 'next-intl';
 
 /**
@@ -17,22 +18,12 @@ import type { useFormatter } from 'next-intl';
  *
  * **In `lib/` since task 39.3**, when S-07's computed and derived figures became its second reader beside S-09's
  * (§12.5.6's task-39 row (7)) — two features, one rounding, which is the whole of 182/3's *one rule binds all four*.
+ * **The rounding itself is `@easyesg/i18n`'s since task 43**, which the api's document rounds by too; this keeps the
+ * layout.
  */
 type Formatter = Pick<ReturnType<typeof useFormatter>, 'number'>;
 
 const DECIMAL = /^(\d+)(?:\.(\d+))?$/u;
-
-/** A non-negative decimal string rounded half-up to `places`, exactly — `'0.125'`, 2 → `'0.13'`. */
-export function roundHalfUp(value: string, places: number): string {
-  const match = DECIMAL.exec(value);
-  if (match === null) return value;
-  const [, whole, fraction = ''] = match;
-  if (fraction.length <= places) return value;
-  const kept = BigInt(whole + fraction.slice(0, places));
-  const rounded = Number(fraction[places]) >= 5 ? kept + 1n : kept;
-  const digits = rounded.toString().padStart(places + 1, '0');
-  return places === 0 ? digits : `${digits.slice(0, -places)}.${digits.slice(-places)}`;
-}
 
 export function formatFigure(input: {
   readonly value: string;

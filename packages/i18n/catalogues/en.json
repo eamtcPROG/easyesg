@@ -349,6 +349,138 @@
     },
     "validation": {
       "rules_unavailable": "The rules the report is checked against cannot be read right now, so it was not checked and nothing was changed. This is resolved on our side; try again shortly, and contact support if it persists."
+    },
+    "export": {
+      "document": {
+        "title": "{undertaking} · Sustainability report {year}",
+        "cover": {
+          "kicker": "Sustainability report · {year}",
+          "standard": "Voluntary sustainability reporting standard for non-listed micro, small and medium-sized undertakings (VSME)",
+          "period": "Reporting period",
+          "scope": "Modules reported",
+          "version": "Standard version",
+          "taxonomy": "VSME taxonomy {version}",
+          "factorSet": "Emission factor set {factorSet}",
+          "language": "Language",
+          "omissions": "{count, plural, =0 {No disclosure is omitted.} one {One disclosure is omitted, with its reason stated.} other {# disclosures are omitted, each with its reason stated.}}",
+          "unresolved": "{count, plural, =0 {No check is left unresolved.} one {One check is unresolved; it is listed after the contents and marked where it occurs.} other {# checks are unresolved; each is listed after the contents and marked where it occurs.}}",
+          "notChecked": "The report has not been checked yet."
+        },
+        "scope": {
+          "basic": "Basic Module, disclosures B1 – B11",
+          "basic_and_comprehensive": "Basic and Comprehensive Modules, disclosures B1 – B11 and C1 – C9"
+        },
+        "languages": {
+          "ro": "Romanian",
+          "en": "English",
+          "ru": "Russian"
+        },
+        "contents": {
+          "title": "Contents"
+        },
+        "legend": {
+          "title": "How to read the marks",
+          "intro": "Each mark is drawn in outline and weight, never in colour, and carries its own words, so a black-and-white copy loses nothing."
+        },
+        "marks": {
+          "nilReturn": {
+            "name": "Nil return",
+            "meaning": "The answer is nothing, deliberately: no incidents, no fines. It is a zero, not a gap."
+          },
+          "notAvailable": {
+            "name": "Not available",
+            "meaning": "The disclosure applies, and the undertaking could not obtain the figure for this period. Its reason is printed with it.",
+            "reason": "Reason given: {reason}"
+          },
+          "omitted": {
+            "name": "Omitted",
+            "meaning": "Withheld as classified or sensitive information, as the standard allows."
+          },
+          "estimate": {
+            "name": "Company estimate",
+            "meaning": "A figure the undertaking gave in place of the one the platform calculated. The note beneath the table gives both figures and the reason."
+          },
+          "unresolved": {
+            "name": "Unresolved",
+            "meaning": "A check raised a question the undertaking has not settled. It is listed after the contents."
+          },
+          "noAnswer": {
+            "name": "No answer",
+            "meaning": "The disclosure is unanswered, and a check names it as owed."
+          }
+        },
+        "omissions": {
+          "title": "Reasoned omissions and unresolved findings",
+          "intro": "{count, plural, =0 {Every disclosure of the report is answered or does not apply.} one {One disclosure is not answered with a figure; it is listed here with its mark.} other {# disclosures are not answered with a figure; each is listed here with its mark.}}"
+        },
+        "findings": {
+          "title": "Unresolved findings",
+          "none": "The last check left nothing unresolved.",
+          "notChecked": "The report has not been checked, so no finding is listed."
+        },
+        "module": {
+          "omitted": "The undertaking omits this module as classified or sensitive information.",
+          "ruledOut": "This module does not apply to the undertaking, given its answers in B1.",
+          "nothing": "Nothing is reported in this module."
+        },
+        "table": {
+          "caption": "Table {module} — {name}",
+          "disclosure": "Disclosure",
+          "unit": "Unit"
+        },
+        "values": {
+          "yes": "Yes",
+          "no": "No"
+        },
+        "units": {
+          "kg": "kg",
+          "t": "t",
+          "m3": "m³",
+          "ha": "ha",
+          "sqkm": "km²",
+          "MWh": "MWh",
+          "tCO2e": "t CO₂e"
+        },
+        "override": {
+          "replaced": "{reported} is the undertaking's figure, given in place of {superseded} calculated by the platform.",
+          "replacedUncalculated": "{reported} is the undertaking's figure, given in place of the one the platform calculated.",
+          "reason": "Reason given: {reason}",
+          "person": "Replaced by {person}."
+        },
+        "provenance": {
+          "title": "Provenance",
+          "intro": "This document is generated by software from the values the undertaking entered. The versions below decide how those values are labelled, converted and calculated.",
+          "template": "Document template",
+          "templateVersion": "EasyESG report template {version}",
+          "taxonomy": "Reporting taxonomy",
+          "taxonomyVersion": "VSME taxonomy {version}",
+          "factorSet": "Emission factor set",
+          "noFactorSet": "No calculation has been run",
+          "language": "Language"
+        },
+        "modules": {
+          "B1": "Basis for preparation",
+          "B2": "Practices, policies and future initiatives for transitioning towards a more sustainable economy",
+          "B3": "Energy and greenhouse gas emissions",
+          "B4": "Pollution of air, water and soil",
+          "B5": "Biodiversity",
+          "B6": "Water",
+          "B7": "Resource use, circular economy and waste management",
+          "B8": "Workforce – General characteristics",
+          "B9": "Workforce – Health and safety",
+          "B10": "Workforce – Remuneration, collective bargaining and training",
+          "B11": "Convictions and fines for corruption and bribery",
+          "C1": "Strategy: business model and sustainability-related initiatives",
+          "C2": "Description of practices, policies and future initiatives for transitioning towards a more sustainable economy",
+          "C3": "GHG reduction targets and climate transition",
+          "C4": "Climate risks",
+          "C5": "Additional (general) workforce characteristics",
+          "C6": "Additional own workforce information – Human rights policies and processes",
+          "C7": "Severe negative human rights incidents",
+          "C8": "Revenues from certain sectors and exclusion from EU reference benchmarks",
+          "C9": "Gender diversity ratio in the governance body"
+        }
+      }
     }
   },
   "notification": {

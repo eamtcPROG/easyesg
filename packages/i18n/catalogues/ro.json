@@ -349,6 +349,138 @@
     },
     "validation": {
       "rules_unavailable": "Regulile după care este verificat raportul nu pot fi citite în acest moment, așa că raportul nu a fost verificat și nimic nu s-a modificat. Problema se rezolvă de partea noastră; încercați din nou peste puțin timp și contactați echipa de asistență dacă persistă."
+    },
+    "export": {
+      "document": {
+        "title": "{undertaking} · Raport de durabilitate {year}",
+        "cover": {
+          "kicker": "Raport de durabilitate · {year}",
+          "standard": "Standardul voluntar de raportare privind durabilitatea pentru microîntreprinderile, întreprinderile mici și mijlocii necotate (VSME)",
+          "period": "Perioada de raportare",
+          "scope": "Modulele raportate",
+          "version": "Versiunea standardului",
+          "taxonomy": "Taxonomia VSME {version}",
+          "factorSet": "Setul de factori de emisie {factorSet}",
+          "language": "Limba",
+          "omissions": "{count, plural, =0 {Nicio informație nu este omisă.} one {O informație este omisă, cu motivul declarat.} few {# informații sunt omise, fiecare cu motivul declarat.} other {# de informații sunt omise, fiecare cu motivul declarat.}}",
+          "unresolved": "{count, plural, =0 {Nicio verificare nu a rămas nesoluționată.} one {O verificare este nesoluționată; ea este enumerată după cuprins și marcată acolo unde apare.} few {# verificări sunt nesoluționate; fiecare este enumerată după cuprins și marcată acolo unde apare.} other {# de verificări sunt nesoluționate; fiecare este enumerată după cuprins și marcată acolo unde apare.}}",
+          "notChecked": "Raportul nu a fost încă verificat."
+        },
+        "scope": {
+          "basic": "Modulul de bază, informațiile B1 – B11",
+          "basic_and_comprehensive": "Modulul de bază și Modulul cuprinzător, informațiile B1 – B11 și C1 – C9"
+        },
+        "languages": {
+          "ro": "română",
+          "en": "engleză",
+          "ru": "rusă"
+        },
+        "contents": {
+          "title": "Cuprins"
+        },
+        "legend": {
+          "title": "Cum se citesc marcajele",
+          "intro": "Fiecare marcaj este desenat prin contur și grosime, niciodată prin culoare, și își poartă propriile cuvinte, astfel încât o copie alb-negru nu pierde nimic."
+        },
+        "marks": {
+          "nilReturn": {
+            "name": "Valoare zero declarată",
+            "meaning": "Răspunsul este, în mod deliberat, nimic: niciun incident, nicio amendă. Este un zero, nu o lipsă."
+          },
+          "notAvailable": {
+            "name": "Indisponibil",
+            "meaning": "Informația se aplică, iar întreprinderea nu a putut obține cifra pentru această perioadă. Motivul este tipărit alături.",
+            "reason": "Motivul declarat: {reason}"
+          },
+          "omitted": {
+            "name": "Omis",
+            "meaning": "Reținut ca informație clasificată sau sensibilă, așa cum permite standardul."
+          },
+          "estimate": {
+            "name": "Estimarea întreprinderii",
+            "meaning": "O cifră pe care întreprinderea a dat-o în locul celei calculate de platformă. Nota de sub tabel arată ambele cifre și motivul."
+          },
+          "unresolved": {
+            "name": "Nesoluționat",
+            "meaning": "O verificare a ridicat o întrebare pe care întreprinderea nu a soluționat-o. Este enumerată după cuprins."
+          },
+          "noAnswer": {
+            "name": "Fără răspuns",
+            "meaning": "Informația nu are răspuns, iar o verificare o indică drept datorată."
+          }
+        },
+        "omissions": {
+          "title": "Omisiuni motivate și constatări nesoluționate",
+          "intro": "{count, plural, =0 {Fiecare informație a raportului are răspuns sau nu se aplică.} one {O informație nu are drept răspuns o cifră; ea este enumerată aici cu marcajul ei.} few {# informații nu au drept răspuns o cifră; fiecare este enumerată aici cu marcajul ei.} other {# de informații nu au drept răspuns o cifră; fiecare este enumerată aici cu marcajul ei.}}"
+        },
+        "findings": {
+          "title": "Constatări nesoluționate",
+          "none": "Ultima verificare nu a lăsat nimic nesoluționat.",
+          "notChecked": "Raportul nu a fost verificat, astfel că nu este enumerată nicio constatare."
+        },
+        "module": {
+          "omitted": "Întreprinderea omite acest modul ca informație clasificată sau sensibilă.",
+          "ruledOut": "Acest modul nu se aplică întreprinderii, potrivit răspunsurilor sale din B1.",
+          "nothing": "Nu se raportează nimic în acest modul."
+        },
+        "table": {
+          "caption": "Tabelul {module} — {name}",
+          "disclosure": "Informația",
+          "unit": "Unitatea"
+        },
+        "values": {
+          "yes": "Da",
+          "no": "Nu"
+        },
+        "units": {
+          "kg": "kg",
+          "t": "t",
+          "m3": "m³",
+          "ha": "ha",
+          "sqkm": "km²",
+          "MWh": "MWh",
+          "tCO2e": "t CO₂e"
+        },
+        "override": {
+          "replaced": "{reported} este cifra întreprinderii, dată în locul cifrei {superseded} calculate de platformă.",
+          "replacedUncalculated": "{reported} este cifra întreprinderii, dată în locul celei calculate de platformă.",
+          "reason": "Motivul declarat: {reason}",
+          "person": "Înlocuită de {person}."
+        },
+        "provenance": {
+          "title": "Proveniența",
+          "intro": "Acest document este generat de un program din valorile introduse de întreprindere. Versiunile de mai jos determină modul în care aceste valori sunt denumite, convertite și calculate.",
+          "template": "Șablonul documentului",
+          "templateVersion": "Șablonul de raport EasyESG {version}",
+          "taxonomy": "Taxonomia de raportare",
+          "taxonomyVersion": "Taxonomia VSME {version}",
+          "factorSet": "Setul de factori de emisie",
+          "noFactorSet": "Nu a fost efectuat niciun calcul",
+          "language": "Limba"
+        },
+        "modules": {
+          "B1": "Baza de întocmire",
+          "B2": "Practici, politici și inițiative viitoare pentru tranziția către o economie mai durabilă",
+          "B3": "Energie și emisii de gaze cu efect de seră",
+          "B4": "Poluarea aerului, a apei și a solului",
+          "B5": "Biodiversitate",
+          "B6": "Apă",
+          "B7": "Utilizarea resurselor, economia circulară și gestionarea deșeurilor",
+          "B8": "Forța de muncă – caracteristici generale",
+          "B9": "Forța de muncă – sănătate și securitate",
+          "B10": "Forța de muncă – remunerare, negociere colectivă și formare",
+          "B11": "Condamnări și amenzi pentru corupție și dare de mită",
+          "C1": "Strategie: modelul de afaceri și inițiativele legate de durabilitate",
+          "C2": "Descrierea practicilor, politicilor și inițiativelor viitoare pentru tranziția către o economie mai durabilă",
+          "C3": "Ținte de reducere a emisiilor de gaze cu efect de seră și tranziția climatică",
+          "C4": "Riscuri climatice",
+          "C5": "Caracteristici suplimentare (generale) ale forței de muncă",
+          "C6": "Informații suplimentare despre forța de muncă proprie – politici și procese privind drepturile omului",
+          "C7": "Incidente grave privind drepturile omului",
+          "C8": "Venituri din anumite sectoare și excluderea din indicii de referință ai UE",
+          "C9": "Raportul de diversitate de gen în organul de conducere"
+        }
+      }
     }
   },
   "notification": {

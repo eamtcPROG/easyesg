@@ -129,7 +129,16 @@ traps each one left — grouped by area rather than by the task that built it.
   used the set leaving, to its editors and administrator, and withdraws the entering set's own — **the first producer on
   the worker**, one organization at a time through `TENANT_WORK` (`contracts/tenant-work.port.ts`) (§12.5.6's
   task-37.3/37.4 row).
-- **Not live**: preview and export (43 … 47), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
+- **Export, its first half** (`core/export`, `infrastructure/adapters/document`; task 43): UC-41's preview,
+  `GET /reports/{id}/preview?locale=`, the report as its document — cover, contents, omissions and findings, a page per
+  module the scope asks, provenance — answered as `text/html` through a `StreamableFile`, unenveloped, to an editor or
+  the OA. `PreviewReport` reads what the screens read (the wizard's step in the document's language, the evaluation
+  scope, the prior period, the latest calculator run, the last validation run), `domain/report-document.ts` decides what
+  prints, and `REPORT_DOCUMENT_RENDERER` renders it — **the one place this app writes JSX**: React templates rendered to
+  static markup, the stylesheet plain CSS copied by `nest-cli.json`'s assets, the fonts embedded, the words
+  `core.export.document.*` (§12.5.6's task-43 row, which closed OQ-38). Task 44's job renders the same port for
+  Chromium, so the preview and the PDF cannot drift.
+- **Not live**: export itself (44 … 47), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 

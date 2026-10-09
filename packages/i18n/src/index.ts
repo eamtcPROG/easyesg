@@ -7,6 +7,9 @@
  * A shared formatting layer beside next-intl's own is exactly the drift that amendment exists
  * to prevent, so the two files are kept identical by review rather than by an abstraction.
  * NFR-26's "no hardcoded format pattern" is enforced in both, by a CI lint rule.
+ *
+ * **One figure rule is here, and it is arithmetic rather than a format** (task 43): `roundHalfUp`, FR-29's rounding,
+ * which `apps/web`'s screens and the api's document both apply before their own formatter lays a figure out.
  */
 export { LOCALES, SOURCE_LOCALE, isLocale, toLocale } from './locales.js';
 export type { Locale } from './locales.js';
@@ -29,4 +32,5 @@ export {
   expandCatalogue,
 } from './expansion-harness.js';
 export { findInternalIdentifiers } from './internal-identifiers.js';
+export { roundHalfUp } from './figures.js';
 export type { IdentifierFinding } from './internal-identifiers.js';

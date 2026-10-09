@@ -180,6 +180,7 @@ const workerProviders: Provider[] = [
     { provide: FACTOR_SETS, useClass: FactorSetCatalog },
     ...(mode === APP_MODE.WORKER ? workerProviders : httpProviders),
   ],
-  exports: [FACTOR_SETS],
+  // Since task 43.1 the latest run's read too, on the HTTP side: the preview prints what an override superseded (UX-43).
+  exports: mode === APP_MODE.WORKER ? [FACTOR_SETS] : [FACTOR_SETS, ReadCalcFigures],
 })
 export class CalculatorModule {}

@@ -64,6 +64,10 @@ const FORWARDED_RESPONSE_HEADERS = [
   'content-disposition',
   'cache-control',
   'x-correlation-id',
+  // The report's document (task 43.2) carries what it may load and that it is not to be sniffed as anything else; S-10
+  // frames it from this origin, so the two travel with it rather than stopping here.
+  'content-security-policy',
+  'x-content-type-options',
 ];
 
 function problem(document: ProblemDocument): NextResponse {

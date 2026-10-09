@@ -1434,7 +1434,6 @@
         "export": "Export",
         "review": "Review the report",
         "exportUnavailable": "Export is not available yet. Everything you answer is saved and will be in the export when it opens.",
-        "reviewUnavailable": "Reviewing the whole report is not available yet. Each section can be answered and saved meanwhile.",
         "unavailableSuffix": "{action} — not available yet",
         "more": "More actions for this report"
       },
@@ -2006,6 +2005,35 @@
           "title": "The figure was not changed",
           "body": "We could not reach the service, so the figure is as it was. Try again in a few minutes."
         }
+      }
+    },
+    "preview": {
+      "title": "Report preview",
+      "heading": "Preview of the report",
+      "note": "The report as a bank, a buyer or an auditor will read it. Nothing is exported and no file is made.",
+      "back": "Back to the report",
+      "language": "Language of the document",
+      "pages": "Pages of the document",
+      "pageNames": {
+        "cover": "Cover",
+        "contents": "Contents",
+        "omissions": "Omissions and findings",
+        "provenance": "Provenance"
+      },
+      "frame": "The report as its document",
+      "pending": "Assembling the document…",
+      "refused": {
+        "title": "Only an editor or an administrator can preview the report",
+        "body": "A view-only member reads the report's answers and its check, not its document.",
+        "action": "Back to the report"
+      },
+      "forbidden": {
+        "title": "You do not have access to this report",
+        "body": "It belongs to an organization you are not a member of, or your access has been removed. Choose the right organization in the bar at the top."
+      },
+      "unreachable": {
+        "title": "The preview could not be opened",
+        "body": "The service could not be reached just now. Your answers are safe; try again in a moment."
       }
     },
     "completion": {

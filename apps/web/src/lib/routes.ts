@@ -241,3 +241,17 @@ export const CALCULATOR_SITE_PARAM = 'site';
 
 /** The query parameter an open derivation writes (task 39.2) — the line it explains, by the id its client chose. */
 export const CALCULATOR_LINE_PARAM = 'line';
+
+/**
+ * S-10, the report preview (task 43.2) — at its own address beside the steps and the calculator. **The document's
+ * language is in the query** (`?language=`), so a preview in English is an address that can be sent (UX-4); with none
+ * given, it opens in the account's export default (182/34).
+ */
+export const reportPreviewRoute = (input: { readonly reportId: string; readonly language?: string | null }): string =>
+  withQuery(
+    `/reports/${input.reportId}/preview`,
+    input.language ? `${PREVIEW_LANGUAGE_PARAM}=${encodeURIComponent(input.language)}` : '',
+  );
+
+/** The query parameter S-10's language choice writes and its page reads — one spelling for both. */
+export const PREVIEW_LANGUAGE_PARAM = 'language';

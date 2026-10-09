@@ -570,9 +570,20 @@ export default tseslint.config(
     },
   },
 
+  // ── apps/api only: the report document's templates ─────────────────────────────────────
+  // The one place the api writes JSX (task 43; §12.5.6's task-43 row): static markup a bank reads and a PDF is
+  // tagged from, so the accessibility rules apply as they do to the screens. No hooks rule — nothing here renders
+  // twice, and a hook in a template rendered to static markup would be a defect of its own.
+  {
+    files: ['apps/api/**/*.tsx'],
+    plugins: { 'jsx-a11y': jsxA11y },
+    languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
+    rules: { ...jsxA11y.flatConfigs.recommended.rules },
+  },
+
   // ── apps/api only: import climbs and the alias ──────────────────────────────────────────
   {
-    files: ['apps/api/**/*.ts'],
+    files: ['apps/api/**/*.{ts,tsx}'],
     rules: {
       /**
        * A relative import that climbs two or more levels uses `@api/*` instead (house rule,

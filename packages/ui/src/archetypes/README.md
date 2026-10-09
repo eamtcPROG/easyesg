@@ -10,7 +10,7 @@ none is an escalation to design review, not a licence to invent.
 | `Record` | View and edit one object's attributes | S-13, S-14, S-15, S-23, S-27, S-28 — `RecordShell`, and since 29 Sep 2026 its card form `RecordCard` for S-13 |
 | `Wizard` | Ordered progression with completion state | S-07, S-09, S-19 |
 | `Panel` | Auxiliary context beside a primary task | S-08, S-11, S-12 |
-| `Document` | Faithful preview of a rendered artefact | S-10 |
+| `Document` | Faithful preview of a rendered artefact | S-10 — `DocumentShell` with `DocumentPages` and `DocumentFrame` (task 43.2): the bar, the pages the document forces, and the api's rendering framed with no script; the document's own layout is the document's |
 | `Status` | Current state of a long-lived thing | S-17, S-20, S-24 |
 | `Exception queue` | Work a human must resolve | `apps/admin` only, keyboard-first |
 | `Dashboard` | Aggregate view | `apps/admin` only — never the tenant home |

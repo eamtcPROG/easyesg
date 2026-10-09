@@ -421,6 +421,9 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'PUT /reports/:id/calculator/figures/:elementKey/override': WRITING_MEMBERS,
   'DELETE /reports/:id/calculator/figures/:elementKey/override': WRITING_MEMBERS,
   'PUT /reports/:id/calculator/figures/:elementKey/explanation': WRITING_MEMBERS,
+  // UC-41's preview (task 43.1; FR-48): the report as its document — an editor's or the OA's, and refused to a
+  // view-only member, who reads findings and the roll-up only (182/22).
+  'GET /reports/:id/preview': WRITING_MEMBERS,
 };
 
 type Constructor = new (...args: never[]) => object;
