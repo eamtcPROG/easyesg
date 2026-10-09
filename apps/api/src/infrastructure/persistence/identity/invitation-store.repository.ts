@@ -12,6 +12,7 @@ import {
 } from '@api/modules/identity/invitation/models/invitation.model';
 import { MEMBERSHIP_STATUS } from '@api/modules/identity/membership/models/membership.model';
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
+import { violatesUniqueIndex } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
 import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
 import { countSeatsHeld, holdSeatLock } from './seat.queries';
@@ -157,7 +158,7 @@ export class InvitationStoreRepository
       );
       return toInvitation(rows[0]);
     } catch (error) {
-      if (isPendingAddressViolation(error)) throw new InvitationAlreadyPendingError();
+      if (violatesUniqueIndex({ error, index: PENDING_ADDRESS_UNIQUE_INDEX })) throw new InvitationAlreadyPendingError();
       throw error;
     }
   }
@@ -291,22 +292,13 @@ const toInvitation = (row: InvitationRow): Invitation => ({
 });
 
 /**
- * `23505` is PostgreSQL's `unique_violation` SQLSTATE; the constraint name says *which* uniqueness
- * failed. Both are named rather than compared as bare literals (CLAUDE.md, "Conventions"), and the
- * rule's stated rationale is exactly the failure mode here: a typo in either makes the comparison
- * quietly false, the branch never fires, and a duplicate invitation answers `500` instead of `409`.
+ * The index that says *which* uniqueness failed — the SQLSTATE beside it is `sql-state.ts`'s (task 209). Named rather
+ * than written as a bare literal at the call (CLAUDE.md, "Conventions"), and the rule's stated rationale is exactly the
+ * failure mode here: a typo makes the comparison quietly false, the branch never fires, and a duplicate invitation
+ * answers `500` instead of `409`.
  *
- * `PENDING_ADDRESS_UNIQUE_INDEX` mirrors the index name in `1787875200000-identity-invitation.ts`,
- * which stays literal there because a migration is frozen history. Two copies, deliberately, changed
- * together by hand — the same shape as an `as const` object mirroring a CHECK.
+ * It mirrors the index name in `1787875200000-identity-invitation.ts`, which stays literal there because a migration
+ * is frozen history. Two copies, deliberately, changed together by hand — the same shape as an `as const` object
+ * mirroring a CHECK.
  */
-const UNIQUE_VIOLATION = '23505';
 const PENDING_ADDRESS_UNIQUE_INDEX = 'invitation_pending_address_key';
-
-const isPendingAddressViolation = (error: unknown): boolean => {
-  const driverError = (error as { driverError?: { code?: string; constraint?: string } }).driverError;
-  return (
-    driverError?.code === UNIQUE_VIOLATION &&
-    driverError.constraint === PENDING_ADDRESS_UNIQUE_INDEX
-  );
-};

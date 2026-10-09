@@ -15,10 +15,10 @@ import type { AdminRole } from '@api/modules/platform/admin/models/admin-session
 import { CORE_DATA_SOURCE } from '../data-source';
 import { countRecentAuthAttempts, recordAuthAttempt } from '../identity/auth-attempt.queries';
 import { returnedRows } from '../returned-rows';
+import { violatesUniqueIndex } from '../sql-state';
 import {
   ADMIN_INVITATION_COLUMNS,
   toAdminInvitation,
-  violatesUniqueIndex,
   type AdminInvitationRow,
 } from './admin-invitation-rows';
 

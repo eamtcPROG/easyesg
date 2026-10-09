@@ -37,13 +37,3 @@ export const toAdminInvitation = (row: AdminInvitationRow): AdminInvitation | nu
         expiresAt: row.expires_at,
       }
     : null;
-
-/** PostgreSQL's SQLSTATE for a unique violation. */
-const UNIQUE_VIOLATION = '23505';
-
-/** A unique violation raised by the named index — how an index rather than a prior read refuses a duplicate. */
-export const violatesUniqueIndex = (input: { readonly error: unknown; readonly index: string }): boolean => {
-  const driverError = (input.error as { driverError?: { code?: string; constraint?: string } })
-    .driverError;
-  return driverError?.code === UNIQUE_VIOLATION && driverError.constraint === input.index;
-};

@@ -1,5 +1,5 @@
 /**
- * The SQLSTATEs this schema answers with a domain error, and the predicate that reads them.
+ * The SQLSTATEs this schema answers with a domain error, and the predicates that read them.
  *
  * **One module because it was already three** (task 34.1), which is `returned-rows.ts`'s own reason
  * one directory up. `report-store` declared `{ UNIQUE_VIOLATION, LOCKED }`, `reporting-period-store`
@@ -13,6 +13,11 @@
  * vocabulary and nothing else local … not a helper for this file; it is a missing export from the
  * vocabulary's own module"* — and `sonarjs/no-duplicate-string` cannot see it, because `'45001'` is
  * five word-characters and the rule's `MIN_LENGTH` is 10.
+ *
+ * **The identity stores were the same shape again, found by task 186** and folded in by task 209: the account,
+ * invitation and social sign-in stores and the admin realm's invitation rows each declared their own `'23505'` and read
+ * the constraint off `driverError` by hand, and the last of them had already grown `violatesUniqueIndex` for its two
+ * stores — the shared predicate, living with one of its readers rather than with the vocabulary.
  *
  * **Class 45 is ours by the standard's own leave** (task 31.2): SQLSTATE reserves it for
  * applications, so a lock refusal is distinguishable from every other plpgsql error in the schema.
@@ -37,12 +42,22 @@ export const hasSqlState = (error: unknown, state: SqlState): boolean =>
   typeof error === 'object' && error !== null && 'code' in error && error.code === state;
 
 /**
- * The constraint a violation names — PostgreSQL's `constraint_name`, which the driver carries as `constraint` — or
- * undefined where the error names none. **For a table holding more than one key**, where the SQLSTATE alone cannot
- * say which rule was broken: `core.reporting_period` answers `23505` for its fiscal year (task 186) and could for its
- * composite foreign-key target, which no statement of the application can repeat.
+ * A unique violation raised by the named index — how a key, rather than a read before the write, refuses a duplicate,
+ * and which key it was where a table holds several (the account's address and a provider's subject; a period's fiscal
+ * year and its composite foreign-key target).
+ *
+ * **The constraint is read off the error itself**: TypeORM 1.1's `QueryFailedError` copies the driver error's own
+ * properties onto itself, `constraint` among them, as `hasSqlState` reads `code` — so neither predicate reaches into
+ * `driverError`. A unique *constraint* is backed by an index of its own name, which is the name PostgreSQL reports, so
+ * one parameter serves both.
  */
-export const violatedConstraint = (error: unknown): string | undefined =>
-  typeof error === 'object' && error !== null && 'constraint' in error && typeof error.constraint === 'string'
-    ? error.constraint
-    : undefined;
+export const violatesUniqueIndex = (input: { readonly error: unknown; readonly index: string }): boolean => {
+  const { error } = input;
+  return (
+    hasSqlState(error, SQL_STATE.UNIQUE_VIOLATION) &&
+    typeof error === 'object' &&
+    error !== null &&
+    'constraint' in error &&
+    error.constraint === input.index
+  );
+};

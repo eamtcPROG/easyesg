@@ -30172,3 +30172,67 @@ dependent's row ran, `apps/admin`'s included.
   `apps/web/CLAUDE.md`'s abandoned-stream line, and no other.
 - **Not run:** `boundaries`, `image:check`, `facade:check` and the two `*:prove` gates, which are the Stage's end and
   CI's. **Not a Stage close**: Stage 2 keeps 187, 188 and 189.
+
+## Task 209 — Identity's unique-violation checks, through `sql-state.ts` · 2026-10-09
+
+Appended and closed in one change, at the owner's request, from what task 186's search for the shape of its own code
+found and offered as a task of its own. No adapter declares a SQLSTATE or reads `driverError` any more: one predicate,
+`violatesUniqueIndex({ error, index })`, answers which unique index refused a write, in `sql-state.ts` beside
+`SQL_STATE` and `hasSqlState`. No behaviour moved.
+
+### What the search found, and what that changed
+
+- **Four copies, and a fifth reader.** The account, invitation and social sign-in stores and the admin realm's
+  invitation rows each declared `const UNIQUE_VIOLATION = '23505'` and cast the error to reach
+  `driverError.code` and `.constraint` — the duplication `sql-state.ts`'s header records ending once already, at task
+  34.1. Task 186 had just added a fifth reader, the period store's fiscal-year key, through a new `violatedConstraint`.
+- **The shared predicate already existed, with the wrong owner.** `admin-invitation-rows.ts` exported
+  `violatesUniqueIndex` for its two stores. Every one of the six sites asks exactly its question — a unique violation,
+  raised by this index — so it moved into `sql-state.ts` unchanged in name and signature, and `violatedConstraint`,
+  one day old, is gone in its favour. The chip's own prompt had proposed composing `hasSqlState` with
+  `violatedConstraint` at each site; that would have spelled one question out six times.
+- **The social sign-in store asks twice** rather than switching on a returned name: two keys, two calls, the same
+  predicate. Each index-name constant stays where it was, beside its store, mirroring a literal in a frozen migration.
+
+### Proven to bite
+
+- **The premise the predicate rests on is a spec now.** `sql-state.spec.ts` builds TypeORM 1.1's own
+  `QueryFailedError` around a driver error shaped as `pg` raises it, so that reading `code` and `constraint` off the
+  wrapper rather than off `driverError` is held, not assumed. Comparing any named constraint instead of this one turned
+  its *another index* case red; restored, its 5 cases pass.
+- **Which sites any suite reaches, measured.** With the predicate stubbed to answer `false`, the five suites that
+  assert these refusals turned 4 cases red, covering three sites: the period store's year (task 186's race case), the
+  invitation store's pending address (two cases), and the admin account store's pending invitation. **Three sites no
+  suite reaches through their index**: the account store's address, the social sign-in store's two keys, and the
+  admin acceptance's live account. A use case's read answers first on each, so the index speaks only in a race no
+  suite drives. That was so before this change; it is recorded rather than closed, since each site's change is the
+  call shape the three reached sites share, over the predicate the spec holds.
+
+### Searched
+
+Every `'23505'`, every `driverError`, and every `.code ===` across `apps/api/src`: after the change only `sql-state.ts`
+names the SQLSTATE, and the remaining `.code` reads are an SMTP reply code and taxonomy member codes. `docs/`, both
+`CLAUDE.md` files and `.agents/` for `violatedConstraint`: `apps/api/CLAUDE.md`'s period bullet now names
+`violatesUniqueIndex`; task 186's entry above keeps the name it shipped with.
+
+### Skills, read against the diff
+
+- `one-idea-per-file`: `reason-docblock-carries-the-why` — each store's docblock keeps why its index name is a mirrored
+  constant and leaves the SQLSTATE to `sql-state.ts`; `reason-measure-structural-claims` — which sites a suite reaches
+  was measured by the stub above rather than assumed from the suites' names.
+- `nestjs-best-practices`: `error-use-exception-filters` holds, each adapter still raising its `DomainError` for the
+  filter; nothing Nest-facing changed.
+
+### Gates
+
+The change reaches `apps/api` alone — six persistence adapters, the admin invitation rows module the predicate left, and
+`sql-state.ts` — and both its entrypoints, since the admin realm's module is built on the worker too.
+
+- `pnpm lint`; `pnpm --filter @easyesg/api typecheck`; `pnpm docs:check`, 48 claims, after the plan's size and the
+  archive's counts moved.
+- `pnpm --filter @easyesg/api test`: 259 suites, **2,120** cases — this task's 5 among them.
+- `pnpm e2e`: **66 of 66** suites, **1,664** cases, the log clean, on a stack discarded first (`pnpm test:down`), since
+  task 186's `e2e:worker` run had left the day's sweep row in it — task 208's caveat.
+- `pnpm e2e:worker`: 13 cases, clean; the test stack was discarded again afterwards, for the same reason.
+- **Not run:** `migrations:check` and `openapi:check`, with no migration, controller or DTO touched; `e2e:web`, since
+  nothing a browser reaches changed. **Not a Stage close**: Stage 2 keeps 187, 188 and 189.

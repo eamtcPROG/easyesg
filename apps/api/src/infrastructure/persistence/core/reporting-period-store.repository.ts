@@ -19,7 +19,7 @@ import type {
   ReportingPeriodPatch,
 } from '@api/modules/core/period/models/reporting-period.model';
 import { returnedRows } from '../returned-rows';
-import { SQL_STATE, hasSqlState, violatedConstraint } from '../sql-state';
+import { SQL_STATE, hasSqlState, violatesUniqueIndex } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
 import { readyToFileOf } from './report-readiness';
 import { validationSummaryOf, type ValidationSummaryColumn } from './report-validation-summary';
@@ -190,9 +190,7 @@ const FISCAL_YEAR_UNIQUE = 'reporting_period_fiscal_year_unique';
  */
 const translate = (error: unknown): never => {
   if (hasSqlState(error, SQL_STATE.EXCLUSION_VIOLATION)) throw new PeriodOverlapsError();
-  if (hasSqlState(error, SQL_STATE.UNIQUE_VIOLATION) && violatedConstraint(error) === FISCAL_YEAR_UNIQUE) {
-    throw new PeriodFiscalYearTakenError();
-  }
+  if (violatesUniqueIndex({ error, index: FISCAL_YEAR_UNIQUE })) throw new PeriodFiscalYearTakenError();
   if (hasSqlState(error, SQL_STATE.LOCKED)) throw new PeriodLockedError();
   throw error;
 };

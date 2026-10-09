@@ -32,6 +32,7 @@ import { SESSION_REVOKED_REASON } from '@api/modules/identity/session/models/ses
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
 import { CORE_DATA_SOURCE } from '../data-source';
 import { returnedRows } from '../returned-rows';
+import { violatesUniqueIndex } from '../sql-state';
 import { ACCOUNT_COLUMNS, toAccount, type AccountRow } from './account-row';
 import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
 
@@ -90,29 +91,16 @@ interface VerificationTokenRow {
 }
 
 /**
- * `23505` is PostgreSQL's `unique_violation` SQLSTATE. The constraint name is what says *which*
- * uniqueness failed.
+ * The index that says *which* uniqueness failed — the SQLSTATE beside it is `sql-state.ts`'s (task 209). Named rather
+ * than written as a bare literal at the call (CLAUDE.md, "Conventions"), and here the rule's stated rationale is exactly
+ * the failure mode: a typo makes the comparison quietly false, the branch never fires, and a duplicate registration
+ * answers `500` instead of OQ-53's `409`.
  *
- * Both are named rather than compared as bare literals (CLAUDE.md, "Conventions"), and here the
- * rule's stated rationale is exactly the failure mode: a typo in either makes the comparison
- * quietly false, the branch never fires, and a duplicate registration answers `500` instead of
- * OQ-53's `409` — a wrong status on a path with an e2e test that would still pass, because the
- * test asserts the 409 comes back and would simply see the 500 as the whole endpoint breaking.
- *
- * `ACCOUNT_EMAIL_UNIQUE_INDEX` mirrors the index name in `1787356800000-identity-account.ts`,
- * which stays literal there because a migration is frozen history. Two copies, deliberately,
- * changed together by hand — the same shape as an `as const` object mirroring a CHECK.
+ * It mirrors the index name in `1787356800000-identity-account.ts`, which stays literal there because a migration is
+ * frozen history. Two copies, deliberately, changed together by hand — the same shape as an `as const` object
+ * mirroring a CHECK.
  */
-const UNIQUE_VIOLATION = '23505';
 const ACCOUNT_EMAIL_UNIQUE_INDEX = 'account_email_key';
-
-const isEmailUniqueViolation = (error: unknown): boolean => {
-  const driverError = (error as { driverError?: { code?: string; constraint?: string } }).driverError;
-  return (
-    driverError?.code === UNIQUE_VIOLATION &&
-    driverError.constraint === ACCOUNT_EMAIL_UNIQUE_INDEX
-  );
-};
 
 class AccountTransactionAdapter implements AccountTransaction {
   constructor(
@@ -144,7 +132,7 @@ class AccountTransactionAdapter implements AccountTransaction {
     } catch (error) {
       // The unique index is the duplicate check, not the caller's prior read — two simultaneous
       // registrations of one address both pass a read-then-write test and one of them is wrong.
-      if (isEmailUniqueViolation(error)) throw new EmailAlreadyRegisteredError();
+      if (violatesUniqueIndex({ error, index: ACCOUNT_EMAIL_UNIQUE_INDEX })) throw new EmailAlreadyRegisteredError();
       throw error;
     }
   }

@@ -24,6 +24,7 @@ import type { SocialProvider } from '@api/contracts/identity-provider.port';
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
 import { CORE_DATA_SOURCE } from '../data-source';
 import { returnedRows } from '../returned-rows';
+import { violatesUniqueIndex } from '../sql-state';
 import { ACCOUNT_COLUMNS, toAccount, type AccountRow } from './account-row';
 import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
 
@@ -87,21 +88,13 @@ const PROVIDER_IDENTITY_COLUMNS =
   'id, account_id, provider, subject, asserted_email, email_verified_asserted';
 
 /**
- * `AccountStoreRepository`'s SQLSTATE mapping, with this store's two constraints. Both races are
- * real: a password registration can commit the address between this flow's read and its insert,
- * and a double-submitted callback can race itself on the subject key. The first is BR-ID-3's
- * collision answer arriving late; the second answers "try again", and the retry signs in against
- * the row the winner created.
+ * `AccountStoreRepository`'s mapping, with this store's two keys. Both races are real: a password registration can
+ * commit the address between this flow's read and its insert, and a double-submitted callback can race itself on the
+ * subject key. The first is BR-ID-3's collision answer arriving late; the second answers "try again", and the retry
+ * signs in against the row the winner created.
  */
-const UNIQUE_VIOLATION = '23505';
 const ACCOUNT_EMAIL_UNIQUE_INDEX = 'account_email_key';
 const PROVIDER_SUBJECT_UNIQUE_CONSTRAINT = 'provider_identity_subject_key';
-
-const uniqueViolationConstraint = (error: unknown): string | undefined => {
-  const driverError = (error as { driverError?: { code?: string; constraint?: string } })
-    .driverError;
-  return driverError?.code === UNIQUE_VIOLATION ? driverError.constraint : undefined;
-};
 
 class SocialSignInTransactionAdapter implements SocialSignInTransaction {
   constructor(private readonly queryRunner: QueryRunner) {}
@@ -330,12 +323,13 @@ class SocialSignInTransactionAdapter implements SocialSignInTransaction {
 
       return created;
     } catch (error) {
-      const constraint = uniqueViolationConstraint(error);
       // The index decides the race the in-flow read cannot (the account repository's argument).
-      if (constraint === ACCOUNT_EMAIL_UNIQUE_INDEX) throw new SocialEmailInUseError();
+      if (violatesUniqueIndex({ error, index: ACCOUNT_EMAIL_UNIQUE_INDEX })) throw new SocialEmailInUseError();
       // A double-submitted callback racing itself: the winner holds the identity, so "try
       // again" is literally the resolution — the retry matches it and signs in.
-      if (constraint === PROVIDER_SUBJECT_UNIQUE_CONSTRAINT) throw new SocialExchangeFailedError();
+      if (violatesUniqueIndex({ error, index: PROVIDER_SUBJECT_UNIQUE_CONSTRAINT })) {
+        throw new SocialExchangeFailedError();
+      }
       throw error;
     }
   }

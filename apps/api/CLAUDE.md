@@ -449,7 +449,7 @@ DR-4's:
 - **An entity holds each fiscal year once** (task 186, reversing 31.1; §12.5.6's task-186 row), by
   `reporting_period_fiscal_year_unique` — and **the use case judges the year before the dates**, through
   `holdsFiscalYear`, so a repeat that also overlaps answers `period-fiscal-year-taken`. The store
-  translates the key's violation by its name (`violatedConstraint`), for the request that loses a race.
+  translates the key's violation by its name (`violatesUniqueIndex`, `sql-state.ts`), for the request that loses a race.
 - **The entity snapshot is taken here and referenced by the period**, not by the report (§7.2 as
   amended, §12.5.6). Its payload is assembled in SQL with `to_jsonb`, so it is a consistent read of
   the same transaction.
