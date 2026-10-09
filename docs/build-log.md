@@ -30576,8 +30576,38 @@ and this Stage added some 48,000 lines. CI's runners have more memory, so their 
 not failed on it. The remedy taken was operational and for this run only — `NODE_OPTIONS=--max-old-space-size=4096` on
 the cold lint — and no gate script changed. **Raised with the owner rather than decided here:** the next cold run on
 this host fails the same way, and whether the lint script should carry a heap setting, or lint be split per workspace,
-is a change to a gate.
+is a change to a gate. *Answered the same day: three passes* — the entry below.
 
 **What would falsify the once-per-Stage rule** (root `CLAUDE.md`): a break that survived from a close to the Stage's
 end and cost more to unpick here than the skipped run would have. The outbox case is the nearest this Stage came — a
 date-dependent fixture that a close's run could not see on any other day, found by review rather than by a gate.
+
+## `pnpm lint` in three passes · 2026-10-09
+
+The owner's answer to the question Stage 2's cold run raised, recorded as the Stage-2-close row's item (8). `pnpm lint`
+is `node tools/lint.mjs`, which runs ESLint over `apps/api`, over `apps/web`, and over the repository with those two
+ignored — the ignore patterns derived from the list that names the separate passes, so a workspace moved in or out of
+the list moves between passes and never out of the run. Each pass keeps its own cache under `node_modules/.cache/eslint/`,
+since ESLint names a directory's cache file after the working directory and three passes sharing one would overwrite each
+other; the clean script removes the parent as before. Every pass runs even when one fails, and extra arguments reach
+each pass.
+
+### Measured before choosing, each cold, on this 8 GB host
+
+| | Peak V8 heap | Resident | Time |
+| --- | --- | --- | --- |
+| `eslint .`, one program (4 GB heap, to finish at all) | 3,031 MB | 2.62 GB | 225 s |
+| `apps/api` alone | 1,362 MB | 1.81 GB | 42 s |
+| `apps/web` alone | 1,386 MB | 1.69 GB | 45 s |
+| The rest, at the default heap | 1,365 MB | 1.70 GB | 34 s |
+
+The three passes linted the same 2,756 files as `eslint .`, none missing and none twice — compared file by file from each
+run's JSON report. *Declined:* one program under `--max-old-space-size=4096`, about a gigabyte of headroom.
+
+### Proven
+
+- **Cold, at the default 2,144 MB heap, through `pnpm lint` itself:** exit 0 in 126 s, three caches written. Warm: 9.9 s.
+- **A violation in a separate pass and one in the remainder, in the same run:** both reported, the failing passes named
+  (`lint: apps/api, the rest of the repository failed.`), exit 1; clean again once the probes were removed.
+- `pnpm eslint:prove` passes unchanged: it drives ESLint itself and never read `pnpm lint`.
+

@@ -23,7 +23,7 @@
     "test:up": "docker compose -f infra/compose/docker-compose.test.yml --env-file infra/compose/.env --env-file apps/api/.env.test up -d --wait",
     "test:down": "docker compose -f infra/compose/docker-compose.test.yml --env-file infra/compose/.env --env-file apps/api/.env.test down",
     "test:stack": "pnpm test:up && ./tools/with-test-stack.sh sh -c 'pnpm --filter @easyesg/api db:migrate && pnpm --filter @easyesg/api config:seed'",
-    "lint": "eslint . --cache --cache-strategy content --cache-location node_modules/.cache/eslint/",
+    "lint": "node tools/lint.mjs",
     "test": "pnpm -r --workspace-concurrency=1 test",
     "pretest:coverage": "node tools/check-coverage.mjs --reset",
     "test:coverage": "pnpm -r --workspace-concurrency=1 test --coverage && node tools/check-coverage.mjs",
