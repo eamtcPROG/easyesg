@@ -78,8 +78,14 @@ describe('refusedFields', () => {
   const problem = (type: string) =>
     ({ status: 'problem', problem: { type, status: 409, title: 't', detail: 'd' } }) as const;
 
-  it('names the two dates for an overlap, and nothing for any other refusal or an answer', () => {
-    expect(refusedFields(problem('https://easyesg.md/problems/period-overlaps'))).toEqual(['start', 'end']);
+  it('names the two dates for an overlap, the year for a held year, and nothing for any other refusal or an answer', () => {
+    expect(refusedFields(problem('https://easyesg.md/problems/period-overlaps'))).toEqual([
+      { field: 'start', problem: 'overlaps' },
+      { field: 'end', problem: 'overlaps' },
+    ]);
+    expect(refusedFields(problem('https://easyesg.md/problems/period-fiscal-year-taken'))).toEqual([
+      { field: 'fiscalYear', problem: 'taken' },
+    ]);
     expect(refusedFields(problem('https://easyesg.md/problems/validation-failed'))).toEqual([]);
     expect(refusedFields({ status: 'unreachable' })).toEqual([]);
     expect(refusedFields({ status: 'ok', value: undefined, messages: [] })).toEqual([]);
@@ -100,12 +106,24 @@ describe('fieldProblems', () => {
 
   it('marks the dates an overlap named, and a reversed range on the end once a save is pressed', () => {
     const filled = { fiscalYear: '2026', start: '2026-01-01', end: '2026-12-31', due: '' };
-    expect(fieldProblems({ value: filled, checked: false, refused: ['start', 'end'] })).toEqual([
+    const overlap = [
       { field: 'start', problem: 'overlaps' },
       { field: 'end', problem: 'overlaps' },
-    ]);
+    ] as const;
+    expect(fieldProblems({ value: filled, checked: false, refused: overlap })).toEqual(overlap);
     expect(fieldProblems({ value: { ...filled, end: '2025-12-31' }, checked: true, refused: [] })).toEqual([
       { field: 'end', problem: 'range' },
+    ]);
+  });
+
+  /** Task 186: the year a race took is marked as taken — its own words, not the dates' — and an empty year still says
+   *  it is missing first, since that is the first thing to fix. */
+  it('marks the year a refusal named as taken, and a missing year as missing before that', () => {
+    const filled = { fiscalYear: '2027', start: '2027-01-01', end: '2027-12-31', due: '' };
+    const taken = [{ field: 'fiscalYear', problem: 'taken' }] as const;
+    expect(fieldProblems({ value: filled, checked: false, refused: taken })).toEqual(taken);
+    expect(fieldProblems({ value: { ...filled, fiscalYear: '' }, checked: true, refused: taken })).toEqual([
+      { field: 'fiscalYear', problem: 'missing' },
     ]);
   });
 });

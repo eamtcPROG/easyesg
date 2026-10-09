@@ -8,6 +8,7 @@ import { RECORD_ANSWERED_ELEMENTS } from '@api/modules/core/disclosure/models/b1
 import type { EntitySnapshotRefresh } from '@api/modules/core/period/interfaces/entity-snapshot-refresh.interface';
 import type { ReportingPeriodStore } from '@api/modules/core/period/interfaces/reporting-period-store.interface';
 import {
+  PeriodFiscalYearTakenError,
   PeriodLockedError,
   PeriodOverlapsError,
 } from '@api/modules/core/period/errors/period.errors';
@@ -18,7 +19,7 @@ import type {
   ReportingPeriodPatch,
 } from '@api/modules/core/period/models/reporting-period.model';
 import { returnedRows } from '../returned-rows';
-import { SQL_STATE, hasSqlState } from '../sql-state';
+import { SQL_STATE, hasSqlState, violatedConstraint } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
 import { readyToFileOf } from './report-readiness';
 import { validationSummaryOf, type ValidationSummaryColumn } from './report-validation-summary';
@@ -154,14 +155,6 @@ const PATCHABLE = {
 } as const satisfies Record<keyof ReportingPeriodPatch, string>;
 
 /**
- * The two SQLSTATEs this table answers with a domain error.
- *
- * `23P01` is PostgreSQL's own `exclusion_violation`, raised by the no-overlap constraint. `45001`
- * is ours: class 45 is left to applications by the standard, and the lock trigger raises it so this
- * refusal is distinguishable from every other plpgsql error in the schema — `raise_exception`
- * (P0001) would have made them all look alike.
- */
-/**
  * The snapshot's document, as one SQL expression over `core.reporting_entity e`: the row, its sites and its consolidation
  * members, each collection ordered by name so the sites' positions — B1's ordinals — are stable (§12.5.6's task-91.2
  * row). **One copy for the two writers**, period open and the entity's save (task 180.2), so the two cannot take
@@ -177,14 +170,29 @@ const SNAPSHOT_PAYLOAD = `to_jsonb(e) || jsonb_build_object(
                  WHERE m.reporting_entity_id = e.id), '[]'::jsonb))`;
 
 /**
- * Both writes translate the same two refusals, so they translate them the same way.
+ * Mirrors the constraint task 186's migration adds, which stays literal there because a migration is frozen history —
+ * two copies changed together by hand, `ACCOUNT_EMAIL_UNIQUE_INDEX`'s arrangement.
+ */
+const FISCAL_YEAR_UNIQUE = 'reporting_period_fiscal_year_unique';
+
+/**
+ * The three SQLSTATEs this table answers with a domain error, translated the same way for every write.
  *
- * **The lock is re-raised from the database even though the use case checks it first**, and that is
- * not redundancy: the application check produces the message, and this is what a caller meets when
- * the period was locked between the read and the write.
+ * `23P01` is PostgreSQL's own `exclusion_violation`, raised by the no-overlap constraint, and `23505` its
+ * `unique_violation`, raised by the one-period-per-year key — read by the constraint's name, since the SQLSTATE alone
+ * would also cover the composite foreign-key target. `45001` is ours: class 45 is left to applications by the
+ * standard, and the lock trigger raises it so this refusal is distinguishable from every other plpgsql error in the
+ * schema — `raise_exception` (P0001) would have made them all look alike.
+ *
+ * **The lock and the year are re-raised from the database even though the use case checks both first**, and that is
+ * not redundancy: the application check produces the message and its order, and this is what a caller meets when the
+ * period was locked, or the year taken, between the read and the write.
  */
 const translate = (error: unknown): never => {
   if (hasSqlState(error, SQL_STATE.EXCLUSION_VIOLATION)) throw new PeriodOverlapsError();
+  if (hasSqlState(error, SQL_STATE.UNIQUE_VIOLATION) && violatedConstraint(error) === FISCAL_YEAR_UNIQUE) {
+    throw new PeriodFiscalYearTakenError();
+  }
   if (hasSqlState(error, SQL_STATE.LOCKED)) throw new PeriodLockedError();
   throw error;
 };
@@ -228,6 +236,26 @@ export class ReportingPeriodStoreRepository
       [input.periodId],
     );
     return rows.length === 0 ? null : toPeriod(rows[0]);
+  }
+
+  /**
+   * An index probe over the entity's few periods — through the no-overlap GiST index today, measured, and
+   * `reporting_period_fiscal_year_unique`'s own where that one is absent. `IS DISTINCT FROM` so an absent exception
+   * compares as no exception at all: `id <> NULL` would match nothing and answer *not held* for every year.
+   */
+  async holdsFiscalYear(input: {
+    reportingEntityId: string;
+    fiscalYear: number;
+    exceptPeriodId?: string;
+  }): Promise<boolean> {
+    const rows = await this.manager.query<{ held: boolean }[]>(
+      `SELECT EXISTS (
+         SELECT 1 FROM core.reporting_period
+          WHERE reporting_entity_id = $1 AND fiscal_year = $2 AND id IS DISTINCT FROM $3::uuid
+       ) AS held`,
+      [input.reportingEntityId, input.fiscalYear, input.exceptPeriodId ?? null],
+    );
+    return rows[0]?.held === true;
   }
 
   /**

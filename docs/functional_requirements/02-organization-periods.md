@@ -372,7 +372,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 ### FR-21 — Open a reporting period
 
-**Status.** Partial — delivered 31.1, 32.1.1, 32.1.2, 33.1, 33.3 · remaining 186 (one period per fiscal year)
+**Status.** Built — delivered 31.1, 32.1.1, 32.1.2, 33.1, 33.3, 186 (one period per fiscal year)
 
 **Obligation.** The system shall allow a reporting period to be opened for an entity with fiscal year and start and end dates, pinning the current template and taxonomy version and linking the immediately preceding period, and shall record an optional due date by which the report must be complete, distinct from the period end.
 
@@ -390,7 +390,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 1. **A period boundary is a calendar date plus its timezone, never an instant** (NFR-34). Dates are read back as text so a server in another zone cannot move a boundary. The zone comes from the reporter's browser; no screen asks for it (§12.5.6 task-32.1 row).
 2. **The pin is resolved for the period's start date**, never for the day the period is opened: `TAXONOMY_REGISTRY.pinFor()` is the only source of a pin. A period starting before 1 Jan 2026 pins `2026-02-01`, and one starting on or after it pins `2026-05-01` (§12.5.6 task-33.3 row). Editing a period's dates does not re-pin it, and nothing in the request tier can move a pin (DR-4; §12.5.6 task-31.3 pin rows).
 3. **The prior period is the entity's period with the latest end before this one's start**, and the link is maintained: opening a period repoints the neighbour that should now follow it, and editing dates re-links both sides. Opening FY2026 and then backfilling FY2025 gives FY2026 a prior (§12.5.6 task-31.1 row; D-3).
-4. **Periods of one entity may not overlap**, enforced by the database (a range-exclusion constraint over the inclusive end). **One entity may not hold two periods with the same fiscal year.** A second period naming a year the entity already holds is refused, on open and on edit, by a unique constraint and by a refusal, 409 `period-fiscal-year-taken`. S-14 already blocks choosing such a year, so the two now agree. This reverses task 31.1's decision to leave the year non-unique (§12.5.6 task-182 identity and organization row, 182/10; unmet until 186).
+4. **Periods of one entity may not overlap**, enforced by the database (a range-exclusion constraint over the inclusive end). **One entity may not hold two periods with the same fiscal year.** A second period naming a year the entity already holds is refused, on open and on edit, by a unique constraint and by a refusal, 409 `period-fiscal-year-taken`. S-14 already blocks choosing such a year, so the two now agree. This reverses task 31.1's decision to leave the year non-unique (§12.5.6 task-182 identity and organization row, 182/10). **The year is judged before the dates**: a period that repeats a held year and also overlaps another is refused for the year, and only a race between two requests can still answer the overlap first (§12.5.6 task-186 row).
 5. The entity snapshot (FR-18) is taken in the same transaction.
 6. **The due date is optional and separate from the period end.** It is a legal date, editable and clearable (null clears) while the period is unlocked. Deadline notices count down to it (FR-165) and the overview marks it passed (FR-23). **No relation is enforced** between the due date, the period's end and the fiscal year, beyond what the opening checks: every date a real calendar day in a known timezone, the end not before the start, and no overlap. A due date before the period end, a fiscal year unrelated to the dates and a period of any length are accepted, because a prior-period catch-up filing can legitimately break each (§12.5.6 task-182 identity and organization row, 182/15).
 7. **A report is a separate, explicit creation**; a period may exist with none (§12.5.6 task-31.3 row; FR-25).
@@ -401,7 +401,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - Unknown entity, or another organization's → 404 `not-found`
 - Entity archived → 409 `entity-archived`
 - Dates overlap another period of the entity → 409 `period-overlaps`
-- A fiscal year the entity already holds → 409 `period-fiscal-year-taken` (unmet until 186)
+- A fiscal year the entity already holds → 409 `period-fiscal-year-taken`
 - No taxonomy version registered → 409 `taxonomy-version-unavailable`
 - Editing a locked period → 409 `period-locked` (FR-22)
 - Not an Organization Administrator → 403 `insufficient-role`
@@ -423,7 +423,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - **AC-10** Given a period's dates are edited, then its template and taxonomy version are unchanged. *(source: DR-4; §12.5.6 task-31.3 pin rows)*
 - **AC-11** Given a period read under any server timezone, then each boundary reads as the calendar date it was recorded with. *(source: NFR-34; build-log task 31.1)*
 - **AC-12** Given an editor or a view-only member, then they read periods and any write is refused with 403. *(source: controller roles)*
-- **AC-13** Given an entity that holds a period for fiscal year 2026, when a second period is opened with fiscal year 2026, or an existing period is edited to it, then the answer is 409 `period-fiscal-year-taken` and nothing changes. *(source: §12.5.6 task-182 identity and organization row, 182/10; `design_spec.md` S-14)* Unmet until 186.
+- **AC-13** Given an entity that holds a period for fiscal year 2026, when a second period is opened with fiscal year 2026, or an existing period is edited to it, then the answer is 409 `period-fiscal-year-taken` and nothing changes. *(source: §12.5.6 task-182 identity and organization row, 182/10; `design_spec.md` S-14; §12.5.6 task-186 row)*
 - **AC-14** Given a due date before the period's end, or a fiscal year that is not the year of either date, then the period is accepted. *(source: §12.5.6 task-182 identity and organization row, 182/15)*
 
 **History.**
@@ -432,6 +432,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - 1 Sep 2026 · project owner · the adoption boundary is the fiscal year (period start) · §12.5.6 task-33.3 row
 - 30 Sep 2026 · project owner · S-14 takes S-13's conventions: year chosen from a list, a save names the wrong field, a way back that returns to its origin · `design_spec.md` S-14 amendments
 - 5 Oct 2026 · project owner · a fiscal year is unique per entity, reversing task 31.1's decision (the recommendation was to permit it at the api; the owner chose to forbid it everywhere); no relation between due date, fiscal year and dates is enforced · §12.5.6 task-182 identity and organization row (182/10, 182/15)
+- 9 Oct 2026 · project owner · a repeated year already stored refuses the migration and changes nothing; the year is judged before the dates · §12.5.6 task-186 row
 
 ### FR-22 — Lock and reopen a period
 

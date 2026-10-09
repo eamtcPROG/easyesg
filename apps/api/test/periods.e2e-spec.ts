@@ -231,8 +231,9 @@ describe('reporting periods (UC-56)', () => {
     it('refuses an overlapping period and names the way out', async () => {
       await openPeriod(aYear(2026)).expect(201);
 
+      // A year of its own, so the refusal is the dates' — a held year is judged first (task 186).
       const refused = await openPeriod({
-        ...aYear(2026),
+        ...aYear(2027),
         periodStart: { date: '2026-07-01', timezone: CHISINAU },
         periodEnd: { date: '2027-06-30', timezone: CHISINAU },
       }).expect(409);
@@ -256,6 +257,116 @@ describe('reporting periods (UC-56)', () => {
       // …and the very next day is fine, which is what makes the case above a boundary rather than
       // an off-by-one in the other direction.
       await openPeriod(aYear(2027)).expect(201);
+    });
+  });
+
+  /**
+   * FR-21 behaviour 4 and AC-13 (task 186; `architecture.md` §12.5.6's task-186 row). The use case refuses a held year
+   * before it writes, so these first cases are its check against real rows; the last holds the database's own refusal,
+   * by making the use case's read miss the row it then collides with.
+   */
+  describe('one period per fiscal year', () => {
+    const typeOf = (body: unknown) => (body as { type?: string }).type;
+    const YEAR_TAKEN = `${PROBLEM_BASE_URI}/period-fiscal-year-taken`;
+
+    it('refuses a second period naming a held year, whatever its dates, and changes nothing', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+
+      // A transition period that overlaps nothing: what task 31.1 admitted, and the owner's 5 Oct 2026 choice refuses.
+      const refused = await openPeriod({
+        ...aYear(2026),
+        periodStart: { date: '2027-01-01', timezone: CHISINAU },
+        periodEnd: { date: '2027-06-30', timezone: CHISINAU },
+      }).expect(409);
+
+      expect(typeOf(refused.body)).toBe(YEAR_TAKEN);
+      expect((refused.body as { detail?: string }).detail).toContain('anul fiscal ales');
+      const listed = objectsOf(
+        (await http().get(`/api/v1/periods?reportingEntityId=${entityId}`).set(admin.authorization).expect(200)).body,
+      );
+      expect(listed.map((period) => period.fiscalYear)).toEqual([2026]);
+    });
+
+    /** The commonest repeat — the same year again with its own dates — breaks both rules, and AC-13 names this answer. */
+    it('answers for the year before the dates when a repeat overlaps too', async () => {
+      await openPeriod(aYear(2026)).expect(201);
+      const refused = await openPeriod(aYear(2026)).expect(409);
+      expect(typeOf(refused.body)).toBe(YEAR_TAKEN);
+    });
+
+    it('refuses an edit onto a held year, and leaves the period as it was', async () => {
+      await openPeriod(aYear(2025)).expect(201);
+      const y2026 = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+
+      const refused = await http()
+        .patch(`/api/v1/periods/${y2026.id}`)
+        .set(admin.authorization)
+        .send({ fiscalYear: 2025 })
+        .expect(409);
+
+      expect(typeOf(refused.body)).toBe(YEAR_TAKEN);
+      const stored = objectOf(
+        (await http().get(`/api/v1/periods/${y2026.id}`).set(admin.authorization).expect(200)).body,
+      );
+      expect(stored.fiscalYear).toBe(2026);
+    });
+
+    it('admits an edit that names the period’s own year, which every save from S-14 does', async () => {
+      const y2026 = objectOf((await openPeriod(aYear(2026)).expect(201)).body);
+      await http()
+        .patch(`/api/v1/periods/${y2026.id}`)
+        .set(admin.authorization)
+        .send({ fiscalYear: 2026, dueDate: { date: '2027-04-30', timezone: CHISINAU } })
+        .expect(200);
+    });
+
+    /**
+     * **The database's refusal, reached the one way a request can reach it: by losing a race.** A second session holds
+     * the entity's 2030 period uncommitted, so the request's read finds the year free and its insert waits on the
+     * unique key; the hold commits only once the request is seen waiting on it — in `pg_locks`, rather than inferred
+     * from a pause of some length — and the request must then answer the year, not a 500. The dates do not overlap, so
+     * the key is the only constraint the two rows meet.
+     */
+    it('is refused by the database too, and the request that loses a race hears the same refusal', async () => {
+      const holder = owner.createQueryRunner();
+      await holder.connect();
+      await holder.startTransaction();
+      try {
+        await holder.query(`SELECT set_config('app.current_org', $1, true)`, [ORG]);
+        await holder.query(
+          `INSERT INTO core.reporting_period (organization_id, reporting_entity_id, fiscal_year,
+                  period_start, period_start_tz, period_end, period_end_tz, template_version, taxonomy_version)
+           VALUES ($1, $2, 2030, '2030-01-01', $3, '2030-12-31', $3, '2026-05-01', '2026-05-01')`,
+          [ORG, entityId, CHISINAU],
+        );
+        const [{ xid }] = (await holder.query(`SELECT pg_current_xact_id()::xid::text AS xid`)) as { xid: string }[];
+
+        const answer = openPeriod({
+          ...aYear(2030),
+          periodStart: { date: '2031-01-01', timezone: CHISINAU },
+          periodEnd: { date: '2031-12-31', timezone: CHISINAU },
+        }).then((response) => response);
+
+        let waiting = false;
+        for (let attempt = 0; attempt < 250 && !waiting; attempt += 1) {
+          const [row] = await owner.query<{ waiting: boolean }[]>(
+            `SELECT EXISTS (SELECT 1 FROM pg_locks
+                             WHERE NOT granted AND locktype = 'transactionid' AND transactionid = $1::xid) AS waiting`,
+            [xid],
+          );
+          waiting = row.waiting;
+          if (!waiting) await new Promise((resolve) => setTimeout(resolve, 20));
+        }
+        expect(waiting).toBe(true);
+
+        await holder.commitTransaction();
+        const refused = await answer;
+        expect(refused.status).toBe(409);
+        expect(typeOf(refused.body)).toBe(YEAR_TAKEN);
+      } finally {
+        if (holder.isTransactionActive) await holder.rollbackTransaction();
+        await holder.release();
+      }
     });
   });
 

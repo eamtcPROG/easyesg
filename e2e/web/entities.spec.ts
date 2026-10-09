@@ -244,6 +244,45 @@ test('S-14 carries S-13’s way back — a trail, an arrow up, the action in the
   await page.waitForURL(`**/entities/${entityId}/periods`);
 });
 
+test('a year another tab took meanwhile is refused beside the year, under the api’s own sentence (task 186)', async ({
+  page,
+  context,
+}) => {
+  // 5 Oct 2026, project owner (182/10): the api refuses a held year, and a refusal the list could not prevent — a race,
+  // or another client — is shown beside the year as an overlap is shown beside the dates.
+  await signedIn(page, 'yeartaken');
+  const organizationId = organizations[organizations.length - 1];
+  const name = `${RUN_PREFIX} Patiseria`;
+  const thisYear = new Date().getFullYear();
+  const nextYear = String(thisYear + 1);
+  const { entityId } = await seedOpenPeriod({ organizationId, name, fiscalYear: thisYear });
+  const create = page.getByRole('button', { name: 'Deschideți perioada' });
+
+  // This form is drawn while next year is free, and next year is chosen…
+  await page.goto(`/entities/${entityId}/periods/new`);
+  const year = page.getByRole('combobox', { name: 'Anul fiscal' });
+  await year.click();
+  await page.getByRole('option', { name: nextYear, exact: true }).click();
+
+  // …and another tab, the same administrator's, opens next year's period before this one saves.
+  const other = await context.newPage();
+  await other.goto(`/entities/${entityId}/periods/new`);
+  await other.getByRole('combobox', { name: 'Anul fiscal' }).click();
+  await other.getByRole('option', { name: nextYear, exact: true }).click();
+  await other.getByRole('button', { name: 'Deschideți perioada' }).click();
+  await other.waitForURL(new RegExp(`/entities/${entityId}/periods/[0-9a-f-]{36}`));
+  await other.close();
+
+  await create.click();
+  // The api's sentence stands above the form, and the year — not the dates — is marked beside it and in the summary.
+  await expect(page.getByText('pentru anul fiscal ales', { exact: false })).toBeVisible();
+  await expect(year).toHaveAttribute('aria-invalid', 'true');
+  const summary = page.getByRole('alert').filter({ hasText: 'Câteva câmpuri au nevoie de atenție' });
+  await expect(summary.getByRole('link')).toHaveText(['O altă perioadă a entității are acum acest an. Alegeți alt an fiscal.']);
+  await expect(page.getByLabel('Prima zi a perioadei', { exact: true })).not.toHaveAttribute('aria-invalid', 'true');
+  await expect(page).toHaveURL(/\/periods\/new$/);
+});
+
 test('the create form keeps its section and its way back, and the picker offers classes before any typing', async ({
   page,
 }) => {

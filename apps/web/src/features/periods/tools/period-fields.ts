@@ -73,22 +73,14 @@ export const withCalendarYearDates = (input: {
 export const missingFields = (value: ReportingPeriodValue): RequiredField[] =>
   REQUIRED_FIELDS.filter((field) => value[field] === '');
 
-/**
- * The fields a refusal is about, where its type says so. Only an overlap names fields — another period of the entity
- * already covers part of these dates, so the dates are what to change; every other refusal is about the period as a
- * whole, and its sentence stands alone above the form.
- */
-export const refusedFields = (outcome: ApiOutcome<unknown>): RequiredField[] =>
-  outcome.status === API_OUTCOME.Problem && outcome.problem.type === PROBLEM_TYPE.PeriodOverlaps
-    ? ['start', 'end']
-    : [];
-
 /** Why a field is marked — each has its own words, and the form picks them by this. */
 export const FIELD_PROBLEM = {
   /** Empty, after a save was pressed. */
   MISSING: 'missing',
   /** Named by an overlap refusal: another period of the entity covers part of these dates. */
   OVERLAPS: 'overlaps',
+  /** Named by a year refusal: another period of the entity holds this fiscal year (task 186). */
+  TAKEN: 'taken',
   /** The end falls before the start — the picker's own rule, listed with the rest once a save was pressed. */
   RANGE: 'range',
 } as const;
@@ -105,6 +97,27 @@ export interface FieldMark {
 }
 
 /**
+ * The fields a refusal is about, and why, where its type says so. Two refusals name fields: an overlap — another period
+ * of the entity already covers part of these dates, so the dates are what to change — and a held year, which the list
+ * offers disabled and so arrives only from a race or another client (task 186), so the year is what to change. Every
+ * other refusal is about the period as a whole, and its sentence stands alone above the form.
+ */
+export const refusedFields = (outcome: ApiOutcome<unknown>): FieldMark[] => {
+  if (outcome.status !== API_OUTCOME.Problem) return [];
+  switch (outcome.problem.type) {
+    case PROBLEM_TYPE.PeriodOverlaps:
+      return [
+        { field: 'start', problem: FIELD_PROBLEM.OVERLAPS },
+        { field: 'end', problem: FIELD_PROBLEM.OVERLAPS },
+      ];
+    case PROBLEM_TYPE.PeriodFiscalYearTaken:
+      return [{ field: 'fiscalYear', problem: FIELD_PROBLEM.TAKEN }];
+    default:
+      return [];
+  }
+};
+
+/**
  * What each field says is wrong with it, in the order the form draws them — the fields' messages and the summary above
  * them read this one list, so the two cannot disagree (UX-111). **Missing comes first**, because an empty field is the
  * first thing to fix; a field the refusal named keeps its mark until the next save; the range is the picker's rule and
@@ -114,15 +127,16 @@ export const fieldProblems = (input: {
   readonly value: ReportingPeriodValue;
   /** A save was pressed with something missing or out of order. */
   readonly checked: boolean;
-  /** The fields the last refusal named. */
-  readonly refused: readonly RequiredField[];
+  /** The fields the last refusal named, and why (`refusedFields`). */
+  readonly refused: readonly FieldMark[];
 }): FieldMark[] => {
   const missing = input.checked ? missingFields(input.value) : [];
   const reversed = input.checked && !periodRangeIsOrdered(input.value);
 
   return REQUIRED_FIELDS.flatMap<FieldMark>((field) => {
     if (missing.includes(field)) return [{ field, problem: FIELD_PROBLEM.MISSING }];
-    if (input.refused.includes(field)) return [{ field, problem: FIELD_PROBLEM.OVERLAPS }];
+    const named = input.refused.find((mark) => mark.field === field);
+    if (named) return [named];
     if (field === RANGE_FIELD && reversed) return [{ field, problem: FIELD_PROBLEM.RANGE }];
     return [];
   });

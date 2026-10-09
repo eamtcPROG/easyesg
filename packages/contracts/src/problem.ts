@@ -88,6 +88,10 @@ export const PROBLEM_TYPE = {
    *  30 Sep 2026 for its first reader). S-14's form marks the two dates as the fields to change, beside the api's own
    *  sentence, so the refusal says which fields were wrong. */
   PeriodOverlaps: 'https://easyesg.md/problems/period-overlaps',
+  /** The entity already holds a period for this fiscal year (FR-21; task 186). S-14 lists a held year disabled, so this
+   *  reaches it only from a race or another client, and its form marks the year as the field to change, beside the
+   *  api's own sentence, as it marks the two dates for an overlap. */
+  PeriodFiscalYearTaken: 'https://easyesg.md/problems/period-fiscal-year-taken',
 } as const;
 
 export type ProblemTypeUri = (typeof PROBLEM_TYPE)[keyof typeof PROBLEM_TYPE];

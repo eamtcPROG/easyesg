@@ -40,6 +40,24 @@ export class PeriodOverlapsError extends DomainError {
 }
 
 /**
+ * UC-56 refused: the entity already holds a period for this fiscal year (FR-21 behaviour 4; task 186).
+ *
+ * **Raised by the use case first and by the database second**, the lock's arrangement rather than the overlap's
+ * (`architecture.md` §12.5.6's task-186 row (2)): `OpenReportingPeriod` asks the store before writing, so a request
+ * that both repeats a held year and overlaps another period's dates hears about the year — the answer FR-21 AC-13
+ * names whatever the dates. `reporting_period_fiscal_year_unique` is the guarantee, and the repository translates its
+ * violation to this same refusal for the request that loses a race.
+ */
+export class PeriodFiscalYearTakenError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.PeriodFiscalYearTaken;
+  readonly status = 409;
+
+  constructor() {
+    super('core.period.fiscal_year_taken');
+  }
+}
+
+/**
  * The period's own dates do not describe a period — the end falls before the start, a boundary is
  * not a real calendar day, or a zone is not one IANA carries.
  *

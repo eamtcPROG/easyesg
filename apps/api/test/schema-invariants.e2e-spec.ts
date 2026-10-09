@@ -1232,6 +1232,50 @@ describe('schema invariants (§7)', () => {
     });
   });
 
+  /**
+   * FR-21 behaviour 4 (task 186): one period per fiscal year for each entity, held by the database and not only by the
+   * use case's read. Asked of `pg_index` rather than of the constraint by name, so the claim is the property — a whole
+   * unique key over exactly the entity and the year — and a partial index, which admits a repeat outside its predicate,
+   * does not pass for one.
+   */
+  describe('an entity holds each fiscal year once (FR-21, task 186)', () => {
+    const fiscalYearKeys = (x: Executor) =>
+      x.query<{ index: string }[]>(
+        `SELECT i.relname AS index
+           FROM pg_index x
+           JOIN pg_class i ON i.oid = x.indexrelid
+          WHERE x.indrelid = 'core.reporting_period'::regclass
+            AND x.indisunique AND x.indisvalid AND x.indpred IS NULL
+            AND (SELECT array_agg(a.attname::text ORDER BY a.attname)
+                   FROM unnest(x.indkey::int2[]) AS k(attnum)
+                   JOIN pg_attribute a ON a.attrelid = x.indrelid AND a.attnum = k.attnum)
+                = ARRAY['fiscal_year', 'reporting_entity_id']
+          ORDER BY 1`,
+      );
+
+    it('holds', async () => {
+      expect(await fiscalYearKeys(db)).toEqual([{ index: 'reporting_period_fiscal_year_unique' }]);
+    });
+
+    it('catches the key dropped, which task 31.1 had left out on purpose', async () => {
+      const caught = await provingViolation(
+        `ALTER TABLE core.reporting_period DROP CONSTRAINT reporting_period_fiscal_year_unique`,
+        fiscalYearKeys,
+      );
+      expect(caught).toEqual([]);
+    });
+
+    it('does not take a partial key for the whole one', async () => {
+      const caught = await provingViolation(
+        `ALTER TABLE core.reporting_period DROP CONSTRAINT reporting_period_fiscal_year_unique;
+         CREATE UNIQUE INDEX probe_open_years ON core.reporting_period (reporting_entity_id, fiscal_year)
+          WHERE locked_at IS NULL`,
+        fiscalYearKeys,
+      );
+      expect(caught).toEqual([]);
+    });
+  });
+
   describe('a locked period reaches every table inside it (FR-22, task 31.4)', () => {
     it('holds — every table with a foreign key into a filing carries the guard, or is exempt', async () => {
       expect((await tablesInsideALockWithoutGuard(db)).map((r) => r.location)).toEqual([]);

@@ -1010,6 +1010,7 @@
         "fiscalYearHelp": "Anul cu care compania își denumește exercițiul. Dacă datele sunt goale, alegerea lui le completează cu 1 ianuarie – 31 decembrie; le puteți schimba dacă exercițiul nu coincide cu anul calendaristic.",
         "fiscalYearPlaceholder": "Alegeți anul",
         "fiscalYearTaken": "Pentru acest an există deja o perioadă.",
+        "fiscalYearHeld": "O altă perioadă a entității are acum acest an. Alegeți alt an fiscal.",
         "fiscalYearRequired": "Alegeți anul fiscal al perioadei.",
         "start": "Prima zi a perioadei",
         "end": "Ultima zi a perioadei",

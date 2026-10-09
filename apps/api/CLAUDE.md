@@ -33,7 +33,7 @@ traps each one left — grouped by area rather than by the task that built it.
   committed catalogues (OQ-43); the api resolves wording because the worker has no client.
 - **The migration runner**: §7.1's schemas — five from the baseline, `notification` since task
   50.1.1 — plus `btree_gist`, `core.organization` as the tenant root, applying and reverting
-  cleanly from an empty database, with fifteen §7 invariants each proving its own rule bites (51 cases),
+  cleanly from an empty database, with sixteen §7 invariants each proving its own rule bites (54 cases),
   asserted by `migrations:check`.
 - **RLS `ENABLED` and `FORCED`** from `core.organization` down, proven isolated as both `esg_app`
   and the owning role, with a test that drops `FORCE` in a rolled-back transaction and watches
@@ -446,6 +446,10 @@ DR-4's:
   `period_end` is a day *inside* the period), and the **prior-period link is maintained**: creating a
   period repoints the neighbour that should now follow it, or a backfilled year leaves its successor
   with a null prior forever and FR-45's comparatives are silently absent.
+- **An entity holds each fiscal year once** (task 186, reversing 31.1; §12.5.6's task-186 row), by
+  `reporting_period_fiscal_year_unique` — and **the use case judges the year before the dates**, through
+  `holdsFiscalYear`, so a repeat that also overlaps answers `period-fiscal-year-taken`. The store
+  translates the key's violation by its name (`violatedConstraint`), for the request that loses a race.
 - **The entity snapshot is taken here and referenced by the period**, not by the report (§7.2 as
   amended, §12.5.6). Its payload is assembled in SQL with `to_jsonb`, so it is a consistent read of
   the same transaction.

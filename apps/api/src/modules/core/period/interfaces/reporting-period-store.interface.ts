@@ -28,6 +28,19 @@ export interface ReportingPeriodStore {
   findPeriod(input: { readonly periodId: string }): Promise<ReportingPeriod | null>;
 
   /**
+   * Whether the entity already holds a period for this fiscal year — another period than `exceptPeriodId`, the one an
+   * edit is moving (FR-21 behaviour 4; task 186).
+   *
+   * **A read the use case orders its refusals by, not the guarantee**: `open` and `update` refuse a repeated year
+   * themselves, through the unique constraint, for the request that loses a race (§12.5.6's task-186 row (2)).
+   */
+  holdsFiscalYear(input: {
+    readonly reportingEntityId: string;
+    readonly fiscalYear: number;
+    readonly exceptPeriodId?: string;
+  }): Promise<boolean>;
+
+  /**
    * UC-56's write, as **one** operation: insert the period, take the entity snapshot, and repoint
    * the neighbour that should now follow it.
    *

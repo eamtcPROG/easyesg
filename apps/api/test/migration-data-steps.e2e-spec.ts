@@ -15,6 +15,7 @@ import {
 } from '../src/infrastructure/persistence/migrations/1791417600000-profile-on-entity';
 import { backfillVersionWindows } from '../src/infrastructure/persistence/migrations/1791504000000-configuration-version-window';
 import { rewriteColonKeys } from '../src/infrastructure/persistence/migrations/1792540800000-outbox-key-queueable';
+import { refuseRepeatedFiscalYears } from '../src/infrastructure/persistence/migrations/1792627200000-period-fiscal-year-unique';
 import { connectAs } from './support/database';
 
 /**
@@ -526,6 +527,90 @@ describe('the migrations’ data steps, against rows (task 164)', () => {
       await expect(
         runner.query(`UPDATE config.entry_version SET validity = NULL WHERE kind = 'data_steps' AND revision = 2`),
       ).rejects.toThrow(/immutable/);
+    });
+  });
+
+  /**
+   * Task 186's check, which refuses rather than moves (§12.5.6's task-186 row (1)): an entity holding a fiscal year twice
+   * stops the migration, named, and nothing is changed. Without its `NO FORCE`/`FORCE` pair the read matches no row and
+   * the first case's refusal never comes.
+   */
+  describe('task 186’s check, before one period per fiscal year', () => {
+    const ORGANIZATION = 'core.organization';
+    const ENTITY = 'core.reporting_entity';
+    const PERIOD = 'core.reporting_period';
+
+    /** The schema the step runs against: the key not yet added, so a repeated year can be seeded at all. */
+    const dropFiscalYearKey = (runner: QueryRunner) =>
+      runner.query(`ALTER TABLE core.reporting_period DROP CONSTRAINT reporting_period_fiscal_year_unique`);
+
+    const seedEntity = async (runner: QueryRunner): Promise<{ organizationId: string; entityId: string }> => {
+      const [{ id: organizationId }] = (await unforced(runner, ORGANIZATION, () =>
+        runner.query(`INSERT INTO core.organization (name, country_code) VALUES ('Lina SRL', 'MD') RETURNING id`),
+      )) as { id: string }[];
+      const [{ id: entityId }] = (await unforced(runner, ENTITY, () =>
+        runner.query(`INSERT INTO core.reporting_entity (organization_id, name) VALUES ($1, 'Brutăria') RETURNING id`, [
+          organizationId,
+        ]),
+      )) as { id: string }[];
+      return { organizationId, entityId };
+    };
+
+    const seedPeriod = async (
+      runner: QueryRunner,
+      period: { organizationId: string; entityId: string; fiscalYear: number; start: string; end: string },
+    ): Promise<string> => {
+      const [{ id }] = (await unforced(runner, PERIOD, () =>
+        runner.query(
+          `INSERT INTO core.reporting_period (organization_id, reporting_entity_id, fiscal_year,
+                  period_start, period_start_tz, period_end, period_end_tz, template_version, taxonomy_version)
+           VALUES ($1, $2, $3, $4, 'Europe/Chisinau', $5, 'Europe/Chisinau', '2026-05-01', '2026-05-01') RETURNING id`,
+          [period.organizationId, period.entityId, period.fiscalYear, period.start, period.end],
+        ),
+      )) as { id: string }[];
+      return id;
+    };
+
+    it('stops on an entity holding a year twice, naming it, and changes nothing', async () => {
+      await inRolledBack(async (runner) => {
+        await dropFiscalYearKey(runner);
+        const held = await seedEntity(runner);
+        // A transition period and the full year after it, both labelled 2026 — task 31.1's admitted case.
+        const transition = await seedPeriod(runner, { ...held, fiscalYear: 2026, start: '2026-01-01', end: '2026-06-30' });
+        const full = await seedPeriod(runner, { ...held, fiscalYear: 2026, start: '2026-07-01', end: '2027-06-30' });
+
+        await expect(refuseRepeatedFiscalYears(runner)).rejects.toThrow(
+          `entity ${held.entityId}, fiscal year 2026: periods ${transition}, ${full}`,
+        );
+
+        const rows = (await unforced(runner, PERIOD, () =>
+          runner.query(`SELECT id, fiscal_year FROM core.reporting_period WHERE reporting_entity_id = $1 ORDER BY period_start`, [
+            held.entityId,
+          ]),
+        )) as { id: string; fiscal_year: number }[];
+        expect(rows).toEqual([
+          { id: transition, fiscal_year: 2026 },
+          { id: full, fiscal_year: 2026 },
+        ]);
+        // And the guarantee it lifted is back in place, the refusal notwithstanding.
+        const [{ forced }] = (await runner.query(
+          `SELECT relforcerowsecurity AS forced FROM pg_class WHERE oid = 'core.reporting_period'::regclass`,
+        )) as { forced: boolean }[];
+        expect(forced).toBe(true);
+      });
+    });
+
+    it('lets the migration on where each entity holds each year once, another entity’s same year included', async () => {
+      await inRolledBack(async (runner) => {
+        await dropFiscalYearKey(runner);
+        const first = await seedEntity(runner);
+        const second = await seedEntity(runner);
+        await seedPeriod(runner, { ...first, fiscalYear: 2025, start: '2025-01-01', end: '2025-12-31' });
+        await seedPeriod(runner, { ...first, fiscalYear: 2026, start: '2026-01-01', end: '2026-12-31' });
+        await seedPeriod(runner, { ...second, fiscalYear: 2026, start: '2026-01-01', end: '2026-12-31' });
+
+        await expect(refuseRepeatedFiscalYears(runner)).resolves.toBeUndefined();
+      });
     });
   });
 

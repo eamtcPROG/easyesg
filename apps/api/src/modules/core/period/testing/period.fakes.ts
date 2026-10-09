@@ -88,6 +88,27 @@ export class FakeReportingPeriodStore implements ReportingPeriodStore {
     return Promise.resolve(this.rows.find((row) => row.id === input.periodId) ?? null);
   }
 
+  /**
+   * The read, modelled; **the unique constraint behind it is not**, for the reason the overlap is not — `open` and
+   * `update` here store a repeated year as readily as an overlapping one. So a spec that sees a held year refused is
+   * seeing the use case's own check, which is the claim it is there to make, and the database's half is
+   * `test/periods.e2e-spec.ts`'s (task 186).
+   */
+  holdsFiscalYear(input: {
+    reportingEntityId: string;
+    fiscalYear: number;
+    exceptPeriodId?: string;
+  }): Promise<boolean> {
+    return Promise.resolve(
+      this.rows.some(
+        (row) =>
+          row.reportingEntityId === input.reportingEntityId &&
+          row.fiscalYear === input.fiscalYear &&
+          row.id !== input.exceptPeriodId,
+      ),
+    );
+  }
+
   open(input: {
     period: NewReportingPeriod;
     templateVersion: string;

@@ -19,7 +19,7 @@
  * `raise_exception` (P0001) would have made them all look alike.
  */
 export const SQL_STATE = {
-  /** PostgreSQL's `unique_violation` — one report per period, one value per element. */
+  /** PostgreSQL's `unique_violation` — one report per period, one value per element, one period per entity and year. */
   UNIQUE_VIOLATION: '23505',
   /** PostgreSQL's `exclusion_violation` — the no-overlap constraint on reporting periods. */
   EXCLUSION_VIOLATION: '23P01',
@@ -35,3 +35,14 @@ export type SqlState = (typeof SQL_STATE)[keyof typeof SQL_STATE];
 
 export const hasSqlState = (error: unknown, state: SqlState): boolean =>
   typeof error === 'object' && error !== null && 'code' in error && error.code === state;
+
+/**
+ * The constraint a violation names — PostgreSQL's `constraint_name`, which the driver carries as `constraint` — or
+ * undefined where the error names none. **For a table holding more than one key**, where the SQLSTATE alone cannot
+ * say which rule was broken: `core.reporting_period` answers `23505` for its fiscal year (task 186) and could for its
+ * composite foreign-key target, which no statement of the application can repeat.
+ */
+export const violatedConstraint = (error: unknown): string | undefined =>
+  typeof error === 'object' && error !== null && 'constraint' in error && typeof error.constraint === 'string'
+    ? error.constraint
+    : undefined;

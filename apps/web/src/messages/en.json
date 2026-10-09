@@ -1010,6 +1010,7 @@
         "fiscalYearHelp": "The year the company labels its financial year with. When the dates are empty, choosing it fills them with 1 January – 31 December; change them if the financial year is not the calendar year.",
         "fiscalYearPlaceholder": "Choose the year",
         "fiscalYearTaken": "A period is already open for this year.",
+        "fiscalYearHeld": "Another period of this entity now holds this year. Choose another fiscal year.",
         "fiscalYearRequired": "Choose the period’s fiscal year.",
         "start": "First day of the period",
         "end": "Last day of the period",

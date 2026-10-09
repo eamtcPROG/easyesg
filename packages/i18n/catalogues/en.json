@@ -108,6 +108,9 @@
     "period-overlaps": {
       "title": "Overlapping periods"
     },
+    "period-fiscal-year-taken": {
+      "title": "Fiscal year already taken"
+    },
     "period-locked": {
       "title": "Period locked"
     },
@@ -304,6 +307,7 @@
     "period": {
       "not_found": "That reporting period does not exist in this organization, so it could not be shown. Refresh the list to see the periods that do.",
       "overlaps": "Another reporting period for this entity already covers part of the dates chosen, and two periods cannot overlap. Adjust the start and end dates, or edit the period that already covers them.",
+      "fiscal_year_taken": "This entity already has a reporting period for the fiscal year chosen, and an entity holds one period for each year, so the period was not saved. Choose another fiscal year, or open the period that already exists for that year.",
       "dates_invalid": "The dates given do not describe a period: the end falls before the start, or one of them is not a real calendar day. Check the days chosen and the timezone, then try again.",
       "taxonomy_version_unavailable": "No version of the standard is registered on the platform, so the period cannot be opened — every report has to be tied to a specific version. Contact support; this is resolved on our side.",
       "locked": "The period is locked, so it can no longer be changed by anyone, an administrator included. Reopen it with a stated reason to make the correction — the change stays visible as an amendment.",

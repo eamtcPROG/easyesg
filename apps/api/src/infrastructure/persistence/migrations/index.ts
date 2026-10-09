@@ -65,6 +65,7 @@ import { ValidationFindings1792281600000 } from './1792281600000-validation-find
 import { ValidationRollUp1792368000000 } from './1792368000000-validation-roll-up';
 import { ReportNoticeReach1792454400000 } from './1792454400000-report-notice-reach';
 import { OutboxKeyQueueable1792540800000 } from './1792540800000-outbox-key-queueable';
+import { PeriodFiscalYearUnique1792627200000 } from './1792627200000-period-fiscal-year-unique';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -150,4 +151,5 @@ export const migrations = [
   ValidationRollUp1792368000000,
   ReportNoticeReach1792454400000,
   OutboxKeyQueueable1792540800000,
+  PeriodFiscalYearUnique1792627200000,
 ];

@@ -146,6 +146,10 @@ export const ProblemType = {
    *  that already covers them — which the generic `conflict` cannot, and because overlapping
    *  periods would make FR-45's "immediately preceding period" ambiguous (task 31.1). */
   PeriodOverlaps: 'period-overlaps',
+  /** UC-56 refused: the entity already holds a period for this fiscal year, and holds one per year (FR-21; task 186,
+   *  reversing task 31.1's non-unique year). Its own slug beside `period-overlaps` because the way out differs — choose
+   *  another year, not other dates — and S-14 marks the year field rather than the two dates. */
+  PeriodFiscalYearTaken: 'period-fiscal-year-taken',
   /** UC-56's precondition unmet: no taxonomy version is registered, so there is nothing to pin and
    *  FR-66 cannot be satisfied. Refused rather than defaulted — a period pinned to a version
    *  invented at the call site is exactly what DR-4 exists to prevent. Its own slug because it is

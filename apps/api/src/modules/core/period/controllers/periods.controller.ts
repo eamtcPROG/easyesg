@@ -115,8 +115,8 @@ export class PeriodsController {
   @ApiResponse({
     status: 409,
     description:
-      'The entity is archived, another period overlaps these dates, or no taxonomy version is ' +
-      'registered to pin.',
+      'The entity is archived, already holds a period for this fiscal year, has another period ' +
+      'overlapping these dates, or no taxonomy version is registered to pin.',
   })
   async open(
     @Body() body: OpenReportingPeriodRequestDto,
@@ -216,7 +216,9 @@ export class PeriodsController {
   @ApiResponse({ status: 404, description: NO_SUCH_PERIOD })
   @ApiResponse({
     status: 409,
-    description: 'Another period overlaps these dates, or the period is locked.',
+    description:
+      'The entity already holds another period for this fiscal year, another period overlaps these ' +
+      'dates, or the period is locked.',
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,

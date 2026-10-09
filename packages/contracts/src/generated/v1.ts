@@ -7167,7 +7167,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The entity is archived, another period overlaps these dates, or no taxonomy version is registered to pin. */
+            /** @description The entity is archived, already holds a period for this fiscal year, has another period overlapping these dates, or no taxonomy version is registered to pin. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -7247,7 +7247,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Another period overlaps these dates, or the period is locked. */
+            /** @description The entity already holds another period for this fiscal year, another period overlaps these dates, or the period is locked. */
             409: {
                 headers: {
                     [name: string]: unknown;

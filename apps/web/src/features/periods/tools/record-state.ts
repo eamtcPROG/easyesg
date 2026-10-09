@@ -1,6 +1,6 @@
 import type { ReportingPeriodValue } from '@easyesg/ui';
 import type { Notice } from '@/lib/notice';
-import type { RequiredField } from './period-fields';
+import type { FieldMark } from './period-fields';
 
 /**
  * S-14's Record screen state (task 32.1.2).
@@ -44,8 +44,8 @@ export type PeriodReportKind = (typeof PERIOD_REPORT)[keyof typeof PERIOD_REPORT
 export interface PeriodReport {
   readonly kind: PeriodReportKind;
   readonly notice: PeriodNotice;
-  /** The fields a refusal names (`refusedFields`) — marked on the form beside the sentence above it. Empty otherwise. */
-  readonly fields: readonly RequiredField[];
+  /** The fields a refusal names, and why (`refusedFields`) — marked on the form beside the sentence above it. Empty otherwise. */
+  readonly fields: readonly FieldMark[];
 }
 
 export interface PeriodRecordState {

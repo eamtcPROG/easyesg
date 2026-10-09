@@ -12,6 +12,7 @@ import type {
 import type { ReportingPeriodStore } from '../interfaces/reporting-period-store.interface';
 import {
   PeriodDatesInvalidError,
+  PeriodFiscalYearTakenError,
   PeriodLockedError,
   PeriodNotFoundError,
   TaxonomyVersionUnavailableError,
@@ -42,6 +43,12 @@ export interface UpdatePeriodCommand {
  * **`pinFor` is asked for the period's own start date, not for today.** A period backfilled for
  * 2025 must pin what was in force *then* — the registry's entry is effective-dated for exactly this,
  * and asking it about today would pin a 2025 filing to a taxonomy adopted in 2027.
+ *
+ * **An entity holds a fiscal year once, and the year is judged before the dates** (FR-21 behaviour 4; task 186,
+ * `architecture.md` §12.5.6's task-186 row (2)). Both writes ask the store first and refuse a held year themselves,
+ * so a period that repeats a year *and* overlaps another's dates is refused for the year — FR-21 AC-13's answer
+ * whatever the dates. The overlap stays the database's alone, and so does the race on the year: the store translates
+ * the unique constraint into the same refusal for the request that loses it.
  */
 export class OpenReportingPeriod {
   constructor(
@@ -61,6 +68,12 @@ export class OpenReportingPeriod {
     const entity = await this.entities.findEntity(period.reportingEntityId);
     if (!entity) throw new EntityNotFoundError();
     if (entity.status === ENTITY_STATUS.ARCHIVED) throw new EntityArchivedError();
+
+    const held = await this.store.holdsFiscalYear({
+      reportingEntityId: period.reportingEntityId,
+      fiscalYear: period.fiscalYear,
+    });
+    if (held) throw new PeriodFiscalYearTakenError();
 
     const pin = this.taxonomy.pinFor({ on: period.periodStart.date });
     if (!pin) throw new TaxonomyVersionUnavailableError();
@@ -99,6 +112,18 @@ export class OpenReportingPeriod {
       periodEnd: command.patch.periodEnd ?? current.periodEnd,
       dueDate: command.patch.dueDate === undefined ? current.dueDate : command.patch.dueDate,
     });
+
+    // Asked only when the year moves: a period keeps its own year on every save S-14 sends, and that year is this
+    // period's, not another's — `exceptPeriodId` says so for the store when it does move.
+    const { fiscalYear } = command.patch;
+    if (fiscalYear !== undefined && fiscalYear !== current.fiscalYear) {
+      const held = await this.store.holdsFiscalYear({
+        reportingEntityId: current.reportingEntityId,
+        fiscalYear,
+        exceptPeriodId: current.id,
+      });
+      if (held) throw new PeriodFiscalYearTakenError();
+    }
 
     const updated = await this.store.update({ ...command, at: this.now() });
     if (!updated) throw new PeriodNotFoundError();

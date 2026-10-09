@@ -15,10 +15,11 @@ import {
 } from '../testing/period.fakes';
 import {
   PeriodDatesInvalidError,
+  PeriodFiscalYearTakenError,
   PeriodNotFoundError,
   TaxonomyVersionUnavailableError,
 } from '../errors/period.errors';
-import type { NewReportingPeriod } from '../models/reporting-period.model';
+import type { NewReportingPeriod, ReportingPeriod } from '../models/reporting-period.model';
 
 /**
  * UC-56 — open a reporting period (FR-21, FR-45, FR-66).
@@ -42,8 +43,14 @@ describe('OpenReportingPeriod (UC-56)', () => {
     ...over,
   });
 
-  const build = (options: { entity?: ReturnType<typeof anEntity>; registry?: FakeTaxonomyRegistry } = {}) => {
-    const store = new FakeReportingPeriodStore();
+  const build = (
+    options: {
+      entity?: ReturnType<typeof anEntity>;
+      registry?: FakeTaxonomyRegistry;
+      periods?: ReportingPeriod[];
+    } = {},
+  ) => {
+    const store = new FakeReportingPeriodStore(options.periods);
     const entities = new FakeReportingEntityStore([options.entity ?? anEntity()]);
     const registry = options.registry ?? new FakeTaxonomyRegistry();
     return {
@@ -177,6 +184,70 @@ describe('OpenReportingPeriod (UC-56)', () => {
         period: aRequest({ dueDate: { date: '2026-12-15', timezone: 'Europe/Chisinau' } }),
       });
       expect(period.dueDate?.date).toBe('2026-12-15');
+    });
+  });
+
+  /**
+   * FR-21 behaviour 4 and AC-13 (task 186). The fake models the store's read and not its constraint, so each refusal
+   * here is the use case's own; that the database refuses too, and that a race answers the same, is the e2e suite's.
+   */
+  describe('one period per fiscal year', () => {
+    const Y2027 = aPeriod({
+      id: '00000000-0000-0000-0000-0000000000c9',
+      fiscalYear: 2027,
+      periodStart: { date: '2027-01-01', timezone: 'Europe/Chisinau' },
+      periodEnd: { date: '2027-12-31', timezone: 'Europe/Chisinau' },
+    });
+
+    /**
+     * The commonest repeat — the same year opened again with its own calendar dates — which also overlaps. Refused for
+     * the year, and before anything else is asked: the pin is not resolved and the store is never asked to write.
+     */
+    it('refuses a year the entity already holds, before the pin is asked or anything is written', async () => {
+      const { useCase, store, registry } = build({ periods: [aPeriod()] });
+
+      await expect(useCase.open({ period: aRequest() })).rejects.toThrow(PeriodFiscalYearTakenError);
+      expect(store.opened).toEqual([]);
+      expect(registry.askedFor).toEqual([]);
+    });
+
+    it('refuses it whatever the dates, so a transition period needs a year of its own', async () => {
+      const { useCase } = build({ periods: [aPeriod()] });
+      await expect(
+        useCase.open({
+          period: aRequest({
+            periodStart: { date: '2027-01-01', timezone: 'Europe/Chisinau' },
+            periodEnd: { date: '2027-06-30', timezone: 'Europe/Chisinau' },
+          }),
+        }),
+      ).rejects.toThrow(PeriodFiscalYearTakenError);
+    });
+
+    it('admits the same year for another entity', async () => {
+      const { useCase } = build({
+        periods: [aPeriod({ reportingEntityId: '00000000-0000-0000-0000-0000000000b9' })],
+      });
+      const period = await useCase.open({ period: aRequest() });
+      expect(period.fiscalYear).toBe(2026);
+    });
+
+    it('refuses an edit moving a period onto a year the entity holds, and leaves the period as it was', async () => {
+      const { useCase, store } = build({ periods: [aPeriod(), Y2027] });
+
+      await expect(useCase.update({ periodId: Y2027.id, patch: { fiscalYear: 2026 } })).rejects.toThrow(
+        PeriodFiscalYearTakenError,
+      );
+      expect(store.all.find((row) => row.id === Y2027.id)?.fiscalYear).toBe(2027);
+    });
+
+    /** Every save S-14 sends names the year, the period's own included, and its own year is not another's. */
+    it('admits an edit that names the period’s own year', async () => {
+      const { useCase } = build({ periods: [aPeriod(), Y2027] });
+      const updated = await useCase.update({
+        periodId: Y2027.id,
+        patch: { fiscalYear: 2027, dueDate: { date: '2028-04-30', timezone: 'Europe/Chisinau' } },
+      });
+      expect(updated.dueDate?.date).toBe('2028-04-30');
     });
   });
 

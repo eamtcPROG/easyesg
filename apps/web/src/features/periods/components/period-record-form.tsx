@@ -77,7 +77,8 @@ import styles from './periods.module.css';
  * reads on the server; a year another period holds is listed disabled, and choosing one fills empty
  * dates with its calendar year (`tools/period-fields.ts`). A save pressed with something missing is
  * refused here, before any request, and each field then says what it lacks, with a summary above
- * them (UX-111); an overlap refusal marks the two dates beside the api's own sentence.
+ * them (UX-111); an overlap refusal marks the two dates beside the api's own sentence, and a year refusal — a race, or
+ * another client, since the list never offers a held year — marks the year (task 186).
  *
  * State is a reducer in `record-state.ts`; the dates are one `ReportingPeriodPicker` rather than
  * four fields, because §11.5 reserves that component for exactly this screen.
@@ -156,6 +157,7 @@ export function PeriodRecordForm({
   const messageFor = (field: RequiredField, problem: FieldProblem): string => {
     if (problem === FIELD_PROBLEM.RANGE) return t('record.rangeInvalid');
     if (problem === FIELD_PROBLEM.OVERLAPS) return t('record.datesOverlap');
+    if (problem === FIELD_PROBLEM.TAKEN) return t('record.fiscalYearHeld');
     return t(MISSING_MESSAGE[field]);
   };
   const fieldErrors: Partial<Record<PeriodField, string>> = Object.fromEntries(

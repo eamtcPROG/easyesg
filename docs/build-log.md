@@ -30062,3 +30062,113 @@ The change reaches `apps/api`'s HTTP entrypoint only: `entity.module.ts` registe
 - **Not run:** `e2e:worker`, whose graph holds no part of this; `openapi:check` and `migrations:check`, with no
   controller, DTO or migration touched; `e2e:web`, since S-13's picker reads the same answers from the same route.
   **Not a Stage close**: Stage 2 keeps 186 … 189.
+
+## Task 186 — One reporting period per fiscal year, the year judged before the dates · 2026-10-09
+
+An entity holds each fiscal year once, refused by the api and by the database: `reporting_period_fiscal_year_unique`
+over `(reporting_entity_id, fiscal_year)` beside the no-overlap exclusion, and 409 `period-fiscal-year-taken` on open
+and on edit. This reverses task 31.1's deliberate omission, as the owner chose on 5 Oct 2026 (182/10). S-14 already
+listed a held year disabled; a refusal that still reaches it, from a race or another client, now marks the year with
+words of its own, under the api's sentence, as an overlap marks the two dates.
+
+### Decided before building (project owner, one batch of two, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-186 row, and cross-logged in the 182/10 text and FR-21's history.
+
+- **A repeated year already stored refuses the migration and changes nothing.** The data step reads every
+  organization's periods with `FORCE` lifted, and names each entity, year and period it finds. The administrator
+  relabels one on S-14, reopening it first if it is locked. *Declined:* relabelling in the migration, which would
+  invent a year for a filing whose label is the administrator's call, and would have to lift FR-22's lock trigger.
+  No running database held one: the dev database's ten periods had none, the test stack starts empty, and nothing is
+  deployed.
+- **The year is judged before the dates.** `OpenReportingPeriod` asks the store (`holdsFiscalYear`) and refuses before
+  writing; on an edit, only when the year moves, leaving the period itself out. The unique key stays the guarantee,
+  and the repository translates its violation, by the constraint's name, into the same refusal. *Declined:* leaving
+  the order to the database, which answers the overlap for the commonest repeat — the same year again with its own
+  dates — so FR-21 AC-13 would have held only for dates that did not overlap.
+
+### What the building settled
+
+- **Which constraint PostgreSQL meets first, measured rather than assumed.** A single statement breaking both rules
+  against a committed row answers `reporting_period_no_overlap` — the older index. So a race whose dates also overlap
+  still answers `period-overlaps`, which the §12.5.6 row says.
+- **The read uses the no-overlap GiST index today, not the new key.** `EXPLAIN` with `enable_seqscan = off` reached an
+  entity's rows through `reporting_period_no_overlap`, and through `reporting_period_entity_idx` with that dropped;
+  with both dropped, the new key served both columns as its index condition. The first drafts of the migration's and
+  the repository's docblocks claimed the key was what the read probed, and both now say what was measured. No index
+  was added for the read.
+- **`violatedConstraint` joins `sql-state.ts`** beside `hasSqlState`, so the repository reads the key by name rather
+  than taking every `23505` on the table as the year: `UNIQUE (id, organization_id)`, the composite foreign-key target,
+  answers the same SQLSTATE. TypeORM 1.1's `QueryFailedError` copies the driver's `constraint` onto itself, read in its
+  source. The orphaned *"two SQLSTATEs"* docblock above `SNAPSHOT_PAYLOAD` moved onto `translate`, which it described.
+- **The fake models the read, not the key**, as it already left the overlap to the database, so a use-case spec that
+  sees a held year refused is seeing the use case's own check.
+- **S-14's refusal carries its reason.** `refusedFields` answered fields alone, and `fieldProblems` turned every named
+  field into *overlaps*; it now answers marks — field and why — so the year can say *taken* in its own words
+  (`record.fiscalYearHeld`). The reducer's `fields` holds those marks. No component, prop or file was added.
+- **One existing case changed, on purpose.** `periods.e2e-spec.ts`'s overlap case opened a second 2026 with
+  overlapping dates; under the year-first rule that answers the year, so it now labels its overlapping period 2027.
+
+### Proven to bite
+
+- **The use case**: removing open's refusal turned 2 of the 19 cases red; removing update's, 1.
+- **The data step**: removing its `NO FORCE`/`FORCE` pair turned exactly its refusal case red, 1 of 13 in
+  `migration-data-steps.e2e-spec.ts`. Restored, all 13 pass.
+- **The database's refusal**: removing the repository's translation of the key turned the race case red, 1 of 38 in
+  `periods.e2e-spec.ts`: the losing request answered 500 where 409 was expected — which also shows it is the database
+  refusing, since the use case's read had found the year free. The case holds the race by an uncommitted row in a
+  second session and commits it only once `pg_locks` shows the request waiting on that transaction. Restored, all pass.
+- **The invariant**: its two proving cases drop the key, and replace it with a partial unique index, and the probe
+  answers nothing for either; it asks `pg_index` for a whole, valid unique key over exactly the two columns, so a
+  partial one does not pass for it.
+- **S-14**: `refusedFields`' spec names the year's mark, and `fieldProblems`' puts a missing year ahead of it. The browser
+  journey drives the race through two tabs of one session — the second opens next year's period while the first form,
+  drawn with that year free, still holds it — and the first save is refused with the year marked and the dates not.
+  The journey was not re-run with the mark removed, which is another full build; its unit half was.
+
+### Searched
+
+- **Every suite and fixture that writes a period**, for a repeated year the key would now refuse: the SQL seeds in
+  `tenant-isolation`, `periods` and `e2e/web/support/db.ts` each write one year per entity. `pnpm e2e`'s 66 suites and
+  the three browser projects all pass with the key in place, so no suite was opening a repeated year.
+- **The rule's shape — a hand-kept `'23505'` beside a hand-read `constraint`** — across `apps/api/src`: four adapters
+  in `identity` and `platform/admin` each declare their own `UNIQUE_VIOLATION` and read `driverError.constraint`, the
+  duplication `sql-state.ts`'s header records ending once already. Offered as a task of its own rather than folded in.
+
+### Skills, read against the diff
+
+- `nestjs-best-practices`: `db-use-transactions` holds — the read and the write share the request's transaction, and
+  the key closes the gap a read-committed read leaves; `di-interface-segregation` was weighed for `holdsFiscalYear` on
+  `ReportingPeriodStore` and held, since its one reader is the use case that already depends on the store's writes;
+  `perf-optimize-database` by the `EXPLAIN`s above; `error-throw-http-exceptions` declined by name, as ever — a
+  `DomainError` with a registered problem type.
+- `one-idea-per-file`: `file-one-behaviour-api` — the step lives in its migration's file by task 164's rule, the error
+  in the module's errors vocabulary; `reason-docblock-carries-the-why` and `reason-measure-structural-claims`, which
+  caught the two index claims above.
+- `vercel-react-best-practices`: the `.tsx` change is one branch in an existing pure helper, with no new prop, read or
+  render work; `js-set-map-lookups` weighed for a `find` over at most three marks and declined at that size.
+- `one-kind-per-folder`: not triggered — no file was added, split or moved under `apps/web/src`.
+
+### Gates
+
+The change reaches `apps/api` (a migration, a controller's responses, the store), `apps/web` (S-14), and two shared
+packages — `packages/i18n`'s catalogues and `packages/contracts`' vocabulary and generated contract — so every
+dependent's row ran, `apps/admin`'s included.
+
+- `pnpm lint`; `typecheck` in `api`, `contracts`, `web`, `admin` and `i18n`; `pnpm docs:check`, 48 claims, after the
+  archive's counts moved. The root `CLAUDE.md`'s *57 tasks are here and 151 have closed* is not a counted claim and
+  was moved by hand to 56 and 152.
+- `pnpm migrations:check`: apply, revert and apply on the test stack, apply on the dev stack, and the invariants
+  **64** on each — 61 before, three for the new invariant. `apps/api/CLAUDE.md`'s claim is sixteen invariants and 54
+  cases.
+- `pnpm --filter @easyesg/api test`: 258 suites, **2,115** cases.
+- `pnpm e2e`: **66 of 66** suites, **1,664** cases — 1,654 at task 208, and this task's ten — the log clean.
+- `pnpm e2e:worker`: 13 cases, clean; the migration and the catalogues reach the worker.
+- `pnpm openapi:check`, the two 409 descriptions regenerated into `v1.json` and `v1.ts` and staged; `pnpm routes:check`.
+- `pnpm --filter @easyesg/i18n test`: 160. `packages/contracts` has no `test` script; its proofs are type-level.
+- `pnpm --filter @easyesg/web test`: 190 files, **1,836** cases. `pnpm --filter @easyesg/admin test`: 37 files, 298.
+- `pnpm e2e:web --project identity --project expansion --project admin`: **327 passed**, 13.4 minutes. The server
+  logged 26 `⨯` lines, every one *The destination stream closed early.* with digest `2667547900` —
+  `apps/web/CLAUDE.md`'s abandoned-stream line, and no other.
+- **Not run:** `boundaries`, `image:check`, `facade:check` and the two `*:prove` gates, which are the Stage's end and
+  CI's. **Not a Stage close**: Stage 2 keeps 187, 188 and 189.
