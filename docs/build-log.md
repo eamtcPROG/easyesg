@@ -30483,8 +30483,8 @@ the sweep and its proof cases on both stacks.
 **Stage 2 — Calculator and validation — is empty, and closes with task 189.** Its last rows were task 182's restatement
 of the requirements: 186 … 189, 191, 201, 204 … 209, behind tasks 39 … 42, 51, 94, 95 and 133.
 
-**The Stage diff** runs from `a5266c33`, the commit that carried tasks 185 and 190 and ended Stage 1, to the commit
-that carries task 189 and this entry; the next Stage's diff starts there. Twenty-eight commits before it, about 813
+**The Stage diff** runs from `a5266c33`, the commit that carried tasks 185 and 190 and ended Stage 1, to `0da895ed`,
+the commit that carries task 189 and this entry; the next Stage's diff starts there. Twenty-eight commits before it, about 813
 files.
 
 **The order was the one Stage 1's entry recommended**: the three reviews first, their fixes, and then one
