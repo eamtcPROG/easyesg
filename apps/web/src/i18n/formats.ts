@@ -73,5 +73,8 @@ export const formats = {
     // "Romanian, English and Russian" — never assembled by concatenation. UX-95 prohibits
     // concatenated sentence fragments: every message is a whole, translatable unit.
     enumeration: { style: 'long', type: 'conjunction' },
+    // "address, city or postal code" — the questions any one of which satisfies a rule (task 95: B1's site questions,
+    // any of which brings B5's site disclosures). Intl's disjunction, never a hand-joined "or".
+    alternatives: { style: 'long', type: 'disjunction' },
   },
 } satisfies Formats;

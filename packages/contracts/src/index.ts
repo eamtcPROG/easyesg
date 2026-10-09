@@ -186,6 +186,7 @@ export type LegalDate = components['schemas']['LegalDateDto'];
  * vocabulary rather than the emitter's.
  */
 export {
+  APPLICABILITY_CONDITION,
   COLUMN_OF_KIND,
   COMPARABILITY,
   DISCLOSURE_KIND,
@@ -196,6 +197,7 @@ export {
   REPORT_STATUS,
   VALUE_COLUMN,
   membersOf,
+  type ApplicabilityCondition,
   type Comparability,
   type DisclosureKind,
   type DisclosureOrigin,
@@ -213,6 +215,8 @@ export type CreateReportRequest = components['schemas']['CreateReportRequestDto'
 export type SendReportReminderRequest = components['schemas']['SendReportReminderRequestDto'];
 export type DisclosureModuleSummary = components['schemas']['DisclosureModuleSummaryDto'];
 export type DisclosureField = components['schemas']['DisclosureFieldDto'];
+/** Why a field or a module is or is not asked (task 91.3; FR-28) — what S-07 words UX-27's note and UX-28's notice from (task 95). */
+export type ApplicabilityCause = components['schemas']['ApplicabilityCauseDto'];
 /** Who replaced a computed figure — on a B3 scope's field and on an invoice line alike (task 39.4; FR-36). */
 export type OverridingPerson = components['schemas']['OverridingPersonDto'];
 /** One answer a choice field offers (task 91.1): `value` is the member's taxonomy-qualified name, what an answer stores. */

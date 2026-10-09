@@ -9,6 +9,15 @@ import {
 import { Button, BUTTON_VARIANT, Fieldset } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDismissedNotes } from '@/client/applicability/use-dismissed-notes';
+import type { NoteScope } from '@/client/applicability/dismissed-notes';
+import {
+  applicabilityNotes,
+  laidOutFields,
+  notesByEntry,
+  undismissed,
+  type ApplicabilityNote as ApplicabilityNoteShape,
+} from '../../../tools/applicability-notes';
 import { writeKey } from '../../../tools/autosave-state';
 import type { PriorValue } from '../../../tools/comparatives';
 import {
@@ -22,6 +31,8 @@ import {
 import { askedFields, askedInputsOf, derivedElements } from '../../../tools/step-applicability';
 import { outstandingDefaults, storedDraftOf, writeFor } from '../../../tools/values';
 import { useAutosaveContext } from '../../providers/autosave-context';
+import { ApplicabilityNote } from '../applicability/applicability-note';
+import { RetainedNotice } from '../applicability/retained-notice';
 import { DerivationInputControl } from '../field/derivation-input-control';
 import { StepField } from '../field/step-field';
 import { ClassificationRow } from '../rows/classification-row';
@@ -71,6 +82,7 @@ export function StepFields({
   derivationInputs,
   priorValues,
   readOnly,
+  scope,
 }: {
   readonly fields: readonly DisclosureFieldShape[];
   /**
@@ -86,6 +98,8 @@ export function StepFields({
   /** Last year's comparable answers, by §7.3's natural key (FR-46, UC-45; task 36.14). */
   readonly priorValues: ReadonlyMap<string, PriorValue>;
   readonly readOnly: boolean;
+  /** The reader and the report — where UX-27's dismissals are remembered, and whose B1 a note links to (task 95). */
+  readonly scope: NoteScope;
 }) {
   const tField = useTranslations(FIELD_MESSAGES);
   const tGroup = useTranslations(GROUP_MESSAGES);
@@ -180,9 +194,33 @@ export function StepFields({
   // re-renders or a row is added, so the grouping ran on every keystroke's acknowledgement.
   const classificationAxes = useMemo(() => new Set(axes.map((axis) => axis.key)), [axes]);
 
+  /**
+   * **What is laid out is the asked fields and, in their own places, the hidden ones whose answer is kept** (task 95;
+   * UX-28) — those render as `RetainedNotice`, never as a control (`renderField` below), so §7.3's *not rendered*
+   * holds for the field. Everything that commits or asks — the defaults above, the inputs — stays on `asked`.
+   */
+  const laidOut = useMemo(() => laidOutFields(fields), [fields]);
+
   const entries = useMemo(
-    () => withAddedRows(layOutStep(asked, classificationAxes), added),
-    [asked, classificationAxes, added],
+    () => withAddedRows(layOutStep(laidOut, classificationAxes), added),
+    [laidOut, classificationAxes, added],
+  );
+
+  /**
+   * UX-27's notes (task 95; `architecture.md` §12.5.6's task-95 row (1)): one per cause among the asked fields a rule
+   * governs, stood before the first entry presenting one of its fields, less the ones this reader dismissed. **None
+   * before the browser's dismissals are read** — `dismissed` is `null` until then — so the server's HTML carries no
+   * note and a dismissed one never flashes. Memoized for this component's reason: it re-renders on every autosave
+   * transition while `fields` and `entries` move only when the server re-renders or a row is added.
+   */
+  const notes = useMemo(() => applicabilityNotes(asked), [asked]);
+  const { dismissed, dismiss } = useDismissedNotes({ scope, fields });
+  const notesBefore = useMemo(
+    () =>
+      dismissed === null
+        ? NO_NOTES
+        : notesByEntry({ entries, notes: undismissed({ notes, dismissed }) }),
+    [entries, notes, dismissed],
   );
 
   // **Built once here rather than per row in the JSX** (convention review, 8 Sep 2026). Called
@@ -242,7 +280,16 @@ export function StepFields({
 
   return (
     <div className={styles.fields}>
-      {entries.map((entry) =>
+      {entries.flatMap((entry, index) => [
+        // UX-27's notes for the questions this entry starts (task 95) — siblings in the grid, keyed by their cause.
+        ...(notesBefore.get(index) ?? []).map((note) => (
+          <ApplicabilityNote
+            key={`note ${note.key}`}
+            note={note}
+            reportId={scope.reportId}
+            onDismiss={() => dismiss(note.elementKeys)}
+          />
+        )),
         entry.kind === STEP_ENTRY.GROUP ? (
           <Fieldset
             key={`${entry.axis} ${entry.ordinal}`}
@@ -328,7 +375,7 @@ export function StepFields({
         ) : (
           renderField(entry.field)
         ),
-      )}
+      ])}
       {/*
         The values the step's derived figures are computed from (UC-26 step 4, UC-27 step 2), after
         the fields rather than among them: EFRAG's own template puts them under the figure they feed,
@@ -358,6 +405,8 @@ export function StepFields({
    *   breakdown's member. `undefined` everywhere else, so every other caller is unchanged.
    */
   function renderField(served: DisclosureFieldShape, named?: string | null) {
+    // A field the reporter is no longer asked is laid out only because its answer is kept, and it is said, not asked.
+    if (!served.applicable) return <RetainedNotice key={writeKey(served)} field={served} />;
     return (
       <StepField
         key={writeKey(served)}
@@ -395,6 +444,9 @@ function groupLegend(
     ? t('legend', { name: row.name, position: row.position })
     : t('legendNamed', { name: row.name, position: row.position, given: row.given });
 }
+
+/** No note stands before any entry — before the dismissals are read. Module-level for `NO_MEMBERS`' reason. */
+const NO_NOTES: ReadonlyMap<number, readonly ApplicabilityNoteShape[]> = new Map();
 
 /** No row of this axis names a member yet. Module-level, so it is one identity rather than many. */
 const NO_MEMBERS: ReadonlySet<string> = new Set();

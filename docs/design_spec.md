@@ -1888,9 +1888,9 @@ This anatomy is the source's only screen-level layout diagram. The field-level c
 
 **UX-26** Conditional fields (turnover at ≥ 50 employees, gender pay gap at ≥ 150, site-driven biodiversity, sector-driven water) shall appear and disappear live as B1 answers change (UC-26, UC-28, UC-81).
 
-**UX-27** When a field appears or disappears, the change shall be announced — a brief, non-modal, dismissible explanation naming the B1 answer that caused it. Fields shall not materialise silently; an unexplained new required field at deadline reads as a system fault.
+**UX-27** When a field appears or disappears, the change shall be announced — a brief, non-modal, dismissible explanation naming the B1 answer that caused it. Fields shall not materialise silently; an unexplained new required field at deadline reads as a system fault. **Cross-logged 9 Oct 2026 (task 95, `architecture.md` §12.5.6's task-95 row (1)):** every rule's field is in another module than its B1 driver, so the explanation is a dismissible note at the field, read off each step read — one per cause, naming the B1 answer and linking to it — and a dismissal is forgotten when the field is next seen not asked, so the note returns with the field. An unanswered field that stops applying is not announced; the module list says why a module asks less.
 
-**UX-28** Where a conditional field disappears after being answered, the entered value shall be retained and restored if the condition returns, and the user shall be told it has been retained rather than discarded.
+**UX-28** Where a conditional field disappears after being answered, the entered value shall be retained and restored if the condition returns, and the user shall be told it has been retained rather than discarded. **Cross-logged 9 Oct 2026 (task 95, `architecture.md` §12.5.6's task-95 row (2)):** the telling is a notice where the hidden field stood — its label, why it is hidden, that the answer is kept and returns with the condition, and the kept answer — with no control, so the field itself stays not rendered (task 36.9).
 
 ### 6.4 Validation presentation and finding-to-field navigation
 

@@ -79,7 +79,12 @@ interface AnswerRow {
   readonly state: string;
 }
 
-function answerOf(row: AnswerRow): FieldValue {
+/**
+ * One row as the interpreter reads it. **Exported since task 95**, whose retained-answer notice asks the package's own
+ * `isAnswered` of a served field — the predicate every reader judges an answer by (182/17) — rather than a second
+ * reading of the columns.
+ */
+export function answerOf(row: AnswerRow): FieldValue {
   return {
     elementKey: row.elementKey,
     dimensionKey: row.dimensionKey ?? '',

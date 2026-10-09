@@ -153,7 +153,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-28 — Conditional applicability
 
-**Status.** Partial — delivered 91.3, 36.7, 36.9, 36.11, 179.1 · remaining 95 (the announcement and the retained value's notice), 80.1 (C modules)
+**Status.** Partial — delivered 91.3, 36.7, 36.9, 36.11, 179.1, 95 (the note at a conditional field and the kept answer's notice) · remaining 80.1 (C modules)
 
 **Obligation.** The system shall decide from B1's stored answers, by effective-dated rules held as configuration, which disclosures apply, showing those that do and not showing those that do not rather than presenting a field and rejecting it later.
 
@@ -161,7 +161,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 |---|---|
 | **Actors** | Evaluated by the api for every reader. PA maintains the rules (FR-72). |
 | **Traces** | UC-19, UC-22, UC-23, UC-24, UC-26, UC-28, UC-81 · VSME ¶13 · UX-9, UX-26 … UX-28 · BR-APP-1 … BR-APP-5 |
-| **Surfaces** | S-07 (fields and module states) · `applicable` and its cause on both module and step reads |
+| **Surfaces** | S-07 (fields and module states; UX-27's note at a conditional field; UX-28's notice where a hidden answered field stood) · `applicable` and its cause on both module and step reads |
 
 **Behaviour.**
 1. Four rules, evaluated on every module and step read: turnover at ≥ 50 employees; the pay gap and its two inputs at ≥ 150; B5's three site-dimensioned disclosures where B1 records any site; B6's four water disclosures where B1's NACE answer falls within sections A … E, matched member-or-descendant (task-91.3 rows).
@@ -169,10 +169,12 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 3. Rules resolve as of today, not the period's start, so a published change reaches reports in progress (UC-81). An unparsable artefact **fails open**: every field applies.
 4. **Applicability shapes what is shown and counted, never the write.** A value stored under a field that stops applying is kept and returned marked. It is restored if the field applies again.
 5. An inapplicable field is not rendered (task-36.9 row).
+6. **A field a rule governs says why it is asked**: a dismissible note at the field names the B1 answer that brought it, says the question goes away again if that answer changes and anything entered is kept, and links to that answer. The note is read off each step read, one per cause, and a dismissal is the reader's, in one browser, forgotten when the field is next seen not asked (task-95 row (1)).
+7. **A hidden field whose answer is kept is said, not asked**: where it stood, its label, why it is hidden, that the answer is kept and returns with the condition, and the kept answer itself (task-95 row (2)).
 
 **Configuration-held values.** `config/seed/disclosure-applicability.vsme.json`: `numeric_at_least NumberOfEmployees 50` and `150`; `any_row_answered` over B1's five site elements; `member_within NaceSectorClassificationCodes` ∈ `NACE_A` … `NACE_E`.
 
-**Boundaries.** The announcement that a field appeared, and the notice on a retained value (UX-27, UX-28), are task 95's. Notifying reports in progress of a rule change is FR-166's. The C modules' rules are task 80.1's.
+**Boundaries.** An unanswered field that stops applying is not announced; the module list's waiting and ruled-out states say why a module asks less (task-95 row). Notifying reports in progress of a rule change is FR-166's. The C modules' rules are task 80.1's.
 
 **Acceptance criteria.**
 - **AC-1** Given B1 headcount 49, then turnover is not shown. At 50 it is shown the next time its step is read, with no page reload and no rejected submission. *(source: FR text; disclosure-applicability artefact)*
@@ -182,10 +184,13 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-5** Given B1's headcount is unanswered, then neither threshold-driven disclosure is shown. *(source: BR-APP-5; UX-9)*
 - **AC-6** Given a stored turnover value, when headcount drops below 50, then the value is kept, hidden, and restored when headcount returns to 50. *(source: §12.5.6 task-91.3 row)*
 - **AC-7** Given the threshold is changed in configuration, then the next read applies it with no deployment. *(source: FR-72; UC-81)*
+- **AC-8** Given B1 headcount 50, when B8 is read, then the turnover rate carries a note naming the B1 answer and linking to it; dismissed, it stays dismissed across a reload, and it returns after headcount falls below 50 and rises again. *(source: UX-27; §12.5.6 task-95 row (1))*
+- **AC-9** Given a stored turnover rate and B1 headcount 10, then B8 shows, where the turnover rate stood, why it is hidden, that the answer is kept, and the kept figure, with no control. *(source: UX-28; §12.5.6 task-95 row (2))*
 
 **History.**
 - 2–3 Sep 2026 · project owner · the rules as a thresholds artefact evaluated by the api; water as NACE A–E; the site rule scoped to B5's dimensioned elements; resolves as of today and fails open · §12.5.6 task-91.3 rows; BR-APP-3, BR-APP-4, BR-APP-5
 - 8–9 Sep 2026 · project owner · water governs all four of B6; an inapplicable field is not rendered · §12.5.6 task-36.7 and task-36.9 rows
+- 9 Oct 2026 · project owner · UX-27 as a note at the field read off each step read, UX-28 as a notice in the hidden field's place · §12.5.6 task-95 row; UX-27, UX-28
 
 ### FR-29 — Quantities in the standard's units, intensities derived
 

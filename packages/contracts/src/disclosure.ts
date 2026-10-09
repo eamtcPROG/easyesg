@@ -143,6 +143,7 @@ type GeneratedReportStatus = components['schemas']['ReportResponseDto']['status'
 type GeneratedReportScope = components['schemas']['ReportResponseDto']['scope'];
 type GeneratedOrigin = components['schemas']['DisclosureFieldDto']['origin'];
 type GeneratedComparability = components['schemas']['PriorPeriodValueDto']['comparability'];
+type GeneratedCondition = components['schemas']['ApplicabilityCauseDto']['condition'];
 
 const disclosureStateMirrorsTheApi: Same<DisclosureState, GeneratedState> = true;
 const disclosureKindMirrorsTheApi: Same<DisclosureKind, GeneratedKind> = true;
@@ -150,6 +151,7 @@ const reportStatusMirrorsTheApi: Same<ReportStatus, GeneratedReportStatus> = tru
 const reportScopeMirrorsTheApi: Same<ReportScope, GeneratedReportScope> = true;
 const disclosureOriginMirrorsTheApi: Same<DisclosureOrigin, GeneratedOrigin> = true;
 const comparabilityMirrorsTheApi: Same<Comparability, GeneratedComparability> = true;
+const applicabilityConditionMirrorsTheApi: Same<ApplicabilityCondition, GeneratedCondition> = true;
 
 // Read once so the holds are not "unused" to the compiler; they exist for their types alone.
 void disclosureStateMirrorsTheApi;
@@ -158,6 +160,7 @@ void reportStatusMirrorsTheApi;
 void reportScopeMirrorsTheApi;
 void disclosureOriginMirrorsTheApi;
 void comparabilityMirrorsTheApi;
+void applicabilityConditionMirrorsTheApi;
 
 /**
  * Whether last year's answer can stand beside this year's input (FR-46; task 34.3's vocabulary,
@@ -177,6 +180,25 @@ export const COMPARABILITY = {
 } as const;
 
 export type Comparability = (typeof COMPARABILITY)[keyof typeof COMPARABILITY];
+
+/**
+ * How an applicability rule decides whether a field is asked (FR-28; task 91.3's vocabulary, mirrored
+ * here at task 95 when S-07 became its first browser reader).
+ *
+ * The api words no sentence about a rule (*"the client words the announcement from this plus the
+ * values below"*), so the browser branches on the kind to say why a field is asked or hidden — one
+ * sentence per kind, which is a branch, which is why the value must exist at runtime here.
+ */
+export const APPLICABILITY_CONDITION = {
+  /** A B1 number at or above a threshold — the headcount rules. */
+  NUMERIC_AT_LEAST: 'numeric_at_least',
+  /** Any row of B1's listed elements answered — the site rule. */
+  ANY_ROW_ANSWERED: 'any_row_answered',
+  /** A B1 choice within listed members, or below one — the NACE rule. */
+  MEMBER_WITHIN: 'member_within',
+} as const;
+
+export type ApplicabilityCondition = (typeof APPLICABILITY_CONDITION)[keyof typeof APPLICABILITY_CONDITION];
 
 /**
  * How an `enumeration_set` answer is written: the chosen members, space-separated.

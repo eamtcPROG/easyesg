@@ -1645,6 +1645,28 @@
           "clear": "Nimic de rezolvat"
         },
         "sheetClose": "Închideți verificarea raportului"
+      },
+      "applicability": {
+        "note": {
+          "numericAtLeast": "Pentru că la „{driver}” în B1 ați răspuns {answer}, adică {threshold} sau mai mult, acest pas vă întreabă și: {fields}.",
+          "anyRowAnswered": "Pentru că în B1 ați completat {drivers}, acest pas vă întreabă și: {fields}.",
+          "memberWithin": "Ca urmare a răspunsului dat la „{driver}” în B1, acest pas vă întreabă și: {fields}.",
+          "body": "Dacă schimbați acel răspuns, aceste întrebări dispar din nou, iar ce ați completat aici se păstrează.",
+          "see": "Vedeți răspunsul din B1",
+          "dismiss": "Ascundeți nota"
+        },
+        "hidden": {
+          "numericAtLeast": "Această întrebare este ascunsă pentru că la „{driver}” în B1 ați răspuns {answer}, adică sub {threshold}.",
+          "anyRowAnswered": "Această întrebare este ascunsă pentru că în B1 nu ați completat {drivers}.",
+          "memberWithin": "Această întrebare este ascunsă ca urmare a răspunsului dat la „{driver}” în B1.",
+          "waiting": "Această întrebare este ascunsă până răspundeți la „{driver}” în B1.",
+          "kept": "Răspunsul dat anterior a fost păstrat și va reapărea dacă situația se schimbă.",
+          "keptValue": "Păstrat: {value}",
+          "notAvailable": "declarat indisponibil",
+          "quantity": "{value} {unit}"
+        },
+        "unnamedDriver": "o întrebare din B1",
+        "unnamedFields": "o întrebare în plus"
       }
     },
     "calculator": {

@@ -12,3 +12,9 @@ export const GROUP_MESSAGES = 'organization.wizard.group' as const;
 
 /** The derivation inputs' own wording — EFRAG words these in the template, not the taxonomy. */
 export const INPUT_MESSAGES = 'organization.wizard.derivationInput' as const;
+
+/**
+ * Why a conditional field is asked or hidden (task 95; UX-27, UX-28) — read by the note and by the kept-answer notice in
+ * `applicability/`, both under this region.
+ */
+export const APPLICABILITY_MESSAGES = 'organization.wizard.applicability' as const;

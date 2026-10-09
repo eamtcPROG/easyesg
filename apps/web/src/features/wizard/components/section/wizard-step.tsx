@@ -186,6 +186,7 @@ export async function WizardStep({
               derivationInputs={read.step.derivationInputs}
               priorValues={prior}
               readOnly={readOnly}
+              scope={{ accountId: session.account.id, reportId }}
             />
           </StepFiguresProvider>
           {/* A finding's address lands focus in its field — opened, shared or followed from S-08 (task 42.3). */}

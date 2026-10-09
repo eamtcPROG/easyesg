@@ -20,6 +20,7 @@ import { useTranslations } from 'next-intl';
 import { syncStateOf, writeKey } from '../../../tools/autosave-state';
 import { fieldAnchor } from '../../../tools/field-anchor';
 import { priorDraftOf, type PriorValue } from '../../../tools/comparatives';
+import { unitWords } from '../../../tools/unit-words';
 import { markerFor } from '../../../tools/field-marker';
 import { TONE_OF_STATE } from '../../../tools/field-tone';
 import {
@@ -91,17 +92,9 @@ export function StepField({
     [DISCLOSURE_STATE.NOT_MATERIAL]: tMarker('not_material'),
     [DISCLOSURE_STATE.NIL_RETURN]: tMarker('nil_return'),
   };
-  // Code to symbol. Built with literal keys like `rowNames` in `section/step-fields.tsx`, so the catalogue lookup is
-  // type-checked: `t(code)` is not, and a missing symbol would be a blank beside a number.
-  const unitNames: Readonly<Record<string, string>> = {
-    [UNIT_CODE.KILOGRAM]: tUnit('kg'),
-    [UNIT_CODE.TONNE]: tUnit('t'),
-    [UNIT_CODE.CUBIC_METRE]: tUnit('m3'),
-    [UNIT_CODE.MEGAWATT_HOUR]: tUnit('MWh'),
-    [UNIT_CODE.TONNE_CO2_EQUIVALENT]: tUnit('tCO2e'),
-    [UNIT_CODE.HECTARE]: tUnit('ha'),
-    [UNIT_CODE.SQUARE_KILOMETRE]: tUnit('sqkm'),
-  };
+  // Code to symbol, with literal keys so a missing symbol is a compile error (`tools/unit-words.ts`, shared since task
+  // 95 with the kept-answer notice, which names the same units).
+  const unitNames = unitWords(tUnit);
   const { state, change } = useAutosaveContext();
   const { findingsOf } = useValidationContext();
 
@@ -277,28 +270,6 @@ export function StepField({
   );
 }
 
-/**
- * The unit codes EFRAG's `measurementGuidance` admits across both registered versions (task 91.4).
- *
- * Declared here and unexported, exactly as `TYPED_AXIS` in `section/step-fields.tsx`: the values are the standard's own UTR
- * codes, used as **message keys** and never rendered — `sqkm` is an internal identifier and may not
- * reach a reader, so the symbols are catalogue content like every other string.
- *
- * **The code itself is the fallback**, and that is a decision rather than a shrug: a UTR code is a
- * *published* identifier a reader can look up — the user-facing-text rule's own exception for a
- * reference shown on purpose — while the alternative is a quantity with no unit at all, which is
- * the thing UX-14 exists to prevent. The extractor asserts this set, so a release adding an eighth
- * fails there rather than arriving here as a bare code.
- */
-const UNIT_CODE = {
-  KILOGRAM: 'kg',
-  TONNE: 't',
-  CUBIC_METRE: 'm3',
-  MEGAWATT_HOUR: 'MWh',
-  TONNE_CO2_EQUIVALENT: 'tCO2e',
-  HECTARE: 'ha',
-  SQUARE_KILOMETRE: 'sqkm',
-} as const;
 
 /** How a pending field paints: the cascade's pending role while it waits, error once it failed. */
 const SYNC_TONE: Readonly<Record<Exclude<SaveState, typeof SAVE_STATE.SAVED>, FieldTone>> = {
@@ -306,4 +277,3 @@ const SYNC_TONE: Readonly<Record<Exclude<SaveState, typeof SAVE_STATE.SAVED>, Fi
   [SAVE_STATE.SAVING]: FIELD_TONE.PENDING,
   [SAVE_STATE.FAILED]: FIELD_TONE.ERROR,
 };
-

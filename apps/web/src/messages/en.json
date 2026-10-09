@@ -1645,6 +1645,28 @@
           "clear": "Nothing outstanding"
         },
         "sheetClose": "Close the report check"
+      },
+      "applicability": {
+        "note": {
+          "numericAtLeast": "Because you answered {answer} to “{driver}” in B1 — {threshold} or more — this step also asks for {fields}.",
+          "anyRowAnswered": "Because you answered {drivers} in B1, this step also asks for {fields}.",
+          "memberWithin": "Because of your answer to “{driver}” in B1, this step also asks for {fields}.",
+          "body": "If you change that answer, these questions go away again, and anything you have entered here is kept.",
+          "see": "See the B1 answer",
+          "dismiss": "Dismiss"
+        },
+        "hidden": {
+          "numericAtLeast": "This question is hidden because you answered {answer} to “{driver}” in B1, which is below {threshold}.",
+          "anyRowAnswered": "This question is hidden because B1 has no answer to {drivers}.",
+          "memberWithin": "This question is hidden because of your answer to “{driver}” in B1.",
+          "waiting": "This question is hidden until “{driver}” is answered in B1.",
+          "kept": "Your earlier answer has been kept and will come back if that changes.",
+          "keptValue": "Kept: {value}",
+          "notAvailable": "declared not available",
+          "quantity": "{value} {unit}"
+        },
+        "unnamedDriver": "a B1 question",
+        "unnamedFields": "a further question"
       }
     },
     "calculator": {

@@ -739,6 +739,27 @@ test('B8 asks headcount per named country, and turnover only past fifty (UC-26)'
   const turnover = page.getByRole('group', { name: 'Rata de fluctuație a personalului' });
   await expect(turnover).toBeVisible();
 
+  // ── UX-27: the question says why it is asked (task 95) ──────────────────────────────────────
+  //
+  // Every rule's field is in another module than its B1 driver, so the note is read off this step: the answer that
+  // brought the question, the question it brought, and the way back to that answer — never an element key.
+  const appeared = page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' });
+  await expect(appeared).toHaveCount(1);
+  await expect(appeared).toContainText('la „Numărul de angajați” în B1 ați răspuns 50, adică 50 sau mai mult');
+  await expect(appeared).toContainText('Rata de fluctuație a personalului');
+  await expect(appeared).not.toContainText('EmployeeTurnoverRate');
+  await expect(appeared.getByRole('link', { name: 'Vedeți răspunsul din B1' })).toHaveAttribute(
+    'href',
+    /\/B1#disclosure-NumberOfEmployees/u,
+  );
+  // Dismissed, it stays dismissed — the reader's, in this browser — once the page has read the browser again.
+  await appeared.getByRole('button', { name: 'Ascundeți nota' }).click();
+  await expect(appeared).toHaveCount(0);
+  await page.reload();
+  // Hydrated, or the absence below is the server's HTML, which draws no note at all and could not fail.
+  await untilHydrated(page.getByRole('group', { name: 'Rata de fluctuație a personalului' }));
+  await expect(page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' })).toHaveCount(0);
+
   // ── UX-28, in its three parts ───────────────────────────────────────────────────────────────
   //
   // *"Where a conditional field **disappears** after being answered, the entered value shall be
@@ -799,6 +820,18 @@ test('B8 asks headcount per named country, and turnover only past fifty (UC-26)'
   await expect(page.getByRole('group', { name: 'Rata de fluctuație a personalului' })).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: 'Angajați care au plecat în perioadă' })).toHaveCount(0);
 
+  // ── UX-28: and the reader is told the answer was kept, where the question stood (task 95) ────
+  //
+  // A notice, not the field: no control and no group, which is why the two assertions above still hold. It says why
+  // the question went, that the answer is kept, and quotes it as the field showed it.
+  await expect(
+    page.getByText(
+      'Această întrebare este ascunsă pentru că la „Numărul de angajați” în B1 ați răspuns 10, adică sub 50.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByText('Răspunsul dat anterior a fost păstrat')).toBeVisible();
+  await expect(page.getByText('Păstrat: 0,125')).toBeVisible();
+
   // …and the answer is **retained** while the question is gone. Read from the store rather than from
   // the screen, which is the only place it can be read now — and the assertion the "field stays
   // visible" version could never make, because it was reading the same fact twice.
@@ -826,6 +859,10 @@ test('B8 asks headcount per named country, and turnover only past fifty (UC-26)'
   // Restored as a figure rather than as an editable box, the reporter never having typed it.
   const restored = page.getByRole('group', { name: 'Rata de fluctuație a personalului' });
   await expect(restored).toBeVisible();
+  // The note returns with the question: reading B8 at ten forgot its dismissal (task 95), which is the change UX-27
+  // wants announced — and the notice the hidden question stood as is gone.
+  await expect(page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' })).toHaveCount(1);
+  await expect(page.getByText('Păstrat: 0,125')).toHaveCount(0);
   // Laid out for the locale, every digit kept (§12.5.6's task-39 row (7)).
   await expect(restored).toContainText('0,125');
   // And the inputs come back carrying what was entered, which is the same claim one layer down.
@@ -1128,6 +1165,14 @@ test('B6 applies once B1 says the undertaking manufactures, and asks in m³ (UC-
   // whose layout supplies it — giving those two one of their own produces *two*, which is the same
   // defect with the opposite sign.
   await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(4);
+
+  // **UX-27 for the sector rule, which quotes no answer** (task 95): one note over the four questions, naming the B1
+  // question that brought them — the stored `nace:NACE_C1071` is an XBRL name and never reaches the sentence.
+  const sectorNote = page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' });
+  await expect(sectorNote).toHaveCount(1);
+  await expect(sectorNote).toContainText('„Codurile de clasificare sectorială NACE” în B1');
+  await expect(sectorNote).toContainText('Consumul total de apă');
+  await expect(sectorNote).not.toContainText('NACE_');
 
   // **UX-14's first branch, which B4 never exercises**: `m3` is the only unit the taxonomy admits
   // here, so it is *shown* and never asked — a chooser over one option is a control that cannot

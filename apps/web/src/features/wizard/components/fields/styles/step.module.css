@@ -123,3 +123,46 @@
   flex-wrap: wrap;
   gap: var(--space-2);
 }
+
+/* UX-27's note's two acts (task 95): the B1 answer's address, then *dismiss*, wrapping beneath each other when narrow. */
+.noteActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+/* UX-28's notice in a hidden field's place (task 95) — the field's label over a sunken, muted statement, so it reads as
+   something said about a question rather than a question to answer. Tokens only, so the dark map reaches it. */
+.retained {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-1);
+  background: var(--surface-sunken);
+}
+
+.retainedLabel {
+  margin: 0;
+  font: 600 15px/24px var(--font-text);
+  color: var(--text-default);
+}
+
+.retainedReason,
+.retainedValue {
+  margin: 0;
+  font: 400 15px/24px var(--font-text);
+  color: var(--text-muted);
+}
+
+/* The reporter's own words, which may run long: three lines, then the rest is kept rather than shown. */
+.retainedValue {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}

@@ -29802,3 +29802,95 @@ and `apps/admin` — and the api's worker, which loads the catalogues in both mo
   2's end — rows 95 and 133 keep it open. `pnpm lint` ran warm, and this task changed a **type** on the wire
   (`labelStanding` narrowed from `string`), which is the case the root `CLAUDE.md` says a warm lint proves less about;
   the Stage's cold run is where that is settled.
+
+## Task 95 — A conditional field says why it is asked, and a hidden answer is shown kept · 2026-10-09
+
+UX-27 and UX-28 on S-07. A field an applicability rule governs carries a dismissible note naming the B1 answer that
+brought it; a field the reporter is no longer asked, whose answer is kept, stands as a notice saying so. Rendering
+only, as the row said — the api has served `applicable` and its cause since task 91.3 — with one vocabulary mirrored
+into `@easyesg/contracts`. FR-28 delivers everything but the C modules' rules (80.1).
+
+### Decided before building
+
+**The four configured rules all put the governed field in another module than its B1 driver** — B8's turnover rate and
+B10's pay gap on headcount, B5's site questions on B1's sites, B6's water on the NACE answer — so nothing ever appears
+on the screen whose answer moved it, and *appears* had no reference on the wire. That was the open question, and the
+owner settled it with a second, in one batch of two, both the recommended options and both in §12.5.6's task-95 row:
+(1) a note at the field, read off each step read, its dismissal remembered in this browser and forgotten when the field
+is next seen not asked; (2) a notice in the hidden field's place, as the C9 artboard draws it, which leaves task 36.9's
+*not rendered* standing for the field. Two alternatives declined there: a change measured against this browser's last
+view of a step (silent on a first visit), and an announcement live on B1 (several step reads per driver write).
+
+### Two findings that changed the build
+
+- **An unanswered field reads `state: ok` since task 42.1**, so §6.2's *"`applicable: false` beside a state that is not
+  `missing`"* no longer tells a kept answer from none. *Retained* is judged by `@easyesg/validation`'s `isAnswered`,
+  which every reader judges an answer by (182/17); `answerOf` was exported from `answers-held.ts` for it rather than
+  re-read.
+- **B8's turnover rate is stored `0.125` and the field shows `0,125`** — a fraction, no sign. The kept-answer reading
+  first gave a percent its own shape with `%` appended, which would have quoted the kept answer as `0,125 %` beside a
+  field that never said so; a percent is now a number written as stored. Found by reading the existing B8 journey's
+  assertions before extending them.
+
+### How it is cut
+
+- **`@easyesg/contracts`**: `APPLICABILITY_CONDITION`, held to the generated enum at compile time like its siblings,
+  and the `ApplicabilityCause` alias — the wording branches on the kind, so the value must exist at runtime.
+- **`features/wizard/tools/`**, pure, each with a spec: `applicability-notes.ts` (notes per cause, `isRetained`, what is
+  laid out, where each note stands, the dismissal-set operations), `applicability-words.ts` (one sentence per condition
+  kind for the note and the hidden reason, and the kept answer's words), `kept-answer.ts` (what a hidden field holds, as
+  a description), and `unit-words.ts` — the unit map moved out of `StepField` when the notice became its second reader.
+- **`client/applicability/`**: the dismissal store, shaped for `useSyncExternalStore` — the same set for the same stored
+  string, and a write tells this page's readers, which the `storage` event never does — and the hook. **The first draft
+  read the store into state in an effect, and `react-hooks/set-state-in-effect` refused it**, rightly: an external store
+  is `useSyncExternalStore`'s, whose server snapshot (`null`) also gives the no-flash behaviour for free. The forgetting
+  is derived in render; the one effect writes it back to the store.
+- **`components/fields/applicability/`**: `ApplicabilityNote` — an inventory `Callout`, its action two controls, the B1
+  answer's `fieldHref` through `StepLink` and *Ascundeți nota* — and `RetainedNotice`, app-local (UX-89 as amended),
+  tokens only. `StepFields` lays out `laidOutFields` instead of `asked` and draws a hidden field as its notice; every
+  commit and every input stays on `asked`.
+- **The namespace is one constant**, `APPLICABILITY_MESSAGES` in `fields/shared/step-messages.ts`, per
+  `shared-namespace-declared-once` — written into both components as a literal first, and moved when the folder skill
+  was read against the diff.
+- `i18n/formats.ts` gains `alternatives`, Intl's disjunction, for the site rule's *"address, city or postal code"*.
+- Three locales authored, Romanian the source, formal register; the quotes are each locale's own.
+
+### Proven to bite
+
+- **The B8 journey** now asserts, at headcount 50, the note's sentence naming the B1 answer and the turnover rate, no
+  element key, and the link's address on B1; its dismissal surviving a reload **after hydration** — before it, the
+  server's HTML has no note and the absence could not fail; at 10, the notice's reason, its promise and *Păstrat: 0,125*;
+  and back at 50, the note again and the notice gone.
+- **The B6 journey** asserts the sector rule's note names the NACE question and never quotes `NACE_`.
+- `applicability-words.spec.ts` renders every kind and every hidden reason in all three catalogues and requires them
+  non-empty and distinct — `request.ts` renders a missing message as `''`, which no screenshot shows.
+- `dismissed-notes.spec.ts` stubs `localStorage`: **Node 26's own global answers `undefined` without
+  `--localstorage-file` and shadows jsdom's**, which is also the no-store case the module must survive, asserted too.
+
+### Skills, read against the diff
+
+- `one-idea-per-file`: four pure modules with specs; the store and its hook apart; each component one idea.
+- `one-kind-per-folder`: `fields/applicability/` and `client/applicability/` are files-only leaves under folder-only
+  parents; `shared-namespace-declared-once` applied as above.
+- `vercel-react-best-practices`: `rerender-` — notes, placement and the dismissed set are memoized where `StepFields`
+  re-renders on every autosave transition; `rendering-hydration-no-flicker` met by the server snapshot rather than an
+  inline script; `client-localstorage-schema` — the stored value is a bare list of element keys, read and filtered, never
+  cast. `server-serialization` untouched: nothing new crosses the boundary but the scope's two ids.
+- `vercel-composition-patterns`: no boolean prop; the note takes its note, its report and its dismiss.
+
+### Gates
+
+The change reaches `apps/web` and `packages/contracts`, whose dependents are the two front ends.
+- `pnpm lint` — red once, on the effect that set state, then clean; typecheck of `web`, `admin` and `contracts`.
+- `pnpm --filter @easyesg/web test`: 1,835, 51 of them new. `pnpm --filter @easyesg/admin test`: 298. `pnpm routes:check`.
+- `pnpm docs:check`: 48 claims — it found the Client Component count (206 → 207) and, once the row had moved, the
+  archive's counts.
+- `pnpm e2e:web --project identity --project expansion --project admin`, one build: 326 of 326. The server printed only
+  digest `2667547900`, twenty-seven times, and nothing else. **The namespace constant landed after that build**, so the
+  two journeys it touches ran again on the final source: 2 of 2.
+- **Two mutations, each run against a rebuilt bundle**: the store's write made a no-op turned B8 red at the line after
+  *Ascundeți nota*; a store keyed per page load — a dismissal that holds in the page and not across a reload — turned it
+  red at the assertion after the reload, which is the one an absence could otherwise have passed vacuously. Both
+  restored and compared byte for byte.
+- **Not run:** the api's suites, since the api did not change; `gates:clean` and the review agents, which are Stage 2's
+  end — row 133 keeps it open.
