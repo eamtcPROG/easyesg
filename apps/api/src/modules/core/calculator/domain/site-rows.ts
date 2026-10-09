@@ -6,10 +6,10 @@ import { B1_ELEMENT } from '@api/modules/core/disclosure/models/b1-element.model
  * §12.5.6's task-38.1 row).
  *
  * **The wizard's own rule, restated as a set**: a typed axis's rows are every ordinal any element on the axis is
- * stored at, plus one per site the period's snapshot holds (`read-wizard-step.use-case.ts`'s `answeredRows`, task
- * 36.6). A line's site must be one of those, so the calculator sums over exactly the sites the report discloses —
- * the boundary B1 states. The row a step shows a report with no sites at all is a place to start typing, not a site,
- * and is not one here.
+ * stored at, plus one per site the period's snapshot holds (`core/disclosure`'s `answeredRows`, in
+ * `domain/typed-axis-rows.ts`, task 36.6). A line's site must be one of those, so the calculator sums over exactly
+ * the sites the report discloses — the boundary B1 states. The row a step shows a report with no sites at all is a
+ * place to start typing, not a site, and is not one here.
  */
 
 /**

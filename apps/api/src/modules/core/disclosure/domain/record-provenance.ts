@@ -6,8 +6,8 @@ import type { DisclosureDefault } from '../models/wizard-step.model';
 import type { EntityDefaults } from './entity-defaults';
 
 /**
- * What in B1 still says what the company record said (task 180.3; FR-27, UX-109) — pure, and out of
- * `read-wizard-step.use-case.ts`, which task 133.2 is to split rather than grow.
+ * What in B1 still says what the company record said (task 180.3; FR-27, UX-109) — pure, so in `domain/` with the
+ * rest of what the step read computes rather than reads (task 133.2).
  *
  * Two answers the step read gives beside a field: **whether the value shown is the record's** — the reader's
  * *from the company record* marker — and **which site rows keep the company's name for the site**. Both rest on one

@@ -1,7 +1,7 @@
 # Tasks
 
 **What is left, in the order it will be delivered.** The closed rows are in
-[archived_tasks.md](archived_tasks.md) — 149 numbers and 262 of them — and moving them out is what
+[archived_tasks.md](archived_tasks.md) — 150 numbers and 263 of them — and moving them out is what
 lets this file answer *what is left* without a reader filtering a third of it away first.
 
 The order is the **Stage** sequence below, authored 12 Sep 2026 and **independent of the task
@@ -121,9 +121,10 @@ at a seat ceiling (142). The three batches that ordered that work are in git his
 
 **Three groups that were listed here have moved, by the placement rule's *earliest open sub-step***
 (amended 1 Oct 2026, project owner). Each had closed every row it held in this Stage and kept one tail
-scheduled later, and none of the tails is identity work: `51` is in Stage 2 immediately after task 41,
-because 51.2's outstanding-report and deadline notices (FR-164, FR-165) wait on 41.3; `133` is at the
-end of Stage 2 beside 133.2; `67` is in Stage 5 with A-03, A-04 and A-05 (67.5 … 67.8).
+scheduled later, and none of the tails is identity work: `51` went to Stage 2 after task 41, because
+51.2's outstanding-report and deadline notices (FR-164, FR-165) waited on 41.3, and `133` to the end of
+Stage 2 with 133.2 — both have since closed there; `67` is in Stage 5 with A-03, A-04 and A-05
+(67.5 … 67.8).
 
 **Identity's tail, named so the test is narrowed visibly rather than silently** (project owner,
 1 Oct 2026). Five rows complete something about accounts or security and stay where they are, each
@@ -149,15 +150,15 @@ for the reason given beside it:
 ## Stage 2 — Calculator and validation
 
 §15.4 #4, unchanged in content and now second rather than fourth. **Two groups opened in Stage 1
-finish here**, carried by the placement rule's *earliest open sub-step* with their closed rows. `51`
-sits immediately after task 41, because 51.2's outstanding-report and deadline notices name what is
-outstanding from 41.3's completion status. `133` sits at the end with its one open row, 133.2:
-`read-wizard-step.use-case.ts` is opened by this stage's work anyway, so the file is refactored once
-rather than twice.
+finished here**, carried by the placement rule's *earliest open sub-step* with their closed rows, and
+both have closed. `51` followed task 41, because 51.2's outstanding-report and deadline notices name
+what is outstanding from 41.3's completion status. `133` closed with 133.2, which split
+`read-wizard-step.use-case.ts` after this stage's calculator and validation work had opened it, so the
+file was refactored once rather than twice. What remains here came from task 182's restatement of the
+requirements.
 
 | # | Name | Scope | Description | Expected result | Related documents | Covered FR | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| **133** | **The api against *one behaviour per file*** | api | **Appended 11 Sep 2026** by task 132, from its measurement. The only file rule the owner scoped to the api — *the api's structure is good* took it out of the folder rules — and two files do not meet it. `core/disclosure/use-cases/read-wizard-step.use-case.ts` is **1,222 lines**: `ReadWizardStep` beside two private classes, `MemberResolver` and `OptionResolver`, and nine module-level helpers (`keyOf`, `newModuleCount`, `toCause`, `qualifiedDomainOf`, `answeredRows`, `chosenMembers`, `rowsOf`, `toField`, `derivationInputsFor`) — the largest source file in the repository, and the one whose docblock has the most to explain. `identity/account/use-cases/manage-totp.use-case.ts` holds **two exported use cases**, `ManageTotp` and `ConsumeRecoveryCode`. Six repositories declare a second class and are *not* on this list: it is a private transaction adapter, the same behaviour's second face, which is the reading *vocabularies stay whole* implies<br><br>**133.1** ✓ *The TOTP use case, split before the stage that rewrites it* — `identity/account/use-cases/manage-totp.use-case.ts` holds **two exported use cases** in one file — the measurement task 132 recorded, and the one *file* rule the owner scoped to the api. Split **here** rather than with its sibling because tasks 144 and 151 both amend this file: refactoring it immediately before or after the stage that rewrites it is two passes over one file. Nothing frozen cites a `133.x`, which is what the preamble's renumbering test permits → One exported use case per file; every caller unchanged<br>**133.2** *The wizard read, against the same rule* — `core/disclosure/use-cases/read-wizard-step.use-case.ts` — 1,222 lines holding one use case, two private resolver classes and nine helpers. Deferred to Stage 2, where the calculator and validation work already reaches the disclosure read, so the file is opened once rather than twice → The use case is a shell; the resolvers and helpers carry their own reasons | The two files split on the seam their own structure names — the resolvers and the pure helpers into files of their own under the kinds the module already has (`domain/` for what is pure; the anatomy is unchanged), the second use case into its own file — with every existing spec passing unchanged and no behaviour moved across a layer. `apps/api/CLAUDE.md`'s paragraph updated from *two files do not meet it* to none | — | — | TODO |
 | **186** | **One reporting period per fiscal year** | api+web | FR-21 (§12.5.6 task-182 identity and organization row, 182/10). A unique constraint on `(entity, fiscal year)` beside the no-overlap exclusion, and a refusal on open and on edit: 409 `period-fiscal-year-taken`, a problem type beside `period-overlaps`, with the contract regenerated. **Reverses** the decision of task 31.1 that left the year non-unique. **Before the constraint:** the migration looks for entities already holding a repeated year and the task states what happens to them, as a data step with a case (task 164). S-14 already blocks choosing a held year; it also shows the new refusal beside the year for a race or another client | A second period naming a held fiscal year is refused by the api and the database; `migrations:check` proves the constraint; FR-21 AC-13 passes | S-14 · 182/10 · arch §12.5.6 | FR-21 | TODO |
 | **187** | **Archived entities are offered no new work, and their periods ask for no attention** | web+api | FR-20 and FR-23 (§12.5.6 task-182 identity and organization row, 182/14, 182/16). S-06's new-report picker and the entry that opens a period on S-14 no longer offer an archived entity; S-13's Index keeps listing it. S-05's attention list leaves out the periods of an archived entity, which stay in the filings table. If `GET /periods` does not already carry the entity's status, it gains it, and the contract is regenerated | An archived entity is absent from both pickers and present on S-13; its periods are listed on S-05 and never counted as attention; FR-20 AC-7 and FR-23 AC-9 pass | S-06 · S-14 · S-13 · S-05 · 182/14 · 182/16 · arch §12.5.6 | FR-20, FR-23 | TODO |
 | **188** | **The IDNO's check digit** | pkg:validation+api+web | FR-16 and FR-107 (§12.5.6 task-182 identity and organization row, 182/12). `validateIdno` evaluates the check digit: the first twelve digits multiplied by the repeating weights 7, 3, 1 and summed, the sum modulo 10 being the thirteenth digit. Verified on 1003600005148 and 1017600033216; the source is StephenAbbott/opencheck PR #269 (`backend/opencheck/sources/asp_moldova.py`), which validated all 265,814 IDNOs in the State Register export of 14 Sep 2026. `checkDigits` becomes `true` or `false` for a well-shaped value, never `null`; the api refuses `false` with 400 `identifier-check-digits`, the type the LEI already uses; S-13 shows the same verdict inline; the spec carries both published numbers and a mutated last digit. A shared package has no narrow run: every dependent's gates follow. Rewrites the docblock that says the algorithm is not obtainable | A well-shaped IDNO with a wrong check digit is refused on entry by the api and inline on S-13; both published numbers are accepted; FR-16 AC-9 and AC-10 pass | S-13 · 182/12 · arch §12.5.6 | FR-16, FR-107 | TODO |

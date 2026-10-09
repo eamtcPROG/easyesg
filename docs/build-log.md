@@ -29894,3 +29894,110 @@ The change reaches `apps/web` and `packages/contracts`, whose dependents are the
   restored and compared byte for byte.
 - **Not run:** the api's suites, since the api did not change; `gates:clean` and the review agents, which are Stage 2's
   end — row 133 keeps it open.
+
+## Task 133.2 — The wizard read reads and composes; what it rules on is in `domain/`; task 133 closes · 2026-10-09
+
+`core/disclosure/use-cases/read-wizard-step.use-case.ts` met *one behaviour per file* (`file-one-behaviour-api`): the
+use case beside two private resolver classes and nine module-level helpers. **It had grown to 1,345 lines from the
+1,222 the row measured**, through seven commits on the step read since: 180.3's and 38.4's before this stage, and 183's,
+39's, 41's, 42's and 94's within it, which is the row's reason for waiting until this stage. It is 544 now, and the rest is eleven files, each with its reason and its
+spec. No behaviour moved: every existing spec passes unchanged, and the step read's output is held by
+`wizard.e2e-spec.ts`, which passed whole.
+
+### Decided before building
+
+No open question: where a file sits is a routine judgement, and the row named the kind. The judgements, and the
+reasons they went the way they did:
+
+- **`domain/` taken literally, so the module gains one.** It had none. Its pure helpers sat in `use-cases/`
+  (`applicability.ts`, `entity-defaults.ts`, `record-provenance.ts`) and `models/`. **Those three moved into `domain/`
+  with their specs, content unchanged**, because two of the new pure files need `soleCause` and `EntityDefaults` from
+  them, and leaving them would have had `domain/` import from `use-cases/`, outward. One importer outside the folder was
+  repointed (`applicability-rules.service.ts`); `architecture.md` cites them by bare filename, which still resolves.
+  `models/`'s pure rules (`axis-leaves`, `evaluation-scope`, `omission.model`) stay. Each is a rule over its model's own
+  vocabulary, and the row asked for none of them to move.
+- **The resolvers stay beside the use case, in `use-cases/`, not in `domain/`.** Both read a port, the registry and,
+  for `OptionResolver`, the organization's vocabularies, and both memoise for the one step read they live for. No
+  `domain/` file in the api takes a port, and the skill's *"under `domain/` where it is pure"* excludes them. Each now
+  asks for only what it calls: `Pick<TaxonomyRegistry, 'axis'>`, `Pick<TaxonomyRegistry, 'enumeration'>`,
+  `Pick<RegisteredTaxonomy, 'standard' | 'version'>`, and `OptionResolver` its own two-operation `OptionVocabulary`.
+  The use case's `WizardVocabulary` keeps three, for `legalFormMemberFor`. Its docblock said *two operations* while
+  listing three; corrected.
+- **What stays in the class is what reads**: `pinned`, `stored`, `defaultsFor`, `omittedModules`, `applicabilityOf`,
+  `ancestryOf`, each a port read, plus `selectedOmissions`, four lines over what `stored` read. `step()` stays the
+  composition of the resolvers and the pure functions. `modules()`'s counting loop moved whole as `moduleSummaries`: the
+  row named `newModuleCount`, and the loop is the idea that accumulator exists for.
+- **Two constants became shared** (the country and the published-classification language), so they moved to
+  `constants/classification.constants.ts`, whose docblock says which files read each.
+
+The files: `domain/` gains `stored-values` (`keyOf`, `indexStored`), `applicability-cause` (`toCause`),
+`qualified-domain`, `module-progress`, `typed-axis-rows` (`answeredRows` with `withRecordSiteNames`, one idea in two
+steps), `chosen-members`, `field-rows` (`rowsOf`), `disclosure-field` (`toField`) and `derivation-inputs`.
+`use-cases/` gains `member-resolver` and `option-resolver`. `testing/step-read.fakes.ts` holds the builders the new
+specs share; the moved specs keep their own.
+
+### Changed on the way, none of it behaviour
+
+- **`admits(axis, member)` takes `{ axis, member }`**, and `chosenMembers`' callback with it: two adjacent strings,
+  which root CLAUDE.md's adjacent-parameter rule names. Swapped, the leaf check answers false and a chosen pollutant
+  loses its row with nothing failing. `toField` keeps its three positional parameters, because they differ in type, which
+  the same rule leaves alone.
+- **`rowsOf` lost two inputs it never read**, `element` and `stored`.
+- **Comments moved verbatim except where the move changed their truth**: *twenty lines down* in `answeredRows`;
+  `qualifiedDomainOf`'s *the two readers*, of three, now names none; *cleared back to `missing`*, which 182/17 made a row
+  holding nothing in `ok`; *the four shipped rules*, an outside count; `MemberResolver.answerable`'s docblock restated
+  `axis-leaves.ts`'s reasoning and now says only what is the resolver's, the cache. The UC-19 docblock had been attached
+  to `ReadWarnings`, which sat between it and the class, and two constants sat among the imports.
+- **`apps/api/CLAUDE.md`'s paragraph** now says no file fails the rule, and says where a resolver and a pure helper go.
+  Its *five such* transaction adapters measured nine (repositories declaring a second class); the count was removed rather
+  than corrected, since an outside count in prose is what `reason-docblock-carries-the-why` refuses.
+
+### Proven to bite
+
+57 cases in eleven specs, where the file had no unit spec at all. **26 mutations, one at a time, each of its own spec**:
+the key's separator, the cause's label, the qualifier's test, the module count's `continue` and its omitted flag,
+first-wins naming, a cleared answer still naming a site, the record's names laid under rather than over, the members'
+sort and the admits filter, the ordinals' sort and the unassigned classification row, currency on every kind, a legacy
+verdict state projected, the label's own standing, the inputs' sort and their source filter, both resolvers' caches, the
+leaves rule in the picker, the borrowed-language note, the total member's lead, a typed axis as a classification, the
+NACE classifier's names, and the domain lookup unqualified. All 26 went red. **One first appeared to survive**, the region
+names' `fallback: 'none'`, because the replacement hit the docblock's mention of the option before the option; applied to
+the option itself, red.
+
+### Searched
+
+- `read-wizard-step` across `apps/api/src` and `test`, the docs set, both CLAUDE.md files and `.agents/skills`. Its four
+  importers take the class and `WizardVocabulary`, which stay. `calculator/domain/site-rows.ts` named `answeredRows` by
+  the old file and was repointed. `record-provenance.ts`'s docblock named 133.2 as a split to come and was rewritten.
+- **The rule's shape elsewhere**: every `*.use-case.ts` in the api, counting top-level classes and functions. None
+  declares a second class. `core/entity/use-cases/search-nace-codes.use-case.ts` holds `NaceCodeLookup` beside seven
+  pure matching helpers: the same split at smaller scale, offered as a follow-up rather than taken here, since the row
+  named two files. `manage-reporting-entity` and `notify-factor-set-replaced` each hold two small helpers of their one
+  behaviour, which the rule does not reach.
+
+### Skills, read against the diff
+
+- `one-idea-per-file`: `file-one-behaviour-api` is the row's rule; `pure-logic-leaves-the-component` is why each pure
+  file has its spec; `reason-docblock-carries-the-why` decided the docblocks above and the removed count;
+  `reason-measure-structural-claims` is the mutation pass.
+- `nestjs-best-practices`: nothing Nest-facing changed. The use case is still built by `useFactory` in
+  `disclosure.module.ts`, its argument list unchanged, and injected by `validation.module.ts`'s `EVALUATION_SCOPES`. No
+  provider was added, because the resolvers are built per step read inside the use case, as before.
+
+### Gates
+
+The change reaches `apps/api` alone, and a use case the worker runs: the day's notice check computes the validation
+scope through it.
+- `pnpm lint`; `pnpm --filter @easyesg/api typecheck`; `pnpm docs:check`, 48 claims, after the archive's counts moved.
+- `pnpm --filter @easyesg/api test`: 256 suites, 2,094 cases.
+- `pnpm e2e`: **red once, on nothing this task touched.** Task 206's `outbox.e2e-spec.ts` uses
+  `validation.report_notice_sweep/2026-10-09` as a sample key to probe the table's check constraint. That is the very key
+  the worker's scheduler writes for today's sweep, and an `e2e:worker` run at 08:29 UTC today, at an earlier close, had
+  left it in the long-lived test stack. The sample insert met the unique index before the constraint it probes. **The
+  plain remedy, not a change to that test**: `pnpm test:down`, then 66 of 66 suites and 1,654 cases. The collision can
+  only happen on 9 Oct 2026, because the sample's date is fixed and the scheduler only writes the current day. CI runs `e2e` before
+  `e2e:worker` on a fresh stack. A second local run today after `e2e:worker` would meet it again.
+- `pnpm e2e:worker`: 13 of 13. Both logs carry no unhandled rejection and no dependency warning.
+- **Not run:** `openapi:check` and `migrations:check`, with no controller, DTO or migration touched; `e2e:web`, with no
+  front end touched and the step read's output unchanged. **Not a Stage close**: Stage 2 keeps 186 … 189, task 182's
+  rows, so `gates:clean` and the three review agents wait for the last of those.

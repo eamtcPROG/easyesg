@@ -938,11 +938,14 @@ not reach this app: *"the api's structure is good"*, so the anatomy above is unc
 case, a service, a controller, a repository or a consumer is one file each. `<module>.errors.ts` —
 the module's closed set of refusals — and a `dto/` file — one wire object with its parts — are
 vocabularies and stay whole; a repository's private transaction adapter (`AccountTransactionAdapter`
-beside `AccountStoreRepository`, five such) is the same behaviour's second face and stays beside
-it. One file does not meet it, task 133.2's: `core/disclosure/use-cases/read-wizard-step.use-case.ts`
-— 1,222 lines, one use case beside two private resolver classes and nine helpers. The second,
-`identity/account/use-cases/manage-totp.use-case.ts`, held `ManageTotp` and `ConsumeRecoveryCode`
-until task 133.1 gave the latter `consume-recovery-code.use-case.ts`.
+beside `AccountStoreRepository`) is the same behaviour's second face and stays beside it. **No file
+fails it since task 133.** The two task 132 measured were `identity/account/use-cases/manage-totp.use-case.ts`,
+which held `ManageTotp` and `ConsumeRecoveryCode` until 133.1 gave the latter its own file, and
+`core/disclosure/use-cases/read-wizard-step.use-case.ts`, one use case beside two private resolver
+classes and nine helpers until 133.2. The resolvers read the registry, so they sit beside the use case
+in `use-cases/`; the helpers are pure, so they sit in the module's `domain/`, each with its spec. That
+split is the shape to copy: **`domain/` holds pure functions over data, and a collaborator that reads a
+port and keeps what it read stays beside the use case it serves.**
 
 A module is a unit of ownership, not a URL prefix. Several own no routes at all
 (`platform/configuration`, `billing/entitlement`); that is correct. **`core/comparatives` left

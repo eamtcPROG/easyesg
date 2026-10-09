@@ -7,7 +7,7 @@ import {
   type ApplicabilityRule,
 } from '../models/applicability.model';
 import type { ApplicabilityRules } from '../interfaces/applicability-rules.interface';
-import { isDecimalText } from '../use-cases/applicability';
+import { isDecimalText } from '../domain/applicability';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
