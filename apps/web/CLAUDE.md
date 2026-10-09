@@ -405,10 +405,13 @@ Five things to know before touching it:
   rail and re-authentication — so the bar's indicator, the exit's warning and the organization switch all count its
   lines. **The durable store now recognises each shape it reads back** (`storedQueue`): it read `elementKey` alone, so a
   queue holding a derivation input was emptied on reload from task 36.10 until then.
-- **Two required slots are `null` with their owners named**: `help` (OQ-59 — no source for UX-17's
-  sentences exists) and `notAvailable` (task 36.13). `enumeration` kinds render as text until task
-  36.2 brings the domain to the browser; `text_block` is a plain `TextArea` until 36.2's narrative
-  control. Every one of these is a different control arriving with its module, not a boolean prop.
+- **Every field's help is the api's** (tasks 91.1, 94): EFRAG's documentation label where it publishes
+  one, the platform's own sentence for every other element, with `helpStanding` beside it — so
+  `StepField` passes `field.help` and adds nothing of its own. UX-30's statement on the
+  omitted-disclosures field is that field's help since task 94, not a notice the screen keeps;
+  `architecture.md` §12.5.6's task-94 row says why it stays platform-authored. *(This bullet named
+  `help`, `notAvailable`, `enumeration` and `text_block` as slots still waiting on their tasks until
+  9 Oct 2026; tasks 36.2, 36.13 and 91.1 had built the last three, and task 94 the first.)*
 
 ### Copy
 

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Logger } from '@nestjs/common';
 import { LABEL_STANDING, LOCALES } from '@easyesg/i18n';
 import { TaxonomyRegistryService } from '@api/modules/platform/taxonomy/services/taxonomy-registry.service';
@@ -105,7 +107,10 @@ describe('the shipped VSME label catalogues', () => {
       // kept the assertion and dropped the calls. This is broader than the null-checks above: it is
       // what catches a spurious log on a resolution that otherwise succeeds.
       for (const locale of LOCALES) {
-        for (const element of elements) labels.label({ version, locale, key: element.key });
+        for (const element of elements) {
+          labels.label({ version, locale, key: element.key });
+          labels.help({ version, locale, key: element.key });
+        }
         labels.labels({ version, locale });
         labels.standing({ version, locale });
       }
@@ -113,7 +118,7 @@ describe('the shipped VSME label catalogues', () => {
     });
   });
 
-  describe.each(registeredVersions)('%s — help and members (task 91.1)', (version) => {
+  describe.each(registeredVersions)('%s — help and members (tasks 91.1, 94)', (version) => {
     const taxonomy = registry.taxonomy({ standard: TAXONOMY_STANDARD.VSME, version });
 
     it('labels every member of every vsme enumeration in every locale, without logging', () => {
@@ -184,17 +189,74 @@ describe('the shipped VSME label catalogues', () => {
       expect(errors).not.toHaveBeenCalled();
     });
 
-    it('carries help only for registered elements, and for at least one', () => {
-      const keys = new Set((taxonomy?.elements ?? []).map((e) => e.key));
-      let documented = 0;
-      for (const element of keys) {
-        for (const locale of LOCALES) {
-          const help = labels.help({ version, locale, key: element });
-          if (help !== null) documented += 1;
+    /**
+     * **Every registered element carries help in every locale** (task 94; UX-17). Until task 94 this
+     * asserted *at least one*, because EFRAG documents a sixth of the elements and the rest rendered
+     * none; the platform's own sentences close the rest, so the claim is now total and a re-extraction
+     * that dropped an element's help — or a new element nobody wrote help for — fails here.
+     */
+    it.each(LOCALES)('gives every registered element help in %s', (locale) => {
+      const keys = (taxonomy?.elements ?? []).map((e) => e.key);
+      expect(keys.length).toBeGreaterThan(0);
+      const helpless = keys.filter((key) => !labels.help({ version, locale, key })?.text);
+      expect(helpless).toEqual([]);
+    });
+
+    /**
+     * **Each entry's standing is the source it came from**, read off the files on disk rather than
+     * through the loader under test (task 94). EFRAG's `documentation` labels take the locale's
+     * standing — official in English — and everything in `help/platform/` is platform-authored in
+     * every locale. The failure this exists for is the platform's English sentences paired with the
+     * English *label* standing, which would present them to a reader as EFRAG's own words with every
+     * other assertion in this file green.
+     */
+    it('pairs each help entry with the standing of the file it came from', () => {
+      const directory = resolve(process.cwd(), '../../packages/i18n/catalogues/disclosure', version, 'help');
+      const read = (path: string): Record<string, string> =>
+        JSON.parse(readFileSync(resolve(directory, path), 'utf8')) as Record<string, string>;
+      for (const locale of LOCALES) {
+        const documented = read(`${locale}.json`);
+        const authored = read(`platform/${locale}.json`);
+        expect(Object.keys(authored).length).toBeGreaterThan(0);
+        for (const [key, text] of Object.entries(documented)) {
+          expect({ locale, key, help: labels.help({ version, locale, key }) }).toEqual({
+            locale,
+            key,
+            help: { text, standing: labels.standing({ version, locale }) },
+          });
+        }
+        for (const [key, text] of Object.entries(authored)) {
+          // Literal on purpose (CLAUDE.md's test exception): the wire value the export will state.
+          expect({ locale, key, help: labels.help({ version, locale, key }) }).toEqual({
+            locale,
+            key,
+            help: { text, standing: 'platform_authored' },
+          });
         }
       }
-      // Sparse by construction — EFRAG documents 22 of 143 — but never empty.
-      expect(documented).toBeGreaterThan(0);
+    });
+
+    /**
+     * **UX-30's statement rides this element's help, so the help must stay the platform's** (task 94;
+     * `architecture.md` §12.5.6's task-94 row). S-07 says at the point of entry that the omitted-
+     * disclosures list goes into the report, and since task 94 it says so in this sentence rather
+     * than in a fallback the screen kept. A release in which EFRAG documents the element would move
+     * its help to EFRAG's words, which need not say it — so that release fails here, and somebody
+     * decides where the statement goes, instead of the screen silently losing it.
+     */
+    it('keeps the omitted-disclosures help platform-authored in every locale', () => {
+      for (const locale of LOCALES) {
+        const help = labels.help({
+          version,
+          locale,
+          key: 'ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation',
+        });
+        expect({ locale, standing: help?.standing }).toEqual({ locale, standing: 'platform_authored' });
+      }
+    });
+
+    it('carries help for nothing the taxonomy does not register', () => {
+      const keys = new Set((taxonomy?.elements ?? []).map((e) => e.key));
       // The other direction, which a probe for an unknown key cannot see (gate-integrity review):
       // every key the catalogue carries is an element the taxonomy registers. A version directory
       // is never edited, so wording outlives the element — the same guard the labels have.
@@ -252,6 +314,11 @@ describe('the shipped VSME label catalogues', () => {
       // from a version it was never authored under is what version pinning exists to prevent.
       expect(labels.labels({ version: '2030-01-01', locale: 'ro' })).toBeNull();
       expect(labels.standing({ version: '2030-01-01', locale: 'ro' })).toBeNull();
+    });
+
+    it('logs a help miss too, since every registered element carries help (task 94)', () => {
+      expect(labels.help({ version: '2026-05-01', locale: 'en', key: 'NoSuchElement' })).toBeNull();
+      expect(errors).toHaveBeenCalledWith(expect.stringContaining('NoSuchElement'));
     });
 
     it('does not log for a standing question, so one bad pin is not a line per locale', () => {

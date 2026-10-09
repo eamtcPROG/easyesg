@@ -1510,7 +1510,6 @@
           "resume": "Reveniți la completare",
           "recorded": "Motiv înregistrat · cititorul raportului îl va vedea"
         },
-        "omissionNotice": "Această declarație intră în raport: cine îl citește vede care informații au fost omise ca fiind clasificate sau sensibile — nu și motivul, pe care standardul nu îl cere.",
         "prior": "Perioada precedentă: {value}",
         "sync": {
           "queued": "În așteptare",

@@ -1510,7 +1510,6 @@
           "resume": "Answer this field after all",
           "recorded": "Reason recorded · a reader of the report will see it"
         },
-        "omissionNotice": "This declaration goes into the report: whoever reads it sees which disclosures were omitted as classified or sensitive — not why, which the standard does not ask for.",
         "prior": "Prior period: {value}",
         "sync": {
           "queued": "Queued",

@@ -33,6 +33,7 @@ const field = (over: Partial<DisclosureField>): DisclosureField => ({
   label: null,
   labelStanding: null,
   help: null,
+  helpStanding: null,
   options: null,
   defaultValue: null,
   valueNumeric: null,

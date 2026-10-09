@@ -1513,7 +1513,8 @@ test('a section declared omitted reads as a third state on the rail (UC-30, UX-2
   await expect(declaration).toBeVisible();
 
   // **UX-30, at the point of entry**: the interface says a third party reads this, before it is
-  // made. EFRAG publishes no help for this element, so the words are the platform's.
+  // made. EFRAG publishes no help for this element, so the words are the platform's — since task 94
+  // the element's own help rather than a notice the screen kept.
   await expect(declaration).toContainText('intră în raport');
 
   // Before: B7 counts like any other module.

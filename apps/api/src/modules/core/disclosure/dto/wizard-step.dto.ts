@@ -15,7 +15,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { LOCALES, type Locale } from '@easyesg/i18n';
+import { LABEL_STANDING, LOCALES, type LabelStanding, type Locale } from '@easyesg/i18n';
 import { DISCLOSURE_KIND } from '@easyesg/vsme';
 import { PERIOD_TYPE } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
@@ -331,20 +331,30 @@ export class DisclosureFieldDto {
 
   @ApiProperty({
     nullable: true,
-    type: String,
+    enum: Object.values(LABEL_STANDING),
     description:
-      "Whether the wording is EFRAG's own or platform-authored. Carried per field because it " +
+      "Whether the label's wording is EFRAG's own or platform-authored. Carried per field because it " +
       'travels with the text — of three locales only English is official.',
   })
-  readonly labelStanding: string | null;
+  readonly labelStanding: LabelStanding | null;
 
   @ApiProperty({
     nullable: true,
     type: String,
     description:
-      "EFRAG's documentation label for the element, or null where the package carries none (UX-17).",
+      "The element's help (UX-17): EFRAG's documentation label where the package carries one, the " +
+      "platform's own sentence otherwise. Null only where the catalogue misses it.",
   })
   readonly help: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    enum: Object.values(LABEL_STANDING),
+    description:
+      "Whether the help is EFRAG's own or platform-authored — the help's own standing, not the " +
+      "label's: the platform's help is authored in every locale, English included. Null where help is.",
+  })
+  readonly helpStanding: LabelStanding | null;
 
   @ApiProperty({
     nullable: true,
@@ -458,6 +468,7 @@ export class DisclosureFieldDto {
     this.label = field.label;
     this.labelStanding = field.labelStanding;
     this.help = field.help;
+    this.helpStanding = field.helpStanding;
     this.options = field.options === null ? null : field.options.map((option) => new DisclosureOptionDto(option));
     this.defaultValue = field.defaultValue === null ? null : new DisclosureDefaultDto(field.defaultValue);
     this.valueNumeric = field.valueNumeric;

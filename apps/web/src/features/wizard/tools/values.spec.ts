@@ -76,6 +76,7 @@ const shaped = (over: Partial<DisclosureField> & { elementKey: string }): Disclo
   label: null,
   labelStanding: null,
   help: null,
+  helpStanding: null,
   options: null,
   defaultValue: null,
   valueNumeric: null,

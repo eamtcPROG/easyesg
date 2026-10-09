@@ -73,6 +73,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     /** The filing's currency on a monetary element; null on every other kind (task 36.12). */
     currency: string | null;
     help: string | null;
+    helpStanding: string | null;
     options: { value: string; label: string | null; code: string | null }[] | null;
     defaultValue: {
       valueText: string | null;
@@ -290,7 +291,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     expect(modules.find((m) => m.module === 'B1')?.answered).toBe(1);
   });
 
-  it('offers each choice field its answers, worded in the request’s locale, and help where EFRAG documents it (task 91.1)', async () => {
+  it('offers each choice field its answers, worded in the request’s locale, and help on every field (tasks 91.1, 94)', async () => {
     const reportId = await createReport(await openPeriod(2026));
 
     const step = objectOf<Step>((await http()
@@ -321,14 +322,35 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     expect(country?.options?.map((o) => o.value)).toEqual(['country:MD']);
     expect(country?.options?.[0]?.label).toBeNull();
 
-    // A field that is not a choice offers nothing, and help is present exactly where published.
+    // A field that is not a choice offers nothing.
     const employees = step.fields.find((f) => f.elementKey === 'NumberOfEmployees');
     expect(employees?.options).toBeNull();
-    expect(employees?.help).toBeNull();
-    const certifications = step.fields.find(
+
+    // **Every field carries help since task 94** — EFRAG's where it documents the element, the
+    // platform's otherwise — so a B1 field without it is a catalogue the wire lost.
+    expect(step.fields.filter((f) => !f.help).map((f) => f.elementKey)).toEqual([]);
+
+    // **And the help's standing is its own, which only English can show**: there the label is
+    // EFRAG's own for every field, while the help is EFRAG's for a documented element and the
+    // platform's for the rest. A wire that copied the label's standing onto the help would answer
+    // `official` for both, and in Romanian — platform-authored throughout — it could not be seen.
+    const english = objectOf<Step>((await http()
+      .get(`/api/v1/reports/${reportId}/modules/B1`)
+      .set(editor.authorization)
+      .set('Accept-Language', 'en')
+      .expect(200)).body);
+    const authored = english.fields.find((f) => f.elementKey === 'NumberOfEmployees');
+    expect({ label: authored?.labelStanding, help: authored?.helpStanding }).toEqual({
+      label: 'official',
+      help: 'platform_authored',
+    });
+    const documented = english.fields.find(
       (f) => f.elementKey === 'DescriptionOfSustainabilityRelatedCertificationsOrLabels',
     );
-    expect(certifications?.help).toBeTruthy();
+    expect({ label: documented?.labelStanding, help: documented?.helpStanding }).toEqual({
+      label: 'official',
+      help: 'official',
+    });
   });
 
   it('writes the same row on a retry, because the key is natural (FR-38)', async () => {

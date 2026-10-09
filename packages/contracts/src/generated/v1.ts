@@ -3835,10 +3835,18 @@ export interface components {
             order: number;
             /** @description Null where the pinned version carries no label for this element in this locale. */
             label: string | null;
-            /** @description Whether the wording is EFRAG's own or platform-authored. Carried per field because it travels with the text — of three locales only English is official. */
-            labelStanding: string | null;
-            /** @description EFRAG's documentation label for the element, or null where the package carries none (UX-17). */
+            /**
+             * @description Whether the label's wording is EFRAG's own or platform-authored. Carried per field because it travels with the text — of three locales only English is official.
+             * @enum {string|null}
+             */
+            labelStanding: "official" | "platform_authored" | null;
+            /** @description The element's help (UX-17): EFRAG's documentation label where the package carries one, the platform's own sentence otherwise. Null only where the catalogue misses it. */
             help: string | null;
+            /**
+             * @description Whether the help is EFRAG's own or platform-authored — the help's own standing, not the label's: the platform's help is authored in every locale, English included. Null where help is.
+             * @enum {string|null}
+             */
+            helpStanding: "official" | "platform_authored" | null;
             /** @description The answers a choice field offers; null for every kind that is not an enumeration. */
             options: components["schemas"]["DisclosureOptionDto"][] | null;
             /** @description What the field would hold if the reporter accepted what the platform already knows — the entity record, or the report’s own scope. Null once any row is stored for this key, and null for every field the platform cannot answer. Committed by the client on blur or step change; never stored by the read. */

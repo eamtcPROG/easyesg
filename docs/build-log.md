@@ -29689,3 +29689,116 @@ The change reaches `apps/web` alone, and the browser suite's helpers.
   only digest `2667547900` and a calculator journey's deliberate missing revision.
 - **Not run:** the admin project, since nothing the console draws changed; the api's suites, since the api did not;
   `gates:clean` and the review agents, which are Stage 2's end.
+
+## Task 94 — Help for every element, the platform's beside EFRAG's, each with its own standing · 2026-10-09
+
+UX-17's one or two visible sentences under every field, for the 121 of 143 elements EFRAG documents nothing for.
+Authored in three locales into `help/platform/` at both registered versions, so a field now always carries help;
+in English that help is EFRAG's on 22 elements and the platform's on 121, and the wire says which, per field.
+FR-24 is Built; FR-31's UX-30 half is delivered.
+
+### Decided before building
+
+One batch of three, all recorded in §12.5.6's task-94 row: (1) the platform's help in `help/platform/`, the folder
+being the standing, joined with EFRAG's by a function that refuses an element both carry, and `helpStanding` on the
+wire; (2) UX-30's statement as the omitted-disclosures element's own help, the screen's fallback retired and the
+element pinned platform-authored by a spec — which settles task 36.13's recorded deferral the way its assumption
+anticipated; (3) **NFR-23's sign-off left at the pilot's editorial pass**, the owner's choice over a new row for the
+pass, so the archived row's expected result was rewritten to what was decided rather than claiming a record that does
+not exist. One call taken in the build and recorded as row (4): the help states the standard, not national law.
+
+### What the content rests on
+
+- **The standard's requirement for each element**, said in plain words with an example where one helps, no paragraph
+  references (UX-17 puts those behind disclosure). **EFRAG's Digital Template 1.3.0 supplied three facts** from its own
+  cell hints, read from the workbook in `config/efrag/` rather than recalled: the GPS format (`latitude,longitude`,
+  several locations separated by whitespace), water consumption as withdrawal minus discharge from production
+  processes, and the high climate impact sectors as NACE sections A to H and L.
+- **Each locale uses its labels' own terms**, so a sentence never names a concept differently from the field above it:
+  *охват* and *по месту потребления* in Russian, *domeniul de aplicare* and *pe bază de amplasare* in Romanian. Where
+  EFRAG's help uses the *Calculation:* shape (totals, ratios) the platform's does too; a yes-or-no question quotes the
+  screen's own word in each locale — “Yes”, „Da”, «Да» — read from the web catalogue.
+- **Where the standard's test is a threshold the help cannot state whole, it gives the test's examples instead**: the
+  Paris-aligned benchmark exclusion names fossil-fuel, tobacco and controversial-weapons revenue, not the percentages.
+- **Mechanical checks, which catch copy errors and not terminology**: the 121 keys equal the gap in both versions
+  exactly, three distinct renderings per entry, no value repeated within a locale, Romanian's comma-below `ș` and `ț`
+  (never the cedilla forms), Cyrillic only in Russian and none in the other two, and no straight quotes.
+
+**Two findings for the editorial pass, left untouched because they are terminology, which is its subject:**
+- **The Romanian and Russian labels of the male training-hours element read as *per employee*** — *per angajat*, *на
+  одного работника* — because the masculine form is also the generic one; only the female label's grammar marks its
+  gender. The platform's help names the gender in all four training-hours entries, so the field is unambiguous, but the
+  label is the 2026 versions' own wording.
+- **Task 91.1's Russian help says *областей 1 + 2 + 3* and *по месту расположения*** where the Russian labels say
+  *охват* and *по месту потребления* — two terms for one concept inside one version. The new help follows the labels.
+
+### How it is cut
+
+- **`packages/i18n`**: six catalogue files; the README gains the layout of all five catalogue kinds and a section on the
+  two help sources; the parity suite walks `help/platform/` as a third sub-catalogue and refuses an element in both
+  help folders, per locale, naming it.
+- **`apps/api`**: `platform/localization/domain/disclosure-help.ts` — `joinHelp`, pure, with its spec — because a join
+  with a refusal is logic, which `one-idea-per-file`'s `pure-logic-leaves-the-component` sends to `domain/`. The loader
+  builds a version's help in one `helpOf` call and names each version once as a constant: `sonarjs/no-duplicate-string`
+  refused the version literal at four sites, which was the right refusal. `help()` now logs a miss as `label()` does,
+  since a miss is a catalogue defect rather than the ordinary case. `helpStanding` joins the model, the DTO and the
+  step read, and **`labelStanding` is typed by `LABEL_STANDING` too** — it was a bare `string` on the wire, the
+  vocabulary rule's *derive every surface* applied where it holds once the second standing was being derived.
+- **`packages/contracts`** regenerated: both standings are the two-member enum.
+- **`apps/web`**: the fallback, its constant and the `omissionNotice` key in three locales are gone; six spec fixtures
+  gain `helpStanding`. **`step-fields.tsx`'s docblock was wrong twice** — help *"sparse"*, and `notAvailable`
+  *"passed as `null` on purpose"*, untrue since `StepField` took the slot — and `apps/web/CLAUDE.md`'s wizard bullet
+  named four slots as waiting on tasks three of which had shipped. Searched for the shape (`22 of 143`, `sparse`,
+  `help: null`, `renders no help`) across code and docs; what remains is history in rows that say so.
+- **`tools/extract-vsme-labels.mjs`**: its docblock says the script never writes `help/platform/`, and why.
+- **Documents**: §12.5.6's task-94 row; the task-91.1 row, the task-36.13 row (its deferral discharged) and OQ-59
+  cross-logged; UX-17 marked met and UX-30 cross-logged; FR-24 Built with AC-6 and a history line; FR-31's delivered
+  list, behaviour item 4, surfaces and history.
+
+### Proven to bite
+
+- **Platform help paired with the locale's standing** — the defect per-entry standing exists for: four red, the
+  file-by-file pairing case and the omitted-disclosures pin in each version; restored.
+- **One version's Romanian platform import replaced by `{}`**: four red — coverage in `ro`, the pairing, the pin, and
+  *resolves the whole taxonomy without logging*, since `help()` now logs; restored.
+- **A platform sentence left unpadded under UX-94's harness**: the expansion spec red. It read the first help entry,
+  which is EFRAG's, so it is now every entry; restored.
+- **An EFRAG-documented key added to the platform's Romanian**: the parity suite's disjointness case red, beside the
+  key-space and distinct-rendering cases; restored, and the restored file compared byte for byte with its twin.
+- **The api e2e reads B1 twice**: in Romanian every field has help, and in English the help's standing is told apart
+  from the label's — `official` over `platform_authored` on the number of employees, `official` over `official` on the
+  certifications. A Romanian read could not see the difference, both standings being authored there.
+
+### Skills, read against the diff
+
+- `one-idea-per-file`: `joinHelp` out of the loader into `domain/` with a spec (`pure-logic-leaves-the-component`);
+  the loader's *"ten imports"* and *"all eighteen catalogues"* replaced by statements that cannot go stale with a count.
+- `nestjs-best-practices`: `api-use-dto-serialization` — the new member crosses through the DTO's constructor;
+  `devops-use-logging` — the miss is `Logger.error` naming key, version and locale. `error-throw-http-exceptions`
+  declined by name: `joinHelp`'s throw is a load-time build defect, `readStanding`'s shape, not a request refusal.
+- `vercel-react-best-practices`: `server-serialization` considered and declined — the field crosses to the client
+  whole and now carries one short string the screen does not read, as `labelStanding` already did; nothing else
+  reaches a deleted branch and constant.
+- `one-kind-per-folder`: no file was added under `apps/web/src`.
+
+### Gates
+
+The change reaches `packages/i18n` and `packages/contracts`, so every dependent's row ran — `apps/api`, `apps/web`
+and `apps/admin` — and the api's worker, which loads the catalogues in both modes.
+- `pnpm lint` — red once, on the version literals above, then clean; and the typecheck of all five workspaces touched.
+- `pnpm --filter @easyesg/i18n test`: 160. `pnpm --filter @easyesg/api test`: 2,037 in 245 suites.
+- `pnpm openapi:check`, with the regenerated contract staged.
+- `pnpm e2e`: 1,654 in 66 suites — **after a first attempt that never started**: Docker Desktop was not running, the
+  test stack could not come up, and the pre-hook failed before any suite ran. Started, and run again. The log carries
+  no *no help for element* line and no error.
+- `pnpm e2e:worker`: 13, nothing logged — the boot proof for the mode in which a catalogue overlap would now stop the
+  worker from loading.
+- `pnpm --filter @easyesg/web test`: 1,784. `pnpm --filter @easyesg/admin test`: 298. `pnpm routes:check`.
+- `pnpm docs:check`: 48 claims, which found the archive's counts (147 numbers, 260 rows) once the row had moved.
+- `pnpm e2e:web --project identity --project expansion --project admin`, one build: 326 of 326, the UX-30 journey now
+  reading its sentence from the field's help. The server printed only digest `2667547900`, seventeen times — the
+  abandoned-stream line `apps/web/CLAUDE.md` documents — and nothing else.
+- **Not run:** `migrations:check`, since no migration changed; `gates:clean` and the review agents, which are Stage
+  2's end — rows 95 and 133 keep it open. `pnpm lint` ran warm, and this task changed a **type** on the wire
+  (`labelStanding` narrowed from `string`), which is the case the root `CLAUDE.md` says a warm lint proves less about;
+  the Stage's cold run is where that is settled.

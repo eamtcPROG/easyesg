@@ -45,8 +45,12 @@ describe('disclosure labels under the +40% harness (task 51.3)', () => {
     expect(key).toBeTruthy();
     expect(labels[key]?.text).toMatch(/·$/u);
     // Help and members travel by their own accessors and would each be a separate place to forget;
-    // they are padded because all eighteen catalogues cross one function.
-    expect(Object.values(catalogue?.help.ro ?? {})[0]?.text).toMatch(/·$/u);
+    // they are padded because every catalogue file crosses one function. **Every help entry, not the
+    // first** (task 94): help joins two sources, and the first entry is EFRAG's, so a platform
+    // sentence that skipped the padding would leave this green while S-07 measured it unpadded.
+    const help = Object.values(catalogue?.help.ro ?? {});
+    expect(help.length).toBeGreaterThan(0);
+    expect(help.filter((entry) => !entry.text.endsWith('·'))).toEqual([]);
     expect(Object.values(catalogue?.members.ro ?? {})[0]?.text).toMatch(/·$/u);
   });
 

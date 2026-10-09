@@ -64,10 +64,14 @@ export interface DisclosureLabelResolver {
   standing(query: { readonly version: string; readonly locale: Locale }): LabelStanding | null;
 
   /**
-   * One element's help text — EFRAG's `documentation` label — or `null` where the package carries
-   * none for it (task 91.1; UX-17, OQ-59). **Sparse by construction**: at `2026-05-01` twenty-two of
-   * 143 elements are documented, and a field with no help says so rather than paraphrasing its own
-   * label. Same standing as the labels, since the same package and the same authoring produced it.
+   * One element's help text (UX-17), or `null` where the version or the element is not registered.
+   * EFRAG's `documentation` label where the package carries one (task 91.1; OQ-59), and the
+   * platform's own sentence for every other element (task 94).
+   *
+   * **Its standing is the entry's own, not the label's.** The platform's sentences are
+   * `platform_authored` in every locale, English included, so an English field can carry an official
+   * label above an authored help sentence — which is why the answer is a `DisclosureLabel` rather
+   * than a string, exactly as `label` is.
    */
   help(query: {
     readonly version: string;

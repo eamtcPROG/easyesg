@@ -49,9 +49,12 @@
  *                                        read from the artefact's `enumerations` and from its
  *                                        explicit `axes` alike
  *
- * Help is **sparse by construction**: at `2026-05-01` EFRAG documents 22 of 143 elements, and the
- * catalogue carries those 22 and no invented sentence for the rest — a field with no help says so
- * rather than paraphrasing its own label (OQ-59, closed 2 Sep 2026). Members are total: every member
+ * EFRAG's help is **sparse**: at `2026-05-01` it documents 22 of 143 elements, and `help/` carries
+ * those and nothing else (OQ-59, closed 2 Sep 2026). **The platform's help for every other element
+ * lives in `help/platform/`, which this script never writes** (task 94): it is authored in all three
+ * locales and platform-authored in English too, so a re-run must not touch it — and if a release
+ * starts documenting an element the platform already covers, the api refuses to load the overlap
+ * rather than choosing between the two sentences silently. Members are total: every member
  * of every `vsme` enumeration domain must label, and the run fails otherwise, for the reason the
  * element check below gives — an unlabelled member is an XBRL name rendered as an answer.
  *

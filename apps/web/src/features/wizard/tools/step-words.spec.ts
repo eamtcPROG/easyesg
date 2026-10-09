@@ -34,6 +34,7 @@ const field = (options: DisclosureOption[] | null): DisclosureField => ({
   label: null,
   labelStanding: null,
   help: null,
+  helpStanding: null,
   options,
   defaultValue: null,
   valueNumeric: null,

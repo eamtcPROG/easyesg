@@ -16,7 +16,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-24 — The guided wizard
 
-**Status.** Partial — delivered 35.1, 35.2, 35.3, 36.1 … 36.14, 89, 91.1 … 91.4, 179, 180, 183 · remaining 94 (help for undocumented elements)
+**Status.** Built — delivered 35.1, 35.2, 35.3, 36.1 … 36.14, 89, 91.1 … 91.4, 94 (help for every element), 179, 180, 183
 
 **Obligation.** The system shall provide a guided, stepped wizard over every VSME Basic Module disclosure B1 … B11, one step per module, capturing a module's structured and narrative content together, and entering a report at the module where work last happened or, where nothing is answered, at the first incomplete step.
 
@@ -35,7 +35,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 4. Within a step, single questions come first and repeating groups after. A typed axis renders as a group per ordinal, and the reporter may add one (task-179.2 and task-36.2 rows).
 5. The module list derives each module's state in the browser — omitted, not applicable (waiting on B1 / ruled out), complete, in progress, not started — and never gates navigation (task-179.1 row).
 6. Entry follows FR-39's position rule.
-7. Help is EFRAG's documentation label where one exists. For the elements EFRAG leaves undocumented, help is task 94's (task-91.1 row).
+7. Every field shows help (UX-17): EFRAG's documentation label where one exists, and the platform's own sentence for every other element, authored in three locales. Each help carries its own standing, so an English field can show EFRAG's label above a platform-authored sentence (task-91.1 and task-94 rows).
 
 **Refusals.**
 - A step read for a module the pinned taxonomy lacks → 404 `not-found` (`core.report.module_not_found`; task 183; §12.5.6's task-182 row (6))
@@ -50,11 +50,13 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-3** Given answers in several modules, when the report is opened, then it enters at the module with the latest answer. If nothing is answered, it enters at the first incomplete step. *(source: §12.5.6 task-35.3 row)*
 - **AC-4** Given a view-only member, then every step reads with no editable control and a banner naming the cause. *(source: §12.5.6 task-35.2 row; UX-13)*
 - **AC-5** Given a module code the pinned taxonomy lacks, when its step is read, then the answer is 404. *(source: §12.5.6 task-182 row (6))*
+- **AC-6** Given any element of the pinned version, when its step is read in any locale, then the field carries help and the help's own standing — official only where EFRAG wrote it, in English. *(source: §12.5.6 task-94 row (1); UX-17)*
 
 **History.**
 - 18 Aug 2026 · OQ-4 closed · UC-20 named explicitly in Source UC · index §10
 - 2 Sep 2026 · project owner · entry at the module of last work, with the first incomplete step only where nothing is answered · §12.5.6 task-35.3 row; UC-18, UX-10
 - 5 Oct 2026 · project owner · an unknown module is a 404 · §12.5.6 task-182 row (6)
+- 9 Oct 2026 · project owner · help for every element, EFRAG's or the platform's, with its standing per entry · §12.5.6 task-94 row; UX-17
 
 ### FR-25 — The reports list
 
@@ -257,20 +259,20 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-31 — A section omitted as classified or sensitive
 
-**Status.** Partial — delivered 36.13, 91.1, 179.1, 41.2 (validation by section), 41.3 (the roll-up discounts it) · remaining 44.3, 46.1 (both exports), 94 (help replaces the notice)
+**Status.** Partial — delivered 36.13, 91.1, 179.1, 41.2 (validation by section), 41.3 (the roll-up discounts it), 94 (the declaration's help states UX-30) · remaining 44.3, 46.1 (both exports)
 
 **Obligation.** The system shall allow a disclosure section to be declared omitted as classified or sensitive information, the one ground VSME ¶19 permits, recording it in B1's list of omitted disclosures without a rationale (¶24(b)). The declaration shall satisfy validation rather than suppress it, be discounted in completion, and appear in both exports.
 
 | | |
 |---|---|
 | **Traces** | UC-30 · VSME ¶13, ¶19, ¶21, ¶24(b) · UX-21, UX-29, UX-30 · BR-DIS-2, BR-VAL-2 |
-| **Surfaces** | S-07 (the B1 choice field; the module list's *Omitted* state; UX-30's notice) · `PUT /reports/{id}/values` on `ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation` |
+| **Surfaces** | S-07 (the B1 choice field; the module list's *Omitted* state; UX-30's statement in the field's help) · `PUT /reports/{id}/values` on `ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation` |
 
 **Behaviour.**
 1. The declaration is an ordinary B1 choice over a 51-section domain, stored as the members' qualified names (task-36.13 rows).
 2. A module reads as omitted when its own member is selected, or when all of its sections are. EFRAG's own roll-up formula is not copied (task-36.13 row).
 3. Deselecting the member restores the section.
-4. At the point of entry the interface says that this is a statement a third party reads. Until help exists for that element, the notice is a fallback (task 94).
+4. At the point of entry the interface says that this is a statement a third party reads. The declaration field's own help says it, authored by the platform and kept platform-authored in every taxonomy version (task-94 row (2)).
 5. "Not applicable" is FR-28's, by rule, and needs no declaration (¶13).
 
 **Acceptance criteria.**
@@ -282,6 +284,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **History.**
 - 9 Sep 2026 · project owner · the ground was "not material or not applicable, with a rationale", which VSME does not permit; realigned to ¶19 with no rationale; "not applicable" moved to FR-28 · §12.5.6 task-36.13 rows; UC-30, UX-29, UX-30, BR-DIS-2, BR-APP-4, FR-41
+- 9 Oct 2026 · project owner · UX-30's statement is the declaration field's own help, the screen's fallback notice retired · §12.5.6 task-94 row (2); UX-30
 
 ### FR-32 — A field not available, with a reason
 

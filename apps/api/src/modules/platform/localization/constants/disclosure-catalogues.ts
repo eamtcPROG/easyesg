@@ -1,5 +1,6 @@
 import {
   EXPANSION_FLAG,
+  LABEL_STANDING,
   LOCALES,
   expandString,
   expansionEnabled,
@@ -29,13 +30,20 @@ import helpRu20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/help/
 import membersEn20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/members/en.json';
 import membersRo20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/members/ro.json';
 import membersRu20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/members/ru.json';
+import platformHelpEn20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/help/platform/en.json';
+import platformHelpRo20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/help/platform/ro.json';
+import platformHelpRu20260201 from '@easyesg/i18n/catalogues/disclosure/2026-02-01/help/platform/ru.json';
+import platformHelpEn20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/help/platform/en.json';
+import platformHelpRo20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/help/platform/ro.json';
+import platformHelpRu20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/help/platform/ru.json';
+import { joinHelp } from '../domain/disclosure-help';
 
 /**
  * The committed VSME label catalogues, one entry per taxonomy version (task 33.2).
  *
- * **Adding a version is an edit to this file and nothing else.** Ten imports and one map entry,
- * and `disclosure-label.artefact.spec.ts` turns forgetting them into a failure rather than into a
- * taxonomy whose every field renders unnamed.
+ * **Adding a version is an edit to this file and nothing else.** An import per file of its
+ * directory and one map entry, and `disclosure-label.artefact.spec.ts` turns forgetting them into a
+ * failure rather than into a taxonomy whose every field renders unnamed or carries no help.
  *
  * **Statically imported rather than read off disk**, which is what makes the catalogues resolvable
  * the same way in the HTTP tier, in the worker and under jest — `readdirSync` over a path relative
@@ -60,7 +68,11 @@ import membersRu20260501 from '@easyesg/i18n/catalogues/disclosure/2026-05-01/me
 export interface DisclosureCatalogue {
   readonly standing: Readonly<Record<Locale, LabelStanding>>;
   readonly labels: Readonly<Record<Locale, Readonly<Record<string, DisclosureLabel>>>>;
-  /** EFRAG's `documentation` labels — sparse: only the elements the package documents (task 91.1). */
+  /**
+   * Every element's help (UX-17): EFRAG's `documentation` label where the package carries one (task
+   * 91.1), the platform's own sentence for every other element (task 94) — each entry with its own
+   * standing, since an authored English sentence is not EFRAG's while the English labels are.
+   */
   readonly help: Readonly<Record<Locale, Readonly<Record<string, DisclosureLabel>>>>;
   /** Every `vsme` enumeration member's label — the answers a choice field offers (task 91.1). */
   readonly members: Readonly<Record<Locale, Readonly<Record<string, DisclosureLabel>>>>;
@@ -111,7 +123,8 @@ function readStanding(
  * its member lists — and they travel by their own path, not through `app/messages/catalogue.ts`. So
  * padding that one left OQ-58's labels measured at their Romanian length on a padded screen, which is
  * the measurement not being taken rather than a check passing, and the same defect as the one that
- * prompted the task. There is no second place to remember: all eighteen catalogues cross `pair`.
+ * prompted the task. There is no second place to remember: every catalogue file crosses `pair`, the
+ * platform's help included.
  */
 const PADDED = expansionEnabled(process.env[EXPANSION_FLAG]);
 
@@ -128,8 +141,36 @@ function pair(
   );
 }
 
-const STANDING_20260201 = readStanding(standing20260201, '2026-02-01');
-const STANDING_20260501 = readStanding(standing20260501, '2026-05-01');
+/**
+ * A version's help in every locale, from its two sources (task 94): EFRAG's `documentation` labels
+ * at each locale's standing, and the platform's sentences at `platform_authored` in every locale —
+ * English too, which is the case the pairing exists for. `joinHelp` refuses an element both carry.
+ */
+function helpOf(sources: {
+  readonly version: string;
+  readonly standing: Readonly<Record<Locale, LabelStanding>>;
+  readonly documented: Readonly<Record<Locale, Readonly<Record<string, string>>>>;
+  readonly authored: Readonly<Record<Locale, Readonly<Record<string, string>>>>;
+}): Readonly<Record<Locale, Readonly<Record<string, DisclosureLabel>>>> {
+  return Object.fromEntries(
+    LOCALES.map((locale) => [
+      locale,
+      joinHelp({
+        version: sources.version,
+        locale,
+        documented: pair(sources.documented[locale], sources.standing[locale]),
+        authored: pair(sources.authored[locale], LABEL_STANDING.PLATFORM_AUTHORED),
+      }),
+    ]),
+  ) as Record<Locale, Readonly<Record<string, DisclosureLabel>>>;
+}
+
+/** Each registered version, named once: its entry's key, its manifest's check and its help's. */
+const VERSION_20260201 = '2026-02-01';
+const VERSION_20260501 = '2026-05-01';
+
+const STANDING_20260201 = readStanding(standing20260201, VERSION_20260201);
+const STANDING_20260501 = readStanding(standing20260501, VERSION_20260501);
 
 export const DISCLOSURE_CATALOGUES: Readonly<Record<string, DisclosureCatalogue>> = {
   // Task 33.3's second registered version (R-7). Its element keys and EFRAG's English wording are
@@ -137,36 +178,38 @@ export const DISCLOSURE_CATALOGUES: Readonly<Record<string, DisclosureCatalogue>
   // labels do not carry. The two authored locales are therefore the same authored text for the same
   // keys, which is per-version authoring rather than a copy of somebody else's translation: the
   // directory is still written once and never edited, as this catalogue's README requires.
-  '2026-02-01': {
+  [VERSION_20260201]: {
     standing: STANDING_20260201,
     labels: {
       ro: pair(ro20260201, STANDING_20260201.ro),
       en: pair(en20260201, STANDING_20260201.en),
       ru: pair(ru20260201, STANDING_20260201.ru),
     },
-    help: {
-      ro: pair(helpRo20260201, STANDING_20260201.ro),
-      en: pair(helpEn20260201, STANDING_20260201.en),
-      ru: pair(helpRu20260201, STANDING_20260201.ru),
-    },
+    help: helpOf({
+      version: VERSION_20260201,
+      standing: STANDING_20260201,
+      documented: { ro: helpRo20260201, en: helpEn20260201, ru: helpRu20260201 },
+      authored: { ro: platformHelpRo20260201, en: platformHelpEn20260201, ru: platformHelpRu20260201 },
+    }),
     members: {
       ro: pair(membersRo20260201, STANDING_20260201.ro),
       en: pair(membersEn20260201, STANDING_20260201.en),
       ru: pair(membersRu20260201, STANDING_20260201.ru),
     },
   },
-  '2026-05-01': {
+  [VERSION_20260501]: {
     standing: STANDING_20260501,
     labels: {
       ro: pair(ro20260501, STANDING_20260501.ro),
       en: pair(en20260501, STANDING_20260501.en),
       ru: pair(ru20260501, STANDING_20260501.ru),
     },
-    help: {
-      ro: pair(helpRo20260501, STANDING_20260501.ro),
-      en: pair(helpEn20260501, STANDING_20260501.en),
-      ru: pair(helpRu20260501, STANDING_20260501.ru),
-    },
+    help: helpOf({
+      version: VERSION_20260501,
+      standing: STANDING_20260501,
+      documented: { ro: helpRo20260501, en: helpEn20260501, ru: helpRu20260501 },
+      authored: { ro: platformHelpRo20260501, en: platformHelpEn20260501, ru: platformHelpRu20260501 },
+    }),
     members: {
       ro: pair(membersRo20260501, STANDING_20260501.ro),
       en: pair(membersEn20260501, STANDING_20260501.en),

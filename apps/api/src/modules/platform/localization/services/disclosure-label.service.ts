@@ -69,9 +69,17 @@ export class DisclosureLabelService implements DisclosureLabelResolver {
     readonly locale: Locale;
     readonly key: string;
   }): DisclosureLabel | null {
-    // Not logged: absence is the ordinary case (22 of 143 at `2026-05-01`), and a field with no
-    // help is a field with no help, not a catalogue defect.
-    return DISCLOSURE_CATALOGUES[query.version]?.help[query.locale]?.[query.key] ?? null;
+    const help = DISCLOSURE_CATALOGUES[query.version]?.help[query.locale]?.[query.key];
+    if (help === undefined) {
+      // Logged since task 94, for `label`'s reason: every registered element carries help — EFRAG's
+      // where it publishes one, the platform's otherwise — so a miss is a catalogue defect, and a
+      // field missing the sentence UX-17 puts under it would otherwise be silent about it.
+      this.logger.error(
+        `no help for element ${query.key} at ${query.version} in ${query.locale} — a disclosure will render without its help`,
+      );
+      return null;
+    }
+    return help;
   }
 
   memberLabels(query: {

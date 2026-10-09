@@ -1,4 +1,4 @@
-import type { Locale } from '@easyesg/i18n';
+import type { LabelStanding, Locale } from '@easyesg/i18n';
 import type { DisclosureKind } from '@easyesg/vsme';
 import type { PeriodType } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
@@ -230,13 +230,19 @@ export interface DisclosureField {
    * standing cannot make UX-47's statement, and of this product's three locales only English is
    * official.
    */
-  readonly labelStanding: string | null;
+  readonly labelStanding: LabelStanding | null;
   /**
-   * EFRAG's `documentation` label for the element, in the request's locale, or `null` where the
-   * package carries none — which is the ordinary case (task 91.1; UX-17, OQ-59). Its standing is
-   * the label's, and `labelStanding` already carries it.
+   * The element's help in the request's locale (UX-17): EFRAG's `documentation` label where the
+   * package carries one (task 91.1), the platform's own sentence for every other element (task 94).
+   * `null` only where the catalogue misses it, which the resolver logs.
    */
   readonly help: string | null;
+  /**
+   * Whose words the help is, carried beside it for `labelStanding`'s reason (task 94). It is **not**
+   * the label's: the platform's help is authored in every locale, so an English field can carry
+   * EFRAG's own label above a sentence the platform wrote. `null` where `help` is.
+   */
+  readonly helpStanding: LabelStanding | null;
   /**
    * The answers a choice field offers, for `enumeration` and `enumeration_set` kinds; `null` for
    * every other kind (task 91.1). Each `value` is the member's taxonomy-qualified name — what the

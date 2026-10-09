@@ -47,12 +47,10 @@ import styles from '../styles/step.module.css';
  * the control inside points `aria-labelledby` at it (UX-110's *visible, programmatically
  * associated* label, once), and the group reuses the same element for its own name.
  *
- * **`help` is the api's, and it is sparse.** EFRAG documents 22 of 143 elements (task 91.1, closing
- * OQ-59), so most fields carry `help: null` and the anatomy renders no sentence rather than a
- * paraphrase of the label. **`notAvailable` is passed as `null` on purpose**: UX-15's declaration
- * is UC-31, task 36.13's. The prop is *required* on the component so that passing nothing is a
- * decision a reader of this file can see, on `Callout`'s `action={null}` precedent — not a slot
- * that was forgotten.
+ * **A field's `help` is the api's, for every element** (tasks 91.1, 94): EFRAG's documentation
+ * label where it publishes one, the platform's own sentence otherwise, so a field passes it through
+ * and this file words none of it. The derivation inputs below are the exception, being the
+ * platform's own fields rather than the taxonomy's, and they word their help from the catalogue.
  *
  * **A typed axis's rows are a `Fieldset` per ordinal, and the reporter may add one** (task 36.2).
  * Without the grouping a two-site B1 reads *Address of site, Address of site, City of site, City of

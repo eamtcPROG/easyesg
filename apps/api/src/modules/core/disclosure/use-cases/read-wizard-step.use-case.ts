@@ -1,4 +1,4 @@
-import type { DisclosureLabel, Locale } from '@easyesg/i18n';
+import type { DisclosureLabel, LabelStanding, Locale } from '@easyesg/i18n';
 import { isAnswered } from '@easyesg/validation';
 import { DISCLOSURE_KIND } from '@easyesg/vsme';
 import type { DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
@@ -945,7 +945,7 @@ function toField(
   },
   resolved: {
     readonly catalogue: Readonly<Record<string, DisclosureLabel>> | null;
-    readonly standing: string | null;
+    readonly standing: LabelStanding | null;
     readonly help: DisclosureLabel | null;
     readonly options: readonly DisclosureOption[] | null;
     readonly applicable: boolean;
@@ -980,6 +980,7 @@ function toField(
     // whose wording is missing still says whose wording it would have been (NFR-24, UX-47).
     labelStanding: label?.standing ?? fallbackStanding,
     help: resolved.help?.text ?? null,
+    helpStanding: resolved.help?.standing ?? null,
     options: resolved.options,
     defaultValue: row.defaultValue,
     valueNumeric: value?.valueNumeric ?? null,

@@ -164,18 +164,12 @@ export function StepField({
        */
       label={named === undefined ? (field.label ?? tField('unnamed')) : (named ?? tField('unnamed'))}
       /*
-       * **UX-30, at the point of entry** (task 36.13): *"the declaration shall be presented as a
-       * statement a third party will read in the export, and the interface shall say so"*. It rides
-       * the `help` slot because UX-17 already puts one to two visible sentences there, which is
-       * exactly the visibility UX-30 asks for — not a new affordance.
-       *
-       * **Keyed to one element, and that is the rule's own shape rather than a screen special
-       * case**: UX-30 governs a single act, stating an omission under VSME ¶24(b), and the standard
-       * gives it a single field. It is a *fallback*, so the day task 94 authors help for this
-       * element EFRAG's own words win — the notice is this platform's, not a stand-in for the 121
-       * missing texts that task owns.
+       * **UX-30's statement is the omitted-disclosures element's own help since task 94** — *"the
+       * interface shall say so at the point of entry"* — authored by the platform and held
+       * platform-authored by the api's artefact spec, so a release that documents the element
+       * cannot silently replace it. Until then this slot fell back to a notice of the screen's.
        */
-      help={field.help ?? (field.elementKey === OMITTED_DISCLOSURES_ELEMENT ? tField('omissionNotice') : null)}
+      help={field.help}
       marker={marker?.label}
       markerTone={marker?.tone}
       // **Computed, not passed as an always-truthy element.** The anatomy renders
@@ -305,19 +299,6 @@ const UNIT_CODE = {
   HECTARE: 'ha',
   SQUARE_KILOMETRE: 'sqkm',
 } as const;
-
-/**
- * VSME's omission is stated in this one field (¶24(b)), and UX-30 attaches a notice to it.
- * Named here rather than spelled at the site, per the closed-vocabulary rule.
- *
- * **A second declaration of the api's own** (`models/omission.model.ts`), and it is a mirror rather
- * than a duplicate for `DISCLOSURE_STATE`'s stated reason: the api produces `packages/contracts` and
- * must never import it, so nothing can hold the two together at compile time. What *does* hold them
- * is the browser journey — a screen naming a different element renders no notice and
- * `wizard.spec.ts`'s omission case fails on the missing text.
- */
-const OMITTED_DISCLOSURES_ELEMENT =
-  'ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation';
 
 /** How a pending field paints: the cascade's pending role while it waits, error once it failed. */
 const SYNC_TONE: Readonly<Record<Exclude<SaveState, typeof SAVE_STATE.SAVED>, FieldTone>> = {

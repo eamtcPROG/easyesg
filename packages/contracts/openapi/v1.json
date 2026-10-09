@@ -10456,12 +10456,25 @@
           "labelStanding": {
             "type": "string",
             "nullable": true,
-            "description": "Whether the wording is EFRAG's own or platform-authored. Carried per field because it travels with the text — of three locales only English is official."
+            "enum": [
+              "official",
+              "platform_authored"
+            ],
+            "description": "Whether the label's wording is EFRAG's own or platform-authored. Carried per field because it travels with the text — of three locales only English is official."
           },
           "help": {
             "type": "string",
             "nullable": true,
-            "description": "EFRAG's documentation label for the element, or null where the package carries none (UX-17)."
+            "description": "The element's help (UX-17): EFRAG's documentation label where the package carries one, the platform's own sentence otherwise. Null only where the catalogue misses it."
+          },
+          "helpStanding": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "official",
+              "platform_authored"
+            ],
+            "description": "Whether the help is EFRAG's own or platform-authored — the help's own standing, not the label's: the platform's help is authored in every locale, English included. Null where help is."
           },
           "options": {
             "nullable": true,
@@ -10578,6 +10591,7 @@
           "label",
           "labelStanding",
           "help",
+          "helpStanding",
           "options",
           "defaultValue",
           "valueNumeric",

@@ -37,17 +37,23 @@ const FILES = (import.meta as unknown as GlobbingImportMeta).glob(
 );
 
 /**
- * The two sub-catalogues task 91.1 added beside the labels — `help/` (EFRAG's `documentation`
- * label, sparse by construction) and `members/` (every enumeration member's label, total). Each
- * is held to the same parity within a version as the labels, over its own key space: help's keys
- * are the subset of elements EFRAG documents, and members' keys are the domains' members, so
- * neither is compared to the element list — that is the api's artefact spec's claim.
+ * The sub-catalogues beside the labels — task 91.1's `help/` (EFRAG's `documentation` label, on the
+ * elements EFRAG documents) and `members/` (every enumeration member's label), and task 94's
+ * `help/platform/` (the platform's own help for every element EFRAG documents nothing for). Each is
+ * held to the same parity within a version as the labels, over its own key space; none is compared
+ * to the element list, because the taxonomy is the api's artefact spec's to read.
  */
-const SUB_CATALOGUES = ['help', 'members'] as const;
-const SUB_FILES = (import.meta as unknown as GlobbingImportMeta).glob(
-  '../catalogues/disclosure/*/{help,members}/*.json',
-  { eager: true, import: 'default' },
-);
+const SUB_CATALOGUES = ['help', 'help/platform', 'members'] as const;
+const SUB_FILES = {
+  ...(import.meta as unknown as GlobbingImportMeta).glob(
+    '../catalogues/disclosure/*/{help,members}/*.json',
+    { eager: true, import: 'default' },
+  ),
+  ...(import.meta as unknown as GlobbingImportMeta).glob(
+    '../catalogues/disclosure/*/help/platform/*.json',
+    { eager: true, import: 'default' },
+  ),
+};
 
 /** `../catalogues/disclosure/2026-05-01/ro.json` → `['2026-05-01', 'ro']`. */
 const parsePath = (path: string): { version: string; name: string } => {
@@ -65,16 +71,21 @@ for (const [path, value] of Object.entries(FILES)) {
 
 const VERSIONS = [...onDisk.keys()].sort();
 
-/** `../catalogues/disclosure/2026-05-01/help/ro.json` → version, sub-catalogue, locale. */
+/**
+ * `../catalogues/disclosure/2026-05-01/help/platform/ro.json` → version, sub-catalogue, locale. The
+ * sub-catalogue is every segment between the version and the file, so `help/platform` is one name.
+ */
 const subOnDisk = new Map<string, Map<string, Map<string, unknown>>>();
 for (const [path, value] of Object.entries(SUB_FILES)) {
-  const [file, folder, version] = path.split('/').reverse();
-  const locale = (file ?? '').replace(/\.json$/, '');
-  const byFolder = subOnDisk.get(version ?? '') ?? new Map<string, Map<string, unknown>>();
-  const byLocale = byFolder.get(folder ?? '') ?? new Map<string, unknown>();
+  const [version = '', ...rest] = path.replace('../catalogues/disclosure/', '').split('/');
+  const file = rest.pop() ?? '';
+  const folder = rest.join('/');
+  const locale = file.replace(/\.json$/, '');
+  const byFolder = subOnDisk.get(version) ?? new Map<string, Map<string, unknown>>();
+  const byLocale = byFolder.get(folder) ?? new Map<string, unknown>();
   byLocale.set(locale, value);
-  byFolder.set(folder ?? '', byLocale);
-  subOnDisk.set(version ?? '', byFolder);
+  byFolder.set(folder, byLocale);
+  subOnDisk.set(version, byFolder);
 }
 
 describe('disclosure label catalogues', () => {
@@ -159,6 +170,17 @@ describe('disclosure label catalogues', () => {
       // A version extracted after task 91.1 carries both folders; a missing one is a regeneration
       // that stopped halfway, and the wizard would offer choice fields with no answers.
       expect([...(folders.get(folder)?.keys() ?? [])].sort()).toEqual([...LOCALES].sort());
+    });
+
+    it.each(LOCALES)('gives no element help from both EFRAG and the platform, in %s', (locale) => {
+      // Task 94. An element's help comes from one source, and which one is its standing — official
+      // English where EFRAG documents it, platform-authored otherwise. A key in both is a decision
+      // nobody took: the api's loader refuses it at import (`joinHelp`), and this says so first,
+      // naming the key, where the catalogues live.
+      const documented = (folders.get('help')?.get(locale) ?? {}) as MessageCatalogue;
+      const authored = (folders.get('help/platform')?.get(locale) ?? {}) as MessageCatalogue;
+      expect(Object.keys(authored).length).toBeGreaterThan(0);
+      expect(Object.keys(authored).filter((key) => key in documented)).toEqual([]);
     });
 
     describe.each(SUB_CATALOGUES)('%s', (folder) => {

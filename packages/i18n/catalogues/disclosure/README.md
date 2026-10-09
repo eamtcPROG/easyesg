@@ -3,9 +3,32 @@
 VSME element labels, help text and units, in **per-taxonomy-version directories**:
 
 ```
-disclosure/<taxonomy-version>/{ro,en,ru}.json   the wording, one flat element-key → string map
-disclosure/<taxonomy-version>/standing.json     which of those locales EFRAG itself publishes
+disclosure/<taxonomy-version>/{ro,en,ru}.json                the wording, one flat element-key → string map
+disclosure/<taxonomy-version>/standing.json                  which of those locales EFRAG itself publishes
+disclosure/<taxonomy-version>/help/{ro,en,ru}.json           EFRAG's `documentation` label, where it publishes one
+disclosure/<taxonomy-version>/help/platform/{ro,en,ru}.json  the platform's help for every other element
+disclosure/<taxonomy-version>/members/{ro,en,ru}.json        the answers a choice field offers, and an axis's members
 ```
+
+## Help — one sentence per element, from one of two sources
+
+UX-17 puts one or two visible sentences of help under every field. EFRAG documents a sixth of the
+elements (task 91.1); **`help/platform/` holds the platform's own help for the rest** (task 94),
+authored in all three locales with Romanian the source — never machine-translated (NFR-23, FR-63).
+
+**Which folder an entry is in is its standing.** `help/` takes the locale's standing from
+`standing.json`, so its English is EFRAG's own; everything in `help/platform/` is
+`platform_authored` in **every** locale, English included. The api pairs them that way at load
+(`disclosure-catalogues.ts`), and its artefact spec reads these files to check it.
+
+**An element is in exactly one of the two.** `tools/extract-vsme-labels.mjs` writes `help/en.json`
+and never `help/platform/`; a release that starts documenting an element the platform already covers
+fails the parity suite here and the api's load, and someone decides which sentence a reader sees.
+One element must stay in `help/platform/` whatever EFRAG publishes: the omitted-disclosures list,
+whose help carries UX-30's statement that the list goes into the report.
+
+**NFR-23's editorial sign-off is outstanding for the platform's help**, as it is for the authored
+labels and members — discharged at the pilot's editorial pass (`architecture.md` §12.5.6's task-94 row).
 
 **Both reasons this was empty are now closed** (task 33.2, 1 Sep 2026), and the second closed in a
 way the note did not anticipate:
@@ -84,7 +107,7 @@ independently at every VSME release (NFR-12), and that spec is the only thing co
 
 ## A note for whoever adds the second version
 
-Adding `disclosure/<next-version>/` is four imports and one map entry in `apps/api`'s
+Adding `disclosure/<next-version>/` is an import per file and one map entry in `apps/api`'s
 `modules/platform/localization/constants/disclosure-catalogues.ts` and nothing else — the specs above
 turn forgetting them into a failure. What is *not* optional is that the new
 directory is written and the old one left alone: DR-4 is the whole reason these are per-version, and
