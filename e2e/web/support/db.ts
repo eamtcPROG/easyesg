@@ -439,6 +439,11 @@ export interface SeedReportInput {
    * which is a real and common state.
    */
   readonly dueDate?: string;
+  /**
+   * The entity archived (FR-20; task 187) — S-05, S-14 and S-39 each answer an archived entity differently from an
+   * active one, and the product's own archive is already driven end to end by S-13's journey. Omitted means active.
+   */
+  readonly archived?: boolean;
 }
 
 /**
@@ -469,13 +474,14 @@ async function seedFiling(input: {
    */
   readonly sites?: readonly { readonly name: string; readonly locality: string }[];
   readonly dueDate?: string;
+  readonly archived?: boolean;
   readonly withReport: boolean;
 }): Promise<{
   readonly entityId: string;
   readonly periodId: string;
   readonly reportId: string | null;
 }> {
-  const { organizationId, name, fiscalYear = 2026, sites, dueDate, withReport } = input;
+  const { organizationId, name, fiscalYear = 2026, sites, dueDate, archived = false, withReport } = input;
   const client = new Client(asOwner());
   await client.connect();
   try {
@@ -485,9 +491,11 @@ async function seedFiling(input: {
     await client.query('BEGIN');
     await client.query(`SELECT set_config('app.current_org', $1, true)`, [organizationId]);
     await client.query(
-      `INSERT INTO core.reporting_entity (id, organization_id, name, nace_codes)
-       VALUES ($1, $2, $3, '{}')`,
-      [entityId, organizationId, name],
+      // Archived at insert where asked, with the time the CHECK pairs to the status: the period and report below are
+      // then a filing opened before the archive, which is the only way one comes to exist (FR-20; task 187).
+      `INSERT INTO core.reporting_entity (id, organization_id, name, nace_codes, status, archived_at)
+       VALUES ($1, $2, $3, '{}', $4, CASE WHEN $4 = 'archived' THEN now() END)`,
+      [entityId, organizationId, name, archived ? 'archived' : 'active'],
     );
     // The payload is `to_jsonb(row)`'s shape — whatever columns the entity had on the day — which
     // is what the api's reader tolerates by design (task 91.2).

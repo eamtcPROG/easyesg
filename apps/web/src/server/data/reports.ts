@@ -1,6 +1,7 @@
 import 'server-only';
 import type { Report, ReportingEntity, ReportingPeriod } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
+import { creationEntities, type OfferedEntity } from '@/features/reports/tools/report-creation';
 import { toReportRows, type ReportRow } from '@/features/reports/tools/reports';
 import { api } from '../api/api-client';
 import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
@@ -49,23 +50,25 @@ export async function readReportList(): Promise<ReportListRead> {
 export type ReportCreationRead =
   | {
       readonly status: typeof TENANT_READ.READY;
-      readonly entities: readonly { readonly id: string; readonly name: string }[];
+      readonly entities: readonly OfferedEntity[];
+      /** The entity chosen in the address, where it is one of `entities` — `creationEntities` says why. */
+      readonly entityId?: string;
       /** Empty until an entity is chosen, and empty again when every period of it is taken. */
       readonly periods: readonly ReportingPeriod[];
     }
   | TenantReadRefusal;
 
-export async function readReportCreation(entityId?: string): Promise<ReportCreationRead> {
+export async function readReportCreation(requested?: string): Promise<ReportCreationRead> {
   const entities = await api.getList<ReportingEntity>('/entities');
 
   if (isPermissionRefusal(entities)) return { status: TENANT_READ.FORBIDDEN };
   if (entities.status !== API_OUTCOME.Ok) return { status: TENANT_READ.UNREACHABLE };
 
-  const named = entities.value.items
-    .map((entity) => ({ id: entity.id, name: entity.name }))
-    .sort((left, right) => left.name.localeCompare(right.name));
+  const offered = creationEntities({ entities: entities.value.items, entityId: requested });
+  const named = offered.entities;
+  const entityId = offered.entityId;
 
-  // No entity chosen yet: the screen renders its first decision and asks for nothing else.
+  // No entity chosen yet, or one this screen does not offer: it renders its first decision and asks for nothing else.
   if (entityId === undefined) {
     return { status: TENANT_READ.READY, entities: named, periods: [] };
   }
@@ -89,6 +92,7 @@ export async function readReportCreation(entityId?: string): Promise<ReportCreat
   return {
     status: TENANT_READ.READY,
     entities: named,
+    entityId,
     periods: periods.value.items.filter(
       (period) => !taken.has(period.id) && period.lockedAt === null,
     ),

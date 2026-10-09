@@ -5,6 +5,7 @@ import {
   type ReportStatus,
 } from '@api/modules/core/disclosure/models/report.model';
 import { RECORD_ANSWERED_ELEMENTS } from '@api/modules/core/disclosure/models/b1-element.model';
+import type { EntityStatus } from '@api/modules/core/entity/models/reporting-entity.model';
 import type { EntitySnapshotRefresh } from '@api/modules/core/period/interfaces/entity-snapshot-refresh.interface';
 import type { ReportingPeriodStore } from '@api/modules/core/period/interfaces/reporting-period-store.interface';
 import {
@@ -47,6 +48,7 @@ interface PeriodRow {
   // report is a LEFT JOIN because a period may legitimately have none — since task 31.3 a report is
   // an explicit creation, and *not started* is FR-23's most important answer rather than an absence.
   entity_name: string;
+  entity_status: EntityStatus;
   report_id: string | null;
   report_status: ReportStatus | null;
   report_updated_at: Date | null;
@@ -90,7 +92,7 @@ const PERIOD_COLUMNS = `p.id, p.reporting_entity_id, p.fiscal_year,
         p.due_date::text      AS due_date,     p.due_date_tz,
         p.template_version, p.taxonomy_version, p.prior_period_id, p.entity_snapshot_id,
         p.locked_at, p.locked_by, p.locked_rule_set_revision, p.created_at, p.updated_at,
-        e.name AS entity_name, r.id AS report_id, r.status AS report_status,
+        e.name AS entity_name, e.status AS entity_status, r.id AS report_id, r.status AS report_status,
         (r.id IS NOT NULL AND ${readyToFileOf('r')}) AS report_ready_to_file,
         ${validationSummaryOf('r')} AS report_validation_summary,
         r.updated_at AS report_updated_at`;
@@ -132,6 +134,7 @@ const toPeriod = (row: PeriodRow): ReportingPeriod => ({
   createdAt: row.created_at,
   updatedAt: row.updated_at,
   entityName: row.entity_name,
+  entityStatus: row.entity_status,
   // Both halves or neither — the LEFT JOIN answers two nulls together, and reading `id` alone would
   // make a half-joined report representable in the one place the model says it is not.
   report:

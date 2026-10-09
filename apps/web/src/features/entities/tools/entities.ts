@@ -1,6 +1,6 @@
 import { matchesSearch } from '@/lib/search-match';
 import { DEFAULT_PAGE_SIZE, readPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
-import type { ReportingEntity } from '@easyesg/contracts';
+import { ENTITY_STATUS, type EntityStatus, type ReportingEntity } from '@easyesg/contracts';
 import type { EntityPeriod } from './entity-periods';
 
 /**
@@ -19,15 +19,6 @@ import type { EntityPeriod } from './entity-periods';
  * task 175, and the **periods** column — deferred here to task 31, and never picked up when that
  * task closed — is the list's way into S-14 since 29 Sep 2026 (`entity-periods.ts`).
  */
-
-/** What the status column says. The API's own vocabulary; a screen may not invent a third. */
-export const ENTITY_STANDING = {
-  ACTIVE: 'active',
-  /** FR-20: out of active selection, its reports and exports intact. Read-only, never deleted. */
-  ARCHIVED: 'archived',
-} as const;
-
-export type EntityStanding = (typeof ENTITY_STANDING)[keyof typeof ENTITY_STANDING];
 
 /**
  * FR-19's reporting boundary — the axis B1 discloses and task 38's calculator aggregates over.
@@ -48,8 +39,8 @@ export const ENTITY_FILTER_ANY = 'any';
 
 export const ENTITY_STANDING_FILTERS = [
   ENTITY_FILTER_ANY,
-  ENTITY_STANDING.ACTIVE,
-  ENTITY_STANDING.ARCHIVED,
+  ENTITY_STATUS.ACTIVE,
+  ENTITY_STATUS.ARCHIVED,
 ] as const;
 
 export type EntityStandingFilter = (typeof ENTITY_STANDING_FILTERS)[number];
@@ -85,7 +76,7 @@ export interface EntityRow {
   readonly activity: readonly string[];
   readonly siteCount: number;
   readonly consolidationBasis: string | null;
-  readonly standing: EntityStanding;
+  readonly standing: EntityStatus;
   /**
    * Its periods, newest first — or **null when they could not be read**, which is not *none*: the column still leads
    * to S-14, and says only where the periods are rather than claiming there are none.
@@ -164,9 +155,9 @@ export const entityViewQuery = (view: EntityView): string => {
 };
 
 /** Active before archived, whichever way the column is sorted — see `DEFAULT_ENTITY_VIEW`. */
-const STANDING_RANK: Record<EntityStanding, number> = {
-  [ENTITY_STANDING.ACTIVE]: 0,
-  [ENTITY_STANDING.ARCHIVED]: 1,
+const STANDING_RANK: Record<EntityStatus, number> = {
+  [ENTITY_STATUS.ACTIVE]: 0,
+  [ENTITY_STATUS.ARCHIVED]: 1,
 };
 
 const compareBy = (left: EntityRow, right: EntityRow, sort: EntitySort): number => {
@@ -202,9 +193,9 @@ export const toEntityRows = (input: {
     }),
     siteCount: entity.sites.length,
     consolidationBasis: entity.consolidationBasis,
-    standing: entity.status === ENTITY_STANDING.ARCHIVED
-      ? ENTITY_STANDING.ARCHIVED
-      : ENTITY_STANDING.ACTIVE,
+    standing: entity.status === ENTITY_STATUS.ARCHIVED
+      ? ENTITY_STATUS.ARCHIVED
+      : ENTITY_STATUS.ACTIVE,
     periods: input.periods === null ? null : (input.periods.get(entity.id) ?? []),
   }));
 

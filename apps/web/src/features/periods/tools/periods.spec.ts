@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ReportingPeriod } from '@easyesg/contracts';
+import { ENTITY_STATUS, type ReportingPeriod } from '@easyesg/contracts';
 import {
   DEFAULT_PERIOD_VIEW,
   PERIOD_FILTER_ANY,
@@ -25,6 +25,7 @@ const aPeriod = (over: Partial<ReportingPeriod> = {}): ReportingPeriod => ({
   // Both joined by `GET /periods` since task 32.4. S-14 renders neither — it reads one entity and
   // names it from the entity read — but the shape is one, so the fixture carries them.
   entityName: 'Alfa SRL',
+  entityStatus: ENTITY_STATUS.ACTIVE,
   report: null,
   fiscalYear: 2026,
   periodStart: { date: '2026-01-01', timezone: CHISINAU },

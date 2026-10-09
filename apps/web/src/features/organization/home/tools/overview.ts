@@ -1,4 +1,4 @@
-import { REPORT_STATUS, type ReportingPeriod } from '@easyesg/contracts';
+import { ENTITY_STATUS, REPORT_STATUS, type ReportingPeriod } from '@easyesg/contracts';
 import { todayIn } from '@/lib/legal-date';
 
 /**
@@ -92,10 +92,15 @@ export interface OverviewRow {
    * would read to a reporter as guidance from the standard.
    */
   readonly overdue: boolean;
-  /** Whether somebody must still act on this filing. `FILING_RULES`, and the period's own lock. */
+  /** Whether somebody must still act on this filing. `FILING_RULES`, the period's own lock, and its entity. */
   readonly attention: boolean;
   /** FR-22. A locked period takes no writes from anyone, the administrator included. */
   readonly periodLocked: boolean;
+  /**
+   * FR-20 and FR-23 (task 187; 182/16). The entity is archived: the period stays listed and asks for nothing — no
+   * attention, no deadline, no resuming — and takes no new report, which the api refuses with `entity-archived`.
+   */
+  readonly entityArchived: boolean;
   /** Null where no report has been opened, which is what makes the row's action a *create*. */
   readonly reportId: string | null;
   /** Epoch-ms (OQ-50). The report's last activity, and how *where did I leave off* is chosen. */
@@ -123,10 +128,13 @@ export const toOverviewRows = (input: {
   input.periods.map((period) => {
     const standing = standingOf(period);
     const periodLocked = period.lockedAt !== null;
+    const entityArchived = period.entityStatus === ENTITY_STATUS.ARCHIVED;
     // **A locked period is never attention, whatever its standing.** Without this a locked period
     // holding no report reads as *not started* and the screen offers a report the API refuses to
     // create — the control that cannot act, one level up from where task 30.1 ruled against it.
-    const attention = FILING_RULES[standing].attention && !periodLocked;
+    // **Nor is an archived entity's period** (182/16), for the same reason one level further out:
+    // the entity takes no new work, so reopening the period would not answer it either.
+    const attention = FILING_RULES[standing].attention && !periodLocked && !entityArchived;
 
     return {
       periodId: period.id,
@@ -146,6 +154,7 @@ export const toOverviewRows = (input: {
         period.dueDate.date < todayIn(period.dueDate.timezone, input.now),
       attention,
       periodLocked,
+      entityArchived,
       reportId: period.report?.id ?? null,
       lastActivity: period.report?.updatedAt ?? null,
       validation: period.report?.validation ?? null,
@@ -192,7 +201,12 @@ export type ResumableRow = OverviewRow & { readonly reportId: string };
  */
 export const resumableRow = (rows: readonly OverviewRow[]): ResumableRow | null =>
   rows
-    .filter((row): row is ResumableRow => row.reportId !== null && FILING_RULES[row.standing].resumable)
+    // An archived entity's report is not offered as *where did I leave off* (§12.5.6's task-187 row): resuming is a
+    // prompt to act, and the entity asks for none. It still opens from its row in the table.
+    .filter(
+      (row): row is ResumableRow =>
+        row.reportId !== null && !row.entityArchived && FILING_RULES[row.standing].resumable,
+    )
     .reduce<ResumableRow | null>(
       (latest, row) =>
         latest === null || (row.lastActivity ?? 0) > (latest.lastActivity ?? 0) ? row : latest,

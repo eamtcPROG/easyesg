@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REPORT_STATUS, type ReportingPeriod } from '@easyesg/contracts';
+import { ENTITY_STATUS, REPORT_STATUS, type ReportingPeriod } from '@easyesg/contracts';
 import {
   OVERVIEW_STANDING,
   attentionRows,
@@ -24,6 +24,7 @@ const aPeriod = (over: Partial<ReportingPeriod> = {}): ReportingPeriod => ({
   id: 'p1',
   reportingEntityId: 'e1',
   entityName: 'Alfa SRL',
+  entityStatus: ENTITY_STATUS.ACTIVE,
   fiscalYear: 2026,
   periodStart: { date: '2026-01-01', timezone: CHISINAU },
   periodEnd: { date: '2026-12-31', timezone: CHISINAU },
@@ -212,5 +213,36 @@ describe('what is the state of everything (UX-6’s third question)', () => {
 
     expect(everythingRows(rows)).toHaveLength(1);
     expect(attentionRows(rows)).toHaveLength(0);
+  });
+});
+
+/**
+ * FR-23 AC-9 and §12.5.6's task-187 row: an archived entity's period stays listed and asks for nothing. Each case is
+ * one the rule's other inputs would otherwise answer the opposite way — an unstarted period, an open report, a passed
+ * due date — so it is the entity that is being judged.
+ */
+describe('an archived entity’s periods', () => {
+  const ARCHIVED = { entityStatus: ENTITY_STATUS.ARCHIVED };
+
+  it('stay in the table and never ask for attention, a passed deadline included', () => {
+    const rows = rowsFor([
+      aPeriod({ ...ARCHIVED, dueDate: { date: '2026-03-31', timezone: CHISINAU } }),
+      aPeriod({ ...ARCHIVED, id: 'p2', fiscalYear: 2025, report: aReport() }),
+    ]);
+
+    expect(rows.map((row) => row.entityArchived)).toEqual([true, true]);
+    expect(everythingRows(rows)).toHaveLength(2);
+    expect(attentionRows(rows)).toEqual([]);
+    expect(rows.map((row) => row.overdue)).toEqual([false, false]);
+  });
+
+  it('are not offered as where I left off, though their report still exists', () => {
+    const rows = rowsFor([
+      aPeriod({ ...ARCHIVED, id: 'p1', report: aReport({ id: 'r1', updatedAt: 9_000 }) }),
+      aPeriod({ id: 'p2', reportingEntityId: 'e2', report: aReport({ id: 'r2', updatedAt: 1_000 }) }),
+    ]);
+
+    expect(rows[0].reportId).toBe('r1');
+    expect(resumableRow(rows)?.reportId).toBe('r2');
   });
 });

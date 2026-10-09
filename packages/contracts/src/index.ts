@@ -173,6 +173,12 @@ export type UpdateReportingEntityRequest =
   components['schemas']['UpdateReportingEntityRequestDto'];
 export type EntitySite = components['schemas']['SiteResponseDto'];
 export type ConsolidationMember = components['schemas']['ConsolidationMemberResponseDto'];
+export {
+  ENTITY_STATUS,
+  ENTITY_STATUS_MIRRORS_WIRE,
+  PERIOD_ENTITY_STATUS_MIRRORS_WIRE,
+  type EntityStatus,
+} from './entity';
 // core — reporting periods (FR-21, FR-22, FR-45, FR-66; tasks 31.1, 31.2, consumed by S-14).
 //
 // **Every boundary is a `LegalDate`, never an instant** (NFR-34). `2026-12-31` is the case the

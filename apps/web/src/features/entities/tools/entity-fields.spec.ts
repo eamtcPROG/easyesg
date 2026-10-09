@@ -1,6 +1,7 @@
 import type { ReportingEntity } from '@easyesg/contracts';
 import { describe, expect, it } from 'vitest';
-import { CONSOLIDATION_BASIS, ENTITY_STANDING } from './entities';
+import { ENTITY_STATUS } from '@easyesg/contracts';
+import { CONSOLIDATION_BASIS } from './entities';
 import { EMPTY_MEMBER, EMPTY_SITE, toFields, toRequest } from './entity-fields';
 
 const entity = (over: Partial<ReportingEntity>): ReportingEntity => ({
@@ -16,7 +17,7 @@ const entity = (over: Partial<ReportingEntity>): ReportingEntity => ({
   reportContactName: null,
   reportContactEmail: null,
   naceCodes: [],
-  status: ENTITY_STANDING.ACTIVE,
+  status: ENTITY_STATUS.ACTIVE,
   archivedAt: null,
   consolidationBasis: null,
   consolidationMembers: [],

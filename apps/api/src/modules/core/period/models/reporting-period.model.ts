@@ -1,5 +1,6 @@
 import type { LegalDate } from '@api/contracts/types/time';
 import type { ReportStatus, ReportValidationSummary } from '@api/modules/core/disclosure/models/report.model';
+import type { EntityStatus } from '@api/modules/core/entity/models/reporting-entity.model';
 
 /**
  * The reporting period (FR-21, FR-45, FR-66; UC-56).
@@ -65,6 +66,12 @@ export interface ReportingPeriod {
    * would be structure with nothing to hold.
    */
   readonly entityName: string;
+  /**
+   * The entity's status, joined beside its name (task 187): an archived entity's period stays listed and asks for no
+   * attention (FR-23; 182/16), and takes no new report (FR-20; §12.5.6's task-187 row). The overview reads it to say so,
+   * and `CreateReport` to refuse.
+   */
+  readonly entityStatus: EntityStatus;
   /**
    * The report opened against this period, or null where none has been (task 32.4).
    *

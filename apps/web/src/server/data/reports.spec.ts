@@ -12,7 +12,7 @@ const { getList } = vi.hoisted(() => ({
 
 vi.mock('../api/api-client', () => ({ api: { getList } }));
 
-import { PROBLEM_TYPE } from '@easyesg/contracts';
+import { ENTITY_STATUS, PROBLEM_TYPE } from '@easyesg/contracts';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { readReportCreation, readReportList } from './reports';
 import { TENANT_READ } from './tenant-read';
@@ -122,8 +122,8 @@ describe('readReportCreation', () => {
   it('offers the entities alphabetically and asks for no periods until one is chosen', async () => {
     getList.mockResolvedValueOnce(
       ok([
-        { id: 'e2', name: 'Zorile SRL' },
-        { id: 'e1', name: 'Aurora SRL' },
+        { id: 'e2', name: 'Zorile SRL', status: ENTITY_STATUS.ACTIVE },
+        { id: 'e1', name: 'Aurora SRL', status: ENTITY_STATUS.ACTIVE },
       ]),
     );
 
@@ -146,7 +146,7 @@ describe('readReportCreation', () => {
    */
   it('withholds a period that already has a report, and one that is locked', async () => {
     getList
-      .mockResolvedValueOnce(ok([{ id: 'e1', name: 'Aurora SRL' }]))
+      .mockResolvedValueOnce(ok([{ id: 'e1', name: 'Aurora SRL', status: ENTITY_STATUS.ACTIVE }]))
       .mockResolvedValueOnce(
         ok([
           period({ id: 'free' }),
@@ -164,7 +164,7 @@ describe('readReportCreation', () => {
 
   it('offers nothing where every period of the entity is spoken for', async () => {
     getList
-      .mockResolvedValueOnce(ok([{ id: 'e1', name: 'Aurora SRL' }]))
+      .mockResolvedValueOnce(ok([{ id: 'e1', name: 'Aurora SRL', status: ENTITY_STATUS.ACTIVE }]))
       .mockResolvedValueOnce(ok([period({ id: 'taken' })]))
       .mockResolvedValueOnce(ok([report({ reportingPeriodId: 'taken' })]));
 
@@ -179,11 +179,30 @@ describe('readReportCreation', () => {
    */
   it('reports unreachable when the entities arrived and the periods did not', async () => {
     getList
-      .mockResolvedValueOnce(ok([{ id: 'e1', name: 'Aurora SRL' }]))
+      .mockResolvedValueOnce(ok([{ id: 'e1', name: 'Aurora SRL', status: ENTITY_STATUS.ACTIVE }]))
       .mockResolvedValueOnce(unreachable)
       .mockResolvedValueOnce(ok([]));
 
     expect((await readReportCreation('e1')).status).toBe(TENANT_READ.UNREACHABLE);
+  });
+
+  /**
+   * FR-20 and §12.5.6's task-187 row: an archived entity is not offered, and an address naming one reads as no choice
+   * made — so its periods are never asked for, which is what keeps them off the screen rather than a filter after.
+   */
+  it('offers no archived entity, and asks for no periods under an address naming one', async () => {
+    getList.mockResolvedValueOnce(
+      ok([
+        { id: 'e1', name: 'Aurora SRL', status: ENTITY_STATUS.ACTIVE },
+        { id: 'e3', name: 'Veche SRL', status: ENTITY_STATUS.ARCHIVED },
+      ]),
+    );
+
+    const read = await readReportCreation('e3');
+
+    expect(read.status === TENANT_READ.READY && read.entities.map((e) => e.name)).toEqual(['Aurora SRL']);
+    expect(read.status === TENANT_READ.READY && read.entityId).toBeUndefined();
+    expect(getList).toHaveBeenCalledTimes(1);
   });
 
   it('reports a permission refusal from the entities read', async () => {

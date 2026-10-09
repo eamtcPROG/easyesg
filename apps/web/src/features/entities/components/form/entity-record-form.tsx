@@ -5,7 +5,7 @@ import { FormSummary } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import { useMemo, useReducer, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import type { NaceCodeMatch, ReportingEntity } from '@easyesg/contracts';
+import { ENTITY_STATUS, type NaceCodeMatch, type ReportingEntity } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
 import { failureNotice, successNotice } from '@/lib/notice';
 import { RecordNotice } from '@/shared/record-notice';
@@ -13,7 +13,6 @@ import { GuardedLink, LeaveGuardContext, type LeaveGuard } from '@/shared/leave-
 import { useRouter } from '@/i18n/navigation';
 import { ROUTES, entityRoute } from '@/lib/routes';
 import { archiveEntityAction, createEntityAction, updateEntityAction } from '../../actions/actions';
-import { ENTITY_STANDING } from '../../tools/entities';
 import type { EntityPeriod } from '../../tools/entity-periods';
 import { toFields, toRequest, type EntityFields } from '../../tools/entity-fields';
 import type { CountryOption } from '../../tools/countries';
@@ -97,7 +96,7 @@ export function EntityRecordForm({
   const [pending, startTransition] = useTransition();
   const [state, dispatch] = useReducer(entityRecordReducer, activity, initialEntityRecordState);
 
-  const archived = entity?.status === ENTITY_STANDING.ARCHIVED;
+  const archived = entity?.status === ENTITY_STATUS.ARCHIVED;
   // What the record is called, in its heading and at the end of the way back alike.
   const title = entity ? entity.name : t('createTitle');
 

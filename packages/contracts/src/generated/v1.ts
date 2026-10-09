@@ -3493,6 +3493,11 @@ export interface components {
             updatedAt: number;
             /** @description The entity this period belongs to, named. Resolved by join so a list spanning entities can say whose year each row is (FR-23). */
             entityName: string;
+            /**
+             * @description The status of the entity this period belongs to (task 187). An archived entity’s period stays listed and asks for no attention (FR-23), and a report cannot be started on it (FR-20).
+             * @enum {string}
+             */
+            entityStatus: "active" | "archived";
             /** @description The report opened against this period, or null where none has been. Null is a real state and the one UC-67 asks about: a period holds at most one report and may hold none (§7.2). */
             report: components["schemas"]["PeriodReportDto"] | null;
         };
@@ -7536,7 +7541,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The period already has a report, or the period is locked. */
+            /** @description The period already has a report, its entity is archived, or the period is locked. */
             409: {
                 headers: {
                     [name: string]: unknown;

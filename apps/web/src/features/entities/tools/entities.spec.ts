@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { ReportingEntity } from '@easyesg/contracts';
+import { ENTITY_STATUS, type ReportingEntity } from '@easyesg/contracts';
 import {
   DEFAULT_ENTITY_VIEW,
   ENTITY_FILTER_ANY,
   ENTITY_SORT,
   ENTITY_SORT_DIRECTION,
-  ENTITY_STANDING,
   applyEntityView,
   entityViewQuery,
   readEntityView,
@@ -27,7 +26,7 @@ const entity = (over: Partial<ReportingEntity> & { id: string; name: string }): 
   reportContactName: null,
   reportContactEmail: null,
   naceCodes: [],
-  status: ENTITY_STANDING.ACTIVE,
+  status: ENTITY_STATUS.ACTIVE,
   archivedAt: null,
   consolidationBasis: null,
   consolidationMembers: [],
@@ -73,7 +72,7 @@ describe('toEntityRows', () => {
     });
 
     expect(row.siteCount).toBe(2);
-    expect(row.standing).toBe(ENTITY_STANDING.ARCHIVED);
+    expect(row.standing).toBe(ENTITY_STATUS.ARCHIVED);
   });
 
   it('gives an entity with no periods an empty list, and every entity null when the periods were not read', () => {
@@ -100,7 +99,7 @@ describe('the view in the address (UX-4)', () => {
 
   it('round-trips a view through its query string', () => {
     const view = {
-      standing: ENTITY_STANDING.ARCHIVED,
+      standing: ENTITY_STATUS.ARCHIVED,
       sort: ENTITY_SORT.SITES,
       direction: ENTITY_SORT_DIRECTION.DESCENDING,
       page: 2,
@@ -141,8 +140,8 @@ describe('applyEntityView', () => {
     expect(empty.total).toBe(0);
 
     const filteredOut = applyEntityView({
-      rows: rows.filter((r) => r.standing === ENTITY_STANDING.ACTIVE),
-      view: { ...DEFAULT_ENTITY_VIEW, standing: ENTITY_STANDING.ARCHIVED },
+      rows: rows.filter((r) => r.standing === ENTITY_STATUS.ACTIVE),
+      view: { ...DEFAULT_ENTITY_VIEW, standing: ENTITY_STATUS.ARCHIVED },
     });
     // Rows exist and none survived the filter — the archetype reads exactly this pair to choose
     // which empty state to draw.

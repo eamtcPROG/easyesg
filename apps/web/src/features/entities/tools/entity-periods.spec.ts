@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ReportingPeriod } from '@easyesg/contracts';
+import { ENTITY_STATUS, type ReportingPeriod } from '@easyesg/contracts';
 import { newestPeriods, periodsByEntity, toEntityPeriods } from './entity-periods';
 
 /**
@@ -11,6 +11,7 @@ const CHISINAU = 'Europe/Chisinau';
 const aPeriod = (over: Partial<ReportingPeriod> & { readonly id: string }): ReportingPeriod => ({
   reportingEntityId: 'e1',
   entityName: 'Alfa SRL',
+  entityStatus: ENTITY_STATUS.ACTIVE,
   report: null,
   fiscalYear: 2026,
   periodStart: { date: '2026-01-01', timezone: CHISINAU },

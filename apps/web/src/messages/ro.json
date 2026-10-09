@@ -617,7 +617,7 @@
           "lede": "Raportările la care mai are cineva de lucrat, cu termenul cel mai apropiat primul.",
           "empty": {
             "title": "Nimic în așteptare",
-            "body": "Fiecare perioadă deschisă este fie finalizată, fie blocată. Nu mai aveți nimic de făcut înainte de termenele stabilite."
+            "body": "Fiecare perioadă deschisă este finalizată, blocată sau aparține unei entități arhivate. Nu mai aveți nimic de făcut înainte de termenele stabilite."
           }
         },
         "resume": {
@@ -637,6 +637,7 @@
           "filed": "Depus"
         },
         "overdue": "Termen depășit",
+        "entityArchived": "Entitate arhivată",
         "periodLocked": "Perioadă blocată",
         "due": "Termen: {date}",
         "dueNone": "Fără termen stabilit",
@@ -955,6 +956,10 @@
         "newReport": "Înapoi la raportul nou"
       },
       "caption": "Perioadele entității",
+      "archived": {
+        "title": "Entitate arhivată",
+        "body": "Această entitate este arhivată, așa că nu i se mai poate deschide nicio perioadă. Perioadele și rapoartele ei rămân disponibile, așa cum au fost."
+      },
       "open": "Deschideți o perioadă",
       "columns": {
         "year": "Anul fiscal",

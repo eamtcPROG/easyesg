@@ -119,7 +119,7 @@ export async function FilingList({
 
           <div className={styles.filingAction}>
             {row.reportId === null ? (
-              canWrite && !row.periodLocked ? (
+              canWrite && !row.periodLocked && !row.entityArchived ? (
                 <TextLink asChild>
                   {/* The creation flow's own address, with the entity already chosen — its two
                       decisions ride the query string precisely so a half-made one is a link. */}
@@ -138,9 +138,12 @@ export async function FilingList({
                  * The lock is named because it is a fact about the filing that every reader needs;
                  * a viewer's own standing is stated once by the global tier's role rather than
                  * repeated on every row, which would be the same sentence N times.
+                 *
+                 * **An archived entity is named the same way, and named first** (task 187): it takes
+                 * no new report whatever the period's lock, so it is the cause that binds.
                  */
                 <span className={`t-caption ${styles.sub}`}>
-                  {row.periodLocked ? t('periodLocked') : null}
+                  {row.entityArchived ? t('entityArchived') : row.periodLocked ? t('periodLocked') : null}
                 </span>
               )
             ) : (

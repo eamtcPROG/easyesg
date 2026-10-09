@@ -96,7 +96,7 @@ export class ReportsController {
   @ApiResponse({ status: 404, description: 'No such reporting period in the active organization.' })
   @ApiResponse({
     status: 409,
-    description: 'The period already has a report, or the period is locked.',
+    description: 'The period already has a report, its entity is archived, or the period is locked.',
   })
   async create(@Body() body: CreateReportRequestDto): Promise<ReportResponseDto> {
     // Passed through as it arrived, absent field included: the default is a statement about the

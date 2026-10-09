@@ -30236,3 +30236,101 @@ The change reaches `apps/api` alone — six persistence adapters, the admin invi
 - `pnpm e2e:worker`: 13 cases, clean; the test stack was discarded again afterwards, for the same reason.
 - **Not run:** `migrations:check` and `openapi:check`, with no migration, controller or DTO touched; `e2e:web`, since
   nothing a browser reaches changed. **Not a Stage close**: Stage 2 keeps 187, 188 and 189.
+
+## Task 187 — Archived entities are offered no new work, refused it, and ask for no attention · 2026-10-09
+
+An archived entity is no longer offered by S-39's new-report picker or by S-14's way to open a period, and S-13 still
+lists it. Its periods stay in S-05's table and never count as attention. Where an action went away, the screen says the
+entity is archived. Building it found the api accepting what the pickers were about to stop offering — a report on an
+archived entity's period — so that is refused too, with the `entity-archived` a new period on one already met.
+
+### Decided before building (project owner, one batch of two, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-187 row, cross-logged in the 182/14 text, FR-20, FR-23 and S-05, S-14
+and S-39 in `design_spec.md`.
+
+- **Starting a report on an archived entity's period is refused, 409 `entity-archived`.** S-39's spec already named
+  this refusal among those that can still arrive at creation, and no requirement owned it: the specs disagreed with
+  each other and with the code. FR-20's refusals gain it, with AC-8. *Declined:* filtering the pickers alone, which
+  leaves a race, a stale tab and every other client able to create what no screen offers. A report already opened is
+  untouched, and what an archive does to one in progress is not decided here.
+- **A removed action names its cause** (UX-13). *Declined:* removing them silently, the indistinguishable read-only
+  state UX-13 forbids.
+
+### What the building settled
+
+- **`GET /periods` carries `entityStatus` beside `entityName`**, joined in the same statement, and `CreateReport`
+  reads it off the period it already reads — so the refusal needs no new port, and S-05 needs no second request.
+- **The entity is checked before the lock.** A locked period of an archived entity answers `entity-archived`: the
+  entity is the cause that binds, since reopening the period would not answer it. S-05's caption follows the same
+  order — *Entitate arhivată* outranks *Perioadă blocată*.
+- **The entity's status became one vocabulary.** S-13 kept a private `ENTITY_STANDING`; S-05, S-14 and S-39 now
+  needed it too, and a second declaration in the same app is what the root rule forbids. `ENTITY_STATUS` is in
+  `@easyesg/contracts` (`entity.ts`), held by `SameSet` to both generated enums that carry it — the entity's own
+  status and the period's `entityStatus` — and S-13 reads it.
+- **S-39 honours `?entity=` only for an entity it offers**, in a pure `creationEntities` with its spec: an archived
+  or unknown one reads as no choice made, so its periods are never even asked for. S-05's row of an archived entity's
+  period no longer links there, but a bookmark or a stale tab can.
+- **S-14's statement is one component, `ArchivedEntityNotice`**, drawn under the list's heading and in the create
+  address's form's place — a bookmark there met a form the api would refuse. The first-use empty state keeps its
+  title and body and passes `action={null}`, the attention region's own precedent; `EmptyState` requires the slot.
+- **S-05's empty attention region said every open period was *finished or locked***, which an archived entity's
+  open period is neither; the sentence names the third cause in all three locales.
+- **An archived entity's report is not offered as *where did I leave off***, and still opens from its row.
+
+### Proven to bite
+
+- **The api's refusal**: removing it turned `create-report.use-case.spec.ts`'s archived case red (1 of 10); the e2e
+  case refuses with `entity-archived` and lists no report for the period.
+- **S-05**: dropping the archived term from attention turned its *never ask for attention* case red, and from the
+  resume rule its *not offered as where I left off* case. **S-39**: letting an archived entity through turned 3 cases
+  red across `creationEntities`' spec and the read's.
+- **The mirror**: `ENTITY_STATUS_MIRRORS_WIRE` and `PERIOD_ENTITY_STATUS_MIRRORS_WIRE` fail `typecheck` on any member
+  either side gains or loses — `SameSet`'s standing arrangement, not re-proven here.
+- **The screens**: three journeys, one per screen, each over an archived entity seeded by a new `archived` option on the filing
+  fixture (S-13's own journey already drives the archive itself). S-05: an archived entity's unstarted filing is **one**
+  row, where an active one's is two, with *Entitate arhivată*, no *start*, no overdue chip, and *Nimic în așteptare*;
+  its report opens from its row and is not offered to resume. S-14: the statement once, no *open a period*, the
+  period still listed, and on the create address the statement under the trail with no year control. S-39: the active
+  entity offered and the archived one absent, and `?entity=` naming it offering no year. Not re-run with each rule
+  removed — each rule's unit half was.
+
+### Searched
+
+- **Every entry that starts a period or a report** — `newPeriodRoute` and `ROUTES.REPORT_NEW` across `apps/web/src`:
+  S-05's row, S-14's filter row and empty state, S-39's own links, S-06's *new report* and its empty state. S-06's two
+  open S-39 bare, which then offers active entities only; no other entry names an entity.
+- **Every reader of an entity's status in `apps/web`**: only S-13's, now on the shared vocabulary.
+- **Every hand-built `ReportingPeriod`**: the api's fake and three web fixtures gained `entityStatus`; the read's spec
+  fixtures gained `status`, which also put back the reason one of its cases was passing — *offers nothing where every
+  period is spoken for* had been passing because the entity itself was filtered out.
+
+### Skills, read against the diff
+
+- `nestjs-best-practices`: `arch-avoid-circular-deps` held — `core/period`'s model and `core/disclosure`'s use case
+  import `core/entity`'s vocabulary, as `OpenReportingPeriod` already did; `error-throw-http-exceptions` declined by
+  name, as ever.
+- `one-idea-per-file`: `ArchivedEntityNotice` its own file because two sections draw it; `creationEntities` out of a
+  `server-only` read into `tools/` with its spec (`pure-logic-leaves-the-component`); docblocks state no outside count.
+- `one-kind-per-folder`: the notice joins `periods/components/`, a files-only leaf; the folder-shape spec passes.
+- `vercel-react-best-practices`: `PeriodsList` and its toolbar gain one primitive prop, which no memo depends on;
+  `ArchivedEntityNotice` is a server component reading its own words. `vercel-composition-patterns` not triggered —
+  no component reached a third boolean.
+
+### Gates
+
+The change reaches `apps/api` (a use case, the period read, a DTO and a controller's responses), `apps/web` (S-05,
+S-14, S-39, S-13's vocabulary) and `packages/contracts`, whose dependents include `apps/admin`, so admin's row ran too.
+
+- `pnpm lint`; `typecheck` in `api`, `contracts`, `web` and `admin`; `pnpm docs:check`, 48 claims, after the
+  archive's counts moved; the root `CLAUDE.md`'s plan size moved by hand to 55 and 154.
+- `pnpm --filter @easyesg/api test`: 259 suites, **2,121** cases.
+- `pnpm e2e`: **66 of 66** suites, **1,666** cases, the log clean.
+- `pnpm e2e:worker`: 13 cases, clean — the period read it shares gained a column. The test stack was discarded
+  afterwards (`pnpm test:down`), so the next run starts without the day's sweep row (task 208's caveat).
+- `pnpm openapi:check`, `entityStatus` and the report route's 409 regenerated and staged; `pnpm routes:check`.
+- `pnpm --filter @easyesg/web test`: 190 files, **1,841** cases. `pnpm --filter @easyesg/admin test`: 37 files, 298.
+- `pnpm e2e:web --project identity --project expansion --project admin`: **330 passed**, 10.7 minutes. The server
+  logged 24 `⨯` lines, every one *The destination stream closed early.* with digest `2667547900`, and no other.
+- **Not run:** `migrations:check`, with no migration; `boundaries`, `image:check`, `facade:check` and the two
+  `*:prove` gates, the Stage's end's and CI's. **Not a Stage close**: Stage 2 keeps 188 and 189.

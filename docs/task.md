@@ -1,7 +1,7 @@
 # Tasks
 
 **What is left, in the order it will be delivered.** The closed rows are in
-[archived_tasks.md](archived_tasks.md) — 153 numbers and 266 of them — and moving them out is what
+[archived_tasks.md](archived_tasks.md) — 154 numbers and 267 of them — and moving them out is what
 lets this file answer *what is left* without a reader filtering a third of it away first.
 
 The order is the **Stage** sequence below, authored 12 Sep 2026 and **independent of the task
@@ -159,7 +159,6 @@ requirements.
 
 | # | Name | Scope | Description | Expected result | Related documents | Covered FR | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| **187** | **Archived entities are offered no new work, and their periods ask for no attention** | web+api | FR-20 and FR-23 (§12.5.6 task-182 identity and organization row, 182/14, 182/16). S-06's new-report picker and the entry that opens a period on S-14 no longer offer an archived entity; S-13's Index keeps listing it. S-05's attention list leaves out the periods of an archived entity, which stay in the filings table. If `GET /periods` does not already carry the entity's status, it gains it, and the contract is regenerated | An archived entity is absent from both pickers and present on S-13; its periods are listed on S-05 and never counted as attention; FR-20 AC-7 and FR-23 AC-9 pass | S-06 · S-14 · S-13 · S-05 · 182/14 · 182/16 · arch §12.5.6 | FR-20, FR-23 | TODO |
 | **188** | **The IDNO's check digit** | pkg:validation+api+web | FR-16 and FR-107 (§12.5.6 task-182 identity and organization row, 182/12). `validateIdno` evaluates the check digit: the first twelve digits multiplied by the repeating weights 7, 3, 1 and summed, the sum modulo 10 being the thirteenth digit. Verified on 1003600005148 and 1017600033216; the source is StephenAbbott/opencheck PR #269 (`backend/opencheck/sources/asp_moldova.py`), which validated all 265,814 IDNOs in the State Register export of 14 Sep 2026. `checkDigits` becomes `true` or `false` for a well-shaped value, never `null`; the api refuses `false` with 400 `identifier-check-digits`, the type the LEI already uses; S-13 shows the same verdict inline; the spec carries both published numbers and a mutated last digit. A shared package has no narrow run: every dependent's gates follow. Rewrites the docblock that says the algorithm is not obtainable | A well-shaped IDNO with a wrong check digit is refused on entry by the api and inline on S-13; both published numbers are accepted; FR-16 AC-9 and AC-10 pass | S-13 · 182/12 · arch §12.5.6 | FR-16, FR-107 | TODO |
 | **189** | **Every tenant business table is captured or declared exempt** | api | FR-159 (§12.5.6 task-182 identity and organization row, 182/4). `migrations:check`'s schema invariants (§7) gain one: each tenant table that holds a business record carries `core.capture_field_change` or is declared exempt with its reason, in the model of task 31.4's lock-trigger declaration. The task enumerates the tables, starts the exemption list with sign-ins and notification events and gives each entry its reason, and proves the invariant fails on a table that is neither | A tenant table with neither the trigger nor a declared exemption fails `migrations:check`; the list of exemptions is readable; FR-159 AC-7 passes | 182/4 · arch §12.5.6, §7 | FR-159 | TODO |
 

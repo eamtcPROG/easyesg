@@ -246,6 +246,40 @@ test('offers a viewer no way to start a report', async ({ page }) => {
 });
 
 /**
+ * FR-23 AC-9 and `architecture.md` §12.5.6's task-187 row: an archived entity's periods stay in the table and ask for
+ * nothing — no attention row, no deadline, no resuming — and a row that would offer to start a report names the archive
+ * instead, as a locked one names its lock (UX-13). Each filing below is one an active entity's would answer the other
+ * way: unstarted with its deadline gone, and a report in progress.
+ */
+test('an archived entity’s periods stay listed, ask for nothing, and say why (task 187)', async ({ page }) => {
+  const { organizationId } = await signedIn(page, 'archived');
+  await seedOpenPeriod({
+    organizationId,
+    name: `${RUN_PREFIX}-Veche`,
+    fiscalYear: 2025,
+    dueDate: '2025-04-30',
+    archived: true,
+  });
+  await seedReport({ organizationId, name: `${RUN_PREFIX}-Arhiva`, fiscalYear: 2024, archived: true });
+
+  await page.reload();
+  // **One row each, and the count is the assertion**: an active entity's unstarted filing is two (the case above), one
+  // per list, so a second row here would be the attention list keeping it.
+  const unstarted = page.getByRole('listitem').filter({ hasText: `${RUN_PREFIX}-Veche` });
+  await expect(unstarted).toHaveCount(1);
+  await expect(unstarted.getByText('Entitate arhivată')).toHaveCount(1);
+  await expect(unstarted.getByRole('link', { name: 'Începeți raportul' })).toHaveCount(0);
+  await expect(page.getByText('Termen depășit')).toHaveCount(0);
+  await expect(page.getByText('Nimic în așteptare')).toBeVisible();
+
+  // The report still opens from its row, and is not offered as where the reader left off.
+  const started = page.getByRole('listitem').filter({ hasText: `${RUN_PREFIX}-Arhiva` });
+  await expect(started).toHaveCount(1);
+  await expect(started.getByRole('link', { name: 'Deschideți raportul' })).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'Continuați raportul' })).toHaveCount(0);
+});
+
+/**
  * **The overview's Suspense boundary, asserted rather than described** (11 Sep 2026).
  *
  * S-05's four regions are sibling Server Components; three read memberships, which is

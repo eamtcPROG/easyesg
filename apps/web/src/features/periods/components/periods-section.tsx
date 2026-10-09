@@ -1,6 +1,7 @@
 import { Callout, CALLOUT_INTENT, PageHeading, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { ENTITY_STATUS } from '@easyesg/contracts';
 import { readPeriodList } from '@/server/data/periods';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
@@ -9,6 +10,7 @@ import { PERIODS_FROM, type PeriodsFrom } from '@/lib/periods-from';
 import { ROUTES } from '@/lib/routes';
 import { periodsBack } from '../tools/periods-back';
 import { applyPeriodView, readPeriodView, toPeriodRows } from '../tools/periods';
+import { ArchivedEntityNotice } from './archived-entity-notice';
 import { PeriodsBreadcrumb } from './periods-breadcrumb';
 import { PeriodsList } from './periods-list';
 import { PERIODS_MESSAGES } from './periods-messages';
@@ -77,7 +79,14 @@ export async function PeriodsSection({
     );
   } else {
     const page = applyPeriodView({ rows: toPeriodRows(read.periods), view });
-    body = <PeriodsList entityId={entityId} page={page} view={view} />;
+    // FR-20 (task 187): an archived entity takes no new period, so the list offers none and says why, once, here.
+    const archived = read.entity.status === ENTITY_STATUS.ARCHIVED;
+    body = (
+      <>
+        {archived ? <ArchivedEntityNotice /> : null}
+        <PeriodsList entityId={entityId} page={page} view={view} canOpen={!archived} />
+      </>
+    );
   }
 
   const ready = read.status === TENANT_READ.READY;

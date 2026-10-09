@@ -50,9 +50,14 @@ export interface PeriodsListProps {
   readonly entityId: string;
   readonly page: PeriodPage;
   readonly view: PeriodView;
+  /**
+   * Whether a period may be opened here — false for an archived entity (FR-20; task 187), whose list then draws *open a
+   * period* neither in the filter row nor in the first-use empty state; the section says why above it.
+   */
+  readonly canOpen: boolean;
 }
 
-export function PeriodsList({ entityId, page, view }: PeriodsListProps) {
+export function PeriodsList({ entityId, page, view, canOpen }: PeriodsListProps) {
   const t = useTranslations(PERIODS_MESSAGES);
   const router = useRouter();
   const [, startNavigation] = useTransition();
@@ -155,6 +160,7 @@ export function PeriodsList({ entityId, page, view }: PeriodsListProps) {
       <PeriodsToolbar
         entityId={entityId}
         from={view.from}
+        canOpen={canOpen}
         standing={view.standing}
         onStandingChangeAction={(standing) => setView({ standing })}
       />
@@ -179,9 +185,12 @@ export function PeriodsList({ entityId, page, view }: PeriodsListProps) {
             <EmptyState
               title={t('empty.firstUse.title')}
               action={
-                <Button asChild>
-                  <Link href={newPeriodRoute(entityId, view.from)}>{t('empty.firstUse.action')}</Link>
-                </Button>
+                // `null` for an archived entity: there is no first period to open, and the notice above says why.
+                canOpen ? (
+                  <Button asChild>
+                    <Link href={newPeriodRoute(entityId, view.from)}>{t('empty.firstUse.action')}</Link>
+                  </Button>
+                ) : null
               }
             >
               {t('empty.firstUse.body')}

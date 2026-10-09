@@ -283,6 +283,34 @@ test('a year another tab took meanwhile is refused beside the year, under the ap
   await expect(page).toHaveURL(/\/periods\/new$/);
 });
 
+test('an archived entity is offered no new period, and S-14 says why — on its list and on the create address (task 187)', async ({
+  page,
+}) => {
+  // FR-20 and §12.5.6's task-187 row: no *open a period* in the filter row or the empty state, the statement once under
+  // the heading, and the form's place taken by it on an address a bookmark or a stale tab can still reach.
+  await signedIn(page, 'archivedperiods');
+  const organizationId = organizations[organizations.length - 1];
+  const name = `${RUN_PREFIX} Atelierul`;
+  const thisYear = new Date().getFullYear();
+  const { entityId } = await seedOpenPeriod({ organizationId, name, fiscalYear: thisYear, archived: true });
+  const notice = page.getByText('Această entitate este arhivată', { exact: false });
+
+  await page.goto(`/entities/${entityId}/periods`);
+  await expect(notice).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'Deschideți o perioadă' })).toHaveCount(0);
+  // Its period stays listed and opens, as FR-20 keeps everything an archived entity held.
+  await expect(page.getByRole('link', { name: `Editați perioada ${thisYear}`, exact: true })).toHaveCount(1);
+
+  await page.goto(`/entities/${entityId}/periods/new`);
+  await expect(notice).toHaveCount(1);
+  await expect(page.getByRole('combobox', { name: 'Anul fiscal' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Deschideți perioada' })).toHaveCount(0);
+  const trail = page.getByRole('navigation', { name: 'Firimituri' });
+  await expect(trail.locator('[aria-current="page"]')).toHaveText('Perioadă nouă');
+  await page.getByRole('link', { name: 'Înapoi la perioadele de raportare' }).click();
+  await page.waitForURL(`**/entities/${entityId}/periods`);
+});
+
 test('the create form keeps its section and its way back, and the picker offers classes before any typing', async ({
   page,
 }) => {

@@ -1,4 +1,6 @@
 import type { Clock } from '@api/contracts/clock.port';
+import { EntityArchivedError } from '@api/modules/core/entity/errors/entity.errors';
+import { ENTITY_STATUS } from '@api/modules/core/entity/models/reporting-entity.model';
 import { PeriodNotFoundError } from '@api/modules/core/period/errors/period.errors';
 import type { ReportingPeriodStore } from '@api/modules/core/period/interfaces/reporting-period-store.interface';
 import type { Report, ReportPatch, ReportScope } from '../models/report.model';
@@ -34,6 +36,11 @@ export interface UpdateReportCommand {
  * where the period is open, and FR-22's lock refuses every write including the administrator's — so
  * this refuses with a message naming the way out, and the trigger refuses again for the caller who
  * arrived between the read and the write.
+ *
+ * **An archived entity's period takes no new report** (FR-20; §12.5.6's task-187 row), refused with the
+ * `entity-archived` a new period on it meets, from the entity status the period's read already joins. S-39 stops
+ * offering the entity; this is what a race, a stale address or another client meets. A report already opened is
+ * untouched, so `update` does not ask.
  */
 export class CreateReport {
   constructor(
@@ -49,6 +56,8 @@ export class CreateReport {
     // shell — so it answers the report's own error, which names reopening.
     const period = await this.periods.findPeriod({ periodId: command.reportingPeriodId });
     if (!period) throw new PeriodNotFoundError();
+    // The entity before the lock: the entity's state is the outer fact, and reopening the period would not answer it.
+    if (period.entityStatus === ENTITY_STATUS.ARCHIVED) throw new EntityArchivedError();
     if (period.lockedAt !== null) throw new ReportNotEditableError();
 
     const created = await this.reports.create({

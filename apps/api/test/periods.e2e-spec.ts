@@ -64,6 +64,7 @@ describe('reporting periods (UC-56)', () => {
     lockedAt: number | null;
     lockedBy: string | null;
     entityName: string;
+    entityStatus: string;
     /**
      * **Every field, not the two this suite happens to read.** `apps/api` may not import
      * `@easyesg/contracts` (`api-not-to-contracts-package`), so this interface is a hand-written
@@ -772,6 +773,33 @@ describe('reporting periods (UC-56)', () => {
 
       expect(byEntity.get(entityId)).toBe('Brutăria Lina');
       expect(byEntity.get(secondEntityId)).toBe('Moara Lina');
+    });
+
+    /**
+     * FR-23 AC-9's input (task 187): every row says whether its entity is archived, which is what S-05 reads to keep an
+     * archived entity's period in the table and out of the attention list. An entity of its own, archived here, since
+     * archiving cannot be undone and the others are every case's.
+     */
+    it('says on every row whether the entity is archived, and keeps an archived entity’s periods listed', async () => {
+      const archived = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({
+          name: 'Patiseria Veche',
+          legalForm: 'srl',
+          naceCodes: ['10.71'],
+          sites: [{ name: 'Atelierul vechi', locality: 'Bălți', countryCode: 'MD' }],
+        })
+        .expect(201);
+      const archivedId = (archived.body as { object: { id: string } }).object.id;
+      await openPeriod(aYear(2026)).expect(201);
+      await openPeriod(aYear(2026, { reportingEntityId: archivedId })).expect(201);
+      await http().post(`/api/v1/entities/${archivedId}/archive`).set(admin.authorization).send({}).expect(204);
+
+      const byEntity = new Map((await overview()).map((row) => [row.reportingEntityId, row.entityStatus]));
+
+      expect(byEntity.get(entityId)).toBe('active');
+      expect(byEntity.get(archivedId)).toBe('archived');
     });
 
     /**

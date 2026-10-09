@@ -6,6 +6,7 @@ import type {
   TaxonomyPin,
   TaxonomyRegistry,
 } from '@api/contracts/taxonomy-registry.port';
+import { ENTITY_STATUS } from '@api/modules/core/entity/models/reporting-entity.model';
 import type { EntitySnapshotRefresh } from '../interfaces/entity-snapshot-refresh.interface';
 import type { ReportingPeriodStore } from '../interfaces/reporting-period-store.interface';
 import type {
@@ -44,6 +45,7 @@ export const aPeriod = (overrides: Partial<ReportingPeriod> = {}): ReportingPeri
   createdAt: new Date('2026-08-01T00:00:00.000Z'),
   updatedAt: new Date('2026-08-01T00:00:00.000Z'),
   entityName: 'Alfa SRL',
+  entityStatus: ENTITY_STATUS.ACTIVE,
   // The default is *no report*, which is the state task 31.3 made real and FR-23's overview exists
   // to show. A fake defaulting the other way would make the started case look like the ordinary one.
   report: null as ReportingPeriod['report'],

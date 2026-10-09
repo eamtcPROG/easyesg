@@ -617,7 +617,7 @@
           "lede": "The filings someone still has work to do on, soonest deadline first.",
           "empty": {
             "title": "Nothing is waiting",
-            "body": "Every open reporting period is either finished or locked. There is nothing left to do before the deadlines you have set."
+            "body": "Every open reporting period is finished, locked or belongs to an archived entity. There is nothing left to do before the deadlines you have set."
           }
         },
         "resume": {
@@ -637,6 +637,7 @@
           "filed": "Filed"
         },
         "overdue": "Deadline passed",
+        "entityArchived": "Entity archived",
         "periodLocked": "Period locked",
         "due": "Due: {date}",
         "dueNone": "No deadline set",
@@ -955,6 +956,10 @@
         "newReport": "Back to the new report"
       },
       "caption": "The entity’s reporting periods",
+      "archived": {
+        "title": "Entity archived",
+        "body": "This entity is archived, so no new period can be opened for it. Its periods and reports stay available, as they were."
+      },
       "open": "Open a period",
       "columns": {
         "year": "Fiscal year",

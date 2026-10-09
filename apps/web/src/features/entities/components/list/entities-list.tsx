@@ -13,6 +13,7 @@ import {
   TextLink,
 } from '@easyesg/ui';
 import type { DataTableColumn, StatusTone } from '@easyesg/ui';
+import { ENTITY_STATUS, type EntityStatus } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useTransition } from 'react';
 import { IndexView } from '@/shared/index-view';
@@ -23,12 +24,10 @@ import { ROUTES, entityPeriodsRoute, entityRoute, withQuery } from '@/lib/routes
 import {
   ENTITY_FILTER_ANY,
   ENTITY_SORT,
-  ENTITY_STANDING,
   entityViewQuery,
   type EntityPage,
   type EntityRow,
   type EntitySort,
-  type EntityStanding,
   type EntityView,
 } from '../../tools/entities';
 import { ENTITIES_MESSAGES } from '../shared/entity-messages';
@@ -66,9 +65,9 @@ export type EntityColumnKey = EntitySort | (typeof ENTITY_COLUMN)[keyof typeof E
 
 /** Active is positive; archived is neutral rather than an error — FR-20 makes it a deliberate,
  *  reversible-by-nobody state, not a fault the reader should be alarmed by. */
-const STANDING_TONE: Record<EntityStanding, StatusTone> = {
-  [ENTITY_STANDING.ACTIVE]: STATUS_TONE.POSITIVE,
-  [ENTITY_STANDING.ARCHIVED]: STATUS_TONE.NEUTRAL,
+const STANDING_TONE: Record<EntityStatus, StatusTone> = {
+  [ENTITY_STATUS.ACTIVE]: STATUS_TONE.POSITIVE,
+  [ENTITY_STATUS.ARCHIVED]: STATUS_TONE.NEUTRAL,
 };
 
 export interface EntitiesListProps {
@@ -183,7 +182,7 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         size: COLUMN_SIZE.FIT,
         cell: (row) => {
           // An archived record takes no change (FR-20), so its button says it opens to be read.
-          const edits = row.standing === ENTITY_STANDING.ACTIVE;
+          const edits = row.standing === ENTITY_STATUS.ACTIVE;
           return (
             <span className={styles.rowActions}>
               {/* 30 Sep 2026, project owner: the periods cell is a link, and a reader may not know to press it — so

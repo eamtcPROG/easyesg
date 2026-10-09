@@ -289,6 +289,42 @@ describe('reports (UC-17, UC-18)', () => {
 
       expect(problemOf(refused.body)).toBe(`${PROBLEM_BASE_URI}/report-not-editable`);
     });
+
+    /**
+     * FR-20 AC-8 and §12.5.6's task-187 row: an archived entity takes no new report, refused with the `entity-archived`
+     * a new period on it meets. Its own entity, because archiving cannot be undone and the suite's is every case's.
+     */
+    it('refuses to start a report on an archived entity’s period, and creates none', async () => {
+      const archived = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({
+          name: 'Patiseria Veche',
+          legalForm: 'srl',
+          naceCodes: ['10.71'],
+          sites: [{ name: 'Atelierul vechi', locality: 'Bălți', countryCode: 'MD' }],
+        })
+        .expect(201);
+      const archivedId = (archived.body as { object: { id: string } }).object.id;
+      const period = await http()
+        .post('/api/v1/periods')
+        .set(admin.authorization)
+        .send({
+          reportingEntityId: archivedId,
+          fiscalYear: 2026,
+          periodStart: { date: '2026-01-01', timezone: CHISINAU },
+          periodEnd: { date: '2026-12-31', timezone: CHISINAU },
+        })
+        .expect(201);
+      const periodId = (period.body as { object: { id: string } }).object.id;
+      await http().post(`/api/v1/entities/${archivedId}/archive`).set(admin.authorization).send({}).expect(204);
+
+      const refused = await createReport(periodId).expect(409);
+
+      expect(problemOf(refused.body)).toBe(`${PROBLEM_BASE_URI}/entity-archived`);
+      const listed = objectsOf((await http().get('/api/v1/reports').set(editor.authorization).expect(200)).body);
+      expect(listed.filter((report) => report.reportingPeriodId === periodId)).toEqual([]);
+    });
   });
 
   describe('the pin moves only by an explicit migration (DR-4, task 31.3’s deliverable)', () => {

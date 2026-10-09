@@ -15,6 +15,7 @@ import {
 } from 'class-validator';
 import { Trim } from '@api/app/decorators/trim.decorator';
 import type { EpochMillis, LegalDate } from '@api/contracts/types/time';
+import { ENTITY_STATUS, type EntityStatus } from '@api/modules/core/entity/models/reporting-entity.model';
 import {
   REPORT_STATUS,
   statusAsRead,
@@ -280,6 +281,14 @@ export class ReportingPeriodResponseDto {
   readonly entityName: string;
 
   @ApiProperty({
+    enum: Object.values(ENTITY_STATUS),
+    description:
+      'The status of the entity this period belongs to (task 187). An archived entity’s period stays listed and asks ' +
+      'for no attention (FR-23), and a report cannot be started on it (FR-20).',
+  })
+  readonly entityStatus: EntityStatus;
+
+  @ApiProperty({
     type: PeriodReportDto,
     nullable: true,
     description:
@@ -307,6 +316,7 @@ export class ReportingPeriodResponseDto {
     this.createdAt = period.createdAt.getTime();
     this.updatedAt = period.updatedAt.getTime();
     this.entityName = period.entityName;
+    this.entityStatus = period.entityStatus;
     this.report = period.report === null ? null : new PeriodReportDto(period.report);
   }
 }

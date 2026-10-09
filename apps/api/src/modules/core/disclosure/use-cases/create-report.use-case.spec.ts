@@ -1,3 +1,5 @@
+import { EntityArchivedError } from '@api/modules/core/entity/errors/entity.errors';
+import { ENTITY_STATUS } from '@api/modules/core/entity/models/reporting-entity.model';
 import { PeriodNotFoundError } from '@api/modules/core/period/errors/period.errors';
 import { aPeriod, FakeReportingPeriodStore } from '@api/modules/core/period/testing/period.fakes';
 import { ReportNotEditableError, ReportNotFoundError } from '../errors/report.errors';
@@ -103,6 +105,22 @@ describe('CreateReport', () => {
           scope: REPORT_SCOPE.BASIC,
         }),
       ).rejects.toBeInstanceOf(PeriodNotFoundError);
+    });
+
+    /**
+     * FR-20 and §12.5.6's task-187 row: an archived entity takes no new work, and S-39 stops offering it — this is what a
+     * race or another client meets. Locked too here, so the order is held: the entity is named, since reopening the
+     * period would not answer it.
+     */
+    it('refuses to start a report on an archived entity’s period, the entity named before a lock', async () => {
+      const { useCase, reportStore } = build({
+        periods: [
+          aPeriod({ id: PERIOD_ID, entityStatus: ENTITY_STATUS.ARCHIVED, lockedAt: new Date('2026-08-20T00:00:00.000Z') }),
+        ],
+      });
+
+      await expect(useCase.create({ reportingPeriodId: PERIOD_ID })).rejects.toBeInstanceOf(EntityArchivedError);
+      expect(reportStore.all).toEqual([]);
     });
 
     /**

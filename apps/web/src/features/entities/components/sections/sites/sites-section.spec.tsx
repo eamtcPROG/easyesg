@@ -3,9 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
-import type { CreateReportingEntityRequest, ReportingEntity } from '@easyesg/contracts';
+import { ENTITY_STATUS, type CreateReportingEntityRequest, type ReportingEntity } from '@easyesg/contracts';
 import ro from '@/messages/ro.json';
-import { ENTITY_STANDING } from '../../../tools/entities';
 import { toFields, toRequest, type EntityFields } from '../../../tools/entity-fields';
 import { SitesSection } from './sites-section';
 
@@ -38,7 +37,7 @@ const ENTITY: ReportingEntity = {
   reportContactName: null,
   reportContactEmail: null,
   naceCodes: [],
-  status: ENTITY_STANDING.ACTIVE,
+  status: ENTITY_STATUS.ACTIVE,
   archivedAt: null,
   consolidationBasis: null,
   consolidationMembers: [],

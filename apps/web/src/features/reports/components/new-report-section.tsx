@@ -62,7 +62,9 @@ export async function NewReportSection({
           {t('unreachable.body')}
         </Callout>
       ) : (
-        <NewReportDecisions read={read} entityId={entityId} periodId={periodId} />
+        // The entity as the read honoured it, not as the address named it: an archived entity — or one that is not this
+        // organization's — reads as no choice made (`creationEntities`).
+        <NewReportDecisions read={read} entityId={read.entityId} periodId={periodId} />
       )}
     </div>
   );

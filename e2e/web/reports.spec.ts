@@ -151,6 +151,26 @@ test('the teaching empty state offers the first report, and the creation flow ma
   await expect(page.getByRole('row').filter({ hasText: `${RUN_PREFIX}-Aurora` })).toHaveCount(1);
 });
 
+test('the creation flow offers no archived entity, and an address naming one chooses nothing (task 187)', async ({
+  page,
+}) => {
+  // FR-20 and §12.5.6's task-187 row: S-39 lists active entities only, and `?entity=` naming an archived one — S-05's
+  // old link, a bookmark — reads as no choice made, rather than drawing its periods under a choice the api refuses.
+  const organizationId = await signedIn(page, 'archivedcreate');
+  await seedOpenPeriod({ organizationId, name: `${RUN_PREFIX}-Activa` });
+  const { entityId: archivedId } = await seedOpenPeriod({ organizationId, name: `${RUN_PREFIX}-Veche`, archived: true });
+
+  await page.goto('/reports/new');
+  await expect(page.getByRole('link', { name: `${RUN_PREFIX}-Activa` })).toHaveCount(1);
+  await expect(page.getByText(`${RUN_PREFIX}-Veche`)).toHaveCount(0);
+
+  await page.goto(`/reports/new?entity=${archivedId}`);
+  await expect(page.getByText(`${RUN_PREFIX}-Veche`)).toHaveCount(0);
+  // No period is offered, since no entity is chosen — the year its period holds is not a link.
+  await expect(page.getByRole('link', { name: '2026', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Creați raportul' })).toHaveCount(0);
+});
+
 test('a filtered-to-nothing list offers the filter back, not the teaching state', async ({ page }) => {
   const organizationId = await signedIn(page, 'filter');
   await seedReport({ organizationId, name: `${RUN_PREFIX}-Lina` });

@@ -338,7 +338,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 ### FR-20 — Archive an entity
 
-**Status.** Partial — delivered 29.3, 30.4.3 · remaining 187 (the pickers that start new work)
+**Status.** Built — delivered 29.3, 30.4.3, 187 (the pickers that start new work, and a report refused on an archived entity's period)
 
 **Obligation.** The system shall allow a reporting entity to be archived, removing it from active selection while retaining its historical reports and exports intact.
 
@@ -352,13 +352,14 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 **Behaviour.**
 1. **Archiving changes the entity's status; nothing is deleted.** No route removes an entity, and there is no un-archive (UC-55).
-2. **An archived entity stays readable.** It is included in `GET /entities` with its status, so its historical reports and exports remain retrievable. Its master data is frozen, and a new period cannot be opened against it.
+2. **An archived entity stays readable.** It is included in `GET /entities` with its status, so its historical reports and exports remain retrievable. Its master data is frozen, a new period cannot be opened against it, and a report cannot be started on one of its periods (§12.5.6 task-187 row). A report already opened is untouched.
 3. S-13 lists archived entities after active ones and does not hide them by default, so a first-use message is never shown to an organization whose entities are all archived (S-13 states; §4.6).
 4. **Archiving is a consequence-disclosing action** naming what survives (UX-70; design_spec S-13).
 5. **"Active selection" means the pickers that start new work**: the new-period entry and the new-report picker do not offer an archived entity. The S-13 Index keeps listing archived entities (item 3) (§12.5.6 task-182 identity and organization row, 182/14).
+6. **Where an action is removed for an archived entity, the screen says so** (UX-13): S-05's row of one of its periods says the entity is archived where it would offer to start a report, and S-14 says once, under its heading, that no new period can be opened — on its create address too, in the form's place. S-39 does not list it, and an address naming it reads as no choice made (§12.5.6 task-187 row).
 
 **Refusals.**
-- Archiving an archived entity, editing one, or opening a period against one → 409 `entity-archived`
+- Archiving an archived entity, editing one, opening a period against one, or starting a report on one of its periods → 409 `entity-archived`
 - Unknown entity → 404 `not-found` · Not an Organization Administrator → 403 `insufficient-role`
 
 **Acceptance criteria.**
@@ -368,7 +369,12 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - **AC-4** Given an archived entity, when a period is opened against it, then the answer is 409 `entity-archived` and no period is created. *(source: FR text; open-period use case, FR-20 comment)*
 - **AC-5** Given an archived entity, when it is archived again, then the answer is 409 `entity-archived`. *(source: controller description)*
 - **AC-6** Given any role, then no route deletes an entity. *(source: controller header; UC-55)*
-- **AC-7** Given an archived entity, then it is not offered by the picker that starts a report or the entry that opens a period, and it is still listed on S-13. *(source: FR text; §12.5.6 task-182 identity and organization row, 182/14)* Unmet until 187.
+- **AC-7** Given an archived entity, then it is not offered by the picker that starts a report or the entry that opens a period, and it is still listed on S-13. *(source: FR text; §12.5.6 task-182 identity and organization row, 182/14)*
+- **AC-8** Given a period of an archived entity, when a report is started on it, then the answer is 409 `entity-archived` and no report is created. *(source: §12.5.6 task-187 row; `design_spec.md` S-39)*
+
+**History.**
+- 5 Oct 2026 · project owner · "active selection" means the pickers that start new work · §12.5.6 task-182 identity and organization row (182/14)
+- 9 Oct 2026 · project owner · a report started on an archived entity's period is refused with `entity-archived`; each removed action names its cause · §12.5.6 task-187 row
 
 ### FR-21 — Open a reporting period
 
@@ -498,7 +504,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 ### FR-23 — The organization-wide overview
 
-**Status.** Partial — delivered 30.5, 32.4, 40 (the interpreter the status will read), 42.2 (completion and validation status: the standing reads readiness, each row the last run's summary) · remaining 187 (an archived entity's periods are not attention items)
+**Status.** Built — delivered 30.5, 32.4, 40 (the interpreter the status will read), 42.2 (completion and validation status: the standing reads readiness, each row the last run's summary), 187 (an archived entity's periods are not attention items)
 
 **Obligation.** The system shall present an organization-wide overview of every period of every entity, with completion and validation status, in a single view.
 
@@ -516,7 +522,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 5. **Where did I leave off** is the one resumable report most recently touched, opened through S-07's own resolver; the screen never picks a step. **What is the state of everything** lists the rows by entity, then most recent year first.
 6. **A row's action is removed by a locked period and by a view-only membership**, and the locked one says so (UX-13). The third cause, a suspended entitlement, is task 54's.
 7. **Completion and validation status are the last run's** (task 42.2; §12.5.6's task-42 row (f)): the standing reads readiness and each row with a report the run's summary — modules complete of those counted, fields outstanding — or *not checked yet* where no run exists. Until 42.2 they were refused rather than drawn empty, the roll-up being server-computed because two counters would be two answers (§12.5.6 task-32.4 and task-179.1 rows).
-8. **Rows are periods only.** An entity with no period has no row; S-13 is where it is seen. The periods of an archived entity stay in the table and are not attention items (§12.5.6 task-182 identity and organization row, 182/16).
+8. **Rows are periods only.** An entity with no period has no row; S-13 is where it is seen. The periods of an archived entity stay in the table and are not attention items (§12.5.6 task-182 identity and organization row, 182/16): never marked overdue, never offered as *where did I leave off*, and offering no report to start, which the row says (§12.5.6 task-187 row). Opening a report that exists stays.
 
 **Refusals.** No membership in the active organization → 403 `membership-required`.
 
@@ -531,12 +537,13 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - **AC-6** Given attention items, then they are ordered by due date, soonest first, with a period lacking one last. *(source: S-05 amendment of 7 Sep 2026)*
 - **AC-7** Given validation and completion have run, then each row shows its completion and validation status. *(source: FR text)* Met since 42.2: `GET /periods` carries the last run's summary beside readiness, and each row draws it (§12.5.6's task-41 row (7), task-42 row (f)).
 - **AC-8** Given an entity with no period, then the overview has no row for it. *(source: §12.5.6 task-182 identity and organization row, 182/16)*
-- **AC-9** Given a period of an archived entity, then it is listed in the table and is not an attention item. *(source: §12.5.6 task-182 identity and organization row, 182/16)* Unmet until 187.
+- **AC-9** Given a period of an archived entity, then it is listed in the table and is not an attention item. *(source: §12.5.6 task-182 identity and organization row, 182/16)*
 
 **History.**
 - 29 Aug 2026 · project owner · the report-status region ships as an explicit stub until reports exist · §12.5.6 task-30.5 row
 - 7 Sep 2026 · project owner · the overview reads periods and not reports; the completion and validation columns are refused with their owners named; no "due soon" threshold; lateness read in the period's zone · §12.5.6 task-32.4 rows
 - 5 Oct 2026 · project owner · "every entity and period" means every period of every entity; an archived entity's periods stay listed and ask for no attention · §12.5.6 task-182 identity and organization row (182/16)
+- 9 Oct 2026 · project owner · an archived entity's period is never overdue or resumable, and its row says the entity is archived where it would offer a report · §12.5.6 task-187 row
 
 ## 3. Business rules held in this part
 
