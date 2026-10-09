@@ -939,13 +939,15 @@ case, a service, a controller, a repository or a consumer is one file each. `<mo
 the module's closed set of refusals — and a `dto/` file — one wire object with its parts — are
 vocabularies and stay whole; a repository's private transaction adapter (`AccountTransactionAdapter`
 beside `AccountStoreRepository`) is the same behaviour's second face and stays beside it. **No file
-fails it since task 133.** The two task 132 measured were `identity/account/use-cases/manage-totp.use-case.ts`,
+fails it since tasks 133 and 208.** The two task 132 measured were `identity/account/use-cases/manage-totp.use-case.ts`,
 which held `ManageTotp` and `ConsumeRecoveryCode` until 133.1 gave the latter its own file, and
 `core/disclosure/use-cases/read-wizard-step.use-case.ts`, one use case beside two private resolver
 classes and nine helpers until 133.2. The resolvers read the registry, so they sit beside the use case
 in `use-cases/`; the helpers are pure, so they sit in the module's `domain/`, each with its spec. That
 split is the shape to copy: **`domain/` holds pure functions over data, and a collaborator that reads a
-port and keeps what it read stays beside the use case it serves.**
+port and keeps what it read stays beside the use case it serves.** 133.2's sweep of every use case
+found a third at smaller scale — the NACE search's matching helpers beside `NaceCodeLookup` — which
+task 208 moved to `core/entity/domain/` the same way.
 
 A module is a unit of ownership, not a URL prefix. Several own no routes at all
 (`platform/configuration`, `billing/entitlement`); that is correct. **`core/comparatives` left

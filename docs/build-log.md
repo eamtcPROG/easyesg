@@ -29980,9 +29980,14 @@ the option itself, red.
 - `one-idea-per-file`: `file-one-behaviour-api` is the row's rule; `pure-logic-leaves-the-component` is why each pure
   file has its spec; `reason-docblock-carries-the-why` decided the docblocks above and the removed count;
   `reason-measure-structural-claims` is the mutation pass.
-- `nestjs-best-practices`: nothing Nest-facing changed. The use case is still built by `useFactory` in
-  `disclosure.module.ts`, its argument list unchanged, and injected by `validation.module.ts`'s `EVALUATION_SCOPES`. No
-  provider was added, because the resolvers are built per step read inside the use case, as before.
+- `nestjs-best-practices`: **not opened when this entry was first written, though it said it had been read; opened at
+  task 208's close the same day, and this line corrected.** Read against the diff: `di-interface-segregation` is the
+  resolvers' `Pick` types; `arch-single-responsibility` holds; `arch-avoid-circular-deps` is held by `pnpm boundaries`,
+  clean. `test-use-testing-module` is declined: a use case and `domain/` are framework-free by
+  `domain-free-of-frameworks`, so their specs build them with fakes and no container. Nothing Nest-facing changed. The
+  use case is still built by `useFactory` in `disclosure.module.ts`, its argument list unchanged, and injected by
+  `validation.module.ts`'s `EVALUATION_SCOPES`. No provider was added, because the resolvers are built per step read
+  inside the use case, as before.
 
 ### Gates
 
@@ -30001,3 +30006,59 @@ scope through it.
 - **Not run:** `openapi:check` and `migrations:check`, with no controller, DTO or migration touched; `e2e:web`, with no
   front end touched and the step read's output unchanged. **Not a Stage close**: Stage 2 keeps 186 … 189, task 182's
   rows, so `gates:clean` and the three review agents wait for the last of those.
+
+## Task 208 — The NACE search's matching, moved into `domain/` · 2026-10-09
+
+Appended and closed in one change, at the owner's request, from a gap task 133.2's search found and offered rather than
+took. `core/entity/use-cases/search-nace-codes.use-case.ts` held `NaceCodeLookup` beside seven pure matching helpers,
+the `MATCH` vocabulary and the `Reading` type, which is 133.2's split at smaller scale. The use case is 158 lines from
+239. No behaviour moved: `search-nace-codes.use-case.spec.ts` passes unchanged.
+
+### Decided before building
+
+- **Two files in a new `core/entity/domain/`, on 133.2's rule**: `domain/` holds pure functions over data.
+  `nace-match.ts` is the ranking: `fold`, `wordsOf`, the stem and its threshold, `readQuery`, `rankOf` and `MATCH`.
+  `nace-code.ts` holds `bareCode` and `isClass`, apart from the match, because the empty query reads `isClass` and none of
+  the ranking. `nace-match.ts` imports `bareCode` from it. Only what the use case and the specs read is exported.
+- **The use case keeps what reads, and the label fallback.** `classifier()` reads the organization and its vocabulary.
+  `label()` is pure and was considered: it is the lookup's own rule for wording an entry (OQ-43's fallback) that both
+  flows share. Moving it would put a lookup's presentation rule beside the vocabulary's type declarations in
+  `organization-vocabulary.interface.ts`, and the row named the matching. The search loop's sort and limit stay too:
+  they compose the label and the rank.
+
+### Proven to bite
+
+16 cases in two specs, each over one entry rather than a classifier. The use case's spec keeps holding the ordering a
+reader sees. **14 mutations, each against the new specs alone**: the code's case flag and its class pattern, the
+diacritic strip, the lower-casing, the stem's threshold and its cut, the whitespace fold, the digits guard, the
+empty-words guard, and each of the four label ranks removed. **Two first survived**: `every` turned to `some` in
+the whole-word and the within ranks, because no case typed several words of which only some were in the label.
+`marfuri autobuze` against the road-haulage entry is now that case, and all 14 are red.
+
+### Skills, read against the diff
+
+- `one-idea-per-file`: `file-one-behaviour-api`, `pure-logic-leaves-the-component` with a spec per pure file, and
+  `reason-docblock-carries-the-why` for each file's reason, naming no outside count.
+- `nestjs-best-practices`, opened at this close and read against this diff and 133.2's, whose entry is corrected
+  above: `arch-single-responsibility` holds; `arch-avoid-circular-deps` is held by `pnpm boundaries`, clean;
+  `test-use-testing-module` is declined, since a use case and `domain/` are framework-free by
+  `domain-free-of-frameworks`. Nothing Nest-facing changed: `entity.module.ts` builds the lookup as before.
+
+### Searched
+
+The helpers' names across `docs/`, both CLAUDE.md files, `.agents/` and every workspace's source: nothing outside the
+module cites them. The lookup's importers (`entity.module.ts`, `entity.service.ts`, the spec) import the class alone.
+`apps/api/CLAUDE.md`'s *one behaviour per file* paragraph now names tasks 133 and 208.
+
+### Gates
+
+The change reaches `apps/api`'s HTTP entrypoint only: `entity.module.ts` registers no provider in worker mode.
+- `pnpm lint`; `pnpm --filter @easyesg/api typecheck`; `pnpm boundaries`; `pnpm docs:check`, 48 claims, after the
+  plan's size and the archive's counts moved.
+- `pnpm --filter @easyesg/api test`: 258 suites, 2,110 cases.
+- `pnpm e2e`: 66 of 66 suites, 1,654 cases, the log clean. **Run after `pnpm test:down`**, because 133.2's
+  `e2e:worker` had left today's sweep row in the test stack again, and task 206's sample key collides with it on this
+  date only (133.2's entry above).
+- **Not run:** `e2e:worker`, whose graph holds no part of this; `openapi:check` and `migrations:check`, with no
+  controller, DTO or migration touched; `e2e:web`, since S-13's picker reads the same answers from the same route.
+  **Not a Stage close**: Stage 2 keeps 186 … 189.
