@@ -186,6 +186,7 @@ test('each site is its own address, and the chips say how many lines it holds (Â
 
   // Restored from the address alone, as a colleague sent the link would see it.
   await openCalculator(page, reportId, '?site=1');
+  await expect(site(page, 'Magazinul')).toBeVisible();
   await expect(site(page, 'BrutÄƒria')).toHaveCount(0);
 });
 

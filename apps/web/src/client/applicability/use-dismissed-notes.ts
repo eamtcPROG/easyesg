@@ -6,7 +6,7 @@ import { forgetNotAsked } from '@/features/wizard/tools/applicability-notes';
 import { readDismissed, subscribeDismissed, writeDismissed, type NoteScope } from './dismissed-notes';
 
 /**
- * The step's dismissed applicability notes, read from this browser and kept in step with what the step asks (task 95;
+ * The step's dismissed applicability notes, read from this tab's session and kept in step with what the step asks (task 95;
  * UX-27).
  *
  * **`null` in the server's HTML and during hydration** — `useSyncExternalStore`'s server snapshot, as `useHydrated`'s

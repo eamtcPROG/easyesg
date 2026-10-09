@@ -311,7 +311,9 @@ const FIELD_AUDITED_TABLES = [
  * `core.field_change` is the trail itself: auditing it would recurse, and it is append-only by
  * other means. The two `audit` tables are the same argument in a different schema — a system audit
  * row and an outbox row are already immutable records of something that happened (§7.7), so
- * capturing per-field changes to them would record the writing of a record.
+ * capturing per-field changes to them would record the writing of a record. The system audit log is
+ * also where the admin realm's sign-ins are written (task 28.4), which is how 182/4's *sign-ins are
+ * exempt* reaches this list.
  */
 const UNAUDITED_TABLES = [
   'core.field_change',
@@ -400,6 +402,13 @@ const auditedTablesMissingCapture = (x: Executor) =>
  * same reason: tenant data is what FR-54 is about, and `core` is where most but no longer all of it
  * lives. Task 26.1's `identity.invitation` was the next case, and it was caught by this sweep
  * rather than remembered — the classification list above names it.
+ *
+ * **This is FR-159's claim made checkable** (§12.5.6's task-189 row): *every state-changing action* means a change to a
+ * tenant business record (182/4), and a tenant table is in neither list only by failing here. **A tenant sign-in is
+ * outside the scope rather than on the list**: `identity.session`, `identity.auth_attempt` and the refresh tokens
+ * carry no `organization_id`, because a sign-in is the account's before it is any organization's — so a table that
+ * starts carrying one is asked about the day it does. If a tenant business record ever lives outside `core` with no
+ * `organization_id`, it is this scope that must widen, not the lists.
  */
 const unclassifiedTenantTables = (x: Executor) =>
   x.query<{ location: string }[]>(

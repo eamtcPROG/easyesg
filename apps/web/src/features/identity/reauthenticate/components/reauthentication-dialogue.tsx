@@ -1,5 +1,6 @@
 'use client';
 
+import { useReturnFocus } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { Dialog } from 'radix-ui';
 import type { ReactNode } from 'react';
@@ -53,12 +54,21 @@ export function ReauthenticationDialogue({
 }) {
   const t = useTranslations('identity.reauthenticate');
   const refuse = (event: Event) => event.preventDefault();
+  // Opened from state, with no `Dialog.Trigger`, so Radix hands focus to nothing on close: the field the reader was in
+  // when the session ended is where focus returns once they are signed in again (task 207's hook, UX-113).
+  const returnFocus = useReturnFocus({});
 
   return (
     <Dialog.Root open={open}>
       <Dialog.Portal>
         <Dialog.Overlay className={styles.overlay} />
-        <Dialog.Content className={styles.dialogue} onEscapeKeyDown={refuse} onInteractOutside={refuse}>
+        <Dialog.Content
+          className={styles.dialogue}
+          onEscapeKeyDown={refuse}
+          onInteractOutside={refuse}
+          onOpenAutoFocus={returnFocus.onOpenAutoFocus}
+          onCloseAutoFocus={returnFocus.onCloseAutoFocus}
+        >
           <Dialog.Title className={`t-heading-3 ${styles.title}`}>{t('title')}</Dialog.Title>
           <Dialog.Description className={`t-body ${styles.explanation}`}>{explanation}</Dialog.Description>
           <ReauthenticationBody

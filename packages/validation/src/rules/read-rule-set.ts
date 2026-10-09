@@ -2,11 +2,11 @@ import { compareDecimals, isDecimalText, readDecimal } from './decimal.js';
 import {
   ADMITTED_VERDICTS,
   CONDITION_KIND,
-  RELATION,
+  isRelation,
+  isRuleKind,
   RULE_KIND,
   type Condition,
   type FieldSelector,
-  type Relation,
   type Rule,
   type RuleKind,
   type RuleSet,
@@ -90,12 +90,6 @@ const isName = (value: unknown): value is string => typeof value === 'string' &&
 
 /** A catalogue key: dot-separated words, as every catalogue in the repository writes them. */
 const MESSAGE_KEY = /^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$/u;
-
-const KINDS: ReadonlySet<string> = new Set(Object.values(RULE_KIND));
-const isRuleKind = (value: unknown): value is RuleKind => typeof value === 'string' && KINDS.has(value);
-
-const RELATIONS: ReadonlySet<string> = new Set(Object.values(RELATION));
-const isRelation = (value: unknown): value is Relation => typeof value === 'string' && RELATIONS.has(value);
 
 /** The properties each kind adds to the four every rule has — anything else is refused. */
 const COMMON = ['id', 'kind', 'verdict', 'message'];

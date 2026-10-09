@@ -2,7 +2,7 @@ import { CALLOUT_INTENT, Callout, WizardShell } from '@easyesg/ui';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { getPathname } from '@/i18n/navigation';
-import { periodRoute, reportCalculatorRoute } from '@/lib/routes';
+import { CALCULATOR_LINE_PARAM, CALCULATOR_SITE_PARAM, periodRoute, reportCalculatorRoute } from '@/lib/routes';
 import { readCalculator } from '@/server/data/calculator';
 import { readValidation } from '@/server/data/validation';
 import { readActiveMembership } from '@/server/data/memberships';
@@ -47,16 +47,16 @@ import { CalculatorFoot } from './calculator-foot';
  */
 export async function CalculatorStep({
   reportId,
-  site,
-  line,
+  searchParams,
 }: {
   readonly reportId: string;
-  /** `?site=` as the route received it. */
-  readonly site: string | readonly string[] | undefined;
-  /** `?line=` as the route received it — the line whose derivation is open (task 39.2). */
-  readonly line: string | readonly string[] | undefined;
+  /**
+   * The route's query, unawaited (`shell-composes-only`): `?site=`, the site the address shows, and `?line=`, the line
+   * whose derivation is open (task 39.2).
+   */
+  readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [t, tWizard, read, session, membership, locale, validation] = await Promise.all([
+  const [t, tWizard, read, session, membership, locale, validation, query] = await Promise.all([
     getTranslations(CALCULATOR_MESSAGES),
     getTranslations(WIZARD_MESSAGES),
     readCalculator(reportId),
@@ -65,7 +65,10 @@ export async function CalculatorStep({
     getLocale(),
     // The module list reads what the last validation run found, as S-07's does (task 42.2) — one list, one reading.
     readValidation(reportId),
+    searchParams,
   ]);
+  const site = query[CALCULATOR_SITE_PARAM];
+  const line = query[CALCULATOR_LINE_PARAM];
 
   if (read.status === TENANT_READ.FORBIDDEN) {
     await redirectToChoiceIfOwed();

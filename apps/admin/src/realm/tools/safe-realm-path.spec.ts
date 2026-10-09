@@ -11,4 +11,14 @@ describe('safeRealmPath', () => {
       expect(safeRealmPath(hostile)).toBeNull();
     }
   });
+
+  /**
+   * The URL parser deletes every tab, newline and carriage return before it reads a URL, so `/\t/evil.test` arrives as
+   * `//evil.test`: a check of the first two characters passes it. A realm path never holds one, so any is refused.
+   */
+  it('refuses a path holding a tab, a newline or a carriage return, which a browser deletes before reading it', () => {
+    for (const hostile of ['/\t/evil.test', '/\n/evil.test', '/\r/evil.test', '/\t\\evil.test', '/accounts\n']) {
+      expect(safeRealmPath(hostile)).toBeNull();
+    }
+  });
 });

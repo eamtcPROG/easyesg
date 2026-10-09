@@ -752,7 +752,7 @@ test('B8 asks headcount per named country, and turnover only past fifty (UC-26)'
     'href',
     /\/B1#disclosure-NumberOfEmployees/u,
   );
-  // Dismissed, it stays dismissed — the reader's, in this browser — once the page has read the browser again.
+  // Dismissed, it stays dismissed — the reader's, for this tab's session — once the page has read the store again.
   await appeared.getByRole('button', { name: 'Ascundeți nota' }).click();
   await expect(appeared).toHaveCount(0);
   await page.reload();

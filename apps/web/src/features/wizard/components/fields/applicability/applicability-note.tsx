@@ -2,6 +2,7 @@ import { Button, BUTTON_VARIANT, Callout, CALLOUT_INTENT, TextLink } from '@easy
 import { useFormatter, useTranslations } from 'next-intl';
 import type { ApplicabilityNote as Note } from '../../../tools/applicability-notes';
 import { noteWords } from '../../../tools/applicability-words';
+import { BASIS_MODULE } from '../../../tools/basis-module';
 import { fieldHref } from '../../../tools/field-anchor';
 import { StepLink } from '../../shared/step-link';
 import { APPLICABILITY_MESSAGES } from '../shared/step-messages';
@@ -43,7 +44,7 @@ export function ApplicabilityNote({
               <StepLink
                 href={fieldHref({
                   reportId,
-                  module: DRIVER_MODULE,
+                  module: BASIS_MODULE,
                   field: { elementKey: driver.elementKey, dimensionKey: '', ordinal: 0 },
                 })}
               >
@@ -61,10 +62,3 @@ export function ApplicabilityNote({
     </Callout>
   );
 }
-
-/**
- * Where every driver is answered: an applicability rule reads B1's answers and nothing else (FR-28; the cause's
- * `drivers` are *"the B1 elements whose answers decide it"*). The standard's own module reference, which renders
- * untranslated (task 35.1); unexported, its one reader being this file.
- */
-const DRIVER_MODULE = 'B1';

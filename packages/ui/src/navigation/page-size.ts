@@ -30,3 +30,10 @@ export const readPageSize = (raw: unknown): { readonly onpage?: PageSize } => {
     typeof raw === 'number' ? raw : typeof raw === 'string' ? Number.parseInt(raw, 10) : Number.NaN;
   return isPageSize(value) && value !== DEFAULT_PAGE_SIZE ? { onpage: value } : {};
 };
+
+/**
+ * The size a view holds: an offered one, or the default — the narrowing a list's view and its pager both need, since a
+ * view always has a size where an address may name none. Here beside the set rather than retyped by each list
+ * (the root `CLAUDE.md`: *an operation over a vocabulary lives with the vocabulary*).
+ */
+export const toPageSize = (raw: unknown): PageSize => readPageSize(raw).onpage ?? DEFAULT_PAGE_SIZE;

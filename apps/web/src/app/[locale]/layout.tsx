@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { SkipLink } from '@easyesg/ui';
+import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
 import { RESTATED_TOKEN } from '@/lib/restated-tokens';
+import { PageSkipLink } from '@/shared/page-skip-link';
 
 /**
  * The root layout. There is deliberately no `src/app/layout.tsx` above this one: every path
@@ -156,9 +156,7 @@ export default async function LocaleLayout({ children, params }: Props) {
 
           `architecture.md` §12.5.6 carries the decision and what it cost to reach.
         */}
-        {/* UX-99's skip link (task 203.3), the first thing a keyboard reaches on every page, to the `<main>` each
-            layout or archetype marks with `MAIN_CONTENT_ID`. */}
-        <SkipLink label={(await getTranslations({ locale, namespace: 'chrome' }))('skipLink')} />
+        <PageSkipLink locale={locale} />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>

@@ -1,6 +1,7 @@
 import { matchesSearch } from '@/lib/search-match';
-import { DEFAULT_PAGE_SIZE, readPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
+import { DEFAULT_PAGE_SIZE, toPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
 import { REPORT_STATUS, type Report, type ReportStatus } from '@easyesg/contracts';
+import { compareText } from '@/lib/collation';
 
 /**
  * S-06's read model — which reports are open to this member, and where each one stands
@@ -133,7 +134,7 @@ export const readReportView = (
     direction:
       oneOf(Object.values(REPORT_SORT_DIRECTION), single('dir')) ?? DEFAULT_REPORT_VIEW.direction,
     page: Number.isFinite(page) && page > 0 ? page : DEFAULT_REPORT_VIEW.page,
-    pageSize: readPageSize(single('onpage')).onpage ?? DEFAULT_REPORT_VIEW.pageSize,
+    pageSize: toPageSize(single('onpage')),
     q: single('q')?.trim() ?? '',
   };
 };
@@ -170,10 +171,10 @@ const STATUS_RANK: Record<ReportStatus, number> = {
 const compareBy = (left: ReportRow, right: ReportRow, sort: ReportSort): number => {
   if (sort === REPORT_SORT.STATUS) return STATUS_RANK[left.status] - STATUS_RANK[right.status];
   if (sort === REPORT_SORT.ACTIVITY) return left.updatedAt - right.updatedAt;
-  // `localeCompare` without a locale argument, which is the *sort* case and not a formatting one:
-  // NFR-26's rule governs what a reader sees, and this decides row order. `Intl.Collator` would be
-  // a formatter constructed at a call site, which `i18n/formats.ts` owns and lint forbids.
-  if (sort === REPORT_SORT.ENTITY) return left.entityName.localeCompare(right.entityName);
+  // A sort, not a formatting: NFR-26 governs what a reader sees, and this decides row order — in OQ-61's root
+  // collation (`compareText`), which constructs nothing, where `Intl.Collator` would be a formatter `i18n/formats.ts`
+  // owns and lint forbids at a call site.
+  if (sort === REPORT_SORT.ENTITY) return compareText(left.entityName, right.entityName);
   return left.fiscalYear - right.fiscalYear;
 };
 
@@ -222,7 +223,7 @@ export const reportFilterOptions = (rows: readonly ReportRow[]): ReportFilterOpt
   return {
     entities: [...entities]
       .map(([id, name]) => ({ id, name }))
-      .sort((left, right) => left.name.localeCompare(right.name)),
+      .sort((left, right) => compareText(left.name, right.name)),
     years: [...new Set(rows.map((row) => row.fiscalYear))].sort((left, right) => right - left),
   };
 };

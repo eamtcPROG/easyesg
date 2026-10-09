@@ -458,7 +458,7 @@ src/
 │                 └─ a domain serving SEVERAL screens splits per screen — see below
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter), S-37's gate
 ├─ server/         server-only: session/ · api/ · sealed/ · data/ · messages/
-├─ client/         browser-only: applicability (task 95 — which of S-07's applicability notes a reader dismissed, in `localStorage`), autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), spreadsheet (task 204.2 — an `.xlsx` or `.csv` read into rows of text, its two readers loaded when the import opens), unsent-work, polling, session (task 92 — the probe and the re-authentication posts), notifications (task 50.2 — the count's poll, the panel's read, the opening mark), push (task 149 — AD-15's socket, its backoff and `useFrame`), query (the one Query client)
+├─ client/         browser-only: applicability (task 95 — which of S-07's applicability notes a reader dismissed, in the tab's `sessionStorage` since Stage 2's close), autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), spreadsheet (task 204.2 — an `.xlsx` or `.csv` read into rows of text, its two readers loaded when the import opens), unsent-work, polling, session (task 92 — the probe and the re-authentication posts), notifications (task 50.2 — the count's poll, the panel's read, the opening mark), push (task 149 — AD-15's socket, its backoff and `useFrame`), query (the one Query client)
 └─ lib/            env, pagination, session-cookie, routes, route-access, notice, api-outcome, legal-date, locale-path, revalidate-paths, requested-path
 ```
 

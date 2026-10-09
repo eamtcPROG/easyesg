@@ -99,7 +99,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 4. The roll-up supplies the named outstanding modules and fields that FR-164's notice carries (UC-38, UC-169; task 51.2 waits for 41.3).
 5. **What the roll-up returns** (182/18). *Counts*, per module and for the report: **resolved** (answered, including a nil return), **reasoned** (declared not available, FR-32) and **outstanding** (what item 3 does not count as resolved); and a **derived status**: *not started* (nothing resolved or reasoned), *in progress* (something outstanding) or *complete* (nothing outstanding) for a module, the wizard's own derivation (task-179.1 row), and the same three for the report, where *complete* reads *ready* (item 6). That is the single readiness signal UC-38 asks for, and it is what the completeness meter draws: *resolved / reasoned / outstanding and never a single percentage* (design_spec.md §11.5). A surface that needs a figure derives one from the counts for display, as the advisor board does (FR-200); the roll-up never returns one.
 6. **The report's status** (182/19). `ready_to_file` is *computed* from the roll-up: a report is ready when nothing is outstanding, and stops being ready when a run finds something outstanding. No user act sets it. **It is derived on read and never stored** (§12.5.6's task-41 row (2)): the stored status stays the period lock's, and an open report reads `ready_to_file` while its latest run leaves nothing outstanding. `filed` is the reporter's explicit act, *Mark as filed* on S-11 (`design/IMPLEMENTATION_PLAN.md`), and never the result of an export: an export may be a draft for a bank, and only the reporter knows a document has left the building. The period lock stays the only writer of `open` and `locked` (task-31.3 row).
-7. S-06 and S-05 refuse the completion and validation columns until this exists (task-32.2 and task-32.4 rows); FR-25/AC-3 is unmet until 41.3.
+7. S-06 and S-05 refused the completion and validation columns until this existed (task-32.2 and task-32.4 rows); they read it since 42.2, and FR-25/AC-3 is met since then.
 8. **The roll-up is as current as the findings it is read from** (182/26): the api evaluates when asked, not on each write (FR-43), so a report edited since the last run reads as the run left it, and an export request runs validation first (FR-44).
 9. **Before a report's first run there is no roll-up, and nothing is drawn as though there were one** (§12.5.6's task-42 row (3)). A module with nothing answered reads *not started*, which a run would also find; any other reads *not checked yet*, and so does the report on S-05 and S-06. S-08 offers the first run.
 10. **The list reads carry the run's summary** (§12.5.6's task-42 row (f)): `GET /reports` and `GET /periods` answer, beside readiness, how many modules the last run found complete of those it counted and how many fields it left outstanding — the figures S-06's completion column and S-05 draw — or none where no run exists. A count of modules is not a percentage, and none is returned (item 5).
@@ -166,7 +166,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-43 — Validation re-run at any completeness
 
-**Status.** Built — delivered 40.2 (the interpreter, whose findings depend on the answers alone and not on their order), 41.2 (the run and the findings it stores). AC-4's maximum-population fixture is not built: a run over a report with its Basic figures answered measured 134 ms
+**Status.** Partial — delivered 40.2 (the interpreter, whose findings depend on the answers alone and not on their order), 41.2 (the run and the findings it stores) · remaining 213 (AC-4's maximum-population fixture). Until it is built: a run over a report with its Basic figures answered measured 134 ms
 
 **Obligation.** The system shall re-run validation idempotently at any level of completeness, so that it functions as a working tool during drafting and not only as a pre-export gate.
 
@@ -197,7 +197,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-1** Given an incomplete report, when validation is run, then it returns findings. *(source: FR text; UC-40)*
 - **AC-2** Given unchanged data, when validation is run twice, then the findings are identical. *(source: FR text; BR-VAL-3)*
 - **AC-3** Given a corrected field, when validation is re-run, then its finding is gone and no stale finding remains. *(source: task 41.2)*
-- **AC-4** Given a fully populated Basic report, then a run completes within p95 2 s. *(source: NFR-39)* Measured, not proven: 134 ms over a report with its Basic figures answered (41.2's e2e holds it under 2 s); the maximum-population fixture NFR-39 names is built by no task.
+- **AC-4** Given a fully populated Basic report, then a run completes within p95 2 s. *(source: NFR-39)* Measured, not proven: 134 ms over a report with its Basic figures answered (41.2's e2e holds it under 2 s); the maximum-population fixture NFR-39 names is task 213's.
 - **AC-5** Given a report reopened on another device, then the same findings show, recomputed. *(source: FR-39/AC-3; §12.5.6 task-35.3 row)*
 - **AC-6** Given a report in another organization, then a run answers 404. *(source: `core/disclosure/errors/report.errors.ts`)*
 - **AC-7** Given a locked period, when validation is run, then it runs and its findings are stored. *(source: §12.5.6 task-182 validation row, 182/21)*
@@ -213,7 +213,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-44 — Export with unresolved findings, after a warning
 
-**Status.** Not started — delivered 41.2 (the findings an export request evaluates) · remaining 44.3, 46.1, 46.5, 47.3, 47.4. Both 44.3 and 47.3 cite this requirement, 47.3 since 182/165, and the warning is S-11's content (47.3), the api's half of it is 47.4's, and the Excel marking is 46.5's.
+**Status.** Partial — delivered 41.2 (the findings an export request evaluates) · remaining 44.3, 46.1, 46.5, 47.3, 47.4. Both 44.3 and 47.3 cite this requirement, 47.3 since 182/165, and the warning is S-11's content (47.3), the api's half of it is 47.4's, and the Excel marking is 46.5's.
 
 **Obligation.** The system shall permit export with unresolved findings after an explicit warning, marking the gaps visibly in the output rather than omitting them silently.
 
@@ -351,7 +351,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-47 — Carry a prior value forward, marked
 
-**Status.** Built — delivered 34.1, 36.14, 191 (the confirm action)
+**Status.** Partial — delivered 34.1, 36.14, 191 (the confirm action) · remaining 44, 46 (neither export carries the mark)
 
 **Obligation.** The system shall allow a prior-period value to be carried forward into the current period, marking it as carried forward so that it is reviewed rather than accumulating unnoticed.
 
@@ -391,7 +391,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-48 — Preview of the assembled report
 
-**Status.** Not started — remaining 39.4 (the overriding person, in the preview), 43.1, 43.2
+**Status.** Not started — remaining 43.1, 43.2 (the overriding person, which 39.4 stores, shown in the preview)
 
 **Obligation.** The system shall render a preview of the fully assembled report — narrative, indicator tables, comparatives — as it will appear when exported, without generating a file.
 
@@ -419,7 +419,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-1** Given a report, then the preview shows its narrative, indicator tables and comparatives. *(source: FR text; UC-41)* Unmet until 43.2.
 - **AC-2** Given a preview, then no file is generated and no export is recorded. *(source: FR text; UC-41)* Unmet until 43.2.
 - **AC-3** Given the preview and the export of the same report, then content, order and marked gaps are the same. *(source: UX-45)* Unmet until 44.3.
-- **AC-4** Given an overridden figure, then the preview shows its attribution marker and the person who overrode it. *(source: UX-43; design_spec.md S-10; §12.5.6 task-182 row (4))* Unmet until 39.4.
+- **AC-4** Given an overridden figure, then the preview shows its attribution marker and the person who overrode it. *(source: UX-43; design_spec.md S-10; §12.5.6 task-182 row (4))* Unmet until 43.2; the person is stored since 39.4 (§12.5.6's task-39 row (3)).
 - **AC-5** Given the preview and the PDF, then both come from one rendering module. *(source: AD-10; task 43.1)* Unmet until 43.1.
 - **AC-6** Given each of the three locales, then a full report previews in it. *(source: task 43.2)* Unmet until 43.2.
 - **AC-7** Given the preview opened from S-07, then it is in the account's export default until another language is chosen on S-10. *(source: §12.5.6 task-182 validation row, 182/34)* Unmet until 43.2.

@@ -1,6 +1,6 @@
 'use client';
 
-import { DEFAULT_PAGE_SIZE, PAGE_SIZES, Pagination, readPageSize } from '@easyesg/ui';
+import { PAGE_SIZES, Pagination, toPageSize } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { useRouter } from '@/i18n/navigation';
@@ -45,7 +45,7 @@ export function CentrePager({
         router.push(
           withQuery(
             ROUTES.NOTIFICATIONS,
-            centreViewQuery({ ...view, page: 1, pageSize: readPageSize(size).onpage ?? DEFAULT_PAGE_SIZE }),
+            centreViewQuery({ ...view, page: 1, pageSize: toPageSize(size) }),
           ),
         ),
     }),

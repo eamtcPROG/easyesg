@@ -660,6 +660,58 @@ describe('the calculator’s lines and runs (task 38.1)', () => {
       expect(await write(editor, gas)).toBeNull();
     });
 
+    /**
+     * The triggers' INSERT branch, which nothing above reaches: the request tier's `INSERT` is table-wide — the columns
+     * are withheld from `UPDATE` only — so on an insert the trigger is the only guard, and a statement naming someone
+     * else as the overrider must come out naming the bound account. Run as the request tier's own role, past the api.
+     */
+    it('names the bound account on an insert, whatever the statement names (task 39.4)', async () => {
+      const { reportId } = await openReport(2026);
+      const lineId = randomUUID();
+      await putLine(reportId, lineId, gas).expect(200);
+      await runOf(reportId);
+      const copy = randomUUID();
+
+      const stored = await asOrganization(appRole, ORG, async (run) => {
+        await run(`SELECT set_config('app.current_user', $1, true)`, [editor.accountId]);
+        // A line copied with an override, naming the administrator.
+        const kept = ((await run(
+          `SELECT string_agg(column_name, ', ' ORDER BY ordinal_position) AS columns FROM information_schema.columns
+            WHERE table_schema = 'core' AND table_name = 'calc_source'
+              AND column_name NOT IN ('id', 'override_tonnes', 'override_explanation', 'override_by')`,
+        )) as { columns: string }[])[0].columns;
+        await run(
+          `INSERT INTO core.calc_source (id, override_tonnes, override_explanation, override_by, ${kept})
+           SELECT $1, 0.5, 'One van was sub-leased', $2, ${kept} FROM core.calc_source WHERE id = $3`,
+          [copy, admin.accountId, lineId],
+        );
+        // B3's scope written again as an override, naming the administrator.
+        // `DELETE … RETURNING` answers `[rows, count]`, not rows (apps/api's CLAUDE.md).
+        const [[figure]] = (await run(
+          `DELETE FROM core.report_disclosure_value WHERE report_id = $1 AND element_key = $2 RETURNING *`,
+          [reportId, B3.SCOPE_1],
+        )) as [Record<string, unknown>[], number];
+        const figureColumns = Object.keys(figure).filter(
+          (column) => !['id', 'origin', 'value_numeric', 'explanation', 'overridden_by'].includes(column),
+        );
+        await run(
+          `INSERT INTO core.report_disclosure_value (origin, value_numeric, explanation, overridden_by, ${figureColumns.join(', ')})
+           VALUES ('overridden', 1.75, 'Our accountant’s figure', $1, ${figureColumns.map((_, index) => `$${index + 2}`).join(', ')})`,
+          [admin.accountId, ...figureColumns.map((column) => figure[column])],
+        );
+        return {
+          line: await run(`SELECT override_by FROM core.calc_source WHERE id = $1`, [copy]),
+          figure: await run(
+            `SELECT overridden_by FROM core.report_disclosure_value WHERE report_id = $1 AND element_key = $2`,
+            [reportId, B3.SCOPE_1],
+          ),
+        };
+      });
+
+      expect(stored.line).toEqual([{ override_by: editor.accountId }]);
+      expect(stored.figure).toEqual([{ overridden_by: editor.accountId }]);
+    });
+
     it('holds an override without its reason unwritable, by the table itself (UX-43)', async () => {
       const { reportId } = await openReport(2026);
       await putLine(reportId, randomUUID(), gas).expect(200);

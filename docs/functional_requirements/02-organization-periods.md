@@ -150,7 +150,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 ### FR-16 — Entity identifiers
 
-**Status.** Built — delivered 29.2, 30.3, 175, 188 (the IDNO check digit)
+**Status.** Partial — delivered 29.2, 30.3, 175, 188 (the IDNO check digit) · remaining 210 (the IDNO a filing needs, as a validation rule)
 
 **Obligation.** The system shall maintain each reporting entity's identifiers, with **IDNO as primary** and **LEI as an optional additional identifier**, validating format and checksum on entry. DUNS, EU ID and PermID are not modelled at MVP.
 
@@ -168,7 +168,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 3. **The IDNO is checked in full.** Government Decision 272/2002 fixes the thirteen-digit layout and says the last digit is a check digit, without giving the algorithm. The algorithm was supplied on 5 Oct 2026: the first twelve digits are multiplied by the repeating weights 7, 3, 1 and summed, and the sum modulo 10 is the thirteenth digit. It holds for 1003600005148 and 1017600033216, and its source (StephenAbbott/opencheck PR #269, `backend/opencheck/sources/asp_moldova.py`) validated all 265,814 IDNOs in the State Register export of 14 Sep 2026. It is not the weighted-modulo-11 family that §7.2 refuted on 28 Aug 2026. Thirteen digits whose last disagrees are refused, on entry by the api and inline on S-13; the validator reports the check digit as *not evaluated* only where the shape fails, which is not the same as failed (§12.5.6 task-182 identity and organization row, 182/12; §7.2).
 4. **The LEI is checked in full**: ISO 17442 shape, then ISO 7064 MOD 97-10. Case is not normalised; a lower-case LEI is malformed.
 5. **No uniqueness constraint on the IDNO.** A platform-wide unique index would be an existence oracle over the Moldovan company register crossed with the customer list (NFR-64), and it would need a cross-tenant read no policy grants. Duplicates are permitted (§7.2). Whether one organization's entities may share an IDNO is deferred: nothing refuses it, and if the answer is to refuse, a partial unique index on (organization, IDNO) and one problem type are what change (§12.5.6 task-175 row).
-6. **Requiredness is not enforced at the record.** That B1 cannot be filed without an IDNO is a validation rule interpreted from configuration (FR-73: the interpreter is task 40's, the rule set 41.1's), so the profile stays usable while half complete.
+6. **Requiredness is not enforced at the record.** That B1 cannot be filed without an IDNO is a validation rule interpreted from configuration (FR-73: the interpreter is task 40's, the rule set 41.1's), so the profile stays usable while half complete. **No rule kind could read the entity's identifiers**, so the rule set carries none and a report whose entity holds no IDNO reads ready to file until task 210 gives the interpreter that reading (§12.5.6's Stage-2-close row, item (3)).
 
 **Refusals.**
 - IDNO not thirteen digits, or LEI not of the right shape → 400 `identifier-malformed` (`core.entity.idno_malformed`, `core.entity.lei_malformed`)
@@ -299,7 +299,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 ### FR-19 — Consolidation scope
 
-**Status.** Built — delivered 29.4, 30.4.3, 91.2, 176
+**Status.** Partial — delivered 29.4, 30.4.3, 91.2, 176 · remaining 215 (a subsidiary's IDNO check digit)
 
 **Obligation.** The system shall record an entity's consolidation basis and, where consolidated, the subsidiaries inside the reporting boundary, feeding B1 and bounding every quantitative figure in the report.
 
@@ -338,7 +338,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 ### FR-20 — Archive an entity
 
-**Status.** Built — delivered 29.3, 30.4.3, 187 (the pickers that start new work, and a report refused on an archived entity's period)
+**Status.** Partial — delivered 29.3, 30.4.3, 187 (the pickers that start new work, and a report refused on an archived entity's period) · remaining 214 (what archiving does to a report in progress)
 
 **Obligation.** The system shall allow a reporting entity to be archived, removing it from active selection while retaining its historical reports and exports intact.
 

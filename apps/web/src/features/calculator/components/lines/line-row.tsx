@@ -164,11 +164,11 @@ export function LineRow({
           total: months.length,
         })
       : months !== null
-        ? format.dateTimeRange(new Date(`${months[0]}-01T00:00:00Z`), new Date(`${months[months.length - 1]}-01T00:00:00Z`), {
-            month: 'short',
-            year: 'numeric',
-            timeZone: 'UTC',
-          })
+        ? format.dateTimeRange(
+            new Date(`${months[0]}-01T00:00:00Z`),
+            new Date(`${months[months.length - 1]}-01T00:00:00Z`),
+            'calendarMonth',
+          )
         : t('line.wholePeriod');
 
   return (

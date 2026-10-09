@@ -18,7 +18,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-153 — Report operations are reachable through the documented API
 
-**Status.** Partial — delivered 2, 3, 21, 31 (31.3), 89 · remaining 41, 44, 47 (the validation and export routes), 192 (report deletion, FR-210)
+**Status.** Partial — delivered 2, 3, 21, 31 (31.3), 41 (the validation routes), 89 · remaining 44, 47 (the export routes), 192 (report deletion, FR-210)
 
 **Obligation.** The system shall expose report CRUD, validation and export operations through a documented, authenticated API and not only through the interface.
 
@@ -26,14 +26,14 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 |---|---|
 | **Actors** | Any authenticated caller, under the same authorization the interface applies. Neither front end is privileged by being first-party. |
 | **Traces** | *(architectural, index §9.4 G-1)* · DR-11 · P-5 · AD-9 · NFR-16 · NFR-83 · NFR-13 · FR-158 |
-| **Surfaces** | `packages/contracts/openapi/v1.json` · `pnpm openapi:emit`, `pnpm openapi:check` · `POST` and `GET /reports`, `GET` and `PATCH /reports/{id}`, `PUT /reports/{id}/values`, `/reports/{id}/modules…`, `/reports/{id}/calculator/…` |
+| **Surfaces** | `packages/contracts/openapi/v1.json` · `pnpm openapi:emit`, `pnpm openapi:check` · `POST` and `GET /reports`, `GET` and `PATCH /reports/{id}`, `PUT /reports/{id}/values`, `/reports/{id}/modules…`, `/reports/{id}/calculator/…`, `/reports/{id}/validation…` |
 
 **Behaviour.**
 1. `apps/web` and `apps/admin` are ordinary clients of one public API. The tenant web app's server tier is a session-holding proxy: it holds the session cookie and forwards each request with a short-lived access token, and every route it calls exists in the public OpenAPI surface and is authorized identically (AD-9).
 2. The surface is one versioned REST API under `/api/v1`, authenticated by a bearer access token. The active organization comes from the session, never from a header or a path segment (`architecture.md` §6.8).
 3. The contract is **generated from the controllers** and diffed in CI together with the types generated from it. A controller change that is not committed as a contract change fails `openapi:check` (§6.8; P-5).
 4. Breaking changes are introduced only in a new version and only after a stated deprecation window (NFR-83). The window's length is deferred to the day a second version is planned, on the recorded assumption that none exists before the pilot (§12.5.6 task-182 tracking row, 182/163).
-5. Of the six named operations, create, read and update of a report are built (`POST /reports`, `GET /reports[/{id}]`, `PATCH /reports/{id}` for the scope) together with the value and calculator routes. Validation and export have no route yet (tasks 41, 44, 47). **Delete is an operation** on a report (182/23): `DELETE /reports/{id}`, the Organization Administrator's alone, soft, only while the period is open and only if the report has never been exported, and specified by FR-210. It is not built (192).
+5. Of the six named operations, create, read and update of a report are built (`POST /reports`, `GET /reports[/{id}]`, `PATCH /reports/{id}` for the scope) together with the value and calculator routes. Validation's routes are built — `POST /reports/{id}/validation/runs`, `GET /reports/{id}/validation` and `GET /reports/{id}/validation/rules` (task 41) — and export has none yet (tasks 44, 47). **Delete is an operation** on a report (182/23): `DELETE /reports/{id}`, the Organization Administrator's alone, soft, only while the period is open and only if the report has never been exported, and specified by FR-210. It is not built (192).
 
 **Refusals.** A request with no valid credential → 401 `authentication-required`. Authorization refusals are FR-158's.
 
@@ -44,7 +44,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - **AC-2** Given a request to any operation without a credential, then it is refused with 401. *(source: FR text; task 28.1 row)*
 - **AC-3** Given a controller route is added, changed or removed, when `openapi:check` runs without the contract and the generated types being regenerated and committed, then the gate fails. *(source: §6.8; P-5; NFR-83)*
 - **AC-4** Given the web app's server tier acts for a signed-in user, then it calls only routes that appear in the contract. *(source: AD-9)*
-- **AC-5** Given a report, when validation is requested through the API, then it is performed under authentication. *(source: FR text)* Unmet until 41.
+- **AC-5** Given a report, when validation is requested through the API, then it is performed under authentication. *(source: FR text)* Met since 41: `POST /reports/{id}/validation/runs`, under authentication.
 - **AC-6** Given a report, when an export is requested through the API, then it is queued under authentication. *(source: FR text; AD-10)* Unmet until 44 and 47.
 - **AC-7** Given every tenant-facing capability, then 100% is reachable through the documented API under identical authorization, with zero interface-only routes. *(source: NFR-16)* The verification is `openapi:check`, the route-permission table and the two boundary rules `web-not-to-api-src` and `admin-not-to-api-src`, which together stand for the route-coverage diff NFR-16 named: a client can reach the API only through its public address and cannot import its source (§12.5.6 task-182 tracking row, 182/162).
 
@@ -142,7 +142,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-157 — One mechanism delivers every system notification
 
-**Status.** Partial — delivered 37.3, 49.1, 49.2, 49.3, 50.1.1, 50.1.4, 50.3, 51.1, 51.3, 51.4, 52.2.1, 52.2.2 · remaining 51.2, 65.1 (the producers not yet raising)
+**Status.** Partial — delivered 37.3, 49.1, 49.2, 49.3, 50.1.1, 50.1.4, 50.3, 51.1, 51.3, 51.4, 51.2, 52.2.1, 52.2.2 · remaining 65.1 (the producers not yet raising)
 
 **Obligation.** The system shall deliver every system-initiated notification — payment failure, quota approach, trial expiry, dunning, taxonomy version change, invitation, outstanding-report notice — through one channel-agnostic mechanism recording delivery timestamp and channel. FR-160 … FR-173 specify that mechanism rather than adding a second one.
 
@@ -166,7 +166,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - **AC-2** Given a file outside the notification module that imports the email port, then the boundary gate fails. *(source: §12.5.6 task-49.2 row (4))*
 - **AC-3** Given any dispatch, then its delivery record carries the channel and the dispatch timestamp. *(source: FR text; AD-11)*
 - **AC-4** Given an invitation or a manual outstanding-report reminder is raised, then it travels through this mechanism. *(source: §12.5.6 task-50.1 and task-50.3 rows)*
-- **AC-5** Given payment failure, quota approach, trial expiry, dunning, a taxonomy version change or an automatic outstanding-report notice, then each travels through this mechanism. *(source: FR text)* Unmet until 37.3, 51.2, 65.1 and the billing producers' own tasks.
+- **AC-5** Given payment failure, quota approach, trial expiry, dunning, a taxonomy version change or an automatic outstanding-report notice, then each travels through this mechanism. *(source: FR text)* The taxonomy change (37.3) and the outstanding-report notice (51.2) travel through it; unmet until 65.1 and the billing producers' own tasks.
 
 ### FR-158 — Authorization is enforced server-side on every request
 
@@ -205,7 +205,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-159 — Every state-changing action names its actor and time
 
-**Status.** Partial — delivered 13, 14, 28.4, 67.4, 67.9 · remaining 61.3 (the billing audit ledger), 189 (the schema invariant over the capture trigger)
+**Status.** Partial — delivered 13, 14, 25.1, 28.4, 67.4, 67.9, 189 (the schema invariant over the capture trigger, found built) · remaining 61.3 (the billing audit ledger)
 
 **Obligation.** The system shall attribute every state-changing action to an acting actor with a timestamp, across reporting, administration and billing alike.
 
@@ -221,7 +221,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 3. **Billing.** The billing ledger attributes its own mutations (DR-6). Not built.
 4. These records are append-only: no `UPDATE` or `DELETE` is granted to any application path, enforced at the database and not in code (NFR-33; task 13).
 5. An attribution outlives its person: `core.field_change.actor_id` carries no foreign key (task 14; FR-55).
-6. **"Every state-changing action" means a change to a tenant business record**, and the claim is made checkable: a schema invariant requires each such table to carry the capture trigger or be declared exempt with its reason, in the model of the lock trigger's declaration (task 31.4). Sign-ins and notification events are on the exemption list (§12.5.6 task-182 identity and organization row, 182/4).
+6. **"Every state-changing action" means a change to a tenant business record**, and the claim is checkable: a schema invariant requires each tenant table — one in `core`, or carrying `organization_id` — to carry the capture trigger or be declared exempt with its reason, in the model of the lock trigger's declaration (task 31.4). It has stood since task 14, widened to every tenant table by task 25.1. Notification events are on the exemption list; a tenant sign-in is outside the scope, its tables carrying no organization, and the admin realm's sign-ins are system audit rows, which are exempt (§12.5.6 task-182 identity and organization row, 182/4; task-189 row).
 
 **Boundaries.** Reading the trail is FR-54's (S-12), the platform log's is FR-81's. Data-subject erasure against these records is FR-207's.
 
@@ -232,7 +232,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - **AC-4** Given an admin sign-in attempt, whether it completes or fails, then it is a row in the system audit log. *(source: §12.5.6 task-28.4 row)*
 - **AC-5** Given an `UPDATE` or `DELETE` against an audit or ledger table from the application role, then it fails at the database. *(source: NFR-33; task 13 row)*
 - **AC-6** Given a billing mutation, then the ledger attributes it to an acting actor with a timestamp. *(source: FR text; DR-6)* Unmet until 61.3.
-- **AC-7** Given a tenant table that holds a business record and neither carries the capture trigger nor is declared exempt with a reason, then `migrations:check` fails. *(source: §12.5.6 task-182 identity and organization row, 182/4; the model of AC-10 of FR-22)* Unmet until 189.
+- **AC-7** Given a tenant table that holds a business record and neither carries the capture trigger nor is declared exempt with a reason, then `migrations:check` fails. *(source: §12.5.6 task-182 identity and organization row, 182/4; task-189 row; the model of AC-10 of FR-22)*
 
 ## 2. Public tier (index §3.33, new)
 

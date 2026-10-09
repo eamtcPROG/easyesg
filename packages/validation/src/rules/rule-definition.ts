@@ -32,6 +32,11 @@ export const RULE_KIND = {
 
 export type RuleKind = (typeof RULE_KIND)[keyof typeof RULE_KIND];
 
+const KINDS: ReadonlySet<string> = new Set(Object.values(RULE_KIND));
+
+/** Whether an unvalidated value — a rule set's `kind` as read from the store — is one of the kinds above. */
+export const isRuleKind = (value: unknown): value is RuleKind => typeof value === 'string' && KINDS.has(value);
+
 /**
  * The verdicts each kind may fire — **every rule names its own**, from this list (§12.5.6's task-40 row (2)), because
  * the template varies it within one kind: a gender split short of headcount is `MISSING VALUE`, an energy split over
@@ -62,6 +67,11 @@ export const RELATION = {
 } as const;
 
 export type Relation = (typeof RELATION)[keyof typeof RELATION];
+
+const RELATIONS: ReadonlySet<string> = new Set(Object.values(RELATION));
+
+/** Whether an unvalidated value — a `sum` rule's `relation` as read from the store — is one of the relations above. */
+export const isRelation = (value: unknown): value is Relation => typeof value === 'string' && RELATIONS.has(value);
 
 /** What must hold for a conditional rule to apply — a closed set, so a condition is never an expression. */
 export const CONDITION_KIND = {

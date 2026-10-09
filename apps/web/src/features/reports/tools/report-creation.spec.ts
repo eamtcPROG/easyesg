@@ -26,10 +26,12 @@ describe('creationEntities', () => {
     anEntity({ id: 'e1', name: 'Alfa SRL' }),
   ];
 
-  it('offers the active entities only, by name', () => {
+  // In the api's order, which `GET /entities` collates by name (OQ-61): the fixture is not in name order, so a re-sort
+  // here — a second collation, the runtime's — turns this red.
+  it('offers the active entities only, in the order the api gives them', () => {
     expect(creationEntities({ entities: ENTITIES }).entities).toEqual([
-      { id: 'e1', name: 'Alfa SRL' },
       { id: 'e2', name: 'Gama SA' },
+      { id: 'e1', name: 'Alfa SRL' },
     ]);
   });
 

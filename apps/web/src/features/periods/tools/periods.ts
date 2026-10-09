@@ -1,7 +1,7 @@
 import {
   DEFAULT_PAGE_SIZE,
   STATUS_TONE,
-  readPageSize,
+  toPageSize,
   type IndexPage,
   type PageSize,
   type StatusTone,
@@ -150,7 +150,7 @@ export const readPeriodView = (
     direction:
       oneOf(Object.values(PERIOD_SORT_DIRECTION), single('dir')) ?? DEFAULT_PERIOD_VIEW.direction,
     page: Number.isFinite(page) && page > 0 ? page : DEFAULT_PERIOD_VIEW.page,
-    pageSize: readPageSize(single('onpage')).onpage ?? DEFAULT_PERIOD_VIEW.pageSize,
+    pageSize: toPageSize(single('onpage')),
     from: readPeriodsFrom(params[PERIODS_FROM_PARAM]),
   };
 };

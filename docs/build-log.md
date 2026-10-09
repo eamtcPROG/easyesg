@@ -30439,3 +30439,145 @@ every dependent's row: `apps/api`, `apps/web` and `apps/admin`.
 - **Not run:** `pnpm e2e:worker` — no consumer changed, and the worker reads nothing the change moved but a catalogue
   entry; `migrations:check`, with no migration; `boundaries`, `image:check`, `facade:check` and the two `*:prove`
   gates, the Stage's end's and CI's. **Not a Stage close**: Stage 2 keeps 189.
+
+## Task 189 — FR-159's audit claim, found checked already · 2026-10-09
+
+The row asked for a schema invariant: each tenant table holding a business record carries `core.capture_field_change`
+or is declared exempt with its reason, proven to fail on a table that is neither, with sign-ins and notification events
+on the exemption list. **Reading `test/schema-invariants.e2e-spec.ts` before building found it standing since task 14.**
+`unclassifiedTenantTables` fails `migrations:check` (through `db:invariants`, on both stacks) on any table in `core` or
+carrying `organization_id` that is in neither `FIELD_AUDITED_TABLES` nor `UNAUDITED_TABLES`; `auditedTablesMissingCapture`
+holds the first list to the trigger; task 25.1 widened the scope from `core` to every tenant table; two cases prove it
+fails on a table declared neither, inside `core` and outside; every one of the fifteen exemptions carries its reason, the
+three notification tables among them since task 50.1. 182/4's *left as a convention could not fail* was a false premise.
+
+### Decided (project owner, one question, the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-189 row, cross-logged in the 182/4 text and FR-159.
+
+- **Closed as delivered, adding no invariant.** FR-159's AC-7 cites the sweep and its cases, and 182/4's text says its
+  premise was found false.
+- **Sign-ins are outside the scope rather than on the list.** The tables a tenant sign-in writes — `identity.session`,
+  `identity.auth_attempt`, the refresh tokens — carry no `organization_id`, so the sweep never asks about them; the
+  admin realm's sign-ins are `audit.system_audit_log` rows (task 28.4), whose exemption now says so. Measured on the dev
+  database: 27 tables fall in the sweep's scope, all classified — twelve captured, fifteen exempt — and the twenty
+  outside it are the account- and config-keyed tables, none holding an organization.
+- *Declined:* widening the sweep to every table in a domain schema — the literal reading of *sign-ins on the list*,
+  some twenty entries saying *not a tenant record*, past 182/4's own scope; and turning each exemption's reason into
+  data with a check of its own.
+
+### What changed
+
+Words only. The sweep's docblock says it is FR-159's claim made checkable, why a tenant sign-in is outside it, and that
+a tenant business record outside `core` with no `organization_id` would mean widening the scope, not the lists;
+`audit.system_audit_log`'s reason names the admin sign-ins. FR-159 lists 25.1 and 189 as delivered and keeps 61.3;
+Stage 2's prose in `task.md` and the root `CLAUDE.md` record the Stage's close.
+
+### Gates
+
+No code ran differently, so the task's own run is the Stage's: `pnpm gates:clean` below, whose `migrations:check` runs
+the sweep and its proof cases on both stacks.
+
+## Stage 2 closes · 2026-10-09
+
+**Stage 2 — Calculator and validation — is empty, and closes with task 189.** Its last rows were task 182's restatement
+of the requirements: 186 … 189, 191, 201, 204 … 209, behind tasks 39 … 42, 51, 94, 95 and 133.
+
+**The Stage diff** runs from `a5266c33`, the commit that carried tasks 185 and 190 and ended Stage 1, to the commit
+that carries task 189 and this entry; the next Stage's diff starts there. Twenty-eight commits before it, about 813
+files.
+
+**The order was the one Stage 1's entry recommended**: the three reviews first, their fixes, and then one
+`pnpm gates:clean` over the final tree, so no cold run was spent on code the reviews were about to change.
+
+### The three review agents, on `opus`, over the whole Stage diff
+
+**`spec-review`: 17 findings.** Six needed the owner, asked as one batch of four and each answered with the
+recommended option — recorded in `architecture.md` §12.5.6's new Stage-2-close row:
+- **A missing unit gives no verdict** (item (1)): B3's energy breakdown, over fuel energy that stores no unit while
+  OQ-22 stands, never answered; kept, recorded and cross-logged on OQ-22, and the corpus now carries the absent unit
+  the product stores and a case pinning the no-verdict.
+- **Note dismissals moved to `sessionStorage`** (item (2)): task 95 kept them in `localStorage`, against OQ-23's
+  basis that no browser storage holds a preference.
+- **The IDNO a filing needs is task 210** (item (3)): no rule kind can read entity data, so FR-16's behaviour 6 was
+  unbuilt while FR-16 read Built, on a task-41 premise FR-16's own inputs contradict.
+- **Four gaps owned by no task got one each** (item (4)): 211, a unitless figure's places; 212, NFR-88's
+  property-based tests; 213, NFR-39's fixture; 214, an archived entity's report in progress; 215, a subsidiary's
+  IDNO check digit — the question task 188's close raised and nobody had answered.
+
+The other eleven were records: OQ-9 closed by decisions already taken (item (6)); OQ-49's closure carried to FR-73
+and the root `CLAUDE.md`; three consequences moved from the build-log into the row (item (5)) — task 188's
+re-judged stored IDNO, task 39.4's no backfill, task 41.1's unpinned earlier locks; and stale statuses brought to the
+code — FR-29, FR-32, FR-39, FR-41, FR-44, FR-47 (Partial: its AC-4 waits on 44 and 46, whose rows now cover it),
+FR-48, FR-153, FR-157 — and task 95's archived Expected result brought to what its row decided, as task 94's was.
+
+**`gate-integrity-review`: ten checks proved to bite by breaking their subject, five that did not.** All five fixed,
+each proven red against its breakage and restored:
+- **Task 186's data-step case** read `FORCE` after its own `unforced` read had restored it; the read moved ahead of
+  that, and removing the step's restore now fails it (1 of 13).
+- **The report-update notice's *several* wording** was specified with an empty name, so its `not.toContain` could not
+  fail; both specs carry the name now, and a Romanian *several* worded as one fails them (2 of 49).
+- **The outbox agreement case** keyed on `validation.report_notice_sweep/2026-10-09` — the row a worker writes today,
+  red on any stack one ran on and comparing nothing while red; it keys on 2000-01-01.
+- **Task 51.2's three worker directory policies** had no case for their `app.current_org IS NULL` conjunct; a new one
+  reads each table unbound, bound elsewhere and as the request tier, and fails with the conjunct dropped.
+- **The override-attribution triggers' INSERT branch** — the only guard there, the column being withheld from UPDATE
+  alone — had no case; a forged overrider inserted past the api must come out naming the bound account, and does not
+  with the triggers disabled.
+Two absence checks in the browser suite gained a positive anchor. And its out-of-scope note was real:
+**`safeRealmPath` passed `/<tab>/evil.test`**, which the URL parser reads as `//evil.test`; it refuses a tab, newline or
+carriage return anywhere now, with a case.
+
+**`convention-review`: 13 findings, all fixed.**
+- **S-07's re-authentication dialogue dropped focus on `body`** on close — task 207's search had stopped at
+  `packages/ui`; it takes `useReturnFocus`, now in the barrel, with a spec proven red without it.
+- **`toPageSize`** beside `PAGE_SIZES`, replacing ten retyped fallbacks.
+- **`calendarMonth`** in `formats.ts` for S-09's two month patterns, and the summary's named `long`.
+- **S-09's route** hands its section the query unawaited.
+- **The validation e2e suite** restores the rule-set slot under its publisher.
+- **`isRuleKind` and `isRelation`** moved into `rule-definition.ts`, with a spec.
+- **The two apps' skip links** are parts that read their own words (`PageSkipLink`, `ConsoleSkipLink`), so neither root
+  file resolves a string.
+- **`apps/admin/CLAUDE.md`** described `safeRealmPath` as inline and staying so; **`apps/api/CLAUDE.md`**'s tenancy
+  exceptions lacked `ReportNoticeDirectoryRepository`.
+- **`BASIS_MODULE`** declared once for B1's two readers.
+- **The dismissals' key carries `v1`.**
+- **Locale-less sorts**: S-39's picker keeps the api's collated order, and every name the tenant tier sorts itself goes
+  through `lib/collation.ts`'s root-locale `compareText` — OQ-61 carried to the browser (item (7)), five sites that
+  predate the Stage included. Two specs that pinned the old re-sort now pin the api's order.
+- **Two vitest configs** counted something outside their file.
+Its *not rules* list: the stale `formats.ts` pointer, the orphaned docblock in `server/data/wizard.ts` and *Two measures*
+over three were fixed. **Not taken, each with its reason:** encoding `reportId` in the two new Server Actions — every
+read in the app builds id segments the same way, a Server Action's caller holds the same authority through the proxy,
+and the api's `ParseUUIDPipe` refuses anything malformed; decimal arithmetic written four times and two small helpers
+retyped — no written rule covers them, and folding them is its own change.
+
+### `pnpm gates:clean`, cold, over the final tree
+
+**All seventeen gates passed, after one environmental failure recorded below.** The order was `pnpm clean`, then the
+cold `pnpm lint` with a 4 GB heap, then `pnpm gates`, whose own lint read the cache that cold run had just written.
+The other sixteen gates, in CI's order:
+- `eslint:prove`, typecheck, `image:check`, and `docs:check` (48 claims).
+- `test:coverage`, every unit suite under coverage: api 259 suites and 2,124 cases, web 193 files and 1,856, admin 37 and
+  299. NFR-88's two measured floors hold — the calculator at lines 100 % and branches 97.38 %, the validation engine at
+  100 % and 97.15 % — each proven to refuse a doctored summary.
+- `boundaries`, with all 24 rules proven to reject a violation. Build, `openapi:check`, `events:check`, `facade:check`
+  and `routes:check`.
+- `migrations:check`, 64 invariant cases on the test stack and 64 on the dev stack.
+- `e2e`: 66 suites, 1,669 cases. `e2e:worker`: 13 cases. `e2e:web`: **330 of 330** in 10.4 minutes.
+
+Every `⨯` line in the browser run — twenty — is *The destination stream closed early.*, digest `2667547900`,
+`apps/web/CLAUDE.md`'s abandoned stream. The api suites logged no unhandled rejection and no dependency warning.
+
+**The first cold run failed before any check had run: `pnpm lint` ran out of heap.** Type-aware ESLint over the whole
+program, with no cache, hit V8's ceiling at about 2 GB — 2,144 MB is the default on this 8 GB host — and aborted
+(SIGABRT, `JavaScript heap out of memory`). It is the size of the program, not a finding: Stage 1's cold run passed,
+and this Stage added some 48,000 lines. CI's runners have more memory, so their default ceiling is higher, and CI has
+not failed on it. The remedy taken was operational and for this run only — `NODE_OPTIONS=--max-old-space-size=4096` on
+the cold lint — and no gate script changed. **Raised with the owner rather than decided here:** the next cold run on
+this host fails the same way, and whether the lint script should carry a heap setting, or lint be split per workspace,
+is a change to a gate.
+
+**What would falsify the once-per-Stage rule** (root `CLAUDE.md`): a break that survived from a close to the Stage's
+end and cost more to unpick here than the skipped run would have. The outbox case is the nearest this Stage came — a
+date-dependent fixture that a close's run could not see on any other day, found by review rather than by a gate.

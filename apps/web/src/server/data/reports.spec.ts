@@ -119,7 +119,9 @@ describe('readReportList', () => {
 });
 
 describe('readReportCreation', () => {
-  it('offers the entities alphabetically and asks for no periods until one is chosen', async () => {
+  // In the api's order, which `GET /entities` collates by name (OQ-61): the stub answers out of name order, so a second
+  // sort here — the runtime's collation, not the api's — turns this red.
+  it('offers the entities in the api’s order and asks for no periods until one is chosen', async () => {
     getList.mockResolvedValueOnce(
       ok([
         { id: 'e2', name: 'Zorile SRL', status: ENTITY_STATUS.ACTIVE },
@@ -131,8 +133,8 @@ describe('readReportCreation', () => {
 
     expect(read.status).toBe(TENANT_READ.READY);
     expect(read.status === TENANT_READ.READY && read.entities.map((e) => e.name)).toEqual([
-      'Aurora SRL',
       'Zorile SRL',
+      'Aurora SRL',
     ]);
     // One request, not three: `GET /periods` is scoped to an entity, so there is nothing to ask yet.
     expect(getList).toHaveBeenCalledTimes(1);

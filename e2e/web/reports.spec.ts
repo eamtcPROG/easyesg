@@ -165,6 +165,8 @@ test('the creation flow offers no archived entity, and an address naming one cho
   await expect(page.getByText(`${RUN_PREFIX}-Veche`)).toHaveCount(0);
 
   await page.goto(`/reports/new?entity=${archivedId}`);
+  // The active entity still offered, so the absences below are the page's answer and not an empty one.
+  await expect(page.getByRole('link', { name: `${RUN_PREFIX}-Activa` })).toHaveCount(1);
   await expect(page.getByText(`${RUN_PREFIX}-Veche`)).toHaveCount(0);
   // No period is offered, since no entity is chosen — the year its period holds is not a link.
   await expect(page.getByRole('link', { name: '2026', exact: true })).toHaveCount(0);

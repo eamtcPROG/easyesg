@@ -96,7 +96,7 @@ export function CalculatorSummary({
             {calculator.latestRun === null
               ? t('notYet')
               : t('lastUsed', {
-                  date: format.dateTime(new Date(calculator.latestRun.recordedAt), { dateStyle: 'long' }),
+                  date: format.dateTime(new Date(calculator.latestRun.recordedAt), 'long'),
                 })}
           </p>
         </div>

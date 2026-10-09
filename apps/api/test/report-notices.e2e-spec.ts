@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Module } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -276,6 +277,22 @@ describe('the outstanding-report and deadline notices (task 51.2)', () => {
     expect(mine.map((period) => period.periodId)).not.toContain(lockedPeriodId);
     expect(mine.map((period) => period.periodId)).not.toContain(archivedPeriodId);
     expect(mine[0].reportCreatedAt).toBeInstanceOf(Date);
+  });
+
+  /**
+   * The three directory policies' three states, asserted as task 37.3's are: the worker reads an organization's
+   * periods, reports and entities across tenants only while nothing is bound; bound to another organization it reads
+   * none of this one's; and the request tier's role gains nothing. **The conjunct `app.current_org IS NULL` is what the
+   * second line proves** — without it the permissive policy would answer a bound worker's every read across tenants.
+   */
+  it('lets the worker read across organizations only while none is bound', async () => {
+    const count = (rows: unknown) => (rows as { count: number }[])[0].count;
+    for (const table of ['core.reporting_period', 'core.report', 'core.reporting_entity']) {
+      const ours = `SELECT count(*)::int AS count FROM ${table} WHERE organization_id = $1`;
+      expect(count(await worker.query(ours, [ORG]))).toBeGreaterThan(0);
+      expect(count(await asOrganization(worker, randomUUID(), (run) => run(ours, [ORG])))).toBe(0);
+      expect(count(await application.query(ours, [ORG]))).toBe(0);
+    }
   });
 
   it('schedules one check for the period that owes one, once however often the day is swept', async () => {

@@ -1032,8 +1032,11 @@ exists), `platform/audit` and `platform/metering` (append-only, cross-tenant by 
 acquisition logged), `NotificationStoreRepository` (task 50.1: the worker's, holding no request
 runner, so each statement opens its own transaction and binds `app.current_org` from the job — the
 reserved platform id for a notice that belongs to no organization), `FactorSetUsersRepository` (task
-37.3: the worker's one unbound read, the organizations with a run on a factor-set revision, under
-`calc_run_worker_directory_select`, which holds only while nothing is bound) and `WorkerTenantWork`
+37.3: the worker's first unbound read, the organizations with a run on a factor-set revision, under
+`calc_run_worker_directory_select`, which holds only while nothing is bound), `ReportNoticeDirectoryRepository`
+(task 51.2: the day's sweep, every open period of every active entity with its report, under the three
+`*_worker_directory_select` policies, which hold only while nothing is bound — `report-notices.e2e-spec.ts`
+proves the binding closes them) and `WorkerTenantWork`
 (task 37.3: `TENANT_WORK` on the worker, which opens a transaction bound to one organization and
 holds it in a request context, so the tenant repositories and the notification port inside it find
 it as they find a request's).

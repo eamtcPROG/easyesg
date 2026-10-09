@@ -5,9 +5,8 @@ import {
   BUTTON_VARIANT,
   COLUMN_ALIGN,
   COLUMN_SIZE,
-  DEFAULT_PAGE_SIZE,
   EmptyState,
-  readPageSize,
+  toPageSize,
   StatusChip,
   TextLink,
   VersionPinIndicator,
@@ -176,7 +175,7 @@ export function PeriodsList({ entityId, page, view, canOpen }: PeriodsListProps)
         }
         onPageChange={(next) => setView({ page: next })}
         // UX-141's size, which resets the page as every other change of view does (task 203.1).
-        onPageSizeChange={(size) => setView({ pageSize: readPageSize(size).onpage ?? DEFAULT_PAGE_SIZE })}
+        onPageSizeChange={(size) => setView({ pageSize: toPageSize(size) })}
         empty={{
           firstUse: (
             // §4.6: an Index "always has an empty state that teaches", and teaching here means

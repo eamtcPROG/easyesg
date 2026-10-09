@@ -102,7 +102,8 @@ describe('email template rendering (OQ-43)', () => {
     const several = renderEmail({
       locale,
       templateKey: NOTIFICATION_CATEGORY.REPORT_UPDATE,
-      params: { ...params, ...REPORT_UPDATE, reach: 'several', entityName: '', fiscalYear: '' },
+      // The report's name and year present for several too, so a *several* worded as one would print them below.
+      params: { ...params, ...REPORT_UPDATE, reach: 'several', entityName: 'Brutăria Lina', fiscalYear: '2026' },
     });
 
     for (const message of [one, several]) {
@@ -113,6 +114,7 @@ describe('email template rendering (OQ-43)', () => {
     expect(one.subject).toContain('Brutăria Lina');
     expect(one.body).toContain('Brutăria Lina');
     expect(several.subject).not.toBe(one.subject);
+    expect(several.subject).not.toContain('Brutăria Lina');
     expect(several.body).not.toContain('Brutăria Lina');
   });
 

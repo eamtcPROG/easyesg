@@ -1,5 +1,5 @@
 import { isNotificationCategoryKey, type NotificationCategoryKey } from '@easyesg/contracts';
-import { DEFAULT_PAGE_SIZE, readPageSize, type PageSize } from '@easyesg/ui';
+import { DEFAULT_PAGE_SIZE, toPageSize, type PageSize } from '@easyesg/ui';
 import type { ListQuery } from '@/lib/pagination';
 import {
   NOTICE_ORDER,
@@ -63,7 +63,7 @@ export const readCentreView = (params: Record<string, string | string[] | undefi
     show: isNoticeShow(show) ? show : DEFAULT_CENTRE_VIEW.show,
     order: isNoticeOrder(order) ? order : DEFAULT_CENTRE_VIEW.order,
     page: Number.isFinite(page) && page > 0 ? page : DEFAULT_CENTRE_VIEW.page,
-    pageSize: readPageSize(single('onpage')).onpage ?? DEFAULT_CENTRE_VIEW.pageSize,
+    pageSize: toPageSize(single('onpage')),
     category: isNotificationCategoryKey(category) ? category : DEFAULT_CENTRE_VIEW.category,
   };
 };

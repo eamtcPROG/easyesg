@@ -194,7 +194,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-29 — Quantities in the standard's units, intensities derived
 
-**Status.** Partial — delivered 36.4 … 36.12, 38.4, 91.4, 183 · remaining 39.2
+**Status.** Partial — delivered 36.4 … 36.12, 38.4, 39.2, 39.3, 91.4, 183 · remaining 211 (a figure with no unit, rounded)
 
 **Obligation.** The system shall capture each quantitative disclosure in the unit the standard states for it, or with no unit where it states none, letting the reporter choose where several are admitted and defaulting to none; and shall derive, rather than accept typed, the figures the standard computes. Those figures are B3's total and GHG intensity, B8's turnover rate, B9's accident rate and B10's collective-agreement coverage and pay gap.
 
@@ -210,7 +210,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 1. The unit lists are EFRAG's `measurementGuidance`. Of 42 elements, 25 admit one unit, 13 admit several and 4 (the intensities) admit none. The unit is chosen per element, not per row (task-91.4 and task-36.5 rows).
 2. Headcount and FTE are B1's two **bases** of a count, not units (task-36.9).
 3. Derivations: turnover rate; accident rate = accidents ÷ (hours × headcount) × 200 000, where hours default to 2 000 as data; coverage = covered ÷ headcount; pay gap = (male − female) ÷ male, kept signed; B3 total = Scope 1 + location-based Scope 2; **B3 intensity = that total ÷ B1 turnover, in the report's currency** (task-36.10, task-36.11, task-38.4 rows; §12.5.6 task-182 row (2)).
-4. **Rounding.** Derived and computed figures are stored exact, apart from intensity at ten significant figures half-up. Each surface rounds once, half-up, to a per-unit precision held as configuration and set by its presentation task (§12.5.6 task-182 row (3)).
+4. **Rounding.** Derived and computed figures are stored exact, apart from intensity at ten significant figures half-up. Each surface rounds once, half-up, to a per-unit precision held as configuration and set by its presentation task (§12.5.6 task-182 row (3)). **A figure with no unit — B3's intensity, B8 … B10's rates — has no precision to read**, so S-07 shows it as stored until task 211 gives it places (§12.5.6's Stage-2-close row, item (4)).
 
 **Refusals.**
 - A derived figure written → 400 `validation-failed` (`core.report.derived_disclosure_not_writable`)
@@ -293,7 +293,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-32 — A field not available, with a reason
 
-**Status.** Partial — delivered 34.1, 36.5, 183 · remaining 41 (reported separately by validation)
+**Status.** Built — delivered 34.1, 36.5, 41 (reported separately by validation), 183
 
 **Obligation.** The system shall allow any field to be declared not available with a stated reason, as a terminal state distinct from `MISSING VALUE`, refusing the declaration without a reason.
 
@@ -309,7 +309,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Acceptance criteria.**
 - **AC-1** Given a field declared not available with a reason, then it is stored in that state with the reason. *(source: FR text; §7.3)*
 - **AC-2** Given the declaration with no reason, or with only whitespace, then it is refused with 400 and nothing changes. *(source: §12.5.6 task-182 row (6))*
-- **AC-3** Given a declared field, then validation reports it separately from `MISSING VALUE`. *(source: FR text; D-4)* Unmet until 41.
+- **AC-3** Given a declared field, then validation reports it separately from `MISSING VALUE`. *(source: FR text; D-4)* Met since 41: a run counts it as reasoned and never as `MISSING VALUE`.
 - **AC-4** Given a declared field, when a value is written to it, then the value is stored, and the trail keeps the declaration and its reason. *(source: §12.5.6 task-182 row (13))*
 
 **History.**
@@ -726,7 +726,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-39 — Resume where the work was left
 
-**Status.** Partial — delivered 35.1, 35.3, 89 · remaining 41 (validation flags)
+**Status.** Built — delivered 35.1, 35.3, 41 (validation flags), 89
 
 **Obligation.** The system shall restore a returning user to the report as it was left — field values, the wizard position and validation flags — on any device and in any session, with the position derived per report from the module where work last happened.
 
@@ -739,12 +739,12 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Behaviour.**
 1. Values are server-held, so any device reads them, including the three answered-but-not-a-number states (FR-30, FR-31, FR-32).
 2. The position is the module with the most recent answer. If nothing is answered, it is the first incomplete step (FR-24). **Nothing records a person's position**, so two people resume where either last worked.
-3. Validation flags are **recomputed, not resumed**: validation is idempotent (FR-43). Until task 41 there are no flags to restore.
+3. Validation flags are **recomputed, not resumed**: validation is idempotent (FR-43). Since task 41 a report's last run and its findings are stored, and reopening shows them as that run left them.
 
 **Acceptance criteria.**
 - **AC-1** Given values saved on one device, when the report is opened on another, then every value reads as stored. *(source: FR text; `e2e/web/resume.spec.ts`)*
 - **AC-2** Given answers in several modules, when the report is opened, then it enters at the module with the latest answer. *(source: §12.5.6 task-35.3 row)*
-- **AC-3** Given validation has run, when the report is reopened, then the same findings show, recomputed. *(source: §12.5.6 task-35.3 row; FR-43)*. Unmet until task 41.
+- **AC-3** Given validation has run, when the report is reopened, then the same findings show, recomputed. *(source: §12.5.6 task-35.3 row; FR-43)*. Met since 41.2: the run and its findings are the report's, read back on reopening.
 
 **History.**
 - 2 Sep 2026 · project owner · position per report, derived from the values; validation flags recomputed, not resumed · §12.5.6 task-35.3 row; FR-24, UX-10, UC-18 amended

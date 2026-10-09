@@ -33,8 +33,9 @@ export interface OfferedEntity {
 /**
  * The entities S-39 offers, and the entity choice as it can honour it (FR-20; 182/14; §12.5.6's task-187 row).
  *
- * **Active entities only, by name**: an archived entity takes no new report, which the api refuses with
- * `entity-archived`, so the list does not offer it — S-13 is where it is still listed. **An `?entity=` naming one it
+ * **Active entities only, in the api's order** (`GET /entities` collates them by name, OQ-61): an archived entity takes
+ * no new report, which the api refuses with `entity-archived`, so the list does not offer it — S-13 is where it is
+ * still listed. **An `?entity=` naming one it
  * does not offer reads as no choice made**: S-05's row of an archived entity's period no longer links here, but a
  * bookmark or a stale tab still can, and drawing that entity's periods with nothing chosen above them would offer a
  * write the api then refuses.
@@ -45,8 +46,8 @@ export const creationEntities = (input: {
 }): { readonly entities: readonly OfferedEntity[]; readonly entityId?: string } => {
   const entities = input.entities
     .filter((entity) => entity.status === ENTITY_STATUS.ACTIVE)
-    .map((entity) => ({ id: entity.id, name: entity.name }))
-    .sort((left, right) => left.name.localeCompare(right.name));
+    // In the api's order, which `GET /entities` collates by name (OQ-61) — a second sort here would re-collate it.
+    .map((entity) => ({ id: entity.id, name: entity.name }));
   const offered = entities.some((entity) => entity.id === input.entityId);
   return { entities, entityId: offered ? input.entityId : undefined };
 };

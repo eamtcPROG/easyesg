@@ -382,13 +382,15 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
    * fails here rather than at a dispatcher on a weekend.
    */
   describe('a key the queue will take (task 206)', () => {
+    // The scheduled-job shape on a day no ticker opens: on the day a worker on this stack wrote its own sweep row, the
+    // real key would collide with that row on the idempotency index and the case would compare nothing.
     const KEYS = [
       'identity.email_verification.requested/0192f000-0000-7000-8000-000000000001/1790726400000',
-      'validation.report_notice_sweep/2026-10-09',
+      'validation.report_notice_sweep/2000-01-01',
       '0192f000-0000-7000-8000-000000000001',
       'invoice/0042',
       'identity.invitation.issued:invitation-1:1790726400000',
-      'validation.report_notice_sweep:2026-10-09',
+      'validation.report_notice_sweep:2000-01-01',
       '42',
       '-42',
       '0042',

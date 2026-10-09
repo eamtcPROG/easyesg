@@ -17,6 +17,7 @@ import {
   VALIDATION_RULE_SET_CONFIG_KIND,
   VALIDATION_RULE_SET_CONFIG_SCOPE,
 } from '../src/modules/core/validation/constants/validation.constants';
+import { restoreSlot, snapshotSlot } from './support/configuration-slot';
 import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
@@ -280,6 +281,12 @@ describe('validation runs and their findings (task 41.2)', () => {
         message: 'validation.required',
         fields: [{ element: 'NumberOfRecordableWorkRelatedAccidentsInTheReportingPeriod' }],
       };
+      // What the slot held and who published it, put back afterwards (task 172): a developer's store may hold an
+      // operator's rule set, and restoring the seed's under no publisher would let the next `config:seed` replace it.
+      const slot = await snapshotSlot(app, {
+        kind: VALIDATION_RULE_SET_CONFIG_KIND,
+        scope: VALIDATION_RULE_SET_CONFIG_SCOPE,
+      });
       try {
         // A whole-window replacement — the only change the publisher can make to the seed's one window.
         await app.get(ConfigurationPublisher).publish({
@@ -292,13 +299,7 @@ describe('validation runs and their findings (task 41.2)', () => {
         expect(rulesOf(await run(open.reportId))).toContain('b9-later-rule');
         expect(rulesOf(await run(locked.reportId))).not.toContain('b9-later-rule');
       } finally {
-        // Restored in the file's own words, not deleted: the store keeps every revision, and the next suite reads
-        // what `config/seed` ships.
-        await app.get(ConfigurationPublisher).publish({
-          kind: VALIDATION_RULE_SET_CONFIG_KIND,
-          scope: VALIDATION_RULE_SET_CONFIG_SCOPE,
-          payload: shipped?.payload ?? { rules: [] },
-        });
+        await restoreSlot(app, slot, shipped?.payload ?? { rules: [] });
         await store.refreshIfStale();
       }
     });

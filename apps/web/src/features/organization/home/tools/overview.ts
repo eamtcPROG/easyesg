@@ -1,5 +1,6 @@
 import { ENTITY_STATUS, REPORT_STATUS, type ReportingPeriod } from '@easyesg/contracts';
 import { todayIn } from '@/lib/legal-date';
+import { compareText } from '@/lib/collation';
 
 /**
  * S-05's report status overview — UC-67 and FR-23 (task 32.4), completing the stub task 30.5 drew.
@@ -179,7 +180,7 @@ export const attentionRows = (rows: readonly OverviewRow[]): OverviewRow[] =>
         return left.due.localeCompare(right.due);
       }
       // ISO days compare as strings, which is why they are held as strings at all.
-      return left.periodEnd.localeCompare(right.periodEnd) || left.entityName.localeCompare(right.entityName);
+      return left.periodEnd.localeCompare(right.periodEnd) || compareText(left.entityName, right.entityName);
     });
 
 /**
@@ -224,7 +225,7 @@ export const resumableRow = (rows: readonly OverviewRow[]): ResumableRow | null 
 export const everythingRows = (rows: readonly OverviewRow[]): OverviewRow[] =>
   [...rows].sort(
     (left, right) =>
-      left.entityName.localeCompare(right.entityName) ||
+      compareText(left.entityName, right.entityName) ||
       right.fiscalYear - left.fiscalYear ||
       // A stable tiebreak, so two rows that compare equal never swap between renders. The id is the
       // only field guaranteed distinct — an entity can hold two periods labelled the same year.

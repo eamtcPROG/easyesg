@@ -2,6 +2,7 @@ import { CALLOUT_INTENT, Callout, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { reportStepRoute } from '@/lib/routes';
 import { StepLink } from '@/features/wizard/components/shared/step-link';
+import { BASIS_MODULE } from '@/features/wizard/tools/basis-module';
 import { CALCULATOR_MESSAGES } from '../shared/calculator-messages';
 
 /**
@@ -17,7 +18,7 @@ export async function NoSites({ reportId }: { readonly reportId: string }) {
       title={t('noSites.title')}
       action={
         <TextLink asChild>
-          <StepLink href={reportStepRoute({ reportId, module: B1_MODULE })}>{t('noSites.action')}</StepLink>
+          <StepLink href={reportStepRoute({ reportId, module: BASIS_MODULE })}>{t('noSites.action')}</StepLink>
         </TextLink>
       }
     >
@@ -25,6 +26,3 @@ export async function NoSites({ reportId }: { readonly reportId: string }) {
     </Callout>
   );
 }
-
-/** B1 — Basis for preparation, where the report's sites are listed. The standard's own reference. */
-const B1_MODULE = 'B1';

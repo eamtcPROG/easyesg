@@ -39,6 +39,11 @@ export const formats = {
      */
     calendar: { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' },
     /**
+     * A calendar **month** — S-09's monthly form and a line's span, *ian. 2026 – dec. 2026* (task 39.1). In UTC for
+     * `calendar`'s reason: a month is written as its first day at midnight UTC, which no zone may move (NFR-34).
+     */
+    calendarMonth: { month: 'short', year: 'numeric', timeZone: 'UTC' },
+    /**
      * A bare year — the copyright notice, and later any year-only label.
      *
      * It exists as a *date* format rather than being interpolated as a number on purpose: ICU
@@ -60,7 +65,7 @@ export const formats = {
      * (task 39.2; UX-42: the factor shown is the one an auditor finds in the published set). **Fifteen significant
      * digits** is what a double carries back exactly from any decimal of that many digits, so a decimal string read into a
      * number prints as itself, `0.0095773` and not its binary neighbour. A computed figure is not shown this way: it is
-     * rounded once to the places `presentation_precision` gives its unit (`features/calculator/tools/figure-format.ts`).
+     * rounded once to the places `presentation_precision` gives its unit (`lib/figure-format.ts`).
      */
     exact: { maximumSignificantDigits: 15 },
     // Gender pay gap (B10), turnover rate (B8), completeness.

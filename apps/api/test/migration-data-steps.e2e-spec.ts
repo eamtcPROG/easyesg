@@ -582,6 +582,12 @@ describe('the migrations’ data steps, against rows (task 164)', () => {
         await expect(refuseRepeatedFiscalYears(runner)).rejects.toThrow(
           `entity ${held.entityId}, fiscal year 2026: periods ${transition}, ${full}`,
         );
+        // The guarantee the step lifted is back in place, the refusal notwithstanding — read before anything below lifts
+        // and restores it again, which would put it back whatever the step had done.
+        const [{ forced }] = (await runner.query(
+          `SELECT relforcerowsecurity AS forced FROM pg_class WHERE oid = 'core.reporting_period'::regclass`,
+        )) as { forced: boolean }[];
+        expect(forced).toBe(true);
 
         const rows = (await unforced(runner, PERIOD, () =>
           runner.query(`SELECT id, fiscal_year FROM core.reporting_period WHERE reporting_entity_id = $1 ORDER BY period_start`, [
@@ -592,11 +598,6 @@ describe('the migrations’ data steps, against rows (task 164)', () => {
           { id: transition, fiscal_year: 2026 },
           { id: full, fiscal_year: 2026 },
         ]);
-        // And the guarantee it lifted is back in place, the refusal notwithstanding.
-        const [{ forced }] = (await runner.query(
-          `SELECT relforcerowsecurity AS forced FROM pg_class WHERE oid = 'core.reporting_period'::regclass`,
-        )) as { forced: boolean }[];
-        expect(forced).toBe(true);
       });
     });
 

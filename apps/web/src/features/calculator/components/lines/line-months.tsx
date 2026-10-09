@@ -39,7 +39,7 @@ export function LineMonths({
   const entered = values ?? months.map(() => null);
   const monthName = (month: string): string =>
     // The first of the month at UTC midnight, formatted in UTC: a calendar month, which no zone can move (NFR-34).
-    format.dateTime(new Date(`${month}-01T00:00:00Z`), { month: 'short', year: 'numeric', timeZone: 'UTC' });
+    format.dateTime(new Date(`${month}-01T00:00:00Z`), 'calendarMonth');
   // A figure the reader reads, not one they type, is laid out for the locale — every digit kept (NFR-26).
   const figure = (value: string) => formatFigure({ value, places: undefined, format });
   const total = monthTotal(entered);

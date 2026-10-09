@@ -1,4 +1,4 @@
-import { DEFAULT_PAGE_SIZE, readPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
+import { DEFAULT_PAGE_SIZE, toPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
 import type { ListQuery } from '@/lib/pagination';
 import {
   INVITED_ROLE,
@@ -239,7 +239,7 @@ export const readAccessView = (params: Record<string, string | string[] | undefi
     direction:
       oneOf(Object.values(ACCESS_SORT_DIRECTION), single('dir')) ?? DEFAULT_ACCESS_VIEW.direction,
     page: Number.isFinite(page) && page > 0 ? page : DEFAULT_ACCESS_VIEW.page,
-    pageSize: readPageSize(single('onpage')).onpage ?? DEFAULT_ACCESS_VIEW.pageSize,
+    pageSize: toPageSize(single('onpage')),
     q: single('q')?.trim() ?? '',
   };
 };

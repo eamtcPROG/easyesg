@@ -1,10 +1,9 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { SkipLink } from '@easyesg/ui';
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
-import { useTranslations } from 'use-intl';
+import { ConsoleSkipLink } from '~/realm/components/chrome/console-skip-link';
 
 /**
- * Root route. Establishes the router context and nothing else.
+ * Root route. Establishes the router context, and draws the one thing above every console page: UX-99's skip link.
  *
  * There is no locale segment in this tree, and that is a decision rather than an omission. The
  * administrative console is Romanian-only at MVP: NFR-23 and FR-63 set three live locales for the
@@ -23,12 +22,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootRoute() {
-  const t = useTranslations('chrome');
-  // UX-99's skip link (task 203.3), the first thing a keyboard reaches on every console page — the realm's and A-01's
-  // alike, since the root wraps both — to the `<main>` each one marks with `MAIN_CONTENT_ID`.
   return (
     <>
-      <SkipLink label={t('skipLink')} />
+      <ConsoleSkipLink />
       <Outlet />
     </>
   );

@@ -117,7 +117,8 @@ src/
 │               requirements and the ended-session exit) · queries/ (the session, the invitation,
 │               A-19's credentials) · tools/ (the three reducers, each role's home, the navigation's
 │               sections, the two arrival notices, the realm reads' arms, A-19's read and code standing,
-│               the email shape, the words both refusal callouts draw). A LEAF (see below)
+│               the email shape, the words both refusal callouts draw, the same-app redirect path).
+│               A LEAF (see below)
 ├─ features/    15 folders, platform/ and billing/, mirroring apps/api's contexts — one index.ts each until
 │               built; platform/admin/ holds organization-register/ (A-02, task 67.3), admin-accounts/
 │               (A-08, task 67.4) and identity-providers/ (A-18, task 67.11); platform/notification/ is A-17
@@ -191,13 +192,13 @@ src/
   gate above is an endless bounce between the screen and the form.
 
   **The redirect is validated where it is consumed, not where it is set.** `_realm`'s guard puts
-  `location.href` in the search param; `_focus/sign-in.tsx`'s `safeRealmPath` is what refuses
-  anything that is not a same-app path — leading `/`, but not `//` and not `/\`, the two forms a
-  browser reads as an origin. An open redirect on the console's sign-in is worth more to an
-  attacker than on any tenant screen, and the check is three lines away from the navigation it
-  guards precisely so a reader of that navigation meets it. **It has two consumers in that file
-  since task 113** — the completed sign-in and the gate above — and stays inline rather than moving
-  to `tools/` with a spec, because that last sentence is the reason it is where it is.
+  `location.href` in the search param; `realm/tools/safe-realm-path.ts` is what refuses anything
+  that is not a same-app path — leading `/`, but not `//` and not `/\`, the two forms a browser
+  reads as an origin, and no tab, newline or carriage return anywhere, which the URL parser deletes
+  before reading (Stage 2's close). An open redirect on the console's sign-in is worth more to an
+  attacker than on any tenant screen. **It was inline in `_focus/sign-in.tsx` while both its
+  consumers were there** (task 113: the completed sign-in and the gate above); A-19's `?from=` made a
+  third in another file, and task 203.5 moved it to `tools/` with a spec rather than restate it.
 
 - **A record opens in a dialogue, a row carries its actions, and a paged list offers a size** (task
   170; `design_spec.md` §5.2's preamble, the owner's four decisions of 24 Sep 2026). The list keeps the

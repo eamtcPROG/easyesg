@@ -383,6 +383,42 @@
       "findings": []
     },
     {
+      "name": "a fuel figure with no unit beside electricity in MWh gives no verdict, until OQ-22 gives it a unit",
+      "rules": {
+        "rules": [
+          {
+            "id": "b3-energy-breakdown",
+            "kind": "sum",
+            "verdict": "inconsistency",
+            "message": "validation.sum.over",
+            "parts": [
+              {"element": "EnergyConsumptionFromElectricity", "member": "NonRenewableEnergyMember"},
+              {"element": "EnergyConsumptionFromFuels", "member": "NonRenewableEnergyMember"}
+            ],
+            "total": {"element": "TotalEnergyConsumption"},
+            "relation": "at_most"
+          }
+        ]
+      },
+      "scope": ["EnergyConsumptionFromElectricity", "EnergyConsumptionFromFuels", "TotalEnergyConsumption"],
+      "values": [
+        {
+          "elementKey": "EnergyConsumptionFromElectricity",
+          "dimensionKey": "NonRenewableEnergyMember",
+          "valueNumeric": "60",
+          "unitCode": "MWh"
+        },
+        {
+          "elementKey": "EnergyConsumptionFromFuels",
+          "dimensionKey": "NonRenewableEnergyMember",
+          "valueNumeric": "50",
+          "unitCode": null
+        },
+        {"elementKey": "TotalEnergyConsumption", "valueNumeric": "100", "unitCode": "MWh"}
+      ],
+      "findings": []
+    },
+    {
       "name": "operands in one unit are compared",
       "rules": {
         "rules": [
@@ -441,19 +477,19 @@
           "elementKey": "EnergyConsumptionFromFuels",
           "dimensionKey": "RenewableEnergyMember",
           "valueNumeric": "60",
-          "unitCode": "MWh"
+          "unitCode": null
         },
         {
           "elementKey": "EnergyConsumptionFromFuels",
           "dimensionKey": "NonRenewableEnergyMember",
           "valueNumeric": "50",
-          "unitCode": "MWh"
+          "unitCode": null
         },
         {
           "elementKey": "EnergyConsumptionFromFuels",
           "dimensionKey": "TotalRenewableAndNonRenewableEnergyMember",
           "valueNumeric": "100",
-          "unitCode": "MWh"
+          "unitCode": null
         }
       ],
       "findings": [
@@ -498,19 +534,19 @@
           "elementKey": "EnergyConsumptionFromFuels",
           "dimensionKey": "RenewableEnergyMember",
           "valueNumeric": "40",
-          "unitCode": "MWh"
+          "unitCode": null
         },
         {
           "elementKey": "EnergyConsumptionFromFuels",
           "dimensionKey": "NonRenewableEnergyMember",
           "valueNumeric": "50",
-          "unitCode": "MWh"
+          "unitCode": null
         },
         {
           "elementKey": "EnergyConsumptionFromFuels",
           "dimensionKey": "TotalRenewableAndNonRenewableEnergyMember",
           "valueNumeric": "100",
-          "unitCode": "MWh"
+          "unitCode": null
         }
       ],
       "findings": []
@@ -539,19 +575,19 @@
           "elementKey": "EnergyConsumptionFromFuels",
           "dimensionKey": "RenewableEnergyMember",
           "valueNumeric": "60",
-          "unitCode": "MWh"
+          "unitCode": null
         },
         {
           "elementKey": "EnergyConsumptionFromFuels",
           "dimensionKey": "NonRenewableEnergyMember",
           "valueNumeric": "40",
-          "unitCode": "MWh"
+          "unitCode": null
         },
         {
           "elementKey": "EnergyConsumptionFromFuels",
           "dimensionKey": "TotalRenewableAndNonRenewableEnergyMember",
           "valueNumeric": "100",
-          "unitCode": "MWh"
+          "unitCode": null
         }
       ],
       "findings": []

@@ -48,7 +48,7 @@ export default defineConfig({
     testTimeout: 30_000,
     include: ['src/**/*.spec.{ts,tsx}'],
     // Counted only toward the project-wide figure, which §12.5.6 reports beside NFR-88's
-    // per-component floors and does not yet enforce (task 205). None of the five components
+    // per-component floors and does not yet enforce (task 205). None of the components
     // carrying a floor is front-end; those live in apps/api and packages/validation.
     //
     // Off unless `--coverage` is passed, which only `pnpm test:coverage` does; the json-summary is

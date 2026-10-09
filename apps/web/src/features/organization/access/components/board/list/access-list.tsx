@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, BUTTON_VARIANT, DEFAULT_PAGE_SIZE, EmptyState, readPageSize } from '@easyesg/ui';
+import { Button, BUTTON_VARIANT, EmptyState, toPageSize } from '@easyesg/ui';
 import { ACCESS_MESSAGES } from '../../shared/access-messages';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
@@ -45,7 +45,7 @@ export function AccessList() {
       }
       onPageChange={(next) => setView({ page: next })}
       // UX-141's size, which resets the page as every other change of view does (task 203.1).
-      onPageSizeChange={(size) => setView({ pageSize: readPageSize(size).onpage ?? DEFAULT_PAGE_SIZE })}
+      onPageSizeChange={(size) => setView({ pageSize: toPageSize(size) })}
       empty={{
         firstUse: (
           <EmptyState

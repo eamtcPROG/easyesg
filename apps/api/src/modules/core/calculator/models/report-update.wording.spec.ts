@@ -14,10 +14,17 @@ import { REPORT_UPDATE_REACH, type ReportUpdateParams } from './report-update.mo
  */
 const category = `notification.${NOTIFICATION_CATEGORY.REPORT_UPDATE}`;
 
-const params = (reach: ReportUpdateParams['reach']): ReportUpdateParams =>
-  reach === REPORT_UPDATE_REACH.ONE
-    ? { reach, setLabel: '2026.1', newSetLabel: '2026.2', entityName: 'Brutăria Lina', fiscalYear: '2026' }
-    : { reach, setLabel: '2026.1', newSetLabel: '2026.2', entityName: '', fiscalYear: '' };
+/**
+ * The report's name and year travel with both readings: a *several* that rendered the one-report wording would print
+ * them, so only by carrying them can the specs below see that it does not.
+ */
+const params = (reach: ReportUpdateParams['reach']): ReportUpdateParams => ({
+  reach,
+  setLabel: '2026.1',
+  newSetLabel: '2026.2',
+  entityName: 'Brutăria Lina',
+  fiscalYear: '2026',
+});
 
 const inApp = (locale: Locale, reach: ReportUpdateParams['reach']) => ({
   name: translate(locale, `${category}.name`),
@@ -49,6 +56,7 @@ describe('the report-update notice’s words (task 37.3)', () => {
     expect(several.title).toBeTruthy();
     expect(several.title).not.toBe(one.title);
     expect(several.title).not.toContain('Brutăria Lina');
+    expect(several.body).not.toContain('Brutăria Lina');
     // The action follows the link: the calculator for one report, the reports list for several.
     expect(several.action).toBeTruthy();
     expect(several.action).not.toBe(one.action);

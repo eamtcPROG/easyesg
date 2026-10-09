@@ -1,7 +1,8 @@
 import { matchesSearch } from '@/lib/search-match';
-import { DEFAULT_PAGE_SIZE, readPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
+import { DEFAULT_PAGE_SIZE, toPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
 import { ENTITY_STATUS, type EntityStatus, type ReportingEntity } from '@easyesg/contracts';
 import type { EntityPeriod } from './entity-periods';
+import { compareText } from '@/lib/collation';
 
 /**
  * S-13's read model — the entities an organization reports on (FR-17 … FR-20, UC-52 … UC-55).
@@ -136,7 +137,7 @@ export const readEntityView = (
     direction:
       oneOf(Object.values(ENTITY_SORT_DIRECTION), single('dir')) ?? DEFAULT_ENTITY_VIEW.direction,
     page: Number.isFinite(page) && page > 0 ? page : DEFAULT_ENTITY_VIEW.page,
-    pageSize: readPageSize(single('onpage')).onpage ?? DEFAULT_ENTITY_VIEW.pageSize,
+    pageSize: toPageSize(single('onpage')),
     q: single('q')?.trim() ?? '',
   };
 };
@@ -165,7 +166,7 @@ const compareBy = (left: EntityRow, right: EntityRow, sort: EntitySort): number 
   if (sort === ENTITY_SORT.STANDING) {
     return STANDING_RANK[left.standing] - STANDING_RANK[right.standing];
   }
-  return left.name.localeCompare(right.name);
+  return compareText(left.name, right.name);
 };
 
 /**
@@ -216,7 +217,7 @@ export const applyEntityView = (input: {
     const by = compareBy(left, right, view.sort);
     // Name is the tie-break everywhere, so the order is total and a re-render cannot reshuffle
     // equal rows under the reader's cursor.
-    const settled = by !== 0 ? by : left.name.localeCompare(right.name);
+    const settled = by !== 0 ? by : compareText(left.name, right.name);
     return view.direction === ENTITY_SORT_DIRECTION.ASCENDING ? settled : -settled;
   });
 

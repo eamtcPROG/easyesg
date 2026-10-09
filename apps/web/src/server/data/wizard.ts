@@ -43,12 +43,6 @@ export const READ_ONLY_CAUSE = {
 
 export type ReadOnlyCause = (typeof READ_ONLY_CAUSE)[keyof typeof READ_ONLY_CAUSE];
 
-/**
- * The step read's one answer of its own (task 183's consequence): the report and its module list read, and the step
- * answered **404** — the api's word, since task 183, for a module the pinned taxonomy does not carry. The section
- * answers it as it answers a module outside the report's scope: the 404 screen, never the unreachable state, which
- * would tell a reader with a stale link to try again later.
- */
 /** The status a missing module is answered with — HTTP's, compared as a number rather than spelled at the site. */
 const NOT_FOUND_STATUS = 404;
 
@@ -96,6 +90,10 @@ export async function readWizardStep(input: {
   if (isPermissionRefusal(modules) || isPermissionRefusal(step) || isPermissionRefusal(report)) {
     return { status: TENANT_READ.FORBIDDEN };
   }
+  // The step read's one answer of its own (task 183's consequence): the report and its module list read, and the step
+  // answered 404 — the api's word, since task 183, for a module the pinned taxonomy does not carry. The section answers
+  // it as it answers a module outside the report's scope: the 404 screen, never the unreachable state, which would tell
+  // a reader with a stale link to try again later.
   if (
     modules.status === API_OUTCOME.Ok &&
     report.status === API_OUTCOME.Ok &&
