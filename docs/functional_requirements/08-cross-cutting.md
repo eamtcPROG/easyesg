@@ -236,11 +236,11 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ## 2. Public tier (index §3.33, new)
 
-**Where the public tier sits.** S-29, S-30 and S-31 are three of the six unauthenticated screens of `architecture.md` §15.4's ninth step. Three properties hold across all of them (`design_spec.md` §5.1b). They are the only screens the framework may cache, because they are the only tenant-independent ones. They carry no session, so nothing on them may read or imply an active organization. And the authentication boundary is a list whose default is closed: a public route is public only because it was added to `UNAUTHENTICATED_SEGMENTS` (task 74.1 row). What is in the repository today is the chrome (74.1, in progress) and three addresses that answer a *not yet available* state in place of a blank page (task 103).
+**Where the public tier sits.** S-29, S-30 and S-31 are three of the six unauthenticated screens of `architecture.md` §15.4's ninth step. Three properties hold across all of them (`design_spec.md` §5.1b). They are the only screens the framework may cache, because they are the only tenant-independent ones. They carry no session, so nothing on them may read or imply an active organization. And the authentication boundary is a list whose default is closed: a public route is public only because it was added to `UNAUTHENTICATED_SEGMENTS` (task 74.1 row). What is in the repository today is the chrome — the band and, since 9 Oct 2026, the footer (74.1) — the Content archetype the pages are drawn on (74.2), and three addresses that answer a *not yet available* state in place of a blank page (task 103).
 
 ### FR-204 — The marketing home
 
-**Status.** Not started — delivered none · remaining 74.1 (in progress), 74.2, 74.3, 74.4, 74.5, 74.6 (the pricing section, which waits for 53.3 and 76)
+**Status.** Partial — delivered 74.1 (the public band and footer), 74.2 (the Content archetype) · remaining 74.3, 74.4, 74.5, 74.6 (the pricing section, which waits for 53.3 and 76)
 
 **Obligation.** The system shall let a visitor with no account and no session read, in the language they choose, what the platform produces and for whom, what it costs and what is asked of them before they sign up, and then proceed to registration or sign-in, while storing nothing against the visitor.
 
@@ -287,7 +287,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-205 — The legal documents
 
-**Status.** Not started — delivered none · remaining 75.1, 75.3, 75.4, 195 (with 74.1 and 74.2, the chrome and the archetype)
+**Status.** Partial — delivered 74.1 and 74.2 (the chrome and the archetype it is drawn on) · remaining 75.1, 75.3, 75.4, 195
 
 **Obligation.** The system shall publish the terms of service, the privacy notice and the cookie policy as one set, readable without signing in and from the footer of every screen, each with a plain-language summary above its formal text, a version and an effective date, in each of the three locales, so that a person is told what is agreed to and how personal data is handled before any is collected.
 

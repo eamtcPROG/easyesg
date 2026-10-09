@@ -469,7 +469,7 @@ issues a session and is never gated:
 
 | Group | Layout it establishes | Screens |
 | --- | --- | --- |
-| `(public)` | None. **The only zone where `"use cache"` is legal** (§14.2) | Marketing, legal, help |
+| `(public)` | The public band and, since task 74.1's other half, the footer, in a column the height of the window — no `<main>`, which a page or `ContentShell` brings. **The only zone where `"use cache"` is legal** (§14.2) | Marketing, legal, help |
 | `(identity)` | Focus archetype — one task, no navigation | S-01, S-02, S-03, S-36, S-38 |
 | `(identity)/(session-issuing)` | None of its own. **UX-136's gate, once for the group** (task 112) — membership of the directory *is* what makes a screen refuse a caller who already holds a session | S-01 sign in and its factor step, S-01 register |
 | `(app)` | Global tier | S-04, S-35 and S-37 — the three authenticated screens in no inner group |
@@ -1136,7 +1136,7 @@ where the hook beside them carries no directive; one since S-02's reset request 
   `setRequestLocale` does not reach its pages — one line per page is the floor. A hand-written
   `const { locale } = await params; setRequestLocale(locale);` in a page is the DRY violation
   this module removed (post-task-22 review, 21 Aug 2026).
-- It is an instance of one of the nine archetypes (§4.6). A screen that fits none is an
+- It is an instance of one of the ten archetypes (§4.6). A screen that fits none is an
   escalation to design review.
 - All eleven §8.1 states are designed before implementation. An undefined state is a defect, not
   an omission (UX-90).

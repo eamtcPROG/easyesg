@@ -104,3 +104,43 @@ test('the band does not overflow the 390 frame', async ({ page }) => {
   }));
   expect(scrollWidth).toBe(clientWidth);
 });
+
+/**
+ * Task 74.1's other half: the public footer (`architecture.md` §12.5.6's task-74 row, item (1)) — on every page of the
+ * group, once, with the three legal links resolving in the page's locale, and at the foot of a page shorter than the
+ * window, which is what the layout's column is for.
+ */
+test.describe('the public footer', () => {
+  for (const path of ['/', '/help', '/legal/terms']) {
+    test(`stands once at the foot of ${path}, its legal links resolving`, async ({ page }) => {
+      await page.goto(path);
+
+      // Exact: a second `contentinfo` would be a footer drawn twice.
+      const footer = page.getByRole('contentinfo');
+      await expect(footer).toHaveCount(1);
+      const legal = footer.getByRole('navigation', { name: 'Documente legale' });
+      await expect(legal.getByRole('link', { name: 'Termeni și condiții' })).toHaveAttribute('href', '/legal/terms');
+      await expect(legal.getByRole('link', { name: 'Politica de confidențialitate' })).toHaveAttribute(
+        'href',
+        '/legal/privacy',
+      );
+      await expect(legal.getByRole('link', { name: 'Politica de cookie-uri' })).toHaveAttribute('href', '/legal/cookies');
+      await expect(footer).toContainText('EasyESG SRL · Chișinău');
+    });
+  }
+
+  test('keeps the page’s locale in its links', async ({ page }) => {
+    await page.goto('/en');
+    const legal = page.getByRole('contentinfo').getByRole('navigation', { name: 'Legal documents' });
+    await expect(legal.getByRole('link', { name: 'Terms of service' })).toHaveAttribute('href', '/en/legal/terms');
+  });
+
+  test('sits at the foot of the window on a page shorter than it', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/');
+    const box = await page.getByRole('contentinfo').boundingBox();
+    expect(box).not.toBeNull();
+    // The column fills the window and the footer takes the space left over above it, so its edge is the window's.
+    expect(Math.round((box?.y ?? 0) + (box?.height ?? 0))).toBe(1000);
+  });
+});

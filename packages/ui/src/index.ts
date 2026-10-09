@@ -88,6 +88,15 @@ export {
   type WizardSwitcherStep,
 } from './archetypes/wizard-module-switcher';
 export { WIZARD_STEP_STATE, type WizardStepState } from './archetypes/wizard-step-vocabulary';
+export { ContentShell, type ContentShellProps } from './archetypes/content-shell';
+export { ContentSection, type ContentSectionProps } from './archetypes/content-section';
+export {
+  ContentContents,
+  type ContentContentsProps,
+  type ContentContentsSection,
+} from './archetypes/content-contents';
+export { ContentPeers, type ContentPeer, type ContentPeersProps } from './archetypes/content-peers';
+export { ContentWide } from './archetypes/content-wide';
 
 export { PasswordField, type PasswordFieldProps } from './form/password-field';
 export { Select, type SelectOption, type SelectProps } from './form/select';

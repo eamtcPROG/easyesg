@@ -1,6 +1,6 @@
 # Page archetypes
 
-Nine templates (design_spec.md §4.6). Every screen is an instance of one; a screen that fits
+Ten templates (design_spec.md §4.6). Every screen is an instance of one; a screen that fits
 none is an escalation to design review, not a licence to invent.
 
 | Archetype | Purpose | Used by |
@@ -14,6 +14,7 @@ none is an escalation to design review, not a licence to invent.
 | `Status` | Current state of a long-lived thing | S-17, S-20, S-24 |
 | `Exception queue` | Work a human must resolve | `apps/admin` only, keyboard-first |
 | `Dashboard` | Aggregate view | `apps/admin` only — never the tenant home |
+| `Content` | Be read | S-29, S-30, S-33 — `ContentShell` with `ContentSection`, `ContentContents`, `ContentPeers` and `ContentWide` (task 74.2); the only archetype with no authenticated instance, and the only one §14.2 lets the framework cache, which is why none of its frame needs the browser |
 
 Two labels in the §4.4 inventory are **compositions, not archetypes** (OQ-7, closed): S-09 is a
 Wizard sub-flow and S-18 is a Comparison. A composition inherits the complete state set of its

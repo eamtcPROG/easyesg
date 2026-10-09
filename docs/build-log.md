@@ -30611,3 +30611,77 @@ run's JSON report. *Declined:* one program under `--max-old-space-size=4096`, ab
   (`lint: apps/api, the rest of the repository failed.`), exit 1; clean again once the probes were removed.
 - `pnpm eslint:prove` passes unchanged: it drives ESLint itself and never read `pnpm lint`.
 
+
+## Task 74.1 and 74.2 — the public footer, and the Content archetype · 2026-10-09
+
+Stage 3's share of task 74: 74.1's other half, the public footer, and 74.2, the tenth archetype S-29, S-30 and S-33 are
+drawn on. 74.3 … 74.6 remain, so the group moves to Stage 6 by the placement rule, its row `IN PROGRESS`.
+
+### Decided before building (project owner, one batch of two, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-74 row; the narrow frames and the states pass in `design_spec.md`
+§4.6's paragraph resolved the same day.
+
+- **The footer ships now.** It was held back on 4 Sep because its three legal links returned `null`; since task 103
+  they answer *not yet available* with a way back, as they already do from the identity and workspace screens.
+  *Declined:* waiting for 75.3, which kept 74.1 open across task 75.
+- **Below `wide`, a Content page's contents become a closed disclosure above its text, and its peer strip scrolls
+  sideways with the current page in view.** No prototype draws a Content page below `wide`; the move is the one S-07's
+  module list and S-08's panel make. *Declined:* the list open above the text, and no list below `wide`.
+
+### What the building settled
+
+- **The footer carries what renders**, as the band did: `SiteFooter`'s note and links in `PublicFooter`, a frame of its
+  own because the Public Home artboard's band is not the workspace's, and a flag between the two is UX-89's boolean.
+  The artboard's product and support columns wait for their screens (OQ-10). The `(public)` layout became a column the
+  height of the window, so the footer stands at the foot of a short page.
+- **`ContentShell` owns the frame and the heading structure**: the `<main>` the skip link reaches — the `(public)`
+  layout renders none — and an `hgroup` holding the page's one `<h1>` with its eyebrow and lede, and a `standing` slot
+  at the head's far end for a document's version and binding language. `ContentSection` is `RecordSection`'s shape for
+  the text, so the `<h2>` level is not the caller's, and its id is the anchor the contents link to.
+- **A Server Component throughout.** §14.2 lets the framework cache this archetype and no other, so the disclosure is
+  a native `<details>` and the peer strip's only client code is `ContentPeersScroll`, a leaf that sets the strip's
+  `scrollLeft` and never `scrollIntoView`, which would move the page too.
+- **The contents are drawn twice and shown once**: a docked `nav` and a disclosure in one grid area whose place moves
+  by width, the list built by a function called twice — the wizard rail's arrangement, and `apps/web/CLAUDE.md`'s rule
+  that an element is called twice, never placed twice. **It marks no reading position**: the artboard tints the first
+  entry, which only a scroll observer could maintain, and that would make the list a client component.
+- **The wider measure is a custom property** `ContentWide` sets on itself and the shell's text reads, so it holds
+  whatever order the two stylesheets load in.
+- **Values extracted, never copied**: the 36px title takes `t-display`, the nearest role; the mono labels take the
+  wizard group label's value; a hovered contents entry's number takes `--text-body`, since `--text-muted` on the tint is
+  4.50:1, tokens.css's own warning.
+
+### Proven to bite
+
+Each guard broken and the spec watched fail, then restored: the landmark's `tabIndex`, the `hgroup`, the closed
+disclosure, the hidden numbers, the current peer, the scroll, a section's label, the wide measure — eight, each 1 or 2
+red. The `hgroup` mutation first failed for the wrong reason, a mismatched closing tag that stopped the file compiling;
+rerun with both tags replaced, it failed on its assertion.
+
+### Skills, read against the diff
+
+- `vercel-composition-patterns`: `architecture-avoid-boolean-props` — the peers and contents are slots, the wide
+  measure a component, the footer a sibling frame rather than a flag on `WorkspaceFooter`.
+- `one-idea-per-file`: one part per file; the scroll is its own client leaf. `reason-docblock-carries-the-why`: each
+  file says why it is where it is, and the counts moved into `packages/ui/CLAUDE.md`, which `docs:check` measures.
+- `one-kind-per-folder`: `archetypes/` is files only; `PublicFooter` joins `shared/` beside `WorkspaceFooter`.
+- `vercel-react-best-practices`: `server-` — nothing of the frame needs the browser; `rerender-` — the one client leaf
+  holds a ref and an effect with no dependencies.
+
+### Gates
+
+The change reaches `packages/ui`, and so both its dependents' rows, and `apps/web`.
+
+- `pnpm lint` (three passes), `typecheck` in `ui`, `web` and `admin`, `pnpm docs:check` — 48 claims, after `packages/ui`'s
+  component, spec, export and client-module counts and the archetype count in two `CLAUDE.md` files moved.
+- `pnpm --filter @easyesg/ui test`: 63 files, **483** cases. `web`: 193 files, 1,856. `admin`: 37 files, 299.
+  `pnpm routes:check`.
+- `pnpm e2e:web --project identity --project expansion --project admin`: **335 passed** in 10.2 minutes — the five new
+  footer cases among them: once on `/`, `/help` and `/legal/terms` with its links resolving, the English locale kept,
+  and its edge the window's on a short page. The server logged 26 `⨯` lines, every one digest `2667547900`.
+- In the browser, at 1440 and 375 in the dark scheme: the footer at the foot of `/en/legal/terms`, wrapping its links
+  below the note at the phone's width; no console error.
+- **The archetype has no instance yet** — task 75's legal set is its first — so it is proven by its specs alone, and
+  the browser sees it when the first page is drawn on it.
+- **Not run:** the api's rows, which nothing here reaches.
