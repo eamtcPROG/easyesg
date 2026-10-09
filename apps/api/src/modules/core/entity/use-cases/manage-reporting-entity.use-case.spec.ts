@@ -4,6 +4,7 @@ import {
   ConsolidationBoundaryEmptyError,
   EntityArchivedError,
   EntityNotFoundError,
+  IdnoCheckDigitsError,
   IdnoMalformedError,
   LegalFormUnknownError,
   LeiCheckDigitsError,
@@ -183,17 +184,26 @@ describe('ManageReportingEntity', () => {
       ).rejects.toBeInstanceOf(LeiCheckDigitsError);
     });
 
-    it('does not refuse an IDNO on its check digit, because that algorithm is unknown', async () => {
+    it('refuses an IDNO whose check digit disagrees, on creation and on an edit, writing nothing', async () => {
+      const { store, useCase } = build();
+      const before = store.all.length;
+      // A published IDNO with its last digit mutated (182/12): the shape is perfect, and only the check digit sees it.
+      const idno = '1003600005149';
+
+      await expect(useCase.create({ entity: { ...NEW, idno } })).rejects.toBeInstanceOf(IdnoCheckDigitsError);
+      expect(store.all).toHaveLength(before);
+      await expect(useCase.update({ entityId: store.all[0].id, patch: { idno } })).rejects.toBeInstanceOf(
+        IdnoCheckDigitsError,
+      );
+      expect(store.all[0].idno).toBeNull();
+    });
+
+    it.each(['1003600005148', '1017600033216'])('accepts the published IDNO %s', async (idno) => {
       const { useCase } = build();
 
-      // Thirteen digits whose thirteenth is almost certainly not the right check digit — and it is
-      // accepted, deliberately. §7.2 records why: the algorithm is not published in the defining
-      // instrument, a candidate reproduced 2 of 12 real IDNOs, and a guessed one would refuse real
-      // registrations rather than catch mistyped ones. This test is what makes that a decision
-      // rather than an omission, and it is the one to change when the norm is found.
-      const created = await useCase.create({ entity: { ...NEW, idno: '1003600158029' } });
+      const created = await useCase.create({ entity: { ...NEW, idno } });
 
-      expect(created.idno).toBe('1003600158029');
+      expect(created.idno).toBe(idno);
     });
   });
 

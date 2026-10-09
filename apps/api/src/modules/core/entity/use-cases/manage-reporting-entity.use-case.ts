@@ -16,6 +16,7 @@ import {
   ConsolidationBoundaryEmptyError,
   EntityArchivedError,
   EntityNotFoundError,
+  IdnoCheckDigitsError,
   IdnoMalformedError,
   LegalFormUnknownError,
   LeiCheckDigitsError,
@@ -168,13 +169,15 @@ export class ManageReportingEntity {
  * `null` clears an identifier and is always permitted; `undefined` leaves it alone.
  */
 function admitIdentifiers(identifiers: { readonly idno?: string | null; readonly lei?: string | null }): void {
-  if (identifiers.idno !== undefined && identifiers.idno !== null && !validateIdno(identifiers.idno).shape) {
-    throw new IdnoMalformedError();
+  // `checkDigits` is `false` only when the shape passed, so each identifier's two refusals cannot overlap.
+  if (identifiers.idno !== undefined && identifiers.idno !== null) {
+    const verdict = validateIdno(identifiers.idno);
+    if (!verdict.shape) throw new IdnoMalformedError();
+    if (verdict.checkDigits === false) throw new IdnoCheckDigitsError();
   }
   if (identifiers.lei !== undefined && identifiers.lei !== null) {
     const verdict = validateLei(identifiers.lei);
     if (!verdict.shape) throw new LeiMalformedError();
-    // `checkDigits` is `false` only when the shape passed, so the two refusals cannot overlap.
     if (verdict.checkDigits === false) throw new LeiCheckDigitsError();
   }
 }

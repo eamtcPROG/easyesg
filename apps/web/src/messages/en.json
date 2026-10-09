@@ -853,6 +853,7 @@
           "idno": "IDNO",
           "idnoHelp": "The state identification number — 13 digits, from your registration certificate.",
           "idnoMalformed": "The IDNO is not 13 digits, so it cannot be recorded. Retype it exactly as it appears on the registration certificate, without spaces.",
+          "idnoCheckDigits": "The IDNO’s last digit, its check digit, does not agree with the twelve before it, so the number is not valid. Compare it with the registration certificate: usually one digit is wrong or two are swapped.",
           "lei": "Legal Entity Identifier (LEI)",
           "leiHelp": "A 20-character international code, required by some banks and EU buyers. Most small Moldovan companies do not hold one — leave it empty if you do not.",
           "leiMalformed": "The LEI is not 20 upper-case letters and digits, so it cannot be recorded. Retype it exactly as it appears on your LEI certificate.",

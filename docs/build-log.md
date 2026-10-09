@@ -30334,3 +30334,108 @@ S-14, S-39, S-13's vocabulary) and `packages/contracts`, whose dependents includ
   logged 24 `⨯` lines, every one *The destination stream closed early.* with digest `2667547900`, and no other.
 - **Not run:** `migrations:check`, with no migration; `boundaries`, `image:check`, `facade:check` and the two
   `*:prove` gates, the Stage's end's and CI's. **Not a Stage close**: Stage 2 keeps 188 and 189.
+
+## Task 188 — The IDNO's check digit · 2026-10-09
+
+`validateIdno` evaluates the thirteenth digit 182/12 supplied — the first twelve weighted 7, 3, 1 repeating, the sum
+modulo 10 — so `checkDigits` is `true` or `false` for every well-shaped value and `null` only where the shape fails, as
+the LEI's always was. The api refuses a wrong check digit with 400 `identifier-check-digits`, the LEI's type, under a
+message of its own (`core.entity.idno_check_digits`); S-13 shows the same verdict inline; 1003600005148 and
+1017600033216 are accepted. FR-16's AC-9 and AC-10 are met, and FR-107 gains the check through the shared function
+with no change of its own.
+
+### Nothing to decide before building
+
+182/12 settled everything the row named, so no question was raised. Two points the row did not name were read off the
+documents rather than decided, and both are stated here so they can be overturned:
+
+- **A subsidiary's IDNO stays FR-19's thirteen digits.** A consolidation member's identifiers are judged by the request
+  DTO's `@Matches` and never reach `validateIdno`; FR-19's inputs, restated the same day as 182/12, say *thirteen
+  digits* and no more, and 182/12's *every caller gains it* names the function's callers. Not widened, and raised with
+  the owner at the close. **If it should be checked:** `ManageReportingEntity` judges each member's IDNO through
+  `validateIdno`, and S-13's boundary section gains the field rule the identity section has.
+- **An IDNO stored before this task is judged again when a save sends it, and S-13 sends it with every save**
+  (`toRequest`). So an entity holding a wrong check digit can change nothing else on S-13 until the number is
+  corrected, and the save's inline verdict says why. No production data exists. The database's `CHECK` stays shape-only, as
+  the 29.2 migration's docblock records — the rule is the shared package's (§9.8), and a constraint would refuse rows
+  already held.
+
+### What the building settled
+
+- **`idnoCheckDigit` is private to the package's module**, over an `IDNO_WEIGHTS` constant, and only ever called on a
+  value that passed the shape. `IdentifierVerdict`'s docblock lost the IDNO's *interval before the algorithm is in
+  hand*: `null` now means a shape failure for both identifiers.
+- **`IdnoCheckDigitsError`** sits beside `LeiCheckDigitsError` under one problem type, because a front end branches on
+  the resolution — go back to the certificate — and the message says which identifier. `admitIdentifiers` reads the
+  IDNO exactly as it reads the LEI.
+- **S-13's two validators left the identity section for `tools/identifiers.ts`** (`IDENTIFIER_FAULT`, `idnoFault`,
+  `leiFault`, with a spec), each reading the value as `toRequest` sends it. The LEI's moved too, its behaviour unchanged,
+  because the IDNO's would otherwise have been its inline twin. `identity.idnoCheckDigits` is new in all three locales,
+  Romanian first.
+- **The contract**: the IDNO's description no longer says its check digit is unverified, the two 400 descriptions name
+  either identifier, and the admin register's two examples — `1009600041284`, which the api now refuses — read
+  `1003600158022`, the entity DTOs' own example. Descriptions and examples only; no generated type moved.
+- **The documents**: FR-16 is Built; FR-107's IDNO rule is delivered and its AC-5 says which half (the function, here;
+  the entry that calls it, 63.13's); §7.2's 182/12 amendment names the task.
+
+### Searched
+
+- **Every thirteen-digit literal tracked in the repository**, by a script applying the check to each. Those reaching the
+  api now pass it: `entities.e2e-spec.ts`'s create case, which held `1009600041284`, and its edit constant use the two
+  published numbers, so AC-10 holds over the wire as well; the use-case spec's case accepting `1003600158029` on purpose
+  became its refusal case. **`organization-register.e2e-spec.ts` built random twelve-digit tails**, which the api would now refuse
+  nine runs in ten — they are eleven digits completed by `withCheckDigit`, the one digit `idnoIsValid` accepts, so the
+  suite carries no second copy of the algorithm.
+- **Left failing the check, each below the api or outside FR-16**: the consolidation members above, in
+  `entities.e2e-spec.ts` and `wizard.e2e-spec.ts`; `migration-data-steps.e2e-spec.ts`'s rows, which a migration moves
+  whatever they hold; `e2e/admin/organization-register.spec.ts`'s three random IDNOs, seeded by SQL and only displayed;
+  the read-side fixtures of `register-read.spec.ts` and `list-organization-entities.use-case.spec.ts`; the artboards in
+  `design/screens/`.
+- **Every sentence saying the check is not evaluated**: the package's docblocks and spec, the use-case spec, the errors'
+  docblock, the DTO's description, S-13's comment, FR-16, FR-107 and the entity table's row, §7.2. The two migrations'
+  docblocks say the `CHECK` stops short of the check digit — still true of the constraint, and frozen history; left.
+  The package header still named S-15 as the inline caller, which it has not been since task 175; fixed in passing.
+
+### Proven to bite
+
+- **The package**: reversing the weights to 1, 3, 7 turned 2 of 27 cases red, and the complement form
+  `(10 − sum mod 10) mod 10` turned 5; restored, 27 green. Its four accepted values include the two taken from real
+  registrations on 28 Aug 2026, before the algorithm was known, which agree with it independently.
+- **The use case**: its refusal case was red (1 of 31) before `IdnoCheckDigitsError` existed.
+- **The wire**: the e2e refusal asserts the `detail` names the IDNO — the problem type is shared, so throwing the LEI's
+  error for an IDNO would pass a type check and fail this. Not re-run with that mutation.
+- **S-13's tool**: reading a check-digit fault as malformed — the wrong sentence on the screen — turned 2 of 9 cases red;
+  restored, 9 green. The browser journey fills a published IDNO with its last digit mutated beside the LEI's bad check
+  digits and finds each sentence twice, inline and in the summary.
+
+### Skills, read against the diff
+
+- `nestjs-best-practices`: `security-validate-all-input` declined — the IDNO is judged in the use case through the
+  shared rule rather than a DTO `@Matches`, the reason `admitIdentifiers`' docblock gives; `error-throw-http-exceptions`
+  declined by name, as ever.
+- `one-idea-per-file`: `pure-logic-leaves-the-component` applied to both validators; `reason-docblock-carries-the-why`
+  kept the register's count out of the package — the docblock cites §7.2 and 182/12 for the provenance.
+- `one-kind-per-folder`: `identifiers.ts` and its spec join `entities/tools/`, a files-only leaf; the folder-shape spec
+  passes.
+- `vercel-react-best-practices`: the identity section stays a Client Component whose `rules` callbacks are inline
+  arrows, as before, which no memo depends on; it imports the tool directly, and `@easyesg/validation` was already in
+  its graph. `vercel-composition-patterns` not triggered.
+
+### Gates
+
+The change reaches three packages — `validation`, `i18n` (the api's catalogues) and `contracts` (regenerated) — and so
+every dependent's row: `apps/api`, `apps/web` and `apps/admin`.
+
+- `pnpm lint`; `typecheck` in `validation`, `i18n`, `contracts`, `api`, `web` and `admin`; `pnpm docs:check`, 48 claims,
+  after the archive's counts moved; the root `CLAUDE.md`'s plan size moved by hand to 54 and 155.
+- `pnpm --filter @easyesg/validation test`: 8 files, **176** cases. `pnpm --filter @easyesg/i18n test`: 5 files, 160.
+- `pnpm --filter @easyesg/api test`: 259 suites, **2,123** cases, the message-key and message-content gates over the new
+  entry among them.
+- `pnpm e2e`: **66 of 66** suites, **1,667** cases, the log clean.
+- `pnpm openapi:check`, four descriptions and two examples regenerated and staged; `pnpm routes:check`.
+- `pnpm --filter @easyesg/web test`: 191 files, **1,850** cases. `pnpm --filter @easyesg/admin test`: 37 files, 298.
+- `pnpm e2e:web --project identity --project expansion --project admin`: **330 passed**, 12.5 minutes. The server
+  logged 28 `⨯` lines, every one *The destination stream closed early.* with digest `2667547900`, and no other.
+- **Not run:** `pnpm e2e:worker` — no consumer changed, and the worker reads nothing the change moved but a catalogue
+  entry; `migrations:check`, with no migration; `boundaries`, `image:check`, `facade:check` and the two `*:prove`
+  gates, the Stage's end's and CI's. **Not a Stage close**: Stage 2 keeps 189.

@@ -301,6 +301,7 @@
       "archived": "The entity is archived, so its master data can no longer be changed. Its reports and exports remain available. Create a new entity if the activity continues in another form.",
       "consolidation_boundary_empty": "You chose consolidated reporting but named no subsidiary inside the boundary, so the change was not saved. Add the subsidiaries included, or report on an individual basis.",
       "idno_malformed": "The IDNO must be exactly thirteen digits and the value you entered is not, so the change was not saved. Check the number on the registration certificate and enter it again.",
+      "idno_check_digits": "The IDNO has thirteen digits but the last one, its check digit, does not match the twelve before it, which usually means one digit is wrong or two are swapped. The change was not saved. Compare the number with the registration certificate and enter it again.",
       "lei_malformed": "An LEI is twenty characters of upper-case letters and digits, and the value you entered is not, so the change was not saved. Copy it from the global register and try again.",
       "lei_check_digits": "The LEI has the right shape but its check digits do not match the rest of the value, which usually means one character is wrong or two are swapped. The change was not saved. Compare it with the source you took it from."
     },

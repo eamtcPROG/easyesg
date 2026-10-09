@@ -3336,7 +3336,7 @@ export interface components {
             /** @description A key from the country’s legal-form vocabulary. */
             legalForm?: string | null;
             /**
-             * @description FR-16’s primary identifier — Moldova’s thirteen-digit state identification number, the entity’s own (task 175). Its shape is validated on entry; the thirteenth digit is a check digit whose algorithm is not published in the defining instrument, so it is not yet verified. Null clears it.
+             * @description FR-16’s primary identifier — Moldova’s thirteen-digit state identification number, the entity’s own (task 175). Both its shape and its check digit — the first twelve digits weighted 7, 3, 1 repeating, the sum modulo 10 — are verified on entry, and the two refuse with different problem types. Null clears it.
              * @example 1003600158022
              */
             idno?: string | null;
@@ -3379,7 +3379,7 @@ export interface components {
             /** @description A key from the country’s legal-form vocabulary. */
             legalForm?: string | null;
             /**
-             * @description FR-16’s primary identifier — Moldova’s thirteen-digit state identification number, the entity’s own (task 175). Its shape is validated on entry; the thirteenth digit is a check digit whose algorithm is not published in the defining instrument, so it is not yet verified. Null clears it.
+             * @description FR-16’s primary identifier — Moldova’s thirteen-digit state identification number, the entity’s own (task 175). Both its shape and its check digit — the first twelve digits weighted 7, 3, 1 repeating, the sum modulo 10 — are verified on entry, and the two refuse with different problem types. Null clears it.
              * @example 1003600158022
              */
             idno?: string | null;
@@ -4705,7 +4705,7 @@ export interface components {
             name: string;
             /**
              * @description The IDNO of the organization’s earliest reporting entity holding one — the identifiers are each entity’s. Null while none of its entities records one.
-             * @example 1009600041284
+             * @example 1003600158022
              */
             idno: string | null;
             /** @description Unix epoch milliseconds when the organization was registered on the platform. */
@@ -4749,7 +4749,7 @@ export interface components {
             name: string;
             /**
              * @description The entity’s IDNO. Null while it records none.
-             * @example 1009600041284
+             * @example 1003600158022
              */
             idno: string | null;
             /** @enum {string} */
@@ -6962,7 +6962,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description An activity code the organization’s country does not register (problem type nace-code-unknown) — the classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2 — a legal form it does not register (legal-form-unknown), a consolidated basis with nothing inside the boundary (consolidation-boundary-empty), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits). */
+            /** @description An activity code the organization’s country does not register (problem type nace-code-unknown) — the classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2 — a legal form it does not register (legal-form-unknown), a consolidated basis with nothing inside the boundary (consolidation-boundary-empty), or an identifier that is malformed (identifier-malformed) or whose check digits disagree — an IDNO or an LEI (identifier-check-digits). */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7061,7 +7061,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description A consolidated basis with nothing inside the boundary (problem type consolidation-boundary-empty), an unregistered activity code (nace-code-unknown) or legal form (legal-form-unknown), or an identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree (identifier-check-digits). */
+            /** @description A consolidated basis with nothing inside the boundary (problem type consolidation-boundary-empty), an unregistered activity code (nace-code-unknown) or legal form (legal-form-unknown), or an identifier that is malformed (identifier-malformed) or whose check digits disagree — an IDNO or an LEI (identifier-check-digits). */
             400: {
                 headers: {
                     [name: string]: unknown;

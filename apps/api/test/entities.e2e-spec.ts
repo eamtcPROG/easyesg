@@ -431,7 +431,9 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
    */
   describe('the entity’s identifiers (UC-51, FR-16; task 175)', () => {
     const LEI = '7LTWFZYICNSX8D621K86'; // Deutsche Bank AG, a published value.
-    const IDNO = '1003600158022';
+    // The two IDNOs 182/12 verified the check digit on, so the wire accepts values from the register, not this file.
+    const IDNO = '1003600005148';
+    const SECOND_IDNO = '1017600033216';
 
     const patch = (body: object) => http().patch(`/api/v1/entities/${entityId}`).set(admin.authorization).send(body);
 
@@ -439,10 +441,10 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
       const created = await http()
         .post('/api/v1/entities')
         .set(admin.authorization)
-        .send({ name: 'Lina Logistică', idno: '1009600041284' })
+        .send({ name: 'Lina Logistică', idno: SECOND_IDNO })
         .expect(201);
       const entity = (created.body as { object: EntityBody }).object;
-      expect({ idno: entity.idno, lei: entity.lei }).toEqual({ idno: '1009600041284', lei: null });
+      expect({ idno: entity.idno, lei: entity.lei }).toEqual({ idno: SECOND_IDNO, lei: null });
     });
 
     it('records them on an existing one', async () => {
@@ -461,6 +463,25 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
         .send({ name: 'Lina Refuzată', idno: '10036001580AB' })
         .expect(400);
       expect((onCreate.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/identifier-malformed`);
+    });
+
+    it('refuses an IDNO whose check digit disagrees, as it does an LEI’s, on a new entity as on an existing one', async () => {
+      // Each published IDNO with its last digit mutated: thirteen digits, and only the check digit sees it (182/12).
+      const onEdit = await patch({ idno: '1003600005149' }).expect(400);
+      expect((onEdit.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/identifier-check-digits`);
+      // The IDNO's sentence, not the LEI's: the slug is shared, so the detail is what says which identifier to recheck.
+      expect((onEdit.body as { detail?: string }).detail).toContain('IDNO');
+
+      const onCreate = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({ name: 'Lina Necontrolată', idno: '1017600033217' })
+        .expect(400);
+      expect((onCreate.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/identifier-check-digits`);
+
+      const listed = await http().get('/api/v1/entities').set(admin.authorization).expect(200);
+      const names = (listed.body as { objects: EntityBody[] }).objects.map((entity) => entity.name);
+      expect(names).not.toContain('Lina Necontrolată');
     });
 
     it('tells a malformed LEI apart from one whose check digits disagree', async () => {

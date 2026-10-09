@@ -151,9 +151,9 @@ class ReportingEntityFieldsDto {
     example: '1003600158022',
     description:
       'FR-16’s primary identifier — Moldova’s thirteen-digit state identification number, the ' +
-      'entity’s own (task 175). Its shape is validated on entry; the thirteenth digit is a check ' +
-      'digit whose algorithm is not published in the defining instrument, so it is not yet ' +
-      'verified. Null clears it.',
+      'entity’s own (task 175). Both its shape and its check digit — the first twelve digits ' +
+      'weighted 7, 3, 1 repeating, the sum modulo 10 — are verified on entry, and the two refuse ' +
+      'with different problem types. Null clears it.',
   })
   @Trim()
   @IsOptional()

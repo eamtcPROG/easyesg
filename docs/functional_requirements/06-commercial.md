@@ -781,7 +781,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 
 ### FR-107 — Validate fiscal identifiers
 
-**Status.** Not started — remaining 63.13 (the validation); 63.7 hosts the screen. The IDNO shape rule it will reuse is delivered (task 29.2), and its check digit arrives with 188.
+**Status.** Not started — remaining 63.13 (the validation); 63.7 hosts the screen. The IDNO rule it will reuse is delivered, its shape by task 29.2 and its check digit by 188.
 
 **Obligation.** The system shall validate the format of supplied fiscal identifiers and, where a lookup is available, verify existence and VAT status.
 
@@ -797,7 +797,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 1. The format of the IDNO and the VAT code is checked on submission or change (UC-109).
 2. A failing identifier is rejected at entry, because an invoice carrying an invalid fiscal code is rejected by the national e-Factura platform and cannot be corrected by editing (BR-FIS-1; D-10).
 3. The message is a three-part message that states what failed, the consequence, and what resolves it, and not a bare format error (S-23; NFR-79).
-4. **The IDNO rule:** thirteen digits and, from 188, the check digit (the first twelve digits weighted 7, 3, 1 repeating, the sum modulo 10). Until then the check digit is **not evaluated**, and the verdict says so rather than claiming a pass (`architecture.md` §7.2; archived task 29.2). The function is shared, so the check reaches this requirement with no change of its own (§12.5.6 task-182 identity and organization row, 182/12; FR-16).
+4. **The IDNO rule:** thirteen digits and the check digit (the first twelve digits weighted 7, 3, 1 repeating, the sum modulo 10), both evaluated since 188 (`architecture.md` §7.2; archived tasks 29.2 and 188). The function is shared, so the check reaches this requirement with no change of its own (§12.5.6 task-182 identity and organization row, 182/12; FR-16).
 5. Where a lookup is available, existence and VAT status are verified and the result recorded (UC-109). The VAT registration code gets **a shape check only**: no public checksum for it is known, which is an assumption recorded here and not a finding. The shape is the tax authority's published form of the code, which the task building this requirement cites, since no source in this set states it (§12.5.6 task-182 identity and organization row, 182/12). **No lookup exists at the MVP** (182/114): the format is checked and the *verified* marker is not shown (task 30.4.2 already draws none). A lookup behind a port, advisory and never blocking, is added when a register is named. The IDNO's check digit (182/12) is a local computation and is not a lookup.
 
 **Refusals.** A malformed identifier is rejected at entry (FR text; BR-FIS-1). No wire outcome is built.
@@ -810,7 +810,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 
 **History.**
 - 5 Oct 2026 · project owner · no fiscal-register lookup at the MVP: format only, no verified marker · §12.5.6 task-182 payment and fiscal row (182/114)
-- **AC-5** Given an IDNO of thirteen digits whose check digit is wrong, when it is submitted, then it is rejected at entry, by the same function FR-16 uses. *(source: FR text; BR-FIS-1; §12.5.6 task-182 identity and organization row, 182/12)* Unmet until 188.
+- **AC-5** Given an IDNO of thirteen digits whose check digit is wrong, when it is submitted, then it is rejected at entry, by the same function FR-16 uses. *(source: FR text; BR-FIS-1; §12.5.6 task-182 identity and organization row, 182/12)* The function holds since 188; the entry that calls it is 63.13's.
 
 ## 5. Order and checkout (index §3.21)
 

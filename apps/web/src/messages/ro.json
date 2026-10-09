@@ -853,6 +853,7 @@
           "idno": "IDNO",
           "idnoHelp": "Numărul de identificare de stat — 13 cifre, de pe certificatul de înregistrare.",
           "idnoMalformed": "IDNO-ul nu are 13 cifre, așa că nu poate fi înregistrat. Rescrieți-l exact cum apare pe certificatul de înregistrare, fără spații.",
+          "idnoCheckDigits": "Ultima cifră a IDNO-ului, cifra de control, nu corespunde celorlalte douăsprezece, deci numărul nu este valid. Comparați-l cu certificatul de înregistrare: de obicei o cifră este greșită sau două sunt inversate.",
           "lei": "Identificator de entitate juridică (LEI)",
           "leiHelp": "Cod internațional de 20 de caractere, cerut de unele bănci și cumpărători din UE. Majoritatea companiilor mici din Moldova nu au unul — lăsați câmpul gol dacă nu aveți.",
           "leiMalformed": "Codul LEI nu are 20 de caractere din litere mari și cifre, așa că nu poate fi înregistrat. Rescrieți-l exact cum apare în certificatul LEI.",

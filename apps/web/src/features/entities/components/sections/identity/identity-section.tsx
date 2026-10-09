@@ -2,11 +2,11 @@
 
 import { RecordSection } from '@easyesg/ui';
 import { FormSelect, FormTextField } from '@easyesg/ui/forms';
-import { validateIdno, validateLei } from '@easyesg/validation';
 import { useTranslations } from 'next-intl';
 import type { Control } from 'react-hook-form';
 import type { NaceCodeMatch } from '@easyesg/contracts';
 import type { EntityFields } from '../../../tools/entity-fields';
+import { IDENTIFIER_FAULT, idnoFault, leiFault } from '../../../tools/identifiers';
 import { ActivityPicker } from './activity-picker';
 import { ENTITY_RECORD_MESSAGES } from '../../shared/entity-messages';
 import styles from '../../styles/entities.module.css';
@@ -20,7 +20,8 @@ import styles from '../../styles/entities.module.css';
  * **The identifiers are the entity's since task 175**, moved from S-15 with their rules: **IDNO primary, LEI optional**
  * (OQ-18), each judged by `@easyesg/validation` — the functions the API re-validates with, so the two verdicts cannot
  * drift (§9.8) — with *shape* and *check digits* kept apart because their resolutions differ: a wrong shape is
- * retyped, disagreeing check digits mean the wrong identifier was copied. **The LEI is labelled with its expansion**,
+ * retyped, disagreeing check digits mean the wrong identifier was copied (`tools/identifiers.ts`, since task 188 for
+ * the IDNO's check digit too). **The LEI is labelled with its expansion**,
  * never the bare abbreviation, which a Moldovan reader takes for the currency (S-15's rule, moved with the field).
  */
 export function IdentitySection({
@@ -72,10 +73,11 @@ export function IdentitySection({
           inputMode="numeric"
           disabled={archived}
           rules={{
-            // Shape only: the thirteenth digit's algorithm is not published in the defining instrument, so a check this
-            // screen invented would refuse real registrations — `validateIdno` says so.
-            validate: (value: string) =>
-              !value.trim() || validateIdno(value.trim()).shape || t('identity.idnoMalformed'),
+            validate: (value: string) => {
+              const fault = idnoFault(value);
+              if (fault === null) return true;
+              return fault === IDENTIFIER_FAULT.MALFORMED ? t('identity.idnoMalformed') : t('identity.idnoCheckDigits');
+            },
           }}
         />
         <FormTextField
@@ -86,11 +88,9 @@ export function IdentitySection({
           disabled={archived}
           rules={{
             validate: (value: string) => {
-              const trimmed = value.trim().toUpperCase();
-              if (!trimmed) return true;
-              const verdict = validateLei(trimmed);
-              if (!verdict.shape) return t('identity.leiMalformed');
-              return verdict.checkDigits === true || t('identity.leiCheckDigits');
+              const fault = leiFault(value);
+              if (fault === null) return true;
+              return fault === IDENTIFIER_FAULT.MALFORMED ? t('identity.leiMalformed') : t('identity.leiCheckDigits');
             },
           }}
         />

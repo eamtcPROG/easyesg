@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
+import { idnoIsValid } from '@easyesg/validation';
 import type { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { initialiseCatalogue } from '../src/app/messages/catalogue';
@@ -50,9 +51,19 @@ const randomOf = (alphabet: string, length: number) =>
 
 /** Letters only, so no search for an IDNO's digits can match a name by accident. */
 const TOKEN = `rg${randomOf('abcdefghijklmnopqrstuvwxyz', 10)}`;
-const IDNO_TAIL = randomOf('0123456789', 12);
+/** A random body completed by the one check digit the shared rule accepts (182/12), so `POST /entities` admits it. */
+const withCheckDigit = (body: string): string => {
+  const idno = [...'0123456789'].map((digit) => `${body}${digit}`).find((candidate) => idnoIsValid(candidate));
+  if (!idno) throw new Error(`no check digit completes ${body}`);
+  return idno;
+};
+const IDNO_TAIL = randomOf('0123456789', 11);
 /** Alfa's IDNOs are its entities' since task 175: the kept entity's, and the archived one's, which still finds it. */
-const ALFA = { name: `Registru Alfa ${TOKEN}`, idno: `7${IDNO_TAIL}`, archivedIdno: `8${IDNO_TAIL}` };
+const ALFA = {
+  name: `Registru Alfa ${TOKEN}`,
+  idno: withCheckDigit(`7${IDNO_TAIL}`),
+  archivedIdno: withCheckDigit(`8${IDNO_TAIL}`),
+};
 const BETA = { name: `Registru Beta ${TOKEN}` };
 
 interface RegisterRow {

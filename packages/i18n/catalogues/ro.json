@@ -301,6 +301,7 @@
       "archived": "Entitatea este arhivată, iar datele ei de bază nu mai pot fi modificate. Rapoartele și exporturile ei rămân disponibile. Creați o entitate nouă dacă activitatea continuă sub altă formă.",
       "consolidation_boundary_empty": "Ați ales raportarea consolidată, dar nu ați indicat nicio filială în perimetrul de raportare, așa că modificarea nu a fost salvată. Adăugați filialele incluse sau alegeți raportarea individuală.",
       "idno_malformed": "IDNO-ul trebuie să conțină exact treisprezece cifre, iar valoarea introdusă nu are această formă, așa că modificarea nu a fost salvată. Verificați numărul pe certificatul de înregistrare și introduceți-l din nou.",
+      "idno_check_digits": "IDNO-ul are treisprezece cifre, însă ultima, cifra de control, nu corespunde celorlalte douăsprezece, ceea ce înseamnă de obicei o cifră greșită sau două inversate. Modificarea nu a fost salvată. Comparați numărul cu certificatul de înregistrare și introduceți-l din nou.",
       "lei_malformed": "Codul LEI se compune din douăzeci de caractere — litere mari și cifre — iar valoarea introdusă nu are această formă, așa că modificarea nu a fost salvată. Copiați-l din registrul global și încercați din nou.",
       "lei_check_digits": "Codul LEI are forma potrivită, însă cifrele sale de verificare nu corespund restului valorii, ceea ce înseamnă de obicei o cifră schimbată sau două inversate. Modificarea nu a fost salvată. Comparați codul cu sursa din care l-ați preluat."
     },

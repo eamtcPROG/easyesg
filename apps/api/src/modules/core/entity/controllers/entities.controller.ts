@@ -178,8 +178,8 @@ export class EntitiesController {
       'nace-code-unknown) — the classifier is CAEM Rev.2 for Moldova, 1:1 with NACE Rev.2 — a legal ' +
       'form it does not register (legal-form-unknown), a consolidated basis with nothing inside the ' +
       'boundary (consolidation-boundary-empty), or an ' +
-      'identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree ' +
-      '(identifier-check-digits).',
+      'identifier that is malformed (identifier-malformed) or whose check digits disagree — an IDNO ' +
+      'or an LEI (identifier-check-digits).',
     content: { 'application/problem+json': {} },
   })
   async create(
@@ -232,8 +232,8 @@ export class EntitiesController {
       'A consolidated basis with nothing inside the boundary (problem type ' +
       'consolidation-boundary-empty), an unregistered activity code (nace-code-unknown) or legal ' +
       'form (legal-form-unknown), or an ' +
-      'identifier that is malformed (identifier-malformed) or an LEI whose check digits disagree ' +
-      '(identifier-check-digits).',
+      'identifier that is malformed (identifier-malformed) or whose check digits disagree — an IDNO ' +
+      'or an LEI (identifier-check-digits).',
     content: { 'application/problem+json': {} },
   })
   @ApiResponse({

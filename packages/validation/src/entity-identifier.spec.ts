@@ -62,33 +62,47 @@ describe('LEI (ISO 17442, ISO 7064 MOD 97-10)', () => {
 });
 
 /**
- * **The IDNO's check digit is deliberately not asserted here, and that absence is the point.**
- *
- * Government Decision 272/2002's Annex 2 — the instrument that defines the identifier — states at
- * point 5 that the thirteenth digit is a check digit and gives no algorithm for it; the word
- * *algoritm* does not appear in the text. Fixtures asserting a checksum would therefore have to be
- * produced by an invented algorithm, and a wrong one **rejects real IDNOs**: the failure mode is
- * refusing a correct registration at the door, which is worse than the filing-time error FR-16 is
- * written to prevent.
- *
- * So the corpus covers the structure the instrument does fix, and the verdict says plainly that the
- * checksum was not evaluated.
+ * **The IDNO's two published numbers are the fixtures the check rests on** (§12.5.6's task-182 row, 182/12): the
+ * first twelve digits weighted 7, 3, 1 repeating, the sum modulo 10 being the thirteenth. The decree that defines the
+ * identifier names the check digit and gives no algorithm (§7.2), so these are values from the register rather than
+ * strings this file produced — and the corpus's two older fixtures, taken from real registrations before the
+ * algorithm was known, agree with it independently.
  */
-describe('IDNO (Government Decision 272/2002, Annex 2, point 5)', () => {
+describe('IDNO (Government Decision 272/2002, Annex 2, point 5; check digit 7-3-1 modulo 10)', () => {
   const VALID = [
-    // Thirteen digits, laid out as index · year · office · sequence · check digit.
+    // The two numbers 182/12 verified the algorithm on.
+    '1003600005148',
+    '1017600033216',
+    // Taken from real registrations on 28 Aug 2026, when only the shape was checked.
     '1003600158022',
     '1003600136646',
   ];
 
-  it.each(VALID)('accepts the structure of %s', (idno) => {
-    expect(validateIdno(idno)).toEqual({ shape: true, checkDigits: null, satisfied: true });
+  it.each(VALID)('accepts %s, check digit included', (idno) => {
+    expect(validateIdno(idno)).toEqual({ shape: true, checkDigits: true, satisfied: true });
+    expect(idnoIsValid(idno)).toBe(true);
   });
 
-  it('reports the checksum as not evaluated, which is not the same as passed', () => {
-    // A caller must be able to tell "we checked and it is fine" from "we did not check". Collapsing
-    // them to `true` would let a later reader believe FR-16's checksum clause is discharged.
-    expect(validateIdno(VALID[0]).checkDigits).toBeNull();
+  it.each([
+    ['the first published number, its last digit mutated', '1003600005149'],
+    ['the second published number, its last digit mutated', '1017600033217'],
+  ])('refuses %s on the check digit, not on the shape', (_label, idno) => {
+    // `checkDigits: false` rather than `null`: thirteen digits were there to check, and NFR-79 needs "check you copied
+    // the right one" kept apart from "retype it".
+    expect(validateIdno(idno)).toEqual({ shape: true, checkDigits: false, satisfied: false });
+    expect(idnoIsValid(idno)).toBe(false);
+  });
+
+  it('refuses a single digit altered inside the number, which the weights exist to catch', () => {
+    // Every weight is coprime to 10, so changing any one digit moves the sum's last digit. Position 10 carries weight 7.
+    expect(validateIdno('1003600006148').checkDigits).toBe(false);
+  });
+
+  it('refuses a transposition of two adjacent digits that do not differ by five', () => {
+    // `…0005148` → `…0001548`: the 5 and the 1 at positions 10 and 11 swapped. Adjacent weights differ by 2, 4 or 6, so
+    // a swap moves the sum's last digit unless the two digits differ by five — the one transposition this check
+    // cannot see, which is why the refusal's wording says "usually" rather than "always".
+    expect(validateIdno('1003600001548')).toEqual({ shape: true, checkDigits: false, satisfied: false });
   });
 
   it.each([
@@ -98,7 +112,7 @@ describe('IDNO (Government Decision 272/2002, Annex 2, point 5)', () => {
     ['a space', '100360015802 '],
     ['punctuation a copy-paste introduces', '1003-600158022'],
     ['empty', ''],
-  ])('refuses %s', (_label, value) => {
+  ])('refuses %s on shape, without claiming a check-digit verdict', (_label, value) => {
     expect(validateIdno(value)).toEqual({ shape: false, checkDigits: null, satisfied: false });
     expect(idnoIsValid(value)).toBe(false);
   });

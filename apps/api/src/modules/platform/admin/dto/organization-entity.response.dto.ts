@@ -13,7 +13,7 @@ export class OrganizationEntityResponseDto {
   @ApiProperty({
     type: String,
     nullable: true,
-    example: '1009600041284',
+    example: '1003600158022',
     description: 'The entity’s IDNO. Null while it records none.',
   })
   idno: string | null;

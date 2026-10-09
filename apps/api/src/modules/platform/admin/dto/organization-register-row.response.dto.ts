@@ -18,7 +18,7 @@ export class OrganizationRegisterRowResponseDto {
   @ApiProperty({
     type: String,
     nullable: true,
-    example: '1009600041284',
+    example: '1003600158022',
     description:
       'The IDNO of the organization’s earliest reporting entity holding one — the identifiers are each ' +
       'entity’s. Null while none of its entities records one.',

@@ -92,7 +92,7 @@ export class EntityArchivedError extends DomainError {
 
 /**
  * FR-16's identifier refusals — the reporting entity's since task 175, which moved them from the organization with the
- * identifiers themselves. **Two problem types across three errors**, because a front end
+ * identifiers themselves. **Two problem types across four errors**, because a front end
  * branches on the *resolution* and there are two of those — retype a malformed value, or go back
  * to the source for one whose check digits disagree. Which identifier failed is carried by the
  * message, since S-13 knows which fields it submitted and the reader needs the sentence, not a slug.
@@ -119,12 +119,25 @@ export class LeiMalformedError extends DomainError {
 }
 
 /**
+ * The IDNO is thirteen digits and its check digit does not agree with the twelve before it (182/12, §7.2).
+ *
+ * **The same problem type as the LEI's**, because the resolution is the same — go back to the registration certificate
+ * rather than retype — and a front end branches on the resolution, not on which identifier failed.
+ */
+export class IdnoCheckDigitsError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierCheckDigits;
+  readonly status = 400;
+
+  constructor() {
+    super('core.entity.idno_check_digits');
+  }
+}
+
+/**
  * The LEI is well-formed and its ISO 7064 MOD 97-10 check digits do not agree with it.
  *
  * **This is the failure the checksum exists to catch and a shape check cannot**: a transposition of
- * two adjacent characters, or a single altered one, leaves the value looking perfectly valid. There
- * is no IDNO counterpart yet — its algorithm is unknown (§7.2), and a guessed one would refuse real
- * registrations rather than catch mistyped ones.
+ * two adjacent characters, or a single altered one, leaves the value looking perfectly valid.
  */
 export class LeiCheckDigitsError extends DomainError {
   readonly problemType: ProblemTypeSlug = ProblemType.IdentifierCheckDigits;

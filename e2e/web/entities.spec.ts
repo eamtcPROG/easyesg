@@ -517,13 +517,16 @@ test('an identifier is refused with a sentence that says which half is wrong, an
   await expect(page.getByText('IDNO-ul nu are 13 cifre', { exact: false })).toHaveCount(2);
   await expect(page.getByText('Codul LEI nu are 20 de caractere', { exact: false })).toHaveCount(2);
 
-  // Twenty valid characters whose check digits disagree: the shape passes and the checksum does not.
+  // The right shape for each, with check digits that disagree: twenty characters for the LEI, and for the IDNO a
+  // published number with its last digit mutated (task 188) — the shape passes and only the check sees them.
+  await page.getByLabel('IDNO').fill('1003600005149');
   await lei.fill('7LTWFZYICNSX8D621K00');
   await page.getByRole('button', { name: 'Adăugați entitatea' }).click();
+  await expect(page.getByText('Ultima cifră a IDNO-ului, cifra de control', { exact: false })).toHaveCount(2);
   await expect(page.getByText('Cifrele de control ale codului LEI', { exact: false })).toHaveCount(2);
 
-  // A published LEI, so the MOD 97-10 fixture is a real value rather than one this suite produced.
-  await page.getByLabel('IDNO').fill('1003600158022');
+  // A published LEI and a published IDNO, so neither check's fixture is a value this suite produced.
+  await page.getByLabel('IDNO').fill('1003600005148');
   await lei.fill('7ltwfzyicnsx8d621k86');
   await page.getByRole('button', { name: 'Adăugați entitatea' }).click();
   await page.waitForURL(/\/entities\/[0-9a-f-]{36}$/);
@@ -532,7 +535,7 @@ test('an identifier is refused with a sentence that says which half is wrong, an
 
   await page.goto('/entities');
   const row = page.getByRole('row').filter({ hasText: `${RUN_PREFIX} Identificatori` });
-  await expect(row).toContainText('1003600158022');
+  await expect(row).toContainText('1003600005148');
 });
 
 test('the screen is live in all three locales', async ({ page }) => {
