@@ -6,7 +6,7 @@ import {
   type SocialProvider,
   type SocialSignInIntent,
 } from '@easyesg/contracts';
-import { SOCIAL_TRANSACTION_COOKIE } from '@/lib/session-cookie';
+import { SOCIAL_TRANSACTION_COOKIE, SOCIAL_TRANSACTION_TTL_MS } from '@/lib/session-cookie';
 import { env } from '@/lib/env';
 import { sealJson, unsealJson } from '../session/session-codec';
 
@@ -33,7 +33,6 @@ export interface SocialTransaction {
   issuedAt: number;
 }
 
-const TRANSACTION_TTL_MS = 10 * 60 * 1000;
 
 /** Path-scoped: only the start and callback handlers ever see it. */
 const COOKIE_PATH = '/auth/social';
@@ -75,7 +74,7 @@ export async function persistSocialTransaction(
       secure: true,
       sameSite: 'lax',
       path: COOKIE_PATH,
-      maxAge: TRANSACTION_TTL_MS / 1000,
+      maxAge: SOCIAL_TRANSACTION_TTL_MS / 1000,
     },
   );
 }
@@ -90,6 +89,6 @@ export async function consumeSocialTransaction(): Promise<SocialTransaction | nu
   if (!sealed) return null;
   store.delete({ name: SOCIAL_TRANSACTION_COOKIE, path: COOKIE_PATH });
   const transaction = readTransaction(unsealJson({ sealed, secret: env.sessionSecret }));
-  if (!transaction || transaction.issuedAt + TRANSACTION_TTL_MS <= Date.now()) return null;
+  if (!transaction || transaction.issuedAt + SOCIAL_TRANSACTION_TTL_MS <= Date.now()) return null;
   return transaction;
 }

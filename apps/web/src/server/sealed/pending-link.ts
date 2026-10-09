@@ -4,6 +4,7 @@ import { isSocialProvider, type SocialProvider } from '@easyesg/contracts';
 import { PROBLEM_TYPE } from '@easyesg/contracts';
 import { API_OUTCOME, mapOutcome, type ApiOutcome } from '@/lib/api-outcome';
 import { env } from '@/lib/env';
+import { PENDING_LINK_COOKIE, PENDING_LINK_TTL_SECONDS } from '@/lib/session-cookie';
 import { api } from '../api/api-client';
 import { readSession } from '../session/session';
 import { sealJson, unsealJson } from '../session/session-codec';
@@ -30,10 +31,6 @@ import { sealJson, unsealJson } from '../session/session-codec';
  * If the user abandons the screen, the cookie expires and nothing is half-done: no identity was
  * attached, because attaching is what the password buys.
  */
-const PENDING_LINK_COOKIE = 'easyesg_pending_link';
-
-/** Five minutes, matching the transaction's own bound — a person confirming, not a session. */
-const PENDING_LINK_TTL_SECONDS = 5 * 60;
 
 export interface PendingLink {
   /**

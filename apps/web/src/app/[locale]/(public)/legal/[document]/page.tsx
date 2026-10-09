@@ -1,25 +1,22 @@
-import { FocusColumn } from '@easyesg/ui';
-import { NotYetAvailable } from '@/shared/not-yet-available';
+import { LegalDocument } from '@/features/public/legal/components/document/legal-document';
+import { generateLegalDocumentMetadata } from '@/features/public/legal/components/document/legal-document-metadata';
+import { activateRequestLocale, type LocaleParams } from '@/i18n/page';
 
 /**
- * Legal documents · unauthenticated
+ * S-30 — Legal documents (terms · privacy · cookies) · VI · UC-178 · Content (§4.6)
  *
- * Terms of service · privacy notice · cookie policy, plus the cookie choice. One shared layout
- * treating the three as a set, with a plain-language summary above the formal text.
- *
- * Reference: `design/screens/EasyESG Public Legal.dc.html`.
- *
- * Not built — but the address answers. It renders §8.1's `error — not yet available` state
- * (task 103) in place of the blank page it used to return; `design_spec.md` §4.5 records why
- * that state is a pattern rather than an `S-nn` row. `design_spec.md` §5 owns this screen's
- * content, controls and states; `design/IMPLEMENTATION_PLAN.md` owns when it lands.
- * Prototypes in `design/screens/` are the rendered reference — read them for values, never
- * copy their markup (OQ-10).
+ * **This file is a shell** (`shell-composes-only`): it pins the locale and hands the section the document the address
+ * names. `LegalDocument` decides what answers — the cookie policy, drawn from task 75.2's inventory; *not yet
+ * available* for the terms and the privacy notice until their text arrives (task 75.4); the 404 for anything else.
  */
-export default function LegalDocumentPage() {
-  return (
-    <FocusColumn>
-      <NotYetAvailable />
-    </FocusColumn>
-  );
+type Props = {
+  params: Promise<{ locale: string; document: string }>;
+};
+
+export const generateMetadata = generateLegalDocumentMetadata;
+
+export default async function LegalDocumentPage({ params }: Props) {
+  const { document } = await params;
+  await activateRequestLocale(params as unknown as LocaleParams);
+  return <LegalDocument document={document} />;
 }

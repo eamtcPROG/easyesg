@@ -28,7 +28,19 @@ import { accountTrigger } from './support/session';
 // register screen gets them: `lang` correctness and accessible names are exactly what varies. It
 // **has** a `<main>` since task 103, which gave the address §8.1's `error — not yet available`
 // state in a `FocusColumn` rather than the blank page it used to return.
-const SCREENS = ['/', '/en', '/ru', '/register', '/en/register', '/ru/register', '/verify'];
+// The cookie policy since task 75.3: the Content archetype's first instance, in the three locales its `lang` varies by.
+const SCREENS = [
+  '/',
+  '/en',
+  '/ru',
+  '/register',
+  '/en/register',
+  '/ru/register',
+  '/verify',
+  '/legal/cookies',
+  '/en/legal/cookies',
+  '/ru/legal/cookies',
+];
 
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 

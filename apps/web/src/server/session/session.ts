@@ -3,7 +3,7 @@ import type { RefreshSessionRequest, SessionResponse } from '@easyesg/contracts'
 import type { Locale } from '@easyesg/i18n';
 import { cookies } from 'next/headers';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
-import { LOCALE_COOKIE, REFRESH_COOKIE } from '@/lib/session-cookie';
+import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE_SECONDS, REFRESH_COOKIE } from '@/lib/session-cookie';
 import { env } from '@/lib/env';
 import { detachedApi } from '../api/api-client';
 import { sealSession, unsealLiveSession, type SessionPayload } from './session-codec';
@@ -46,7 +46,6 @@ import { sealSession, unsealLiveSession, type SessionPayload } from './session-c
  */
 const ACCESS_TOKEN_REFRESH_SKEW_MS = 30_000;
 
-const SECONDS_PER_YEAR = 60 * 60 * 24 * 365;
 
 /**
  * `remembered` is the caller's, not the response's: the API states the session's *expiry* and never
@@ -183,7 +182,7 @@ export async function rememberLocale(locale: Locale): Promise<void> {
   (await cookies()).set(LOCALE_COOKIE, locale, {
     sameSite: 'lax',
     path: '/',
-    maxAge: SECONDS_PER_YEAR,
+    maxAge: LOCALE_COOKIE_MAX_AGE_SECONDS,
   });
 }
 

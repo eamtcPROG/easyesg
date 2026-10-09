@@ -2186,6 +2186,74 @@
   "legal": {
     "privacy": {
       "phone": "Numărul de telefon, dacă îl adăugați în profil, este păstrat doar pentru ca echipa de asistență să vă poată contacta în legătură cu contul dumneavoastră. Îl pot vedea numai administratorii platformei, câte o persoană odată, iar fiecare vizualizare este înregistrată. Îl puteți șterge oricând din profil."
+    },
+    "set": {
+      "eyebrow": "Documente legale",
+      "peers": "Setul de documente legale",
+      "contents": "Pe această pagină"
+    },
+    "documents": {
+      "terms": "Termeni și condiții",
+      "privacy": "Politica de confidențialitate",
+      "cookies": "Politica de cookie-uri"
+    },
+    "cookies": {
+      "lede": "Ce păstrează acest site în browserul dumneavoastră, la ce folosește și cât timp. Tot ce este enumerat aici este necesar pentru ca site-ul să funcționeze, așa că nu aveți nimic de acceptat sau de refuzat.",
+      "sections": {
+        "set": {
+          "heading": "Fiecare cookie pe care îl setăm",
+          "intro": "Toate sunt strict necesare: fără ele nu v-ați putea autentifica, iar site-ul nu și-ar aminti limba aleasă. Cele marcate „Consola echipei EasyESG” sunt setate doar pe adresa separată în care lucrează echipa noastră.",
+          "caption": "Cookie-urile setate de platformă"
+        },
+        "notSet": {
+          "heading": "Ce nu setăm",
+          "body": "Nu folosim cookie-uri de statistică, de publicitate sau de urmărire și nu încărcăm cod de la terți — nici fonturile nu vin de pe alt site. Dacă așa ceva s-ar schimba, această pagină ar spune-o înainte, iar dumneavoastră ați putea alege."
+        },
+        "storage": {
+          "heading": "Ce păstrăm în browser în afara cookie-urilor",
+          "intro": "Pe lângă cookie-uri, site-ul păstrează în browser doar atât cât îi trebuie pentru a nu vă pierde munca:"
+        },
+        "browser": {
+          "heading": "Dacă ștergeți cookie-urile",
+          "body": "Le puteți șterge oricând din setările browserului. Veți fi deconectat, iar site-ul va uita limba pe care ați ales-o. Nu există nimic de acceptat sau de refuzat aici, pentru că nu setăm nimic opțional."
+        }
+      },
+      "columns": {
+        "name": "Cookie",
+        "purpose": "La ce folosește",
+        "lifetime": "Cât durează",
+        "where": "Unde"
+      },
+      "surface": {
+        "site": "Acest site",
+        "console": "Consola echipei EasyESG"
+      },
+      "purpose": {
+        "session": "Vă păstrează autentificat și vă protejează sesiunea.",
+        "locale": "Își amintește limba în care citiți site-ul.",
+        "social": "Leagă pașii autentificării cu Google cât timp sunteți trimis la Google și înapoi.",
+        "factorChallenge": "Vă ține între parolă și codul din aplicația de autentificare.",
+        "pendingLink": "Păstrează legarea unui cont Google până o confirmați cu parola.",
+        "setupGrant": "Păstrează deschis pasul de setare a parolei din linkul primit pe e-mail.",
+        "adminSession": "Păstrează autentificat în consolă un membru al echipei EasyESG.",
+        "adminChallenge": "Ține un membru al echipei EasyESG între parolă și cod, la autentificarea în consolă."
+      },
+      "lifetime": {
+        "whileSignedIn": "Cât sunteți autentificat — până vă deconectați sau, dacă nu ați ales să rămâneți autentificat, până închideți browserul.",
+        "minutes": "{minutes, plural, one {# minut} few {# minute} other {# de minute}}",
+        "sessionThenYear": "Până închideți browserul; {years, plural, one {un an} few {# ani} other {# de ani}} după ce vă autentificați, cu limba din profil.",
+        "untilStepEnds": "Cât durează pasul — câteva minute."
+      },
+      "storageKind": {
+        "sessionStorage": "Cât e deschisă fila",
+        "indexedDb": "În browser, până se trimite"
+      },
+      "storagePurpose": {
+        "pendingVerification": "Adresa de e-mail care așteaptă confirmarea, ca să vi-o putem retrimite.",
+        "resetAddress": "Adresa pentru care ați cerut resetarea parolei, ca să nu o scrieți din nou.",
+        "dismissedNotes": "Notele din raport pe care le-ați ascuns, ca să nu reapară cât lucrați.",
+        "autosave": "Răspunsurile din raport încă netrimise, ca să nu se piardă dacă rămâneți fără conexiune."
+      }
     }
   }
 }

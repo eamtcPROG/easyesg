@@ -1,6 +1,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
+import { FACTOR_CHALLENGE_COOKIE, FACTOR_CHALLENGE_TTL_SECONDS } from '@/lib/session-cookie';
 import { sealJson, unsealJson } from '../session/session-codec';
 
 /**
@@ -15,10 +16,6 @@ import { sealJson, unsealJson } from '../session/session-codec';
  * than send them back to their password, so `completeFactorAction` puts it back on a refusal. What
  * bounds guessing is the API's own throttle and FR-4's lockout, not this cookie.
  */
-const FACTOR_CHALLENGE_COOKIE = 'easyesg_factor_challenge';
-
-/** Five minutes, matching the API's own window — the cookie must not outlive what it holds. */
-const CHALLENGE_TTL_SECONDS = 5 * 60;
 
 export interface HeldChallenge {
   readonly challenge: string;
@@ -45,7 +42,7 @@ export async function holdFactorChallenge(held: HeldChallenge): Promise<void> {
     secure: true,
     sameSite: 'lax',
     path: '/',
-    maxAge: CHALLENGE_TTL_SECONDS,
+    maxAge: FACTOR_CHALLENGE_TTL_SECONDS,
   });
 }
 

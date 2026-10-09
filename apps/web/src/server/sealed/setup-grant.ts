@@ -1,6 +1,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
+import { SETUP_GRANT_COOKIE } from '@/lib/session-cookie';
 import { sealJson, unsealJson } from '../session/session-codec';
 
 /**
@@ -16,7 +17,6 @@ import { sealJson, unsealJson } from '../session/session-codec';
  *
  * **The expiry is the API's**, answered with the grant, never a quarter-hour restated here.
  */
-const SETUP_GRANT_COOKIE = 'easyesg_setup_grant';
 
 export interface HeldSetupGrant {
   readonly grant: string;

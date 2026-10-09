@@ -30685,3 +30685,88 @@ The change reaches `packages/ui`, and so both its dependents' rows, and `apps/we
 - **The archetype has no instance yet** — task 75's legal set is its first — so it is proven by its specs alone, and
   the browser sees it when the first page is drawn on it.
 - **Not run:** the api's rows, which nothing here reaches.
+
+## Task 75.1, 75.2 and 75.5 — the cookie inventory and the disclosure, ahead of the legal text · 2026-10-09
+
+What could be built of the legal set before its text: the decisions written, the inventory of everything the platform
+keeps in a browser with the gate 182/122 asked for, and the cookie policy's disclosure drawn from it on the Content
+archetype. The terms of service and the privacy notice — and the cookie policy's own prose — wait on the owner's or
+counsel's text, so 75.3 is half-built and 75.4 waits; the row is `BLOCKED` on that text.
+
+### Decided before building (project owner, one batch of four)
+
+Recorded in `architecture.md` §12.5.6's new task-75 row, cross-logged in `design_spec.md` S-30 and FR-73's boundary.
+
+- **The text is the owner's or counsel's**, in three locales, not drafted here from the prototype — whose text is
+  structure only: four suppliers that are not the platform's, analytics consent the build does not set, Law 133/2011
+  where NFR-5 names Law 195/2024, retention periods no NFR states. *Declined, the recommended option:* drafting here for
+  counsel's review.
+- **The controller is not yet settled**, so it is a recorded gap: no document naming it goes live, and the pilot does
+  not start, until it is filled.
+- **The terms' first version covers the free pilot**, with the processing of personal data inside a report as a
+  section in place of the processing agreement 182/121 does not publish; plans and payment come with billing.
+- **Moldovan law, the courts in Chișinău**, after a written attempt to settle.
+
+### What the building settled
+
+- **The version and effective date (182/116) wait for the text** (row item (5)): a registry of versions with no
+  document to version would be a mechanism holding nulls, so the disclosure ships with no standing, and FR-205's
+  AC-4 and AC-10 — and FR-111's AC-3 — now wait on 75.4 rather than 75.1.
+- **Every cookie fact the tenant tier decides now lives in `lib/session-cookie.ts`**: the three names that were private
+  to their sealed modules, and every lifetime this tier sets, so the inventory imports them rather than restating them.
+  `NEXT_LOCALE` has two writers, found by reading next-intl's routing config: its middleware's browser-session cookie
+  and `rememberLocale`'s year — the disclosure says both.
+- **The inventory states lifetimes as a small vocabulary** — while signed in, a number of minutes this tier sets, the
+  locale cookie's session-then-year, and *as long as the step* where the api sets the expiry — because the console's two
+  cookies and the setup grant take their lifetimes from api arguments `apps/web` may not import.
+- **The gate reads source, not imports**: every constant named `…COOKIE` in the four workspaces, `SET_COOKIE` (the
+  header's name, in two api files) excluded; and every module that *uses* `sessionStorage`, `localStorage` or
+  IndexedDB — a use, so the inventory naming the stores is not counted as keeping one — with `localStorage` refused
+  outright, OQ-23's basis. A fourth `sessionStorage` store, the applicability dismissals Stage 2 moved there, is on it.
+- **`/legal/<document>` answers by the set**: the cookie policy drawn; the terms and the privacy notice *not yet
+  available*, as before; anything else the 404, since the set is three (182/121) and a fourth is not coming.
+- **The cookie table keeps its four columns at every width, and the compact frame took four attempts** (S-30's layout
+  now says so). A scroll region with a literal `tabIndex` was refused by `jsx-a11y`; wrapping instead, a name breaking
+  anywhere, left the Romanian table 7.6px through its card at 390px and the Russian 54px through at 320px, found by the
+  compact check before closing. Halving the cells' inline padding fits every locale at 390 with words whole, and
+  hyphenation fits 320 where the browser has a Russian dictionary. Where it has none, one word outgrows its column, and
+  both ways of breaking it read worse than scrolling: `overflow-wrap: anywhere` on every cell broke *Этот* in a short
+  column, and on the prose column alone the auto layout squeezed it to five letters a line. So the card scrolls there,
+  as `DataTable`'s does, and `TableScroll`, a client leaf, makes it a region named by the caption and a tab stop while —
+  and only while — it scrolls: a `role` that depends on state is what `jsx-a11y` admits, and the right semantics
+  besides. It watches the table as well as the card, since the table grows inside a card whose size does not change.
+  A cookie's name never takes a hyphen, which a reader would take for part of it.
+- **The table's section takes the wide measure and its prose keeps the reading one** — `ContentSection` now holds a
+  paragraph to 70ch inside a `ContentWide` block, so a section whose content is a table stays one region.
+- **`features/public` is built**, so its scaffold barrel went (no boundary fixture imports it), and the feature count
+  in `apps/web/CLAUDE.md` moved to twelve built and six scaffolds.
+
+### Proven to bite
+
+- **The inventory's gate**: a new `…COOKIE` constant, a `localStorage` use, a new `sessionStorage` module, and an entry
+  dropped from the inventory each turned it red (1 of 4); restored, 4 green.
+- **The policy against the browser**: a real registration and sign-in, then every cookie the context holds must be on
+  the policy — the claim read from the far end, beside the source scan.
+- **The table at compact**: the card-fit check at 390px read 7.6px against the old padding, measured in the browser
+  before the fix. The 320px Russian check turns hyphenation off, so every host reaches the arm; it needs the card to
+  scroll, the page not to, and the card to be a named tab stop, then runs axe's WCAG set — with the card's `overflow-x`
+  removed, the page scrolled 37px. `TableScroll`'s spec: the observer handed a callback that does nothing failed its
+  resize case (1 of 3); restored, 3 green.
+
+### Gates
+
+The change reaches `apps/web`, `packages/ui` (one stylesheet) and the docs, so the close ran their rows of the table:
+
+- `pnpm lint` — three passes, clean; `pnpm --filter @easyesg/web typecheck` and `@easyesg/ui`'s, clean;
+  `pnpm boundaries`, no violations; `pnpm docs:check`, 48 claims — after it caught the Client Component count at 207
+  against 208 on disk, the new leaf.
+- `pnpm --filter @easyesg/web test` — 196 files, 1,873 tests; `pnpm --filter @easyesg/ui test` — 483, run once the
+  `ContentSection` measure changed, which nothing since has touched.
+- `pnpm e2e:web` — the whole suite once, before the compact work: 342 passed and two failed, both this task's —
+  axe's `landmark-unique` on `/ru/legal/cookies`, where the peer strip and the footer's links were both *Правовые
+  документы* (the strip is now named for the set in all three locales), and a strip locator that also matched the
+  footer's link. Then `legal.spec.ts` and `accessibility.spec.ts` on `identity` after each round: 28, and after the
+  compact table 30, passed. The `⨯` lines in the full run all carry digest `2667547900`, the abandoned-stream case
+  `apps/web/CLAUDE.md` describes; the last run printed none.
+- **Skipped:** the `expansion` project after the compact work — no expansion spec reaches `/legal`, and the change since
+  the full run is the legal feature's own stylesheet, its leaf and its specs.

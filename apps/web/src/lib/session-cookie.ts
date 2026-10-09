@@ -1,7 +1,12 @@
 /**
- * Session cookie names. Deliberately not in `src/server/` and deliberately carrying no
- * `server-only` marker: `proxy.ts` needs them and is neither a Server Component nor a client
- * bundle. Names are not secrets; the values never leave the server.
+ * Every cookie the tenant application sets — its name and, where this tier decides it, how long it lasts. Deliberately
+ * not in `src/server/` and deliberately carrying no `server-only` marker: `proxy.ts` needs the names and is neither a
+ * Server Component nor a client bundle, and the cookie policy's inventory reads all of it (task 75.2,
+ * `features/public/legal/tools/cookie-inventory.ts`). Names are not secrets; the values never leave the server.
+ *
+ * **Declared here rather than beside each writer** since task 75.2 (182/122): the disclosure must be true of what the
+ * application sets, and one module holding the facts it states is what lets the inventory import them rather than
+ * restate them.
  */
 
 /**
@@ -29,3 +34,41 @@ export const LOCALE_COOKIE = 'NEXT_LOCALE';
  * does not — under `Strict` every callback would look like a restarted flow.
  */
 export const SOCIAL_TRANSACTION_COOKIE = 'easyesg_social';
+
+/**
+ * How long next-intl's locale cookie lasts once a profile preference writes it — at sign-in, and when S-36's second
+ * step saves the language chosen (`rememberLocale`). next-intl's own middleware writes the same cookie with no
+ * `maxAge`, a browser-session cookie, when a locale is chosen by address.
+ */
+export const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+
+/** How long the OAuth transaction lasts — a provider round trip, not a session. */
+export const SOCIAL_TRANSACTION_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * S-01's factor step (task 27.8): the API's sealed challenge, held between the password step and the code, so the
+ * browser never holds the challenge itself. It is **not** single-use, deliberately: a mistyped code must leave the
+ * reader on the step rather than send them back to their password, so `completeFactorAction` puts it back on a
+ * refusal. What bounds guessing is the API's own throttle and FR-4's lockout, not this cookie.
+ */
+export const FACTOR_CHALLENGE_COOKIE = 'easyesg_factor_challenge';
+
+/** Five minutes, matching the API's own window — the cookie must not outlive what it holds. */
+export const FACTOR_CHALLENGE_TTL_SECONDS = 5 * 60;
+
+/**
+ * A provider link waiting for its password confirmation (FR-8, task 27.6) — bound to the account that began it. If
+ * the user abandons the screen, the cookie expires and nothing is half-done: no identity was attached, because
+ * attaching is what the password buys.
+ */
+export const PENDING_LINK_COOKIE = 'easyesg_pending_link';
+
+/** Five minutes, matching the transaction's own bound — a person confirming, not a session. */
+export const PENDING_LINK_TTL_SECONDS = 5 * 60;
+
+/**
+ * S-36's password step reached from S-02's setup link (task 155): the API's grant, sealed until the password is set.
+ * **The expiry is the API's**, answered with the grant, never a quarter-hour restated here.
+ */
+export const SETUP_GRANT_COOKIE = 'easyesg_setup_grant';
+

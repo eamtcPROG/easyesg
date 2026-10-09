@@ -287,7 +287,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-205 — The legal documents
 
-**Status.** Partial — delivered 74.1 and 74.2 (the chrome and the archetype it is drawn on) · remaining 75.1, 75.3, 75.4, 195
+**Status.** Partial — delivered 74.1 and 74.2 (the chrome and the archetype it is drawn on), 75.1 (the decisions written) · remaining 75.3 (the set drawn: the cookie policy is, the terms and the privacy notice wait on their text), 75.4 (the text, the owner's or counsel's), 195
 
 **Obligation.** The system shall publish the terms of service, the privacy notice and the cookie policy as one set, readable without signing in and from the footer of every screen, each with a plain-language summary above its formal text, a version and an effective date, in each of the three locales, so that a person is told what is agreed to and how personal data is handled before any is collected.
 
@@ -321,7 +321,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - **AC-7** Given the registration screen, then it links to the terms and the notice. *(source: `design_spec.md` S-30 entry points)*
 - **AC-8** Given the registration screen, then its copy states that continuing is acceptance of the terms and the notice, and no acceptance record is written. *(source: §12.5.6 task-182 public tier row, 182/115; `design_spec.md` OQ-24)*
 - **AC-9** Given the documents carry a version, when an account registers, then the version accepted and the time are recorded against it, and an account created before then is asked to accept again. *(source: §12.5.6 task-182 public tier row, 182/115)* Unmet until 75.1 and 195.
-- **AC-10** Given a document, then its version and effective date are the ones the release that carries it supplies. *(source: §12.5.6 task-182 public tier row, 182/116)* Unmet until 75.1.
+- **AC-10** Given a document, then its version and effective date are the ones the release that carries it supplies. *(source: §12.5.6 task-182 public tier row, 182/116)* Unmet until 75.4, which builds the version with the text (§12.5.6 task-75 row (5)).
 - **AC-11** Given the footer, then it links to exactly three legal documents. *(source: §12.5.6 task-182 public tier row, 182/121)*
 
 **History.**
@@ -332,7 +332,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-206 — The cookie choice
 
-**Status.** Not started — delivered none · remaining 75.1, 75.2, 75.5
+**Status.** Built — delivered 75.1, 75.2 (the inventory and its gate), 75.5 (the disclosure in the cookie policy)
 
 **Obligation.** The system shall tell a visitor, before anything is set, every cookie the site sets by purpose, what it does not set, and any browser storage that is not a cookie, while setting no non-essential storage; it shall therefore record no consent and offer no accept or decline. Adding any non-essential storage re-opens this requirement, and the consent mechanism ships in the same change.
 
@@ -362,8 +362,8 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - **AC-5** Given a reader who has not read it, then the privacy notice remains reachable from the disclosure. *(source: `design_spec.md` S-31 layout)*
 - **AC-6** Given a change that adds non-essential storage, then it includes the consent mechanism, and the disclosure is true of the build at that release. *(source: OQ-23; UC-179 rule)*
 - **AC-7** Given each of the three locales, then the disclosure is live. *(source: task 75.5 row)*
-- **AC-8** Given a first visit to any public screen, then no overlay is shown and nothing is stored to record that one was. *(source: §12.5.6 task-182 public tier row, 182/117; UC-179 postconditions)* Unmet until 75.5.
-- **AC-9** Given a cookie added to the application that the enumerated inventory does not list, then a test fails. *(source: §12.5.6 task-182 public tier row, 182/122; task 75.2 row)* Unmet until 75.2.
+- **AC-8** Given a first visit to any public screen, then no overlay is shown and nothing is stored to record that one was. *(source: §12.5.6 task-182 public tier row, 182/117; UC-179 postconditions)*
+- **AC-9** Given a cookie added to the application that the enumerated inventory does not list, then a test fails. *(source: §12.5.6 task-182 public tier row, 182/122; task 75.2 row)*
 
 **History.**
 - 5 Oct 2026 · project owner · written to close G-9 for UC-179, from UC-179 and S-31 as OQ-23 settled them · index §9.4 G-9

@@ -41,7 +41,7 @@ Business rules held here: BR-VER-1, BR-VER-3, BR-ID-6, BR-ACC-6 (§5). Entities 
 
 **Effects.** A content publication is a platform event for the system audit log (FR-81).
 
-**Boundaries.** Publishing is FR-62's. The runtime fallback is FR-64's. Whether the terms of service, privacy notice and cookie policy are FR-61 content is task 75.1's decision: FR-61 as narrowed names help-centre articles and plan copy and not legal documents (task-75.1 row). Who seeds the first rows is task 76.5's.
+**Boundaries.** Publishing is FR-62's. The runtime fallback is FR-64's. The terms of service, privacy notice and cookie policy are **not** FR-61 content: their text is committed to the release, which supplies its version and effective date (§12.5.6 task-182 public tier row, 182/116), and it is the owner's or counsel's to supply (§12.5.6 task-75 row). Who seeds the first rows is task 76.5's.
 
 **Acceptance criteria.**
 - **AC-1** Given a help-centre article or a plan description edited in the console and published, then users read it with no deployment. *(source: FR text; NFR-85)* Unmet until 67.5 and 76.

@@ -911,7 +911,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 
 ### FR-111 — Evidence of what was agreed
 
-**Status.** Not started — remaining 58.5 (the terms capture), 63.3; 75.1 (the terms document's version, which 63.3 records)
+**Status.** Not started — remaining 58.5 (the terms capture), 63.3; 75.4 (the terms document's version, built with its text, which 63.3 records)
 
 **Obligation.** The system shall record the accepted terms version, timestamp and acting user against the order on confirmation.
 
@@ -932,7 +932,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 **Acceptance criteria.**
 - **AC-1** Given an order confirmed, then the terms version, the timestamp and the acting user are recorded against it. *(source: FR text; UC-113)*
 - **AC-2** Given a confirmation, then the plan's specific conditions are among what is accepted. *(source: UC-113 step 1)*
-- **AC-3** Given an order confirmed, then the record names the version identifier of the terms document and the plan version identifier. *(source: §12.5.6 task-182 public tier row, 182/116)* Unmet until 63.3 and 75.1.
+- **AC-3** Given an order confirmed, then the record names the version identifier of the terms document and the plan version identifier. *(source: §12.5.6 task-182 public tier row, 182/116)* Unmet until 63.3 and 75.4.
 
 **History.**
 - 5 Oct 2026 · project owner · the terms version is the release-supplied version of the terms document, recorded with the plan version identifier · §12.5.6 task-182 public tier row (182/116)

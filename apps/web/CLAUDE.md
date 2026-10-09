@@ -13,7 +13,7 @@ every screen. Cite them; do not re-derive them.
 Identity, organization, periods, reports, entities, the wizard with its validation, the calculator, the notification centre and
 the profile are live; preview and export, checkout and billing and the public tier are the
 fourteen addresses `AddressNotice` answers for (fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across seven route groups,
-8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (11 built),
+8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (12 built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
 browser (`pnpm e2e:web`).
@@ -570,7 +570,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   **A domain serving ONE screen does not split per screen** — there is no second screen to split
   by — **but its root is a directory like any other** (task 132), so it holds `components/ ·
   tools/ · actions/` directly rather than files beside `components/`. Task 134 gave `periods/`,
-  `entities/`, `reports/`, `credentials/` and `wizard/` that shape; the seven unbuilt scaffolds are
+  `entities/`, `reports/`, `credentials/` and `wizard/` that shape, and task 75 gave it `public/`; the six unbuilt scaffolds are
   one `index.ts` each, their empty folders gone. What this rule answers is the shape a domain grows
   into, not a shape to impose on arrival.
 
@@ -590,7 +590,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   the scaffolding is a file that lies to the next reader. **One exception, and it is a gate's**: a barrel
   a boundary fixture imports — `commerce/index.ts` and `reporting/index.ts`, which
   `prove-boundaries.sh` reaches as `'../commerce'` and `'../reporting'` — goes only when the fixture
-  is repointed, or the proof goes inert (task 134). The seven unbuilt domains keep theirs.
+  is repointed, or the proof goes inert (task 134). The six unbuilt domains keep theirs.
 
   **File names keep their prefix.** `access/access-list.tsx` stutters and stays: this app relies on
   component file names that survive out of context — `entities-list.tsx`, `reports-list.tsx`,
@@ -1010,7 +1010,8 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **207 files here are Client Components** (9 Oct 2026: one more since task 95 — the hook that reads which of S-07's
+  **208 files here are Client Components** (9 Oct 2026: one more since task 75 — the cookie policy's table card, which
+  measures whether its table fits and, while it does not, is a region a keyboard can reach; one more since task 95 — the hook that reads which of S-07's
   applicability notes a reader dismissed, through `useSyncExternalStore`, beside the store in `client/applicability/`;
   the note and the kept-answer notice are drawn inside `StepFields` and carry no directive. 8 Oct 2026: two more since task 42.3 — the step's field focus, which lands a finding's address in its field, and the context a finding's link reads in S-08; two more since task 42.2 — S-08's section, which docks the panel and raises its sheet, and its run's hook; one more since task 42.1 — the wizard's validation provider, which runs the interpreter over the step's held answers. 7 Oct 2026: eight more since task 204.2 gave S-09 its spreadsheet import — the panel's section, its file arm, its mapping arm with the sheet, column and value choices and the report, and the notice an import leaves; six more since task 39.3 gave UC-34's acts a screen — B3's figure control on S-07, its note form and its action hook, the override form that control and a line share, a line's override, and the step's figures context; seven more since task 39.2 gave S-09 its figures — the derivation, the summary beside the step, UX-44's notice, the one-source pager, the run's hook and its refusal, and the calculator's Query hook; thirteen more since task 39.1 built S-09 — its board and site chips, the add-a-source form, the empty state, a site's lines, the line row with its figure, unit and monthly form, the two commit-on-blur fields and their hook, and the words hook its parts share. 6 Oct 2026: two more since task 203.2 — `shared/list-search.tsx`, the search S-06, S-13 and S-16 share, and S-16's search region; three more since task 190 — S-28's arrival notice, the re-authentication dialogue's recovered stage, and S-05's *not now* on the second-factor prompt. 30 Sep 2026: three more since task 179.1 drew S-07 as its artboards — the module list below `wide`, the bar's action drawn ahead of its screen, and the bar's ⋯ at `compact`; the exit and the save state moved into the bar and are counted once; one more since S-06 took them too — its filter row, `reports-toolbar.tsx`; one more since S-14 took S-13's conventions — its filter row, `periods-toolbar.tsx`; the leave guard moved to `shared/` and is counted once. 29 Sep 2026: two more since S-13 became S-14's way in — the list's periods cell and the record's periods panel; one more since task 177 moved S-15's address section to
   S-13 and added the report-contact section beside it; one fewer since task 175 moved S-15's identifiers section to

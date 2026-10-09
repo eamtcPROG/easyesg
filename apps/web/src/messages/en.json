@@ -2186,6 +2186,74 @@
   "legal": {
     "privacy": {
       "phone": "If you add a phone number to your profile, it is kept only so that support can reach you about your account. Only the platform’s administrators can see it, one person at a time, and each time they do is recorded. You can remove it from your profile at any time."
+    },
+    "set": {
+      "eyebrow": "Legal documents",
+      "peers": "The set of legal documents",
+      "contents": "On this page"
+    },
+    "documents": {
+      "terms": "Terms of service",
+      "privacy": "Privacy notice",
+      "cookies": "Cookie policy"
+    },
+    "cookies": {
+      "lede": "What this site keeps in your browser, what for and for how long. Everything listed here is needed for the site to work, so there is nothing for you to accept or decline.",
+      "sections": {
+        "set": {
+          "heading": "Every cookie we set",
+          "intro": "All of them are strictly necessary: without them you could not sign in, and the site would not remember the language you chose. Those marked “EasyESG team console” are set only on the separate address where our team works.",
+          "caption": "The cookies the platform sets"
+        },
+        "notSet": {
+          "heading": "What we do not set",
+          "body": "We use no statistics, advertising or tracking cookies, and we load no third-party code — not even the fonts come from another site. If that ever changed, this page would say so first, and you would be able to choose."
+        },
+        "storage": {
+          "heading": "What we keep in your browser that is not a cookie",
+          "intro": "Besides cookies, the site keeps in your browser only what it needs so that you do not lose your work:"
+        },
+        "browser": {
+          "heading": "If you delete the cookies",
+          "body": "You can delete them at any time in your browser’s settings. You will be signed out, and the site will forget the language you chose. There is nothing to accept or decline here, because we set nothing optional."
+        }
+      },
+      "columns": {
+        "name": "Cookie",
+        "purpose": "What it is for",
+        "lifetime": "How long it lasts",
+        "where": "Where"
+      },
+      "surface": {
+        "site": "This site",
+        "console": "EasyESG team console"
+      },
+      "purpose": {
+        "session": "Keeps you signed in and protects your session.",
+        "locale": "Remembers the language you read the site in.",
+        "social": "Connects the steps of signing in with Google while you are sent to Google and back.",
+        "factorChallenge": "Holds your place between your password and the code from your authenticator app.",
+        "pendingLink": "Keeps the link to a Google account until you confirm it with your password.",
+        "setupGrant": "Keeps open the step that sets your password from the link you received by email.",
+        "adminSession": "Keeps a member of the EasyESG team signed in to the console.",
+        "adminChallenge": "Holds a member of the EasyESG team between password and code when signing in to the console."
+      },
+      "lifetime": {
+        "whileSignedIn": "While you are signed in — until you sign out or, unless you chose to stay signed in, until you close your browser.",
+        "minutes": "{minutes, plural, one {# minute} other {# minutes}}",
+        "sessionThenYear": "Until you close your browser; {years, plural, one {one year} other {# years}} once you sign in, with your profile’s language.",
+        "untilStepEnds": "As long as the step lasts — a few minutes."
+      },
+      "storageKind": {
+        "sessionStorage": "While the tab is open",
+        "indexedDb": "In your browser, until it is sent"
+      },
+      "storagePurpose": {
+        "pendingVerification": "The email address awaiting confirmation, so that we can send the link again.",
+        "resetAddress": "The address you asked to reset a password for, so that you do not type it again.",
+        "dismissedNotes": "The notes in your report you have hidden, so that they do not come back while you work.",
+        "autosave": "Report answers not yet sent, so that they are not lost if you lose your connection."
+      }
     }
   }
 }

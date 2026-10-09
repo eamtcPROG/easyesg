@@ -1,0 +1,104 @@
+/*
+ * The legal set's own parts (task 75.3): the cookie table and the storage list, inside the Content archetype's text.
+ * Values through the token cascade; the table follows the prototype's cookie list (OQ-10).
+ */
+
+/*
+ * The table's card. Its columns wrap to the frame down to a phone's width; where one word outgrows its column, the card
+ * scrolls sideways inside itself, as `DataTable`'s does, and the page never does.
+ */
+.tableFrame {
+  overflow-x: auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-body);
+}
+
+/* The section's heading already names the table to the eye; the caption names it to assistive technology. */
+.caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.table th,
+.table td {
+  padding: var(--space-4) var(--space-5);
+  text-align: start;
+  vertical-align: top;
+  border-block-end: 1px solid var(--border-default);
+}
+
+.table thead th {
+  font: 600 12px/16px var(--font-text);
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+/* A cookie's name is one long token, kept whole where there is room. */
+.table tbody th {
+  font-weight: 400;
+  white-space: nowrap;
+  color: var(--text-default);
+}
+
+/*
+ * At the phone's frame the four columns fit by three concessions: a cell's inline padding halves — eight insets of 16px
+ * are a third of a 390px frame — text hyphenates where the browser knows the language, and a cookie's name, one long
+ * token, breaks anywhere. Only the name breaks anywhere: given the same licence, the auto layout squeezes a prose column
+ * to a few letters and breaks every word in it, which reads worse than a card that scrolls. And the name never takes a
+ * hyphen, which a reader would take for part of it.
+ */
+@media (max-width: 39.9375rem) {
+  .table th,
+  .table td {
+    padding-inline: var(--space-3);
+    hyphens: auto;
+  }
+
+  .table tbody th {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    hyphens: manual;
+  }
+}
+
+.storage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.store {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+.storeKind {
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+}
