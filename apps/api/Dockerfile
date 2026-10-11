@@ -108,6 +108,9 @@ COPY --from=build --chown=node:node /repo/node_modules ./node_modules
 COPY --from=build --chown=node:node /repo/packages/i18n ./packages/i18n
 COPY --from=build --chown=node:node /repo/packages/validation ./packages/validation
 COPY --from=build --chown=node:node /repo/packages/vsme ./packages/vsme
+# Since task 46 a runtime dependency rather than a spec's: the worker patches the EFRAG template with it, and both modes
+# read the template map's cells as its targets.
+COPY --from=build --chown=node:node /repo/packages/xlsx-patch ./packages/xlsx-patch
 COPY --from=build --chown=node:node /repo/apps/api ./apps/api
 
 # The EFRAG Digital Template binaries (task 45.3; 182/48): committed and registered, never uploaded, so the image is

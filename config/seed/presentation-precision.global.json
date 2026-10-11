@@ -2,5 +2,12 @@
   "places": {
     "tCO2e": 2,
     "MWh": 2
+  },
+  "elements": {
+    "Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased": 7,
+    "EmployeeTurnoverRate": 2,
+    "RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod": 2,
+    "PercentageGapInPayBetweenFemaleAndMaleEmployees": 2,
+    "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements": 2
   }
 }

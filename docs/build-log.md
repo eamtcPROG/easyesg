@@ -31134,3 +31134,152 @@ module's providers in both modes, two Dockerfiles, `.dockerignore` and two pre-h
   both green.
 - **Skipped, and why**: `pnpm openapi:check` — no controller or DTO changed, and the contract is the emitted one.
   `events:check`, `facade:check` and `eslint:prove` reach nothing this changed and run at the Stage's end.
+
+## Task 46 — the report in EFRAG's template: a map per release, footnotes, a reader's Calc, a golden corpus · 2026-10-11
+
+46.1 put the Excel export on the worker beside the PDF's — a report assembled into the cells and notes of the template
+its pin names, through a `vsme_digital_template_map` per template version, and patched by `packages/xlsx-patch`; 46.2
+put LibreOffice Calc in the test stack as the automated gate and Microsoft Excel on a release checklist; 46.3 states the
+platform-authored labels' standing as a footnote on B1's basis for preparation; 46.4 started `config/golden-reports/`
+with one full Basic report, both formats, its expectation in English and Romanian; 46.5 marks a company estimate,
+a field not available, an unresolved finding and the undertaking's own figure beside one the template computes.
+
+### Decided before building (project owner, three batches, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-46 row (1)–(9); amended in the same edits AD-10's Excel paragraph,
+the task-45 row (b), OQ-18's cross-log, the task-175 row (5), 182/30's wording, FR-44 behaviour 6 and AC-9, and FR-50
+behaviours 6, 7, 12 and 15–18.
+
+- **(1) Where each value goes is a configuration artefact per template version**, generated from the binary by
+  `tools/extract-vsme-template-map.mjs` and refused at publication unless every target resolves to a cell the template
+  lets it write. *Declined:* a TypeScript mapping per version.
+- **(2) The marks are footnotes on EFRAG's own Footnotes sheet** — and the template has no *not available* state
+  anywhere, so 182/30's *its not-available choices* named nothing. *Declined:* Excel cell notes.
+- **(3) A figure the template computes keeps its formula**, its inputs written and the undertaking's own figure
+  footnoted — except one the platform derives from those very inputs. *Declined:* footnoting only what the template
+  cannot reach; writing the inputs and saying nothing.
+- **(4) The export names the platform as the file's application**, which is what makes LibreOffice recompute on open
+  (measured). *Declined:* `app.xml` byte for byte and the gate forcing recalculation through its profile.
+- **(5) With no LEI the IDNO is written and the scheme left blank**, the template's list having no national register.
+  *Declined:* `IDNO` typed into the scheme cell; no identifier.
+- **(6) A unit the cell cannot hold is converted exactly** into the finest it offers, with a footnote stating the
+  stored figure. *Declined:* refusing the export until units align.
+- **(7) NFR-22's facts with no cell are document properties**, the factor set a footnote, 46.3's statement a footnote
+  on B1's basis. *Declined:* the document properties alone.
+- **(8) The golden corpus lives in `config/golden-reports/`**. *Declined:* a fixture of the export suite.
+- **(9) `1.2.0`, which has no Footnotes sheet, carries each footnote as a cell note** — the third batch, raised by
+  reading `1.2.0` after the first eight. *Declined:* refusing a `1.2.0` export that needs a mark.
+
+### Decided while building (project owner, one question)
+
+- **(10) A figure stored with no unit is presented at the digits a reader of the Excel file sees.** The golden corpus
+  showed it: calculated and derived figures are written by `writeDerived` with no `unit_code`, so the PDF printed
+  Scope 1 as `34.9168437216` and B8's turnover rate as the fraction `0.1020408163…`, while EFRAG's template formats the
+  same cells `0.00` and `0.00%` — NFR-18 failing as a reader sees the two files, invisible to a Calc reading of raw
+  values. The PDF now presents such a figure in its element's one admitted unit (tonnes CO2e for B3's scopes and total)
+  or at its element's places — an `elements` map in `presentation_precision`, set to EFRAG's formats — and a share as a
+  percentage; the Excel writes it exact, so the template's formulas compute from what the platform computed and
+  182/32 holds. *Declined:* rounding the Excel's cells too; leaving both at every digit. **It took task 211's question**:
+  the Stage-2-close row (4) had planned exactly these places for S-07 to round to and the exports to read, so 211 is
+  narrowed to S-07 in `task.md`, and FR-29's behaviour 4 and status say so.
+
+### What the building settled, and what running it found
+
+Row (a)–(i) of the task-46 row holds each; what follows is how each was found.
+
+- **The template's own checks were the corpus's best finding.** The first golden expectation read every Basic section
+  in *Table of Contents & Validation*, and five said `MISSING VALUE`. Two were the fixture — no Scope 2 line, three
+  applicable B6 figures unanswered — and three were the export: the map answered B1's *has the undertaking obtained a
+  certification* never, B4's *required by law to report pollutants* never, B11's *convictions and fines* never, and
+  wrote no unit for B7's waste totals, which the template computes and still asks the unit of. Enumerating every
+  template-only yes/no on the four Basic sheets found ten, of which the map had four, all answered *held* — which would
+  have ticked B5's *sites in or near a biodiversity-sensitive area* for a report answering *no* for every site. Gates
+  now say how they are answered (`held`, `affirmed`, `several`); with the fixture completed, every section the report
+  answers reads `OK` and B1's identifier line reads `MISSING VALUE`, as decision (5) said it would.
+- **LibreOffice recalculates by who wrote the file, not by `fullCalcOnLoad`** — measured on 25.2.3 headless: B8's
+  turnover rate read the cached `-` in a patched file naming *Microsoft Excel* in `docProps/app.xml` and `10%` in the
+  identical file naming another application. That is what decision (4) rests on, and why the gate opens files with
+  Calc's own defaults.
+- **The Footnotes sheet is ten-row merged blocks**, 152 of them in `1.3.0`: the first draft wrote one footnote per row
+  and `xlsx-patch` refused the second write into a merge (`MERGED_CELL`). The map gained the block height and capacity;
+  one footnote is written per distinct text, its figures each on a row of the block — so Scope 1's and Scope 2's factor
+  set is one footnote — and an export needing more blocks than the sheet holds fails rather than drops one.
+- **EFRAG's files carry defects the extractor now asserts**: B7's waste-type dropdown is on the materials table
+  (`D437:F437`) in both releases; B10's minimum-wage `YES`/`NO` validation is on `C143`, a B9 label, and `1.2.0` ships
+  the answer cell empty; EFRAG's taxonomy labels the asbestos member *Abestos*, which its template's pollutant list
+  spells right. Each first appeared as an extractor failure, not as a guess. **Not fixed here**: the platform's own
+  English member label inherits *Abestos* from the taxonomy (OQ-43's catalogues are extracted, not authored).
+- **B7's mass and volume share one cell** per waste row, and B4's three emission columns share one unit cell: the
+  second figure into a shared cell is stated beside the first in a footnote, and a unit cell governing figures stored
+  in different units takes the finest and converts exactly (row (6)).
+- **The calculated B3 figure's override stores no unit** — 38.4's override route takes a figure and a reason, no
+  unit — so the PDF's note read
+  `0.9699123256`; decision (10) is what moved it to `0.97`, in both files, through the element's admitted unit.
+- **`@easyesg/xlsx-patch` was a dev dependency of the api**, enough for task 45's spec and not for a worker that writes
+  files: moved to `dependencies` with `pnpm`, the api's Dockerfile copies the package, and the three pre-hooks that
+  build workspace packages build it. `image:check` reads four workspace dependencies now.
+- **The Calc image is a test-stack service** (`infra/compose/calc`, the validator profile, no network, 768 MB), its
+  version asserted by the build; CI builds it once per stack job from its own cache scope, as the renderer.
+
+### Proven to bite
+
+- `golden-reports.e2e-spec.ts`: its first full run failed on its own expectation — B8's turnover rate was written as
+  `10%` from arithmetic done by eye, and Calc showed `10.2040816326531%` (5 ÷ 49). The expectation was wrong; the
+  value was read against the arithmetic and corrected, which is the README's rule for every later change. The ToC
+  statuses failing five ways are the bite of the template's-own-checks half.
+- **Ten mutations, each applied once, its spec run, the file restored** — every one red: an *affirmed* gate answered
+  as *held* (3 failed) and a *several* gate as *held* (2); a unitless figure given no element unit (3) or no element
+  places (2); a computed figure rounded in its cell (1); a share printed as a fraction (1) and a percentage rounded at
+  the fraction (1); an inapplicable figure's inputs written (1); the map's reader admitting a gate on nothing (1); a
+  malformed element map read as none (4). Restored, the touched suites read 778 green.
+- **The golden corpus caught one more defect after the digits decision**: its PDF lacked the `5.00%` its workbook
+  showed for B10's pay gap — a figure the standard does not ask of a 50-person undertaking (FR-28), which the PDF rightly
+  left out and the workbook computed from the inputs it wrote. Inputs are now written only where the figure they derive
+  is (row (j)); the fixture keeps the pay inputs, and the expectation holds their cells empty and D150 at `-`.
+
+### Searched for the shape
+
+- **Every template-only yes/no on the Basic sheets**: ten, enumerated by cell type from the binaries, each mapped or
+  left on purpose — B1's OpenStreetMap consent (the reader's) and *previous period unchanged* (182/33).
+- **Every reader of `field.unitCode` as a figure's presented unit**: the document's figures, prior figures and
+  override note, and the workbook's cells, unit cells and notes now go through `figure-precision.ts`; S-09's calculator
+  panel already rounded in tonnes; S-07's wizard is task 211's.
+- **Every `switch` over a document value's kind**: `value-text.tsx`, `override-note.ts` and `module-row.tsx`'s figure
+  set gained the percentage; the override note's figures stay numbers, an override being B3's alone.
+- **Every e2e assertion on a calculated figure's digits**: the PDF suite's override note and the Excel suite's
+  footnote moved to `0.97`; the calculator suite's `0.9699123256` assertions read the stored figure and stay.
+
+### Skills read against the diff
+
+`one-idea-per-file` (`file-one-behaviour-api`, `pure-logic-leaves-the-component`, `reason-docblock-carries-the-why`,
+`reason-measure-structural-claims`): one use case per file — reading a report's contents, composing the workbook,
+producing the file, one attempt's shared shape — and the assembly's pure parts each a domain file with its spec
+(answers, rows, units, values, gates, figure precision). Two docblock counts of things outside their file — the corpus
+README's *six figures*, the efrag README's *three defects* — were removed. *Considered and kept*: `report-workbook.ts`
+holds one assembly with its private helpers; each helper is internal to it and the parts with rules of their own
+already left. `nestjs-best-practices`: `di-interface-segregation` is why the element places are a second face,
+`ELEMENT_PRECISION`, rather than a method on a port two readers never call; `arch-module-sharing` why that face is
+`useExisting` on the one service; `di-use-interfaces-tokens` the writer's and the identifiers' tokens;
+`micro-use-queues` the export queue. *Declined*: `error-throw-http-exceptions`, which the architecture forbids in use
+cases.
+
+### Gates
+
+The change reaches `apps/api` (a consumer, a migration, the module graph in both modes, the contract surface's ports
+but no controller), `packages/xlsx-patch` and `packages/i18n` (so every dependent's row: `apps/web`, `apps/admin`),
+`config/seed`, the api's Dockerfile, the test stack and CI's stack jobs:
+
+- `pnpm lint`, three passes, clean after three findings in new code (a `..` climb in a test helper, an unused import, a
+  literal comparison in the cell-notes writer — now `NOTE_PART.DRAWING_EXTENSION`). `pnpm typecheck`, every workspace.
+  `pnpm boundaries`, `pnpm image:check` (four workspace dependencies), `pnpm openapi:check` and `pnpm events:check`
+  unchanged; `pnpm docs:check`, 48 claims, after the archive's counts and task 47's Covered FR (FR-50 now names 47's
+  request, notice and history as its remaining) moved.
+- Unit: `xlsx-patch` 86, `i18n` 163, `api` 2,260 in 279 suites, `web` 1,886, `admin` 299; `pnpm routes:check`.
+- `pnpm migrations:check`, both stacks, 64 and 64 — the export record's `format` admitting `xlsx`.
+- `pnpm e2e` 70 suites / 1,711 in 557 s: 1,710 green and the golden corpus's PDF case red on the pay gap above; fixed,
+  the golden suite 4 of 4 and the Excel suite 13 of 13 alone after it. The log's warnings are the notification and
+  outbox suites' own (a bounce, a suppressed address, a recipient with no account, task 206's refused key); no unhandled
+  rejection or dependency warning. `pnpm e2e:worker` 16 — both export jobs routed on the export queue with their retry.
+- **Skipped: `pnpm e2e:web`.** The change reaches the browser only through `packages/i18n`, whose new keys are all
+  under `core.export.*`, which no screen reads, and no markup changed; the web and admin unit suites ran.
+- **Not run here: Microsoft Excel.** The release checklist's item, by design (T-12).

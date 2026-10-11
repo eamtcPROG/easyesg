@@ -69,6 +69,7 @@ import { PeriodFiscalYearUnique1792627200000 } from './1792627200000-period-fisc
 import { ExportArtifact1792713600000 } from './1792713600000-export-artifact';
 import { OrganizationInvitationPolicyRole1792800000000 } from './1792800000000-organization-invitation-policy-role';
 import { TemplateReleasePins1792886400000 } from './1792886400000-template-release-pins';
+import { ExportArtifactXlsx1792972800000 } from './1792972800000-export-artifact-xlsx';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -158,4 +159,5 @@ export const migrations = [
   ExportArtifact1792713600000,
   OrganizationInvitationPolicyRole1792800000000,
   TemplateReleasePins1792886400000,
+  ExportArtifactXlsx1792972800000,
 ];

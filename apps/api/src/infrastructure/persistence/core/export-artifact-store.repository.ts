@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { isLocale } from '@easyesg/i18n';
-import { EXPORT_STATUS } from '@api/modules/core/export/constants/export.constants';
+import { EXPORT_STATUS, isExportFormat } from '@api/modules/core/export/constants/export.constants';
 import type { ExportArtifactStore } from '@api/modules/core/export/interfaces/export-artifact-store.interface';
 import type { RequestedExport } from '@api/modules/core/export/models/requested-export.model';
 import { displayName } from '@api/modules/identity/account/domain/display-name';
@@ -9,6 +9,7 @@ import { TenantRepository } from '../tenant-repository';
 interface RequestedExportRow {
   id: string;
   report_id: string;
+  format: string;
   locale: string;
   requester_found: boolean;
   requester_email: string | null;
@@ -32,7 +33,7 @@ export class ExportArtifactStoreRepository extends TenantRepository<never> imple
 
   async findRequested(query: { readonly exportId: string }): Promise<RequestedExport | null> {
     const rows = await this.manager.query<RequestedExportRow[]>(
-      `SELECT e.id, e.report_id, e.locale,
+      `SELECT e.id, e.report_id, e.format, e.locale,
               requester.id IS NOT NULL AS requester_found, requester.email AS requester_email,
               requester.given_name AS requester_given_name, requester.family_name AS requester_family_name
          FROM core.export_artifact e
@@ -43,9 +44,11 @@ export class ExportArtifactStoreRepository extends TenantRepository<never> imple
     const row = rows[0];
     if (row === undefined) return null;
     if (!isLocale(row.locale)) throw new Error(`Export ${row.id} names a language the platform does not register.`);
+    if (!isExportFormat(row.format)) throw new Error(`Export ${row.id} names a format the platform does not produce.`);
     return {
       id: row.id,
       reportId: row.report_id,
+      format: row.format,
       locale: row.locale,
       requestedBy:
         row.requester_found && row.requester_email !== null

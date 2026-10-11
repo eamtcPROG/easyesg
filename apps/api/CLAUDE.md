@@ -17,7 +17,8 @@ producer through `raise()` since 50.3, UC-175's reminder, and each person's pref
 one-click unsubscribe since task 52, the calculator since tasks 37 … 39, and validation's rule set, run, findings and
 roll-up since task 41, over `@easyesg/validation`'s interpreter, and NFR-87's version-pinned suite over both since
 task 201, and FR-164's and FR-165's notices on the worker's first scheduled job since task 51.2, and the PDF export's job on the worker since
-task 44 — printed by the renderer service, stored and recorded; validation's screens, export's request and history, billing, the console's
+task 44 — printed by the renderer service, stored and recorded — and the Excel export's beside it since task 46, the report
+written into the EFRAG template it pins through a map per template version; validation's screens, export's request and history, billing, the console's
 screens, edge and deploy, the public tier and the Comprehensive Module are not. `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
@@ -133,7 +134,7 @@ traps each one left — grouped by area rather than by the task that built it.
   used the set leaving, to its editors and administrator, and withdraws the entering set's own — **the first producer on
   the worker**, one organization at a time through `TENANT_WORK` (`contracts/tenant-work.port.ts`) (§12.5.6's
   task-37.3/37.4 row).
-- **Export** (`core/export`, `infrastructure/adapters/document`; tasks 43, 44): UC-41's preview,
+- **Export** (`core/export`, `infrastructure/adapters/{document,workbook}`; tasks 43, 44, 46): UC-41's preview,
   `GET /reports/{id}/preview?locale=`, the report as its document — cover, contents, omissions and findings, a page per
   module the scope asks, provenance — answered as `text/html` through a `StreamableFile`, unenveloped, to an editor or
   the OA. `PreviewReport` reads what the screens read (the wizard's step in the document's language, the evaluation
@@ -147,9 +148,16 @@ traps each one left — grouped by area rather than by the task that built it.
   `apps/renderer`) as a tagged PDF/A-2a and PDF/UA-1 file, stores it (`OBJECT_STORAGE`, S3-compatible) and settles
   the export's record, `core.export_artifact` (§12.5.6's task-44 row). The job runs on a queue of its own,
   `easyesg-export`, with a retry of its own — three attempts, the last recording the failure — and nothing renders in
-  the request tier. The request (`POST /reports/{id}/exports`), the history, the re-download and the completion
+  the request tier. **Since task 46 the Excel export's job beside it** (`XlsxExportRequestedHandler` →
+  `ProduceXlsxExport`), on the same queue with the same retry: `ReadReportContents` is the one read both files compose
+  from, `ComposeReportWorkbook` assembles the template's cells and notes (`domain/report-workbook.ts`) by the template's
+  map — `vsme_digital_template_map`, read with the registration by `DIGITAL_TEMPLATE_REGISTRY` — and
+  `REPORT_WORKBOOK_WRITER` (`infrastructure/adapters/workbook`) patches the binary through `@easyesg/xlsx-patch`, words
+  the notes in the export's language and names the platform as the file's writer (§12.5.6's task-46 row). One attempt's
+  shape — compose, produce, store, settle, the failure on the last attempt — is `runExportAttempt`, shared by both.
+  The request (`POST /reports/{id}/exports`), the history, the re-download and the completion
   notice are task 47's.
-- **Not live**: export's request, history and Excel half (45 … 47), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
+- **Not live**: export's request and history (47), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -611,6 +619,22 @@ Four things to know before touching it:
   the hang case waiting out the renderer's deadline.
 - **The worker needs `RENDERER_URL` and `OBJECT_STORAGE_*`**, and refuses to start without the storage endpoint and
   keys. `.env.example` carries the dev stack's, `.env.test` the test stack's.
+- **Where a value goes in the Excel file is the map, and the map is generated** (task 46): a cell, a dropdown's string
+  or a yes/no question wrong is fixed in `tools/extract-vsme-template-map.mjs` and the map regenerated, never by
+  editing `config/seed/vsme-digital-template-map.<version>.json` or by a branch in `report-workbook.ts`. Publication
+  refuses a map naming a cell the template computes, so a target the extractor gets wrong fails at seed rather than in a
+  filed workbook. An answered element the map places nowhere throws — a Comprehensive disclosure is task 80.3's.
+- **A computed figure is written exact; a reporter's rounds** (§12.5.6's task-46 row (10)): a calculated or derived
+  figure is stored with no unit, and the template's formulas compute from it, so rounding it in the cell would make B3's
+  total disagree with the platform's. The digits a reader sees are EFRAG's cell formats, which the PDF prints to through
+  `figure-precision.ts` and the `elements` places in `presentation_precision`.
+- **The Excel suites read every file in LibreOffice Calc** — the test stack's `calc` service (`infra/compose/calc`),
+  run once per file with no network, with Calc's own defaults: the export names the platform as its writer, so Calc
+  computes the template's formulas on open. `pnpm test:up` builds the image only when it is absent; a changed one needs
+  `docker compose -f infra/compose/docker-compose.test.yml --env-file infra/compose/.env --env-file apps/api/.env.test
+  build calc`. **Calc's reading is the raw value**, not the cell's display — what the PDF prints is held to EFRAG's
+  formats by the golden corpus (`config/golden-reports/`), whose expectation includes the template's own status per
+  section.
 
 **Push**
 

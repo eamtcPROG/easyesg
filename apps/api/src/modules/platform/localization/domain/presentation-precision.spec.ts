@@ -1,4 +1,4 @@
-import { presentationPrecisionRefusal, readPresentationPrecision } from './presentation-precision';
+import { presentationPrecisionRefusal, readElementPrecision, readPresentationPrecision } from './presentation-precision';
 
 describe('readPresentationPrecision (task 39.2)', () => {
   it('reads the places by unit', () => {
@@ -21,5 +21,25 @@ describe('readPresentationPrecision (task 39.2)', () => {
 
   it('refuses nothing the reader reads', () => {
     expect(presentationPrecisionRefusal({ places: { tCO2e: 2 } })).toBeNull();
+  });
+});
+
+describe('readElementPrecision (task 46)', () => {
+  it('reads the places of a figure computed with no unit, by its element, and none where the payload names none', () => {
+    const payload = { places: { tCO2e: 2 }, elements: { EmployeeTurnoverRate: 2, Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased: 7 } };
+    expect(readElementPrecision(payload)).toEqual({ EmployeeTurnoverRate: 2, Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased: 7 });
+    expect(readElementPrecision({ places: { tCO2e: 2 } })).toEqual({});
+    expect(presentationPrecisionRefusal(payload)).toBeNull();
+  });
+
+  it.each([
+    ['elements as a list', { places: {}, elements: [2] }],
+    ['a fractional places', { places: {}, elements: { EmployeeTurnoverRate: 0.5 } }],
+    ['more places than any figure needs', { places: {}, elements: { EmployeeTurnoverRate: 11 } }],
+    ['a key that is no element', { places: {}, elements: { 'employee turnover': 2 } }],
+  ])('reads nothing from %s, and publication refuses it — whole or not at all', (_case, payload) => {
+    expect(readElementPrecision(payload)).toBeNull();
+    expect(readPresentationPrecision(payload)).toEqual({});
+    expect(presentationPrecisionRefusal(payload)).toEqual(expect.any(String));
   });
 });

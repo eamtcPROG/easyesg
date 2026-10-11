@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { PresentationPrecision } from '@api/contracts/presentation-precision.port';
+import type { ElementPrecision, PresentationPrecision } from '@api/contracts/presentation-precision.port';
 import { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import {
   PRESENTATION_PRECISION_CONFIG_KIND,
   PRESENTATION_PRECISION_CONFIG_SCOPE,
 } from '../constants/presentation-precision.constants';
-import { readPresentationPrecision } from '../domain/presentation-precision';
+import { readElementPrecision, readPresentationPrecision } from '../domain/presentation-precision';
 
 /**
  * `PresentationPrecision` over the configuration store (task 39.2). Validated, never cast — configuration is data
@@ -14,12 +14,20 @@ import { readPresentationPrecision } from '../domain/presentation-precision';
  * replace, as `SeatAllowanceService` does, because an operator fixing it needs to see it stop.
  */
 @Injectable()
-export class PresentationPrecisionService implements PresentationPrecision {
+export class PresentationPrecisionService implements PresentationPrecision, ElementPrecision {
   private readonly logger = new Logger(PresentationPrecisionService.name);
 
   constructor(private readonly configurationStore: ConfigurationStore) {}
 
   places(): Readonly<Record<string, number>> {
+    return this.read(readPresentationPrecision);
+  }
+
+  elementPlaces(): Readonly<Record<string, number>> {
+    return this.read(readElementPrecision);
+  }
+
+  private read(reader: (payload: unknown) => Readonly<Record<string, number>> | null): Readonly<Record<string, number>> {
     const entry = this.configurationStore.get({
       kind: PRESENTATION_PRECISION_CONFIG_KIND,
       scope: PRESENTATION_PRECISION_CONFIG_SCOPE,
@@ -29,7 +37,7 @@ export class PresentationPrecisionService implements PresentationPrecision {
       this.logger.error(`No ${artefact} is in force; computed figures are shown unrounded until one is published`);
       return {};
     }
-    const places = readPresentationPrecision(entry.payload);
+    const places = reader(entry.payload);
     if (places === null) {
       this.logger.error(
         `Configuration entry ${artefact} (revision ${entry.revision}) is malformed; computed figures are shown unrounded until it is replaced`,

@@ -496,6 +496,28 @@
           "page": "Page {page} of {pages}",
           "omissions": "Omissions and findings"
         }
+      },
+      "workbook": {
+        "notes": {
+          "override": {
+            "replaced": "Company estimate: {reported} is the undertaking's figure, given in place of {superseded} calculated by the platform.",
+            "replacedUncalculated": "Company estimate: {reported} is the undertaking's figure, given in place of the one the platform calculated.",
+            "reason": "Reason given: {reason}",
+            "person": "Replaced by {person}."
+          },
+          "notAvailable": {
+            "plain": "Not available: the undertaking could not obtain this information for the reporting period.",
+            "reason": "Not available: the undertaking could not obtain this information for the reporting period. Reason given: {reason}"
+          },
+          "finding": "Unresolved: {happened}",
+          "ownFigure": "The undertaking reports {figure} for this figure. The template computes its own from the cells it reads, and the two may differ.",
+          "converted": "Reported as {figure}; written here in {unit}, the unit every figure of this cell is given in.",
+          "noUnit": "Reported as {figure}, with no unit of measurement chosen.",
+          "also": "The undertaking also reports {figure} here; the template has no cell of its own for this figure.",
+          "notListed": "The undertaking also reports no change since the previous period in: {members}. The template's list has no entry for them.",
+          "factorSet": "Calculated by the platform with the emission factor set {label}.",
+          "labels": "The notes in this file are the platform's own wording in this language and carry no EFRAG standing. The template's labels are EFRAG's official English, which is authoritative."
+        }
       }
     }
   },

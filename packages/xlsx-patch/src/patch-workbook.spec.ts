@@ -136,6 +136,78 @@ describe('patching the EFRAG Digital Template', () => {
     });
   });
 
+  /** The parts a patch changed, added or dropped — what AD-10's *every other part byte for byte* is checked against. */
+  const touched = (before: ReturnType<typeof readZip>, after: ReturnType<typeof readZip>): string[] => {
+    const of = (archive: typeof before, name: string) => archive.entries.find((entry) => entry.name === name);
+    const changed = before.entries
+      .filter((entry) => {
+        const other = of(after, entry.name);
+        return other === undefined || !Buffer.from(other.localRecord).equals(Buffer.from(entry.localRecord)) || !centralWithoutOffset(other).equals(centralWithoutOffset(entry));
+      })
+      .map((entry) => (of(after, entry.name) === undefined ? `${entry.name} (dropped)` : entry.name));
+    const added = after.entries.filter((entry) => of(before, entry.name) === undefined).map((entry) => `${entry.name} (added)`);
+    return [...changed, ...added].sort();
+  };
+
+  describe('the file’s own properties (task 46; task-46 rows (4), (7))', () => {
+    const template = committedTemplate(COMMITTED_TEMPLATE.V1_3_0);
+    const properties = { application: 'EasyESG', language: 'ru', modified: new Date(Date.UTC(2026, 9, 11, 9, 0, 0)), lastModifiedBy: 'Ana Popescu' };
+
+    it('changes the two property parts and nothing else, given no values', () => {
+      expect(touched(readZip(template), readZip(patchWorkbook({ template, writes: [], properties })))).toEqual(['docProps/app.xml', 'docProps/core.xml']);
+    });
+
+    it('names the platform as the application — what makes LibreOffice compute the template’s formulas on open', () => {
+      const app = textOf(readZip(patchWorkbook({ template, writes, properties })).entries.find((entry) => entry.name === 'docProps/app.xml'));
+      expect(app).toContain('<Application>EasyESG</Application>');
+      expect(app).not.toContain('Microsoft Excel');
+    });
+  });
+
+  describe('notes, for a template with no Footnotes sheet (task 46; task-46 row (9))', () => {
+    const template = committedTemplate(COMMITTED_TEMPLATE.V1_2_0);
+    const notes = [
+      { at: { kind: CELL_TARGET.NAMED, name: 'Assets' } as const, text: 'Company estimate' },
+      // `Assets` is `E280` in 1.2.0 — the map names cells by EFRAG's names for exactly this reason.
+      { at: { kind: CELL_TARGET.ADDRESS, sheet: 'General Information', cell: 'E280' } as const, text: 'Reason given: a second note on the same cell' },
+      // A cell the template computes takes a note as readily as one it asks for (task-46 row (3)).
+      { at: { kind: CELL_TARGET.NAMED, name: 'EmployeeTurnoverRate' } as const, text: 'The undertaking reports 8%' },
+    ];
+    const patched = patchWorkbook({ template, writes: [], notes, noteAuthor: 'EasyESG' });
+
+    it('changes each noted sheet, its relationships and the content types, adds a comments part and a drawing per sheet — nothing else', () => {
+      expect(touched(readZip(template), readZip(patched))).toEqual(
+        [
+          '[Content_Types].xml',
+          'xl/worksheets/sheet3.xml',
+          'xl/worksheets/sheet5.xml',
+          'xl/worksheets/_rels/sheet3.xml.rels',
+          'xl/worksheets/_rels/sheet5.xml.rels',
+          'xl/comments1.xml (added)',
+          'xl/comments2.xml (added)',
+          'xl/drawings/vmlDrawing1.vml (added)',
+          'xl/drawings/vmlDrawing2.vml (added)',
+        ].sort(),
+      );
+    });
+
+    it('joins two notes on one cell into one, in the order given, and writes every part a reader can check', () => {
+      const archive = readZip(patched);
+      for (const entry of archive.entries) expect(entryContent(entry).byteLength).toBe(entry.uncompressedSize);
+      const comments = textOf(archive.entries.find((entry) => entry.name === 'xl/comments1.xml'));
+      expect(comments.match(/<comment /g)).toHaveLength(1);
+      expect(comments).toContain('Company estimate\n\nReason given: a second note on the same cell');
+    });
+
+    it('is the same bytes twice — the new parts take the workbook part’s timestamp, not the clock’s', () => {
+      expect(Buffer.from(patchWorkbook({ template, writes: [], notes, noteAuthor: 'EasyESG' })).equals(Buffer.from(patched))).toBe(true);
+    });
+
+    it('refuses notes with no author to attribute them to', () => {
+      expect(refusalOf(() => patchWorkbook({ template, writes: [], notes }))).toBe(PATCH_REFUSAL.MALFORMED_TEXT);
+    });
+  });
+
   describe('refusals over the real template', () => {
     const template = committedTemplate(COMMITTED_TEMPLATE.V1_3_0);
     const one = (write: CellWrite) => () => patchWorkbook({ template, writes: [write] });

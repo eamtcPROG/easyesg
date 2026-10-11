@@ -60,7 +60,7 @@ function sources(overrides: Partial<DocumentSources> = {}): DocumentSources {
     prior: { availability: 'no_prior_period', prior: null, values: [] },
     run: null,
     findings: null,
-    places: {},
+    precision: { units: {}, elements: {} },
     labelStanding: 'official',
     production: null,
     ...overrides,
@@ -100,7 +100,7 @@ describe('assembleReportDocument (task 43; FR-48, UX-119)', () => {
           ],
         ]),
         inScope: new Set(['TotalEnergyConsumption']),
-        places: { MWh: 2 },
+        precision: { units: { MWh: 2 }, elements: {} },
         prior: {
           availability: 'available',
           prior: { reportId: 'r0', periodId: 'p0', fiscalYear: 2025, taxonomyVersion: '2026-05-01' },
@@ -133,6 +133,31 @@ describe('assembleReportDocument (task 43; FR-48, UX-119)', () => {
         withheld: false,
         override: null,
       },
+    ]);
+  });
+
+  it('prints a calculated figure stored with no unit in its element’s one unit, and a derived share as a percentage (task-46 row (10))', () => {
+    const document = assembleReportDocument(
+      sources({
+        steps: new Map([
+          [
+            'B3',
+            [
+              field({ elementKey: 'GrossScope1GreenhouseGasEmissions', valueNumeric: '34.9168437216', unitCodes: ['tCO2e'], origin: 'calculated' }),
+              field({ elementKey: 'EmployeeTurnoverRate', kind: 'percent', valueNumeric: '0.1020408163265306', derived: true }),
+              field({ elementKey: 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod', valueNumeric: '4', derived: true }),
+            ],
+          ],
+        ]),
+        inScope: new Set(['GrossScope1GreenhouseGasEmissions', 'EmployeeTurnoverRate', 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod']),
+        precision: { units: { tCO2e: 2 }, elements: { EmployeeTurnoverRate: 2 } },
+      }),
+    );
+    expect(document.modules[0].rows.map(({ value, unit }) => ({ value, unit }))).toEqual([
+      { value: { kind: DOCUMENT_VALUE.FIGURE, value: '34.9168437216', places: 2 }, unit: 'tCO2e' },
+      { value: { kind: DOCUMENT_VALUE.PERCENT, value: '0.1020408163265306', places: 2 }, unit: null },
+      // No places configured for it: every digit, which is never wrong, only long.
+      { value: { kind: DOCUMENT_VALUE.FIGURE, value: '4', places: null }, unit: null },
     ]);
   });
 
@@ -280,7 +305,7 @@ describe('assembleReportDocument (task 43; FR-48, UX-119)', () => {
           factorSet: 'MD-2026.1',
           results: new Map([['GrossScopeOneGreenhouseGasEmissions', '0.8912']]),
         },
-        places: { tCO2e: 2 },
+        precision: { units: { tCO2e: 2 }, elements: {} },
       }),
     );
     expect(document.factorSet).toBe('MD-2026.1');

@@ -18,6 +18,13 @@ export const VSME_TAXONOMY_CONFIG_KIND = 'vsme_taxonomy';
 export const VSME_DIGITAL_TEMPLATE_CONFIG_KIND = 'vsme_digital_template';
 
 /**
+ * Where the Excel export writes each value into one registered template (task 46.1; `architecture.md` §12.5.6's
+ * task-46 row (1)). **Scope is the template's version**, as its registration's is; generated from the binary by
+ * `tools/extract-vsme-template-map.mjs`, never authored.
+ */
+export const VSME_DIGITAL_TEMPLATE_MAP_CONFIG_KIND = 'vsme_digital_template_map';
+
+/**
  * Which version a period or report opened today is pinned to. **Scope is the standard**, and the
  * entry is effective-dated by the store's own schedule, because scheduling an adoption is a publish
  * rather than a release (OQ-45).

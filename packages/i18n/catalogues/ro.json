@@ -496,6 +496,28 @@
           "page": "Pagina {page} din {pages}",
           "omissions": "Omisiuni și constatări"
         }
+      },
+      "workbook": {
+        "notes": {
+          "override": {
+            "replaced": "Estimare a întreprinderii: {reported} este cifra întreprinderii, dată în locul cifrei {superseded} calculate de platformă.",
+            "replacedUncalculated": "Estimare a întreprinderii: {reported} este cifra întreprinderii, dată în locul celei calculate de platformă.",
+            "reason": "Motivul declarat: {reason}",
+            "person": "Înlocuită de {person}."
+          },
+          "notAvailable": {
+            "plain": "Indisponibil: întreprinderea nu a putut obține această informație pentru perioada raportată.",
+            "reason": "Indisponibil: întreprinderea nu a putut obține această informație pentru perioada raportată. Motivul declarat: {reason}"
+          },
+          "finding": "Nerezolvat: {happened}",
+          "ownFigure": "Întreprinderea raportează {figure} pentru această cifră. Șablonul își calculează propria cifră din celulele pe care le citește, iar cele două pot diferi.",
+          "converted": "Raportat ca {figure}; scris aici în {unit}, unitatea pe care o folosesc toate cifrele acestei celule.",
+          "noUnit": "Raportat ca {figure}, fără o unitate de măsură aleasă.",
+          "also": "Întreprinderea raportează și {figure} aici; șablonul nu are o celulă proprie pentru această cifră.",
+          "notListed": "Întreprinderea raportează, de asemenea, informații neschimbate față de perioada precedentă pentru: {members}. Lista șablonului nu are o intrare pentru acestea.",
+          "factorSet": "Calculată de platformă cu setul de factori de emisie {label}.",
+          "labels": "Notele din acest fișier sunt formularea proprie a platformei în limba română și nu au statut EFRAG. Denumirile din șablon sunt textul oficial EFRAG în limba engleză, care face autoritate."
+        }
       }
     }
   },

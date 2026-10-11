@@ -194,7 +194,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-29 — Quantities in the standard's units, intensities derived
 
-**Status.** Partial — delivered 36.4 … 36.12, 38.4, 39.2, 39.3, 91.4, 183 · remaining 211 (a figure with no unit, rounded)
+**Status.** Partial — delivered 36.4 … 36.12, 38.4, 39.2, 39.3, 91.4, 183, 46 (a figure with no unit, rounded in the exports) · remaining 211 (and on S-07)
 
 **Obligation.** The system shall capture each quantitative disclosure in the unit the standard states for it, or with no unit where it states none, letting the reporter choose where several are admitted and defaulting to none; and shall derive, rather than accept typed, the figures the standard computes. Those figures are B3's total and GHG intensity, B8's turnover rate, B9's accident rate and B10's collective-agreement coverage and pay gap.
 
@@ -210,7 +210,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 1. The unit lists are EFRAG's `measurementGuidance`. Of 42 elements, 25 admit one unit, 13 admit several and 4 (the intensities) admit none. The unit is chosen per element, not per row (task-91.4 and task-36.5 rows).
 2. Headcount and FTE are B1's two **bases** of a count, not units (task-36.9).
 3. Derivations: turnover rate; accident rate = accidents ÷ (hours × headcount) × 200 000, where hours default to 2 000 as data; coverage = covered ÷ headcount; pay gap = (male − female) ÷ male, kept signed; B3 total = Scope 1 + location-based Scope 2; **B3 intensity = that total ÷ B1 turnover, in the report's currency** (task-36.10, task-36.11, task-38.4 rows; §12.5.6 task-182 row (2)).
-4. **Rounding.** Derived and computed figures are stored exact, apart from intensity at ten significant figures half-up. Each surface rounds once, half-up, to a per-unit precision held as configuration and set by its presentation task (§12.5.6 task-182 row (3)). **A figure with no unit — B3's intensity, B8 … B10's rates — has no precision to read**, so S-07 shows it as stored until task 211 gives it places (§12.5.6's Stage-2-close row, item (4)).
+4. **Rounding.** Derived and computed figures are stored exact, apart from intensity at ten significant figures half-up. Each surface rounds once, half-up, to a per-unit precision held as configuration and set by its presentation task (§12.5.6 task-182 row (3)). **A figure with no unit — B3's intensity, B8 … B10's rates — has no precision to read**, so S-07 shows it as stored until task 211 gives it places (§12.5.6's Stage-2-close row, item (4)). **Amended 11 Oct 2026** (project owner, task 46; §12.5.6's task-46 row (10)): the places are its element's, in `presentation_precision` beside the units', set to the digits EFRAG's template shows the same cell at, and a figure stored with no unit whose element admits one unit is in that unit — B3's calculated scopes and total in tonnes CO2e. The PDF and the Excel export read them; S-07 rounding to them is what remains of task 211.
 
 **Refusals.**
 - A derived figure written → 400 `validation-failed` (`core.report.derived_disclosure_not_writable`)
@@ -237,7 +237,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-30 — Zero is an answer
 
-**Status.** Partial — delivered 34.1, 36.10, 36.12, 44.3 (a stated zero in the PDF) · remaining 46.1 (and in the Excel export)
+**Status.** Built — delivered 34.1, 36.10, 36.12, 44.3 (a stated zero in the PDF), 46.1 (and in the Excel export)
 
 **Obligation.** The system shall store a numeric zero as an affirmative nil return, distinct from a field never answered, and shall render it as a stated answer on every surface.
 
@@ -257,14 +257,14 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-1** Given 0 is written for a numeric field, then it is stored with state `nil_return`, and the step shows it as answered. *(source: FR text; §12.5.6 task-36.10 row)*
 - **AC-2** Given a field never written, then it has no stored row and shows as unanswered. *(source: FR text; §7.3)*
 - **AC-3** Given a client sends `nil_return` with a non-zero value, then it is stored as `ok`. *(source: §12.5.6 task-36.10 row)*
-- **AC-4** Given a nil return, then the PDF and the Excel export each show it as a stated zero, not a gap. *(source: FR text)* Met for the PDF by 44.3, read from the file; the Excel export's is 46.1's.
+- **AC-4** Given a nil return, then the PDF and the Excel export each show it as a stated zero, not a gap. *(source: FR text)* Met for the PDF by 44.3, read from the file; for the Excel export by 46.1, read in LibreOffice Calc.
 
 **History.**
 - 9 Sep 2026 · project owner · a zero is an answer for every numeric kind · §12.5.6 task-36.10 row
 
 ### FR-31 — A section omitted as classified or sensitive
 
-**Status.** Partial — delivered 36.13, 91.1, 179.1, 41.2 (validation by section), 41.3 (the roll-up discounts it), 94 (the declaration's help states UX-30), 44.3 (the PDF states it) · remaining 46.1 (the Excel export)
+**Status.** Built — delivered 36.13, 91.1, 179.1, 41.2 (validation by section), 41.3 (the roll-up discounts it), 94 (the declaration's help states UX-30), 44.3 (the PDF states it), 46.1 (the Excel export, through the template's own ToC checkbox)
 
 **Obligation.** The system shall allow a disclosure section to be declared omitted as classified or sensitive information, the one ground VSME ¶19 permits, recording it in B1's list of omitted disclosures without a rationale (¶24(b)). The declaration shall satisfy validation rather than suppress it, be discounted in completion, and appear in both exports.
 
@@ -284,7 +284,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-1** Given a section selected in the B1 list, then the declaration is stored there with no rationale field. *(source: FR text; ¶24(b))*
 - **AC-2** Given a module's own member is selected, then the module list shows it *Omitted*, distinct from complete or incomplete. *(source: UC-30; §12.5.6 task-36.13 row)*
 - **AC-3** Given an omitted section, then validation reports it satisfied and completion discounts it. *(source: FR text; UC-30)* Validation since 41.2 and completion since 41.3, a section's elements read from `disclosure_omission_section` (§12.5.6's task-41 row (4)).
-- **AC-4** Given an omitted section, then both exports state it, and the Excel export does so in the template's own element. *(source: FR text)* Met for the PDF by 44.3, read from the file; the Excel export's is 46.1's.
+- **AC-4** Given an omitted section, then both exports state it, and the Excel export does so in the template's own element. *(source: FR text)* Met for the PDF by 44.3, read from the file; for the Excel export by 46.1: its ToC checkbox, which fills B1's list, read in LibreOffice Calc.
 - **AC-5** Given the member is deselected, then the section reads as before the declaration. *(source: UC-30)*
 
 **History.**
@@ -551,7 +551,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-36 — Annotate or override a computed figure
 
-**Status.** Partial — delivered 38.4 (38.5 closed inside it), 39.3, 39.4, 43.2 (the person, the superseded figure and the reason in the preview, drawn by the rendering the PDF shares), 44.6 (the marker in the PDF) · remaining 46.5 (the marker in the Excel export)
+**Status.** Built — delivered 38.4 (38.5 closed inside it), 39.3, 39.4, 43.2 (the person, the superseded figure and the reason in the preview, drawn by the rendering the PDF shares), 44.6 (the marker in the PDF), 46.5 (the marker in the Excel export, a footnote — a cell note in `1.2.0`)
 
 **Obligation.** The system shall allow a computed figure to be annotated, or replaced by an externally calculated figure with a stated reason, flagging the replacement, naming on the figure the person who made it, and retaining the superseded computed figure.
 

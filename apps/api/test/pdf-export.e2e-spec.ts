@@ -318,7 +318,9 @@ describe('the PDF export (task 44)', () => {
     const text = await wordsOf(english.pdf);
     // The marks are set in capitals by the stylesheet; their words are the catalogue's.
     expect(text).toContain(phrase('1 company estimate'));
-    expect(text).toContain(phrase("1.75 is the undertaking's figure, given in place of 0.9699123256 calculated by the platform."));
+    // The figure it replaced is a calculated one, stored with no unit: printed in tonnes CO2e at their two places, the
+    // digits EFRAG's template shows the cell at (task-46 row (10)).
+    expect(text).toContain(phrase("1.75 is the undertaking's figure, given in place of 0.97 calculated by the platform."));
     expect(text).toContain(phrase(`Reason given: ${OVERRIDE_REASON}`));
     expect(text).toContain(phrase(`Replaced by ${REGISTERED_NAME.givenName} ${REGISTERED_NAME.familyName}.`));
   });

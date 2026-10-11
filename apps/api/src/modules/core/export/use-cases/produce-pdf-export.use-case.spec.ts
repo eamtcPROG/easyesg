@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto';
 import type { ReportDocument } from '@api/contracts/report-document.port';
 import type { TenantWork } from '@api/contracts/tenant-work.port';
+import { EXPORT_FORMAT } from '../constants/export.constants';
 import type { ExportArtifactStore } from '../interfaces/export-artifact-store.interface';
 import type { RequestedExport } from '../models/requested-export.model';
 import { ProducePdfExport, type ProducePdfExportCommand } from './produce-pdf-export.use-case';
 
 const NOW = new Date('2026-10-11T09:30:00Z');
 const PDF = Buffer.from('%PDF-1.7 the file');
-const REQUESTED: RequestedExport = { id: 'export-1', reportId: 'report-1', locale: 'ru', requestedBy: 'Ana Rusu' };
+const REQUESTED: RequestedExport = { id: 'export-1', reportId: 'report-1', format: EXPORT_FORMAT.PDF, locale: 'ru', requestedBy: 'Ana Rusu' };
 const COMMAND: ProducePdfExportCommand = { organizationId: 'org-1', exportId: 'export-1', attempt: 1, attempts: 3 };
 
 /** Everything the use case touches, recording what happened and whether it happened inside a unit of work. */
@@ -109,6 +110,13 @@ describe('ProducePdfExport (task 44.2; FR-49, FR-53, AD-10)', () => {
     const { produce, store } = harness({ print: () => Promise.reject(new Error('The renderer answered 504: killed')) });
     await expect(produce.execute({ ...COMMAND, attempt: 2 })).rejects.toThrow('504');
     expect(store.failed).toEqual([]);
+  });
+
+  it('refuses an export that asks for another format — a PDF job never writes an Excel export’s record (task 46)', async () => {
+    const { produce, store, stored } = harness({ requested: { ...REQUESTED, format: EXPORT_FORMAT.XLSX } });
+    await expect(produce.execute({ ...COMMAND, attempt: 3 })).rejects.toThrow('asks for a xlsx file, not pdf');
+    expect(stored).toEqual([]);
+    expect(store.failed).toEqual([{ exportId: 'export-1', failure: 'Export export-1 asks for a xlsx file, not pdf.' }]);
   });
 
   it('records the last attempt’s failure, and still throws it', async () => {

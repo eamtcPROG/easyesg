@@ -5,7 +5,7 @@ import { Mark } from './mark';
 import { ValueText } from './value-text';
 
 /** The values printed as figures — aligned to the end, and never split from their unit. Internal to this file. */
-const FIGURES: ReadonlySet<string> = new Set([DOCUMENT_VALUE.FIGURE, DOCUMENT_VALUE.MONEY, DOCUMENT_VALUE.NIL_RETURN]);
+const FIGURES: ReadonlySet<string> = new Set([DOCUMENT_VALUE.FIGURE, DOCUMENT_VALUE.PERCENT, DOCUMENT_VALUE.MONEY, DOCUMENT_VALUE.NIL_RETURN]);
 
 /**
  * One disclosure of a module's table: its label and what names the row, the figure with its marks, the prior period's

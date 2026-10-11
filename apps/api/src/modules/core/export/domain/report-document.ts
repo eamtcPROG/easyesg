@@ -23,6 +23,7 @@ import {
 import { DISCLOSURE_ORIGIN, DISCLOSURE_STATE } from '@api/modules/core/disclosure/models/disclosure-value.model';
 import { scopeAsks, type ReportScope } from '@api/modules/core/disclosure/models/report.model';
 import type { DisclosureField, DisclosureModuleSummary } from '@api/modules/core/disclosure/models/wizard-step.model';
+import { type FigurePrecision, presentedPlaces, presentedUnit } from './figure-precision';
 
 /**
  * What the report's document prints, decided from what the screens already read (task 43; FR-48, UX-119;
@@ -64,8 +65,11 @@ export interface DocumentSources {
   readonly run: { readonly factorSet: string | null; readonly results: ReadonlyMap<string, string> } | null;
   /** The last validation run's findings — `null` where none has run. */
   readonly findings: readonly Finding[] | null;
-  /** The places each unit's figures are rounded to (FR-29); a unit absent here keeps every digit. */
-  readonly places: Readonly<Record<string, number>>;
+  /**
+   * The digits each figure is shown to (FR-29; task-46 row (10)): by its unit — the stored one, or its element's one
+   * admitted unit where a calculated or derived figure is stored with none — else by its element; neither keeps every digit.
+   */
+  readonly precision: FigurePrecision;
   /** Whose words the labels are in the document's language at the pinned version (UX-98) — printed as it stands. */
   readonly labelStanding: LabelStanding | null;
   /** The file's own facts, which only an export has (task 44) — passed through as they stand. */
@@ -99,8 +103,9 @@ const addressOf = (address: { readonly elementKey: string; readonly dimensionKey
   `${address.elementKey}|${address.dimensionKey}|${address.ordinal}`;
 
 export function assembleReportDocument(sources: DocumentSources): ReportDocument {
-  const placesOf = (unit: string | null): number | null =>
-    unit !== null && sources.places[unit] !== undefined ? sources.places[unit] : null;
+  /** The places a field's figure is shown to — in `unitCode`, where a prior period's names another. */
+  const placesOf = (field: DisclosureField, unitCode: string | null = field.unitCode): number | null =>
+    presentedPlaces({ field: { ...field, unitCode }, precision: sources.precision });
   const unresolved = new Set((sources.findings ?? []).map((finding) => addressOf(finding.field)));
   const priorByAddress = new Map<string, PriorPeriodValue>(
     sources.prior.availability === PRIOR_PERIOD_AVAILABILITY.AVAILABLE
@@ -167,14 +172,14 @@ export function assembleReportDocument(sources: DocumentSources): ReportDocument
         member: field.dimensionLabel,
         value,
         prior: figure ? priorOf(priorByAddress.get(address), field, placesOf) : null,
-        unit: figure ? field.unitCode : null,
+        unit: figure && field.kind !== DISCLOSURE_KIND.PERCENT ? presentedUnit(field) : null,
         unresolved: isUnresolved,
         withheld: false,
         override:
           field.origin === DISCLOSURE_ORIGIN.OVERRIDDEN
             ? {
                 superseded: sources.run?.results.get(field.elementKey) ?? null,
-                places: placesOf(field.unitCode),
+                places: placesOf(field),
                 reason: field.explanation,
                 person: field.overriddenBy?.name ?? null,
               }
@@ -233,7 +238,7 @@ function inPrintedOrder(fields: readonly DisclosureField[]): readonly Disclosure
 }
 
 /** The answer a field holds, as the document prints it — `null` where it holds none. */
-function answerOf(field: DisclosureField, placesOf: (unit: string | null) => number | null): DocumentValue | null {
+function answerOf(field: DisclosureField, placesOf: (field: DisclosureField) => number | null): DocumentValue | null {
   if (field.state === DISCLOSURE_STATE.NIL_RETURN) return { kind: DOCUMENT_VALUE.NIL_RETURN };
   if (field.state === DISCLOSURE_STATE.NOT_AVAILABLE) {
     return { kind: DOCUMENT_VALUE.NOT_AVAILABLE, reason: field.notAvailableReason };
@@ -241,17 +246,20 @@ function answerOf(field: DisclosureField, placesOf: (unit: string | null) => num
   const text = field.valueText === null || field.valueText.trim() === '' ? null : field.valueText;
   switch (field.kind) {
     case DISCLOSURE_KIND.NUMERIC:
+      return field.valueNumeric === null
+        ? null
+        : { kind: DOCUMENT_VALUE.FIGURE, value: field.valueNumeric, places: placesOf(field) };
     case DISCLOSURE_KIND.PERCENT:
       return field.valueNumeric === null
         ? null
-        : { kind: DOCUMENT_VALUE.FIGURE, value: field.valueNumeric, places: placesOf(field.unitCode) };
+        : { kind: DOCUMENT_VALUE.PERCENT, value: field.valueNumeric, places: placesOf(field) };
     case DISCLOSURE_KIND.MONETARY:
       return field.valueNumeric === null
         ? null
         : {
             kind: DOCUMENT_VALUE.MONEY,
             value: field.valueNumeric,
-            places: placesOf(field.unitCode),
+            places: placesOf(field),
             currency: field.currency,
           };
     case DISCLOSURE_KIND.YEAR:
@@ -280,13 +288,18 @@ function answerOf(field: DisclosureField, placesOf: (unit: string | null) => num
 function priorOf(
   prior: PriorPeriodValue | undefined,
   field: DisclosureField,
-  placesOf: (unit: string | null) => number | null,
+  placesOf: (field: DisclosureField, unitCode: string | null) => number | null,
 ): DocumentValue | null {
   if (prior === undefined) return null;
   if (prior.state === DISCLOSURE_STATE.NIL_RETURN) return { kind: DOCUMENT_VALUE.NIL_RETURN };
   if (prior.valueNumeric === null || prior.state === DISCLOSURE_STATE.NOT_AVAILABLE) return null;
-  const places = placesOf(prior.unitCode ?? field.unitCode);
-  return field.kind === DISCLOSURE_KIND.MONETARY
-    ? { kind: DOCUMENT_VALUE.MONEY, value: prior.valueNumeric, places, currency: field.currency }
-    : { kind: DOCUMENT_VALUE.FIGURE, value: prior.valueNumeric, places };
+  const places = placesOf(field, prior.unitCode ?? field.unitCode);
+  switch (field.kind) {
+    case DISCLOSURE_KIND.MONETARY:
+      return { kind: DOCUMENT_VALUE.MONEY, value: prior.valueNumeric, places, currency: field.currency };
+    case DISCLOSURE_KIND.PERCENT:
+      return { kind: DOCUMENT_VALUE.PERCENT, value: prior.valueNumeric, places };
+    default:
+      return { kind: DOCUMENT_VALUE.FIGURE, value: prior.valueNumeric, places };
+  }
 }

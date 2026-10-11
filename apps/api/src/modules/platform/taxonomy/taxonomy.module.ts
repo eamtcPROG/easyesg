@@ -1,8 +1,8 @@
-import { resolve } from 'node:path';
 import { Module } from '@nestjs/common';
 import { DIGITAL_TEMPLATE_REGISTRY } from '@api/contracts/digital-template-registry.port';
 import { TAXONOMY_REGISTRY } from '@api/contracts/taxonomy-registry.port';
 import { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
+import { efragDirectory } from './services/committed-template';
 import { DigitalTemplateRegistryService } from './services/digital-template-registry.service';
 import { TaxonomyRegistryService } from './services/taxonomy-registry.service';
 
@@ -32,6 +32,7 @@ import { TaxonomyRegistryService } from './services/taxonomy-registry.service';
  * the EFRAG binary committed under `config/efrag/<version>/`, by a `vsme_digital_template` registration. By factory,
  * because it takes the directory as well as the store; the directory is the repository's `config/efrag` as seen from
  * `apps/api`, the working directory of every script, suite and image entrypoint — the seed loader's own convention.
+ * Since task 46.1 it answers the template's map with it, the `vsme_digital_template_map` read from that very binary.
  */
 @Module({
   providers: [
@@ -39,7 +40,7 @@ import { TaxonomyRegistryService } from './services/taxonomy-registry.service';
     {
       provide: DIGITAL_TEMPLATE_REGISTRY,
       useFactory: (store: ConfigurationStore) =>
-        new DigitalTemplateRegistryService({ store, directory: resolve(process.cwd(), '../../config/efrag') }),
+        new DigitalTemplateRegistryService({ store, directory: efragDirectory() }),
       inject: [ConfigurationStore],
     },
   ],

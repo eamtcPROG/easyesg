@@ -20,6 +20,11 @@ export interface DocumentWords {
   message(key: string, params?: Readonly<Record<string, unknown>>): string | null;
   /** A decimal rounded to `places` where some are given, every digit kept where none are. */
   figure(value: string, places: number | null): string;
+  /**
+   * A fraction as the locale writes a percentage — `0.1020408…` as *10.20%*, *10,20 %* — rounded to `places` decimals
+   * of the percent where some are given (task-46 row (10)).
+   */
+  percent(value: string, places: number | null): string;
   /** A calendar date, `YYYY-MM-DD`, as the locale writes a date in full. */
   date(date: string): string;
   /** Two calendar dates as one range — *1 January – 31 December 2026*. */
@@ -55,6 +60,21 @@ export function documentWords(locale: Locale): DocumentWords {
     }
     return format;
   };
+  const percents = new Map<number, Intl.NumberFormat>();
+  const percentFormat = (places: number | null): Intl.NumberFormat => {
+    const key = places ?? -1;
+    let format = percents.get(key);
+    if (format === undefined) {
+      format = new Intl.NumberFormat(
+        locale,
+        places === null
+          ? { style: 'percent', maximumFractionDigits: EVERY_DIGIT }
+          : { style: 'percent', minimumFractionDigits: places, maximumFractionDigits: places },
+      );
+      percents.set(key, format);
+    }
+    return format;
+  };
   const dates = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' });
   const lists = new Intl.ListFormat(locale, { type: 'unit', style: 'short' });
 
@@ -65,6 +85,9 @@ export function documentWords(locale: Locale): DocumentWords {
     // A string reaches the formatter as the exact decimal it is (ECMA-402's string operand), never a float.
     figure: (value, places) =>
       numberFormat(places).format((places === null ? value : roundHalfUp(value, places)) as Intl.StringNumericLiteral),
+    // Rounded as the fraction it is stored as, two places further along, so a percent's decimals round once and half-up.
+    percent: (value, places) =>
+      percentFormat(places).format((places === null ? value : roundHalfUp(value, places + 2)) as Intl.StringNumericLiteral),
     date: (date) => dates.format(asDay(date)),
     range: (start, end) => dates.formatRange(asDay(start), asDay(end)),
     moment: (instant, timezone) =>

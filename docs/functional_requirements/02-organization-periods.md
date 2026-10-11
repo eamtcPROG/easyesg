@@ -176,7 +176,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - IDNO of the right shape whose check digit disagrees → 400 `identifier-check-digits` (`core.entity.idno_check_digits`), the type the LEI uses
 - The entity is archived → 409 `entity-archived` (FR-20)
 
-**Boundaries.** The export writes the LEI under EFRAG's LEI scheme where the entity holds one, and otherwise the IDNO under a scheme URI the platform defines; task 46 fixes the URI and proves the instance against EFRAG's validator (§12.5.6 task-175 row (5)). The console's search by IDNO is A-02's (same row, (4)). The billing account's own IDNO and VAT code are FR-106's and FR-107's.
+**Boundaries.** The export writes the LEI under EFRAG's LEI scheme where the entity holds one, and otherwise the IDNO under a scheme URI the platform defines; task 46 fixes the URI and proves the instance against EFRAG's validator (§12.5.6 task-175 row (5)). **Amended 11 Oct 2026** (project owner, task 46; §12.5.6's task-46 row (5)): the EFRAG Excel template takes a scheme from its own list, which has no entry for a national register and no place for a URI, so the Excel export writes the IDNO with the scheme left blank; a scheme URI is the XBRL export's to spell (AD-8, Phase 2). The console's search by IDNO is A-02's (same row, (4)). The billing account's own IDNO and VAT code are FR-106's and FR-107's.
 
 **Acceptance criteria.**
 - **AC-1** Given a reporting entity, when a thirteen-digit IDNO is recorded, then it is stored as the entity's primary identifier. *(source: FR text; UC-51 step 1)*

@@ -12,6 +12,8 @@ export function ValueText({ value, words }: { readonly value: DocumentValue; rea
     case DOCUMENT_VALUE.FIGURE:
     case DOCUMENT_VALUE.MONEY:
       return <>{words.figure(value.value, value.places)}</>;
+    case DOCUMENT_VALUE.PERCENT:
+      return <>{words.percent(value.value, value.places)}</>;
     case DOCUMENT_VALUE.YEAR:
       return <>{value.value}</>;
     case DOCUMENT_VALUE.TEXT:

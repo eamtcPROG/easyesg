@@ -4,8 +4,9 @@ import { join } from 'node:path';
 import { Logger } from '@nestjs/common';
 import type { DigitalTemplate, DigitalTemplateRegistry } from '@api/contracts/digital-template-registry.port';
 import type { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
-import { VSME_DIGITAL_TEMPLATE_CONFIG_KIND } from '../constants/taxonomy.constants';
+import { VSME_DIGITAL_TEMPLATE_CONFIG_KIND, VSME_DIGITAL_TEMPLATE_MAP_CONFIG_KIND } from '../constants/taxonomy.constants';
 import { readDigitalTemplateEntry } from '../domain/digital-template-entry';
+import { readDigitalTemplateMap } from '../domain/digital-template-map';
 
 /** EFRAG's template releases are `major.minor.patch`; a version spelled otherwise names no directory here. */
 const TEMPLATE_VERSION = /^\d+\.\d+\.\d+$/;
@@ -25,6 +26,10 @@ const TEMPLATE_VERSION = /^\d+\.\d+\.\d+$/;
  *
  * **No cache.** A template is read and its digest checked on each resolution — one file read and one hash, beside an
  * export that renders for seconds — so a stale binary cannot outlive a corrected registration.
+ *
+ * **The map comes with the binary or the template answers `null`** (task 46.1): an export cannot write a template it has
+ * no map for, and a map read from another binary than the one registered — its digest says which — would place values
+ * by a layout the file does not have. Both are an operator's to correct, so both are logged.
  */
 export class DigitalTemplateRegistryService implements DigitalTemplateRegistry {
   private readonly logger = new Logger(DigitalTemplateRegistryService.name);
@@ -58,6 +63,18 @@ export class DigitalTemplateRegistryService implements DigitalTemplateRegistry {
       return null;
     }
 
+    const mapEntry = this.sources.store.get({ kind: VSME_DIGITAL_TEMPLATE_MAP_CONFIG_KIND, scope: pin.templateVersion });
+    const map = mapEntry === undefined ? null : readDigitalTemplateMap(mapEntry.payload);
+    if (map === null || map.template.sha256 !== entry.sha256 || map.taxonomyVersion !== entry.taxonomyVersion) {
+      this.logger.error(
+        mapEntry === undefined
+          ? `Template ${pin.templateVersion} is registered with no ${VSME_DIGITAL_TEMPLATE_MAP_CONFIG_KIND}; no Excel export can write it`
+          : `Configuration entry ${VSME_DIGITAL_TEMPLATE_MAP_CONFIG_KIND}/${pin.templateVersion} (revision ${mapEntry.revision}) ` +
+              'is malformed or was read from another binary than the one registered; no Excel export can write that template',
+      );
+      return null;
+    }
+
     const path = join(this.sources.directory, pin.templateVersion, entry.file);
     const content = await readFile(path).then(
       (bytes) => new Uint8Array(bytes),
@@ -69,6 +86,6 @@ export class DigitalTemplateRegistryService implements DigitalTemplateRegistry {
     if (digest !== entry.sha256) {
       throw new Error(`${path} is not the template ${pin.templateVersion} is registered as: SHA-256 ${digest}, registered ${entry.sha256}`);
     }
-    return { version: pin.templateVersion, taxonomyVersion: entry.taxonomyVersion, content };
+    return { version: pin.templateVersion, taxonomyVersion: entry.taxonomyVersion, content, map };
   }
 }

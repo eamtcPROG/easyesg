@@ -24,6 +24,11 @@ export interface ReportDocumentRenderer {
 export const DOCUMENT_VALUE = {
   /** A number, rounded to `places` where the configuration gives its unit some (FR-29). */
   FIGURE: 'figure',
+  /**
+   * A share, stored as a fraction — which is what every derivation writes and what EFRAG's `0.00%` cells hold — and
+   * printed as a percentage, `places` counting decimals of the percent (task-46 row (10)).
+   */
+  PERCENT: 'percent',
   /** An amount of money, in the report's currency. */
   MONEY: 'money',
   /** A year, which is a date and takes no thousands separator. */
@@ -44,6 +49,7 @@ export const DOCUMENT_VALUE = {
 
 export type DocumentValue =
   | { readonly kind: typeof DOCUMENT_VALUE.FIGURE; readonly value: string; readonly places: number | null }
+  | { readonly kind: typeof DOCUMENT_VALUE.PERCENT; readonly value: string; readonly places: number | null }
   | {
       readonly kind: typeof DOCUMENT_VALUE.MONEY;
       readonly value: string;

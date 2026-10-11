@@ -21,3 +21,16 @@ export interface PresentationPrecision {
 
 /** DI token beside the interface, so a consumer imports one thing (P-7). */
 export const PRESENTATION_PRECISION = Symbol('PRESENTATION_PRECISION');
+
+/**
+ * The places a figure the platform computes **with no unit** is shown to, by its element (task 46; `architecture.md`
+ * §12.5.6's task-46 row (10)) — B3's intensity, B8's turnover rate, B9's accident rate, B10's pay gap and bargaining
+ * coverage, set to the digits EFRAG's Digital Template shows them at, so the PDF prints what a reader of the Excel file
+ * sees. **A percentage's places count decimals of the percent.** The same artefact as `PresentationPrecision`, in a face
+ * of its own because only the exports read it; it fails open the same way, to no places.
+ */
+export interface ElementPrecision {
+  elementPlaces(): Readonly<Record<string, number>>;
+}
+
+export const ELEMENT_PRECISION = Symbol('ELEMENT_PRECISION');

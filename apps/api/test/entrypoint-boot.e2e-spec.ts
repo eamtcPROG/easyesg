@@ -12,7 +12,7 @@ import { EXPORT_QUEUE, OUTBOX_QUEUE } from '../src/infrastructure/queue/queue.co
 import { DELIVERY_RETRY } from '../src/infrastructure/queue/retries-with';
 import { ScheduleTicker } from '../src/infrastructure/schedule/schedule-ticker.service';
 import { FACTOR_SET_REPLACED } from '../src/modules/core/calculator/constants/calculator.constants';
-import { EXPORT_PDF_REQUESTED } from '../src/modules/core/export/constants/export.constants';
+import { EXPORT_PDF_REQUESTED, EXPORT_XLSX_REQUESTED } from '../src/modules/core/export/constants/export.constants';
 import { REPORT_NOTICE_CHECK, REPORT_NOTICE_SWEEP } from '../src/modules/core/validation/constants/validation.constants';
 import { EMAIL_VERIFICATION_REQUESTED, PASSWORD_RESET_REQUESTED } from '../src/modules/identity/account/constants/account.constants';
 import { INVITATION_ISSUED } from '../src/modules/identity/invitation/constants/invitation.constants';
@@ -130,14 +130,12 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
     });
 
     /**
-     * **The export queue's job is routed by its own consumer** (task 44.5): the same probe as above, on the export
-     * queue's consumer — and AD-10's consumer refuses it, so an export put on the wrong queue fails loudly rather than
-     * running beside the emails it was given a queue of its own to stay out of the way of.
+     * **The export queue's jobs are routed by its own consumer** (tasks 44.5, 46.1): the same probe as above, on the
+     * export queue's consumer — and AD-10's consumer refuses each, so an export put on the wrong queue fails loudly
+     * rather than running beside the emails it was given a queue of its own to stay out of the way of.
      */
-    it(`routes ${EXPORT_PDF_REQUESTED} on the export queue alone`, async () => {
-      const job = { id: 'boot-probe', name: EXPORT_PDF_REQUESTED, data: {}, attemptsMade: 0, opts: {} } as unknown as Job<
-        Record<string, unknown>
-      >;
+    it.each([EXPORT_PDF_REQUESTED, EXPORT_XLSX_REQUESTED])('routes %s on the export queue alone', async (name) => {
+      const job = { id: 'boot-probe', name, data: {}, attemptsMade: 0, opts: {} } as unknown as Job<Record<string, unknown>>;
       await expect(app.get(ExportConsumer, { strict: false }).process(job)).rejects.toThrow(/payload/);
       await expect(app.get(OutboxConsumer, { strict: false }).process(job)).rejects.toThrow(/on queue "easyesg"/);
     });
@@ -147,12 +145,11 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
      * dispatcher puts them on the job, so a deleted `@OnQueue` would put exports back in front of every email, and a
      * deleted `@RetriesWith` would retry a broken one for most of a day — with every other check green.
      */
-    it('places the PDF export on its own queue with its own retry, and every other job as before', () => {
+    it('places both exports on their own queue with their own retry, and every other job as before', () => {
       const placement = app.get(JobPlacement, { strict: false });
-      expect(placement.of(EXPORT_PDF_REQUESTED)).toEqual({
-        queue: EXPORT_QUEUE,
-        retry: { attempts: 3, backoff: { type: 'exponential', delay: 10_000 } },
-      });
+      for (const name of [EXPORT_PDF_REQUESTED, EXPORT_XLSX_REQUESTED]) {
+        expect(placement.of(name)).toEqual({ queue: EXPORT_QUEUE, retry: { attempts: 3, backoff: { type: 'exponential', delay: 10_000 } } });
+      }
       expect(placement.of(EMAIL_VERIFICATION_REQUESTED)).toEqual({ queue: OUTBOX_QUEUE, retry: DELIVERY_RETRY });
     });
 

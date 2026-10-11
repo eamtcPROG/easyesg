@@ -80,6 +80,18 @@ services:
     networks:
       - easyesg-net
 
+  # LibreOffice Calc, headless — NFR-20's automated gate for the Excel export (task 46.2; T-12), run by the export suites
+  # once per workbook they produce, as veraPDF is per PDF: `docker compose run --rm calc /data/<file>.xlsx`. Built from
+  # `calc/` the first time it is run (CI builds it beforehand from its layer cache), and given no network — it reads a
+  # file and writes what Calc made of it, nothing more.
+  calc:
+    build:
+      context: ./calc
+    image: easyesg-calc:test
+    profiles: [validator]
+    mem_limit: 768m
+    network_mode: none
+
 # Project-scoped, so this is `easyesg-test_easyesg-net` and never the dev stack's network.
 networks:
   easyesg-net:

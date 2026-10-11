@@ -105,6 +105,24 @@ describe('ReactReportDocumentRenderer (task 43; FR-48, UX-117 … UX-121)', () =
     );
   });
 
+  it('prints a share as a percentage, rounded once at its decimals of the percent, as each locale writes one (task-46 row (10))', () => {
+    const share = (locale: 'en' | 'ro') =>
+      new ReactReportDocumentRenderer().render({
+        ...DOCUMENT,
+        locale,
+        modules: [
+          {
+            module: 'B8',
+            standing: DOCUMENT_MODULE.REPORTED,
+            narrative: [],
+            rows: [row({ label: 'Employee turnover rate', value: { kind: DOCUMENT_VALUE.PERCENT, value: '0.1020408163265306', places: 2 }, unit: null })],
+          },
+        ],
+      });
+    expect(share('en')).toContain('<td class="figure">10.20%</td><td class="figure">—</td><td class="unit">—</td>');
+    expect(share('ro')).toContain('<td class="figure">10,20\u00a0%</td>');
+  });
+
   it('is worded in Romanian and Russian too, figures laid out as each locale writes them', () => {
     const romanian = new ReactReportDocumentRenderer().render({ ...DOCUMENT, locale: 'ro' });
     expect(romanian).toContain('<html lang="ro">');

@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { Logger } from '@nestjs/common';
 import { readPart } from '@easyesg/xlsx-patch';
 import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-configuration-store';
-import { REPORTING_TAXONOMY_CONFIG_KIND, VSME_DIGITAL_TEMPLATE_CONFIG_KIND } from './constants/taxonomy.constants';
+import { REPORTING_TAXONOMY_CONFIG_KIND, VSME_DIGITAL_TEMPLATE_CONFIG_KIND, VSME_TAXONOMY_CONFIG_KIND } from './constants/taxonomy.constants';
 import { readDigitalTemplateEntry } from './domain/digital-template-entry';
 import { DigitalTemplateRegistryService } from './services/digital-template-registry.service';
 
@@ -56,6 +56,28 @@ describe('the shipped Digital Template registrations', () => {
       const strings = template === null ? '' : (readPart(template.content, 'xl/sharedStrings.xml') ?? '');
       const named = [...strings.matchAll(/https:\/\/xbrl\.efrag\.org\/taxonomy\/vsme\/(\d{4}-\d{2}-\d{2})\//g)].map((match) => match[1]);
       expect(new Set(named)).toEqual(new Set([registered?.taxonomyVersion]));
+    },
+  );
+
+  /**
+   * **Every registered template has a map, read from it, placing every disclosure the Basic Module asks** (task 46.1):
+   * B1 … B11 and the four *any other* disclosures that belong to no module. A map generated against a taxonomy that
+   * later gained an element, or from a binary since replaced, fails here rather than at an export that drops a value.
+   */
+  it.each(registrations.map((entry) => [entry.scope, entry] as const))(
+    'maps every Basic Module disclosure of %s, from that very binary',
+    async (version, entry) => {
+      const registered = readDigitalTemplateEntry(entry.payload);
+      const template = await registry.templateFor({ templateVersion: version, taxonomyVersion: registered?.taxonomyVersion ?? '' });
+      expect(template?.map.template.sha256).toBe(registered?.sha256);
+      const taxonomy = entries.find((candidate) => candidate.kind === VSME_TAXONOMY_CONFIG_KIND && candidate.scope === registered?.taxonomyVersion);
+      const elements = (taxonomy?.payload.elements ?? {}) as Record<string, { modules: string[] }>;
+      const basic = Object.entries(elements)
+        .filter(([, element]) => element.modules.length === 0 || element.modules.some((module) => /^B\d+$/.test(module)))
+        .map(([key]) => key)
+        .sort();
+      expect(basic.length).toBeGreaterThan(100);
+      expect(Object.keys(template?.map.elements ?? {}).sort()).toEqual(basic);
     },
   );
 });

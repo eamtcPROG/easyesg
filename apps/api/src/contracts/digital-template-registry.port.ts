@@ -9,6 +9,7 @@
  * In the port surface because the export is `core/export`'s and the registry `platform/taxonomy`'s — the same reason
  * `TAXONOMY_REGISTRY` is here.
  */
+import type { DigitalTemplateMap } from './digital-template-map';
 
 /** A registered template, its binary read from the release and checked against its registration. */
 export interface DigitalTemplate {
@@ -18,13 +19,16 @@ export interface DigitalTemplate {
   readonly taxonomyVersion: string;
   /** The workbook's bytes, exactly as committed — the SHA-256 the registration names. */
   readonly content: Uint8Array;
+  /** Where the export writes each value into it (task 46.1) — read from this very binary, by its digest. */
+  readonly map: DigitalTemplateMap;
 }
 
 export interface DigitalTemplateRegistry {
   /**
    * The template a report's pin names, or `null` when none answers it: the version is registered nowhere, its
    * registration is unreadable, or the registered template is written against a different taxonomy than the report
-   * was prepared under. **Never a nearby version** — exporting a report against a template it was not prepared under
+   * was prepared under — or, since task 46.1, it has no map the export could write through, or one read from another
+   * binary. **Never a nearby version** — exporting a report against a template it was not prepared under
    * is what FR-51 forbids, and `null` is what lets the export refuse with a reason instead (task 46.1).
    *
    * A registration whose committed binary is missing, or is not the file it names by digest, is a defect in the

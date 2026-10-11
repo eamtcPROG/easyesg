@@ -213,7 +213,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-44 — Export with unresolved findings, after a warning
 
-**Status.** Partial — delivered 41.2 (the findings an export request evaluates), 43.2 (the preview's marks, the rendering the PDF shares), 44.3 (the marks in the PDF) · remaining 46.1, 46.5, 47.3, 47.4. Both 44.3 and 47.3 cite this requirement, 47.3 since 182/165, and the warning is S-11's content (47.3), the api's half of it is 47.4's, and the Excel marking is 46.5's.
+**Status.** Partial — delivered 41.2 (the findings an export request evaluates), 43.2 (the preview's marks, the rendering the PDF shares), 44.3 (the marks in the PDF), 46.1 and 46.5 (the marks in the Excel export) · remaining 47.3, 47.4. Both 44.3 and 47.3 cite this requirement, 47.3 since 182/165, and the warning is S-11's content (47.3), the api's half of it is 47.4's, and the Excel marking is 46.5's.
 
 **Obligation.** The system shall permit export with unresolved findings after an explicit warning, marking the gaps visibly in the output rather than omitting them silently.
 
@@ -231,7 +231,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 3. **Gaps are marked visibly and consistently in the produced document** (UX-119): a field *not available* with its stated reason, a section omitted as classified or sensitive named as such, and unresolved findings shown rather than omitted. A reader can always tell a zero, a gap and an omission apart. The marking survives monochrome print (UX-121).
 4. The preview shows the same gaps, marked the same way (UX-45).
 5. Export never proceeds silently against a version the report was not prepared under (S-11; FR-51).
-6. **How the Excel export marks a gap** (182/30), given that the template's presentation is preserved (UX-122): through the template's own states where it has an element for the thing (its list of omitted disclosures, its not-available choices), and elsewhere through a cell note, placed by task 46.5 beside the override marker. No platform sheet is added, and no gap is left blank.
+6. **How the Excel export marks a gap** (182/30), given that the template's presentation is preserved (UX-122): through the template's own element where it has one (a section omitted is its ToC checkbox, which fills the template's list of omitted disclosures), and elsewhere through a footnote on the template's own Footnotes sheet, placed by task 46.5 beside the override marker — or, in a template that has no Footnotes sheet (`1.2.0`), an Excel cell note on the figure's cell (§12.5.6's task-46 row (9)). The template has no not-available state, so a field declared not available is a footnote stating its reason, and an unresolved finding a footnote stating what the finding found (`architecture.md` §12.5.6's task-46 row (2)). No platform sheet is added, and no gap is left blank.
 7. **Nothing is gated by findings** (182/27). The *submission* that tasks 42 and 42.2 said the roll-up gates is the report reading *ready to file*, which the roll-up computes per the rule definitions (FR-41; 182/19). No other step is gated, and export never is. Both task rows are reworded.
 8. **Validation is evaluated at the export request** (182/26), so the warning lists what is unresolved at that moment, on a locked period too (182/21).
 
@@ -248,7 +248,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-6** Given the preview, then it marks the same gaps as the export. *(source: UX-45)* Met by 43.2: the preview's marks are the shared rendering's (FR-48 AC-5), which the PDF's job renders too.
 - **AC-7** Given unresolved findings and an export request that carries no acknowledgement, then it is refused, the refusal lists the unresolved findings as evaluated at the request, and no job is enqueued. *(source: §12.5.6 task-182 validation row, 182/20)* Unmet until 47.4.
 - **AC-8** Given the same request carrying an acknowledgement, then it is accepted; given no unresolved findings, then no acknowledgement is needed. *(source: §12.5.6 task-182 validation row, 182/20)* Unmet until 47.4.
-- **AC-9** Given an Excel export of a report holding a field declared not available, a section omitted and an unresolved finding, then each is marked in the template's own element where it has one and in a cell note where it has not, and none is left blank. *(source: §12.5.6 task-182 validation row, 182/30)* Unmet until 46.5.
+- **AC-9** Given an Excel export of a report holding a field declared not available, a section omitted and an unresolved finding, then each is marked in the template's own element where it has one and in a footnote on its Footnotes sheet where it has not, and none is left blank. *(source: §12.5.6 task-182 validation row, 182/30; task-46 row (2))* Met by 46.5: a footnote on `1.3.0`'s Footnotes sheet and a cell note on `1.2.0`, read in LibreOffice Calc.
 - **AC-10** Given a locked period, then the warning and the acknowledgement protocol work as on an open one. *(source: §12.5.6 task-182 validation row, 182/21)* Unmet until 47.4.
 - **AC-11** Given a view-only member, when an export is requested, then it is refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)* Unmet until 47.4.
 
@@ -258,6 +258,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 5 Oct 2026 · project owner · nothing is gated by findings; *submission* in tasks 42 and 42.2 meant readiness to file · §12.5.6 task-182 validation row (182/27)
 - 5 Oct 2026 · project owner · the Excel export marks gaps through the template's own states, else a cell note · §12.5.6 task-182 validation row (182/30)
 - 5 Oct 2026 · project owner · an editor or the OA exports; a view-only member is refused · §12.5.6 task-182 validation row (182/22)
+- 11 Oct 2026 · project owner · the Excel export's note is a footnote on the template's Footnotes sheet, and the template has no not-available state · §12.5.6 task-46 row (2)
 
 ## 2. Comparatives (index §3.9)
 
@@ -351,7 +352,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-47 — Carry a prior value forward, marked
 
-**Status.** Partial — delivered 34.1, 36.14, 191 (the confirm action), 44 (the PDF carries no mark) · remaining 46 (nor does the Excel export)
+**Status.** Built — delivered 34.1, 36.14, 191 (the confirm action), 44 (the PDF carries no mark), 46 (nor does the Excel export)
 
 **Obligation.** The system shall allow a prior-period value to be carried forward into the current period, marking it as carried forward so that it is reviewed rather than accumulating unnoticed.
 
@@ -378,7 +379,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-1** Given a linked prior period with a value for an empty field, when carry forward is chosen, then the value is copied into the current period and identifiable as carried forward. *(source: FR text; UC-46)*
 - **AC-2** Given a field that already holds an answer, then carry forward is not offered. *(source: UC-46; §12.5.6 task-36.14 row)*
 - **AC-3** Given a carried value, when it is edited, then the mark clears. *(source: UX-32; `PUT /reports/{id}/values`)*
-- **AC-4** Given a carried value, then neither export carries the mark. *(source: UC-46 note; §12.5.6 task-36.14 row)* Met for the PDF by 44: the document's model has no place for the mark, and a carried value assembles exactly as the same value typed in (`report-document.spec.ts`). The Excel export's is 46's.
+- **AC-4** Given a carried value, then neither export carries the mark. *(source: UC-46 note; §12.5.6 task-36.14 row)* Met for the PDF by 44: the document's model has no place for the mark, and a carried value assembles exactly as the same value typed in (`report-document.spec.ts`); for the Excel export by 46, the same way (`report-workbook.spec.ts`).
 - **AC-5** Given a module, then no single action carries all its values. *(source: §12.5.6 task-36.14 row)*
 - **AC-6** Given a locked period, then carrying a value is refused with 409. *(source: FR-26/AC-2)*
 - **AC-7** Given a carried value, when the reporter confirms it without editing, then it is stored unchanged with the mark cleared and no longer reads as carried, and the trail records the change. *(source: §12.5.6 task-182 validation row, 182/29)* Met since 191.
@@ -432,7 +433,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-49 — The PDF
 
-**Status.** Partial — delivered 43.1 (the rendering it shares with the preview), 44.1 … 44.7 (the renderer, the job with its record and stored file, the conformance, the hang, the queue of its own, the override marker, the platform-authored-labels statement) · remaining 47.1, 47.3 (the completion notice), 47.4 (the request and its answer)
+**Status.** Partial — delivered 43.1 (the rendering it shares with the preview), 44.1 … 44.7 (the renderer, the job with its record and stored file, the conformance, the hang, the queue of its own, the override marker, the platform-authored-labels statement), 46.4 (a figure stored with no unit at the digits the Excel shows) · remaining 47.1, 47.3 (the completion notice), 47.4 (the request and its answer)
 
 **Obligation.** The system shall generate a formatted, publication-ready PDF from stored data in the selected export language.
 
@@ -450,7 +451,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 3. **The pipeline.** Headless Chromium through Playwright, `tagged: true`, over semantic HTML. The output intent, ICC profile and conformance metadata are injected in place with `qpdf` or `pikepdf`; Ghostscript is not in the path. Conformance is PDF/A-2a and PDF/UA-1, validated with veraPDF in CI and in the export regression suite (NFR-75, NFR-82; task 44.3). A render that hangs is killed and retried on a fresh instance (T-13; task 44.4): an attempt may run 60 s, and an export is attempted three times before it is recorded failed (§12.5.6's task-44 row (4)). Chromium runs in a `renderer` service of its own, and veraPDF in the regression suite rather than on every export (§12.5.6's task-44 row (1)).
 4. **The document** has its own layout system (UX-117): a cover with entity, period, module scope, taxonomy version and generation date; a contents list; one section per module in the standard order; indicator tables with comparatives; and a provenance page naming template version, taxonomy version, factor-set version and the generating user. Print structure is controlled (UX-118), the structure is tagged (UX-120), and nothing depends on colour (UX-121).
 5. Every export embeds the entity, period, template and taxonomy version, factor-set version, language and generation timestamp (NFR-22).
-6. **What the values say.** Each figure rounds once, half-up, to the per-unit precision configuration holds, set by task 44's artboard (task-182 row (3)). A nil return renders as a stated zero (FR-30/AC-4). A section declared omitted is stated (FR-31). A figure that replaced a computed one carries a *company estimate* marker and a footnote with its reason and the superseded value (task 44.6; task-182 row (7)). Gaps are marked (FR-44).
+6. **What the values say.** Each figure rounds once, half-up, to the per-unit precision configuration holds, set by task 44's artboard (task-182 row (3)). **A figure stored with no unit** — a calculated or derived one — is presented in its element's one admitted unit (B3's tonnes CO2e), or else at its element's configured places, set to the digits EFRAG's template shows the same cell at; a share, stored as a fraction, prints as a percentage (task 46; §12.5.6's task-46 row (10)). A nil return renders as a stated zero (FR-30/AC-4). A section declared omitted is stated (FR-31). A figure that replaced a computed one carries a *company estimate* marker and a footnote with its reason and the superseded value (task 44.6; task-182 row (7)). Gaps are marked (FR-44).
 7. **Labels.** Where the export language's VSME labels are platform-authored (Romanian and Russian at `2026-05-01`), the document says so (UX-98; T-14).
 8. User-entered text is escaped for markup and script (NFR-70; `architecture.md` §9.7).
 9. Pinned versions govern which template and labels are used (FR-51).
@@ -458,7 +459,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 **Refusals.** An entitlement refusal (suspension: new exports blocked, previous ones still downloadable) is FR-104's. Unresolved findings without an acknowledgement are FR-44's refusal. View-only → 403 `insufficient-role` (182/22). Unknown report → 404 `not-found`.
 
-**Configuration-held values.** The per-unit display precision (task 44's). Template and label catalogues are per taxonomy version (`architecture.md` §9.4).
+**Configuration-held values.** The per-unit display precision (task 44's), and the places of a figure computed with no unit, by its element (task 46's). Template and label catalogues are per taxonomy version (`architecture.md` §9.4).
 
 **Boundaries.** The preview is FR-48's. Language is FR-52's. History is FR-53's. Version prompts are FR-51's. The Excel export is FR-50's.
 
@@ -473,7 +474,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-8** Given an export in a language whose labels are platform-authored, then the document states it. *(source: UX-98; T-14)* Met by 44.7, on the cover and the provenance page.
 - **AC-9** Given a render that hangs, then it is killed and the job completes on a fresh instance. *(source: T-13; task 44.4)* Met by 44.4, against a real Chromium stopped mid-launch.
 - **AC-10** Given user text beginning with markup, then the PDF shows it as text. *(source: NFR-70; §9.7)* Met by 44.2.
-- **AC-11** Given a PDF, then a figure agrees with the Excel export's. *(source: NFR-18; task 46.4)* Unmet until 46.4.
+- **AC-11** Given a PDF, then a figure agrees with the Excel export's. *(source: NFR-18; task 46.4)* Met by 46.4: the golden corpus holds the PDF to the digits EFRAG's formats show the Excel's exact figures at (§12.5.6's task-46 row (10)).
 
 **History.**
 - 18 Aug 2026 · architecture · the conformance target is PDF/A-2a and PDF/UA-1, not PDF/A-2b · NFR-82 amended, `architecture.md` §17.1, AD-10
@@ -482,10 +483,11 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 5 Oct 2026 · project owner · an editor or the OA exports; a view-only member is refused · §12.5.6 task-182 validation row (182/22)
 - 11 Oct 2026 · project owner · the completion notice arrives with S-11 (47.3); a render attempt runs at most 60 s and an export is attempted three times; Chromium in a renderer service of its own · §12.5.6 task-44 row
 - 11 Oct 2026 · project owner · exports have a queue of their own, measured · §12.5.6 task-44 row (5)
+- 11 Oct 2026 · project owner · a figure stored with no unit is printed at the digits the Excel export shows it at · §12.5.6 task-46 row (10)
 
 ### FR-50 — The EFRAG Excel Digital Template
 
-**Status.** Partial — delivered 45.1 (a patch with no writes is the template byte for byte), 45.2 (values written into the template's own cells, its formulas, formatting and validation untouched), 45.3 (a report's template pin resolves the registered binary) · remaining 46.1 … 46.5
+**Status.** Partial — delivered 45.1 (a patch with no writes is the template byte for byte), 45.2 (values written into the template's own cells, its formulas, formatting and validation untouched), 45.3 (a report's template pin resolves the registered binary), 46.1 … 46.5 (the map and the job on the export queue, the LibreOffice Calc gate, the platform-authored-labels statement, the golden-report corpus, the marks) · remaining 47.1, 47.3 (the completion notice), 47.4 (the request and its answer)
 
 **Obligation.** The system shall write stored values into the named ranges of the official EFRAG Excel Digital Template at the version pinned to the report, preserving the template's own dropdowns and consistency-check formulas.
 
@@ -503,32 +505,37 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 3. A template version is a dimension separate from the taxonomy version a report pins; the registry that resolves a report's pin to a template binary is task 45.3's (DR-4). **A template version is EFRAG's own release identifier** (`1.3.0`), its binary under `config/efrag/<version>/` and registered in the configuration store with its digest; a pin the registry does not pair with its taxonomy resolves no template, and the export refuses rather than choosing another (FR-51; `architecture.md` §12.5.6's task-45 row).
 4. The template's own verdicts (its *Table of Contents & Validation* sheet) are EFRAG's and stay working; they are not `packages/validation`'s (`config/efrag/README.md`).
 5. Opens without a repair prompt in Microsoft 365, current Excel and LibreOffice Calc, with named ranges, dropdowns and formulas intact (NFR-20). LibreOffice Calc headless is the CI gate (task 46.2); Microsoft 365 and desktop Excel are a manual item on the release checklist, because server-side Office automation is unsupported on Linux (T-12).
-6. **The entity identifier written is the LEI where the entity has one, otherwise the IDNO** (`architecture.md` OQ-18, cross-logged 29 Sep 2026).
-7. A section declared omitted is written in the template's own element (FR-31). A nil return is a stated zero (FR-30/AC-4). The override marker is placed where the template permits a note, not in a cell of its own, so its checks still pass (task 46.5; task-182 row (7)).
+6. **The entity identifier written is the LEI where the entity has one, otherwise the IDNO** (`architecture.md` OQ-18, cross-logged 29 Sep 2026). The template's scheme list offers LEI, DUNS, EU ID and PermID, so an IDNO is written with the scheme left blank (§12.5.6's task-46 row (5)).
+7. A section declared omitted is written in the template's own element (FR-31), its checkbox on the template's *Table of Contents & Validation* sheet, which fills B1's list of omitted disclosures. A nil return is a stated zero (FR-30/AC-4). The override marker is placed where the template permits a note, not in a cell of its own, so its checks still pass: a footnote on the template's Footnotes sheet, or a cell note on the figure's cell in `1.2.0`, which has no Footnotes sheet (task 46.5; task-182 row (7); `architecture.md` §12.5.6's task-46 rows (2), (9)).
 8. User text beginning with `=`, `+`, `-` or `@` is neutralised (NFR-70; §9.7). Romanian and Russian wording is platform-authored with no EFRAG standing (the template's own labels stay English, item 10), and the export says so in the file (task 46.3; T-14; UX-98).
-9. Figures round once, half-up, at the surface's per-unit precision (task-182 row (3)); the platform's PDF and Excel figures agree (NFR-18), proven on a golden-report corpus (task 46.4).
+9. Figures round once, half-up, at the surface's per-unit precision (task-182 row (3)); the platform's PDF and Excel figures agree (NFR-18), proven on a golden-report corpus (task 46.4). **A figure the platform calculated or derived is written exact**, and EFRAG's own cell formats display it at the digits the PDF prints it to, so the template's formulas compute from what the platform computed (§12.5.6's task-46 row (10)).
 10. **Language** (182/31). The template carries its labels in English and eleven other languages, neither Romanian nor Russian. The export sets the template's language cell to English, so the file carries the one language with official labels; the platform writes the values, its narrative text in the language the reporter chose, and the platform-authored statement (item 8). Choosing Romanian or Russian chooses the narrative language only. The template's translations sheet is not touched (UX-122).
-11. **Formulas** (182/32). Where the template computes a figure (B8's turnover rate, B9's accident rate), the export writes the inputs only and leaves the formula cells alone, so the template's own consistency checks keep working. The golden-report corpus (task 46.4) proves that the formula's result equals the platform's stored figure for the same inputs.
-12. **Gaps** (182/30). A field declared not available, a section omitted and an unresolved finding are marked through the template's own states where it has an element, and otherwise through a cell note (FR-44 item 6; task 46.5).
+11. **Formulas** (182/32). Where the template computes a figure the platform also derives (B3's location-based total and intensity, B8's turnover rate, B9's accident rate, B10's pay gap and bargaining coverage), the export writes the inputs only and leaves the formula cells alone, so the template's own consistency checks keep working. The golden-report corpus (task 46.4) proves that the formula's result equals the platform's stored figure for the same inputs.
+12. **Gaps** (182/30). A field declared not available, a section omitted and an unresolved finding are marked through the template's own element where it has one, and otherwise through a footnote on its Footnotes sheet — a cell note in `1.2.0` (FR-44 item 6; task 46.5; §12.5.6's task-46 rows (2), (9)).
+15. **Where each value goes is configuration** (`architecture.md` §12.5.6's task-46 row (1)): a `vsme_digital_template_map` per template version, generated from the binary, names each element's cells, each member's spelling in EFRAG's lists and each yes/no's encoding, and is refused at publication unless it resolves in its binary.
+16. **A figure the template computes** keeps its formula; the export writes the inputs it reads where the platform holds them, and states the undertaking's own figure in a footnote wherever one is stored, except a figure the platform derives from the same inputs (§12.5.6's task-46 row (3)).
+17. **A unit the template's cell cannot hold** is converted exactly into one it can — the finest among the figures it governs — with a footnote stating the figure as stored (§12.5.6's task-46 row (6)).
+18. **The file names the platform as its application**, so LibreOffice recalculates the template's formulas on open as Excel does, and carries NFR-22's facts that have no cell as its document properties and, for the factor set, as footnotes on the calculated B3 figures (§12.5.6's task-46 row (4), (7)).
+19. **The template's own yes/no questions** before a group — a certification obtained, sites in or near biodiversity-sensitive areas, convictions and fines incurred, more than one country — are answered *yes* only where the report affirms them, each as its question asks; one the report does not affirm is left as EFRAG ships it (§12.5.6's task-46 row (a)).
 13. **Comparatives** (182/33). The template has no prior-period cells, so no prior-period value is written. The three B1 statements about unchanged disclosures (FR-47 item 6) carry the standard's own wording.
 14. The export is a job, with the same pipeline, concurrency and notification as FR-49.
 
 **Boundaries.** XBRL and iXBRL export are Phase 2 (AD-8). The version prompt is FR-51's.
 
 **Acceptance criteria.**
-- **AC-1** Given a report, then values land in the named ranges of the template version the report pins. *(source: FR text)* Unmet until 46.1.
-- **AC-2** Given the exported file, then the template's dropdowns and consistency-check formulas remain functional. *(source: FR text; NFR-20)* Unmet until 46.2.
+- **AC-1** Given a report, then values land in the named ranges of the template version the report pins. *(source: FR text)* Met by 46.1: `report-workbook.spec.ts` over the shipped map, and `xlsx-export.e2e-spec.ts` and `golden-reports.e2e-spec.ts` read in Calc, `1.3.0` and `1.2.0` alike.
+- **AC-2** Given the exported file, then the template's dropdowns and consistency-check formulas remain functional. *(source: FR text; NFR-20)* Met by 46.2: after Calc's round trip an export's defined names, data validations and formulas equal the template's own, and the golden corpus holds the template's status per section.
 - **AC-3** Given a no-op patch of the template, then the output is identical to the input, or every difference is enumerated and explained. *(source: task 45.1)* Met by 45.1: identical, byte for byte, for every committed binary; a patch with values changes only the parts §12.5.6's task-45 row (b) enumerates.
-- **AC-4** Given the exported file, then it opens in LibreOffice Calc with no repair prompt. *(source: NFR-20; task 46.2)* Unmet until 46.2.
-- **AC-5** Given an entity with an LEI, then the LEI is written. Given none, then the IDNO. *(source: `architecture.md` OQ-18)* Unmet until 46.1.
-- **AC-6** Given an overridden figure, then the file marks and explains it, and the template's checks still pass. *(source: task 46.5)* Unmet until 46.5.
-- **AC-7** Given a nil return, then the file shows a stated zero. *(source: FR-30/AC-4)* Unmet until 46.1.
-- **AC-8** Given an omitted section, then the file states it in the template's own element. *(source: FR-31/AC-4)* Unmet until 46.1.
-- **AC-9** Given user text starting with `=`, then the cell holds text, not a formula. *(source: NFR-70; §9.7)* Unmet until 46.1.
-- **AC-10** Given a Romanian or Russian export, then the file states, as the platform's own statement, that the Romanian or Russian wording in it carries no EFRAG standing. *(source: task 46.3; T-14; §12.5.6 task-182 validation row, 182/31)* Unmet until 46.3.
-- **AC-11** Given an export in any language, then the template's language cell reads English and its translations sheet is unchanged. *(source: §12.5.6 task-182 validation row, 182/31)* Unmet until 46.1.
-- **AC-12** Given a figure the template computes by formula, then its cell still holds the formula and no stored value is written over it; given the golden corpus, then the formula's result equals the stored figure. *(source: §12.5.6 task-182 validation row, 182/32)* Unmet until 46.1, 46.4.
-- **AC-13** Given a report holding prior-period values, then the Excel export writes none of them. *(source: §12.5.6 task-182 validation row, 182/33)* Unmet until 46.1.
+- **AC-4** Given the exported file, then it opens in LibreOffice Calc with no repair prompt. *(source: NFR-20; task 46.2)* Met by 46.2, in LibreOffice Calc 25.2 headless with its own defaults; Microsoft 365 and desktop Excel are the release checklist's.
+- **AC-5** Given an entity with an LEI, then the LEI is written. Given none, then the IDNO. *(source: `architecture.md` OQ-18)* Met by 46.1.
+- **AC-6** Given an overridden figure, then the file marks and explains it, and the template's checks still pass. *(source: task 46.5)* Met by 46.5: a footnote naming the figure replaced, the reason and the person.
+- **AC-7** Given a nil return, then the file shows a stated zero. *(source: FR-30/AC-4)* Met by 46.1.
+- **AC-8** Given an omitted section, then the file states it in the template's own element. *(source: FR-31/AC-4)* Met by 46.1.
+- **AC-9** Given user text starting with `=`, then the cell holds text, not a formula. *(source: NFR-70; §9.7)* Met by 46.1.
+- **AC-10** Given a Romanian or Russian export, then the file states, as the platform's own statement, that the Romanian or Russian wording in it carries no EFRAG standing. *(source: task 46.3; T-14; §12.5.6 task-182 validation row, 182/31)* Met by 46.3: a footnote on B1's basis for preparation, read from the label standing at the report's pinned version.
+- **AC-11** Given an export in any language, then the template's language cell reads English and its translations sheet is unchanged. *(source: §12.5.6 task-182 validation row, 182/31)* Met by 46.1.
+- **AC-12** Given a figure the template computes by formula, then its cell still holds the formula and no stored value is written over it; given the golden corpus, then the formula's result equals the stored figure. *(source: §12.5.6 task-182 validation row, 182/32)* Met by 46.1 and 46.4: the map refuses a target the template computes, and the golden corpus holds six such figures equal to the stored ones in every language's file.
+- **AC-13** Given a report holding prior-period values, then the Excel export writes none of them. *(source: §12.5.6 task-182 validation row, 182/33)* Met by 46.1.
 
 **History.**
 - 18 Aug 2026 · architecture · the Excel verification is split: Calc in CI, Excel by hand · NFR-20 ratified, `architecture.md` §17.1
@@ -538,6 +545,9 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 5 Oct 2026 · project owner · the language cell stays English; formula cells are left alone; no comparatives; gaps marked through the template's states or a cell note · §12.5.6 task-182 validation row (182/30, 182/31, 182/32, 182/33)
 - 5 Oct 2026 · project owner · an editor or the OA exports; a view-only member is refused · §12.5.6 task-182 validation row (182/22)
 - 11 Oct 2026 · project owner · a template version is EFRAG's release identifier; template 1.2.0 registered for the February 2026 taxonomy; 45.2 proven structurally and by one recorded LibreOffice run · §12.5.6 task-45 row
+- 11 Oct 2026 · project owner · the map is configuration per template version; marks are footnotes; a computed figure keeps its formula and the undertaking's own is footnoted; the file names the platform as its application; the IDNO goes with the scheme blank; units the cell cannot hold are converted exactly; NFR-22's facts are document properties and footnotes; the golden corpus lives in `config/golden-reports/`; a template with no Footnotes sheet (`1.2.0`) carries each footnote as a cell note · §12.5.6 task-46 row
+- 11 Oct 2026 · architecture · the template's own yes/no questions are answered as each asks — held, affirmed or more than one · §12.5.6 task-46 row (a)
+- 11 Oct 2026 · project owner · a calculated or derived figure is written exact, EFRAG's formats showing it at the PDF's digits · §12.5.6 task-46 row (10)
 
 ### FR-51 — Never an export against an unplanned version
 
@@ -575,7 +585,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-52 — Export language, independent of the interface
 
-**Status.** Partial — delivered 52.3 · remaining 47.2, 47.3
+**Status.** Partial — delivered 52.3, 46.1 (the Excel export's language cell English, its narrative and notes in the language chosen) · remaining 47.2, 47.3
 
 **Obligation.** The system shall allow the export language to be selected independently of the user's interface language.
 
@@ -598,7 +608,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-2** Given a new export, then its language starts as the account's export default. *(source: §12.5.6 task-52.3 row (6); task 47.2)* Unmet until 47.2.
 - **AC-3** Given a language whose labels carry no official EFRAG standing, then the dialogue states it and recommends English. *(source: UX-47; UX-98)* Unmet until 47.3.
 - **AC-4** Given an export, then its language is on its history record. *(source: UX-49; FR-53)* Unmet until 47.1.
-- **AC-5** Given an Excel export in Romanian or Russian, then the template's language cell reads English and the narrative text is in the chosen language. *(source: §12.5.6 task-182 validation row, 182/31)* Unmet until 46.1.
+- **AC-5** Given an Excel export in Romanian or Russian, then the template's language cell reads English and the narrative text is in the chosen language. *(source: §12.5.6 task-182 validation row, 182/31)* Met by 46.1.
 
 **History.**
 - 31 Aug 2026 · project owner · the caveat is written against which labels are official, and English alone is · design_spec.md UX-47 amended; `architecture.md` §9.4, T-14
@@ -607,7 +617,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-53 — Immutable export history
 
-**Status.** Partial — delivered 44.2 (the export's record and its stored file, the storage half of 47.1 — §12.5.6's task-44 row (2)) · remaining 46.1, 47.1, 47.3
+**Status.** Partial — delivered 44.2 (the export's record and its stored file, the storage half of 47.1 — §12.5.6's task-44 row (2)), 46.1 (the Excel file's record) · remaining 47.1, 47.3
 
 **Obligation.** The system shall maintain an immutable export history recording format, language, taxonomy version, timestamp and generating user, and shall allow any prior export to be re-downloaded in exactly the form it was distributed.
 
@@ -634,7 +644,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-1** Given an export, then it is recorded with format, language, taxonomy version, timestamp and generating user. *(source: FR text; UX-49)* Met by 44.2 (`core.export_artifact`); the history that reads it is 47.1's.
 - **AC-2** Given a history entry, then it cannot be altered. *(source: FR text)* Met by 44.2: a settled record matches no update policy, its owner's included.
 - **AC-3** Given an export, when its data later changes and it is re-downloaded, then the file is the original, byte for byte. *(source: FR text; UC-44; task 47.1)* Unmet until 47.1.
-- **AC-4** Given an export, then its file carries entity, period, template and taxonomy version, factor-set version, language and generation timestamp. *(source: NFR-22)* Met by 44.2 for the PDF; the Excel file's is 46.1's.
+- **AC-4** Given an export, then its file carries entity, period, template and taxonomy version, factor-set version, language and generation timestamp. *(source: NFR-22)* Met by 44.2 for the PDF; by 46.1 for the Excel file — the entity, the period and the template and taxonomy versions in the template's own cells, the factor set a footnote on each calculated figure, the language, the moment and the person in its document properties (§12.5.6's task-46 row (7)).
 - **AC-5** Given a downgrade, lapse or suspension, then previously generated documents remain downloadable and new exports are blocked. *(source: FR-104; UC-142)* Unmet until 47.3.
 - **AC-6** Given the history, then each entry's pinned version is visible. *(source: task 47.3; UX-49)* Unmet until 47.3.
 - **AC-7** Given an export, then the file and its history entry are kept for the life of the organization plus one year. *(source: §12.5.6 task-182 data-subject requests row, 182/126)* Held while nothing removes them; no task yet removes them when that period ends.

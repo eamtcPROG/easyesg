@@ -153,6 +153,17 @@ jobs:
           load: true
           cache-from: type=gha,scope=renderer
           cache-to: type=gha,mode=max,scope=renderer
+      # Task 46.2: LibreOffice Calc, NFR-20's automated gate, which the Excel suites open every export in. Built here
+      # from its own layer cache for the renderer's reason: Compose builds `easyesg-calc:test` only where none exists,
+      # and an uncached build is a LibreOffice install on every run.
+      - name: Build the Calc image
+        uses: docker/build-push-action@v7
+        with:
+          context: infra/compose/calc
+          tags: easyesg-calc:test
+          load: true
+          cache-from: type=gha,scope=calc
+          cache-to: type=gha,mode=max,scope=calc
 
       # `--wait` blocks until every health check passes, so nothing below races a half-built
       # cluster — the false positive the postgres health check's TCP form was written to avoid.
@@ -258,6 +269,17 @@ jobs:
           load: true
           cache-from: type=gha,scope=renderer
           cache-to: type=gha,mode=max,scope=renderer
+      # Task 46.2: LibreOffice Calc, NFR-20's automated gate, which the Excel suites open every export in. Built here
+      # from its own layer cache for the renderer's reason: Compose builds `easyesg-calc:test` only where none exists,
+      # and an uncached build is a LibreOffice install on every run.
+      - name: Build the Calc image
+        uses: docker/build-push-action@v7
+        with:
+          context: infra/compose/calc
+          tags: easyesg-calc:test
+          load: true
+          cache-from: type=gha,scope=calc
+          cache-to: type=gha,mode=max,scope=calc
 
       - run: pnpm dev:up
       - run: pnpm --filter @easyesg/api db:migrate

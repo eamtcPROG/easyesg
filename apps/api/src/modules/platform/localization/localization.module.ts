@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DISCLOSURE_LABELS } from '@api/contracts/disclosure-label.port';
-import { PRESENTATION_PRECISION } from '@api/contracts/presentation-precision.port';
+import { ELEMENT_PRECISION, PRESENTATION_PRECISION } from '@api/contracts/presentation-precision.port';
 import { DisclosureLabelService } from './services/disclosure-label.service';
 import { PresentationPrecisionService } from './services/presentation-precision.service';
 
@@ -26,13 +26,15 @@ import { PresentationPrecisionService } from './services/presentation-precision.
  *
  * **Since task 39.2 it also says how many places a computed figure is shown to** (`PRESENTATION_PRECISION`, over the
  * `presentation_precision` artefact; §12.5.6's task-39 row (5)) — a presentation concern beside the wording, registered in
- * both modes for the same reason: S-09 reads it on the HTTP tier, and the exports will on the worker.
+ * both modes for the same reason: S-09 reads it on the HTTP tier, and the exports will on the worker. **Since task 46 the
+ * same artefact's element places too** (`ELEMENT_PRECISION`, the one service's second face), which only the exports read.
  */
 @Module({
   providers: [
     { provide: DISCLOSURE_LABELS, useClass: DisclosureLabelService },
     { provide: PRESENTATION_PRECISION, useClass: PresentationPrecisionService },
+    { provide: ELEMENT_PRECISION, useExisting: PRESENTATION_PRECISION },
   ],
-  exports: [DISCLOSURE_LABELS, PRESENTATION_PRECISION],
+  exports: [DISCLOSURE_LABELS, PRESENTATION_PRECISION, ELEMENT_PRECISION],
 })
 export class LocalizationModule {}
