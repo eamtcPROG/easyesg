@@ -1,4 +1,5 @@
-# Local development dependencies only — PostgreSQL and Redis.
+# Local development dependencies — PostgreSQL and Redis, and since task 44 the renderer and the object storage the
+# worker's PDF export calls.
 #
 # architecture.md §12.5.10: the Compose stack IS the development environment. No service and
 # no service client is installed on a developer host, which needs Node, pnpm, Docker and git
@@ -103,10 +104,66 @@ services:
     networks:
       - easyesg-net
 
+  # The renderer (architecture.md §5, T-13; task 44.1): headless Chromium and the PDF finisher, the worker's one place to
+  # print a report. Built from `apps/renderer/Dockerfile` — the image a deploy runs, never a development variant — and
+  # held to a hard memory limit with a restart policy, so a render that eats its memory dies alone and comes back.
+  renderer:
+    build:
+      context: ../..
+      dockerfile: apps/renderer/Dockerfile
+    image: easyesg-renderer:dev
+    container_name: easyesg-renderer
+    restart: unless-stopped
+    # An init process is PID 1, not the renderer (§12.5.10's reason for postgres). A render killed at its deadline takes
+    # Chromium's whole process tree with it, and whatever is orphaned is reparented to PID 1 — which Node never reaps.
+    init: true
+    # About 500 MB is what one render of a full report peaks at (measured on Chromium 151, task 44); the renderer runs
+    # one at a time, and Chromium's shared memory gets room of its own rather than Docker's 64 MB default.
+    mem_limit: 512m
+    shm_size: 256m
+    ports:
+      - 3300:3000
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - easyesg-net
+
+  # Object storage for the exports' files (§5, §12.5.1; task 44.2): Versity's S3 gateway over a directory, standing in
+  # for Scaleway, whose S3 API the worker speaks to both. Each top-level directory is a bucket, so `esg-exports` is made
+  # before the gateway starts. Its root keys come from this directory's .env and are the worker's OBJECT_STORAGE_* keys.
+  storage:
+    image: versity/versitygw:v1.8.0
+    container_name: easyesg-storage
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c", "mkdir -p /data/esg-exports && exec /usr/local/bin/versitygw posix /data"]
+    environment:
+      # Scaleway's region (§12.5.1), so a request is signed for the region production signs it for.
+      VGW_REGION: fr-par
+      ROOT_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY:?set STORAGE_ACCESS_KEY in infra/compose/.env}
+      ROOT_SECRET_ACCESS_KEY: ${STORAGE_SECRET_KEY:?set STORAGE_SECRET_KEY in infra/compose/.env}
+    ports:
+      - 7070:7070
+    volumes:
+      - storagedata:/data
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "7070"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - easyesg-net
+
 volumes:
   pgdata:
     driver: local
   redisdata:
+    driver: local
+  storagedata:
     driver: local
 
 networks:

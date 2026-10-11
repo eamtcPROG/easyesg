@@ -87,6 +87,8 @@ function configFrom(config: ConfigService<AppConfig, true>): AppConfig {
     notification: config.get('notification', { infer: true }),
     admin: config.get('admin', { infer: true }),
     email: config.get('email', { infer: true }),
+    renderer: config.get('renderer', { infer: true }),
+    objectStorage: config.get('objectStorage', { infer: true }),
     web: config.get('web', { infer: true }),
   };
 }

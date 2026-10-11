@@ -5,6 +5,11 @@ import type { DocumentWords } from '../document-words';
  * The cover (UX-117): which company, which year, which standard and which version of it, in which language — and how
  * many disclosures are omitted and how many checks are unresolved, on the cover itself, so a reader never finds them
  * first on page nine.
+ *
+ * **Whose words the labels are, beside the language** (UX-98, T-14 as amended; task 44.7): EFRAG's own, or the
+ * platform's translation — Romanian and Russian at `2026-05-01` — stated in the document itself, because a bank or a
+ * buyer reads the file and not the export dialogue. **When the file was produced** is the file's own fact (NFR-22), in
+ * the zone of the report's period, and a preview, which produces no file, prints none.
  */
 export function CoverPage({ document, words }: { readonly document: ReportDocument; readonly words: DocumentWords }) {
   const omitted = document.gaps.length + document.omittedModules.length;
@@ -26,7 +31,18 @@ export function CoverPage({ document, words }: { readonly document: ReportDocume
           )}
         </dd>
         <dt>{words.t('cover.language')}</dt>
-        <dd>{words.t(`languages.${document.locale}`)}</dd>
+        <dd>
+          {words.t(`languages.${document.locale}`)}
+          {document.labelStanding === null ? null : (
+            <span className="attribution">{words.t(`labels.${document.labelStanding}`)}</span>
+          )}
+        </dd>
+        {document.production === null ? null : (
+          <>
+            <dt>{words.t('cover.produced')}</dt>
+            <dd>{words.moment(document.production.generatedAt, document.periodStart.timezone)}</dd>
+          </>
+        )}
       </dl>
       <p className="summary">
         {words.t('cover.omissions', { count: omitted })}{' '}

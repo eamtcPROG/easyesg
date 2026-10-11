@@ -153,6 +153,32 @@ export interface AppConfig {
       from: string | undefined;
     };
   };
+  renderer: {
+    /**
+     * The renderer service's address (§5; task 44.1). The worker's alone: the request tier never renders (AD-10), and
+     * the job sends the document's markup here and takes back the finished PDF.
+     */
+    url: string;
+    /**
+     * How long the worker waits for one render before giving it up — a backstop above the renderer's own deadline
+     * (§12.5.6's task-44 row (4): 60 s, at which the renderer kills its browser and answers). This covers what that
+     * deadline cannot: a renderer that has stopped answering at all, and a render waiting behind another for a slot.
+     */
+    timeoutMs: number;
+  };
+  objectStorage: {
+    /**
+     * The S3-compatible endpoint the export's files are stored at (§5, §12.5.1): Scaleway's in production, the emulator
+     * in the Compose stacks. Undefaulted, with its keys, so a worker without storage refuses to start rather than
+     * producing files it cannot keep. The worker's alone until the re-download (task 47.1) reads them on the HTTP side.
+     */
+    endpoint: string | undefined;
+    region: string;
+    /** `esg-exports` (§12.5.1). */
+    bucket: string;
+    accessKeyId: string | undefined;
+    secretAccessKey: string | undefined;
+  };
   web: {
     /**
      * Origin of `apps/web`, used to build the verification link the email carries (FR-3). The API
@@ -220,6 +246,18 @@ export default (): AppConfig => ({
       password: process.env.EMAIL_PASSWORD,
       from: process.env.EMAIL_FROM,
     },
+  },
+  // `renderer` is the Compose service name, as `postgres` and `redis` are above.
+  renderer: {
+    url: process.env.RENDERER_URL ?? 'http://renderer:3000',
+    timeoutMs: Number.parseInt(process.env.RENDERER_TIMEOUT_MS ?? '180000', 10),
+  },
+  objectStorage: {
+    endpoint: process.env.OBJECT_STORAGE_ENDPOINT,
+    region: process.env.OBJECT_STORAGE_REGION ?? 'fr-par',
+    bucket: process.env.OBJECT_STORAGE_BUCKET ?? 'esg-exports',
+    accessKeyId: process.env.OBJECT_STORAGE_ACCESS_KEY_ID,
+    secretAccessKey: process.env.OBJECT_STORAGE_SECRET_ACCESS_KEY,
   },
   // 3100 is `apps/web`'s dev port (`next dev --port 3100`), so a host run works with no .env entry.
   web: { publicUrl: process.env.PUBLIC_WEB_URL ?? 'http://localhost:3100' },

@@ -3,11 +3,13 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import { DiscoveryModule } from '@nestjs/core';
 import configuration, { APP_MODE, type AppConfig } from '@api/config/configuration';
+import { ExportConsumer } from './export-consumer';
+import { JobPlacement } from './job-placement';
 import { OutboxConsumer } from './outbox-consumer';
-import { OUTBOX_QUEUE } from './queue.constants';
+import { EXPORT_QUEUE, OUTBOX_QUEUE } from './queue.constants';
 
 /**
- * The BullMQ connection and the one queue AD-10 names.
+ * The BullMQ connection and its queues — AD-10's, and since task 44.5 the export queue beside it.
  *
  * Registered in both modes on purpose, even though only the worker consumes: the dispatcher runs on
  * the worker and produces, and the HTTP tier needs the queue registered for nothing at all — which
@@ -15,11 +17,12 @@ import { OUTBOX_QUEUE } from './queue.constants';
  * row and the dispatcher does the rest. If a producer ever appears in `apps/api/src/modules/**`
  * outside the outbox, that is the rule being broken, not a new capability.
  *
- * **`OutboxConsumer` is the queue's only consumer and runs on the worker entrypoint alone**, for
- * the same reason `OutboxModule` keeps the dispatcher there. It is a single `@Processor` by
- * necessity rather than by preference — a BullMQ worker consumes every job on its queue and cannot
- * subscribe to a name, so two of them on AD-10's one queue would compete for each other's work.
- * `job-handler.ts` carries the argument in full; modules claim a job name with `@HandlesJob`.
+ * **Each queue has one consumer, and the consumers run on the worker entrypoint alone**, for the
+ * same reason `OutboxModule` keeps the dispatcher there: `OutboxConsumer` for AD-10's queue,
+ * `ExportConsumer` for the export queue. One `@Processor` per queue by necessity rather than by
+ * preference — a BullMQ worker consumes every job on its queue and cannot subscribe to a name, so two
+ * on one queue would compete for each other's work. `job-handler.ts` carries the argument in full;
+ * modules claim a job name with `@HandlesJob` and its queue with `@OnQueue`.
  */
 const { mode } = configuration();
 
@@ -41,9 +44,11 @@ const { mode } = configuration();
         },
       }),
     }),
-    BullModule.registerQueue({ name: OUTBOX_QUEUE }),
+    BullModule.registerQueue({ name: OUTBOX_QUEUE }, { name: EXPORT_QUEUE }),
   ],
-  providers: mode === APP_MODE.WORKER ? [OutboxConsumer] : [],
-  exports: [BullModule],
+  // A consumer per queue since task 44.5, and `JobPlacement` beside them: the dispatcher reads from it which queue each
+  // job goes to and how often it is tried.
+  providers: mode === APP_MODE.WORKER ? [OutboxConsumer, ExportConsumer, JobPlacement] : [],
+  exports: mode === APP_MODE.WORKER ? [BullModule, JobPlacement] : [BullModule],
 })
 export class QueueModule {}

@@ -360,7 +360,7 @@ describe('the factor set at publication and its replacement notice (tasks 37.3, 
         { publish: () => Promise.resolve() },
       ),
     );
-    await handler.handle(asJob(row), { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1 });
+    await handler.handle(asJob(row), { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1, attempts: 1 });
   };
 
   const centre = async (who: SignedInAccount): Promise<Record<string, unknown>[]> =>

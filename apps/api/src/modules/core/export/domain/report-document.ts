@@ -1,4 +1,4 @@
-import type { Locale } from '@easyesg/i18n';
+import type { LabelStanding, Locale } from '@easyesg/i18n';
 import type { Finding } from '@easyesg/validation';
 import { DISCLOSURE_KIND, MEMBER_SEPARATOR } from '@easyesg/vsme';
 import {
@@ -8,6 +8,7 @@ import {
   type DocumentGap,
   type DocumentModule,
   type DocumentNarrative,
+  type DocumentProduction,
   type DocumentRow,
   type DocumentValue,
   type ReportDocument,
@@ -65,6 +66,10 @@ export interface DocumentSources {
   readonly findings: readonly Finding[] | null;
   /** The places each unit's figures are rounded to (FR-29); a unit absent here keeps every digit. */
   readonly places: Readonly<Record<string, number>>;
+  /** Whose words the labels are in the document's language at the pinned version (UX-98) — printed as it stands. */
+  readonly labelStanding: LabelStanding | null;
+  /** The file's own facts, which only an export has (task 44) — passed through as they stand. */
+  readonly production: DocumentProduction | null;
 }
 
 type ModuleStanding = Pick<DisclosureModuleSummary, 'module' | 'applicable' | 'omitted' | 'applicabilityCause'>;
@@ -205,6 +210,8 @@ export function assembleReportDocument(sources: DocumentSources): ReportDocument
             message: finding.message,
             params: finding.params,
           })),
+    labelStanding: sources.labelStanding,
+    production: sources.production,
   };
 }
 

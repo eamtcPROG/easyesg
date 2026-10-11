@@ -364,7 +364,8 @@
           "language": "Limba",
           "omissions": "{count, plural, =0 {Nicio informație nu este omisă.} one {O informație este omisă, cu motivul declarat.} few {# informații sunt omise, fiecare cu motivul declarat.} other {# de informații sunt omise, fiecare cu motivul declarat.}}",
           "unresolved": "{count, plural, =0 {Nicio verificare nu a rămas nesoluționată.} one {O verificare este nesoluționată; ea este enumerată după cuprins și marcată acolo unde apare.} few {# verificări sunt nesoluționate; fiecare este enumerată după cuprins și marcată acolo unde apare.} other {# de verificări sunt nesoluționate; fiecare este enumerată după cuprins și marcată acolo unde apare.}}",
-          "notChecked": "Raportul nu a fost încă verificat."
+          "notChecked": "Raportul nu a fost încă verificat.",
+          "produced": "Generat"
         },
         "scope": {
           "basic": "Modulul de bază, informațiile B1 – B11",
@@ -456,7 +457,9 @@
           "taxonomyVersion": "Taxonomia VSME {version}",
           "factorSet": "Setul de factori de emisie",
           "noFactorSet": "Nu a fost efectuat niciun calcul",
-          "language": "Limba"
+          "language": "Limba",
+          "generatedBy": "Generat de",
+          "generated": "{person} · {moment}"
         },
         "modules": {
           "B1": "Baza de întocmire",
@@ -479,6 +482,19 @@
           "C7": "Incidente grave privind drepturile omului",
           "C8": "Venituri din anumite sectoare și excluderea din indicii de referință ai UE",
           "C9": "Raportul de diversitate de gen în organul de conducere"
+        },
+        "labels": {
+          "official": "Denumirile informațiilor sunt textul oficial EFRAG în această limbă, reprodus întocmai.",
+          "platform_authored": "Denumirile informațiilor în această limbă sunt traducerea proprie a platformei: EFRAG nu publică un text oficial în această limbă, iar versiunea sa în limba engleză este cea care face autoritate."
+        },
+        "furniture": {
+          "standard": "VSME {version} · {scope} · {language}",
+          "scope": {
+            "basic": "Modulul de bază",
+            "basic_and_comprehensive": "Modulul de bază și Modulul cuprinzător"
+          },
+          "page": "Pagina {page} din {pages}",
+          "omissions": "Omisiuni și constatări"
         }
       }
     }

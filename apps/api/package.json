@@ -38,6 +38,7 @@
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "catalog:",
     "@easyesg/i18n": "workspace:*",
     "@easyesg/validation": "workspace:*",
     "@easyesg/vsme": "workspace:*",
@@ -93,6 +94,7 @@
     "@types/supertest": "catalog:",
     "@types/ws": "catalog:",
     "jest": "catalog:",
+    "pdfjs-dist": "catalog:",
     "source-map-support": "catalog:",
     "supertest": "catalog:",
     "ts-jest": "catalog:",

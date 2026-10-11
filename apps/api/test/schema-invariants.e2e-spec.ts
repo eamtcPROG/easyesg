@@ -317,6 +317,12 @@ const FIELD_AUDITED_TABLES = [
  */
 const UNAUDITED_TABLES = [
   'core.field_change',
+  /**
+   * `core.export_artifact` (task 44.2) records that an export was asked for and what it produced, and is settled once —
+   * no update policy admits a settled row and no runtime role deletes one — so a per-field trail of it would record the
+   * writing of a record, `core.calc_run`'s argument.
+   */
+  'core.export_artifact',
   'audit.system_audit_log',
   'audit.outbox_event',
   /**
@@ -738,6 +744,11 @@ const LOCK_GUARDED_ROOTS = ['core.report', 'core.reporting_period'];
  * locked report writes them like any other (FR-43 AC-7).
  */
 const LOCK_GUARD_EXEMPT_TABLES = [
+  /**
+   * `core.export_artifact` (task 44.2) is an export's record, not filed content: a locked report is the one exported,
+   * so its export must be recordable — and the record is settled once and never written again, by its own policy.
+   */
+  'core.export_artifact',
   'core.period_reopening',
   'core.validation_finding',
   'core.validation_module',

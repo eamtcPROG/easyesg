@@ -1,5 +1,5 @@
-# The test stack — PostgreSQL and Redis for the suites, and nothing a developer works in (task 174; project owner,
-# 28 Sep 2026; architecture.md §12.5.10).
+# The test stack — PostgreSQL and Redis for the suites, and since task 44 the renderer and object storage — and nothing
+# a developer works in (task 174; project owner, 28 Sep 2026; architecture.md §12.5.10).
 #
 # **Why it exists.** Every stack-bound gate used to connect to the dev stack's `esg` and Redis, so the suites and the
 # developer shared one store: task 172's suites overwrote an operator's own provider configuration, task 173's run
@@ -48,6 +48,37 @@ services:
       - ${REDIS_PORT:?set REDIS_PORT in apps/api/.env.test}:6379
     # No volume: the RDB snapshot the dev flags ask for lands in the container's own layer and goes with it.
     volumes: !reset []
+
+  # The same renderer image the dev stack builds, on a port of its own (task 44).
+  renderer:
+    extends:
+      file: docker-compose.yml
+      service: renderer
+    container_name: easyesg-test-renderer
+    ports: !override
+      - ${RENDERER_PORT:?set RENDERER_PORT in apps/api/.env.test}:3000
+
+  # Its files in memory, as the database's are, so `pnpm test:down` discards them with everything else.
+  storage:
+    extends:
+      file: docker-compose.yml
+      service: storage
+    container_name: easyesg-test-storage
+    ports: !override
+      - ${STORAGE_PORT:?set STORAGE_PORT in apps/api/.env.test}:7070
+    volumes: !reset []
+    tmpfs:
+      - /data
+
+  # veraPDF, the validator NFR-82 names, run by the export regression suite against every PDF it produces and never on
+  # an export itself (§12.5.6's task-44 row (1)). A profile of its own, so `pnpm test:up` does not start it: the suite
+  # runs it once per file, with `docker compose run --rm verapdf`, and the same pinned image answers locally and in CI.
+  verapdf:
+    image: verapdf/cli:v1.30.2
+    profiles: [validator]
+    mem_limit: 512m
+    networks:
+      - easyesg-net
 
 # Project-scoped, so this is `easyesg-test_easyesg-net` and never the dev stack's network.
 networks:

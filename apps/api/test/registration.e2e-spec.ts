@@ -204,6 +204,7 @@ describe('registration and verification (UC-01, UC-03, FR-1, FR-3)', () => {
         jobId: queued.idempotency_key,
         jobName: EMAIL_VERIFICATION_REQUESTED,
         attempt: 1,
+        attempts: 1,
       });
 
       expect(emailPort.sent).toHaveLength(1);

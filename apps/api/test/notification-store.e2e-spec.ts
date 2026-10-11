@@ -231,7 +231,7 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
     );
     const [row] = rows;
     const job = asJob(row);
-    const context = { jobId: outboxKey, jobName: row.event_type, attempt: 1 };
+    const context = { jobId: outboxKey, jobName: row.event_type, attempt: 1, attempts: 1 };
     await (row.event_type === NOTIFICATION_CANCELLED ? cancelledHandler : handler).handle(job, context);
   };
 

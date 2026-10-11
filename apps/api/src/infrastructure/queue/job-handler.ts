@@ -12,9 +12,10 @@ import type { EpochMicros } from '@api/contracts/types/time';
  * **That needs a router, and finding out why costs a production incident otherwise.** A BullMQ
  * `Worker` consumes every job on its queue; it cannot subscribe to a name. So two classes each
  * carrying `@Processor(OUTBOX_QUEUE)` do not divide the work between them — they become two
- * competing workers, each receiving jobs meant for the other, and each failing on them. The single
- * `@Processor` in `outbox-consumer.ts` is the only one there may ever be, and this decorator is how
- * a module claims a job name inside it.
+ * competing workers, each receiving jobs meant for the other, and each failing on them. So each queue
+ * has exactly one `@Processor` — `outbox-consumer.ts` for AD-10's queue and, since task 44.5,
+ * `export-consumer.ts` for the export queue — and this decorator is how a module claims a job name
+ * inside one; `@OnQueue` says which.
  *
  * Task 19 is the first consumer of any kind, which is why the mechanism lands here rather than in
  * task 44 — where the same wall would have been hit with a Chromium pipeline attached to it.
@@ -44,6 +45,11 @@ export interface JobContext {
   readonly jobName: string;
   /** 1 on the first run. For a handler that must behave differently on a retry; most must not. */
   readonly attempt: number;
+  /**
+   * How many attempts the job is given (`@RetriesWith`, or the delivery retry) — so a handler that records a final
+   * failure knows the attempt it is on is the last (task 44), without restating its own retry.
+   */
+  readonly attempts: number;
 }
 
 /**

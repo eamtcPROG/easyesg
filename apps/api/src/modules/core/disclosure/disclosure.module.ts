@@ -283,9 +283,19 @@ const httpProviders: Provider[] = [
   // `ReportService` and `WizardService` since task 67.9: a read under a support-access grant runs exactly the
   // reads a member's S-06 and S-07 run, inside the grant's binding, so it borrows them rather than restating.
   // `CALCULATED_FIGURES` since task 38.4, for the carbon calculator's run.
+  // `REPORT_STORE` in both since task 44.2: the report's document is composed from it, by the preview and by the
+  // export's job on the worker alike.
   exports:
     mode === APP_MODE.WORKER
-      ? [ReadWizardStep]
-      : [DISCLOSURE_VALUE_STORE, DisclosureFacade, ReportService, WizardService, CALCULATED_FIGURES, ReadWizardStep],
+      ? [ReadWizardStep, REPORT_STORE]
+      : [
+          DISCLOSURE_VALUE_STORE,
+          DisclosureFacade,
+          ReportService,
+          WizardService,
+          CALCULATED_FIGURES,
+          ReadWizardStep,
+          REPORT_STORE,
+        ],
 })
 export class DisclosureModule {}

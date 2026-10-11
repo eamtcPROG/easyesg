@@ -61,17 +61,31 @@ import { WriteCalcSource } from './use-cases/write-calc-source.use-case';
  *
  * **`FACTOR_SETS` is registered in both modes**, like the store it reads: the worker renders exports, every export
  * names the factor-set version its figures used (NFR-22), and a catalog only the HTTP tier held would leave the worker
- * unable to read a pin. **The lines and runs are the HTTP tier's alone.** **The worker's one job is FR-166's factor
+ * unable to read a pin. **The lines and runs are written by the HTTP tier alone**; the latest run is read in both, since the export's job prints it (task 44.2). **The worker's one job is FR-166's factor
  * half** (task 37.3): a factor set replaced in its window, announced by the publisher on the outbox, tells each
  * organization with an open report calculated on it — through `TENANT_WORK`, one organization's transaction at a time.
  */
 const { mode } = configuration();
 
+/**
+ * The latest run's read, in both modes since task 44.2: the preview prints what an override superseded (UX-43, task
+ * 43.1), and the export's job on the worker prints the same document (FR-49) — so the read, and the two stores it
+ * reads, are registered wherever a document is composed.
+ */
+const readProviders: Provider[] = [
+  { provide: CALC_REPORTS, useClass: CalcReportsRepository },
+  { provide: CALC_RUN_STORE, useClass: CalcRunStoreRepository },
+  {
+    provide: ReadCalcFigures,
+    inject: [CALC_REPORTS, CALC_RUN_STORE, FACTOR_SETS],
+    useFactory: (reports: CalcReports, runs: CalcRunStore, factorSets: FactorSets) =>
+      new ReadCalcFigures(reports, runs, factorSets),
+  },
+];
+
 const httpProviders: Provider[] = [
   CalculatorService,
-  { provide: CALC_REPORTS, useClass: CalcReportsRepository },
   { provide: CALC_SOURCE_STORE, useClass: CalcSourceStoreRepository },
-  { provide: CALC_RUN_STORE, useClass: CalcRunStoreRepository },
   // S-09's site names are the wizard's (task 39.1), read through `WizardService`, which `DisclosureModule` exports.
   { provide: CALC_SITE_NAMES, useClass: WizardSiteNames },
   {
@@ -116,12 +130,6 @@ const httpProviders: Provider[] = [
     inject: [CALC_REPORTS, CALC_RUN_STORE, FACTOR_SETS, CALCULATED_FIGURES],
     useFactory: (reports: CalcReports, runs: CalcRunStore, factorSets: FactorSets, figures: CalculatedFigures) =>
       new RecordCalcRun(reports, runs, factorSets, figures),
-  },
-  {
-    provide: ReadCalcFigures,
-    inject: [CALC_REPORTS, CALC_RUN_STORE, FACTOR_SETS],
-    useFactory: (reports: CalcReports, runs: CalcRunStore, factorSets: FactorSets) =>
-      new ReadCalcFigures(reports, runs, factorSets),
   },
   {
     provide: ReadCalcRun,
@@ -178,9 +186,10 @@ const workerProviders: Provider[] = [
   controllers: mode === APP_MODE.WORKER ? [] : [CalculatorController],
   providers: [
     { provide: FACTOR_SETS, useClass: FactorSetCatalog },
+    ...readProviders,
     ...(mode === APP_MODE.WORKER ? workerProviders : httpProviders),
   ],
-  // Since task 43.1 the latest run's read too, on the HTTP side: the preview prints what an override superseded (UX-43).
-  exports: mode === APP_MODE.WORKER ? [FACTOR_SETS] : [FACTOR_SETS, ReadCalcFigures],
+  // The latest run's read since task 43.1 for the preview, and on the worker since task 44.2 for the export's job.
+  exports: [FACTOR_SETS, ReadCalcFigures],
 })
 export class CalculatorModule {}

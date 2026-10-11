@@ -154,7 +154,7 @@ describe('the outstanding-report and deadline notices (task 51.2)', () => {
         { publish: () => Promise.resolve() },
       ),
     );
-    await handler.handle(asJob(row), { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1 });
+    await handler.handle(asJob(row), { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1, attempts: 1 });
   };
 
   const openPeriod = async (input: {

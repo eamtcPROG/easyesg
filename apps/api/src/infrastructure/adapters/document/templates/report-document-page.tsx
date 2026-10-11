@@ -4,6 +4,7 @@ import { ContentsPage } from './contents-page';
 import { CoverPage } from './cover-page';
 import { ModulePage } from './module-page';
 import { OmissionsPage } from './omissions-page';
+import { pageFurniture } from './page-furniture';
 import { ProvenancePage } from './provenance-page';
 
 /**
@@ -24,6 +25,8 @@ export function ReportDocumentPage(props: {
         <title>{words.t('title', { undertaking: document.undertaking, year: String(document.fiscalYear) })}</title>
         {/* The document's own stylesheet and fonts — trusted, and the only markup not escaped. */}
         <style dangerouslySetInnerHTML={{ __html: props.styles }} />
+        {/* The PDF's page furniture, whose words reach the stylesheet only through `cssString` (NFR-70). */}
+        <style dangerouslySetInnerHTML={{ __html: pageFurniture({ document, words }) }} />
       </head>
       <body>
         <main>

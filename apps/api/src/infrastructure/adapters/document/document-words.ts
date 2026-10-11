@@ -24,6 +24,11 @@ export interface DocumentWords {
   date(date: string): string;
   /** Two calendar dates as one range — *1 January – 31 December 2026*. */
   range(start: string, end: string): string;
+  /**
+   * An instant — the moment a file was produced (NFR-22) — on the wall clock of `timezone`, the zone named beside it,
+   * because a reader holding the file may sit in another.
+   */
+  moment(instant: Date, timezone: string): string;
   /** The options a reporter chose, as the locale lists them. */
   list(items: readonly string[]): string;
 }
@@ -62,6 +67,16 @@ export function documentWords(locale: Locale): DocumentWords {
       numberFormat(places).format((places === null ? value : roundHalfUp(value, places)) as Intl.StringNumericLiteral),
     date: (date) => dates.format(asDay(date)),
     range: (start, end) => dates.formatRange(asDay(start), asDay(end)),
+    moment: (instant, timezone) =>
+      new Intl.DateTimeFormat(locale, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: timezone,
+        timeZoneName: 'short',
+      }).format(instant),
     list: (items) => lists.format(items),
   };
 }

@@ -140,6 +140,20 @@ jobs:
           cp infra/compose/.env.example infra/compose/.env
           cp apps/api/.env.example apps/api/.env
 
+      # Task 44: the renderer image, built here with the images job's layer cache so the stacks below start it rather
+      # than build it — Compose builds `easyesg-renderer:dev` only where no such image exists, and an uncached build
+      # (Chromium and its libraries) would spend minutes of this job's budget on every run.
+      - uses: docker/setup-buildx-action@v4
+      - name: Build the renderer image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/renderer/Dockerfile
+          tags: easyesg-renderer:dev
+          load: true
+          cache-from: type=gha,scope=renderer
+          cache-to: type=gha,mode=max,scope=renderer
+
       # `--wait` blocks until every health check passes, so nothing below races a half-built
       # cluster — the false positive the postgres health check's TCP form was written to avoid.
       - run: pnpm dev:up
@@ -231,6 +245,20 @@ jobs:
           cp apps/api/.env.example apps/api/.env
           # The committed example enables billing; this job is the one that must not.
           sed -i 's/^BILLING_ENABLED=.*/BILLING_ENABLED=false/' apps/api/.env
+      # Task 44: the renderer image, built here with the images job's layer cache so the stacks below start it rather
+      # than build it — Compose builds `easyesg-renderer:dev` only where no such image exists, and an uncached build
+      # (Chromium and its libraries) would spend minutes of this job's budget on every run.
+      - uses: docker/setup-buildx-action@v4
+      - name: Build the renderer image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/renderer/Dockerfile
+          tags: easyesg-renderer:dev
+          load: true
+          cache-from: type=gha,scope=renderer
+          cache-to: type=gha,mode=max,scope=renderer
+
       - run: pnpm dev:up
       - run: pnpm --filter @easyesg/api db:migrate
       - run: pnpm test
@@ -258,14 +286,14 @@ jobs:
       # No pnpm setup: each image installs from the lockfile inside its own build, which is the
       # point — an image that depended on the runner's node_modules would not be reproducible.
       #
-      # Buildx, for the GitHub Actions layer cache. All three images build on every run — the
+      # Buildx, for the GitHub Actions layer cache. All four images build on every run — the
       # workspace dependency graph (lockfile → everything, packages/ui → web and admin,
       # packages/i18n → all three) is not something to restate as per-image path filters, which
       # would drift from the real graph silently. The cache is the non-drifting form of the same
       # optimisation: an image none of whose COPY inputs changed replays every layer in seconds,
-      # so a push touching only apps/admin pays for one real build, not three. `mode=max` caches
+      # so a push touching only apps/admin pays for one real build, not four. `mode=max` caches
       # the builder stages, where the expensive layers (the pnpm installs) live; separate scopes
-      # so the three images do not evict each other; the cache written on dev is the one the next
+      # so the four images do not evict each other; the cache written on dev is the one the next
       # push to dev restores. Majors verified as `runs.using: node24` on 20 Aug 2026, per action.
       - uses: docker/setup-buildx-action@v4
 
@@ -301,6 +329,18 @@ jobs:
           cache-from: type=gha,scope=admin
           cache-to: type=gha,mode=max,scope=admin
 
+      # Task 44.1: the renderer, whose build already refuses an image whose Chromium does not launch or is not the
+      # pinned build (§12.5.9). Its cache scope is the one the two stack jobs read.
+      - name: renderer image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/renderer/Dockerfile
+          tags: easyesg-renderer:ci
+          load: true
+          cache-from: type=gha,scope=renderer
+          cache-to: type=gha,mode=max,scope=renderer
+
       # Building is not running, and the difference is not academic: the api image built cleanly
       # while dying at start on a workspace package whose dist had never been built. Every image is
       # therefore started and asked for something.
@@ -310,7 +350,9 @@ jobs:
       - name: Start the stack the api image talks to
         run: |
           cp infra/compose/.env.example infra/compose/.env
-          docker compose -f infra/compose/docker-compose.yml up -d --wait
+          # The stores alone: the renderer runs from the image built above, in its own step below, rather than from
+          # the one Compose would build for a developer.
+          docker compose -f infra/compose/docker-compose.yml up -d --wait postgres redis storage
 
       # The api reads the configuration store at boot (AD-4's version poll), so it cannot start
       # against an unmigrated database — it exits on `42P01 undefined_table` rather than serving
@@ -352,6 +394,9 @@ jobs:
             -e DB_NAME=esg -e REDIS_HOST=redis -e EMAIL_PROVIDER=log \
             -e SECRET_ENCRYPTION_KEY=devonly-secret-encryption-key \
             -e UNSUBSCRIBE_SIGNING_KEY=devonly-unsubscribe-signing-key-for-local-runs \
+            -e OBJECT_STORAGE_ENDPOINT=http://storage:7070 \
+            -e OBJECT_STORAGE_ACCESS_KEY_ID=devonly-storage-access \
+            -e OBJECT_STORAGE_SECRET_ACCESS_KEY=devonly-storage-secret \
             -e PUBLIC_WEB_URL=http://localhost:3100 easyesg-api:ci
           timeout 60 bash -c 'until curl -fsS http://localhost:3000/health; do sleep 2; done'
           # "Serves" can be polled; "has not crashed" can only be waited on — a crash-looping
@@ -359,6 +404,18 @@ jobs:
           # after the api (which shares its boot path) is already up.
           sleep 5
           test "$(docker inspect -f '{{.State.Status}}' worker)" = running
+
+      # The renderer is started as a deploy runs it — capped, with its own shared memory and an init process — and asked
+      # to print: a document in, a PDF out, through Chromium and the finisher both. A health answer alone would prove
+      # Node starts, not that the browser it exists for does.
+      - name: renderer prints a document
+        run: |
+          docker run -d --name renderer --init --memory 512m --shm-size 256m -p 3300:3000 easyesg-renderer:ci
+          timeout 60 bash -c 'until curl -fsS http://localhost:3300/health; do sleep 2; done'
+          curl -fsS -o smoke.pdf -H 'content-type: application/json' --data \
+            '{"markup":"<!doctype html><html lang=\"en\"><head><title>Smoke</title></head><body><main><h1>Smoke</h1><p>A page.</p></main></body></html>","generatedAt":1791700000000}' \
+            http://localhost:3300/render
+          test "$(head -c 5 smoke.pdf)" = '%PDF-'
 
       # Next.js standalone output against pnpm's symlink layout, which CLAUDE.md asks to be proven
       # on the first Docker build. `/health` sits outside the [locale] segment and needs no session
@@ -380,6 +437,6 @@ jobs:
       - name: Container logs
         if: failure()
         run: |
-          for c in api worker web admin; do
+          for c in api worker renderer web admin; do
             echo "── $c"; docker logs "$c" 2>&1 | tail -40 || true
           done

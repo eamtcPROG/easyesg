@@ -190,7 +190,7 @@ describe('a notification raised and dispatched by category (task 49.3)', () => {
     // What the dispatcher enqueues: the row's payload, with the row's organization and time beside it.
     await handler.handle(
       asJob(row),
-      { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1 },
+      { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1, attempts: 1 },
     );
 
     expect(

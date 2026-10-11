@@ -14,12 +14,14 @@ Peak season is April–May (statutory filing window).
 
 ## Current state
 
-**Three applications and five packages; identity, organization and the reporting core are live end to
+**Four applications and five packages; identity, organization and the reporting core are live end to
 end, and notification dispatch since task 49, each notice recorded with a delivery per recipient and channel since
 50.1.1 and each recipient's centre on screen since 50.2.1, with its unread count in the band, and its first
 producer since 50.3 — an administrator's reminder about an open report — and since 51.2 the two that watch a condition, the
-outstanding-report and deadline notices, raised by the worker's first scheduled job; billing, export beyond its preview (task 43) and the public tier are
-structure without behaviour.** `apps/api`, `apps/web`, `apps/admin` and `packages/ui` each keep their shipped state
+outstanding-report and deadline notices, raised by the worker's first scheduled job; and since task 44 a PDF export's job on the
+worker, printed by the renderer (`apps/renderer`) as a tagged PDF/A-2a and PDF/UA-1 file, stored and recorded; billing, the
+export's request and history (task 47) and the public tier are structure without behaviour.** `apps/api`, `apps/web`,
+`apps/admin`, `apps/renderer` and `packages/ui` each keep their shipped state
 in their own `CLAUDE.md`'s "Current state", which loads when you work there; the rows below are the packages with no
 `CLAUDE.md` of their own. `docs/task.md` is what is left, in Stage order, `docs/archived_tasks.md` is what has closed,
 and `docs/build-log.md` is why each landed as it did.
@@ -31,9 +33,9 @@ and `docs/build-log.md` is why each landed as it did.
 | `packages/validation` | The password policy (OQ-51), the entity-identifier rules and, since task 185, FR-9's name-part rule, shared by `api` and `web` — architecture.md §9.8 records the placement. And since task 40 the rule interpreter: the rule definition — a closed vocabulary of kinds, each rule naming its verdict and message key (§12.5.6's task-40 row) — the reader that admits a rule set, and `evaluateRules`, with one corpus (`corpus/`) that `apps/api` runs against the package's CommonJS build and `apps/web` against its source. Rule sets from the store are task 41.1's. Since task 42 a finding's message is three parts by construction (`finding-message.ts`): what happened, so what, what now, each a leaf beneath the key a rule names, which the api's publication and the browser's wording both read |
 | `packages/vsme` | The taxonomy model and the generated typed facade (AD-3, task 34.2): the typing the element-keyed disclosure store gave up, generated per registered taxonomy version from `config/seed`'s artefact and kept in step by `pnpm facade:check` — the taxonomy itself stays configuration (AD-4) and its wording stays committed catalogues (OQ-43) |
 
-`infra/{compose,postgres}` holds the dev stack — Postgres and Redis, started with `pnpm dev:up` — and, since task 174,
-the **test stack** beside it (`docker-compose.test.yml`, ports 5433 and 6380), which the suites run against and prepare
-themselves.
+`infra/{compose,postgres}` holds the dev stack — Postgres and Redis, and since task 44 the renderer and an S3-compatible
+store, started with `pnpm dev:up` — and, since task 174, the **test stack** beside it (`docker-compose.test.yml`, ports
+5433 and 6380), which the suites run against and prepare themselves.
 `config/seed/` holds the configuration store's starting state, applied idempotently by
 `pnpm --filter @easyesg/api config:seed` — 30 artefacts since task 51.2, six of them the
 taxonomy registry's (three per registered version — the taxonomy and its two classifications) and
@@ -44,10 +46,10 @@ whose factor set or rule set is not kept there.
 `.github/workflows/gates.yml` runs four jobs on every
 push to `dev`/`main` (docs-only pushes skipped) and every PR — three gate jobs in parallel
 (`hermetic`, `database`, `BILLING_ENABLED=false`), then images behind all three, buildx-cached so
-only the image whose inputs changed pays a real build. `apps/{api,web,admin}`
+only the image whose inputs changed pays a real build. `apps/{api,web,admin,renderer}`
 each carry a Dockerfile, built with the repository root as context. Not started:
-`packages/xlsx-patch`, `infra/{caddy,ansible,tofu}`, `docs/runbooks/`, and the `renderer` image
-(task 44) — `packages/vsme` and `config/efrag/` have shipped since, with task 34.2's typed facade.
+`packages/xlsx-patch`, `infra/{caddy,ansible,tofu}` and `docs/runbooks/` — `packages/vsme` and `config/efrag/` have
+shipped since, with task 34.2's typed facade, and the `renderer` image with task 44.
 
 Working commands: `pnpm gates:scoped` (the dependency-graph run — see "Closing a task"
 for which run applies when),
@@ -167,6 +169,7 @@ proves it now:
 | `api` (HTTP) | `pnpm e2e` — `test/entrypoint-boot.e2e-spec.ts` in HTTP mode, plus every other suite |
 | `api` (`MODE=worker`) | `pnpm e2e:worker` — the same spec, launched in worker mode |
 | `web`, `admin` | `pnpm e2e:web` — builds the standalone bundle and drives it in a real browser |
+| `renderer` | Its image's last build step (`assert-chromium.js`: Chromium launches, as the image's user, at the pinned build); `pnpm e2e`'s export suite, which renders through the test stack's container; and CI's images job, which starts the image and has it print a document |
 
 **The mode is read at module-definition time, so one process cannot exercise two branches** — which is why the pair
 of runs is the proof and neither alone is. **A new entrypoint owes this spec a case**, and its own run, or it ships with
@@ -264,8 +267,8 @@ what is wrong.
 
 | File | Owns | Use it |
 | --- | --- | --- |
-| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, emptied on 1 Oct 2026, took two rows back on 5 Oct when task 182's restatement found registration accepting a blank name part (185) and two second-factor prompts unbuilt (190), and **closed on 6 Oct 2026** with both; its test — accounts, authentication, authorisation, admin user management and security *fully functional* — is met, and the five identity rows that wait on infrastructure or billing are named there with the Stage each sits in. Stage 2, Calculator and validation, **closed on 9 Oct 2026** with task 189. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026), which is what let Stage 1 empty while `51`, `67` and `133` kept later tails; **215 tasks across the two plan files**, of which 58 tasks are here and 157 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
-| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 157 numbers, 270 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
+| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, emptied on 1 Oct 2026, took two rows back on 5 Oct when task 182's restatement found registration accepting a blank name part (185) and two second-factor prompts unbuilt (190), and **closed on 6 Oct 2026** with both; its test — accounts, authentication, authorisation, admin user management and security *fully functional* — is met, and the five identity rows that wait on infrastructure or billing are named there with the Stage each sits in. Stage 2, Calculator and validation, **closed on 9 Oct 2026** with task 189. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026), which is what let Stage 1 empty while `51`, `67` and `133` kept later tails; **215 tasks across the two plan files**, of which 57 tasks are here and 158 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
+| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 158 numbers, 271 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
 | [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
 
 **Closing a task is a three-part edit: set the Status, move the row into `archived_tasks.md`, write the
@@ -414,7 +417,7 @@ with RLS · Redis + BullMQ · TypeORM 1.1 (`synchronize` off, SQL migrations) ·
 EU/EEA VMs · Caddy edge · Playwright/Chromium for PDF.
 
 ```bash
-apps/{api,web,admin}   packages/{contracts,vsme,validation,ui,xlsx-patch,i18n}
+apps/{api,web,admin,renderer}   packages/{contracts,vsme,validation,ui,xlsx-patch,i18n}
 config/{seed,efrag,version-pinned}    design/{IMPLEMENTATION_PLAN.md,HANDOFF.md,screens}
 infra/{compose,caddy,postgres,ci,ansible}    docs/runbooks
 ```

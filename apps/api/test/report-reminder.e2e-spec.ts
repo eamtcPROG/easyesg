@@ -132,7 +132,7 @@ describe('the manual reminder (UC-175, task 50.3)', () => {
         { publish: () => Promise.resolve() },
       ),
     );
-    await handler.handle(asJob(row), { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1 });
+    await handler.handle(asJob(row), { jobId: row.idempotency_key, jobName: NOTIFICATION_RAISED, attempt: 1, attempts: 1 });
   };
 
   const centre = async (who: SignedInAccount, language = 'ro'): Promise<Item[]> =>

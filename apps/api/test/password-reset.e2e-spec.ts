@@ -184,6 +184,7 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
         jobId: queued.idempotency_key,
         jobName: PASSWORD_RESET_REQUESTED,
         attempt: 1,
+        attempts: 1,
       });
 
       expect(emailPort.sent).toHaveLength(1);
@@ -330,6 +331,7 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
         jobId: queued.idempotency_key,
         jobName: PASSWORD_RESET_REQUESTED,
         attempt: 1,
+        attempts: 1,
       });
       expect(emailPort.sent[0].templateKey).toBe('identity.password_setup');
 

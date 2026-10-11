@@ -237,7 +237,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-30 — Zero is an answer
 
-**Status.** Partial — delivered 34.1, 36.10, 36.12 · remaining 44.3, 46.1 (rendered distinctly in each export)
+**Status.** Partial — delivered 34.1, 36.10, 36.12, 44.3 (a stated zero in the PDF) · remaining 46.1 (and in the Excel export)
 
 **Obligation.** The system shall store a numeric zero as an affirmative nil return, distinct from a field never answered, and shall render it as a stated answer on every surface.
 
@@ -257,14 +257,14 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-1** Given 0 is written for a numeric field, then it is stored with state `nil_return`, and the step shows it as answered. *(source: FR text; §12.5.6 task-36.10 row)*
 - **AC-2** Given a field never written, then it has no stored row and shows as unanswered. *(source: FR text; §7.3)*
 - **AC-3** Given a client sends `nil_return` with a non-zero value, then it is stored as `ok`. *(source: §12.5.6 task-36.10 row)*
-- **AC-4** Given a nil return, then the PDF and the Excel export each show it as a stated zero, not a gap. *(source: FR text)* Unmet until 44.3 and 46.1.
+- **AC-4** Given a nil return, then the PDF and the Excel export each show it as a stated zero, not a gap. *(source: FR text)* Met for the PDF by 44.3, read from the file; the Excel export's is 46.1's.
 
 **History.**
 - 9 Sep 2026 · project owner · a zero is an answer for every numeric kind · §12.5.6 task-36.10 row
 
 ### FR-31 — A section omitted as classified or sensitive
 
-**Status.** Partial — delivered 36.13, 91.1, 179.1, 41.2 (validation by section), 41.3 (the roll-up discounts it), 94 (the declaration's help states UX-30) · remaining 44.3, 46.1 (both exports)
+**Status.** Partial — delivered 36.13, 91.1, 179.1, 41.2 (validation by section), 41.3 (the roll-up discounts it), 94 (the declaration's help states UX-30), 44.3 (the PDF states it) · remaining 46.1 (the Excel export)
 
 **Obligation.** The system shall allow a disclosure section to be declared omitted as classified or sensitive information, the one ground VSME ¶19 permits, recording it in B1's list of omitted disclosures without a rationale (¶24(b)). The declaration shall satisfy validation rather than suppress it, be discounted in completion, and appear in both exports.
 
@@ -284,7 +284,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-1** Given a section selected in the B1 list, then the declaration is stored there with no rationale field. *(source: FR text; ¶24(b))*
 - **AC-2** Given a module's own member is selected, then the module list shows it *Omitted*, distinct from complete or incomplete. *(source: UC-30; §12.5.6 task-36.13 row)*
 - **AC-3** Given an omitted section, then validation reports it satisfied and completion discounts it. *(source: FR text; UC-30)* Validation since 41.2 and completion since 41.3, a section's elements read from `disclosure_omission_section` (§12.5.6's task-41 row (4)).
-- **AC-4** Given an omitted section, then both exports state it, and the Excel export does so in the template's own element. *(source: FR text)* Unmet until 44.3 and 46.1.
+- **AC-4** Given an omitted section, then both exports state it, and the Excel export does so in the template's own element. *(source: FR text)* Met for the PDF by 44.3, read from the file; the Excel export's is 46.1's.
 - **AC-5** Given the member is deselected, then the section reads as before the declaration. *(source: UC-30)*
 
 **History.**
@@ -551,7 +551,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-36 — Annotate or override a computed figure
 
-**Status.** Partial — delivered 38.4 (38.5 closed inside it), 39.3, 39.4, 43.2 (the person, the superseded figure and the reason in the preview, drawn by the rendering the PDF shares) · remaining 44.6, 46.5 (the marker in each export)
+**Status.** Partial — delivered 38.4 (38.5 closed inside it), 39.3, 39.4, 43.2 (the person, the superseded figure and the reason in the preview, drawn by the rendering the PDF shares), 44.6 (the marker in the PDF) · remaining 46.5 (the marker in the Excel export)
 
 **Obligation.** The system shall allow a computed figure to be annotated, or replaced by an externally calculated figure with a stated reason, flagging the replacement, naming on the figure the person who made it, and retaining the superseded computed figure.
 

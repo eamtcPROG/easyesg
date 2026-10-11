@@ -4,6 +4,10 @@ import { OutboxDispatcher } from '../src/infrastructure/outbox/outbox-dispatcher
 import { writeOutboxEvent } from '../src/infrastructure/outbox/outbox-writer';
 import { isQueueableKey } from '../src/infrastructure/outbox/queueable-key';
 import { OUTBOX_QUEUE } from '../src/infrastructure/queue/queue.constants';
+import { DELIVERY_RETRY } from '../src/infrastructure/queue/retries-with';
+
+/** Every job on AD-10's queue and the delivery retry — where the dispatcher puts a job whose handler declares neither. */
+const DELIVERY_ONLY = { of: () => ({ queue: OUTBOX_QUEUE, retry: DELIVERY_RETRY }) };
 
 /**
  * The transactional outbox (AD-6, AD-10, P-8, T-5).
@@ -254,7 +258,7 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
     it('enqueues by event type with the idempotency key as job id, then marks dispatched', async () => {
       await seed('export-1');
       const recorded: string[] = [];
-      const dispatcher = new OutboxDispatcher(owner, recordingQueue(recorded));
+      const dispatcher = new OutboxDispatcher(owner, recordingQueue(recorded), recordingQueue(recorded), DELIVERY_ONLY);
 
       expect(await dispatcher.dispatchBatch()).toBe(1);
       expect(recorded).toEqual(['report.export.requested:export-1']);
@@ -281,7 +285,7 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
         },
       } as unknown as Queue;
 
-      expect(await new OutboxDispatcher(owner, capturing).dispatchBatch()).toBe(1);
+      expect(await new OutboxDispatcher(owner, capturing, capturing, DELIVERY_ONLY).dispatchBatch()).toBe(1);
       expect(carried).toEqual([
         { reportId: 'r-1', organizationId: ORGANIZATION, occurredAtMicros: Number(row.occurred_micros) },
       ]);
@@ -298,7 +302,7 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
      * later move to parallel e2e has one place telling it what breaks and why.
      */
     it('does nothing, and takes no transaction, when there is nothing to do', async () => {
-      const dispatcher = new OutboxDispatcher(owner, recordingQueue([]));
+      const dispatcher = new OutboxDispatcher(owner, recordingQueue([]), recordingQueue([]), DELIVERY_ONLY);
       expect(await dispatcher.dispatchBatch()).toBe(0);
     });
   });
@@ -313,7 +317,7 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
     it('leaves the row pending when the dispatch fails after enqueueing', async () => {
       await seed('export-crash');
       const reached: string[] = [];
-      const dispatcher = new OutboxDispatcher(crashingAtMark(owner), recordingQueue(reached));
+      const dispatcher = new OutboxDispatcher(crashingAtMark(owner), recordingQueue(reached), recordingQueue(reached), DELIVERY_ONLY);
 
       await expect(dispatcher.dispatchBatch()).rejects.toThrow(/died before its commit/);
 
@@ -329,7 +333,7 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
       // A real queue, because deduplication is BullMQ's behaviour and not something to assert
       // against a stub. This is the second half of AD-6: at-least-once delivery, effectively-once
       // processing.
-      const dispatcher = new OutboxDispatcher(owner, queue);
+      const dispatcher = new OutboxDispatcher(owner, queue, queue, DELIVERY_ONLY);
       expect(await dispatcher.dispatchBatch()).toBe(1);
 
       // Put it back as though the commit had never happened, then dispatch again. Scoped like the cleanup above
@@ -345,7 +349,7 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
       await seed('poisonous');
       await owner.query(`UPDATE audit.outbox_event SET attempts = 10 WHERE organization_id = $1`, [ORGANIZATION]);
 
-      const dispatcher = new OutboxDispatcher(owner, recordingQueue([]));
+      const dispatcher = new OutboxDispatcher(owner, recordingQueue([]), recordingQueue([]), DELIVERY_ONLY);
       expect(await dispatcher.dispatchBatch()).toBe(0);
       // Still pending and still visible: NFR-71 wants a tracked exception with an owner, not a row
       // that quietly disappears or one that retries for ever behind every healthy job.
@@ -364,7 +368,7 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
       await seed('export-after');
       const recorded: string[] = [];
 
-      expect(await new OutboxDispatcher(owner, refusingQueue('export-refused', recorded)).dispatchBatch()).toBe(2);
+      expect(await new OutboxDispatcher(owner, refusingQueue('export-refused', recorded), refusingQueue('export-refused', recorded), DELIVERY_ONLY).dispatchBatch()).toBe(2);
 
       expect(recorded).toEqual(['report.export.requested:export-before', 'report.export.requested:export-after']);
       expect(await pending()).toEqual([{ idempotency_key: 'export-refused', attempts: 1 }]);

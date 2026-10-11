@@ -3,7 +3,7 @@ import { ReportNoticeSweepHandler } from './report-notice-sweep.handler';
 
 /** The adapter over `SweepReportNotices` (task 51.2): the slot's day and moment, validated rather than cast. */
 describe('ReportNoticeSweepHandler (task 51.2)', () => {
-  const context = { jobId: 'validation.report_notice_sweep/2026-10-09', jobName: 'validation.report_notice_sweep', attempt: 1 };
+  const context = { jobId: 'validation.report_notice_sweep/2026-10-09', jobName: 'validation.report_notice_sweep', attempt: 1, attempts: 1 };
   const payload = { day: '2026-10-09', organizationId: null, occurredAtMicros: 1_791_604_800_000_123 };
 
   const build = () => {

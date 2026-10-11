@@ -1,10 +1,11 @@
-import { Injectable, Logger, type OnApplicationShutdown, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, type OnApplicationShutdown, type OnModuleInit } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { Queue } from 'bullmq';
 import type { DataSource, QueryRunner } from 'typeorm';
 import { CORE_DATA_SOURCE } from '../persistence/data-source';
-import { OUTBOX_QUEUE } from '../queue/queue.constants';
+import { JobPlacement, type JobPlacementPolicy } from '../queue/job-placement';
+import { EXPORT_QUEUE, OUTBOX_QUEUE } from '../queue/queue.constants';
 import { DISPATCH_BATCH_SIZE, DISPATCH_INTERVAL_MS, MAX_DISPATCH_ATTEMPTS } from './outbox.constants';
 
 interface PendingEvent {
@@ -42,27 +43,6 @@ interface PendingEvent {
  * the connection's `maxRetriesPerRequest: null` makes `add` wait for Redis rather than throw, so a throw is the queue
  * refusing that job.
  */
-/**
- * NFR-107's bounded retry, as job options (task 51.4; §12.5.6's task-51.4 row).
- *
- * **Eleven attempts on an exponential backoff from a minute** — 60s, 120s, 240s … 61440s — which sums to
- * about 17 hours and therefore lands the last attempt inside the 24 the requirement fixes. A twelfth would
- * put it past 34 hours and outside it, which is why the count is stated here rather than rounded up to a
- * comfortable number.
- *
- * **It belongs on the job rather than on a schedule of its own** because `DeliverNotification` already
- * derives what is owed from what is recorded: a retried job re-sends only the recipients with no delivery
- * row, so retrying the whole job costs nothing and reaches nobody twice. A second scheduler beside AD-10's
- * would be the dual-write that decision exists to refuse.
- *
- * **A hard bounce never takes this path.** The channel records it and returns, so the job succeeds; only a
- * transient failure throws, and only a throw retries. Retrying a refused address would spend all eleven
- * attempts learning the same thing eleven times.
- */
-export const DELIVERY_RETRY = {
-  attempts: 11,
-  backoff: { type: 'exponential', delay: 60_000 },
-} as const;
 
 @Injectable()
 export class OutboxDispatcher implements OnModuleInit, OnApplicationShutdown {
@@ -74,6 +54,10 @@ export class OutboxDispatcher implements OnModuleInit, OnApplicationShutdown {
   constructor(
     @InjectDataSource(CORE_DATA_SOURCE) private readonly dataSource: DataSource,
     @InjectQueue(OUTBOX_QUEUE) private readonly queue: Queue,
+    @InjectQueue(EXPORT_QUEUE) private readonly exportQueue: Queue,
+    // Each job's queue and retry are its handler's to declare (`@OnQueue`, `@RetriesWith`; task 44); this only puts
+    // the job where it was told, with the options it was given.
+    @Inject(JobPlacement) private readonly placement: JobPlacementPolicy,
   ) {}
 
   onModuleInit(): void {
@@ -161,7 +145,8 @@ export class OutboxDispatcher implements OnModuleInit, OnApplicationShutdown {
   }
 
   private async enqueue(event: PendingEvent): Promise<void> {
-    await this.queue.add(
+    const { queue, retry } = this.placement.of(event.event_type);
+    await (queue === EXPORT_QUEUE ? this.exportQueue : this.queue).add(
       event.event_type,
       // The organization travels with the job: §7.6 has the worker set tenant context from the
       // job payload's organization, since a consumer has no request to read it from. So does the
@@ -174,7 +159,7 @@ export class OutboxDispatcher implements OnModuleInit, OnApplicationShutdown {
         organizationId: event.organization_id,
         occurredAtMicros: Number(event.occurred_micros),
       },
-      { jobId: event.idempotency_key, ...DELIVERY_RETRY },
+      { jobId: event.idempotency_key, ...retry },
     );
   }
 

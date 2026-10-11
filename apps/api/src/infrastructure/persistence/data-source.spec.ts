@@ -42,6 +42,14 @@ const config: AppConfig = {
     provider: 'log',
     smtp: { host: undefined, port: 587, user: undefined, password: undefined, from: undefined },
   },
+  renderer: { url: 'http://renderer:3000', timeoutMs: 180_000 },
+  objectStorage: {
+    endpoint: 'http://storage:7070',
+    region: 'fr-par',
+    bucket: 'esg-exports',
+    accessKeyId: 'not-a-real-key',
+    secretAccessKey: 'not-a-real-secret',
+  },
   web: { publicUrl: 'http://localhost:3100' },
 };
 

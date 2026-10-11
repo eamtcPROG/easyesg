@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // A Node service and nothing else: ESM as the root package is, resolved as Node resolves it, so a relative
+    // specifier carries its `.js` and the emit runs without a bundler.
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["ES2024"],
+    "noEmit": true,
+    "types": ["node"]
+  },
+  // `vitest.config.ts` is in the program for the reason packages/ui gives: type-aware lint resolves files through
+  // the tsconfig. The build config sets its own `include`, so it is never emitted.
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "vitest.config.ts"]
+}

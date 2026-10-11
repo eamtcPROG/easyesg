@@ -1,7 +1,10 @@
 import type { DiscoveryService, Reflector } from '@nestjs/core';
 import type { Job } from 'bullmq';
 import { JOB_NAME_METADATA, type JobContext, type JobHandler } from './job-handler';
+import { ExportConsumer } from './export-consumer';
+import { ON_QUEUE_METADATA } from './on-queue';
 import { OutboxConsumer } from './outbox-consumer';
+import { EXPORT_QUEUE } from './queue.constants';
 
 /**
  * The router that makes AD-10's single queue workable.
@@ -38,7 +41,7 @@ const consumerOver = (handlers: Record<string, JobHandler>) => {
 };
 
 const jobNamed = (name: string, data: Record<string, unknown> = {}): Job<Record<string, unknown>> =>
-  ({ id: 'idempotency-key-1', name, data, attemptsMade: 0 }) as unknown as Job<Record<string, unknown>>;
+  ({ id: 'idempotency-key-1', name, data, attemptsMade: 0, opts: { attempts: 3 } }) as unknown as Job<Record<string, unknown>>;
 
 describe('OutboxConsumer (AD-10)', () => {
   it('routes a job to the handler that claimed its name', async () => {
@@ -68,6 +71,7 @@ describe('OutboxConsumer (AD-10)', () => {
       jobId: 'idempotency-key-1',
       jobName: 'identity.email_verification.requested',
       attempt: 1,
+      attempts: 3,
     });
   });
 
@@ -81,7 +85,7 @@ describe('OutboxConsumer (AD-10)', () => {
     consumer.onModuleInit();
 
     await expect(consumer.process(jobNamed('export.pdf.requested'))).rejects.toThrow(
-      /No handler is registered for job "export.pdf.requested"/,
+      /No handler is registered for job "export.pdf.requested" on queue "easyesg"/,
     );
   });
 
@@ -93,10 +97,32 @@ describe('OutboxConsumer (AD-10)', () => {
     const discovery = {
       getProviders: () => [{ instance: first }, { instance: second }],
     } as unknown as DiscoveryService;
-    const reflector = { get: () => 'identity.email_verification.requested' } as unknown as Reflector;
+    const reflector = {
+      get: (key: string) => (key === JOB_NAME_METADATA ? 'identity.email_verification.requested' : undefined),
+    } as unknown as Reflector;
 
     expect(() => new OutboxConsumer(discovery, reflector).onModuleInit()).toThrow(
       /One job name, one handler/,
     );
+  });
+
+  /**
+   * Since task 44.5 each queue has its consumer, and a handler declares its queue: the export queue's job is routed by
+   * its consumer alone, so one that lands on AD-10's queue is refused there rather than run beside the emails.
+   */
+  it('routes a job only on the queue its handler declared', async () => {
+    const exportJob = new RecordingHandler();
+    const discovery = { getProviders: () => [{ instance: exportJob }] } as unknown as DiscoveryService;
+    const reflector = {
+      get: (key: string) => (key === JOB_NAME_METADATA ? 'export.pdf.requested' : key === ON_QUEUE_METADATA ? EXPORT_QUEUE : undefined),
+    } as unknown as Reflector;
+    const outbox = new OutboxConsumer(discovery, reflector);
+    const exports = new ExportConsumer(discovery, reflector);
+    outbox.onModuleInit();
+    exports.onModuleInit();
+
+    await expect(outbox.process(jobNamed('export.pdf.requested'))).rejects.toThrow(/on queue "easyesg"/);
+    await exports.process(jobNamed('export.pdf.requested'));
+    expect(exportJob.calls).toHaveLength(1);
   });
 });

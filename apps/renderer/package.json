@@ -1,0 +1,23 @@
+{
+  "name": "@easyesg/renderer",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "The renderer service (architecture.md §5, AD-10, T-13; task 44): a report document's markup in, a tagged PDF/A-2a and PDF/UA-1 file out — headless Chromium launched fresh for every render, then finished in place by pikepdf. The worker is its one client.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "playwright": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

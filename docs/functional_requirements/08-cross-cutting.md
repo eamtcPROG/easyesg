@@ -18,7 +18,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-153 — Report operations are reachable through the documented API
 
-**Status.** Partial — delivered 2, 3, 21, 31 (31.3), 41 (the validation routes), 89 · remaining 44, 47 (the export routes), 192 (report deletion, FR-210)
+**Status.** Partial — delivered 2, 3, 21, 31 (31.3), 41 (the validation routes), 89 · remaining 47 (the export routes), 192 (report deletion, FR-210)
 
 **Obligation.** The system shall expose report CRUD, validation and export operations through a documented, authenticated API and not only through the interface.
 
@@ -45,7 +45,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - **AC-3** Given a controller route is added, changed or removed, when `openapi:check` runs without the contract and the generated types being regenerated and committed, then the gate fails. *(source: §6.8; P-5; NFR-83)*
 - **AC-4** Given the web app's server tier acts for a signed-in user, then it calls only routes that appear in the contract. *(source: AD-9)*
 - **AC-5** Given a report, when validation is requested through the API, then it is performed under authentication. *(source: FR text)* Met since 41: `POST /reports/{id}/validation/runs`, under authentication.
-- **AC-6** Given a report, when an export is requested through the API, then it is queued under authentication. *(source: FR text; AD-10)* Unmet until 44 and 47.
+- **AC-6** Given a report, when an export is requested through the API, then it is queued under authentication. *(source: FR text; AD-10)* Unmet until 47.4, whose route writes the request task 44's job produces.
 - **AC-7** Given every tenant-facing capability, then 100% is reachable through the documented API under identical authorization, with zero interface-only routes. *(source: NFR-16)* The verification is `openapi:check`, the route-permission table and the two boundary rules `web-not-to-api-src` and `admin-not-to-api-src`, which together stand for the route-coverage diff NFR-16 named: a client can reach the API only through its public address and cannot import its source (§12.5.6 task-182 tracking row, 182/162).
 
 **History.**

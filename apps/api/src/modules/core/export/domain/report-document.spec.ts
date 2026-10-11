@@ -61,11 +61,35 @@ function sources(overrides: Partial<DocumentSources> = {}): DocumentSources {
     run: null,
     findings: null,
     places: {},
+    labelStanding: 'official',
+    production: null,
     ...overrides,
   };
 }
 
 describe('assembleReportDocument (task 43; FR-48, UX-119)', () => {
+  it('carries the labels’ standing and the file’s own facts as they stand — none in a preview (task 44; UX-98, NFR-22)', () => {
+    expect(assembleReportDocument(sources())).toMatchObject({ labelStanding: 'official', production: null });
+    const production = { generatedAt: new Date('2026-10-11T09:30:00Z'), generatedBy: 'Ana Rusu' };
+    expect(assembleReportDocument(sources({ labelStanding: 'platform_authored', production }))).toMatchObject({
+      labelStanding: 'platform_authored',
+      production,
+    });
+  });
+
+  it('prints a value carried forward exactly as the same value typed in — the mark is the platform’s, never the export’s (FR-47 AC-4)', () => {
+    const printed = (carriedForward: boolean) =>
+      assembleReportDocument(
+        sources({
+          steps: new Map([
+            ['B3', [field({ elementKey: 'TotalEnergyConsumption', valueNumeric: '256.384', unitCode: 'MWh', carriedForward })]],
+          ]),
+          inScope: new Set(['TotalEnergyConsumption']),
+        }),
+      );
+    expect(printed(true)).toEqual(printed(false));
+  });
+
   it('prints an answered figure with its unit and the places its unit is rounded to, beside a comparable prior', () => {
     const document = assembleReportDocument(
       sources({

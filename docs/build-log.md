@@ -30874,3 +30874,133 @@ The change reaches `apps/api`, `apps/web`, `packages/ui` and `packages/i18n` (so
   findings above. After them: `preview.spec.ts` rebuilt and run, 5 passed; its S-07 case three times more, 3 passed;
   the wizard's leave journeys — `autosave`, `wizard`, `calculator`, `reauthentication` — 42 passed. The run's 21 `⨯`
   lines all carry digest `2667547900`, the abandoned stream `apps/web/CLAUDE.md` describes.
+
+## Task 44 — the PDF pipeline: a renderer of its own, a job on a queue of its own, a file that conforms · 2026-10-11
+
+44.1 built the renderer, `apps/renderer`; 44.2 the export's job on the worker, its record and its stored file; 44.3 the
+file's conformance and its page furniture; 44.4 the hang; 44.5 measured the queue question and acted on it; 44.6 and
+44.7 proved the override marker and the labels' standing in the file. The request, the history, the re-download and the
+completion notice are task 47's.
+
+### Decided before building (project owner, one batch of four, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-44 row (1)–(4); amended in the same edit §12.5.10's sentence placing
+Chromium in the worker image, §15.3's deferral of the separate container, FR-49 behaviours 1 and 3, FR-53's status, and
+task rows 44.2, 47.1 and 47.3.
+
+- **Chromium runs in a `renderer` service of its own**, and veraPDF in the export regression suite, not per export.
+  *Declined:* Chromium in the api image; Playwright's `run-server` driven from the worker.
+- **44.2 builds the storage half of 47.1** — the export's record and its file in object storage; 47.1 keeps the history,
+  the re-download and their roles. *Declined:* all of 47.1 first; the bytes in PostgreSQL.
+- **The completion notice arrives with S-11, in 47.3.** *Declined:* a notice now linking to S-07 or to S-11's address.
+- **A render attempt may run 60 s; an export is attempted three times** from 10 s, the last recording the failure.
+  *Declined:* 30 s; the delivery retry's eleven attempts.
+
+### Decided after measuring (44.5; row (5))
+
+**Measured** on the test stack with a temporary suite — a real BullMQ queue and worker at the consumer's concurrency of
+one, eight real exports through the real handler, renderer and storage, then one instant job standing in for a
+verification email; interactive reads probed every 100 ms throughout:
+
+| | Instant job's wait | Export, mean / max | Burst | Read p50 / p95 |
+| --- | --- | --- | --- | --- |
+| At rest | — | — | — | 27 / 47 ms |
+| One shared queue | **17 203 ms** | 2 156 / 4 622 ms | 17 285 ms | 26 / 78 ms |
+| A queue of its own | **4 ms** | 2 969 / 4 704 ms | 23 755 ms | 38 / 108 ms |
+
+On the shared queue the email waited for the whole burst, as FIFO at concurrency one must; so about 27 exports, or one
+hung render held for its 60 s deadline, already breaks NFR-106's 60 s and NFR-46's *confined to export latency*. The
+reads ran in the process that composed the documents, so they overstate contention, and stayed far inside NFR-37 anyway.
+**The owner chose a queue of its own**, `easyesg-export`; *declined*, a higher concurrency on one queue and a lower
+priority for exports. The measuring suite was removed after its run; its method is this paragraph.
+
+### What the building settled, and what running it found
+
+Row (a)–(l) of the task-44 row holds each decision; what follows is what a diff cannot show — how each was found.
+
+- **The spike came first, and it decided OQ-7.** Chromium 151's raw tagged output, against veraPDF 1.30.2: PDF/A-2a
+  failed on three rules (no metadata stream, no trailer `/ID`, DeviceRGB with no output intent) and PDF/UA-1 on six — a
+  ragged table, link annotations with no `/Contents`, `LI` holding `Link` directly, 34 pieces of untagged content, no
+  metadata. Finished in place with pikepdf, both profiles passed. **The table was the template's, not Chromium's**: a
+  unit-less row left the unit cell empty, Chromium tags no cell for it, and PDF/UA-1 7.2 counted the row a cell short.
+  **The untagged content was the inline marks' outlines** — Chromium tags their words, not their boxes — and later the
+  page-margin boxes, which Chromium leaves outside any tag. The finisher marks decoration as Artifact and margin text as
+  pagination, and refuses untagged text in the body.
+- **The worker could not read its own organization.** The export suite's first run failed every case with `permission
+  denied for table invitation` from a query naming no invitation: `core.organization`'s invitation-bearer policy reads
+  `identity.invitation`, and PostgreSQL checks the reader's privilege on every table any applicable `TO PUBLIC` policy
+  names. No worker code had read the organization before. Scoped `TO esg_app` (row (g)).
+- **A browser that hangs while launching cannot be killed through Playwright.** The first hang run answered 504 and
+  left one Chromium process alive and stopped. A probe in the container confirmed why: `launchServer({ timeout: 5000 })`
+  against a browser stopped at launch was still pending two minutes later — no handle, so nothing to kill, and no
+  timeout. Each render's browser now carries a switch naming the render, and the deadline kills that process group
+  (`kill-render.ts`, row (h)).
+- **Killing the browser made the launch fail before the deadline answered**, so the renderer said 500 for a hang. Past
+  the deadline the answer is now the deadline's, once the kill is done (`deadline.ts`); `deadline.spec.ts`'s new case
+  failed against the old wrapper.
+- **The freezer froze itself.** The hang helper first matched Chromium by command line, and its own command line names
+  Playwright's browser directory; it stopped itself and the case hung. It now matches by executable
+  (`/proc/<pid>/exe`).
+- **Debian's pikepdf is 6.0.0**, and wants `Name("/Header")` where newer releases accept `Name("Header")`; the first
+  furniture render failed on it, and an uncaught finisher error read as a conformance refusal (422). The finisher now
+  exits 2 for a refusal and the renderer answers 500 for anything else.
+- **Every source change reinstalled Chromium** — about 90 s of a four-minute build — because the production prune ran
+  after the source copy and its output never matched the cache. The production dependencies are a stage of their own
+  that sees only the manifests; with a probe line added to `main.ts`, the Chromium layer read `CACHED`.
+- **A nil return is a zero written to a count**, and B6 and B9 apply only once B1 answers: the suite's first gap and nil
+  return sat on fields that did not apply, and the document — correctly — printed neither.
+- **Assumed and recorded, not asked**: the generation moment is printed in the zone of the report's period (row (d)).
+- **Not built here, named so it is not lost**: the 202 and the request route (47.4), the notice (47.3), the history and
+  re-download (47.1), a production Compose file's `renderer` service with `init` (72). FR-153 no longer names task 44 —
+  the job is no route — and task 44's row no longer covers FR-153.
+
+### Proven to bite
+
+- `pdf-export.e2e-spec.ts` (11, against the test stack's real renderer, storage and veraPDF): every file through veraPDF
+  against PDF/A-2a and PDF/UA-1 in Russian and English; NFR-22's seven facts, the company-estimate marker and footnote,
+  both labels statements, a gap with its reason, a nil return, an omitted module and markup printed as text, read from
+  the file by PDF.js; settled once, against the worker and the owner; the failure recorded on the last attempt only; the
+  hang killed and retried. **Bite**: before the kill-by-switch the hang case failed with one live browser; before the
+  deadline fix it failed on 500; with the old test data the gap and nil-return cases failed on fields that did not apply.
+- `entrypoint-boot.e2e-spec.ts`, worker mode (15): the export job routed on its queue and refused on AD-10's, and its
+  placement. **Bite**: `@OnQueue` commented out failed 2 of 15; restored, 15 green.
+- `report-document.spec.ts`: a carried value assembles exactly as the same value typed in (FR-47 AC-4). **Bite**: a
+  mutation leaking the flag into the row's member failed it; restored.
+- `deadline.spec.ts`'s kill-ordering case failed against the old wrapper (1 of 19), then 19 green.
+- `css-string.spec.ts` escapes a `</style><script>` undertaking name; the furniture rendered it as plain text in the PDF.
+
+### Searched for the shape
+
+- **Other permissive policies the worker cannot evaluate**: every policy whose expression reads another table, queried
+  on the test stack — one remains, `organization_directory_select` reading `identity.membership`, which `esg_worker`
+  holds `SELECT` on.
+- **Empty cells**: the unit column was the only one the templates could leave empty — the prior column already prints a
+  dash, and a figure cell always holds a value or a mark.
+- **`DELIVERY_RETRY`'s old home**: `apps/api/CLAUDE.md` pointed at the dispatcher; it points at `retries-with.ts` now.
+
+### Skills read against the diff
+
+`nestjs-best-practices`: ports and adapters for the renderer and storage, both modules registering one provider by
+factory; the use cases framework-free, registered by `useFactory`. `one-idea-per-file`: one behaviour per file in the
+api and the renderer — the request reader, the deadline, the slots, the kill, the print, the finish, the server each a
+file, the pure ones with a spec; the furniture's CSS and its escaping split. *Declined*: a spec for `print-pdf.ts` and
+`finish-pdf.ts`, which need Chromium and Python and are proven by the export suite against the real image.
+
+### Gates
+
+The change reaches `apps/api`, `apps/renderer` (new), `packages/i18n` (so `apps/web` and `apps/admin` too), two
+migrations, the Compose stacks, the Dockerfiles and CI:
+
+- `pnpm lint`, three passes, clean after seven findings in the new code; `pnpm typecheck`, all nine workspaces;
+  `pnpm docs:check`, 48 claims; `pnpm openapi:check`, the contract unchanged; `pnpm image:check`; `pnpm boundaries`,
+  no violations over 2,850 modules.
+- Unit: `i18n` 163, `renderer` 19, `api` 2,158, `web` 1,886, `admin` 299.
+- `pnpm migrations:check`, both stacks, 64 and 64; `pnpm e2e:worker` 15.
+- `pnpm e2e` 68 suites / 1,692 in 522 s, the export suite among them against the rebuilt renderer image; its log carries
+  no unhandled rejection, open handle or dependency warning.
+- **The renderer is a new entrypoint, and owes its boot proof**: its image refuses to build unless Chromium launches at
+  the pinned build; `pnpm e2e`'s export suite renders through the test stack's container; CI's images job starts the
+  image and has it print a document. The root `CLAUDE.md`'s boot table names all three.
+- **Skipped, and why**: `pnpm e2e:web`. The change reaches no browser journey — the catalogue gained keys only the api's
+  document reads, with no new markup on any screen — and the browser suite's worker boots the graph `e2e:worker` proves.
+  CI runs it on the push.

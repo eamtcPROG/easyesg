@@ -66,6 +66,8 @@ import { ValidationRollUp1792368000000 } from './1792368000000-validation-roll-u
 import { ReportNoticeReach1792454400000 } from './1792454400000-report-notice-reach';
 import { OutboxKeyQueueable1792540800000 } from './1792540800000-outbox-key-queueable';
 import { PeriodFiscalYearUnique1792627200000 } from './1792627200000-period-fiscal-year-unique';
+import { ExportArtifact1792713600000 } from './1792713600000-export-artifact';
+import { OrganizationInvitationPolicyRole1792800000000 } from './1792800000000-organization-invitation-policy-role';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -152,4 +154,6 @@ export const migrations = [
   ReportNoticeReach1792454400000,
   OutboxKeyQueueable1792540800000,
   PeriodFiscalYearUnique1792627200000,
+  ExportArtifact1792713600000,
+  OrganizationInvitationPolicyRole1792800000000,
 ];

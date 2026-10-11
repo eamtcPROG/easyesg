@@ -16,7 +16,8 @@ since 50.1.2, cancellation since 50.1.3, every notice the platform sends on the 
 producer through `raise()` since 50.3, UC-175's reminder, and each person's preferences, honoured at dispatch, with FR-169's
 one-click unsubscribe since task 52, the calculator since tasks 37 … 39, and validation's rule set, run, findings and
 roll-up since task 41, over `@easyesg/validation`'s interpreter, and NFR-87's version-pinned suite over both since
-task 201, and FR-164's and FR-165's notices on the worker's first scheduled job since task 51.2; validation's screens, export, billing, the console's
+task 201, and FR-164's and FR-165's notices on the worker's first scheduled job since task 51.2, and the PDF export's job on the worker since
+task 44 — printed by the renderer service, stored and recorded; validation's screens, export's request and history, billing, the console's
 screens, edge and deploy, the public tier and the Comprehensive Module are not. `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
@@ -129,16 +130,23 @@ traps each one left — grouped by area rather than by the task that built it.
   used the set leaving, to its editors and administrator, and withdraws the entering set's own — **the first producer on
   the worker**, one organization at a time through `TENANT_WORK` (`contracts/tenant-work.port.ts`) (§12.5.6's
   task-37.3/37.4 row).
-- **Export, its first half** (`core/export`, `infrastructure/adapters/document`; task 43): UC-41's preview,
+- **Export** (`core/export`, `infrastructure/adapters/document`; tasks 43, 44): UC-41's preview,
   `GET /reports/{id}/preview?locale=`, the report as its document — cover, contents, omissions and findings, a page per
   module the scope asks, provenance — answered as `text/html` through a `StreamableFile`, unenveloped, to an editor or
   the OA. `PreviewReport` reads what the screens read (the wizard's step in the document's language, the evaluation
   scope, the prior period, the latest calculator run, the last validation run), `domain/report-document.ts` decides what
   prints, and `REPORT_DOCUMENT_RENDERER` renders it — **the one place this app writes JSX**: React templates rendered to
   static markup, the stylesheet plain CSS copied by `nest-cli.json`'s assets, the fonts embedded, the words
-  `core.export.document.*` (§12.5.6's task-43 row, which closed OQ-38). Task 44's job renders the same port for
-  Chromium, so the preview and the PDF cannot drift.
-- **Not live**: export itself (44 … 47), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
+  `core.export.document.*` (§12.5.6's task-43 row, which closed OQ-38). **Since task 44 its second half, on the
+  worker**: `ComposeReportDocument` is the one composition both modes register — the preview renders it, and the PDF
+  export's job (`PdfExportRequestedHandler` → `ProducePdfExport`) composes it in the export's own language with the
+  file's own facts (who asked, when), renders the same markup, prints it on the renderer service (`PDF_RENDERER`,
+  `apps/renderer`) as a tagged PDF/A-2a and PDF/UA-1 file, stores it (`OBJECT_STORAGE`, S3-compatible) and settles
+  the export's record, `core.export_artifact` (§12.5.6's task-44 row). The job runs on a queue of its own,
+  `easyesg-export`, with a retry of its own — three attempts, the last recording the failure — and nothing renders in
+  the request tier. The request (`POST /reports/{id}/exports`), the history, the re-download and the completion
+  notice are task 47's.
+- **Not live**: export's request, history and Excel half (45 … 47), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -576,6 +584,31 @@ Four things to know before touching it:
   unless the change to the code is itself a decision. A seed edit to either artefact fails it too, until the new version
   is kept beside the old (`config/version-pinned/README.md`).
 
+**Export**
+
+- **The worker composes the document through the HTTP tier's own reads**, registered in both modes since task 44 —
+  the report store, the latest calculator run, the label resolver beside the step reads. A read added to
+  `ComposeReportDocument` must be registered on the worker too, and `esg_worker` must hold `SELECT` on what it reads:
+  the worker's boot proof says the graph resolves, and only the export suite says the role can read.
+- **A permissive policy the worker cannot evaluate blocks the whole table** (task 44). `core.organization`'s
+  invitation-bearer policy reads `identity.invitation`, which `esg_worker` holds no grant on, and PostgreSQL checks
+  every table any applicable policy names — so every read of the organization failed with `permission denied for table
+  invitation`, from a query naming no invitation. The policy is scoped `TO esg_app` now; a new permissive policy that
+  reads another table should name the roles it is for.
+- **No transaction is held across a render**: the job composes in one `TENANT_WORK` unit, prints and stores outside
+  any, and settles the record in a second. A render may take its full 60 s deadline.
+- **The record is settled once by its policy, not by code**: `core.export_artifact`'s update policy admits only a
+  `requested` row, so a second job for an export reads nothing and writes nothing. Its requester and its versions are
+  stamped by a trigger; the application is granted only the four columns a request states.
+- **The export suite runs against real services** — the test stack's renderer, its storage emulator and veraPDF.
+  `pnpm test:up` builds the renderer image only when it is absent, so a changed renderer needs `docker compose -f
+  infra/compose/docker-compose.test.yml --env-file infra/compose/.env --env-file apps/api/.env.test build renderer`.
+  It reads each file with PDF.js in a child process (`test/support/pdf-file.ts`) and hangs Chromium from outside the
+  renderer (`test/support/renderer-container.ts`); on a one-CPU Docker VM it takes about three minutes, one of them
+  the hang case waiting out the renderer's deadline.
+- **The worker needs `RENDERER_URL` and `OBJECT_STORAGE_*`**, and refuses to start without the storage endpoint and
+  keys. `.env.example` carries the dev stack's, `.env.test` the test stack's.
+
 **Push**
 
 - **AD-15's socket is the api's own, a Nest gateway on its HTTP server** (task 147; §12.5.6's task-147 rows).
@@ -687,8 +720,8 @@ caller would be a second place to forget them. Four things to know:
   mailbox they do not hold. The key is `suppressionKey`'s — lower-cased — and a `CHECK` says so, so a writer
   that skips it is refused rather than trusted.
 - **A hard bounce must not throw**, and that asymmetry is NFR-107. The channel records `bounced` and returns, so
-  the job succeeds; only a transient failure throws, and only a throw retries. `DELIVERY_RETRY` in the outbox
-  dispatcher is eleven attempts on an exponential backoff from a minute — about 17 hours, inside the 24 the
+  the job succeeds; only a transient failure throws, and only a throw retries. `DELIVERY_RETRY` (`queue/retries-with.ts`,
+  the retry every job takes that declares none) is eleven attempts on an exponential backoff from a minute — about 17 hours, inside the 24 the
   requirement fixes, where a twelfth would put it past 34.
 - **A suite that suppresses an address must clear it** (`clearSuppressedAddresses`). Nothing cascades: the table
   hangs off no notice and has no organization. The first run of `notification-store.e2e-spec.ts`'s bounce case
@@ -1291,21 +1324,26 @@ than manufacture it — a stray row fails them loudly and names the count, inste
 
 ### Consuming from the queue
 
-**There is exactly one `@Processor(OUTBOX_QUEUE)` in this application and there must stay one.** A
-BullMQ worker consumes every job on its queue and cannot subscribe to a name, so a second
-`@Processor` on AD-10's single queue does not divide the work — the two compete, each receiving
-jobs meant for the other and failing on them. `OutboxConsumer` is that one processor; a module
-claims a job name by marking a provider `@HandlesJob('<event_type>')`, and it is found by
+**Each queue has exactly one `@Processor`, and there must stay one per queue** — two since task 44.5: `OutboxConsumer`
+on AD-10's `easyesg` queue, and `ExportConsumer` on `easyesg-export`, which document generation has to itself
+(§12.5.6's task-44 row (5): measured, an export burst on the shared queue held an email behind it for the whole burst).
+A BullMQ worker consumes every job on its queue and cannot subscribe to a name, so a second `@Processor` on one queue
+does not divide the work — the two compete, each receiving jobs meant for the other and failing on them. Both are
+`QueueConsumer`s; a module claims a job name by marking a provider `@HandlesJob('<event_type>')`, and it is found by
 `DiscoveryService` so the module that owns the work owns its registration.
 
-- The string must equal the `eventType` written to `audit.outbox_event` — both sides read one
-  exported constant.
-- A handler takes `(payload, context)`, never a `Job`, so it is testable without a queue.
-  `context.jobId` **is** the outbox row's idempotency key, which is what §8.4's outbound calls need.
-- An unclaimed job name **throws**. An outbox row exists because a transaction committed a decision;
-  dropping it silently is the loss the outbox exists to prevent. A failed job is visible and
-  re-runnable.
-- Consumers run on the worker entrypoint only, like the dispatcher.
+- The string must equal the `eventType` written to `audit.outbox_event` — both sides read one exported constant.
+- **A job's queue and retry are its handler's to declare**, beside `@HandlesJob`: `@OnQueue(EXPORT_QUEUE)` and
+  `@RetriesWith({ attempts, backoff })`. `JobPlacement` reads both for the dispatcher; a job declaring neither goes to
+  AD-10's queue with the delivery retry (`DELIVERY_RETRY`, NFR-107's eleven attempts). A consumer refuses a job its
+  queue's handlers did not claim, so one on the wrong queue fails loudly.
+- A handler takes `(payload, context)`, never a `Job`, so it is testable without a queue. `context.jobId` **is** the
+  outbox row's idempotency key, which is what §8.4's outbound calls need; `context.attempt` and `context.attempts` say
+  whether this is the last attempt, which is how the export records its failure once.
+- An unclaimed job name **throws**. An outbox row exists because a transaction committed a decision; dropping it
+  silently is the loss the outbox exists to prevent. A failed job is visible and re-runnable.
+- Consumers run on the worker entrypoint only, like the dispatcher, and the boot proof gives every job name to its
+  queue's consumer (`entrypoint-boot.e2e-spec.ts`): add a new job's name there.
 
 ### Scheduling a daily job
 

@@ -768,8 +768,10 @@ export default tseslint.config(
    * caught it: a rule that is not configured reports nothing, which is what a clean file also does.
    * Widen a block's `files` if these should apply here; do not re-assert that they already do.
    */
+  // `apps/api/test/support/*.mjs` since task 44 for the same reason: PDF.js's reader, plain ES modules run in a child
+  // process because the api's suites load CommonJS, so no tsconfig of the api's holds it.
   {
-    files: ['tools/*.mjs'],
+    files: ['tools/*.mjs', 'apps/api/test/support/*.mjs'],
     extends: [tseslint.configs.disableTypeChecked],
   },
 );

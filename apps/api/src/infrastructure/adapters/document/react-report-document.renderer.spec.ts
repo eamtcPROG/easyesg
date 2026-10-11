@@ -56,6 +56,8 @@ const DOCUMENT: ReportDocument = {
   ],
   omittedModules: ['B4'],
   findings: [],
+  labelStanding: 'official',
+  production: null,
 };
 
 describe('ReactReportDocumentRenderer (task 43; FR-48, UX-117 … UX-121)', () => {

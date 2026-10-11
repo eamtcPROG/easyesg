@@ -1,4 +1,4 @@
-import type { Locale } from '@easyesg/i18n';
+import type { LabelStanding, Locale } from '@easyesg/i18n';
 import type { LegalDate } from './types/time';
 
 /**
@@ -133,6 +133,17 @@ export interface DocumentGap {
   readonly withheld: boolean;
 }
 
+/**
+ * Who produced the file and when — a file's facts (NFR-22; FR-53), so a preview, which produces no file (FR-48 AC-2),
+ * has none, and the export's job writes them (task 44).
+ */
+export interface DocumentProduction {
+  /** The moment the file is produced — printed in the zone of the report's period. */
+  readonly generatedAt: Date;
+  /** The person who asked for it, by the name they are shown under — `null` where the account is gone. */
+  readonly generatedBy: string | null;
+}
+
 export interface ReportDocument {
   readonly locale: Locale;
   readonly undertaking: string;
@@ -154,4 +165,11 @@ export interface ReportDocument {
   readonly omittedModules: readonly string[];
   /** The last validation run's findings — `null` where the report has never been checked. */
   readonly findings: readonly DocumentFinding[] | null;
+  /**
+   * Whose words the disclosure labels are in this language at the report's pinned version — EFRAG's own, or the
+   * platform's translation (UX-98, T-14) — which the document states; `null` where the version registers none.
+   */
+  readonly labelStanding: LabelStanding | null;
+  /** The file's own facts — `null` in the preview. */
+  readonly production: DocumentProduction | null;
 }

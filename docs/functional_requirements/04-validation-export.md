@@ -213,7 +213,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-44 — Export with unresolved findings, after a warning
 
-**Status.** Partial — delivered 41.2 (the findings an export request evaluates), 43.2 (the preview's marks, the rendering the PDF shares) · remaining 44.3, 46.1, 46.5, 47.3, 47.4. Both 44.3 and 47.3 cite this requirement, 47.3 since 182/165, and the warning is S-11's content (47.3), the api's half of it is 47.4's, and the Excel marking is 46.5's.
+**Status.** Partial — delivered 41.2 (the findings an export request evaluates), 43.2 (the preview's marks, the rendering the PDF shares), 44.3 (the marks in the PDF) · remaining 46.1, 46.5, 47.3, 47.4. Both 44.3 and 47.3 cite this requirement, 47.3 since 182/165, and the warning is S-11's content (47.3), the api's half of it is 47.4's, and the Excel marking is 46.5's.
 
 **Obligation.** The system shall permit export with unresolved findings after an explicit warning, marking the gaps visibly in the output rather than omitting them silently.
 
@@ -241,9 +241,9 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 **Acceptance criteria.**
 - **AC-1** Given unresolved findings, when an export is requested, then the user is warned first, with the list of what is unresolved, and the export proceeds only after they confirm. *(source: FR text; UX-25; S-11)* Unmet until 47.3.
-- **AC-2** Given an export with unresolved findings, then the produced PDF marks each gap visibly and omits none silently. *(source: FR text; UX-119; task 44.3)* Unmet until 44.3.
-- **AC-3** Given a field not available, then the PDF states its reason. Given a section omitted, then it is named as omitted. *(source: UX-119)* Unmet until 44.3.
-- **AC-4** Given a zero, a gap and an omission, then a reader can tell all three apart in the PDF. *(source: UX-119)* Unmet until 44.3.
+- **AC-2** Given an export with unresolved findings, then the produced PDF marks each gap visibly and omits none silently. *(source: FR text; UX-119; task 44.3)* Met by 44.3: the PDF prints the preview's marks.
+- **AC-3** Given a field not available, then the PDF states its reason. Given a section omitted, then it is named as omitted. *(source: UX-119)* Met by 44.3 for the reason, read from the file; the omitted section is the shared rendering's, asserted by the renderer's spec.
+- **AC-4** Given a zero, a gap and an omission, then a reader can tell all three apart in the PDF. *(source: UX-119)* Met by 44.3.
 - **AC-5** Given billing disabled, then the warning still appears. *(source: D-11; NFR-1; UC-42)* Unmet until 47.3.
 - **AC-6** Given the preview, then it marks the same gaps as the export. *(source: UX-45)* Met by 43.2: the preview's marks are the shared rendering's (FR-48 AC-5), which the PDF's job renders too.
 - **AC-7** Given unresolved findings and an export request that carries no acknowledgement, then it is refused, the refusal lists the unresolved findings as evaluated at the request, and no job is enqueued. *(source: §12.5.6 task-182 validation row, 182/20)* Unmet until 47.4.
@@ -351,7 +351,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-47 — Carry a prior value forward, marked
 
-**Status.** Partial — delivered 34.1, 36.14, 191 (the confirm action) · remaining 44, 46 (neither export carries the mark)
+**Status.** Partial — delivered 34.1, 36.14, 191 (the confirm action), 44 (the PDF carries no mark) · remaining 46 (nor does the Excel export)
 
 **Obligation.** The system shall allow a prior-period value to be carried forward into the current period, marking it as carried forward so that it is reviewed rather than accumulating unnoticed.
 
@@ -378,7 +378,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-1** Given a linked prior period with a value for an empty field, when carry forward is chosen, then the value is copied into the current period and identifiable as carried forward. *(source: FR text; UC-46)*
 - **AC-2** Given a field that already holds an answer, then carry forward is not offered. *(source: UC-46; §12.5.6 task-36.14 row)*
 - **AC-3** Given a carried value, when it is edited, then the mark clears. *(source: UX-32; `PUT /reports/{id}/values`)*
-- **AC-4** Given a carried value, then neither export carries the mark. *(source: UC-46 note; §12.5.6 task-36.14 row)* Unmet until 44, 46.
+- **AC-4** Given a carried value, then neither export carries the mark. *(source: UC-46 note; §12.5.6 task-36.14 row)* Met for the PDF by 44: the document's model has no place for the mark, and a carried value assembles exactly as the same value typed in (`report-document.spec.ts`). The Excel export's is 46's.
 - **AC-5** Given a module, then no single action carries all its values. *(source: §12.5.6 task-36.14 row)*
 - **AC-6** Given a locked period, then carrying a value is refused with 409. *(source: FR-26/AC-2)*
 - **AC-7** Given a carried value, when the reporter confirms it without editing, then it is stored unchanged with the mark cleared and no longer reads as carried, and the trail records the change. *(source: §12.5.6 task-182 validation row, 182/29)* Met since 191.
@@ -391,7 +391,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-48 — Preview of the assembled report
 
-**Status.** Partial — delivered 43.1, 43.2 · remaining 44.3 (AC-3: the preview and the export compared, once the export exists)
+**Status.** Built — delivered 43.1, 43.2, 44.2 (AC-3)
 
 **Obligation.** The system shall render a preview of the fully assembled report — narrative, indicator tables, comparatives — as it will appear when exported, without generating a file.
 
@@ -418,9 +418,9 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Acceptance criteria.**
 - **AC-1** Given a report, then the preview shows its narrative, indicator tables and comparatives. *(source: FR text; UC-41)*
 - **AC-2** Given a preview, then no file is generated and no export is recorded. *(source: FR text; UC-41)*
-- **AC-3** Given the preview and the export of the same report, then content, order and marked gaps are the same. *(source: UX-45)* Unmet until 44.3.
+- **AC-3** Given the preview and the export of the same report, then content, order and marked gaps are the same. *(source: UX-45)* Met by 44.2: both are `ComposeReportDocument`'s model rendered by `REPORT_DOCUMENT_RENDERER`, the PDF adding only the file's own facts (who and when) and the page furniture print gives it.
 - **AC-4** Given an overridden figure, then the preview shows its attribution marker and the person who overrode it. *(source: UX-43; design_spec.md S-10; §12.5.6 task-182 row (4))*
-- **AC-5** Given the preview and the PDF, then both come from one rendering module. *(source: AD-10; task 43.1)* Met by 43.1 for the preview; the PDF's job (44.2) renders the same port.
+- **AC-5** Given the preview and the PDF, then both come from one rendering module. *(source: AD-10; task 43.1)* Met by 43.1 for the preview and by 44.2 for the PDF, whose job renders the same port.
 - **AC-6** Given each of the three locales, then a full report previews in it. *(source: task 43.2)*
 - **AC-7** Given the preview opened from S-07, then it is in the account's export default until another language is chosen on S-10. *(source: §12.5.6 task-182 validation row, 182/34)*
 - **AC-8** Given a view-only member, when a preview is requested, then it is refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)*
@@ -432,7 +432,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-49 — The PDF
 
-**Status.** Partial — delivered 43.1 (the rendering it shares with the preview) · remaining 44.1 … 44.6, 44.7 (the platform-authored-labels statement), 47.1, 47.4
+**Status.** Partial — delivered 43.1 (the rendering it shares with the preview), 44.1 … 44.7 (the renderer, the job with its record and stored file, the conformance, the hang, the queue of its own, the override marker, the platform-authored-labels statement) · remaining 47.1, 47.3 (the completion notice), 47.4 (the request and its answer)
 
 **Obligation.** The system shall generate a formatted, publication-ready PDF from stored data in the selected export language.
 
@@ -445,9 +445,9 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Preconditions.** A report. A language selected (UC-42; FR-52).
 
 **Behaviour.**
-1. **Always a job.** The request answers 202 with a job id, enqueued through the outbox, generated on the worker and never in the request tier (AD-10, NFR-46). The screen watches the job, polling every 5 s while it runs (`architecture.md` OQ-36); beyond a projected 30 s the result is delivered by notification (NFR-42, UX-46). Completion raises a notification (task 44.2). Generation takes p95 ≤ 10 s (NFR-42).
-2. **Concurrency.** 10 exports at once per organization; the rest queue and are never rejected (§12.5.6). Whether export needs a queue of its own is task 44.5's to measure.
-3. **The pipeline.** Headless Chromium through Playwright, `tagged: true`, over semantic HTML. The output intent, ICC profile and conformance metadata are injected in place with `qpdf` or `pikepdf`; Ghostscript is not in the path. Conformance is PDF/A-2a and PDF/UA-1, validated with veraPDF in CI and in the export regression suite (NFR-75, NFR-82; task 44.3). A render that hangs is killed and retried on a fresh instance (T-13; task 44.4).
+1. **Always a job.** The request answers 202 with a job id, enqueued through the outbox, generated on the worker and never in the request tier (AD-10, NFR-46). The screen watches the job, polling every 5 s while it runs (`architecture.md` OQ-36); beyond a projected 30 s the result is delivered by notification (NFR-42, UX-46). Completion raises a notification, which arrives with S-11, the screen it opens (task 47.3); the job records completion and final failure on the export's record (task 44.2). **Amended 11 Oct 2026** (project owner, task 44; §12.5.6's task-44 row (3)): this read *task 44.2*. Generation takes p95 ≤ 10 s (NFR-42).
+2. **Concurrency.** 10 exports at once per organization; the rest queue and are never rejected (§12.5.6). **Exports have a queue of their own** (task 44.5; §12.5.6's task-44 row (5)): measured, a burst on the shared queue held every other job behind it, so an export burst now costs export latency alone (NFR-46).
+3. **The pipeline.** Headless Chromium through Playwright, `tagged: true`, over semantic HTML. The output intent, ICC profile and conformance metadata are injected in place with `qpdf` or `pikepdf`; Ghostscript is not in the path. Conformance is PDF/A-2a and PDF/UA-1, validated with veraPDF in CI and in the export regression suite (NFR-75, NFR-82; task 44.3). A render that hangs is killed and retried on a fresh instance (T-13; task 44.4): an attempt may run 60 s, and an export is attempted three times before it is recorded failed (§12.5.6's task-44 row (4)). Chromium runs in a `renderer` service of its own, and veraPDF in the regression suite rather than on every export (§12.5.6's task-44 row (1)).
 4. **The document** has its own layout system (UX-117): a cover with entity, period, module scope, taxonomy version and generation date; a contents list; one section per module in the standard order; indicator tables with comparatives; and a provenance page naming template version, taxonomy version, factor-set version and the generating user. Print structure is controlled (UX-118), the structure is tagged (UX-120), and nothing depends on colour (UX-121).
 5. Every export embeds the entity, period, template and taxonomy version, factor-set version, language and generation timestamp (NFR-22).
 6. **What the values say.** Each figure rounds once, half-up, to the per-unit precision configuration holds, set by task 44's artboard (task-182 row (3)). A nil return renders as a stated zero (FR-30/AC-4). A section declared omitted is stated (FR-31). A figure that replaced a computed one carries a *company estimate* marker and a footnote with its reason and the superseded value (task 44.6; task-182 row (7)). Gaps are marked (FR-44).
@@ -463,16 +463,16 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Boundaries.** The preview is FR-48's. Language is FR-52's. History is FR-53's. Version prompts are FR-51's. The Excel export is FR-50's.
 
 **Acceptance criteria.**
-- **AC-1** Given a report, when a PDF is requested, then the answer is 202 with a job id and no rendering happens in the request. *(source: AD-10; NFR-46)* Unmet until 44.2.
-- **AC-2** Given a PDF, then it is generated from stored data in the selected language. *(source: FR text)* Unmet until 44.2.
-- **AC-3** Given a record-intended PDF, then it conforms to PDF/A-2a and PDF/UA-1, validated by veraPDF. *(source: NFR-82; task 44.3)* Unmet until 44.3.
-- **AC-4** Given a PDF, then it has a cover, contents, one section per module in standard order, indicator tables with comparatives and a provenance page. *(source: UX-117)* Unmet until 44.
-- **AC-5** Given a PDF, then the seven metadata elements are embedded. *(source: NFR-22)* Unmet until 44.
-- **AC-6** Given an overridden figure, then the PDF marks it *company estimate* and footnotes its reason and the superseded value. *(source: UX-43; task 44.6)* Unmet until 44.6.
-- **AC-7** Given a nil return, then the PDF shows it as a stated zero. *(source: FR-30/AC-4)* Unmet until 44.3.
-- **AC-8** Given an export in a language whose labels are platform-authored, then the document states it. *(source: UX-98; T-14)* Unmet until 44.7.
-- **AC-9** Given a render that hangs, then it is killed and the job completes on a fresh instance. *(source: T-13; task 44.4)* Unmet until 44.4.
-- **AC-10** Given user text beginning with markup, then the PDF shows it as text. *(source: NFR-70; §9.7)* Unmet until 44.
+- **AC-1** Given a report, when a PDF is requested, then the answer is 202 with a job id and no rendering happens in the request. *(source: AD-10; NFR-46)* Met in part by 44.2: nothing renders in the request tier, which holds neither a renderer client nor the export's job (`pdf-export.e2e-spec.ts`); the 202 and its job id are 47.4's.
+- **AC-2** Given a PDF, then it is generated from stored data in the selected language. *(source: FR text)* Met by 44.2.
+- **AC-3** Given a record-intended PDF, then it conforms to PDF/A-2a and PDF/UA-1, validated by veraPDF. *(source: NFR-82; task 44.3)* Met by 44.3, per file in the export suite.
+- **AC-4** Given a PDF, then it has a cover, contents, one section per module in standard order, indicator tables with comparatives and a provenance page. *(source: UX-117)* Met by 44.2: the PDF prints the document the preview's suite asserts page by page, with the running header and page counter UX-118 adds in print.
+- **AC-5** Given a PDF, then the seven metadata elements are embedded. *(source: NFR-22)* Met by 44.2: entity, period, template and taxonomy version, factor set, language and the moment of generation, read from the file.
+- **AC-6** Given an overridden figure, then the PDF marks it *company estimate* and footnotes its reason and the superseded value. *(source: UX-43; task 44.6)* Met by 44.6.
+- **AC-7** Given a nil return, then the PDF shows it as a stated zero. *(source: FR-30/AC-4)* Met by 44.3.
+- **AC-8** Given an export in a language whose labels are platform-authored, then the document states it. *(source: UX-98; T-14)* Met by 44.7, on the cover and the provenance page.
+- **AC-9** Given a render that hangs, then it is killed and the job completes on a fresh instance. *(source: T-13; task 44.4)* Met by 44.4, against a real Chromium stopped mid-launch.
+- **AC-10** Given user text beginning with markup, then the PDF shows it as text. *(source: NFR-70; §9.7)* Met by 44.2.
 - **AC-11** Given a PDF, then a figure agrees with the Excel export's. *(source: NFR-18; task 46.4)* Unmet until 46.4.
 
 **History.**
@@ -480,6 +480,8 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 31 Aug 2026 · project owner · the platform-authored-labels caveat covers Romanian as well as Russian · design_spec.md UX-47, UX-98 amended
 - 5 Oct 2026 · project owner · one rounding rule; the override marker owned by 44.6 · §12.5.6 task-182 row (3), (7)
 - 5 Oct 2026 · project owner · an editor or the OA exports; a view-only member is refused · §12.5.6 task-182 validation row (182/22)
+- 11 Oct 2026 · project owner · the completion notice arrives with S-11 (47.3); a render attempt runs at most 60 s and an export is attempted three times; Chromium in a renderer service of its own · §12.5.6 task-44 row
+- 11 Oct 2026 · project owner · exports have a queue of their own, measured · §12.5.6 task-44 row (5)
 
 ### FR-50 — The EFRAG Excel Digital Template
 
@@ -604,7 +606,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-53 — Immutable export history
 
-**Status.** Not started — remaining 44.2, 46.1, 47.1, 47.3
+**Status.** Partial — delivered 44.2 (the export's record and its stored file, the storage half of 47.1 — §12.5.6's task-44 row (2)) · remaining 46.1, 47.1, 47.3
 
 **Obligation.** The system shall maintain an immutable export history recording format, language, taxonomy version, timestamp and generating user, and shall allow any prior export to be re-downloaded in exactly the form it was distributed.
 
@@ -628,10 +630,10 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Boundaries.** The record of a migration is FR-69's. The adoption count of exports is FR-83's.
 
 **Acceptance criteria.**
-- **AC-1** Given an export, then it is recorded with format, language, taxonomy version, timestamp and generating user. *(source: FR text; UX-49)* Unmet until 47.1.
-- **AC-2** Given a history entry, then it cannot be altered. *(source: FR text)* Unmet until 47.1.
+- **AC-1** Given an export, then it is recorded with format, language, taxonomy version, timestamp and generating user. *(source: FR text; UX-49)* Met by 44.2 (`core.export_artifact`); the history that reads it is 47.1's.
+- **AC-2** Given a history entry, then it cannot be altered. *(source: FR text)* Met by 44.2: a settled record matches no update policy, its owner's included.
 - **AC-3** Given an export, when its data later changes and it is re-downloaded, then the file is the original, byte for byte. *(source: FR text; UC-44; task 47.1)* Unmet until 47.1.
-- **AC-4** Given an export, then its file carries entity, period, template and taxonomy version, factor-set version, language and generation timestamp. *(source: NFR-22)* Unmet until 44.2, 46.1.
+- **AC-4** Given an export, then its file carries entity, period, template and taxonomy version, factor-set version, language and generation timestamp. *(source: NFR-22)* Met by 44.2 for the PDF; the Excel file's is 46.1's.
 - **AC-5** Given a downgrade, lapse or suspension, then previously generated documents remain downloadable and new exports are blocked. *(source: FR-104; UC-142)* Unmet until 47.3.
 - **AC-6** Given the history, then each entry's pinned version is visible. *(source: task 47.3; UX-49)* Unmet until 47.3.
 - **AC-7** Given an export, then the file and its history entry are kept for the life of the organization plus one year. *(source: §12.5.6 task-182 data-subject requests row, 182/126)* Held while nothing removes them; no task yet removes them when that period ends.

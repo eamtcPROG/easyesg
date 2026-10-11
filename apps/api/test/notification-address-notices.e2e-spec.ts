@@ -100,7 +100,7 @@ describe('the four address notices, recorded (task 50.1.4)', () => {
     if (!keys.includes(input.key)) keys.push(input.key);
     await handler.handle(
       { ...input.payload, occurredAtMicros: Date.now() * 1000 },
-      { jobId: input.key, jobName: input.jobName, attempt: 1 },
+      { jobId: input.key, jobName: input.jobName, attempt: 1, attempts: 1 },
     );
     return provider.sent;
   };

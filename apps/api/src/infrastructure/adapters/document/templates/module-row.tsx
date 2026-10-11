@@ -44,8 +44,12 @@ export function ModuleRow(props: {
   );
 }
 
-/** The unit's word — the currency, for money — or nothing where the figure carries none. */
+/**
+ * The unit's word — the currency, for money — or a dash where the figure carries none, as the prior period's column
+ * prints one where there is no comparable figure. Never an empty cell: Chromium tags no cell for an empty one, and a
+ * row one cell short is a table PDF/UA-1 refuses (7.2; task 44.3).
+ */
 function unitOf(row: DocumentRow, words: DocumentWords): string {
   if (row.unit !== null) return words.t(`units.${row.unit}`) || row.unit;
-  return row.value.kind === DOCUMENT_VALUE.MONEY ? (row.value.currency ?? '') : '';
+  return (row.value.kind === DOCUMENT_VALUE.MONEY ? row.value.currency : null) || '—';
 }

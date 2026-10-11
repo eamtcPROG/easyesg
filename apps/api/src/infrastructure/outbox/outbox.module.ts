@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import configuration, { APP_MODE } from '@api/config/configuration';
-import { OUTBOX_QUEUE } from '../queue/queue.constants';
+import { EXPORT_QUEUE, OUTBOX_QUEUE } from '../queue/queue.constants';
 import { OutboxDispatcher } from './outbox-dispatcher.service';
 
 /**
@@ -18,7 +18,7 @@ import { OutboxDispatcher } from './outbox-dispatcher.service';
 const { mode } = configuration();
 
 @Module({
-  imports: [BullModule.registerQueue({ name: OUTBOX_QUEUE })],
+  imports: [BullModule.registerQueue({ name: OUTBOX_QUEUE }, { name: EXPORT_QUEUE })],
   providers: mode === APP_MODE.WORKER ? [OutboxDispatcher] : [],
   exports: mode === APP_MODE.WORKER ? [OutboxDispatcher] : [],
 })
