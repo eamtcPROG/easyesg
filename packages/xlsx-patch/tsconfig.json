@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2024"],
+    "noEmit": true,
+    // ["node"], where the isomorphic packages carry []: this one is server-side by definition. It reads and writes zip
+    // archives with node:zlib — the deflate the parts it changes need, and the CRC-32 their headers carry — and its only
+    // consumer is the worker (AD-10). Nothing here may reach a browser bundle, which the empty list would not prevent
+    // and this one at least states.
+    "types": ["node"]
+  },
+  // `vitest.config.ts` is in the program for the reason packages/ui gives: type-aware lint resolves files through the
+  // tsconfig. The build configs set their own `include`, so it is never emitted.
+  "include": ["src/**/*.ts", "vitest.config.ts"]
+}

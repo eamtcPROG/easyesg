@@ -1,4 +1,5 @@
 import { VALIDATION_RULE_SET_CONFIG_KIND } from '@api/modules/core/validation/constants/validation.constants';
+import { VSME_DIGITAL_TEMPLATE_CONFIG_KIND } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { ruleFor } from './configuration-kind-rules';
 
 /**
@@ -15,6 +16,18 @@ describe('configuration kind rules', () => {
     const refusal = ruleFor(VALIDATION_RULE_SET_CONFIG_KIND).refusal;
     expect(refusal?.(rule('validation.required'))).toBeNull();
     expect(refusal?.(rule('validation.nowhere'))).toContain('validation.nowhere');
+  });
+
+  it('refuses a Digital Template registration the registry would not read (task 45.3)', () => {
+    const refusal = ruleFor(VSME_DIGITAL_TEMPLATE_CONFIG_KIND).refusal;
+    const registration = {
+      taxonomyVersion: '2026-05-01',
+      file: 'VSME-Digital-Template-1.3.0.xlsx',
+      sha256: '6652336d63ea523bb57dfb87d4f96ea5f032c82fa05f5a9b594223cfaa87df6e',
+      source: 'https://xbrl.efrag.org/downloads/vsme/VSME-Digital-Template-1.3.0.xlsx',
+    };
+    expect(refusal?.(registration)).toBeNull();
+    expect(refusal?.({ ...registration, file: '../seed/reporting-taxonomy.vsme.json' })).toMatch(/read whole$/);
   });
 
   it('asks nothing of a kind no module bound a rule to', () => {

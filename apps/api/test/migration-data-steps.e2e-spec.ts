@@ -16,6 +16,10 @@ import {
 import { backfillVersionWindows } from '../src/infrastructure/persistence/migrations/1791504000000-configuration-version-window';
 import { rewriteColonKeys } from '../src/infrastructure/persistence/migrations/1792540800000-outbox-key-queueable';
 import { refuseRepeatedFiscalYears } from '../src/infrastructure/persistence/migrations/1792627200000-period-fiscal-year-unique';
+import {
+  renameTemplatePinsToDates,
+  renameTemplatePinsToReleases,
+} from '../src/infrastructure/persistence/migrations/1792886400000-template-release-pins';
 import { connectAs } from './support/database';
 
 /**
@@ -564,7 +568,7 @@ describe('the migrations’ data steps, against rows (task 164)', () => {
         runner.query(
           `INSERT INTO core.reporting_period (organization_id, reporting_entity_id, fiscal_year,
                   period_start, period_start_tz, period_end, period_end_tz, template_version, taxonomy_version)
-           VALUES ($1, $2, $3, $4, 'Europe/Chisinau', $5, 'Europe/Chisinau', '2026-05-01', '2026-05-01') RETURNING id`,
+           VALUES ($1, $2, $3, $4, 'Europe/Chisinau', $5, 'Europe/Chisinau', '1.3.0', '2026-05-01') RETURNING id`,
           [period.organizationId, period.entityId, period.fiscalYear, period.start, period.end],
         ),
       )) as { id: string }[];
@@ -611,6 +615,123 @@ describe('the migrations’ data steps, against rows (task 164)', () => {
         await seedPeriod(runner, { ...second, fiscalYear: 2026, start: '2026-01-01', end: '2026-12-31' });
 
         await expect(refuseRepeatedFiscalYears(runner)).resolves.toBeUndefined();
+      });
+    });
+  });
+
+  describe('task 45.3’s template pins, from the taxonomy’s date to EFRAG’s release', () => {
+    /** One table's pins, read with `FORCE` lifted — each of the three tables a template pin is stored in. */
+    const pins = async (
+      runner: QueryRunner,
+      table: 'core.reporting_period' | 'core.report' | 'core.export_artifact',
+      organizationId: string,
+    ) =>
+      (
+        (await unforced(runner, table, () =>
+          runner.query(`SELECT template_version, taxonomy_version FROM ${table} WHERE organization_id = $1 ORDER BY 1`, [
+            organizationId,
+          ]),
+        )) as { template_version: string; taxonomy_version: string }[]
+      ).map((row) => `${row.template_version} ${row.taxonomy_version}`);
+
+    /**
+     * A FY2025 period locked under the February pins, and a FY2026 period with a locked report and an export record under
+     * the May ones — so the step meets both pairs, both locks and the one table no lock guards.
+     */
+    const seedFiling = async (runner: QueryRunner): Promise<string> => {
+      const accountId = randomUUID();
+      const [{ id: organizationId }] = (await unforced(runner, 'core.organization', () =>
+        runner.query(`INSERT INTO core.organization (name, country_code) VALUES ('Lina SRL', 'MD') RETURNING id`),
+      )) as { id: string }[];
+      const [{ id: entityId }] = (await unforced(runner, 'core.reporting_entity', () =>
+        runner.query(`INSERT INTO core.reporting_entity (organization_id, name) VALUES ($1, 'Brutăria') RETURNING id`, [
+          organizationId,
+        ]),
+      )) as { id: string }[];
+      const period = (fiscalYear: number, pin: string, locked: boolean) =>
+        unforced(runner, 'core.reporting_period', () =>
+          runner.query(
+            `INSERT INTO core.reporting_period (organization_id, reporting_entity_id, fiscal_year, period_start,
+                    period_start_tz, period_end, period_end_tz, template_version, taxonomy_version, locked_at)
+             VALUES ($1, $2, $3, make_date($3, 1, 1), 'Europe/Chisinau', make_date($3, 12, 31), 'Europe/Chisinau',
+                     $4, $4, CASE WHEN $5 THEN now() END) RETURNING id`,
+            [organizationId, entityId, fiscalYear, pin, locked],
+          ),
+        ) as Promise<{ id: string }[]>;
+      await period(2025, '2026-02-01', true);
+      const [{ id: periodId }] = await period(2026, '2026-05-01', false);
+      const [{ id: reportId }] = (await unforced(runner, 'core.report', () =>
+        runner.query(
+          `INSERT INTO core.report (organization_id, reporting_period_id, scope, status, template_version, taxonomy_version)
+           VALUES ($1, $2, 'basic', 'locked', '2026-05-01', '2026-05-01') RETURNING id`,
+          [organizationId, periodId],
+        ),
+      )) as { id: string }[];
+      // The export's insert stamps its pins from the report, so the report's policy is lifted while it reads.
+      await runner.query(`SELECT set_config('app.current_user', $1, true)`, [accountId]);
+      await unforced(runner, 'core.report', () =>
+        unforced(runner, 'core.export_artifact', () =>
+          runner.query(`INSERT INTO core.export_artifact (organization_id, report_id, format, locale) VALUES ($1, $2, 'pdf', 'en')`, [
+            organizationId,
+            reportId,
+          ]),
+        ),
+      );
+      // A migration binds no one, so the step must run as one does: the trail's actor is then the step's, none.
+      await runner.query(`SELECT set_config('app.current_user', '', true)`);
+      return organizationId;
+    };
+
+    it('`up` renames every pin to the release it names, locked rows included, and puts every guarantee back', async () => {
+      await inRolledBack(async (runner) => {
+        const organizationId = await seedFiling(runner);
+
+        await renameTemplatePinsToReleases(runner);
+
+        // Read before anything below lifts and restores `FORCE` again, which would put it back whatever the step had done.
+        const guarantees = (await runner.query(
+          `SELECT c.relname, c.relforcerowsecurity AS forced,
+                  (SELECT string_agg(t.tgenabled::text, '') FROM pg_trigger t
+                    WHERE t.tgrelid = c.oid AND t.tgname = 'refuse_locked_write') AS lock
+             FROM pg_class c WHERE c.oid IN ('core.reporting_period'::regclass, 'core.report'::regclass,
+                                             'core.export_artifact'::regclass) ORDER BY 1`,
+        )) as { relname: string; forced: boolean; lock: string | null }[];
+        expect(guarantees).toEqual([
+          { relname: 'export_artifact', forced: true, lock: null },
+          { relname: 'report', forced: true, lock: 'O' },
+          { relname: 'reporting_period', forced: true, lock: 'O' },
+        ]);
+
+        expect(await pins(runner, 'core.reporting_period', organizationId)).toEqual(['1.2.0 2026-02-01', '1.3.0 2026-05-01']);
+        expect(await pins(runner, 'core.report', organizationId)).toEqual(['1.3.0 2026-05-01']);
+        expect(await pins(runner, 'core.export_artifact', organizationId)).toEqual(['1.3.0 2026-05-01']);
+
+        // The trail records each rename, with no actor — a migration's.
+        const trail = (await unforced(runner, 'core.field_change', () =>
+          runner.query(
+            `SELECT table_name, old_value, new_value, actor_id FROM core.field_change
+              WHERE organization_id = $1 AND field_name = 'template_version' AND operation = 'UPDATE' ORDER BY 1, 2`,
+            [organizationId],
+          ),
+        )) as { table_name: string; old_value: string; new_value: string; actor_id: string | null }[];
+        expect(trail).toEqual([
+          { table_name: 'core.report', old_value: '2026-05-01', new_value: '1.3.0', actor_id: null },
+          { table_name: 'core.reporting_period', old_value: '2026-02-01', new_value: '1.2.0', actor_id: null },
+          { table_name: 'core.reporting_period', old_value: '2026-05-01', new_value: '1.3.0', actor_id: null },
+        ]);
+      });
+    });
+
+    it('`down` renames them back to the dates they were written as', async () => {
+      await inRolledBack(async (runner) => {
+        const organizationId = await seedFiling(runner);
+        await renameTemplatePinsToReleases(runner);
+
+        await renameTemplatePinsToDates(runner);
+
+        expect(await pins(runner, 'core.reporting_period', organizationId)).toEqual(['2026-02-01 2026-02-01', '2026-05-01 2026-05-01']);
+        expect(await pins(runner, 'core.report', organizationId)).toEqual(['2026-05-01 2026-05-01']);
+        expect(await pins(runner, 'core.export_artifact', organizationId)).toEqual(['2026-05-01 2026-05-01']);
       });
     });
   });

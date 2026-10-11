@@ -36,6 +36,7 @@ COPY packages/i18n/package.json packages/i18n/
 COPY packages/ui/package.json packages/ui/
 COPY packages/validation/package.json packages/validation/
 COPY packages/vsme/package.json packages/vsme/
+COPY packages/xlsx-patch/package.json packages/xlsx-patch/
 
 # --frozen-lockfile: an install that would change the lockfile fails instead of resolving something
 # else. `strictDepBuilds` additionally fails on a dependency build script nobody has adjudicated,
@@ -108,6 +109,12 @@ COPY --from=build --chown=node:node /repo/packages/i18n ./packages/i18n
 COPY --from=build --chown=node:node /repo/packages/validation ./packages/validation
 COPY --from=build --chown=node:node /repo/packages/vsme ./packages/vsme
 COPY --from=build --chown=node:node /repo/apps/api ./apps/api
+
+# The EFRAG Digital Template binaries (task 45.3; 182/48): committed and registered, never uploaded, so the image is
+# where the worker finds the template a report's pin names — `../../config/efrag` from the working directory below,
+# the path the registry reads in every mode. From the context rather than the build stage, which never needed them;
+# `.dockerignore` keeps the 1.3.0 Sample out, a test fixture no registration names.
+COPY --chown=node:node config/efrag ./config/efrag
 
 # Never root. The image runs an HTTP tier reachable through the edge, and node's own image already
 # ships an unprivileged user for the purpose.

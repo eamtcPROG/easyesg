@@ -65,12 +65,12 @@ describe('OpenReportingPeriod (UC-56)', () => {
       const { useCase, store } = build();
       const period = await useCase.open({ period: aRequest() });
 
-      expect(period.templateVersion).toBe('2026-05-01');
+      expect(period.templateVersion).toBe('1.3.0');
       expect(period.taxonomyVersion).toBe('2026-05-01');
       // The command type has no field for either, so the assertion that matters is that the store
       // was handed what the registry said rather than anything derived here.
       expect(store.opened[0]).toMatchObject({
-        templateVersion: '2026-05-01',
+        templateVersion: '1.3.0',
         taxonomyVersion: '2026-05-01',
       });
     });

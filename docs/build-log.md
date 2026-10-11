@@ -31004,3 +31004,133 @@ migrations, the Compose stacks, the Dockerfiles and CI:
 - **Skipped, and why**: `pnpm e2e:web`. The change reaches no browser journey — the catalogue gained keys only the api's
   document reads, with no new markup on any screen — and the browser suite's worker boots the graph `e2e:worker` proves.
   CI runs it on the push.
+
+## Task 45 — the EFRAG template patched in place, and the template a report pins · 2026-10-11
+
+45.1 built `packages/xlsx-patch`'s zip codec and proved a no-op patch is the template byte for byte; 45.2 the value
+patch — a cell's element spliced, the calc chain dropped, recalculation on open asked for — proven by the parts it
+changes and by one recorded LibreOffice run; 45.3 the template registry, `config/efrag/<version>/`, EFRAG's `1.2.0`
+beside `1.3.0`, and the pin renamed to EFRAG's release identifiers. The Excel export itself is task 46's.
+
+### Decided before building (project owner, one batch of three, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-45 row (1)–(3); amended in the same edit OQ-45's consequence sentence,
+§10.7's tree, AD-10's Excel paragraph, FR-50 (status, behaviours 1–3, AC-3), FR-66 behaviour 6, and task 46.2's row.
+
+- **A template version is EFRAG's own release identifier, `1.3.0`**, its binary under `config/efrag/<version>/`; stored
+  pins renamed by migration. *Declined:* keeping the taxonomy's date as the template version.
+- **EFRAG's template `1.2.0` is registered for the `2026-02-01` taxonomy** — the owner authorised the download.
+  *Declined:* registering `1.3.0` alone and refusing FY2025 reports' Excel export.
+- **45.2's *still calculates* is proven structurally and by one recorded LibreOffice run.** *Declined:* LibreOffice in
+  the test stack now (46.2's); the structural proof alone.
+
+### What the building settled, and what running it found
+
+Row (a)–(f) of the task-45 row holds each decision; what follows is how each was found.
+
+- **The documents disagreed about who owned the layout before anyone asked.** OQ-45 (closed 29 Aug) said
+  `config/efrag/<version>/` takes the taxonomy's `YYYY-MM-DD`; `config/efrag/README.md` (26 Aug) and FR-50 behaviour 3
+  (5 Oct) both said the layout was deferred to 45.3; and the adoption artefact had written the taxonomy's date as
+  `templateVersion` since task 33.1, with no row recording why. The question went to the owner as one, not resolved by
+  picking the closed register.
+- **Template `1.3.0` names its taxonomy inside itself**, `…/vsme/2026-05-01/vsme-all.xsd` among its shared strings —
+  found by searching the workbook for a date before asking, and what made the pairing a fact rather than an inference.
+  `1.2.0`, downloaded once authorised, names `2026-02-01`: thirteen sheets to `1.3.0`'s sixteen, 816 defined names to 879.
+- **Both binaries are zips a codec can reproduce exactly**: no data descriptors, no comment, entries contiguous and the
+  central directory in local order. The local headers carry 520-byte extra fields the central records do not — Excel's
+  padding — which a record-copying codec keeps for free and a re-encoding one would drop.
+- **The defined names are a clean seam, measured before relying on it**: 137 of the 143 elements are names, the other
+  six `Element_Member` cells; every cell a resolvable name covers already exists as a styled empty element — 22,561
+  cells in `1.2.0`, 32,427 in `1.3.0`, none missing — and EFRAG ships 36 and 37 names as `#REF!`. 394 of the cells the
+  element names cover hold the template's own formulas, which is why a formula cell is a refusal.
+- **B8's and B9's inputs are unnamed cells.** The departures, start and end counts are `Social Disclosures!D134:D136`
+  feeding `D137`'s formula, and B9's hours read `General Information!E284` — so the package addresses a cell by sheet
+  and A1 as well as by name. Found when the spec's first draft wrote a name that does not exist.
+- **The recorded run found a defect every spec had missed.** Python's `zipfile` refused the first patched file —
+  *"Overlapped entries"* — because the replaced entries' central records still stated their old sizes. Node's
+  `Buffer.prototype.slice` returns a view, and `new DataView(x.buffer)` ignores `x.byteOffset`: the header writes
+  landed at the start of the caller's whole file buffer, corrupting the template the caller still held. The specs fed
+  `new Uint8Array(…)` copies; the api's `readFile` hands over a `Buffer`, so the shipped path was the untested one.
+  `readZip` now takes a plain view of its input, every `DataView` carries its offset and length, the reader refuses a
+  local header that disagrees with its central record, and a spec patches a `Buffer` and asserts it unchanged —
+  red against the old code. **Checked with a reader that is not ours**, which is what found it.
+- **LibreOffice 25.2.3 opens a patched `1.3.0` and does not recalculate it.** With its defaults the written inputs
+  showed and every formula cell kept its cached `-`, `fullCalcOnLoad` or not (a control with it stripped read the
+  same). With `OOXMLRecalcMode` set to *always* in a throwaway profile, the template computed B8's turnover rate
+  (3 ÷ ((40 + 20) ÷ 2) = 10%), B9's hours (2,000 × 50) and its accident rate ((2 ÷ 100,000) × 200,000 = 4). The run's
+  method: a `debian:trixie-slim` image with `libreoffice-calc-nogui`, each workbook converted headless to the Social
+  Disclosures sheet as CSV and re-saved as `.xlsx` (all sixteen sheets kept). The image and the files were removed
+  after; the finding is task 46.2's row now.
+- **Task 43's PDF named the pin "EasyESG report template"**, reading the template version as the platform's own
+  document template — no row recorded that reading, and S-14 had always called the same pin *EFRAG template*. Renamed
+  to `1.3.0`, the PDF's line would have been false, so it now reads *VSME Digital Template 1.3.0* in English, with
+  *Șablonul digital VSME* and *Цифровой шаблон VSME* beside S-14's own Romanian and Russian.
+- **The rename lifts the filing locks for its one statement.** Both `refuse_locked_write` triggers would refuse a
+  locked period's or report's pin; the step disables each around its `UPDATE`, lifts `FORCE` as task 175's step does,
+  and leaves the field-change trigger on, so the trail records each rename with no actor.
+- **`boundaries` failed on a cold tree**: dependency-cruiser resolves a workspace package through its built output,
+  and the api's artefact spec imports `@easyesg/xlsx-patch`. Found by deleting the package's `dist` before running it;
+  `preboundaries` now builds it, as the api's `pretest` does.
+
+### Proven to bite
+
+- `zip-codec.spec.ts`: every committed binary round-trips byte for byte, and **the case beside it shows that assertion
+  can fail** — re-deflating one unchanged entry changes the archive's bytes. A writer dropping the archive comment
+  failed it (1 of 15).
+- `patch-workbook.spec.ts`: a patch changes exactly the written sheets, the workbook, its relationships and the content
+  types, drops the calc chain, and changes each written sheet in its written elements alone. **Bite**: a written cell
+  losing its `s` failed 5; leaving the calc chain in place failed 2; the old `Buffer` handling failed the `Buffer` case.
+- `digital-template-artefact.spec.ts`: every adoption window resolves its template against its own taxonomy, and each
+  workbook names the taxonomy it is registered against. **Bite**: `1.2.0` re-registered against `2026-05-01` failed 2
+  of 3; restored.
+- `migration-data-steps.e2e-spec.ts`'s two new cases: **bite** — without the lock lift the locked rows refused the
+  rename (2 failed); without the `FORCE` lift the step renamed nothing (1 failed); restored, 15 green.
+- `digital-template-registry.service.spec.ts`: each arm of the data/defect line reached on purpose — unregistered,
+  unreadable, mis-paired, a version spelled as no release is, a changed file, a missing one.
+
+### Searched for the shape
+
+- **Every template pin written as a date**: three api suites' raw inserts and assertions, two fakes sharing one
+  `REGISTERED_VERSION` for both pins (split into two constants — the sharing was the conflation being removed), four
+  unit specs, six web spec fixtures, and the browser journeys' seed and S-06's two pin assertions, which counted
+  `2026-05-01` twice and now count each pin once.
+- **`new DataView(x.buffer)` without its offset**: only in this package; the two safe sites made explicit too.
+- **The template's wording**: the PDF provenance in three locales; the web's catalogues already said *EFRAG template*.
+
+### Skills read against the diff
+
+`one-idea-per-file`: the package is one idea per file — reading the zip, writing it, an entry's content, A1
+references, defined names, a value as a cell, the sheet splice, the recalculation edits, the parts, the target, the
+patch — each pure one with a spec; on the api one behaviour per file (the port, the reader with its refusal, the
+service, the migration with its two exported steps). Three docblocks were tightened to cite the census spec rather than
+state its counts. `nestjs-best-practices`: the registry is a port in the port surface with its adapter registered by
+factory, as it takes the directory beside the store. *Declined*: a spec of its own for `cell-target.ts`, whose every
+arm `patch-workbook.spec.ts` reaches over the real template.
+
+### Gates
+
+The change reaches a new package (`packages/xlsx-patch`) and its dependent `apps/api`, `packages/i18n` (so `apps/web`
+and `apps/admin`), web's specs and the browser journeys (the renamed pin shows on S-06), a migration, the taxonomy
+module's providers in both modes, two Dockerfiles, `.dockerignore` and two pre-hooks:
+
+- `pnpm lint`, three passes, clean after two findings in the new code (a literal protocol comparison, a type-only
+  constant); a seeded literal comparison inside the package was refused, so the third pass reaches it.
+  `pnpm typecheck`, all ten workspaces; `pnpm docs:check`, 48 claims; `pnpm image:check`; `pnpm boundaries` **cold**
+  — the package's `dist` deleted first, which is what found the missing pre-hook.
+- Unit: `xlsx-patch` 71, `api` 2,180, `web` 1,886, `admin` 299, `i18n` 163.
+- `pnpm migrations:check`, both stacks, 64 and 64; the dev store reseeded, both registrations published through the
+  real publisher and its new refusal.
+- `pnpm e2e` 68 suites / 1,694 in 485 s; its log carries no unhandled rejection, open handle or dependency warning.
+  `pnpm e2e:worker` 15 — the template registry is registered in worker mode too.
+- `pnpm e2e:web`, all three projects, 351 in 12.8 min, S-06's two pin journeys among them. The server printed
+  `The destination stream closed early` (digest `2667547900`) 27 times, every one the documented abort, none in a
+  journey this change touched; no other `⨯`.
+- **The api image could not be built on this host, and that predates this task.** The build stopped in `nest build`,
+  out of heap: this host's Docker VM has 958 MiB and one CPU, so Node's default heap in a build container is 503 MB.
+  The same build at `a625ab10`, task 44's commit, from a clean worktree, failed identically. The images job, on CI's
+  runners, is where the Dockerfile change — the `xlsx-patch` manifest in the install layer, `config/efrag` copied in,
+  the Sample kept out — is first built; a local image build needs Docker Desktop's memory raised.
+- `pnpm routes:check` (the admin row `packages/i18n` reaches) and `pnpm boundaries:prove` (its pre-hook changed):
+  both green.
+- **Skipped, and why**: `pnpm openapi:check` — no controller or DTO changed, and the contract is the emitted one.
+  `events:check`, `facade:check` and `eslint:prove` reach nothing this changed and run at the Stage's end.

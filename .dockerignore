@@ -22,3 +22,7 @@ docs
 design
 **/*.md
 !config/seed/README.md
+
+# The EFRAG Sample workbook is task 45.1's round-trip fixture and is registered as no template, so no image reads it
+# (task 45.3). The templates beside it are what the api image copies.
+config/efrag/**/*-Sample-*.xlsx

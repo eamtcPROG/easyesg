@@ -5,7 +5,7 @@
   "license": "UNLICENSED",
   "description": "easyesg public API — NestJS, HTTP and worker modes (architecture.md AD-1)",
   "scripts": {
-    "pretest": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build && pnpm --filter @easyesg/vsme build",
+    "pretest": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build && pnpm --filter @easyesg/vsme build && pnpm --filter @easyesg/xlsx-patch build",
     "pretest:e2e": "pnpm --filter @easyesg/i18n build && pnpm --filter @easyesg/validation build && pnpm --filter @easyesg/vsme build && pnpm -w test:stack",
     "build": "nest build",
     "postbuild": "tsc-alias -p tsconfig.build.json",
@@ -80,6 +80,7 @@
     "ws": "catalog:"
   },
   "devDependencies": {
+    "@easyesg/xlsx-patch": "workspace:*",
     "@nestjs/cli": "catalog:",
     "@nestjs/schematics": "catalog:",
     "@nestjs/testing": "catalog:",

@@ -758,6 +758,9 @@ importers:
         specifier: 'catalog:'
         version: 8.21.3
     devDependencies:
+      '@easyesg/xlsx-patch':
+        specifier: workspace:*
+        version: link:../../packages/xlsx-patch
       '@nestjs/cli':
         specifier: 'catalog:'
         version: 11.0.24(@swc/core@1.15.47)(@types/node@26.2.0)(lightningcss@1.33.0)(postcss@8.5.26)(prettier@3.9.6)(uglify-js@3.19.3)
@@ -1016,6 +1019,21 @@ importers:
 
   packages/vsme:
     devDependencies:
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 4.1.10(vitest@4.1.10)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@26.2.0)(@vitest/coverage-v8@4.1.10)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.2.1(@types/node@26.2.0)(jiti@2.7.0)(sass@1.102.0)(terser@5.50.0)(yaml@2.9.0))
+
+  packages/xlsx-patch:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 4.1.10(vitest@4.1.10)

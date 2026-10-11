@@ -21,7 +21,7 @@ const DOCUMENT: ReportDocument = {
   periodStart: { date: '2026-01-01', timezone: 'Europe/Chisinau' },
   periodEnd: { date: '2026-12-31', timezone: 'Europe/Chisinau' },
   scope: 'basic',
-  templateVersion: '2026-05-01',
+  templateVersion: '1.3.0',
   taxonomyVersion: '2026-05-01',
   factorSet: 'MD-2026.1',
   priorYear: 2025,

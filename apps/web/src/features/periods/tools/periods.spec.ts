@@ -31,7 +31,7 @@ const aPeriod = (over: Partial<ReportingPeriod> = {}): ReportingPeriod => ({
   periodStart: { date: '2026-01-01', timezone: CHISINAU },
   periodEnd: { date: '2026-12-31', timezone: CHISINAU },
   dueDate: null,
-  templateVersion: '2026-05-01',
+  templateVersion: '1.3.0',
   taxonomyVersion: '2026-05-01',
   priorPeriodId: null,
   entitySnapshotId: 's1',

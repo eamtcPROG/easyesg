@@ -5,6 +5,8 @@ import { presentationPrecisionRefusal } from '@api/modules/platform/localization
 import { isWordedAsFindingInEveryLocale } from '@api/app/messages/committed-catalogues';
 import { VALIDATION_RULE_SET_CONFIG_KIND } from '@api/modules/core/validation/constants/validation.constants';
 import { ruleSetRefusal } from '@api/modules/core/validation/domain/rule-set-publication';
+import { VSME_DIGITAL_TEMPLATE_CONFIG_KIND } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
+import { digitalTemplateRefusal } from '@api/modules/platform/taxonomy/domain/digital-template-entry';
 
 /**
  * What a publication asks of a kind beyond writing it (tasks 37.3, 37.4; `architecture.md` §12.5.6's task-37.3/37.4
@@ -35,6 +37,9 @@ const RULES: Readonly<Record<string, ConfigurationKindRule>> = {
   [VALIDATION_RULE_SET_CONFIG_KIND]: {
     refusal: (payload) => ruleSetRefusal({ payload, wordedAsFinding: isWordedAsFindingInEveryLocale }),
   },
+  // A template registration the registry would not read — a path for a file name, a digest that is not one — is
+  // refused where the operator registering it can correct it, not found by the first Excel export (task 45.3).
+  [VSME_DIGITAL_TEMPLATE_CONFIG_KIND]: { refusal: digitalTemplateRefusal },
 };
 
 /** The kind's rule, or none: most kinds are written as they come and announce nothing. */

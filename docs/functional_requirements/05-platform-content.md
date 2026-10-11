@@ -234,6 +234,7 @@ Registering a version and authoring a mapping write configuration. A migration r
 3. `esg_app` holds `UPDATE` on every `core.report` column except `template_version` and `taxonomy_version`. A schema invariant asserts that exception list in both directions (task-31.3 row). FR-69's run is the explicit act that may move a pin.
 4. A report pinned to a version the registry no longer holds fails explicitly. Saved answers stay intact (task-89 row).
 5. A comparative says which two versions produced it (task 34.3).
+6. **The two halves are spelled by their own releases**: the template version is EFRAG's template release identifier (`1.3.0`), the taxonomy version EFRAG's taxonomy release (`2026-05-01`). Until 11 Oct 2026 the template half held the taxonomy's date; the stored pins were then renamed by migration — the same version spelled anew, on locked rows too, recorded in the trail — which is not a move and not FR-69's act (§12.5.6 task-45 row (1)).
 
 **Refusals.** A report whose own version is gone → 500 `taxonomy-version-unavailable` (`core.report.taxonomy_version_unavailable`). It is not a 404, because nothing the caller sent is wrong (task-89 row).
 
@@ -248,6 +249,7 @@ Registering a version and authoring a mapping write configuration. A migration r
 - 29 Aug 2026 · project owner · the registry was built ahead of the report table that pins it · §12.5.6 task-31 row
 - 31 Aug 2026 · project owner · the report copies its period's pin; the request tier cannot move it, by column privilege · §12.5.6 task-31.3 rows
 - 1 Sep 2026 · project owner · a report pinned to a withdrawn version fails explicitly · §12.5.6 task-89 row
+- 11 Oct 2026 · project owner · a template version is EFRAG's template release identifier; stored pins renamed to it · §12.5.6 task-45 row
 
 ### FR-67 — Author the field mapping between two versions
 

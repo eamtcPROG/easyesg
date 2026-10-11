@@ -27,6 +27,8 @@ import type {
 const CHISINAU = 'Europe/Chisinau';
 /** The adoption task 33.1's `reporting-taxonomy.vsme.json` registers. */
 const REGISTERED_VERSION = '2026-05-01';
+/** EFRAG's template release written against it (task 45.3) — a pin of its own, not the taxonomy's date again. */
+const REGISTERED_TEMPLATE = '1.3.0';
 
 export const aPeriod = (overrides: Partial<ReportingPeriod> = {}): ReportingPeriod => ({
   id: '00000000-0000-0000-0000-0000000000c1',
@@ -35,7 +37,7 @@ export const aPeriod = (overrides: Partial<ReportingPeriod> = {}): ReportingPeri
   periodStart: { date: '2026-01-01', timezone: CHISINAU },
   periodEnd: { date: '2026-12-31', timezone: CHISINAU },
   dueDate: null,
-  templateVersion: REGISTERED_VERSION,
+  templateVersion: REGISTERED_TEMPLATE,
   taxonomyVersion: REGISTERED_VERSION,
   priorPeriodId: null,
   entitySnapshotId: '00000000-0000-0000-0000-0000000000a1',
@@ -214,7 +216,7 @@ export class FakeTaxonomyRegistry implements TaxonomyRegistry {
   constructor(private readonly pin: TaxonomyPin | null = {
     standard: 'vsme',
     taxonomyVersion: REGISTERED_VERSION,
-    templateVersion: REGISTERED_VERSION,
+    templateVersion: REGISTERED_TEMPLATE,
   }) {}
 
   pinFor(query: { on?: string }): TaxonomyPin | null {

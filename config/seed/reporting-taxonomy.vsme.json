@@ -5,7 +5,7 @@
       "payload": {
         "standard": "vsme",
         "version": "2026-02-01",
-        "templateVersion": "2026-02-01",
+        "templateVersion": "1.2.0",
         "compatibleWith": null
       }
     },
@@ -14,7 +14,7 @@
       "payload": {
         "standard": "vsme",
         "version": "2026-05-01",
-        "templateVersion": "2026-05-01",
+        "templateVersion": "1.3.0",
         "compatibleWith": null
       }
     }

@@ -22,6 +22,7 @@ COPY packages/i18n/package.json packages/i18n/
 COPY packages/ui/package.json packages/ui/
 COPY packages/validation/package.json packages/validation/
 COPY packages/vsme/package.json packages/vsme/
+COPY packages/xlsx-patch/package.json packages/xlsx-patch/
 
 # The production dependencies from the manifests alone, in a stage of their own, so the layers built on them — Chromium
 # above all — depend on the lockfile and never on the renderer's source.

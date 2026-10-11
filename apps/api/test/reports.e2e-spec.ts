@@ -41,6 +41,8 @@ const CHISINAU = 'Europe/Chisinau';
 
 /** The adoption task 33.1's `reporting-taxonomy.vsme.json` registers. */
 const REGISTERED_VERSION = '2026-05-01';
+/** EFRAG's template release the same adoption pins (task 45.3): a pin of its own, beside the taxonomy's. */
+const REGISTERED_TEMPLATE = '1.3.0';
 /**
  * A version this platform adopted earlier and has since moved past. Task 33.3 registers a second
  * version in staging deliberately; until it does, this suite manufactures the state as the schema
@@ -192,7 +194,7 @@ describe('reports (UC-17, UC-18)', () => {
         reportingPeriodId: periodId,
         scope: REPORT_SCOPE.BASIC,
         status: REPORT_STATUS.OPEN,
-        templateVersion: REGISTERED_VERSION,
+        templateVersion: REGISTERED_TEMPLATE,
         taxonomyVersion: REGISTERED_VERSION,
       });
     });

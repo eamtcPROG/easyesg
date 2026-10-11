@@ -10,6 +10,14 @@
 export const VSME_TAXONOMY_CONFIG_KIND = 'vsme_taxonomy';
 
 /**
+ * One registered EFRAG Digital Template (task 45.3; FR-50, DR-4). **Scope is the template's version, EFRAG's own
+ * release identifier** — `1.3.0` — by OQ-45's reasoning applied to the template (`architecture.md` §12.5.6's task-45
+ * row (1)): the identifier is EFRAG's, printed in the workbook itself, and not ours to invent. The binary is
+ * committed under `config/efrag/<version>/` and registered here; nobody uploads it (182/48).
+ */
+export const VSME_DIGITAL_TEMPLATE_CONFIG_KIND = 'vsme_digital_template';
+
+/**
  * Which version a period or report opened today is pinned to. **Scope is the standard**, and the
  * entry is effective-dated by the store's own schedule, because scheduling an adoption is a publish
  * rather than a release (OQ-45).

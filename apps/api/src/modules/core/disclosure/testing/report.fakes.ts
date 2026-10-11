@@ -18,6 +18,8 @@ import {
 
 /** The adoption task 33.1's `reporting-taxonomy.vsme.json` registers. */
 const REGISTERED_VERSION = '2026-05-01';
+/** EFRAG's template release written against it (task 45.3) — a pin of its own, not the taxonomy's date again. */
+const REGISTERED_TEMPLATE = '1.3.0';
 
 /** The joined subject (task 32.2). A fixture, because the fake stands in for a store whose reads
  *  resolve it — a fake answering `undefined` would model a shape the product cannot produce. */
@@ -44,7 +46,7 @@ export const aReport = (overrides: Partial<Report> = {}): Report => ({
   // The column's own DEFAULT, mirrored rather than invented: a fake that disagreed with the schema
   // would make every monetary field's currency a property of the test rather than of the filing.
   reportingCurrency: 'MDL',
-  templateVersion: REGISTERED_VERSION,
+  templateVersion: REGISTERED_TEMPLATE,
   taxonomyVersion: REGISTERED_VERSION,
   createdAt: new Date('2026-08-01T00:00:00.000Z'),
   updatedAt: new Date('2026-08-01T00:00:00.000Z'),

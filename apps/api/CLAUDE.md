@@ -79,8 +79,11 @@ traps each one left — grouped by area rather than by the task that built it.
   IDNO and LEI are each entity's** (`core.reporting_entity`), and `POST /organizations` writes the organization's
   first entity, named after it, in the founding transaction (§12.5.6's task-175 row).
 - **Reporting core** (`platform/taxonomy`, `core/period`, `core/disclosure`, `core/comparatives`;
-  tasks 31, 33, 34, 89, 91): the taxonomy registry (`TAXONOMY_REGISTRY` over three `config/seed`
-  artefacts per registered version) and its typed facade in `packages/vsme`; reporting periods
+  tasks 31, 33, 34, 45, 89, 91): the taxonomy registry (`TAXONOMY_REGISTRY` over three `config/seed`
+  artefacts per registered version) and its typed facade in `packages/vsme`; since task 45.3 the template registry
+  (`DIGITAL_TEMPLATE_REGISTRY`), which resolves a report's `templateVersion` — EFRAG's release identifier, `1.3.0` — to
+  the binary under `config/efrag/<version>/` by a `vsme_digital_template` registration, checking its digest, and answers
+  no template for a pin it does not pair with its taxonomy; reporting periods
   (`GET/POST /periods`, `GET/PATCH /periods/{id}`) with the lock
   (`POST /periods/{id}/{lock,reopening}`, `GET /periods/{id}/reopenings`); the report
   (`GET/POST /reports`, `GET/PATCH /reports/{id}`) carrying its pinned taxonomy; the disclosure

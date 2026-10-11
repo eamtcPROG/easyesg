@@ -451,8 +451,8 @@
         "provenance": {
           "title": "Proveniența",
           "intro": "Acest document este generat de un program din valorile introduse de întreprindere. Versiunile de mai jos determină modul în care aceste valori sunt denumite, convertite și calculate.",
-          "template": "Șablonul documentului",
-          "templateVersion": "Șablonul de raport EasyESG {version}",
+          "template": "Șablonul EFRAG",
+          "templateVersion": "Șablonul digital VSME {version}",
           "taxonomy": "Taxonomia de raportare",
           "taxonomyVersion": "Taxonomia VSME {version}",
           "factorSet": "Setul de factori de emisie",

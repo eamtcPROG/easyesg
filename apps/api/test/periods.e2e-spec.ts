@@ -181,7 +181,7 @@ describe('reporting periods (UC-56)', () => {
         dueDate: null,
         // The adoption registered by task 33.1's `reporting-taxonomy.vsme.json`, resolved through
         // the registry rather than chosen here.
-        templateVersion: '2026-05-01',
+        templateVersion: '1.3.0',
         taxonomyVersion: '2026-05-01',
         priorPeriodId: null,
       });
@@ -337,7 +337,7 @@ describe('reporting periods (UC-56)', () => {
         await holder.query(
           `INSERT INTO core.reporting_period (organization_id, reporting_entity_id, fiscal_year,
                   period_start, period_start_tz, period_end, period_end_tz, template_version, taxonomy_version)
-           VALUES ($1, $2, 2030, '2030-01-01', $3, '2030-12-31', $3, '2026-05-01', '2026-05-01')`,
+           VALUES ($1, $2, 2030, '2030-01-01', $3, '2030-12-31', $3, '1.3.0', '2026-05-01')`,
           [ORG, entityId, CHISINAU],
         );
         const [{ xid }] = (await holder.query(`SELECT pg_current_xact_id()::xid::text AS xid`)) as { xid: string }[];
@@ -723,7 +723,7 @@ describe('reporting periods (UC-56)', () => {
           `INSERT INTO core.reporting_period (id, organization_id, reporting_entity_id, fiscal_year,
                  period_start, period_start_tz, period_end, period_end_tz,
                  template_version, taxonomy_version)
-           VALUES ($1,$2,$3,2026,'2026-01-01',$4,'2026-12-31',$4,'2026-05-01','2026-05-01')`,
+           VALUES ($1,$2,$3,2026,'2026-01-01',$4,'2026-12-31',$4,'1.3.0','2026-05-01')`,
           [OTHER_PERIOD, OTHER_ORG, OTHER_ENTITY, CHISINAU],
         );
       });

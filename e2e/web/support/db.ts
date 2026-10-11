@@ -417,7 +417,8 @@ export async function cleanupOrganizations(organizationIds: readonly string[]): 
  *
  * **The pins are written, not resolved.** A period opened through the API asks the taxonomy registry
  * for them; here they are stated, so the fixture does not depend on which adoption window the
- * calendar happens to be in. `2026-05-01` is what a FY2026 period pins under task 33.3's schedule.
+ * calendar happens to be in. A FY2026 period pins `1.3.0` and `2026-05-01` under task 33.3's schedule — the template
+ * as EFRAG's own release since task 45.3.
  *
  * **`entity_snapshot_id` is left null.** FR-18's snapshot is taken at period open by the use case,
  * and a browser journey about navigation has no business manufacturing one — the column is nullable
@@ -529,7 +530,7 @@ async function seedFiling(input: {
           template_version, taxonomy_version, entity_snapshot_id)
        VALUES ($1, $2, $3, $4, $5, 'Europe/Chisinau', $6, 'Europe/Chisinau',
                $7, CASE WHEN $7::date IS NULL THEN NULL ELSE 'Europe/Chisinau' END,
-               '2026-05-01', '2026-05-01', $8)`,
+               '1.3.0', '2026-05-01', $8)`,
       [
         periodId,
         organizationId,
@@ -545,7 +546,7 @@ async function seedFiling(input: {
       await client.query(
         `INSERT INTO core.report
            (id, organization_id, reporting_period_id, scope, status, template_version, taxonomy_version)
-         VALUES ($1, $2, $3, 'basic', 'open', '2026-05-01', '2026-05-01')`,
+         VALUES ($1, $2, $3, 'basic', 'open', '1.3.0', '2026-05-01')`,
         [reportId, organizationId, periodId],
       );
     }
@@ -737,7 +738,7 @@ export async function seedPriorPeriod(input: {
          (id, organization_id, reporting_entity_id, fiscal_year,
           period_start, period_start_tz, period_end, period_end_tz,
           template_version, taxonomy_version)
-       VALUES ($1, $2, $3, $4, $5, 'Europe/Chisinau', $6, 'Europe/Chisinau', '2026-05-01', '2026-05-01')`,
+       VALUES ($1, $2, $3, $4, $5, 'Europe/Chisinau', $6, 'Europe/Chisinau', '1.3.0', '2026-05-01')`,
       [priorPeriodId, input.organizationId, entityId, year - 1, `${year - 1}-01-01`, `${year - 1}-12-31`],
     );
     await client.query(

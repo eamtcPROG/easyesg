@@ -485,7 +485,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-50 — The EFRAG Excel Digital Template
 
-**Status.** Not started — remaining 45.1 … 45.3, 46.1 … 46.5
+**Status.** Partial — delivered 45.1 (a patch with no writes is the template byte for byte), 45.2 (values written into the template's own cells, its formulas, formatting and validation untouched), 45.3 (a report's template pin resolves the registered binary) · remaining 46.1 … 46.5
 
 **Obligation.** The system shall write stored values into the named ranges of the official EFRAG Excel Digital Template at the version pinned to the report, preserving the template's own dropdowns and consistency-check formulas.
 
@@ -498,9 +498,9 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Preconditions.** A report with a pinned template version, whose binary is registered (task 45.3).
 
 **Behaviour.**
-1. **The template is patched, not regenerated.** The workbook is a zip of XML parts. The export resolves the named ranges from `xl/workbook.xml`, rewrites only the target cells in the relevant sheet, deletes `xl/calcChain.xml`, sets full recalculation on load, and rezips every other part byte for byte. A library that rebuilds the workbook (ExcelJS) was rejected, because it loses data validation and defined names on a round trip (AD-10).
-2. **The template** is the official EFRAG VSME Digital Template, MIT-licensed, tracked in `config/efrag/` (version `1.3.0` and its sample). Measured: sixteen sheets, 121 data validations, 3,720 formulas. The licence sheet inside the workbook travels with every export and is not removed. A no-op patch must be provably a no-op (task 45.1); values land in the template's own cells with formulas, formatting and validation untouched (task 45.2).
-3. A template version is a dimension separate from the taxonomy version a report pins; the registry that resolves a report's pin to a template binary is task 45.3's (DR-4). How `config/efrag/` is laid out per version is OQ-45's, deferred to 45.3.
+1. **The template is patched, not regenerated.** The workbook is a zip of XML parts. The export resolves the named ranges from `xl/workbook.xml`, rewrites only the target cells in the relevant sheet, deletes `xl/calcChain.xml` with its relationship and content-type override, sets full recalculation on load, and rezips every other part byte for byte (task 45; `packages/xlsx-patch`). A library that rebuilds the workbook (ExcelJS) was rejected, because it loses data validation and defined names on a round trip (AD-10).
+2. **The template** is the official EFRAG VSME Digital Template, MIT-licensed, tracked in `config/efrag/<version>/` — `1.3.0` with its sample, and `1.2.0`, written against the February 2026 taxonomy (task 45.3). Measured: sixteen sheets, 121 data validations, 3,720 formulas. The licence sheet inside the workbook travels with every export and is not removed. A no-op patch must be provably a no-op (task 45.1); values land in the template's own cells with formulas, formatting and validation untouched (task 45.2).
+3. A template version is a dimension separate from the taxonomy version a report pins; the registry that resolves a report's pin to a template binary is task 45.3's (DR-4). **A template version is EFRAG's own release identifier** (`1.3.0`), its binary under `config/efrag/<version>/` and registered in the configuration store with its digest; a pin the registry does not pair with its taxonomy resolves no template, and the export refuses rather than choosing another (FR-51; `architecture.md` §12.5.6's task-45 row).
 4. The template's own verdicts (its *Table of Contents & Validation* sheet) are EFRAG's and stay working; they are not `packages/validation`'s (`config/efrag/README.md`).
 5. Opens without a repair prompt in Microsoft 365, current Excel and LibreOffice Calc, with named ranges, dropdowns and formulas intact (NFR-20). LibreOffice Calc headless is the CI gate (task 46.2); Microsoft 365 and desktop Excel are a manual item on the release checklist, because server-side Office automation is unsupported on Linux (T-12).
 6. **The entity identifier written is the LEI where the entity has one, otherwise the IDNO** (`architecture.md` OQ-18, cross-logged 29 Sep 2026).
@@ -518,7 +518,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Acceptance criteria.**
 - **AC-1** Given a report, then values land in the named ranges of the template version the report pins. *(source: FR text)* Unmet until 46.1.
 - **AC-2** Given the exported file, then the template's dropdowns and consistency-check formulas remain functional. *(source: FR text; NFR-20)* Unmet until 46.2.
-- **AC-3** Given a no-op patch of the template, then the output is identical to the input, or every difference is enumerated and explained. *(source: task 45.1)* Unmet until 45.1.
+- **AC-3** Given a no-op patch of the template, then the output is identical to the input, or every difference is enumerated and explained. *(source: task 45.1)* Met by 45.1: identical, byte for byte, for every committed binary; a patch with values changes only the parts §12.5.6's task-45 row (b) enumerates.
 - **AC-4** Given the exported file, then it opens in LibreOffice Calc with no repair prompt. *(source: NFR-20; task 46.2)* Unmet until 46.2.
 - **AC-5** Given an entity with an LEI, then the LEI is written. Given none, then the IDNO. *(source: `architecture.md` OQ-18)* Unmet until 46.1.
 - **AC-6** Given an overridden figure, then the file marks and explains it, and the template's checks still pass. *(source: task 46.5)* Unmet until 46.5.
@@ -537,6 +537,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 5 Oct 2026 · project owner · the override marker is 46.5's · §12.5.6 task-182 row (7)
 - 5 Oct 2026 · project owner · the language cell stays English; formula cells are left alone; no comparatives; gaps marked through the template's states or a cell note · §12.5.6 task-182 validation row (182/30, 182/31, 182/32, 182/33)
 - 5 Oct 2026 · project owner · an editor or the OA exports; a view-only member is refused · §12.5.6 task-182 validation row (182/22)
+- 11 Oct 2026 · project owner · a template version is EFRAG's release identifier; template 1.2.0 registered for the February 2026 taxonomy; 45.2 proven structurally and by one recorded LibreOffice run · §12.5.6 task-45 row
 
 ### FR-51 — Never an export against an unplanned version
 

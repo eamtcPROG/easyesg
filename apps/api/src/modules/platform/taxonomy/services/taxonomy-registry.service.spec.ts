@@ -95,7 +95,7 @@ describe('TaxonomyRegistryService (FR-65, FR-66)', () => {
       const registry = build([
         version({ elements: {} }, '2026-05-01'),
         version({ elements: {} }, '2029-01-01'),
-        pin({ standard: 'vsme', version: '2026-05-01', templateVersion: '2026-05-01' }),
+        pin({ standard: 'vsme', version: '2026-05-01', templateVersion: '1.3.0' }),
       ]);
 
       // The whole point of the separate artefact: `2029-01-01` is registered and readable, and a
@@ -103,7 +103,7 @@ describe('TaxonomyRegistryService (FR-65, FR-66)', () => {
       expect(registry.pinFor({})).toEqual({
         standard: 'vsme',
         taxonomyVersion: '2026-05-01',
-        templateVersion: '2026-05-01',
+        templateVersion: '1.3.0',
       });
     });
 
@@ -112,7 +112,7 @@ describe('TaxonomyRegistryService (FR-65, FR-66)', () => {
     });
 
     it('refuses to guess when the entry is malformed', () => {
-      const registry = build([pin({ standard: 'vsme', version: 7, templateVersion: '2026-05-01' })]);
+      const registry = build([pin({ standard: 'vsme', version: 7, templateVersion: '1.3.0' })]);
       expect(registry.pinFor({})).toBeNull();
     });
   });

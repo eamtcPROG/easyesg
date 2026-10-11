@@ -90,8 +90,10 @@ test('the index lists a report and its row opens the wizard (UC-17, and the exit
   await expect(row.getByRole('cell', { name: '2026', exact: true })).toHaveCount(1);
   await expect(row.getByText('VSME Basic', { exact: true })).toHaveCount(1);
   // DR-4's pins on the screen rather than implied — **both**, which is what task 32.3's
-  // "displays its pinned versions" asks for and what `.first()` would have hidden.
-  await expect(row.getByText('2026-05-01', { exact: true })).toHaveCount(2);
+  // "displays its pinned versions" asks for and what `.first()` would have hidden. Two values since
+  // task 45.3: the template is EFRAG's release, no longer the taxonomy's date written twice.
+  await expect(row.getByText('1.3.0', { exact: true })).toHaveCount(1);
+  await expect(row.getByText('2026-05-01', { exact: true })).toHaveCount(1);
 
   // **The claim the block was about.** The row's link goes to the report, and the report resolves
   // to a step — two screens and a redirect, which is exactly what did not exist before task 36.
@@ -130,7 +132,8 @@ test('the teaching empty state offers the first report, and the creation flow ma
   // **A count, not `.first()`.** Two pins are intended — template and taxonomy, which FR-69
   // migrates independently — so `.first()` would have left the assertion green with either one
   // gone, on the screen whose whole deliverable is that both are checkable.
-  await expect(page.getByText('2026-05-01', { exact: true })).toHaveCount(2);
+  await expect(page.getByText('1.3.0', { exact: true })).toHaveCount(1);
+  await expect(page.getByText('2026-05-01', { exact: true })).toHaveCount(1);
 
   // A period id that names nothing must not reach the write — a stale link, or a period that
   // gained a report since the page was opened. The confirm disappears rather than 409-ing.

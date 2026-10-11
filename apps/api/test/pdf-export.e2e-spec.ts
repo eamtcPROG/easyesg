@@ -293,7 +293,7 @@ describe('the PDF export (task 44)', () => {
     expect(settled).toMatchObject({
       status: 'completed',
       locale: 'ru',
-      template_version: '2026-05-01',
+      template_version: '1.3.0',
       taxonomy_version: '2026-05-01',
       requested_by: editor.accountId,
       object_key: `organizations/${ORG}/exports/${russian.exportId}.pdf`,
@@ -341,7 +341,7 @@ describe('the PDF export (task 44)', () => {
     for (const fact of [
       'Brutăria Exportului',
       'January 1 – December 31, 2026',
-      'EasyESG report template 2026-05-01',
+      'VSME Digital Template 1.3.0',
       'VSME taxonomy 2026-05-01',
       // The seeded `md` factor set's label, as the run pinned it.
       'Emission factor set 2026.1',

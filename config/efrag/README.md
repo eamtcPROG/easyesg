@@ -4,34 +4,48 @@ The binaries the export pipeline patches (tasks 45, 46). Tracked in git on purpo
 says so in as many words: *"those are inputs the export pipeline needs — keep them tracked."*
 They are not generated, and `packages/xlsx-patch` cannot round-trip a file it does not have.
 
-| File | SHA-256 | Size |
-| --- | --- | --- |
-| `VSME-Digital-Template-1.3.0.xlsx` | `6652336d63ea523bb57dfb87d4f96ea5f032c82fa05f5a9b594223cfaa87df6e` | 778 434 B |
-| `VSME-Digital-Template-Sample-1.3.0.xlsx` | `1ccf52b47567ea8f2524705ceac08918c6f319c3e8c9e0a6d4a3db336ab837ed` | 784 812 B |
+| File | SHA-256 | Size | Written against |
+| --- | --- | --- | --- |
+| `1.3.0/VSME-Digital-Template-1.3.0.xlsx` | `6652336d63ea523bb57dfb87d4f96ea5f032c82fa05f5a9b594223cfaa87df6e` | 778 434 B | taxonomy `2026-05-01` |
+| `1.3.0/VSME-Digital-Template-Sample-1.3.0.xlsx` | `1ccf52b47567ea8f2524705ceac08918c6f319c3e8c9e0a6d4a3db336ab837ed` | 784 812 B | — (a fixture, registered as no template) |
+| `1.2.0/VSME-Digital-Template-1.2.0.xlsx` | `a3f24b0e5e70c6bf125b742fd8b676a322d87b118542bf162de0699fb79f7abb` | 646 105 B | taxonomy `2026-02-01` |
 
-Obtained from EFRAG and placed here 26 Aug 2026. The **Sample** is the same workbook with a
-`Cover Page` sheet and worked example data filled in; it is the fixture task 45.1 wants
-(*"open the official template and re-emit it unchanged"* needs a populated file to be a real test),
-not a second template.
+`1.3.0` and its Sample were obtained from EFRAG and placed here 26 Aug 2026; `1.2.0` was downloaded
+11 Oct 2026 from `https://xbrl.efrag.org/downloads/vsme/VSME-Digital-Template-1.2.0.xlsx`, which EFRAG
+lists as published 27 Feb 2026 beside its February 2026 taxonomy package — the project owner
+authorised the download (task 45.3). **Which taxonomy each is written against is read from the
+workbook itself**: EFRAG writes the taxonomy's entry point into the template, and `1.3.0` names
+`https://xbrl.efrag.org/taxonomy/vsme/2026-05-01/vsme-all.xsd` while `1.2.0` names the `2026-02-01`
+one; `apps/api`'s `digital-template-artefact.spec.ts` holds each registration to it.
+
+The **Sample** is the same workbook with a `Cover Page` sheet and worked example data filled in; it is
+task 45.1's populated fixture (*"open the official template and re-emit it unchanged"*), not a second
+template, and `.dockerignore` keeps it out of every image.
 
 **Licence: MIT, Copyright (c) 2025 EFRAG** — stated on the workbook's own `Licence` sheet. Copying,
 modifying and redistributing are permitted provided the notice travels with the file, which it does:
-the notice is a sheet *inside* the binary, so a patched export carries it by construction. Do not
-delete that sheet in `xlsx-patch`.
+the notice is a sheet *inside* the binary, and `packages/xlsx-patch` leaves every part it does not
+write byte for byte as it arrived, the Licence sheet's included.
 
-## What is not decided here
+## Layout and registration
 
-**The directory layout is `OQ-45`'s and task 45.3's, and nothing in this folder presumes it.**
-`architecture.md` §10.7 describes this folder as holding template binaries *per version*, and OQ-45
-— how a taxonomy version is written — names `config/efrag/<version>/` as one of the four places that
-identifier becomes a path. These files therefore sit at the folder root under **EFRAG's own release
-filenames**, which carry `1.3.0` because EFRAG put it there. Choosing `1.3.0/`, `2025-10/` or
-anything else as a *directory* is the decision OQ-45 defers to the task that will have several real
-EFRAG releases in front of it. Moving these two files into a subdirectory later costs one `git mv`.
+**One directory per template version, named with EFRAG's own template release identifier** — `1.3.0`,
+`1.2.0` — and each file under EFRAG's own file name (`architecture.md` §12.5.6's task-45 row (1),
+project owner, 11 Oct 2026). A template version is a dimension of its own beside the taxonomy version a
+report pins (DR-4): a template fix EFRAG releases against an unchanged taxonomy is a new directory, not
+a replaced file.
 
-Note also that a **template** version and a **taxonomy** version are separate dimensions in task
-45.3's own wording (*"which template version, pinned, alongside the taxonomy version a report
-already pins"*), and this file records only the first.
+**A binary here is registered, never uploaded** (182/48): `config/seed/vsme-digital-template.<version>.json`
+names its taxonomy version, its file and its SHA-256, and the adoption windows in
+`config/seed/reporting-taxonomy.vsme.json` name which template a newly opened period pins. The api
+resolves a report's pin through that registration to the file here and refuses one whose digest
+differs, so **replacing a file without a new registration fails every export of it** — which is the
+point. The api image copies this folder.
+
+**To add a release:** a directory, the binary under EFRAG's name, its registration in `config/seed/`
+with the digest, and — when the platform adopts it — a window in the adoption artefact. The registry's
+artefact spec then proves the window resolves and that the workbook names the taxonomy it is
+registered against.
 
 ## What is in the workbook
 
@@ -71,7 +85,7 @@ setter: Danish `da`, Dutch `nl`, French `fr`, German `de`, Irish `ga`, Italian `
 Polish `pl`, Portuguese `pt`, Slovenian `sl`, Spanish `es`.
 
 **Romanian is not among them, and neither is Russian.** `problem_overview.md` OQ-5 left exactly this
-as *"an action for the `config/efrag` seeding task, not an open question"* — the action is now
-performed against the current template, and the answer is on record here. Closing OQ-5 in its own
-register, and the consequences for NFR-24, UX-47, UX-98, T-14 and task 46.3, belong to whoever takes
-that decision; this file reports the observation and does not take it.
+as *"an action for the `config/efrag` seeding task, not an open question"*. The observation recorded
+here was acted on 31 Aug 2026 (task 33.2): T-14, NFR-24, UX-47 and UX-98 now say that only English
+VSME labels carry EFRAG standing, and the Excel export sets the template's language cell to English
+(FR-50 behaviour 10, task 46.1).

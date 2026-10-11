@@ -607,7 +607,7 @@ describe.each([
                                             period_start, period_start_tz, period_end, period_end_tz,
                                             template_version, taxonomy_version)
               VALUES ($1, $2, 2026, '2026-01-01', 'Europe/Chisinau', '2026-12-31', 'Europe/Chisinau',
-                      '2026-05-01', '2026-05-01')`,
+                      '1.3.0', '2026-05-01')`,
         [organizationId, entityId],
       );
     }

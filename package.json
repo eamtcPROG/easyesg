@@ -27,7 +27,7 @@
     "test": "pnpm -r --workspace-concurrency=1 test",
     "pretest:coverage": "node tools/check-coverage.mjs --reset",
     "test:coverage": "pnpm -r --workspace-concurrency=1 test --coverage && node tools/check-coverage.mjs",
-    "preboundaries": "pnpm --filter @easyesg/i18n --filter @easyesg/validation --filter @easyesg/vsme build",
+    "preboundaries": "pnpm --filter @easyesg/i18n --filter @easyesg/validation --filter @easyesg/vsme --filter @easyesg/xlsx-patch build",
     "boundaries": "depcruise --config .dependency-cruiser.cjs apps/api/src apps/web/src apps/admin/src packages/ui/src packages/i18n/src",
     "boundaries:prove": "./tools/prove-boundaries.sh",
     "eslint:prove": "node tools/prove-eslint.mjs",
