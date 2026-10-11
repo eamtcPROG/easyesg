@@ -106,7 +106,8 @@ export class SupportAccessGrantController {
     @Param(REQUEST_ID, ParseUUIDPipe) requestId: string,
   ): Promise<ReportResponseDto[]> {
     const reports = await this.reports.list({ organizationId, requestId });
-    return reports.map((report) => new ReportResponseDto(report));
+    const adopted = this.reports.adopted();
+    return reports.map((report) => new ReportResponseDto(report, adopted));
   }
 
   @Get('reports/:reportId/modules')

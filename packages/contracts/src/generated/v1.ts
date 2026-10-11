@@ -1143,6 +1143,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/{id}/filing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Mark the report filed (FR-41)
+         * @description Records that the report has left the building, on the day stated, and who recorded it. Allowed once an export of the report has completed; unresolved findings do not prevent it. A locked report is marked like an open one. Marking again replaces the day.
+         */
+        put: operations["ReportFilingController_mark"];
+        post?: never;
+        /**
+         * Withdraw the filed mark (FR-41)
+         * @description Clears the mark, and who and when with it; the change trail keeps both acts. No reason is asked.
+         */
+        delete: operations["ReportFilingController_withdraw"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/{id}/modules": {
         parameters: {
             query?: never;
@@ -1587,6 +1611,90 @@ export interface paths {
          * @description The whole document — cover, contents, omissions and findings, one page per module, provenance — as one HTML page with its styles and fonts inside it and no script, in the language asked for, which need not be the interface’s (FR-52). Nothing is written: no file and no export record (FR-48).
          */
         get: operations["PreviewController_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The report’s export history (UC-44)
+         * @description Every export of the report — requested, completed or failed — with its format, language, pinned versions, when and by whom it was asked for (UX-49).
+         */
+        get: operations["ExportsController_list"];
+        put?: never;
+        /**
+         * Ask for an export of the report (UC-42, UC-43)
+         * @description Runs validation, keeping the run as the report’s, then queues the file in the language asked for, at the report’s own pinned versions (FR-51). A report holding unresolved findings is refused with them listed unless the request acknowledges them (FR-44). The report’s status is not changed (FR-41).
+         */
+        post: operations["ExportsController_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/exports/languages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The languages an export of the report may be written in (FR-52, UX-47)
+         * @description Every language a file may be written in, each with whether its labels are EFRAG’s own or platform-authored at the report’s pinned taxonomy version — what the export dialogue says beside a language that carries no EFRAG standing.
+         */
+        get: operations["ExportsController_languages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One export (FR-49)
+         * @description What S-11 watches while the file is produced — polled every five seconds while it is requested (OQ-36).
+         */
+        get: operations["ExportsController_find"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exports/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The export’s file, exactly as it was produced (UC-44; FR-53)
+         * @description The stored file, byte for byte, never regenerated — and never refused for the plan the organization is on (FR-104). Answered as itself, not inside the response envelope.
+         */
+        get: operations["ExportsController_file"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3676,6 +3784,34 @@ export interface components {
             /** @description The elements a rule may read — those that apply, are in the report’s scope and are not withheld by an omission (FR-28, FR-31, FR-177). A rule naming any other is not evaluated. */
             scope: string[];
         };
+        FilingPersonDto: {
+            /**
+             * Format: uuid
+             * @description The account that marked the report filed.
+             */
+            accountId: string;
+            /** @description Their display name as it reads now, or null where the account no longer exists. */
+            name: string | null;
+        };
+        ReportFilingDto: {
+            /** @description The day the reporter says the report was filed. */
+            filedOn: components["schemas"]["LegalDateDto"];
+            /** @description When it was marked — Unix epoch milliseconds, UTC. */
+            filedAt: number;
+            filedBy: components["schemas"]["FilingPersonDto"];
+        };
+        SupersedingPinDto: {
+            /**
+             * @description The VSME taxonomy release a new report would pin today.
+             * @example 2026-05-01
+             */
+            taxonomyVersion: string;
+            /**
+             * @description The EFRAG Digital Template release a new report would pin today.
+             * @example 1.3.0
+             */
+            templateVersion: string;
+        };
         ReportSubjectDto: {
             /** Format: uuid */
             reportingEntityId: string;
@@ -3695,15 +3831,21 @@ export interface components {
             /** @enum {string} */
             scope: "basic" | "basic_and_comprehensive";
             /**
-             * @description Where the report stands. Open and locked follow the reporting period’s lock, which is their only writer (FR-22). An open report whose latest validation run left nothing outstanding reads ready to file (FR-41, 182/19) — read, never written.
+             * @description Where the report stands. Open and locked follow the reporting period’s lock, which is their only writer (FR-22). An open report whose latest validation run left nothing outstanding reads ready to file (FR-41, 182/19) — read, never written. A report its reporter marked filed reads filed, whether its period is open or locked (task 47.5).
              * @enum {string}
              */
             status: "open" | "locked" | "ready_to_file" | "filed";
+            /** @description Whether the report’s period is locked (FR-22), so it takes no writes from anyone — whatever its status reads: a filed report in a locked period reads filed (task 47.5). */
+            locked: boolean;
             /** @description What its latest validation run came to (FR-41), or null where it was never checked. */
             validation: components["schemas"]["ReportValidationSummaryDto"] | null;
+            /** @description The reporter’s filed mark (FR-41), or null where it was never marked or the mark was withdrawn. */
+            filing: components["schemas"]["ReportFilingDto"] | null;
+            /** @description The versions a new report would pin today, where they differ from this report’s pin (FR-51) — or null where its pin is current. An export always uses the report’s own pin. */
+            supersededBy: components["schemas"]["SupersedingPinDto"] | null;
             /**
              * @description The EFRAG Digital Template release this report is pinned to (DR-4, FR-66). Copied from the reporting period at creation and moved only by an explicit migration run (FR-69).
-             * @example 2026-05-01
+             * @example 1.3.0
              */
             templateVersion: string;
             /**
@@ -3747,6 +3889,13 @@ export interface components {
              * @example Mai lipsesc datele despre consumul de energie.
              */
             note?: string;
+        };
+        MarkReportFiledRequestDto: {
+            /**
+             * @description The day the report was filed, as a calendar date with no time and no offset; read in the reporting period’s time zone (NFR-34). S-11 offers today; the wire has no default.
+             * @example 2026-10-09
+             */
+            filedOn: string;
         };
         ApplicabilityDriverDto: {
             /** @example NumberOfEmployees */
@@ -4035,7 +4184,7 @@ export interface components {
              * @description What kind of notice this is — a key for the client to act on, never text to show.
              * @enum {string}
              */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline";
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
             /** @description The category’s name in the negotiated language, to show beside the notice. Absent when none is written. */
             categoryName?: string;
             /** @description The notice’s title in the negotiated language. Absent when the category has no in-app wording. */
@@ -4078,7 +4227,7 @@ export interface components {
              * @description The category — a key for the client to act on, never text to show.
              * @enum {string}
              */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline";
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
             /** @description The category’s name in the negotiated language. Absent when none is written. */
             categoryName?: string;
             /** @description Whether the category may not be switched off — security, account, invoice delivery, payment failure and service restriction notices. A mandatory category is listed on every channel it travels on, switched on. */
@@ -4095,7 +4244,7 @@ export interface components {
              * @description The category — a key for the client to act on, never text to show.
              * @enum {string}
              */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline";
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
             /**
              * @description The channel it is switched off on.
              * @enum {string}
@@ -4116,7 +4265,7 @@ export interface components {
              * @description The category the link is about — a key to act on, never text to show. Absent when unusable.
              * @enum {string}
              */
-            categoryKey?: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline";
+            categoryKey?: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
             /** @description The category’s name in the negotiated language. Absent when unusable, or when none is written. */
             categoryName?: string;
             /**
@@ -4508,6 +4657,81 @@ export interface components {
              * @example The Cahul shop is billed by its landlord and is not included.
              */
             explanation?: string | null;
+        };
+        ExportRequesterDto: {
+            /**
+             * Format: uuid
+             * @description The account that asked for the export.
+             */
+            accountId: string;
+            /** @description Their display name as it reads now, or null where the account no longer exists. */
+            name: string | null;
+        };
+        ExportResponseDto: {
+            /**
+             * Format: uuid
+             * @description The export — also its job’s id, which S-11 watches.
+             */
+            id: string;
+            /** Format: uuid */
+            reportId: string;
+            /** @enum {string} */
+            format: "pdf" | "xlsx";
+            /**
+             * @description The file’s language (FR-52).
+             * @enum {string}
+             */
+            locale: "ro" | "en" | "ru";
+            /**
+             * @description The EFRAG Digital Template release it was produced at (DR-4).
+             * @example 1.3.0
+             */
+            templateVersion: string;
+            /**
+             * @description The VSME taxonomy release it was produced at (DR-4).
+             * @example 2026-05-01
+             */
+            taxonomyVersion: string;
+            /**
+             * @description Requested while its job runs, completed once its file is stored, failed after its last attempt.
+             * @enum {string}
+             */
+            status: "requested" | "completed" | "failed";
+            /** @description When it was asked for — Unix epoch milliseconds, UTC. */
+            requestedAt: number;
+            requestedBy: components["schemas"]["ExportRequesterDto"];
+            /** @description When its file was stored — Unix epoch milliseconds, UTC. Null until it is. */
+            completedAt: number | null;
+            /** @description When its last attempt failed — Unix epoch milliseconds, UTC. Null unless it did. */
+            failedAt: number | null;
+            /** @description The stored file’s size in bytes, null until it is stored. */
+            byteSize: number | null;
+        };
+        RequestExportRequestDto: {
+            /**
+             * @description The file: the PDF, or the EFRAG Digital Template.
+             * @enum {string}
+             */
+            format: "pdf" | "xlsx";
+            /**
+             * @description The file’s language, chosen independently of the interface’s (FR-52). S-11 starts from the account’s export language; the request always names one.
+             * @enum {string}
+             */
+            locale: "ro" | "en" | "ru";
+            /** @description That the person asking has seen the report’s unresolved findings and exports with them (FR-44). Absent is not acknowledged: a report holding unresolved findings is then refused with them listed, and the same request carrying this is accepted. */
+            acknowledgeUnresolvedFindings?: boolean;
+        };
+        ExportLanguageDto: {
+            /** @enum {string} */
+            locale: "ro" | "en" | "ru";
+            /**
+             * @description Whether the labels in this language are EFRAG’s own or platform-authored at the report’s pinned taxonomy version (UX-47, T-14). Null where the version carries no labels in this language.
+             * @enum {string|null}
+             */
+            labelStanding: "official" | "platform_authored" | null;
+        };
+        ExportLanguagesResponseDto: {
+            languages: components["schemas"]["ExportLanguageDto"][];
         };
         SupportAccessDecisionResponseDto: {
             /** @enum {string} */
@@ -4917,7 +5141,7 @@ export interface components {
              * @description The notification category, where the target is a category’s configuration version (task 67.10).
              * @enum {string|null}
              */
-            targetCategory: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | null;
+            targetCategory: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished" | null;
         };
         AdminCredentialsResponseDto: {
             /**
@@ -5105,7 +5329,7 @@ export interface components {
              * @description A key for the console to act on, never text to show.
              * @enum {string}
              */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline";
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
             /** @description Code declares it mandatory: its classification is fixed and it travels by email. */
             mandatory: boolean;
             /** @description A notice sent to an address with a token in its link: it never travels in-app. */
@@ -7681,6 +7905,86 @@ export interface operations {
             };
         };
     };
+    ReportFilingController_mark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkReportFiledRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The report, marked filed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportResponseDto"];
+                    };
+                };
+            };
+            /** @description The day is not a real calendar day. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No export of the report has completed yet. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportFilingController_withdraw: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The report as it now stands. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ReportResponseDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     WizardController_modules: {
         parameters: {
             query?: never;
@@ -7847,7 +8151,7 @@ export interface operations {
                 page?: number;
                 /** @description One ordering, `received,<asc|desc>`. Defaults to `received,desc` — newest first. */
                 order?: unknown;
-                /** @description Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder, reporting.report_update, reporting.outstanding_report, reporting.report_deadline. A value outside these, or a field this route does not define, is ignored rather than refused. */
+                /** @description Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder, reporting.report_update, reporting.outstanding_report, reporting.report_deadline, reporting.export_finished. A value outside these, or a field this route does not define, is ignored rather than refused. */
                 filters?: unknown;
             };
             header?: never;
@@ -8542,6 +8846,207 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ExportsController_list: {
+        parameters: {
+            query?: {
+                /** @description Exports per page, 25 unless given. `-1` (all rows) is refused on this route. */
+                onpage?: number;
+                /** @description 1-based. */
+                page?: number;
+                /** @description One ordering, `requested,<asc|desc>`. Defaults to `requested,desc` — newest first. */
+                order?: unknown;
+                /** @description Compact facets, pipe-separated: `format,<pdf|xlsx>`, `language,<ro|en|ru>`, `taxonomyVersion,<version>` and `status,<requested|completed|failed>`, each taking several values. A value no export can hold is ignored rather than refused. */
+                filters?: unknown;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of the history. `total` counts the exports the facets admit; `unfiltered` counts the report’s exports before them, which tells an empty page whether nothing has been exported yet or the facets matched nothing. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["ExportResponseDto"][];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ExportsController_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestExportRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The export, requested; its id is its job’s. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ExportResponseDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The report holds unresolved findings and the request did not acknowledge them (problem type export-findings-unacknowledged); `findings` lists them as this request evaluated them, each as the report’s validation read names it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No validation rule set can be read, so the request cannot be judged. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ExportsController_languages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The languages, in the platform’s order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ExportLanguagesResponseDto"];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ExportsController_find: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The export as it stands. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["ExportResponseDto"];
+                    };
+                };
+            };
+            /** @description No such export in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ExportsController_file: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such export in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The export is still being produced, or failed (problem type export-file-unavailable). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
             };
         };
     };
@@ -10663,7 +11168,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The category. */
-                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline";
+                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
             };
             cookie?: never;
         };
@@ -10728,7 +11233,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The category. */
-                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline";
+                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
             };
             cookie?: never;
         };
@@ -10802,7 +11307,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The category. */
-                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline";
+                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
             };
             cookie?: never;
         };

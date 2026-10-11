@@ -148,6 +148,16 @@ describe('notification preferences (UC-168, FR-163)', () => {
           { channel: 'email', enabled: true },
         ],
       },
+      // The finished export's notice (task 47.3): optional, in-app and by email, to the person who asked.
+      {
+        categoryKey: 'reporting.export_finished',
+        categoryName: 'Exporturi încheiate',
+        mandatory: false,
+        channels: [
+          { channel: 'in_app', enabled: true },
+          { channel: 'email', enabled: true },
+        ],
+      },
     ]);
   });
 

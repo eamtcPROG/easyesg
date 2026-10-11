@@ -37,6 +37,7 @@ export const NOTIFICATION_CATEGORY = {
   REPORT_UPDATE: 'reporting.report_update',
   OUTSTANDING_REPORT: 'reporting.outstanding_report',
   REPORT_DEADLINE: 'reporting.report_deadline',
+  EXPORT_FINISHED: 'reporting.export_finished',
 } as const;
 
 export type NotificationCategoryKey = (typeof NOTIFICATION_CATEGORY)[keyof typeof NOTIFICATION_CATEGORY];

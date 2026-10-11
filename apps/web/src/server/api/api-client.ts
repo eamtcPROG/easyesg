@@ -1,5 +1,6 @@
 import 'server-only';
 import {
+  answersNoBody,
   readProblemDocument,
   readResultList,
   readResultObject,
@@ -38,7 +39,9 @@ import { redirectToSignIn } from '../session/sign-in-redirect';
  *    `title`/`detail` already resolved in the request's negotiated locale (OQ-46) and in
  *    NFR-79's three-part shape — so a screen renders them as received and never maps a slug to
  *    a sentence.
- * 3. **Bypasses**: an explicit 202/204 with no body (`value` is `undefined`), and
+ * 3. **Bypasses**: an explicit 204, and a 202 with no body (`value` is `undefined`) — **a 202 may carry the envelope**
+ *    since task 47.4, when the route answers what it accepted (the export request's record, whose id is its job's), and
+ *    then it is read like any other; and
  *    `StreamableFile`/`Buffer` byte streams — those are downloads, they must pass through the
  *    `/api/[...path]` proxy byte-for-byte (FR-53), and they are deliberately NOT this client's
  *    job.
@@ -251,8 +254,8 @@ async function requestObject<TObject>(
   const sent = await send(method, path, body, context);
   if (!('response' in sent)) return sent;
 
-  // 202/204 leave with no body by design (§6.8's bypasses).
-  if (sent.response.status === 202 || sent.response.status === 204) {
+  // §6.8's bypasses — a 204, and a 202 with nothing to say; a 202 answering what it accepted is read (task 47.4).
+  if (answersNoBody({ status: sent.response.status, contentType: sent.response.headers.get('content-type') })) {
     return { status: API_OUTCOME.Ok, value: undefined as TObject, messages: [] };
   }
 

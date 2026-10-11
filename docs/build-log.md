@@ -31283,3 +31283,137 @@ but no controller), `packages/xlsx-patch` and `packages/i18n` (so every dependen
 - **Skipped: `pnpm e2e:web`.** The change reaches the browser only through `packages/i18n`, whose new keys are all
   under `core.export.*`, which no screen reads, and no markup changed; the web and admin unit suites ran.
 - **Not run here: Microsoft Excel.** The release checklist's item, by design (T-12).
+
+## Task 47 — the export asked for, watched and kept; the report marked filed · 2026-10-12
+
+47.1 put the history and the re-download on the api — every export of a report, newest first, filtered, and its file
+streamed byte for byte past the envelope; 47.2 has a request name its language, S-11 starting from the account's export
+default; 47.3 built S-11 — the dialogue's two decisions, the caveat, UX-48's notice, the warning listing unresolved
+findings, the file watched until it is ready, the history with a download per file — and the completion notice, to the
+person who asked, past 30 s; 47.4 put the request on the api, running validation and keeping the run, refusing unresolved
+findings with them listed until acknowledged; 47.5 put the filed mark beside the status, made and withdrawn on S-11.
+
+### Decided before building (project owner, one batch of seven, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-47 row (1)–(7); amended in the same edits §6.8's export routes, the
+task-37.3 row (*only the lock refuses a recalculation*), FR-41 behaviour 6 and its surfaces, FR-51's precondition, FR-53's
+duplicated AC-7, S-11's controls (*migrate first* struck, *Mark as filed* added), `actors.md` and
+`design/IMPLEMENTATION_PLAN.md`.
+
+- **(1) The mark is its own columns beside the status**, `filed_on`/`filed_on_tz`, `filed_at` and `filed_by`, the last
+  two written by a trigger and withheld from `esg_app`; a lock leaves them alone and a filed report reads `filed` over
+  either period state. *Declined:* `filed` in the status column, which the next lock would erase.
+- **(2) The lock alone freezes.** *Declined:* a mark that refuses writes; an edit that clears it.
+- **(3) Withdrawn by an editor or the OA, no reason.** *Declined:* the OA alone with a reason.
+- **(4) Who, when and a *filed on* date, allowed once an export completed; findings gate nothing.** *Declined:* the
+  artboard's recipient and note, which no source asks for.
+- **(5) The notice is `reporting.export_finished`, optional, to the requester, past 30 s, for completion and final
+  failure.** *Declined:* a notice on every export; every editor.
+- **(6) Superseded means the version a new report would pin today differs.** *Declined:* any newer version registered.
+- **(7) The request's validation run is stored as the report's, committed before the request decides.** *Declined:* an
+  evaluation the request keeps to itself.
+
+### Settled while building, recorded rather than asked
+
+Row (a)–(o) of the task-47 row; the five that building surfaced rather than reading:
+
+- **(k) The dialogue's caveat follows the pin, from the api.** S-11 cannot know which languages carry EFRAG's own labels
+  — the browser never reads the label catalogues (AD-9) — and naming Romanian and Russian in the screen would be
+  T-14's *at `2026-05-01`* frozen into code. `DISCLOSURE_LABELS.standing`, shaped at task 33.2 *for the dialogue that
+  asks once per offered language*, now answers through `GET /reports/{id}/exports/languages`, and the recommendation
+  names the first language whose labels are official.
+- **(l) The refusal's list reaches the browser as the problem's `findings` member.** `readProblemDocument` dropped
+  every extension member, so the first refusal a screen needed to read beyond its title could not be read at all. It
+  now keeps them as received, and S-11 admits the list through a validated reader of its own
+  (`refused-findings.ts`); a refusal of this kind with a list it cannot read still owes the warning, and draws it unlisted.
+- **(n) Whether to offer the mark is asked of the whole history.** A page of the history can hold no completed export
+  while an older one completed, so the api's history gained a status facet and S-11 asks one row of it.
+- **(o) A report answers `locked` beside its status.** Decision (1) made `filed` read over the lock — and S-07's and
+  S-09's read-only rule was `status === locked`, so a filed report in a locked period would have been offered as
+  editable, every write refused by the trigger. The web reads the flag now; the wizard's spec pins it.
+- **(m) No taxonomy facet on screen**: a report's exports share its pin until a migration exists, so the facet could
+  offer one value; the api keeps it.
+
+### What the building found
+
+- **`.gitignore`'s bare `exports/` swallowed S-11.** The rule for runtime data matched
+  `apps/web/src/features/export/exports/` and `apps/web/src/client/exports/` at any depth — 32 files, the screen and its
+  watch, absent from `git status` while every gate passed on disk: the `credentials/` trap of 27 Aug 2026, which the
+  file's own comment warns of. Found by reading `git status` against what was built, before staging. `exports/`,
+  `uploads/` and `backups/` are anchored to the root now — all three name domain concepts under `src/`. *Searched:* the
+  file's other directory rules (`/credentials/` already anchored; `infra/**/data/` path-qualified); and every path under
+  `apps`, `packages`, `e2e` and `config` git ignores — `.env.local` and `next-env.d.ts`, both meant to be.
+- **The new category was missing from five enumerations.** The api's unit suite caught two — `offered-preferences.spec.ts`,
+  and the email renderer's link check, whose shared parameters lacked the notice's `format` and `outcome`, so the ICU
+  subject failed to render — and the api's two category suites and S-26's journey list the categories in full; each
+  gains the row. *Searched:* every test naming a category's display name or listing `reporting.report_deadline`.
+- **The placeholder export action is gone.** `PendingAction`, S-07's *Export* drawn ahead of its screen since task
+  179.1, is deleted with its style and its two catalogue keys; S-07's bar, its ⋯ at `compact` and S-10's bar link to
+  S-11 by the exit's own rule, and S-07's bar journey asserts the link rather than the unavailable button.
+- **Both front ends read every 202 as bodiless, and the browser journey was what said so.** The request answers 202
+  with the export's record, the first 202 in the api to carry one; the web's seam returned `value: undefined`, the
+  dialogue watched an export that was not there, and S-11 fell to Next's *This page couldn't load* — with every unit
+  and api suite green and nothing in the server's log, because nothing failed on the server. Found by tracing the
+  journey and reading the Server Action's own answer. The rule is `answersNoBody` in `@easyesg/contracts` now — a 204,
+  or a 202 that is not the envelope's media type — used by both seams, the console's carrying the same assumption
+  though it calls no such route yet; `api-client.spec.ts` reads a 202's record.
+- **The lock's snapshot suite caught `locked`.** `report-snapshot.e2e-spec.ts` holds a report *reading identically but for
+  the lock itself* across a lock, and row (o)'s flag is the lock — so it is asserted moving, false to true, beside the
+  status it is excluded with, rather than excluded silently.
+- **The request tier builds an S3 client since 47.1, and nothing released it.** Every application — every e2e file's —
+  now constructs `S3ObjectStorage`; the adapter destroys its client on `onModuleDestroy`, as the socket ticket store
+  closes its Redis client, and a spec fails without the hook.
+- **`pnpm e2e` ran out of heap on this host.** The first run aborted at about 552 s (`JavaScript heap out of memory`,
+  SIGABRT) at the default ~2 GB ceiling of this 8 GB machine, one suite more than task 46's run, which passed in 557 s
+  — all 71 files in one `--runInBand` process. With `NODE_OPTIONS=--max-old-space-size=4096` for that run alone, as
+  Stage 2's cold lint was run, it passed: 71 suites, 1,762 tests, 482 s. No gate script changed. Jest printed no
+  per-file heap lines in a non-interactive run, so where the heap grows is unmeasured. **Raised with the owner rather
+  than decided here** — whether the e2e script carries a heap setting, recycles a single worker
+  (`--maxWorkers=1` with `workerIdleMemoryLimit` rather than `--runInBand`) or stays as it is while CI's larger runners
+  pass it.
+- **Lint's five findings in new code**: a `module` variable (Next's rule), a form with no `method` (task 96's rule), an
+  untyped e2e body, a control-character class (now `\p{Cc}`), and the report DTO's template example, `2026-05-01` — the
+  template is EFRAG's release identifier since task 45.3, so the example was wrong as well as repeated.
+
+### Not built, and why
+
+- **The artboard's export count and *Download* beneath S-06's filed row.** Task 32.2.2's entry assigned them to task 47;
+  task 47's row never carried them and S-06's spec entry does not ask for them. S-11, one press from the report, holds
+  the history and its downloads. Raised with the owner rather than built in passing.
+- **S-11's read-only state under suspension** — task 65.2's (row (g)).
+
+### Gates
+
+The change reaches `apps/api` (controllers and DTOs, a migration, a consumer's notice, the module graph in both modes),
+`apps/web`, `apps/admin` (a category's label, the seam's 202 rule), `packages/contracts` (regenerated, and runtime
+exports both seams read) and `packages/i18n`, so every dependent's row ran, one suite at a time, with no dev server
+running:
+
+- `pnpm lint`, clean after the findings above. `pnpm typecheck`, every workspace. `pnpm docs:check`, 48 claims, after
+  three counts moved (the contract's paths, 120 to 125; the seed's artefacts, 34 to 35; the web's Client Components,
+  209 to 217) and task 65's Covered FR gained FR-53, its 65.2 being where FR-53's AC-5 is now named as remaining.
+  `pnpm events:check`; `pnpm routes:check`. `pnpm openapi:check` with the regenerated contract staged.
+- Unit: `api` 2,287 in 287 suites, `web` 1,927, `admin` 299, `i18n` 163.
+- `pnpm migrations:check`, both stacks, 64 and 64 — the mark's columns, grants and trigger.
+- `pnpm e2e`: 71 suites, 1,762 tests, 482 s, at a 4 GB heap for that run (above); its log holds only the warnings other
+  suites provoke on purpose — task 206's refused key, a bounce, a suppressed address, a recipient with no account.
+  `pnpm e2e:worker`: 16 — the worker boots with the export jobs' new notice port.
+- `pnpm e2e:web`, all three projects: 354 of 354, ten minutes. The first run failed S-11's journey on the 202 above; the
+  journey alone passed 3 of 3 against the rebuilt bundle, then the whole suite. Its *destination stream closed early*
+  lines are the abandoned streams `apps/web/CLAUDE.md` records, from other screens.
+
+### Skills, read against the diff
+
+`vercel-react-best-practices`: `async-api-routes` moved the section's translations and locale ahead of the awaited
+query; `async-parallel` — the read is one `Promise.all` of five; `server-serialization` — the client islands take a
+page, three languages and a summary; `client-swr-dedup` — the dialogue's card and the history's row share one Query key
+per export, so a watched export is read once; `rendering-conditional-render` throughout. *Considered and kept*: the
+status cell's `router.refresh()` in an effect on settle (`rerender-move-effect-to-event`) — it answers a poll, not an
+event. `vercel-composition-patterns`: not loaded beyond that pass — no component grew a boolean, the one flag being the
+warning's `busy`. `one-kind-per-folder`: `components/` mirrors the section's return in render order (`bar/`,
+`notices/`, `dialogue/`, `filing/`, `history/`) with `section/`, `frame/`, `states/`, `shared/`, `styles/`; the shared
+messages constant now states its admission test. `one-idea-per-file`: the settled status chip and the watched cell were
+one file and are two. `nestjs-best-practices` (the api half): `di-use-interfaces-tokens` for the history store and the
+object reader, a second face of the storage adapter (`di-interface-segregation`) rather than a read on the writer's port;
+`error-use-exception-filters` for the refusal's `findings`, an extension member the filter spreads. *Declined*:
+`error-throw-http-exceptions`, which the architecture forbids in use cases.

@@ -11,7 +11,7 @@ every screen. Cite them; do not re-derive them.
 ## Current state
 
 Identity, organization, periods, reports, entities, the wizard with its validation, the calculator, the notification centre and
-the profile are live; preview and export, checkout and billing and the public tier are the
+the profile are live, and preview and export since tasks 43 and 47; checkout and billing and the public tier are the
 fourteen addresses `AddressNotice` answers for (fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across seven route groups,
 8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (13 built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
@@ -28,15 +28,19 @@ acts — a line's tonnes replaced with a reason on S-09, and on S-07's B3 a scop
 since 39.4, the person who made each replacement named beside it, and since 204.2 its spreadsheet import — an `.xlsx` or `.csv` read in the browser by `client/spreadsheet/`, its columns and values matched, the rows it cannot read reported, each readable row queued as a typed line, S-07's fields with their verdicts where they are answered, live, since task 42.1, S-08 since 42.2 — the validation panel beside the step at `wide` and a sheet below it, *Check my report*, and the run's roll-up on S-07's list, S-05 and S-06 — with each finding an address that lands focus in its field since 42.3, S-26 notification centre
 with, since task 37.3, its category filter,
 S-10 since task 43.2 — the report as its document, the api's rendering framed with no script in the account's export
-language until another is chosen, its pages opened in the frame, reached from S-07's *Review the report* — S-27 profile,
+language until another is chosen, its pages opened in the frame, reached from S-07's *Review the report* — S-11 since task
+47 — the export dialogue's two decisions with the caveat beside a language whose labels carry no EFRAG standing, the
+warning listing a report's unresolved findings and the export that acknowledges them, the file watched until it is ready
+through the pass-through, the history with its download per file, and the filed mark made and withdrawn, reached from
+S-07's and S-10's *Export* — S-27 profile,
 languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
 layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
 complete your account, S-37 choose organization, S-38 unsubscribe from an email; §4.2's global tier with, since task
 83.2, the organization switcher, and the workspace tier with its drawer, and since task 67.9 UX-124's support-access
 banner across every signed-in screen, and since task 50.2.1 the band's notification bell with the unread count, polled
 every minute, and its row in the compact drawer, the bell opening the panel of the latest notices since 50.2.2. **Not
-live** beyond those fourteen addresses: the wizard's deferred step S-11, which still returns `null` under UX-5's exit
-control.
+live** beyond those fourteen addresses: nothing — S-11, the last wizard screen that returned `null`, is built since
+task 47.
 
 `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must. What follows is what a reader needs in hand for each live slice, grouped by
 the seam it sits on rather than by the task that built it.
@@ -48,7 +52,8 @@ the Next server tier calls the public API as the ordinary client AD-9 says it is
 `src/server/api/api-client.ts` is the full client seam: `api.get / getList / post / put / patch / delete`,
 each returning one `ApiOutcome<T>` (envelope unwrapped — `messages[]` included, because
 `WARNING` is how AD-5's `allow_with_warning` reaches a caller — problem+json as received,
-202/204 as Ok-with-no-value, network/timeout/gateway failures as `unreachable`). List queries
+a 204 or an empty 202 as Ok-with-no-value — a 202 carrying the envelope is read, since task 47.4's export request answers
+its record (`answersNoBody`, shared with the console) — network/timeout/gateway failures as `unreachable`). List queries
 are built by `src/lib/pagination.ts`, the typed inverse of the API's `ListQueryInterceptor` —
 its grammar has no escaping, so the builder throws on a value containing `|` or `,` rather than
 letting it parse as extra groups. **Note `API_BASE_URL` already carries `/api/v1`**, so client
@@ -1012,7 +1017,10 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **209 files here are Client Components** (10 Oct 2026: one more since task 43.2 — the wizard's leave guard,
+  **217 files here are Client Components** (12 Oct 2026: nine more since task 47 built S-11 — the dialogue, its pending
+  card, the history, its columns, its filters and the status cell that watches a row still being made, the filed mark
+  and the panel that makes one, and the export's watch in `client/exports/` — and one fewer, the bar's action drawn ahead
+  of its screen, which S-11 retired. 10 Oct 2026: one more since task 43.2 — the wizard's leave guard,
   `useLeaveGuard`, which the bar's *Review the report* and its ⋯ at `compact` share with the exit. 9 Oct 2026: one more since task 75 — the cookie policy's table card, which
   measures whether its table fits and, while it does not, is a region a keyboard can reach; one more since task 95 — the hook that reads which of S-07's
   applicability notes a reader dismissed, through `useSyncExternalStore`, beside the store in `client/applicability/`;

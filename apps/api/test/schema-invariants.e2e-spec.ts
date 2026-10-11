@@ -477,6 +477,10 @@ const APP_IMMUTABLE_COLUMNS: Record<string, string[]> = {
     // Identity and tenancy. A row does not move between organizations or periods; that would be a
     // different report (§12.5.6's task-31.3 rows).
     'created_at',
+    // The filed mark's moment and person (task 47.5): stamped by `core.stamp_report_filing` from the moment and from
+    // `app.current_user`, so a caller cannot name someone else; the reporter writes the date and its zone alone.
+    'filed_at',
+    'filed_by',
     'id',
     'organization_id',
     // The currency a filing's monetary disclosures are stated in (task 36.12). Withheld for the

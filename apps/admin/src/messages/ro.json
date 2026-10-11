@@ -773,7 +773,8 @@
         "manualReminder": "Mementouri",
         "reportUpdate": "Actualizări ale rapoartelor",
         "outstandingReport": "Câmpuri de completat",
-        "reportDeadline": "Termene de depunere"
+        "reportDeadline": "Termene de depunere",
+        "exportFinished": "Exporturi încheiate"
       },
       "channels": {
         "in_app": "În aplicație",

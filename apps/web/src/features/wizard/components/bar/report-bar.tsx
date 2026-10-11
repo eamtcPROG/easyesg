@@ -1,14 +1,12 @@
 import type { DisclosureModuleSummary, Report } from '@easyesg/contracts';
 import { BUTTON_VARIANT, Button, WizardBar } from '@easyesg/ui';
 import { getFormatter, getTranslations } from 'next-intl/server';
-import { ROUTES, reportPreviewRoute } from '@/lib/routes';
+import { ROUTES, reportExportRoute, reportPreviewRoute } from '@/lib/routes';
 import type { ReadOnlyCause } from '@/server/data/wizard';
-import { BAR_ACTION } from '../../tools/bar-actions';
 import { reportIdentity } from '../../tools/report-identity';
 import { initialSavedAt } from '../../tools/saved-at';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import { ExitLink } from './exit-link';
-import { PendingAction } from './pending-action';
 import { ReportOverflow } from './report-overflow';
 import { SaveState } from './save-state';
 
@@ -51,8 +49,11 @@ export async function ReportBar({
       saveState={readOnly === null ? <SaveState initialSavedAt={initialSavedAt(modules)} /> : null}
       actions={
         <>
-          <PendingAction action={BAR_ACTION.EXPORT} />
-          {/* S-10 (task 43.2), left by the exit's own rule: an answer not yet sent is in no preview until it is. */}
+          {/* S-11 (task 47.3) and S-10 (task 43.2), each left by the exit's own rule: an answer not yet sent is in no
+              file and no preview until it is. */}
+          <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
+            <ExitLink href={reportExportRoute({ reportId: report.id })}>{t('bar.export')}</ExitLink>
+          </Button>
           <Button asChild variant={BUTTON_VARIANT.PRIMARY}>
             <ExitLink href={reportPreviewRoute({ reportId: report.id })}>{t('bar.review')}</ExitLink>
           </Button>

@@ -1,4 +1,5 @@
 import type { DigitalTemplateRegistry } from '@api/contracts/digital-template-registry.port';
+import type { NotificationPort } from '@api/contracts/notification.port';
 import type { ObjectStorage } from '@api/contracts/object-storage.port';
 import type { ReportWorkbookWriter } from '@api/contracts/report-workbook.port';
 import type { TenantWork } from '@api/contracts/tenant-work.port';
@@ -27,6 +28,7 @@ export class ProduceXlsxExport {
     private readonly templates: DigitalTemplateRegistry,
     private readonly writer: ReportWorkbookWriter,
     private readonly storage: ObjectStorage,
+    private readonly notifications: NotificationPort,
     private readonly now: () => Date,
   ) {}
 
@@ -37,6 +39,7 @@ export class ProduceXlsxExport {
       tenantWork: this.tenantWork,
       store: this.store,
       storage: this.storage,
+      notifications: this.notifications,
       now: this.now,
       compose: (requested, generatedAt) =>
         this.compose.execute({

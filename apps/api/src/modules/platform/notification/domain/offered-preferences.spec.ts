@@ -32,6 +32,7 @@ describe('offeredPreferences (task 52.1)', () => {
       'reporting.report_update',
       'reporting.outstanding_report',
       'reporting.report_deadline',
+      'reporting.export_finished',
     ]);
   });
 

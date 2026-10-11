@@ -93,6 +93,7 @@ describe('LockReportingPeriod (UC-57, UC-58)', () => {
           id: '00000000-0000-0000-0000-0000000000d1',
           status: 'open',
           readyToFile: false,
+          filed: false,
           validation: null,
           updatedAt: NOW,
         },

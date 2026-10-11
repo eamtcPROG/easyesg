@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
 import type { DataSource } from 'typeorm';
+import type { NotificationPort } from '@api/contracts/notification.port';
 import { S3ObjectStorage } from '@api/infrastructure/adapters/object-storage/s3-object-storage';
 
 const BUCKET = 'esg-exports';
@@ -83,3 +84,20 @@ export async function requestExport(input: {
   }
   return exportId;
 }
+
+/**
+ * A notification port that raises nothing, for a suite that builds an export's job by hand (task 47.3): the notice is
+ * raised only for an export settled more than 30 s after its request, which these suites' exports are not, and its
+ * real path is `export-history.e2e-spec.ts`'s to prove. Recording, so a case can still see a raise it did not expect.
+ */
+export const inertNotifications = (): NotificationPort & { readonly raised: unknown[] } => {
+  const raised: unknown[] = [];
+  return {
+    raised,
+    raise: (command) => {
+      raised.push(command);
+      return Promise.resolve({ notificationId: 'inert' });
+    },
+    cancel: () => Promise.resolve(),
+  };
+};

@@ -152,7 +152,8 @@ const workerProviders: Provider[] = [
     ...(mode === APP_MODE.WORKER ? workerProviders : httpProviders),
   ],
   // Since task 43.1 the run's read too: the preview prints the last run's unresolved findings (UX-119), and task 44's
-  // export on the worker will — `RunValidation` is registered in both modes.
-  exports: [VALIDATION_RULE_SETS, RunValidation],
+  // export on the worker will — `RunValidation` is registered in both modes. Since task 47.4 the HTTP side's service as
+  // well: an export request runs validation and refuses with the findings named as S-08 names them (182/20).
+  exports: [VALIDATION_RULE_SETS, RunValidation, ...(mode === APP_MODE.WORKER ? [] : [ValidationService])],
 })
 export class ValidationModule {}

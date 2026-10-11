@@ -80,7 +80,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-41 — Roll-up per module and per report
 
-**Status.** Partial — delivered 41.2, 41.3 (the roll-up, computed by each run, and readiness read from it), 42.2 (S-07's list, S-08's meter, S-05 and S-06 read it; the browser's interim count is gone) · remaining 47.5 (marking a report filed).
+**Status.** Built — delivered 41.2, 41.3 (the roll-up, computed by each run, and readiness read from it), 42.2 (S-07's list, S-08's meter, S-05 and S-06 read it; the browser's interim count is gone), 47.5 (the filed mark: its own record beside the status, made and withdrawn on S-11)
 
 **Obligation.** The system shall roll validation state up per module and across the whole report, discounting sections declared omitted as classified or sensitive information (FR-31) so that a legitimate omission does not depress completion.
 
@@ -88,7 +88,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 |---|---|
 | **Actors** | SYS computes. Every member reads the roll-up, a view-only member included (FR-25; 182/22). |
 | **Traces** | UC-38, UC-169 · D-4 · BR-VAL-2 · UX-20, UX-21 · `architecture.md` §9.8 · FR-31, FR-164 · entity *Validation finding* |
-| **Surfaces** | S-08 (roll-up and meter) · S-07's module list · S-06 and S-05's completion and validation columns · `GET /reports/{id}/validation`'s `rollUp`, and the report's status on `GET /reports` and `GET /periods` (task 41.3) |
+| **Surfaces** | S-08 (roll-up and meter) · S-07's module list · S-06 and S-05's completion and validation columns · `GET /reports/{id}/validation`'s `rollUp`, and the report's status on `GET /reports` and `GET /periods` (task 41.3) · S-11's *Mark as filed* · `PUT`/`DELETE /reports/{id}/filing` (task 47.5) |
 
 **Preconditions.** Persisted findings (task 41.2).
 
@@ -98,7 +98,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 3. **What counts as resolved** (design_spec.md §6.4): `OK`, `nil_return` and `not_available` do (the last *reasoned*); `MISSING VALUE`, `VALUE INCONSISTENCY`, `ERROR` and `INVALID URL` do not.
 4. The roll-up supplies the named outstanding modules and fields that FR-164's notice carries (UC-38, UC-169; task 51.2 waits for 41.3).
 5. **What the roll-up returns** (182/18). *Counts*, per module and for the report: **resolved** (answered, including a nil return), **reasoned** (declared not available, FR-32) and **outstanding** (what item 3 does not count as resolved); and a **derived status**: *not started* (nothing resolved or reasoned), *in progress* (something outstanding) or *complete* (nothing outstanding) for a module, the wizard's own derivation (task-179.1 row), and the same three for the report, where *complete* reads *ready* (item 6). That is the single readiness signal UC-38 asks for, and it is what the completeness meter draws: *resolved / reasoned / outstanding and never a single percentage* (design_spec.md §11.5). A surface that needs a figure derives one from the counts for display, as the advisor board does (FR-200); the roll-up never returns one.
-6. **The report's status** (182/19). `ready_to_file` is *computed* from the roll-up: a report is ready when nothing is outstanding, and stops being ready when a run finds something outstanding. No user act sets it. **It is derived on read and never stored** (§12.5.6's task-41 row (2)): the stored status stays the period lock's, and an open report reads `ready_to_file` while its latest run leaves nothing outstanding. `filed` is the reporter's explicit act, *Mark as filed* on S-11 (`design/IMPLEMENTATION_PLAN.md`), and never the result of an export: an export may be a draft for a bank, and only the reporter knows a document has left the building. The period lock stays the only writer of `open` and `locked` (task-31.3 row).
+6. **The report's status** (182/19). `ready_to_file` is *computed* from the roll-up: a report is ready when nothing is outstanding, and stops being ready when a run finds something outstanding. No user act sets it. **It is derived on read and never stored** (§12.5.6's task-41 row (2)): the stored status stays the period lock's, and an open report reads `ready_to_file` while its latest run leaves nothing outstanding. `filed` is the reporter's explicit act, *Mark as filed* on S-11 (`design/IMPLEMENTATION_PLAN.md`), and never the result of an export: an export may be a draft for a bank, and only the reporter knows a document has left the building. The period lock stays the only writer of `open` and `locked` (task-31.3 row). **The mark is its own record beside the status** (§12.5.6's task-47 row (1)–(4), 12 Oct 2026): the *filed on* date the reporter states, who marked and when; a lock or a reopening leaves it alone, and a filed report reads `filed` whether its period is open or locked. It is allowed once an export of the report has completed, freezes nothing — the lock alone does — and is withdrawn by an editor or the OA with no reason.
 7. S-06 and S-05 refused the completion and validation columns until this existed (task-32.2 and task-32.4 rows); they read it since 42.2, and FR-25/AC-3 is met since then.
 8. **The roll-up is as current as the findings it is read from** (182/26): the api evaluates when asked, not on each write (FR-43), so a report edited since the last run reads as the run left it, and an export request runs validation first (FR-44).
 9. **Before a report's first run there is no roll-up, and nothing is drawn as though there were one** (§12.5.6's task-42 row (3)). A module with nothing answered reads *not started*, which a run would also find; any other reads *not checked yet*, and so does the report on S-05 and S-06. S-08 offers the first run.
@@ -115,7 +115,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-6** Given outstanding items, then the roll-up names the modules and fields. *(source: UC-38; UC-169; FR-164)*
 - **AC-7** Given a report, then the roll-up returns counts per module and for the report (resolved, reasoned, outstanding) and a derived status, and returns no percentage. *(source: §12.5.6 task-182 validation row, 182/18)*
 - **AC-8** Given a report with nothing outstanding, then it reads ready to file; given a later run that finds something outstanding, then it no longer does. No user act sets either. *(source: §12.5.6 task-182 validation row, 182/19)*
-- **AC-9** Given a completed export, then the report's status is unchanged; given the reporter marks the report filed, then it reads filed. *(source: §12.5.6 task-182 validation row, 182/19)* Unmet until 47.5.
+- **AC-9** Given a completed export, then the report's status is unchanged; given the reporter marks the report filed, then it reads filed. *(source: §12.5.6 task-182 validation row, 182/19)* Met by 47.5: `export-history.e2e-spec.ts` reads the status after an export and after a mark, across the period's lock.
 
 **History.**
 - 31 Aug and 7 Sep 2026 · project owner · S-06 and S-05 refuse the completion column until this exists, rather than draw a count the roll-up would contradict · §12.5.6 task-32.2 and task-32.4 rows
@@ -129,6 +129,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 8 Oct 2026 · build · the roll-up is computed by the run and read as it left it, readiness with it; a module waiting on B1 is listed, one ruled out is not · §12.5.6 task-41 row (h)
 - 8 Oct 2026 · project owner · before the first run a module or a report reads *not checked yet*; the list reads carry the last run's summary · §12.5.6 task-42 row (3), (f)
 - 8 Oct 2026 · build · S-07's list, S-08, S-05 and S-06 read the roll-up; the browser's count is gone · §12.5.6 task-42 row, as built (42.2)
+- 12 Oct 2026 · project owner · the filed mark is its own record, made once an export has completed and withdrawn without a reason; the lock alone freezes · §12.5.6 task-47 row (1)–(4)
 
 ### FR-42 — From a finding to its field
 
@@ -213,7 +214,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-44 — Export with unresolved findings, after a warning
 
-**Status.** Partial — delivered 41.2 (the findings an export request evaluates), 43.2 (the preview's marks, the rendering the PDF shares), 44.3 (the marks in the PDF), 46.1 and 46.5 (the marks in the Excel export) · remaining 47.3, 47.4. Both 44.3 and 47.3 cite this requirement, 47.3 since 182/165, and the warning is S-11's content (47.3), the api's half of it is 47.4's, and the Excel marking is 46.5's.
+**Status.** Built — delivered 41.2 (the findings an export request evaluates), 43.2 (the preview's marks, the rendering the PDF shares), 44.3 (the marks in the PDF), 46.1 and 46.5 (the marks in the Excel export) , 47.3 (S-11's warning, listing what the refusal lists), 47.4 (the request, refused for unresolved findings until acknowledged). Both 44.3 and 47.3 cite this requirement, 47.3 since 182/165; the Excel marking is 46.5's.
 
 **Obligation.** The system shall permit export with unresolved findings after an explicit warning, marking the gaps visibly in the output rather than omitting them silently.
 
@@ -240,17 +241,17 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Boundaries.** Entitlement refusals (suspension, quota) are FR-99 … FR-105's. Findings are FR-40's.
 
 **Acceptance criteria.**
-- **AC-1** Given unresolved findings, when an export is requested, then the user is warned first, with the list of what is unresolved, and the export proceeds only after they confirm. *(source: FR text; UX-25; S-11)* Unmet until 47.3.
+- **AC-1** Given unresolved findings, when an export is requested, then the user is warned first, with the list of what is unresolved, and the export proceeds only after they confirm. *(source: FR text; UX-25; S-11)* Met by 47.3: S-11 asks without the acknowledgement, draws the refusal's list with each field's words and its way to the field, and asks again only on *export with them* (`exports.spec.ts`).
 - **AC-2** Given an export with unresolved findings, then the produced PDF marks each gap visibly and omits none silently. *(source: FR text; UX-119; task 44.3)* Met by 44.3: the PDF prints the preview's marks.
 - **AC-3** Given a field not available, then the PDF states its reason. Given a section omitted, then it is named as omitted. *(source: UX-119)* Met by 44.3 for the reason, read from the file; the omitted section is the shared rendering's, asserted by the renderer's spec.
 - **AC-4** Given a zero, a gap and an omission, then a reader can tell all three apart in the PDF. *(source: UX-119)* Met by 44.3.
-- **AC-5** Given billing disabled, then the warning still appears. *(source: D-11; NFR-1; UC-42)* Unmet until 47.3.
+- **AC-5** Given billing disabled, then the warning still appears. *(source: D-11; NFR-1; UC-42)* Met by 47.4 and 47.3: the request carries no entitlement gate (§12.5.6's task-47 row (e)), its refusal listing the findings is asserted by `export-history.e2e-spec.ts`, which CI's `BILLING_ENABLED=false` job runs, and S-11 draws the warning from that refusal alone.
 - **AC-6** Given the preview, then it marks the same gaps as the export. *(source: UX-45)* Met by 43.2: the preview's marks are the shared rendering's (FR-48 AC-5), which the PDF's job renders too.
-- **AC-7** Given unresolved findings and an export request that carries no acknowledgement, then it is refused, the refusal lists the unresolved findings as evaluated at the request, and no job is enqueued. *(source: §12.5.6 task-182 validation row, 182/20)* Unmet until 47.4.
-- **AC-8** Given the same request carrying an acknowledgement, then it is accepted; given no unresolved findings, then no acknowledgement is needed. *(source: §12.5.6 task-182 validation row, 182/20)* Unmet until 47.4.
+- **AC-7** Given unresolved findings and an export request that carries no acknowledgement, then it is refused, the refusal lists the unresolved findings as evaluated at the request, and no job is enqueued. *(source: §12.5.6 task-182 validation row, 182/20)* Met by 47.4: 409 with the findings as the request's own run named them, no record and no job (`export-history.e2e-spec.ts`); the run is kept as the report's (§12.5.6's task-47 row (7)).
+- **AC-8** Given the same request carrying an acknowledgement, then it is accepted; given no unresolved findings, then no acknowledgement is needed. *(source: §12.5.6 task-182 validation row, 182/20)* Met by 47.4 (`request-export.use-case.spec.ts`, `export-history.e2e-spec.ts`).
 - **AC-9** Given an Excel export of a report holding a field declared not available, a section omitted and an unresolved finding, then each is marked in the template's own element where it has one and in a footnote on its Footnotes sheet where it has not, and none is left blank. *(source: §12.5.6 task-182 validation row, 182/30; task-46 row (2))* Met by 46.5: a footnote on `1.3.0`'s Footnotes sheet and a cell note on `1.2.0`, read in LibreOffice Calc.
-- **AC-10** Given a locked period, then the warning and the acknowledgement protocol work as on an open one. *(source: §12.5.6 task-182 validation row, 182/21)* Unmet until 47.4.
-- **AC-11** Given a view-only member, when an export is requested, then it is refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)* Unmet until 47.4.
+- **AC-10** Given a locked period, then the warning and the acknowledgement protocol work as on an open one. *(source: §12.5.6 task-182 validation row, 182/21)* Met by 47.4: the request is judged as on an open report, the lock refusing no export (`request-export.use-case.spec.ts`).
+- **AC-11** Given a view-only member, when an export is requested, then it is refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)* Met by 47.4 (`export-history.e2e-spec.ts`; the route matrix).
 
 **History.**
 - 18 Aug 2026 · design owner · UX-25's citation corrected to UC-42, FR-44 and BR-VAL-4 · design_spec.md OQ-8
@@ -433,7 +434,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-49 — The PDF
 
-**Status.** Partial — delivered 43.1 (the rendering it shares with the preview), 44.1 … 44.7 (the renderer, the job with its record and stored file, the conformance, the hang, the queue of its own, the override marker, the platform-authored-labels statement), 46.4 (a figure stored with no unit at the digits the Excel shows) · remaining 47.1, 47.3 (the completion notice), 47.4 (the request and its answer)
+**Status.** Built — delivered 43.1 (the rendering it shares with the preview), 44.1 … 44.7 (the renderer, the job with its record and stored file, the conformance, the hang, the queue of its own, the override marker, the platform-authored-labels statement), 46.4 (a figure stored with no unit at the digits the Excel shows) , 47.1 (the history and the file, byte for byte), 47.3 (the completion notice to the person who asked, past 30 s), 47.4 (the request and its answer)
 
 **Obligation.** The system shall generate a formatted, publication-ready PDF from stored data in the selected export language.
 
@@ -464,7 +465,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Boundaries.** The preview is FR-48's. Language is FR-52's. History is FR-53's. Version prompts are FR-51's. The Excel export is FR-50's.
 
 **Acceptance criteria.**
-- **AC-1** Given a report, when a PDF is requested, then the answer is 202 with a job id and no rendering happens in the request. *(source: AD-10; NFR-46)* Met in part by 44.2: nothing renders in the request tier, which holds neither a renderer client nor the export's job (`pdf-export.e2e-spec.ts`); the 202 and its job id are 47.4's.
+- **AC-1** Given a report, when a PDF is requested, then the answer is 202 with a job id and no rendering happens in the request. *(source: AD-10; NFR-46)* Met by 44.2 and 47.4: nothing renders in the request tier, which holds neither a renderer client nor the export's job (`pdf-export.e2e-spec.ts`), and the request answers 202 with the export, whose id is its job's (`export-history.e2e-spec.ts`).
 - **AC-2** Given a PDF, then it is generated from stored data in the selected language. *(source: FR text)* Met by 44.2.
 - **AC-3** Given a record-intended PDF, then it conforms to PDF/A-2a and PDF/UA-1, validated by veraPDF. *(source: NFR-82; task 44.3)* Met by 44.3, per file in the export suite.
 - **AC-4** Given a PDF, then it has a cover, contents, one section per module in standard order, indicator tables with comparatives and a provenance page. *(source: UX-117)* Met by 44.2: the PDF prints the document the preview's suite asserts page by page, with the running header and page counter UX-118 adds in print.
@@ -487,7 +488,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-50 — The EFRAG Excel Digital Template
 
-**Status.** Partial — delivered 45.1 (a patch with no writes is the template byte for byte), 45.2 (values written into the template's own cells, its formulas, formatting and validation untouched), 45.3 (a report's template pin resolves the registered binary), 46.1 … 46.5 (the map and the job on the export queue, the LibreOffice Calc gate, the platform-authored-labels statement, the golden-report corpus, the marks) · remaining 47.1, 47.3 (the completion notice), 47.4 (the request and its answer)
+**Status.** Built — delivered 45.1 (a patch with no writes is the template byte for byte), 45.2 (values written into the template's own cells, its formulas, formatting and validation untouched), 45.3 (a report's template pin resolves the registered binary), 46.1 … 46.5 (the map and the job on the export queue, the LibreOffice Calc gate, the platform-authored-labels statement, the golden-report corpus, the marks) , 47.1 (the history and the file), 47.3 (the completion notice), 47.4 (the request and its answer)
 
 **Obligation.** The system shall write stored values into the named ranges of the official EFRAG Excel Digital Template at the version pinned to the report, preserving the template's own dropdowns and consistency-check formulas.
 
@@ -551,7 +552,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-51 — Never an export against an unplanned version
 
-**Status.** Not started — remaining 47.1, 47.3, 67.7. Row 47.3 cites this requirement since 182/165; the dialogue is S-11's and 47.3 builds S-11.
+**Status.** Partial — delivered 47.1 (every export at the report's own pin, named on its record), 47.3 (S-11's notice where the pin is superseded, with no migration offered) · remaining 67.7 (the migration the notice speaks of)
 
 **Obligation.** Where a report is pinned to a superseded version, the system shall prompt migration or export against the original version with an explicit notice, and shall never silently export against a version the report was not prepared under.
 
@@ -561,7 +562,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 | **Traces** | UC-43, UC-78 · DR-4 · NFR-3 · UX-48 · BR-VER-2 · FR-65 … FR-70 · `architecture.md` §7.5, §11.5 |
 | **Surfaces** | S-11 (the dialogue) · A-04 (migration runs, PA) |
 
-**Preconditions.** A report pinned to a version for which a newer one is registered (FR-65, FR-68).
+**Preconditions.** A report pinned to a version for which a newer one is registered (FR-65, FR-68). **Superseded means adopted** (§12.5.6's task-47 row (6), 12 Oct 2026): the pin differs from the version a new report would pin today, so a version registered ahead of its adoption supersedes nothing yet.
 
 **Behaviour.**
 1. **A report's pin is copied from its period when the report is created and nothing in the request tier can move it**, enforced by column privilege (§12.5.6 task-31.3 row). Re-export resolves the pinned version, not the current one (NFR-3; §7.5).
@@ -572,11 +573,11 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 6. The version an export was made under is recorded with it (FR-53).
 
 **Acceptance criteria.**
-- **AC-1** Given a report pinned to a superseded version, when an export is requested, then the user is shown an explicit notice that migration is the platform's to run and organizations are told when, and is offered the export against the original version now, before anything is generated. *(source: FR text; UX-48; §12.5.6 task-182 validation row, 182/35)* Unmet until 47.3.
-- **AC-5** Given the dialogue, then it offers no control that runs a migration. *(source: §12.5.6 task-182 validation row, 182/35)* Unmet until 47.3.
-- **AC-2** Given any path to an export, then it never uses a version other than the report's pin without that notice. *(source: FR text; BR-VER-2)* Unmet until 47.1.
-- **AC-3** Given export against the original is chosen, then the file uses the pinned version's template and labels, and its record names that version. *(source: FR text; §12.5.6 task-31.3 row)* Unmet until 47.1.
-- **AC-4** Given a report not migrated, when a newer version is registered, then it still exports and validates against its pin. *(source: `architecture.md` §11.5; NFR-3)* Unmet until 47.1.
+- **AC-1** Given a report pinned to a superseded version, when an export is requested, then the user is shown an explicit notice that migration is the platform's to run and organizations are told when, and is offered the export against the original version now, before anything is generated. *(source: FR text; UX-48; §12.5.6 task-182 validation row, 182/35)* Met by 47.3: S-11 draws the notice from the report's `supersededBy` (§12.5.6's task-47 row (6)), above the dialogue whose export is against the pin.
+- **AC-5** Given the dialogue, then it offers no control that runs a migration. *(source: §12.5.6 task-182 validation row, 182/35)* Met by 47.3: the dialogue holds two decisions and no third.
+- **AC-2** Given any path to an export, then it never uses a version other than the report's pin without that notice. *(source: FR text; BR-VER-2)* Met by 47.1: the request names no version, and the record's are stamped from the report's pin by a trigger (task 44.2).
+- **AC-3** Given export against the original is chosen, then the file uses the pinned version's template and labels, and its record names that version. *(source: FR text; §12.5.6 task-31.3 row)* Met by 47.1: the history answers each export's template and taxonomy version, and the file is composed at them (`export-history.e2e-spec.ts`).
+- **AC-4** Given a report not migrated, when a newer version is registered, then it still exports and validates against its pin. *(source: `architecture.md` §11.5; NFR-3)* Met by 47.1 with 46.4: an export's versions are its report's pin, stamped on its record by the database, and the golden corpus exports reports pinned to both registered versions (`golden-reports.e2e-spec.ts`); a run validates the report's own pinned elements (task 41.2).
 
 **History.**
 - 31 Aug 2026 · project owner · the report's pin is copied, never re-resolved, and no request-tier path moves it · §12.5.6 task-31.3 row
@@ -585,7 +586,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-52 — Export language, independent of the interface
 
-**Status.** Partial — delivered 52.3, 46.1 (the Excel export's language cell English, its narrative and notes in the language chosen) · remaining 47.2, 47.3
+**Status.** Built — delivered 52.3, 46.1 (the Excel export's language cell English, its narrative and notes in the language chosen), 47.2 (the request names its language, S-11 starting from the account's export default), 47.3 (the dialogue's caveat, read from the labels' standing at the pin)
 
 **Obligation.** The system shall allow the export language to be selected independently of the user's interface language.
 
@@ -604,10 +605,10 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 6. **For the Excel export** the choice sets the language of the narrative text only: the template's language cell stays English, whose labels are the official ones (FR-50 item 10; 182/31).
 
 **Acceptance criteria.**
-- **AC-1** Given an interface language, then the export language can be set to another, and the export honours it. *(source: FR text; UC-48)* Unmet until 47.2.
-- **AC-2** Given a new export, then its language starts as the account's export default. *(source: §12.5.6 task-52.3 row (6); task 47.2)* Unmet until 47.2.
-- **AC-3** Given a language whose labels carry no official EFRAG standing, then the dialogue states it and recommends English. *(source: UX-47; UX-98)* Unmet until 47.3.
-- **AC-4** Given an export, then its language is on its history record. *(source: UX-49; FR-53)* Unmet until 47.1.
+- **AC-1** Given an interface language, then the export language can be set to another, and the export honours it. *(source: FR text; UC-48)* Met by 47.2: the language is the request's, chosen on S-11 apart from the interface's (`exports.spec.ts` exports in English from a Romanian interface).
+- **AC-2** Given a new export, then its language starts as the account's export default. *(source: §12.5.6 task-52.3 row (6); task 47.2)* Met by 47.2: the dialogue starts from the account's export language (`export-languages.spec.ts`).
+- **AC-3** Given a language whose labels carry no official EFRAG standing, then the dialogue states it and recommends English. *(source: UX-47; UX-98)* Met by 47.3: the statement stands beside a language the api calls platform-authored at the pin and recommends the language whose labels are EFRAG's own — English at `2026-05-01` (§12.5.6's task-47 row (k)).
+- **AC-4** Given an export, then its language is on its history record. *(source: UX-49; FR-53)* Met by 47.1: the history answers it per export.
 - **AC-5** Given an Excel export in Romanian or Russian, then the template's language cell reads English and the narrative text is in the chosen language. *(source: §12.5.6 task-182 validation row, 182/31)* Met by 46.1.
 
 **History.**
@@ -617,7 +618,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-53 — Immutable export history
 
-**Status.** Partial — delivered 44.2 (the export's record and its stored file, the storage half of 47.1 — §12.5.6's task-44 row (2)), 46.1 (the Excel file's record) · remaining 47.1, 47.3
+**Status.** Partial — delivered 44.2 (the export's record and its stored file, the storage half of 47.1 — §12.5.6's task-44 row (2)), 46.1 (the Excel file's record), 47.1 (the history and the re-download, streamed by the api), 47.3 (S-11's history) · remaining 65.2 (AC-5, under suspension)
 
 **Obligation.** The system shall maintain an immutable export history recording format, language, taxonomy version, timestamp and generating user, and shall allow any prior export to be re-downloaded in exactly the form it was distributed.
 
@@ -641,15 +642,15 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 **Boundaries.** The record of a migration is FR-69's. The adoption count of exports is FR-83's.
 
 **Acceptance criteria.**
-- **AC-1** Given an export, then it is recorded with format, language, taxonomy version, timestamp and generating user. *(source: FR text; UX-49)* Met by 44.2 (`core.export_artifact`); the history that reads it is 47.1's.
+- **AC-1** Given an export, then it is recorded with format, language, taxonomy version, timestamp and generating user. *(source: FR text; UX-49)* Met by 44.2 (`core.export_artifact`) and 47.1, whose history reads it.
 - **AC-2** Given a history entry, then it cannot be altered. *(source: FR text)* Met by 44.2: a settled record matches no update policy, its owner's included.
-- **AC-3** Given an export, when its data later changes and it is re-downloaded, then the file is the original, byte for byte. *(source: FR text; UC-44; task 47.1)* Unmet until 47.1.
+- **AC-3** Given an export, when its data later changes and it is re-downloaded, then the file is the original, byte for byte. *(source: FR text; UC-44; task 47.1)* Met by 47.1: the stored bytes, never regenerated, served past the envelope — `export-history.e2e-spec.ts` compares them and their digest.
 - **AC-4** Given an export, then its file carries entity, period, template and taxonomy version, factor-set version, language and generation timestamp. *(source: NFR-22)* Met by 44.2 for the PDF; by 46.1 for the Excel file — the entity, the period and the template and taxonomy versions in the template's own cells, the factor set a footnote on each calculated figure, the language, the moment and the person in its document properties (§12.5.6's task-46 row (7)).
-- **AC-5** Given a downgrade, lapse or suspension, then previously generated documents remain downloadable and new exports are blocked. *(source: FR-104; UC-142)* Unmet until 47.3.
-- **AC-6** Given the history, then each entry's pinned version is visible. *(source: task 47.3; UX-49)* Unmet until 47.3.
+- **AC-5** Given a downgrade, lapse or suspension, then previously generated documents remain downloadable and new exports are blocked. *(source: FR-104; UC-142)* Unmet until 65.2, which builds suspension (§12.5.6's task-47 row (g)); the history and the file are never gated (47.1).
+- **AC-6** Given the history, then each entry's pinned version is visible. *(source: task 47.3; UX-49)* Met by 47.3: S-11's history names each export's taxonomy and template version.
 - **AC-7** Given an export, then the file and its history entry are kept for the life of the organization plus one year. *(source: §12.5.6 task-182 data-subject requests row, 182/126)* Held while nothing removes them; no task yet removes them when that period ends.
-- **AC-7** Given a view-only member, then the history and a re-download are refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)* Unmet until 47.1.
-- **AC-8** Given a completed export, then the report's status is unchanged. *(source: §12.5.6 task-182 validation row, 182/19)* Unmet until 47.1.
+- **AC-8** Given a view-only member, then the history and a re-download are refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)* Met by 47.1 (`export-history.e2e-spec.ts`; the route matrix). *(Numbered AC-7 until 12 Oct 2026, a second AC-7.)*
+- **AC-9** Given a completed export, then the report's status is unchanged. *(source: §12.5.6 task-182 validation row, 182/19)* Met by 47.1: nothing an export writes reaches the report.
 
 **History.**
 - 29 Aug 2026 · project owner · there is no report snapshot table: the lock and the retained distributed file carry the guarantee that an export and a locked report cannot disagree · §12.5.6 task-31.4 row

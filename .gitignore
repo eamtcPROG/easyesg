@@ -49,10 +49,13 @@ apps/*/env/*
 *.key
 
 # Generated and tenant data. Fiscal documents, exports and backups are produced
-# at runtime and retained by the archive (DR-8), never by git.
-uploads/
-exports/
-backups/
+# at runtime and retained by the archive (DR-8), never by git. **Anchored to the root
+# since task 47**: a bare `exports/` matched `apps/web/src/features/export/exports/` and
+# `apps/web/src/client/exports/` — S-11's screen and its watch — at any depth, the
+# `credentials/` trap above again; all three words name domain concepts in `src/`.
+/uploads/
+/exports/
+/backups/
 infra/**/data/
 
 # NOTE: config/efrag/ holds the official EFRAG Digital Template binaries, per

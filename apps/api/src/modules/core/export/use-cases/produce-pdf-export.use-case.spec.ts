@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import type { NotificationPort, RaiseNotificationCommand } from '@api/contracts/notification.port';
 import type { ReportDocument } from '@api/contracts/report-document.port';
 import type { TenantWork } from '@api/contracts/tenant-work.port';
 import { EXPORT_FORMAT } from '../constants/export.constants';
@@ -8,12 +9,31 @@ import { ProducePdfExport, type ProducePdfExportCommand } from './produce-pdf-ex
 
 const NOW = new Date('2026-10-11T09:30:00Z');
 const PDF = Buffer.from('%PDF-1.7 the file');
-const REQUESTED: RequestedExport = { id: 'export-1', reportId: 'report-1', format: EXPORT_FORMAT.PDF, locale: 'ru', requestedBy: 'Ana Rusu' };
+const REQUESTED: RequestedExport = {
+  id: 'export-1',
+  reportId: 'report-1',
+  format: EXPORT_FORMAT.PDF,
+  locale: 'ru',
+  requestedBy: 'Ana Rusu',
+  requestedById: 'account-1',
+  // Asked for ten seconds before the job settles — watched on S-11, no notice.
+  requestedAt: new Date(NOW.getTime() - 10_000),
+  subject: { entityName: 'Brutăria de Aur', fiscalYear: 2026 },
+};
 const COMMAND: ProducePdfExportCommand = { organizationId: 'org-1', exportId: 'export-1', attempt: 1, attempts: 3 };
 
 /** Everything the use case touches, recording what happened and whether it happened inside a unit of work. */
 function harness(options: { requested?: RequestedExport | null; print?: () => Promise<Buffer> } = {}) {
   const events: string[] = [];
+  const raised: RaiseNotificationCommand[] = [];
+  const notifications: NotificationPort = {
+    raise: (command) => {
+      events.push(`raise ${inside ? 'inside' : 'outside'} a unit of work`);
+      raised.push(command);
+      return Promise.resolve({ notificationId: `n-${raised.length}` });
+    },
+    cancel: () => Promise.reject(new Error('An export never cancels a notice')),
+  };
   let inside = false;
   const tenantWork: TenantWork = {
     inOrganization: async (scope, work) => {
@@ -64,9 +84,10 @@ function harness(options: { requested?: RequestedExport | null; print?: () => Pr
         return Promise.resolve();
       },
     },
+    notifications,
     () => NOW,
   );
-  return { produce, store, composed, stored, events };
+  return { produce, store, composed, stored, events, raised };
 }
 
 describe('ProducePdfExport (task 44.2; FR-49, FR-53, AD-10)', () => {
@@ -117,6 +138,36 @@ describe('ProducePdfExport (task 44.2; FR-49, FR-53, AD-10)', () => {
     await expect(produce.execute({ ...COMMAND, attempt: 3 })).rejects.toThrow('asks for a xlsx file, not pdf');
     expect(stored).toEqual([]);
     expect(store.failed).toEqual([{ exportId: 'export-1', failure: 'Export export-1 asks for a xlsx file, not pdf.' }]);
+  });
+
+  it('tells the person who asked, once the file is stored, when it took more than 30 s — and not when it did not (task 47.3)', async () => {
+    const quick = harness();
+    await quick.produce.execute(COMMAND);
+    expect(quick.raised).toEqual([]);
+
+    const slow = harness({ requested: { ...REQUESTED, requestedAt: new Date(NOW.getTime() - 31_000) } });
+    await slow.produce.execute(COMMAND);
+    expect(slow.raised).toEqual([
+      {
+        categoryKey: 'reporting.export_finished',
+        organizationId: 'org-1',
+        recipientUserIds: ['account-1'],
+        subjectRef: 'export:export-1',
+        deepLink: '/reports/report-1/export',
+        params: { entityName: 'Brutăria de Aur', fiscalYear: '2026', format: 'pdf', outcome: 'completed' },
+      },
+    ]);
+    // In the unit that settles the record, so the two commit together.
+    expect(slow.events.slice(-3)).toEqual(['enter org-1', 'raise inside a unit of work', 'leave']);
+  });
+
+  it('tells them of a final failure too, when it came more than 30 s after the request', async () => {
+    const { produce, raised } = harness({
+      requested: { ...REQUESTED, requestedAt: new Date(NOW.getTime() - 120_000) },
+      print: () => Promise.reject(new Error('The renderer answered 504: killed')),
+    });
+    await expect(produce.execute({ ...COMMAND, attempt: 3 })).rejects.toThrow('504');
+    expect(raised.map((command) => command.params?.outcome)).toEqual(['failed']);
   });
 
   it('records the last attempt’s failure, and still throws it', async () => {

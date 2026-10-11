@@ -1,8 +1,10 @@
+import { createHash, randomUUID } from 'node:crypto';
 import { Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
 import { DIGITAL_TEMPLATE_REGISTRY, type DigitalTemplateRegistry } from '@api/contracts/digital-template-registry.port';
 import { DISCLOSURE_LABELS, type DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
-import { OBJECT_STORAGE, type ObjectStorage } from '@api/contracts/object-storage.port';
+import { NOTIFICATION_PORT, type NotificationPort } from '@api/contracts/notification.port';
+import { OBJECT_READER, OBJECT_STORAGE, type ObjectReader, type ObjectStorage } from '@api/contracts/object-storage.port';
 import { PDF_RENDERER, type PdfRenderer } from '@api/contracts/pdf-renderer.port';
 import {
   ELEMENT_PRECISION,
@@ -19,8 +21,10 @@ import { RendererModule } from '@api/infrastructure/adapters/renderer/renderer.m
 import { WorkbookModule } from '@api/infrastructure/adapters/workbook/workbook.module';
 import { EntityIdentifiersRepository } from '@api/infrastructure/persistence/core/entity-identifiers.repository';
 import { ExportArtifactStoreRepository } from '@api/infrastructure/persistence/core/export-artifact-store.repository';
+import { ExportHistoryRepository } from '@api/infrastructure/persistence/core/export-history.repository';
 import { WorkerTenantWork } from '@api/infrastructure/persistence/worker-tenant-work';
 import { LocalizationModule } from '@api/modules/platform/localization/localization.module';
+import { NotificationModule } from '@api/modules/platform/notification/notification.module';
 import { TaxonomyModule } from '@api/modules/platform/taxonomy/taxonomy.module';
 import { CalculatorModule } from '../calculator/calculator.module';
 import { ReadCalcFigures } from '../calculator/use-cases/read-calc-figures.use-case';
@@ -33,7 +37,12 @@ import { ValidationModule } from '../validation/validation.module';
 import { RunValidation } from '../validation/use-cases/run-validation.use-case';
 import { PdfExportRequestedHandler } from './consumers/pdf-export-requested.handler';
 import { XlsxExportRequestedHandler } from './consumers/xlsx-export-requested.handler';
+import { ExportsController } from './controllers/exports.controller';
 import { PreviewController } from './controllers/preview.controller';
+import { EXPORT_HISTORY, type ExportHistoryStore } from './interfaces/export-history.interface';
+import { ExportService } from './services/export.service';
+import { ReadExportFile } from './use-cases/read-export-file.use-case';
+import { RequestExport } from './use-cases/request-export.use-case';
 import { ENTITY_IDENTIFIERS, type EntityIdentifiersStore } from './interfaces/entity-identifiers.interface';
 import { EXPORT_ARTIFACT_STORE, type ExportArtifactStore } from './interfaces/export-artifact-store.interface';
 import { PreviewService } from './services/preview.service';
@@ -83,6 +92,20 @@ const reading: Provider[] = [
 
 const httpProviders: Provider[] = [
   PreviewService,
+  // S-11's api (tasks 47.1, 47.4): the request, the history, one export and its file.
+  ExportService,
+  { provide: EXPORT_HISTORY, useClass: ExportHistoryRepository },
+  {
+    provide: RequestExport,
+    inject: [EXPORT_HISTORY],
+    useFactory: (history: ExportHistoryStore) => new RequestExport(history, () => randomUUID()),
+  },
+  {
+    provide: ReadExportFile,
+    inject: [EXPORT_HISTORY, OBJECT_READER],
+    useFactory: (history: ExportHistoryStore, files: ObjectReader) =>
+      new ReadExportFile(history, files, (body) => createHash('sha256').update(body).digest('hex')),
+  },
   {
     provide: PreviewReport,
     inject: [ComposeReportDocument, REPORT_DOCUMENT_RENDERER],
@@ -104,6 +127,7 @@ const workerProviders: Provider[] = [
       REPORT_DOCUMENT_RENDERER,
       PDF_RENDERER,
       OBJECT_STORAGE,
+      NOTIFICATION_PORT,
     ],
     useFactory: (
       tenantWork: TenantWork,
@@ -112,7 +136,8 @@ const workerProviders: Provider[] = [
       documents: ReportDocumentRenderer,
       printer: PdfRenderer,
       storage: ObjectStorage,
-    ) => new ProducePdfExport(tenantWork, store, compose, documents, printer, storage, () => new Date()),
+      notifications: NotificationPort,
+    ) => new ProducePdfExport(tenantWork, store, compose, documents, printer, storage, notifications, () => new Date()),
   },
   {
     provide: ComposeReportWorkbook,
@@ -128,6 +153,7 @@ const workerProviders: Provider[] = [
       DIGITAL_TEMPLATE_REGISTRY,
       REPORT_WORKBOOK_WRITER,
       OBJECT_STORAGE,
+      NOTIFICATION_PORT,
     ],
     useFactory: (
       tenantWork: TenantWork,
@@ -136,7 +162,8 @@ const workerProviders: Provider[] = [
       templates: DigitalTemplateRegistry,
       writer: ReportWorkbookWriter,
       storage: ObjectStorage,
-    ) => new ProduceXlsxExport(tenantWork, store, compose, templates, writer, storage, () => new Date()),
+      notifications: NotificationPort,
+    ) => new ProduceXlsxExport(tenantWork, store, compose, templates, writer, storage, notifications, () => new Date()),
   },
   PdfExportRequestedHandler,
   XlsxExportRequestedHandler,
@@ -148,11 +175,15 @@ const workerProviders: Provider[] = [
     ComparativesModule,
     CalculatorModule,
     ValidationModule,
+    // The completion notice the export's job raises on the worker (task 47.3).
+    NotificationModule,
     LocalizationModule,
     DocumentModule,
-    ...(mode === APP_MODE.WORKER ? [RendererModule, ObjectStorageModule, TaxonomyModule, WorkbookModule] : []),
+    // Object storage in both modes since task 47.1: the worker stores a file, the request tier reads it back.
+    ObjectStorageModule,
+    ...(mode === APP_MODE.WORKER ? [RendererModule, TaxonomyModule, WorkbookModule] : []),
   ],
-  controllers: mode === APP_MODE.WORKER ? [] : [PreviewController],
+  controllers: mode === APP_MODE.WORKER ? [] : [PreviewController, ExportsController],
   providers: [...reading, ...(mode === APP_MODE.WORKER ? workerProviders : httpProviders)],
 })
 export class ExportModule {}

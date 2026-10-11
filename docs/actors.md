@@ -258,6 +258,7 @@ Legend: **Y** granted; **—** not granted; **R** read-only; **T** time-boxed an
 | Export PDF / EFRAG Excel Digital Template; re-download exports | — | Y | Y | — | — | — | — | Y (as RC in a granted client) |
 | View report change history | — | Y | Y | — | — | — | — | Y (as RC in a granted client) |
 | Select export language independently of interface language | — | Y | Y | — | — | — | — | Y (as RC in a granted client) |
+| Mark a report filed, once an export has completed; withdraw the mark | — | Y | Y | — | — | — | — | Y (as RC in a granted client) |
 | Organization profile (the account: name, country, contact email and phone) | — | — | Y | R (account metadata only) | — | S (identifier validation) | — | — |
 | Entity identifiers and master data (the reporting entity: identifiers, legal form, registered address, report-cover contact) | — | — | Y | R (account metadata only) | — | S (identifier validation) | — | — |
 | Reporting entities: create, edit, consolidation scope, archive | — | — | Y | — | — | — | — | — |
@@ -306,6 +307,8 @@ Legend: **Y** granted; **—** not granted; **R** read-only; **T** time-boxed an
 | Automatic expiry of an advisor relationship; request/outcome notices | — | — | — | — | — | S | — | — |
 
 **Amended 5 Oct 2026** (project owner, task 182, 182/22): the RC column is the **editor** role, and the OA holds each capability in the four rows above it that this matrix had left to the RC. The matrix has no column for a **view-only** member, who is not an RC; that member reads validation findings and the roll-up and nothing else of those rows: no validation run, preview, export, re-download, export history or change trail. Deleting a report is the OA's alone and an advisor acting in a client does not hold it (182/23).
+
+**Amended 12 Oct 2026** (project owner, task 47; `architecture.md` §12.5.6's task-47 row (3), (4)): the row *Mark a report filed* is added — the reporter's own act on S-11 (FR-41, 182/19), allowed once an export has completed and withdrawn by whoever may make it; a view-only member does neither.
 
 Supporting requirements: FR-25, FR-57, FR-58 (more than one user within an org may view/edit a shared report — the accessible-report list honouring per-report permissions, invitation with an edit or view-only role, and role change on an existing membership), FR-14 (typed organization relationships so Advisor/Buyer/Licensee types need no schema change), FR-99, FR-100, FR-105 (central entitlement/plan-check service and metering events), NFR-13 (RBAC per org/role, secure auth, authenticated API surface), NFR-9 (relationship model extensible to Advisor, Buyer, Licensee), NFR-7 (every disclosure field change attributable to user and timestamp).
 

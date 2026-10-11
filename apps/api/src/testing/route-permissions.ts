@@ -424,6 +424,16 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // UC-41's preview (task 43.1; FR-48): the report as its document — an editor's or the OA's, and refused to a
   // view-only member, who reads findings and the roll-up only (182/22).
   'GET /reports/:id/preview': WRITING_MEMBERS,
+  // S-11's api (tasks 47.1, 47.4; FR-44, FR-49 … FR-53): asking for an export, the history, watching one and its file —
+  // an editor's or the OA's, and refused to a view-only member, for the history and the re-download too (182/22).
+  'POST /reports/:id/exports': WRITING_MEMBERS,
+  'GET /reports/:id/exports': WRITING_MEMBERS,
+  'GET /reports/:id/exports/languages': WRITING_MEMBERS,
+  'GET /exports/:id': WRITING_MEMBERS,
+  'GET /exports/:id/file': WRITING_MEMBERS,
+  // FR-41's filed mark on S-11 (task 47.5; 182/19): made and withdrawn by whoever may export.
+  'PUT /reports/:id/filing': WRITING_MEMBERS,
+  'DELETE /reports/:id/filing': WRITING_MEMBERS,
 };
 
 type Constructor = new (...args: never[]) => object;

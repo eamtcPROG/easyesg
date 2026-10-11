@@ -402,7 +402,8 @@ jobs:
           # the one both hold, since task 50.1.4 gave the worker a caller for it: it seals the link
           # a verification, reset or invitation email carried onto the notice's record.
           # UNSUBSCRIBE_SIGNING_KEY is the second (task 52.2.2): the worker signs FR-169's link and
-          # the api checks it.
+          # the api checks it. The storage keys are the third since task 47.1: the worker stores an
+          # export's file and the api streams it back for the re-download.
           docker run -d --name api --network easyesg_easyesg-net -p 3000:3000 \
             -e DB_HOST=postgres -e DB_USER=esg_app -e DB_PASSWORD=devonly-app -e DB_NAME=esg \
             -e DB_ADMIN_RO_USER=esg_admin_ro -e DB_ADMIN_RO_PASSWORD=devonly-admin-ro \
@@ -410,6 +411,9 @@ jobs:
             -e AUTH_JWT_SECRET=devonly-jwt-secret \
             -e AUTH_ADMIN_SECRET=devonly-admin-secret \
             -e SECRET_ENCRYPTION_KEY=devonly-secret-encryption-key \
+            -e OBJECT_STORAGE_ENDPOINT=http://storage:7070 \
+            -e OBJECT_STORAGE_ACCESS_KEY_ID=devonly-storage-access \
+            -e OBJECT_STORAGE_SECRET_ACCESS_KEY=devonly-storage-secret \
             -e UNSUBSCRIBE_SIGNING_KEY=devonly-unsubscribe-signing-key-for-local-runs easyesg-api:ci
           docker run -d --name worker --network easyesg_easyesg-net -e MODE=worker \
             -e DB_HOST=postgres -e DB_WORKER_USER=esg_worker -e DB_WORKER_PASSWORD=devonly-worker \

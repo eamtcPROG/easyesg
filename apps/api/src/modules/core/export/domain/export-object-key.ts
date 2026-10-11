@@ -1,6 +1,4 @@
-import { EXPORT_FORMAT, type ExportFormat } from '../constants/export.constants';
-
-const EXTENSION: Readonly<Record<ExportFormat, string>> = { [EXPORT_FORMAT.PDF]: 'pdf', [EXPORT_FORMAT.XLSX]: 'xlsx' };
+import { EXPORT_EXTENSION, type ExportFormat } from '../constants/export.constants';
 
 /**
  * Where an export's file is stored (task 44.2): under its organization, then its own id — so a retry writes over the
@@ -12,5 +10,5 @@ export function exportObjectKey(input: {
   readonly exportId: string;
   readonly format: ExportFormat;
 }): string {
-  return `organizations/${input.organizationId}/exports/${input.exportId}.${EXTENSION[input.format]}`;
+  return `organizations/${input.organizationId}/exports/${input.exportId}.${EXPORT_EXTENSION[input.format]}`;
 }

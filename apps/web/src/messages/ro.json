@@ -1433,8 +1433,6 @@
         "meta": "{entity} · {period} · {standing}",
         "export": "Exportați",
         "review": "Revizuiți raportul",
-        "exportUnavailable": "Exportul nu este încă disponibil. Tot ce completați este salvat și va fi inclus în export când acesta va fi disponibil.",
-        "unavailableSuffix": "{action} — încă nu este disponibil",
         "more": "Mai multe acțiuni pentru acest raport"
       },
       "step": {
@@ -2034,6 +2032,146 @@
       "unreachable": {
         "title": "Previzualizarea nu a putut fi deschisă",
         "body": "Serviciul nu a putut fi contactat acum. Răspunsurile dumneavoastră sunt în siguranță; încercați din nou peste câteva momente."
+      }
+    },
+    "exports": {
+      "title": "Exportul raportului",
+      "heading": "Exportați raportul",
+      "lede": "Alegeți fișierul și limba lui. Fișierul se pregătește în fundal, iar între timp puteți părăsi această pagină.",
+      "back": "Înapoi la raport",
+      "review": "Previzualizați raportul",
+      "dialogue": {
+        "title": "Un fișier nou",
+        "format": "Formatul",
+        "formats": {
+          "pdf": {
+            "label": "PDF — pentru o bancă sau un client",
+            "description": "Raportul așezat pentru citire, cu motivele omisiunilor tipărite lângă cerințele de care țin."
+          },
+          "xlsx": {
+            "label": "Excel — șablonul digital EFRAG",
+            "description": "Registrul de calcul al standardului, completat cu răspunsurile dumneavoastră, pentru un sistem de depunere sau un coleg care lucrează mai departe pe el."
+          }
+        },
+        "language": "Limba fișierului",
+        "languageHelp": "Se alege separat de limba în care citiți această pagină.",
+        "caveat": {
+          "title": "Aceste denumiri nu au statut oficial EFRAG",
+          "body": "Denumirile în această limbă sunt scrise de EasyESG, nu publicate de EFRAG, așa că nu pot fi citate drept textul standardului.",
+          "recommend": "Pentru o bancă sau un cumpărător din UE, alegeți {language}: denumirile în această limbă sunt chiar ale EFRAG."
+        },
+        "superseded": {
+          "title": "Rapoartele noi folosesc acum o versiune mai nouă a standardului",
+          "body": "Acest raport a fost întocmit după taxonomia {pinned}, iar rapoartele deschise acum folosesc {current}. EasyESG face migrările și anunță organizațiile când una este gata. Fișierul se face după versiunea după care a fost întocmit raportul."
+        },
+        "submit": "Exportați",
+        "submitting": "Se cere fișierul…",
+        "unreachable": {
+          "title": "Exportul nu a putut fi cerut",
+          "body": "Serviciul nu a putut fi accesat chiar acum. Nu s-a exportat nimic; încercați din nou peste câteva momente."
+        },
+        "findings": {
+          "title": "{count, plural, =0 {Raportul are constatări nerezolvate} one {Raportul are o constatare nerezolvată} few {Raportul are # constatări nerezolvate} other {Raportul are # de constatări nerezolvate}}",
+          "body": "Fișierul le va arăta pe fiecare la locul ei, marcată, ca cititorul să le vadă. Puteți exporta oricum sau le puteți rezolva mai întâi.",
+          "list": "Ce este nerezolvat",
+          "goToField": "Mergeți la câmp",
+          "acknowledge": "{count, plural, =0 {Exportați oricum} one {Exportați cu constatarea} few {Exportați cu cele # constatări} other {Exportați cu cele # de constatări}}",
+          "fix": "Rezolvați-le mai întâi"
+        }
+      },
+      "pending": {
+        "title": "Se pregătește {format, select, pdf {PDF-ul} other {fișierul Excel}} în {language}",
+        "body": "Puteți părăsi această pagină. Dacă durează mai mult de 30 de secunde, vă anunțăm când este gata.",
+        "completed": {
+          "title": "Fișierul este gata",
+          "body": "Apare în istoricul de mai jos și rămâne disponibil exact așa cum a fost făcut."
+        },
+        "failed": {
+          "title": "Fișierul nu a putut fi făcut",
+          "body": "Nu s-a trimis nimic nicăieri. Încercați din nou; dacă nu reușește nici atunci, contactați asistența și menționați ora la care s-a întâmplat."
+        },
+        "download": "Descărcați",
+        "another": "Exportați alt fișier"
+      },
+      "history": {
+        "title": "Istoricul exporturilor",
+        "note": "Fiecare fișier rămâne exact așa cum a fost făcut și se descarcă identic, până la ultimul octet.",
+        "caption": "Exporturile acestui raport",
+        "filters": {
+          "label": "Filtrați istoricul",
+          "format": "Formatul",
+          "language": "Limba",
+          "any": "Toate"
+        },
+        "formats": {
+          "pdf": "PDF",
+          "xlsx": "Excel"
+        },
+        "columns": {
+          "requested": "Cerut",
+          "file": "Fișierul",
+          "versions": "Versiunile",
+          "status": "Starea",
+          "action": "Descărcare"
+        },
+        "requested": "{when} · {person}",
+        "personUnknown": "un fost membru",
+        "file": "{format} · {language}",
+        "versions": "Taxonomia {taxonomy} · șablonul {template}",
+        "status": {
+          "requested": "În pregătire",
+          "completed": "Gata",
+          "failed": "Eșuat"
+        },
+        "download": "Descărcați",
+        "downloadLabel": "Descărcați {format, select, pdf {PDF-ul} other {fișierul Excel}} cerut la {when}",
+        "empty": {
+          "firstUse": {
+            "title": "Nu ați exportat încă niciun fișier",
+            "body": "Fișierele pe care le exportați apar aici, fiecare păstrat exact așa cum a fost făcut."
+          },
+          "filtered": {
+            "title": "Niciun export nu corespunde acestor filtre",
+            "body": "Ștergeți filtrele pentru a vedea toate fișierele.",
+            "action": "Ștergeți filtrele"
+          }
+        }
+      },
+      "filing": {
+        "title": "Marcați raportul ca depus",
+        "lede": "Consemnați că raportul a fost trimis. EasyESG nu îl trimite în locul dumneavoastră.",
+        "summary": "{outstanding, plural, =0 {Nimic nerezolvat la ultima verificare} one {O constatare nerezolvată la ultima verificare} few {# constatări nerezolvate la ultima verificare} other {# de constatări nerezolvate la ultima verificare}}",
+        "unchecked": "Raportul nu a fost verificat încă",
+        "filedOn": "Data depunerii",
+        "filedOnHelp": "Ziua în care a fost trimis, în fusul orar al perioadei de raportare.",
+        "consequence": "Marcarea nu schimbă raportul: rămâne editabil cât timp perioada lui este deschisă, iar doar blocarea perioadei îl îngheață. Fișierele exportate rămân exact așa cum au fost trimise.",
+        "open": "Marcați ca depus",
+        "notYet": "Nu încă",
+        "submit": "Marcați ca depus",
+        "waiting": "Puteți marca raportul ca depus după ce exportați un fișier al lui.",
+        "filed": {
+          "title": "Depus la {date}",
+          "body": "Marcat de {person}, la {at}.",
+          "withdraw": "Retrageți marcajul",
+          "personUnknown": "un fost membru"
+        },
+        "unreachable": {
+          "title": "Marcajul nu a putut fi salvat",
+          "body": "Serviciul nu a putut fi accesat chiar acum. Raportul nu s-a schimbat; încercați din nou peste câteva momente."
+        }
+      },
+      "refused": {
+        "title": "Doar un editor sau un administrator poate exporta raportul",
+        "body": "Un membru cu acces doar la vizualizare citește răspunsurile raportului și verificarea lui, nu fișierele lui.",
+        "action": "Înapoi la raport"
+      },
+      "forbidden": {
+        "title": "Nu aveți acces la acest raport",
+        "body": "Raportul aparține unei organizații din care nu faceți parte sau accesul dumneavoastră a fost retras. Alegeți organizația potrivită din bara de sus."
+      },
+      "unreachable": {
+        "title": "Pagina de export nu a putut fi deschisă",
+        "body": "Serviciul nu a putut fi accesat chiar acum. Nu s-a exportat nimic; încercați din nou peste câteva momente."
       }
     },
     "completion": {

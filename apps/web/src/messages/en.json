@@ -1433,8 +1433,6 @@
         "meta": "{entity} · {period} · {standing}",
         "export": "Export",
         "review": "Review the report",
-        "exportUnavailable": "Export is not available yet. Everything you answer is saved and will be in the export when it opens.",
-        "unavailableSuffix": "{action} — not available yet",
         "more": "More actions for this report"
       },
       "step": {
@@ -2034,6 +2032,146 @@
       "unreachable": {
         "title": "The preview could not be opened",
         "body": "The service could not be reached just now. Your answers are safe; try again in a moment."
+      }
+    },
+    "exports": {
+      "title": "Export the report",
+      "heading": "Export this report",
+      "lede": "Choose the file and its language. The file is made in the background, and you can leave this screen while it is.",
+      "back": "Back to the report",
+      "review": "Review the report",
+      "dialogue": {
+        "title": "A new file",
+        "format": "Format",
+        "formats": {
+          "pdf": {
+            "label": "PDF — for a bank or a customer",
+            "description": "The report laid out for reading, with your reasons for any gaps printed beside the disclosures they belong to."
+          },
+          "xlsx": {
+            "label": "Excel — EFRAG's digital template",
+            "description": "The standard's own workbook, filled in with your answers, for a filing system or a colleague to work from."
+          }
+        },
+        "language": "Language of the file",
+        "languageHelp": "Chosen apart from the language you read this screen in.",
+        "caveat": {
+          "title": "These labels have no official EFRAG standing",
+          "body": "The labels in this language are written by EasyESG, not published by EFRAG, so they cannot be cited as the standard's own words.",
+          "recommend": "For a bank or a buyer in the EU, choose {language}: its labels are EFRAG's own."
+        },
+        "superseded": {
+          "title": "New reports now use a newer version of the standard",
+          "body": "This report was prepared under the {pinned} taxonomy, and reports opened now use {current}. EasyESG runs migrations and tells organizations when one is ready. The file is made under the version this report was prepared under."
+        },
+        "submit": "Export",
+        "submitting": "Asking for the file…",
+        "unreachable": {
+          "title": "The export could not be asked for",
+          "body": "The service could not be reached just now. Nothing was exported; try again in a moment."
+        },
+        "findings": {
+          "title": "{count, plural, =0 {This report has unresolved findings} one {This report has one unresolved finding} other {This report has # unresolved findings}}",
+          "body": "The file will show each of them where it belongs, marked, so a reader sees them. You can export anyway, or fix them first.",
+          "list": "What is unresolved",
+          "goToField": "Go to the field",
+          "acknowledge": "{count, plural, =0 {Export anyway} one {Export with the finding} other {Export with the # findings}}",
+          "fix": "Fix them first"
+        }
+      },
+      "pending": {
+        "title": "Making the {format, select, pdf {PDF} other {Excel file}} in {language}",
+        "body": "You can leave this screen. If it takes longer than 30 seconds, we will tell you when it is ready.",
+        "completed": {
+          "title": "The file is ready",
+          "body": "It is in the history below and stays retrievable exactly as it was made."
+        },
+        "failed": {
+          "title": "The file could not be made",
+          "body": "Nothing was sent anywhere. Try again; if it fails again, contact support and mention the time it happened."
+        },
+        "download": "Download",
+        "another": "Export another file"
+      },
+      "history": {
+        "title": "Export history",
+        "note": "Every file stays exactly as it was made, and downloads identical to the last byte.",
+        "caption": "Exports of this report",
+        "filters": {
+          "label": "Filter the history",
+          "format": "Format",
+          "language": "Language",
+          "any": "All"
+        },
+        "formats": {
+          "pdf": "PDF",
+          "xlsx": "Excel"
+        },
+        "columns": {
+          "requested": "Asked for",
+          "file": "File",
+          "versions": "Versions",
+          "status": "Status",
+          "action": "Download"
+        },
+        "requested": "{when} · {person}",
+        "personUnknown": "a former member",
+        "file": "{format} · {language}",
+        "versions": "Taxonomy {taxonomy} · template {template}",
+        "status": {
+          "requested": "Being made",
+          "completed": "Ready",
+          "failed": "Failed"
+        },
+        "download": "Download",
+        "downloadLabel": "Download the {format, select, pdf {PDF} other {Excel file}} asked for on {when}",
+        "empty": {
+          "firstUse": {
+            "title": "No file has been exported yet",
+            "body": "The files you export appear here, each kept exactly as it was made."
+          },
+          "filtered": {
+            "title": "No export matches these filters",
+            "body": "Clear the filters to see every file.",
+            "action": "Clear the filters"
+          }
+        }
+      },
+      "filing": {
+        "title": "Mark this report as filed",
+        "lede": "Record that the report has been sent. EasyESG does not send it for you.",
+        "summary": "{outstanding, plural, =0 {Nothing outstanding at the last check} one {One finding outstanding at the last check} other {# findings outstanding at the last check}}",
+        "unchecked": "The report has not been checked yet",
+        "filedOn": "Filed on",
+        "filedOnHelp": "The day it was sent, in the reporting period's time zone.",
+        "consequence": "Marking it does not change the report: it stays editable while its period is open, and only locking the period freezes it. The files you exported stay exactly as they were sent.",
+        "open": "Mark as filed",
+        "notYet": "Not yet",
+        "submit": "Mark as filed",
+        "waiting": "You can mark the report filed once a file of it has been exported.",
+        "filed": {
+          "title": "Filed on {date}",
+          "body": "Marked by {person} on {at}.",
+          "withdraw": "Withdraw the mark",
+          "personUnknown": "a former member"
+        },
+        "unreachable": {
+          "title": "The mark could not be saved",
+          "body": "The service could not be reached just now. The report has not changed; try again in a moment."
+        }
+      },
+      "refused": {
+        "title": "Only an editor or an administrator can export the report",
+        "body": "A view-only member reads the report's answers and its check, not its files.",
+        "action": "Back to the report"
+      },
+      "forbidden": {
+        "title": "You do not have access to this report",
+        "body": "It belongs to an organization you are not a member of, or your access has been removed. Choose the right organization in the bar at the top."
+      },
+      "unreachable": {
+        "title": "The export screen could not be opened",
+        "body": "The service could not be reached just now. Nothing was exported; try again in a moment."
       }
     },
     "completion": {

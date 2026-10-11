@@ -43,6 +43,8 @@ export const aReport = (overrides: Partial<Report> = {}): Report => ({
   // Never validated, so never ready (task 41.3) and with nothing to summarise (task 42.2) — what a new report reads.
   readyToFile: false,
   validation: null,
+  // Never marked filed (task 47.5) — the mark is the reporter's own act.
+  filing: null,
   // The column's own DEFAULT, mirrored rather than invented: a fake that disagreed with the schema
   // would make every monetary field's currency a property of the test rather than of the filing.
   reportingCurrency: 'MDL',

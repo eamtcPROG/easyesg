@@ -152,6 +152,15 @@
     },
     "notification-category-changed": {
       "title": "Setările s-au schimbat între timp"
+    },
+    "report-not-exported": {
+      "title": "Raportul nu a fost încă exportat"
+    },
+    "export-findings-unacknowledged": {
+      "title": "Constatări nerezolvate de confirmat"
+    },
+    "export-file-unavailable": {
+      "title": "Fișier indisponibil"
     }
   },
   "validation": {
@@ -332,7 +341,9 @@
       "not_available_reason_required": "Un câmp marcat ca indisponibil are nevoie de un motiv, așa că valoarea nu a fost salvată. Scrieți de ce informația nu este disponibilă și salvați din nou.",
       "not_available_reason_unexpected": "S-a trimis un motiv pentru un câmp care nu este marcat ca indisponibil, așa că valoarea nu a fost salvată. Reîncărcați pagina și completați din nou câmpul.",
       "unit_not_admitted": "Unitatea aleasă nu este una pe care standardul o admite pentru acest câmp, așa că valoarea nu a fost salvată. Reîncărcați pagina și alegeți o unitate din listă.",
-      "module_not_found": "Acest raport nu are o astfel de secțiune, așa că nu este nimic de afișat. Deschideți din nou raportul din lista de rapoarte."
+      "module_not_found": "Acest raport nu are o astfel de secțiune, așa că nu este nimic de afișat. Deschideți din nou raportul din lista de rapoarte.",
+      "not_exported": "Niciun export al acestui raport nu s-a finalizat încă, așa că nu există nimic de înregistrat ca depus. Generați mai întâi fișierul PDF sau Excel, apoi marcați raportul ca depus.",
+      "filing_date_invalid": "Data depunerii nu este o zi reală din calendar, așa că marcajul nu a fost înregistrat. Alegeți ziua în care a fost depus raportul și încercați din nou."
     },
     "calculator": {
       "unknown_source": "Sursa de energie trimisă nu se numără printre cele acoperite de factorii de emisie ai acestui raport, așa că linia nu a putut fi salvată. Reîmprospătați pagina pentru a încărca sursele din care puteți alege.",
@@ -518,7 +529,10 @@
           "factorSet": "Calculată de platformă cu setul de factori de emisie {label}.",
           "labels": "Notele din acest fișier sunt formularea proprie a platformei în limba română și nu au statut EFRAG. Denumirile din șablon sunt textul oficial EFRAG în limba engleză, care face autoritate."
         }
-      }
+      },
+      "findings_unacknowledged": "Raportul are încă {count, plural, one {# constatare nerezolvată} few {# constatări nerezolvate} other {# de constatări nerezolvate}}, așa că exportul nu a fost pornit. Consultați lista, apoi exportați din nou, confirmând că exportați cu ele.",
+      "file_unavailable": "Acest export nu are încă un fișier: este fie în curs de generare, fie a eșuat. Așteptați să se încheie sau exportați din nou raportul.",
+      "not_found": "Acest export nu există în organizația dumneavoastră. Deschideți istoricul exporturilor raportului pentru a-l găsi."
     }
   },
   "notification": {
@@ -588,6 +602,16 @@
           "title": "{daysRemaining, plural, one {Mai este o zi} few {Mai sunt # zile} other {Mai sunt # de zile}} până la termenul raportului {entityName} pentru {fiscalYear}",
           "body": "Termenul este {dueDate}. {started, select, no {Raportul nu a fost început încă.} other {Mai {outstanding, plural, one {este un câmp} few {sunt # câmpuri} other {sunt # de câmpuri}} de completat sau de corectat.}}",
           "action": "Deschideți raportul"
+        }
+      },
+      "export_finished": {
+        "name": "Exporturi încheiate",
+        "subject": "{outcome, select, failed {Exportul {format, select, xlsx {Excel} other {PDF}} al raportului {entityName} pentru {fiscalYear} nu a putut fi generat} other {Exportul {format, select, xlsx {Excel} other {PDF}} al raportului {entityName} pentru {fiscalYear} este gata}}",
+        "body": "Bună ziua,\n\n{outcome, select, failed {Fișierul {format, select, xlsx {Excel} other {PDF}} cerut pentru raportul de durabilitate al {entityName} pentru {fiscalYear} nu a putut fi generat, după mai multe încercări. Nimic nu s-a pierdut din raport: îl puteți exporta din nou.} other {Fișierul {format, select, xlsx {Excel} other {PDF}} cerut pentru raportul de durabilitate al {entityName} pentru {fiscalYear} este gata și rămâne în istoricul exporturilor raportului.}}\n\nDeschideți exporturile raportului de aici:\n\n{link}\n\nPrimiți acest mesaj pentru că ați cerut acest export, iar generarea a durat mai mult de o jumătate de minut.",
+        "in_app": {
+          "title": "{outcome, select, failed {Exportul {format, select, xlsx {Excel} other {PDF}} nu a putut fi generat} other {Exportul {format, select, xlsx {Excel} other {PDF}} este gata}}",
+          "body": "{outcome, select, failed {Raportul {entityName} pentru {fiscalYear} nu s-a schimbat; îl puteți exporta din nou.} other {Raportul {entityName} pentru {fiscalYear} — fișierul vă așteaptă în istoricul exporturilor.}}",
+          "action": "Deschideți exporturile"
         }
       }
     },

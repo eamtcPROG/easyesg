@@ -64,6 +64,14 @@ export const NOTIFICATION_SPECIMEN: Readonly<Record<NotificationCategoryKey, Rea
     started: 'yes',
     outstanding: 4,
   },
+  // A finished PDF — the wording's commoner arm; the failed arm reads the same four values.
+  [NOTIFICATION_CATEGORY.EXPORT_FINISHED]: {
+    link: specimenLink('reports/…/export'),
+    entityName: SPECIMEN_ENTITY,
+    fiscalYear: '2026',
+    format: 'pdf',
+    outcome: 'completed',
+  },
 };
 
 function specimenLink(path: string): string {

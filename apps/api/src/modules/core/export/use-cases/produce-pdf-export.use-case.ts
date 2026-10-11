@@ -1,3 +1,4 @@
+import type { NotificationPort } from '@api/contracts/notification.port';
 import type { ObjectStorage } from '@api/contracts/object-storage.port';
 import type { PdfRenderer } from '@api/contracts/pdf-renderer.port';
 import type { ReportDocumentRenderer } from '@api/contracts/report-document.port';
@@ -26,6 +27,7 @@ export class ProducePdfExport {
     private readonly documents: ReportDocumentRenderer,
     private readonly printer: PdfRenderer,
     private readonly storage: ObjectStorage,
+    private readonly notifications: NotificationPort,
     private readonly now: () => Date,
   ) {}
 
@@ -36,6 +38,7 @@ export class ProducePdfExport {
       tenantWork: this.tenantWork,
       store: this.store,
       storage: this.storage,
+      notifications: this.notifications,
       now: this.now,
       compose: async (requested, generatedAt) =>
         this.documents.render(

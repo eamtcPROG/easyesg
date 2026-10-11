@@ -157,6 +157,8 @@ describe('notification categories from the console (A-17; task 67.10)', () => {
       // FR-164's and FR-165's notices (task 51.2).
       OUTSTANDING,
       'reporting.report_deadline',
+      // The finished export's notice (task 47.3).
+      'reporting.export_finished',
     ]);
     // Which cadence each keeps is code's, said to the console so it offers the right field (task 51.2).
     expect(read.map((category) => [category.categoryKey, category.cadence])).toEqual(

@@ -44,3 +44,6 @@ export const PERIODS_PATH = '/[locale]/(app)/(workspace)/entities/[entityId]/per
 
 /** S-26 — a mark or a dismissal changes what the centre lists and counts (task 50.2.1). */
 export const NOTIFICATIONS_PATH = '/[locale]/(app)/(workspace)/notifications';
+
+/** S-11 (task 47.3): a request, a mark and its withdrawal each change what the screen draws. */
+export const REPORT_EXPORT_PATH = '/[locale]/(app)/(wizard)/reports/[reportId]/export';

@@ -21,6 +21,12 @@ export interface ProblemDocument {
   instance?: string;
   /** NFR-90: quotable reference for support. The one identifier a person may be shown. */
   correlationId?: string;
+  /**
+   * RFC 9457's extension members — everything the document carries beyond the members above, as received, and absent
+   * where it carries none (task 47.3). **Read through a validated reader, never cast**: a refusal's `findings` is the
+   * first a screen reads, S-11's list of what is unresolved (`apps/api`'s `ExportFindingsUnacknowledgedError`).
+   */
+  extensions?: Readonly<Record<string, unknown>>;
 }
 
 /** Narrowing helper: a fetch body is a problem document iff the response said so. */
@@ -92,6 +98,9 @@ export const PROBLEM_TYPE = {
    *  reaches it only from a race or another client, and its form marks the year as the field to change, beside the
    *  api's own sentence, as it marks the two dates for an overlap. */
   PeriodFiscalYearTaken: 'https://easyesg.md/problems/period-fiscal-year-taken',
+  /** An export asked for while the report holds unresolved findings, without acknowledging them (FR-44; task 47.4). S-11
+   *  draws the warning listing them — the refusal's `findings` extension — and asks again with the acknowledgement. */
+  ExportFindingsUnacknowledged: 'https://easyesg.md/problems/export-findings-unacknowledged',
 } as const;
 
 export type ProblemTypeUri = (typeof PROBLEM_TYPE)[keyof typeof PROBLEM_TYPE];

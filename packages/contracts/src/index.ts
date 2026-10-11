@@ -29,6 +29,7 @@ export type { Message, ResultList, ResultObject } from './envelope';
 export {
   API_OUTCOME,
   mapOutcome,
+  answersNoBody,
   readProblemDocument,
   readResultList,
   readResultObject,
@@ -304,6 +305,29 @@ export type ValidationCounts = components['schemas']['CountsDto'];
  * with `@easyesg/validation`'s `readRuleSet`, never a cast.
  */
 export type ValidationRules = components['schemas']['ValidationRulesDto'];
+// Export — S-11's request, history, watch and languages, and the filed mark (task 47; FR-41, FR-44, FR-49 … FR-53).
+export {
+  EXPORT_FORMAT,
+  EXPORT_FORMAT_MIRRORS_WIRE,
+  EXPORT_STATUS,
+  EXPORT_STATUS_MIRRORS_WIRE,
+  isExportFormat,
+  isExportStatus,
+  type ExportFormat,
+  type ExportStatus,
+} from './export';
+/** One export as the history lists it and S-11 watches it — its id is its job's (tasks 47.1, 47.4). */
+export type Export = components['schemas']['ExportResponseDto'];
+/** Asking for one: the format, the language, and whether the unresolved findings are acknowledged (FR-44). */
+export type RequestExportRequest = components['schemas']['RequestExportRequestDto'];
+/** The languages a file may be written in, each with its labels' standing at the report's pin (UX-47). */
+export type ExportLanguages = components['schemas']['ExportLanguagesResponseDto'];
+export type ExportLanguage = components['schemas']['ExportLanguageDto'];
+/** The filed mark on a report — the day stated, when it was recorded and by whom (FR-41; task 47.5). */
+export type ReportFiling = components['schemas']['ReportFilingDto'];
+export type MarkReportFiledRequest = components['schemas']['MarkReportFiledRequestDto'];
+/** The versions a new report would pin today, where they differ from the report's own (FR-51; UX-48). */
+export type SupersedingPin = components['schemas']['SupersedingPinDto'];
 /** The prior-period comparative (task 34.3; UC-45, FR-46). */
 export type PriorPeriodComparatives = components['schemas']['PriorPeriodResponseDto'];
 

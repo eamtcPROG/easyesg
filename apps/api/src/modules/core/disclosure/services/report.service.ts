@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { TAXONOMY_REGISTRY, type TaxonomyPin, type TaxonomyRegistry } from '@api/contracts/taxonomy-registry.port';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
 import type { Report } from '../models/report.model';
 import { REPORT_STORE, type ReportStore } from '../interfaces/report-store.interface';
@@ -10,7 +11,9 @@ import {
   type CreateReportCommand,
   type UpdateReportCommand,
 } from '../use-cases/create-report.use-case';
+import { MarkReportFiled, type MarkReportFiledCommand } from '../use-cases/mark-report-filed.use-case';
 import { SendReportReminder, type SendReportReminderCommand } from '../use-cases/send-report-reminder.use-case';
+import { WithdrawReportFiling } from '../use-cases/withdraw-report-filing.use-case';
 
 /**
  * The Nest-aware seam between `ReportsController` and the use case (house rule: controllers call
@@ -22,6 +25,9 @@ import { SendReportReminder, type SendReportReminderCommand } from '../use-cases
  *
  * **UC-175's reminder takes its sender and organization from the request** (task 50.3), `PeriodService`'s rule for
  * who locked a period: an attribution a caller could name is not an attribution.
+ *
+ * **FR-41's filed mark** (task 47.5) is made and withdrawn here, and `adopted()` says what a new report would pin today,
+ * which every route answering a report states beside it (FR-51; §12.5.6's task-47 row (6)).
  */
 @Injectable()
 export class ReportService {
@@ -29,7 +35,23 @@ export class ReportService {
     private readonly reports: CreateReport,
     @Inject(REPORT_STORE) private readonly store: ReportStore,
     private readonly reminders: SendReportReminder,
+    private readonly marking: MarkReportFiled,
+    private readonly withdrawing: WithdrawReportFiling,
+    @Inject(TAXONOMY_REGISTRY) private readonly registry: TaxonomyRegistry,
   ) {}
+
+  /** What a new report would pin today — the adoption a report's own pin is compared with (FR-51). */
+  adopted(): TaxonomyPin | null {
+    return this.registry.pinFor({});
+  }
+
+  markFiled(command: MarkReportFiledCommand): Promise<Report> {
+    return this.marking.execute(command);
+  }
+
+  withdrawFiling(command: { readonly reportId: string }): Promise<Report> {
+    return this.withdrawing.execute(command);
+  }
 
   list(input: { readonly reportingEntityId?: string }): Promise<Report[]> {
     return this.store.listReports(input);

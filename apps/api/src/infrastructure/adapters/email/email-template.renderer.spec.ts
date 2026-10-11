@@ -31,6 +31,8 @@ describe('email template rendering (OQ-43)', () => {
    */
   const OUTSTANDING = { count: 3, intervalDays: 7, fields: 'B1: Cifra de afaceri și Active; B3: Consumul total de energie' };
   const DEADLINE = { dueDate: '30 mai 2027', daysRemaining: 7, started: 'yes', outstanding: 4 };
+  /** The finished export's notice (task 47.3): the file's format and how it ended, beside the reminder's report names. */
+  const EXPORT_FINISHED = { format: 'pdf', outcome: 'completed' };
 
   it.each(LOCALES)('renders the verification template in %s', (locale: Locale) => {
     const { subject, body } = renderEmail({ locale, templateKey: NOTIFICATION_CATEGORY.EMAIL_VERIFICATION, params });
@@ -51,7 +53,15 @@ describe('email template rendering (OQ-43)', () => {
       const { body } = renderEmail({
         locale,
         templateKey: wording,
-        params: { ...params, organizationName: 'Brutăria', ...REMINDER, ...REPORT_UPDATE, ...OUTSTANDING, ...DEADLINE },
+        params: {
+          ...params,
+          organizationName: 'Brutăria',
+          ...REMINDER,
+          ...REPORT_UPDATE,
+          ...OUTSTANDING,
+          ...DEADLINE,
+          ...EXPORT_FINISHED,
+        },
       });
 
       expect(body).toContain(params.link);

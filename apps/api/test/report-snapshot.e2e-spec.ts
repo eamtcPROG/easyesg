@@ -276,8 +276,11 @@ describe('the filing does not move while the period is locked (task 31.4)', () =
       // The wire's own names for the same four columns. Asserted at this level as well as over the
       // rows because the deliverable says a locked report READS identically, and what a person
       // reads is the DTO — a projection that could drop or derive a field the row still holds.
-      expect(without(reportAfter, ['status', 'updatedAt'])).toEqual(
-        without(reportBefore, ['status', 'updatedAt']),
+      // `locked` **is** the lock since task 47 — the flag beside `status` that a filed report needs, since `filed` reads
+      // over the lock (§12.5.6's task-47 row (o)) — so it moves with it, and is asserted moving rather than excluded.
+      expect([reportBefore.locked, reportAfter.locked]).toEqual([false, true]);
+      expect(without(reportAfter, ['status', 'locked', 'updatedAt'])).toEqual(
+        without(reportBefore, ['status', 'locked', 'updatedAt']),
       );
       // **The period carries the report since task 32.4**, so *"but for the lock itself"* now has
       // to reach one level down: the lock moves the nested report's `status` and `updatedAt` in the

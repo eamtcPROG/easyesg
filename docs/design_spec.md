@@ -819,12 +819,12 @@ phone screen: the form is replaced by what happened, what it means and the way b
 - **Content and data shown:**
   - Dialogue: exactly two decisions and no more — **format** (PDF · EFRAG Excel) and **language**, independent of interface language (UX-47). Where a language whose labels are platform-authored is selected — Romanian and Russian at `2026-05-01`, per T-14 as amended — a statement that those labels carry no official EFRAG standing, with **English** recommended for a bank or EU buyer. Where the report is pinned to a superseded taxonomy version, an explicit notice that the platform runs migrations and organizations are told when, with the export against the original version offered now (UX-48; amended 5 Oct 2026, 182/35). Where findings are unresolved, an explicit warning listing what is unresolved (UX-25), whose acknowledgement the api also requires (amended 5 Oct 2026, 182/20).
   - History: format, language, taxonomy version, timestamp and generating user for every prior export (UX-49).
-- **Controls and actions:** choose format; choose language; export; migrate first; export against the original version; re-download any prior artefact.
+- **Controls and actions:** choose format; choose language; export; export against the original version; re-download any prior artefact; *Mark as filed*, with the date it was filed, once an export has completed, and withdraw the mark. *(Amended 12 Oct 2026, `architecture.md` §12.5.6's task-47 row (1)–(4): **migrate first** is struck — the reporter runs no migration, 182/35 — and the filed mark, which this entry had left out though `design/IMPLEMENTATION_PLAN.md` puts it on S-11, is added.)*
 - **States:** empty — first use (no exports yet); empty — filtered; loading — initial; **pending — async** (the defining state: export is presented as a job from the first interaction, with immediate acknowledgement, a named place to watch, and freedom to leave the screen; beyond 30 s the result is delivered by notification, UX-46, §8.5); error — recoverable; read-only (new exports blocked under suspension, UC-142, while previously generated documents remain downloadable, UX-54).
 - **Validation behaviour:** export is permitted with unresolved findings after the explicit warning; it is never silently blocked, and it never proceeds silently against a version the report was not prepared under.
 - **Exits:** the produced file; the notification centre (S-26) for a long-running job; back to S-07 or S-10.
 - **Use cases:** UC-42, UC-43, UC-44, UC-48.
-- **FRs:** FR-44, FR-49, FR-50, FR-51, FR-52, FR-53.
+- **FRs:** FR-41, FR-44, FR-49, FR-50, FR-51, FR-52, FR-53.
 
 ### S-12 — Field change history
 

@@ -21,6 +21,7 @@ import { PdfExportRequestedHandler } from '../src/modules/core/export/consumers/
 import { ComposeReportDocument } from '../src/modules/core/export/use-cases/compose-report-document.use-case';
 import { ProducePdfExport } from '../src/modules/core/export/use-cases/produce-pdf-export.use-case';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
+import { inertNotifications } from './support/export-files';
 import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
 import { conformance, pdfText, squash } from './support/pdf-file';
 import { freezeNextBrowser, liveBrowserProcesses } from './support/renderer-container';
@@ -97,6 +98,7 @@ describe('the PDF export (task 44)', () => {
           accessKeyId: required('OBJECT_STORAGE_ACCESS_KEY_ID'),
           secretAccessKey: required('OBJECT_STORAGE_SECRET_ACCESS_KEY'),
         }),
+        inertNotifications(),
         () => new Date(),
       ),
     );

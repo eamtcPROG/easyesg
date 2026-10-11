@@ -15,7 +15,16 @@ import { ProduceXlsxExport } from './produce-xlsx-export.use-case';
 
 const NOW = new Date('2026-10-11T09:30:00Z');
 const FILE = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
-const REQUESTED: RequestedExport = { id: 'export-7', reportId: 'report-1', format: EXPORT_FORMAT.XLSX, locale: 'ro', requestedBy: 'Ana Rusu' };
+const REQUESTED: RequestedExport = {
+  id: 'export-7',
+  reportId: 'report-1',
+  format: EXPORT_FORMAT.XLSX,
+  locale: 'ro',
+  requestedBy: 'Ana Rusu',
+  requestedById: 'account-1',
+  requestedAt: new Date(NOW.getTime() - 5_000),
+  subject: { entityName: 'Brutăria', fiscalYear: 2026 },
+};
 const COMMAND = { organizationId: 'org-1', exportId: 'export-7', attempt: 1, attempts: 3 };
 const MAP = readDigitalTemplateMap(
   JSON.parse(readFileSync(resolve(process.cwd(), '../../config/seed/vsme-digital-template-map.1.3.0.json'), 'utf8')),
@@ -89,6 +98,8 @@ function harness(options: { template?: DigitalTemplate | null } = {}) {
         return Promise.resolve();
       },
     },
+    // Settled five seconds after the request: watched on S-11, so nothing is raised.
+    { raise: () => Promise.reject(new Error('A quick export raises no notice')), cancel: () => Promise.resolve() },
     () => NOW,
   );
   return { produce, store, composed, asked, written, stored };

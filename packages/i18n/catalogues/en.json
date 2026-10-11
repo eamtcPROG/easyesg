@@ -152,6 +152,15 @@
     },
     "notification-category-changed": {
       "title": "The settings changed in the meantime"
+    },
+    "report-not-exported": {
+      "title": "Report not yet exported"
+    },
+    "export-findings-unacknowledged": {
+      "title": "Unresolved findings to acknowledge"
+    },
+    "export-file-unavailable": {
+      "title": "File not available"
     }
   },
   "validation": {
@@ -332,7 +341,9 @@
       "not_available_reason_required": "A field marked not available needs a reason, so the value was not saved. Write why the information is not available and save again.",
       "not_available_reason_unexpected": "A reason was sent for a field that is not marked not available, so the value was not saved. Refresh the page and enter the field again.",
       "unit_not_admitted": "The unit chosen is not one the standard admits for this field, so the value was not saved. Refresh the page and choose a unit from the list.",
-      "module_not_found": "This report has no such section, so there is nothing to show. Open the report again from the list of reports."
+      "module_not_found": "This report has no such section, so there is nothing to show. Open the report again from the list of reports.",
+      "not_exported": "No export of this report has finished yet, so there is nothing to record as filed. Produce the PDF or the Excel file first, then mark the report filed.",
+      "filing_date_invalid": "The filing date is not a real calendar day, so the mark was not recorded. Choose the day the report was filed and try again."
     },
     "calculator": {
       "unknown_source": "The energy source sent is not one this report’s emission factors cover, so the line could not be saved. Refresh the page to load the sources you can choose from.",
@@ -518,7 +529,10 @@
           "factorSet": "Calculated by the platform with the emission factor set {label}.",
           "labels": "The notes in this file are the platform's own wording in this language and carry no EFRAG standing. The template's labels are EFRAG's official English, which is authoritative."
         }
-      }
+      },
+      "findings_unacknowledged": "The report still has {count, plural, one {# unresolved finding} other {# unresolved findings}}, so the export was not started. Review the list, then export again, confirming that you are exporting with them.",
+      "file_unavailable": "This export has no file yet: it is still being produced, or it failed. Wait for it to finish, or export the report again.",
+      "not_found": "This export does not exist in your organization. Open the report’s export history to find it."
     }
   },
   "notification": {
@@ -588,6 +602,16 @@
           "title": "{daysRemaining, plural, one {# day} other {# days}} left to file the {entityName} report for {fiscalYear}",
           "body": "It is due on {dueDate}. {started, select, no {The report has not been started yet.} other {{outstanding, plural, one {# field is} other {# fields are}} still to complete or correct.}}",
           "action": "Open the report"
+        }
+      },
+      "export_finished": {
+        "name": "Finished exports",
+        "subject": "{outcome, select, failed {The {format, select, xlsx {Excel} other {PDF}} export of the {entityName} report for {fiscalYear} could not be produced} other {The {format, select, xlsx {Excel} other {PDF}} export of the {entityName} report for {fiscalYear} is ready}}",
+        "body": "Hello,\n\n{outcome, select, failed {The {format, select, xlsx {Excel} other {PDF}} file you asked for, of the sustainability report for {entityName} for {fiscalYear}, could not be produced after several attempts. Nothing in the report was lost: you can export it again.} other {The {format, select, xlsx {Excel} other {PDF}} file you asked for, of the sustainability report for {entityName} for {fiscalYear}, is ready, and stays in the report’s export history.}}\n\nOpen the report’s exports here:\n\n{link}\n\nYou are receiving this because you asked for this export and producing it took longer than half a minute.",
+        "in_app": {
+          "title": "{outcome, select, failed {The {format, select, xlsx {Excel} other {PDF}} export could not be produced} other {The {format, select, xlsx {Excel} other {PDF}} export is ready}}",
+          "body": "{outcome, select, failed {The {entityName} report for {fiscalYear} has not changed; you can export it again.} other {The {entityName} report for {fiscalYear} — the file is waiting in its export history.}}",
+          "action": "Open the exports"
         }
       }
     },

@@ -1,0 +1,142 @@
+/*
+ * S-11's frame and parts (task 47.3): the bar, then one scrolling column — the heading, the dialogue's panel, the filed
+ * mark and the history — at the content's width. Tokens only (UX-127).
+ */
+.shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 0;
+}
+
+.body {
+  flex: 1;
+  min-block-size: 0;
+  overflow-y: auto;
+  background: var(--surface-sunken);
+}
+
+.body:focus {
+  outline: none;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+  max-inline-size: var(--content-max);
+  margin-inline: auto;
+  padding: var(--space-7) var(--space-4) var(--space-9);
+}
+
+@media (min-width: 48rem) {
+  .column {
+    padding-inline: var(--space-7);
+  }
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.title,
+.lede,
+.sectionTitle,
+.note {
+  margin: 0;
+}
+
+.title {
+  color: var(--text-default);
+}
+
+.lede,
+.note {
+  max-inline-size: var(--measure-text);
+  color: var(--text-body);
+}
+
+/* A region of the screen: its heading over what it holds. */
+.region {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sectionTitle {
+  color: var(--text-default);
+}
+
+/* The dialogue's panel and the filing panel: one surface, its decisions stacked, the commit at its foot. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+
+.decisions {
+  display: grid;
+  gap: var(--space-6);
+}
+
+@media (min-width: 64rem) {
+  .decisions {
+    grid-template-columns: 3fr 2fr;
+  }
+}
+
+.commit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+/* The findings a warning lists, each its field, its words and the way to it. */
+.findings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finding {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.findingField {
+  color: var(--text-default);
+}
+
+/* The filters above the history, one row where there is room. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-end;
+}
+
+.filters > * {
+  min-inline-size: 12rem;
+}
+
+.cellStack {
+  display: flex;
+  flex-direction: column;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+/* The view-only member's state, and the screen's error states, at the column's width. */
+.state {
+  max-inline-size: var(--measure-text);
+}

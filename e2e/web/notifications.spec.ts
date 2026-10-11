@@ -314,13 +314,15 @@ test.describe('S-26 — the notification centre', () => {
 
     await page.goto('/notifications');
     const categories = page.getByRole('list', { name: 'Categoria' });
-    // Every category that travels in-app, read from the reader's preferences — FR-164's and FR-165's since task 51.2.
+    // Every category that travels in-app, read from the reader's preferences — FR-164's and FR-165's since task 51.2,
+    // the finished export's since task 47.3.
     await expect(categories.getByRole('link')).toHaveText([
       'Toate categoriile',
       'Mementouri',
       'Actualizări ale rapoartelor',
       'Câmpuri de completat',
       'Termene de depunere',
+      'Exporturi încheiate',
     ]);
     await expect(categories.getByRole('link', { name: 'Toate categoriile' })).toHaveAttribute('aria-current', 'page');
 

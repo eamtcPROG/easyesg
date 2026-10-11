@@ -103,6 +103,8 @@ export interface PeriodReport {
   readonly status: ReportStatus;
   /** Whether its latest validation run left nothing outstanding (task 41.3) — the report's own `readyToFile`. */
   readonly readyToFile: boolean;
+  /** Whether its reporter marked it filed (task 47.5) — the report's own mark, read over the status. */
+  readonly filed: boolean;
   /** What its latest validation run came to (task 42.2) — the report's own `validation`, `null` where never checked. */
   readonly validation: ReportValidationSummary | null;
   /**

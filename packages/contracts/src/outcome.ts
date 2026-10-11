@@ -125,6 +125,24 @@ export function readResultList<TObject>(
 }
 
 /**
+ * Whether a success answered nothing (§6.8's bypasses): a 204 never carries a body, and a 202 carries one only where the
+ * route answers what it accepted — the export request's record since task 47.4 — which the envelope's media type says.
+ * Shared by both front ends' seams, which read every 202 as bodiless until then and so discarded that record.
+ */
+export function answersNoBody(response: { readonly status: number; readonly contentType: string | null }): boolean {
+  if (response.status === NO_CONTENT_STATUS) return true;
+  return response.status === ACCEPTED_STATUS && !(response.contentType ?? '').includes(ENVELOPE_MEDIA_TYPE);
+}
+
+const NO_CONTENT_STATUS = 204;
+const ACCEPTED_STATUS = 202;
+/** The envelope's media type; a problem document's is its own and is read before any success. */
+const ENVELOPE_MEDIA_TYPE = 'application/json';
+
+/** The members `ProblemDocument` names — RFC 9457's five and NFR-90's reference; every other member is an extension. */
+const PROBLEM_MEMBERS: ReadonlySet<string> = new Set(['type', 'status', 'title', 'detail', 'instance', 'correlationId']);
+
+/**
  * A problem document is repaired rather than rejected where it can be — a failure that arrives
  * slightly malformed is still a failure the user must be told about, and dropping it to
  * `unreachable` would replace "the address is already taken" with "try again later". RFC 9457
@@ -136,6 +154,9 @@ export function readProblemDocument(body: unknown, httpStatus: number): ProblemD
   const source = isRecord(body) ? body : {};
   const text = (value: unknown): string | undefined =>
     typeof value === 'string' ? value : undefined;
+  // The extension members, kept as received for a reader to validate (task 47.3) — and the member left out where there
+  // are none, so a document that carries none reads exactly as it did before extensions were kept.
+  const extensions = Object.fromEntries(Object.entries(source).filter(([member]) => !PROBLEM_MEMBERS.has(member)));
 
   return {
     type: text(source.type) ?? 'about:blank',
@@ -144,5 +165,6 @@ export function readProblemDocument(body: unknown, httpStatus: number): ProblemD
     detail: text(source.detail),
     instance: text(source.instance),
     correlationId: text(source.correlationId),
+    ...(Object.keys(extensions).length > 0 ? { extensions } : {}),
   };
 }

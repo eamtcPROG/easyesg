@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { TaxonomyPin } from '@api/contracts/taxonomy-registry.port';
 import type { Report } from '@api/modules/core/disclosure/models/report.model';
 import type {
   DisclosureModuleSummary,
@@ -32,6 +33,11 @@ export class SupportAccessReportsService {
     private readonly reports: ReportService,
     private readonly wizard: WizardService,
   ) {}
+
+  /** What a new report would pin today — configuration, so read outside the grant and logged as nothing. */
+  adopted(): TaxonomyPin | null {
+    return this.reports.adopted();
+  }
 
   list(scope: GrantScope): Promise<Report[]> {
     return this.underGrant.execute({

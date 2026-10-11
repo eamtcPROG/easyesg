@@ -78,6 +78,33 @@ export class ReportNotEditableError extends DomainError {
 }
 
 /**
+ * The day a report was filed is not a real calendar day (task 47.5) — `2026-02-30` has the shape and is no day at all.
+ * `ValidationFailed`, as the period's own dates are refused: nothing branches on it, and the way out is the date.
+ */
+export class ReportFilingDateInvalidError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.filing_date_invalid');
+  }
+}
+
+/**
+ * FR-41's mark asked for a report no export of which has completed (task 47.5; §12.5.6's task-47 row (4)). A mark
+ * records that a report has left the building, so it needs a file to have left in: the way out is S-11's export, not a
+ * different date.
+ */
+export class ReportNotExportedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ReportNotExported;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.not_exported');
+  }
+}
+
+/**
  * The report pins a taxonomy version the registry no longer carries.
  *
  * **An explicit failure rather than an empty form**, which is the position `TAXONOMY_REGISTRY`'s own

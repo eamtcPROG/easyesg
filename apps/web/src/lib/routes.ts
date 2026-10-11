@@ -255,3 +255,11 @@ export const reportPreviewRoute = (input: { readonly reportId: string; readonly 
 
 /** The query parameter S-10's language choice writes and its page reads — one spelling for both. */
 export const PREVIEW_LANGUAGE_PARAM = 'language';
+
+/**
+ * S-11, the export dialogue and its history (task 47.3) — beside S-10, where *proceed to export* leads, and where the
+ * completion notice opens (the api's `reporting.export_finished` link names the same path). **The history's view is in
+ * the query** (UX-4), as S-16's list's is; the screen's own builder writes it.
+ */
+export const reportExportRoute = (input: { readonly reportId: string; readonly query?: string }): string =>
+  withQuery(`/reports/${input.reportId}/export`, input.query ?? '');

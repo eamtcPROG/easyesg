@@ -124,7 +124,7 @@ The factor set is versioned config, not code. The UI must show which set a figur
 
 Then the printed artefact itself: cover and contents · the body · reasoned omissions · provenance. Rendered by the worker through Playwright/Chromium, so the layout must hold with no client JS and no web fonts loading late.
 
-Export is gated on no unresolved findings. **Reasoned omissions do not block export** — they flow into the document verbatim, with their stated reason. That is the product's central claim; if the export loses the reason text, the feature is broken regardless of what the screen shows.
+Export is never gated by unresolved findings: it warns, and proceeds once the warning is acknowledged (FR-44; `architecture.md` §12.5.6's task-182 validation row, 182/20 and 182/27 — *amended 12 Oct 2026*, this line had read *gated on no unresolved findings*). **Reasoned omissions do not block export** — they flow into the document verbatim, with their stated reason. That is the product's central claim; if the export loses the reason text, the feature is broken regardless of what the screen shows.
 
 **Reference:** `EasyESG Reporting Screens.dc.html` screens 12–17, 23; `EasyESG Exported Document.dc.html`.
 

@@ -1,4 +1,4 @@
-import { MEMBERSHIP_ROLE, REPORT_STATUS } from '@easyesg/contracts';
+import { MEMBERSHIP_ROLE } from '@easyesg/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import { READ_ONLY_CAUSE, readOnlyCauseOf, resumeModule } from './wizard';
 
@@ -11,24 +11,15 @@ vi.mock('server-only', () => ({}));
  */
 describe('readOnlyCauseOf', () => {
   it('names the lock even for a viewer, the role for an open report, and nothing for an editor', () => {
+    expect(readOnlyCauseOf({ report: { locked: true }, role: MEMBERSHIP_ROLE.VIEWER })).toBe(READ_ONLY_CAUSE.LOCKED);
     expect(
-      readOnlyCauseOf({ report: { status: REPORT_STATUS.LOCKED }, role: MEMBERSHIP_ROLE.VIEWER }),
+      readOnlyCauseOf({ report: { locked: true }, role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR }),
     ).toBe(READ_ONLY_CAUSE.LOCKED);
-    expect(
-      readOnlyCauseOf({
-        report: { status: REPORT_STATUS.LOCKED },
-        role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR,
-      }),
-    ).toBe(READ_ONLY_CAUSE.LOCKED);
-    expect(
-      readOnlyCauseOf({ report: { status: REPORT_STATUS.OPEN }, role: MEMBERSHIP_ROLE.VIEWER }),
-    ).toBe(READ_ONLY_CAUSE.VIEWER);
-    expect(
-      readOnlyCauseOf({ report: { status: REPORT_STATUS.OPEN }, role: MEMBERSHIP_ROLE.EDITOR }),
-    ).toBeNull();
+    expect(readOnlyCauseOf({ report: { locked: false }, role: MEMBERSHIP_ROLE.VIEWER })).toBe(READ_ONLY_CAUSE.VIEWER);
+    expect(readOnlyCauseOf({ report: { locked: false }, role: MEMBERSHIP_ROLE.EDITOR })).toBeNull();
     // No membership resolved is not "viewer": the API is the authority on the role, and a screen
     // that could not read it must not invent one.
-    expect(readOnlyCauseOf({ report: { status: REPORT_STATUS.OPEN }, role: null })).toBeNull();
+    expect(readOnlyCauseOf({ report: { locked: false }, role: null })).toBeNull();
   });
 });
 

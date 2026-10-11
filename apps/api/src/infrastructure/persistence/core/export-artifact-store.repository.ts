@@ -11,6 +11,10 @@ interface RequestedExportRow {
   report_id: string;
   format: string;
   locale: string;
+  requested_by: string;
+  requested_at: Date;
+  entity_name: string;
+  fiscal_year: number;
   requester_found: boolean;
   requester_email: string | null;
   requester_given_name: string | null;
@@ -33,10 +37,14 @@ export class ExportArtifactStoreRepository extends TenantRepository<never> imple
 
   async findRequested(query: { readonly exportId: string }): Promise<RequestedExport | null> {
     const rows = await this.manager.query<RequestedExportRow[]>(
-      `SELECT e.id, e.report_id, e.format, e.locale,
+      `SELECT e.id, e.report_id, e.format, e.locale, e.requested_by, e.requested_at,
+              entity.name AS entity_name, period.fiscal_year,
               requester.id IS NOT NULL AS requester_found, requester.email AS requester_email,
               requester.given_name AS requester_given_name, requester.family_name AS requester_family_name
          FROM core.export_artifact e
+         JOIN core.report report ON report.id = e.report_id
+         JOIN core.reporting_period period ON period.id = report.reporting_period_id
+         JOIN core.reporting_entity entity ON entity.id = period.reporting_entity_id
     LEFT JOIN identity.account requester ON requester.id = e.requested_by
         WHERE e.id = $1 AND e.status = $2`,
       [query.exportId, EXPORT_STATUS.REQUESTED],
@@ -57,6 +65,9 @@ export class ExportArtifactStoreRepository extends TenantRepository<never> imple
               row.requester_email,
             )
           : null,
+      requestedById: row.requested_by,
+      requestedAt: row.requested_at,
+      subject: { entityName: row.entity_name, fiscalYear: row.fiscal_year },
     };
   }
 

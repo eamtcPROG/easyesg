@@ -25,7 +25,7 @@ import { ReadReportContents } from '../src/modules/core/export/use-cases/read-re
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { type CalcReading, cellOf, openInCalc } from './support/calc-file';
 import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
-import { exportStorage, requestExport, storageReader } from './support/export-files';
+import { exportStorage, inertNotifications, requestExport, storageReader } from './support/export-files';
 import { cleanupSignedInAccounts, REGISTERED_NAME, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 import { structureOf } from './support/workbook-structure';
 
@@ -72,6 +72,7 @@ describe('the Excel export (task 46)', () => {
         app.get<DigitalTemplateRegistry>(DIGITAL_TEMPLATE_REGISTRY),
         new XlsxReportWorkbookWriter(),
         exportStorage(),
+        inertNotifications(),
         () => new Date(),
       ),
     );

@@ -54,6 +54,11 @@ import { REPORT_STORE, type ReportStore } from './interfaces/report-store.interf
 import { ApplicabilityRulesService } from './services/applicability-rules.service';
 import { DisclosureFacade } from './services/disclosure-facade.service';
 import { ReportService } from './services/report.service';
+import { MarkReportFiled } from './use-cases/mark-report-filed.use-case';
+import { WithdrawReportFiling } from './use-cases/withdraw-report-filing.use-case';
+import { ReportFilingController } from './controllers/report-filing.controller';
+import { REPORT_FILING_STORE, type ReportFilingStore } from './interfaces/report-filing-store.interface';
+import { ReportFilingStoreRepository } from '@api/infrastructure/persistence/core/report-filing-store.repository';
 import { WizardService } from './services/wizard.service';
 import { CreateReport } from './use-cases/create-report.use-case';
 import { SendReportReminder } from './use-cases/send-report-reminder.use-case';
@@ -173,6 +178,18 @@ const evaluationProviders: Provider[] = [
 const httpProviders: Provider[] = [
   ...evaluationProviders,
   ReportService,
+  // FR-41's filed mark (task 47.5): its own port beside the report store, and its two use cases.
+  { provide: REPORT_FILING_STORE, useClass: ReportFilingStoreRepository },
+  {
+    provide: MarkReportFiled,
+    inject: [REPORT_STORE, REPORT_FILING_STORE],
+    useFactory: (reports: ReportStore, filing: ReportFilingStore) => new MarkReportFiled(reports, filing),
+  },
+  {
+    provide: WithdrawReportFiling,
+    inject: [REPORT_STORE, REPORT_FILING_STORE],
+    useFactory: (reports: ReportStore, filing: ReportFilingStore) => new WithdrawReportFiling(reports, filing),
+  },
   // Task 34.2's facade. Takes the store, and takes the *descriptor* from its caller rather than
   // importing one version's — DR-4 makes two coexist, and which applies is a property of the report
   // the caller holds.
@@ -278,7 +295,7 @@ const httpProviders: Provider[] = [
   // platform's own Romanian and Russian and offers the countries the platform registers.
   // `NotificationModule` for `NOTIFICATION_PORT` (task 50.3), which the reminder raises through.
   imports: [TaxonomyModule, LocalizationModule, OrganizationModule, NotificationModule],
-  controllers: mode === APP_MODE.WORKER ? [] : [ReportsController, WizardController],
+  controllers: mode === APP_MODE.WORKER ? [] : [ReportsController, ReportFilingController, WizardController],
   providers: mode === APP_MODE.WORKER ? evaluationProviders : httpProviders,
   // `ReportService` and `WizardService` since task 67.9: a read under a support-access grant runs exactly the
   // reads a member's S-06 and S-07 run, inside the grant's binding, so it borrows them rather than restating.

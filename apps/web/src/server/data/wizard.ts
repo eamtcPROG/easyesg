@@ -1,7 +1,6 @@
 import 'server-only';
 import {
   MEMBERSHIP_ROLE,
-  REPORT_STATUS,
   type DisclosureModuleSummary,
   type DisclosureStep,
   type MembershipRole,
@@ -29,8 +28,9 @@ import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tena
 /**
  * Why S-07 is read-only, where it is — UX-13's three causes, named rather than collapsed.
  *
- * **Two of the three are reachable today.** A locked period is the report's status; a view-only
- * membership is the caller's role in the active organization. The third, a suspended entitlement
+ * **Two of the three are reachable today.** A locked period is the report's `locked` — never its status, which reads
+ * `filed` over the lock since task 47.5; a view-only membership is the caller's role in the active organization. The
+ * third, a suspended entitlement
  * (UC-142), is task 54's and is absent from the vocabulary rather than present and unreachable —
  * a cause with no producer would be a screen state nothing can enter.
  */
@@ -129,11 +129,12 @@ export async function readWizardStep(input: {
  * "the lock is not a role gate"), so it is the cause named even when the reader is also a viewer.
  */
 export function readOnlyCauseOf(input: {
-  readonly report: Pick<Report, 'status'>;
+  /** `locked`, never the status: a filed report reads `filed` over its period's lock (task 47.5). */
+  readonly report: Pick<Report, 'locked'>;
   /** The contract's own union, never `string` — a renamed role must fail here, not read as editable. */
   readonly role: MembershipRole | null;
 }): ReadOnlyCause | null {
-  if (input.report.status === REPORT_STATUS.LOCKED) return READ_ONLY_CAUSE.LOCKED;
+  if (input.report.locked) return READ_ONLY_CAUSE.LOCKED;
   if (input.role === MEMBERSHIP_ROLE.VIEWER) return READ_ONLY_CAUSE.VIEWER;
   return null;
 }

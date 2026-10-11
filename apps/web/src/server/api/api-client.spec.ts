@@ -225,6 +225,17 @@ describe('the api client (§6.8 wire conventions, in one place)', () => {
     });
   });
 
+  it('reads a 202 that answers what it accepted — the export request’s record (task 47.4)', async () => {
+    const queued = { id: 'e1', status: 'requested' };
+    fetchMock.mockResolvedValue(jsonResponse({ object: queued, messages: [] }, { status: 202 }));
+
+    expect(await api.post('/reports/r1/exports', { format: 'pdf', locale: 'en' })).toEqual({
+      status: API_OUTCOME.Ok,
+      value: queued,
+      messages: [],
+    });
+  });
+
   it('maps a network failure to unreachable — the outcome the bundled catalogue explains', async () => {
     fetchMock.mockRejectedValue(new TypeError('fetch failed'));
     expect(await api.get('/things/x')).toEqual({ status: API_OUTCOME.Unreachable });

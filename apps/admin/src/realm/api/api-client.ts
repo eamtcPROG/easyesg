@@ -1,5 +1,6 @@
 import {
   API_OUTCOME,
+  answersNoBody,
   readProblemDocument,
   readResultList,
   readResultObject,
@@ -121,7 +122,8 @@ async function requestObject<TObject>(
   const sent = await send(method, path, body);
   if (!('response' in sent)) return sent;
 
-  if (sent.response.status === 202 || sent.response.status === 204) {
+  // §6.8's bypasses — a 204, and a 202 with nothing to say; a 202 answering what it accepted is read (task 47.4).
+  if (answersNoBody({ status: sent.response.status, contentType: sent.response.headers.get('content-type') })) {
     return { status: API_OUTCOME.Ok, value: undefined as TObject, messages: [] };
   }
 

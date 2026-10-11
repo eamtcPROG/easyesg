@@ -10,6 +10,9 @@ import {
   type ReportSubject,
 } from '../models/report.model';
 import { ReportValidationSummaryDto } from './report-validation-summary.dto';
+import { ReportFilingDto } from './report-filing.dto';
+import { type SupersedingPin, supersedingPin } from '../domain/superseding-pin';
+import type { TaxonomyPin } from '@api/contracts/taxonomy-registry.port';
 import { LegalDateDto } from '@api/modules/core/period/dto/reporting-period.dto';
 import type { EpochMillis, LegalDate } from '@api/contracts/types/time';
 
@@ -123,6 +126,20 @@ export class ReportSubjectDto {
   }
 }
 
+/** The versions a report's pin is superseded by (task 47; FR-51; §12.5.6's task-47 row (6)). */
+export class SupersedingPinDto implements SupersedingPin {
+  @ApiProperty({ example: '2026-05-01', description: 'The VSME taxonomy release a new report would pin today.' })
+  readonly taxonomyVersion: string;
+
+  @ApiProperty({ example: '1.3.0', description: 'The EFRAG Digital Template release a new report would pin today.' })
+  readonly templateVersion: string;
+
+  constructor(pin: SupersedingPin) {
+    this.taxonomyVersion = pin.taxonomyVersion;
+    this.templateVersion = pin.templateVersion;
+  }
+}
+
 export class ReportResponseDto {
   @ApiProperty({ format: 'uuid' })
   readonly id: string;
@@ -138,9 +155,17 @@ export class ReportResponseDto {
     description:
       'Where the report stands. Open and locked follow the reporting period’s lock, which is ' +
       'their only writer (FR-22). An open report whose latest validation run left nothing outstanding ' +
-      'reads ready to file (FR-41, 182/19) — read, never written.',
+      'reads ready to file (FR-41, 182/19) — read, never written. A report its reporter marked filed reads ' +
+      'filed, whether its period is open or locked (task 47.5).',
   })
   readonly status: ReportStatus;
+
+  @ApiProperty({
+    description:
+      'Whether the report’s period is locked (FR-22), so it takes no writes from anyone — whatever its status reads: ' +
+      'a filed report in a locked period reads filed (task 47.5).',
+  })
+  readonly locked: boolean;
 
   @ApiProperty({
     type: ReportValidationSummaryDto,
@@ -150,7 +175,24 @@ export class ReportResponseDto {
   readonly validation: ReportValidationSummaryDto | null;
 
   @ApiProperty({
-    example: '2026-05-01',
+    type: ReportFilingDto,
+    nullable: true,
+    description: 'The reporter’s filed mark (FR-41), or null where it was never marked or the mark was withdrawn.',
+  })
+  readonly filing: ReportFilingDto | null;
+
+  @ApiProperty({
+    type: SupersedingPinDto,
+    nullable: true,
+    description:
+      'The versions a new report would pin today, where they differ from this report’s pin (FR-51) — or null where its ' +
+      'pin is current. An export always uses the report’s own pin.',
+  })
+  readonly supersededBy: SupersedingPinDto | null;
+
+  @ApiProperty({
+    // EFRAG's own release identifier since task 45.3, which this example had not followed.
+    example: '1.3.0',
     description:
       'The EFRAG Digital Template release this report is pinned to (DR-4, FR-66). Copied from the ' +
       'reporting period at creation and moved only by an explicit migration run (FR-69).',
@@ -172,12 +214,17 @@ export class ReportResponseDto {
   @ApiProperty({ type: ReportSubjectDto })
   readonly subject: ReportSubjectDto;
 
-  constructor(report: Report) {
+  /** `adopted` is what a new report would pin today — every route answering a report passes it, so none can omit it. */
+  constructor(report: Report, adopted: TaxonomyPin | null) {
     this.id = report.id;
     this.reportingPeriodId = report.reportingPeriodId;
     this.scope = report.scope;
-    this.status = statusAsRead(report);
+    this.status = statusAsRead({ ...report, filed: report.filing !== null });
+    this.locked = report.status === REPORT_STATUS.LOCKED;
     this.validation = report.validation === null ? null : new ReportValidationSummaryDto(report.validation);
+    this.filing = report.filing === null ? null : new ReportFilingDto(report.filing);
+    const superseding: SupersedingPin | null = supersedingPin({ report, adopted });
+    this.supersededBy = superseding === null ? null : new SupersedingPinDto(superseding);
     this.templateVersion = report.templateVersion;
     this.taxonomyVersion = report.taxonomyVersion;
     // The one conversion OQ-50 permits, at the persistence-to-DTO boundary.

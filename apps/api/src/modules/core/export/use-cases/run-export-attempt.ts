@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
+import { NOTIFICATION_CATEGORY, type NotificationPort } from '@api/contracts/notification.port';
 import type { ObjectStorage } from '@api/contracts/object-storage.port';
 import type { TenantWork } from '@api/contracts/tenant-work.port';
-import { EXPORT_MEDIA_TYPE, type ExportFormat } from '../constants/export.constants';
+import { EXPORT_MEDIA_TYPE, EXPORT_NOTICE_AFTER_MS, EXPORT_STATUS, type ExportFormat } from '../constants/export.constants';
 import { exportObjectKey } from '../domain/export-object-key';
 import type { ExportArtifactStore } from '../interfaces/export-artifact-store.interface';
 import type { RequestedExport } from '../models/requested-export.model';
@@ -29,6 +30,10 @@ export interface ExportAttemptCommand {
  * attempt which settled it, does nothing. **A job produces its own format and no other**: an export asking for another
  * is a defect in whatever enqueued it, and is refused like any failure. **A failure is recorded on the last attempt
  * only**, and every failure is thrown so the queue retries it; the earlier attempts' failures are the queue's to keep.
+ *
+ * **The person who asked is told when it settles — if it took more than 30 s** (task 47.3; §12.5.6's task-47 row (5)):
+ * `reporting.export_finished`, raised inside the unit that settles the record, so the notice and the settled record
+ * commit together, for a completed file and for a final failure alike. A quicker one was watched on S-11.
  */
 export async function runExportAttempt<Composed>(input: {
   readonly command: ExportAttemptCommand;
@@ -36,6 +41,7 @@ export async function runExportAttempt<Composed>(input: {
   readonly tenantWork: TenantWork;
   readonly store: ExportArtifactStore;
   readonly storage: ObjectStorage;
+  readonly notifications: NotificationPort;
   readonly now: () => Date;
   /** Reads what the file is made from, inside the organization's unit of work. */
   readonly compose: (requested: RequestedExport, generatedAt: Date) => Promise<Composed>;
@@ -45,9 +51,23 @@ export async function runExportAttempt<Composed>(input: {
   const { command, format, tenantWork, store } = input;
   const { organizationId, exportId } = command;
   const generatedAt = input.now();
+  /** The record as the attempt read it — what the settling notice names; `null` until it is read. */
+  let requested: RequestedExport | null = null;
+  const notifyIfSlow = async (outcome: typeof EXPORT_STATUS.COMPLETED | typeof EXPORT_STATUS.FAILED): Promise<void> => {
+    if (requested === null || input.now().getTime() - requested.requestedAt.getTime() <= EXPORT_NOTICE_AFTER_MS) return;
+    await input.notifications.raise({
+      categoryKey: NOTIFICATION_CATEGORY.EXPORT_FINISHED,
+      organizationId,
+      recipientUserIds: [requested.requestedById],
+      subjectRef: `export:${exportId}`,
+      deepLink: `/reports/${requested.reportId}/export`,
+      // The year as text: ICU would give a number a thousands separator.
+      params: { entityName: requested.subject.entityName, fiscalYear: String(requested.subject.fiscalYear), format, outcome },
+    });
+  };
   try {
     const composed = await tenantWork.inOrganization({ organizationId }, async () => {
-      const requested = await store.findRequested({ exportId });
+      requested = await store.findRequested({ exportId });
       if (requested === null) return null;
       if (requested.format !== format) throw new Error(`Export ${exportId} asks for a ${requested.format} file, not ${format}.`);
       return { value: await input.compose(requested, generatedAt) };
@@ -58,20 +78,22 @@ export async function runExportAttempt<Composed>(input: {
     const objectKey = exportObjectKey({ organizationId, exportId, format });
     const body = Buffer.from(file.buffer, file.byteOffset, file.byteLength);
     await input.storage.put({ key: objectKey, body, contentType: EXPORT_MEDIA_TYPE[format] });
-    await tenantWork.inOrganization({ organizationId }, () =>
-      store.complete({
+    await tenantWork.inOrganization({ organizationId }, async () => {
+      await store.complete({
         exportId,
         generatedAt,
         objectKey,
         byteSize: file.byteLength,
         sha256: createHash('sha256').update(file).digest('hex'),
-      }),
-    );
+      });
+      await notifyIfSlow(EXPORT_STATUS.COMPLETED);
+    });
   } catch (error) {
     if (command.attempt >= command.attempts) {
-      await tenantWork.inOrganization({ organizationId }, () =>
-        store.fail({ exportId, failure: error instanceof Error ? error.message : String(error) }),
-      );
+      await tenantWork.inOrganization({ organizationId }, async () => {
+        await store.fail({ exportId, failure: error instanceof Error ? error.message : String(error) });
+        await notifyIfSlow(EXPORT_STATUS.FAILED);
+      });
     }
     throw error;
   }

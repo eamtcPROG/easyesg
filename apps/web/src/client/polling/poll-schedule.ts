@@ -12,8 +12,8 @@ import { EVENT_NAME, type EventName } from '@easyesg/contracts';
  *
  * **The intervals are `architecture.md` OQ-36's**, closed 12 Sep 2026: the unread count 60 s, S-16's access list 30 s
  * (task 149), every poll stopped while the tab is hidden, and a failed poll backed off full-jitter exponential to a
- * five-minute cap. Order state (3 s) and export job state (5 s) are OQ-36's too, and arrive with the tasks that poll
- * them rather than as values with no reader. UX-116 is why none is shorter: under the April–May load no element may
+ * five-minute cap. Export job state (5 s, task 47.3) is OQ-36's too; order state (3 s) arrives with the task that
+ * polls it rather than as a value with no reader. UX-116 is why none is shorter: under the April–May load no element may
  * poll more often than the state it reflects actually changes.
  */
 export const POLL_INTERVAL = {
@@ -21,6 +21,8 @@ export const POLL_INTERVAL = {
   UNREAD_COUNT: 60_000,
   /** S-16's members and invitations (UC-59 … UC-64; task 149). */
   ACCESS_LIST: 30_000,
+  /** S-11's export while its file is produced (FR-49, UX-46; task 47.3) — stopped once it settles. */
+  EXPORT_JOB: 5_000,
 } as const;
 
 /**

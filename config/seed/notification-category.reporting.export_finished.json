@@ -1,0 +1,4 @@
+{
+  "channels": ["in_app", "email"],
+  "classification": "optional"
+}

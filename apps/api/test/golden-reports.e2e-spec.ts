@@ -25,7 +25,7 @@ import { ReadReportContents } from '../src/modules/core/export/use-cases/read-re
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { cellOf, openInCalc } from './support/calc-file';
 import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
-import { exportStorage, requestExport, storageReader } from './support/export-files';
+import { exportStorage, inertNotifications, requestExport, storageReader } from './support/export-files';
 import { pdfText, squash } from './support/pdf-file';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 import { computedValueOf } from './support/workbook-structure';
@@ -108,6 +108,7 @@ describe.each(corpus)('the golden report $name (task 46.4)', ({ name, report, ex
         app.get<ReportDocumentRenderer>(REPORT_DOCUMENT_RENDERER),
         new HttpPdfRenderer({ url: process.env.RENDERER_URL ?? '', timeoutMs: 180_000 }),
         exportStorage(),
+        inertNotifications(),
         () => new Date(),
       ).execute({ organizationId: ORG, exportId, ...context(exportId) });
     } else {
@@ -118,6 +119,7 @@ describe.each(corpus)('the golden report $name (task 46.4)', ({ name, report, ex
         app.get<DigitalTemplateRegistry>(DIGITAL_TEMPLATE_REGISTRY),
         new XlsxReportWorkbookWriter(),
         exportStorage(),
+        inertNotifications(),
         () => new Date(),
       ).execute({ organizationId: ORG, exportId, ...context(exportId) });
     }

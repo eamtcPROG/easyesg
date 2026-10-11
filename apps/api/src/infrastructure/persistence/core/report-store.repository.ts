@@ -17,6 +17,7 @@ import type {
   ReportScope,
   ReportStatus,
 } from '@api/modules/core/disclosure/models/report.model';
+import { displayName } from '@api/modules/identity/account/domain/display-name';
 import { returnedRows } from '../returned-rows';
 import { SQL_STATE, hasSqlState } from '../sql-state';
 import { TenantRepository } from '../tenant-repository';
@@ -30,6 +31,15 @@ interface ReportRow {
   status: ReportStatus;
   ready_to_file: boolean;
   validation_summary: ValidationSummaryColumn | null;
+  // The filed mark (task 47.5), its person named by the same join an override's is.
+  filed_on: string | null;
+  filed_on_tz: string | null;
+  filed_at: Date | null;
+  filed_by: string | null;
+  filer_found: boolean;
+  filer_email: string | null;
+  filer_given_name: string | null;
+  filer_family_name: string | null;
   template_version: string;
   reporting_currency: string;
   taxonomy_version: string;
@@ -57,6 +67,8 @@ interface ReportRow {
  */
 const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, r.status, ${readyToFileOf('r')} AS ready_to_file,
         ${validationSummaryOf('r')} AS validation_summary,
+        r.filed_on::text AS filed_on, r.filed_on_tz, r.filed_at, r.filed_by, filer.id IS NOT NULL AS filer_found,
+        filer.email AS filer_email, filer.given_name AS filer_given_name, filer.family_name AS filer_family_name,
         r.template_version, r.taxonomy_version, r.reporting_currency, r.created_at, r.updated_at,
         p.reporting_entity_id, e.name AS entity_name, p.fiscal_year,
         p.period_start::text AS period_start, p.period_start_tz,
@@ -70,7 +82,8 @@ const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, r.status, ${readyT
  */
 const REPORT_FROM = `FROM core.report r
          JOIN core.reporting_period p ON p.id = r.reporting_period_id
-         JOIN core.reporting_entity e ON e.id = p.reporting_entity_id`;
+         JOIN core.reporting_entity e ON e.id = p.reporting_entity_id
+         LEFT JOIN identity.account filer ON filer.id = r.filed_by`;
 
 /**
  * **The writes return an id and then re-read.** `REPORT_COLUMNS` now spans three tables, and a
@@ -87,6 +100,7 @@ const toReport = (row: ReportRow): Report => ({
   status: row.status,
   readyToFile: row.ready_to_file,
   validation: row.validation_summary,
+  filing: filingOf(row),
   templateVersion: row.template_version,
   reportingCurrency: row.reporting_currency,
   taxonomyVersion: row.taxonomy_version,
@@ -104,6 +118,23 @@ const toReport = (row: ReportRow): Report => ({
         : null,
   },
 });
+
+/**
+ * The filed mark as a reader reads it (task 47.5) — none where the date is gone, and a person with no name where the
+ * account is (the stored id carries no foreign key, as an override's does not: `overriding-person.ts`).
+ */
+function filingOf(row: ReportRow): Report['filing'] {
+  if (row.filed_on === null || row.filed_on_tz === null || row.filed_at === null || row.filed_by === null) return null;
+  const name =
+    row.filer_found && row.filer_email !== null
+      ? displayName({ givenName: row.filer_given_name, familyName: row.filer_family_name }, row.filer_email)
+      : null;
+  return {
+    filedOn: { date: row.filed_on, timezone: row.filed_on_tz },
+    filedAt: row.filed_at,
+    filedBy: { accountId: row.filed_by, name },
+  };
+}
 
 /**
  * The two SQLSTATEs this table answers with a domain error.

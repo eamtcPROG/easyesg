@@ -65,9 +65,9 @@ export const scopeAsks = (input: { readonly scope: ReportScope; readonly module:
  * FR-22 makes the lock a property of the reporting period, and this column is its shadow inside the
  * report, moved in the same transaction so the two cannot disagree. Nothing else may write them.
  *
- * `READY_TO_FILE` is read since task 41.3 and never stored (`statusAsRead`); `FILED` arrives with task 47.5. Both
- * were declared with the column because its `CHECK` is frozen history the day it ships and both prototypes draw all
- * four.
+ * `READY_TO_FILE` is read since task 41.3 and `FILED` since task 47.5, and **neither is ever stored** (`statusAsRead`):
+ * the column keeps the lock's two states. Both were declared with the column because its `CHECK` is frozen history the
+ * day it ships and both prototypes draw all four.
  */
 export const REPORT_STATUS = {
   /** Authorable. The state a report is created in. */
@@ -80,7 +80,11 @@ export const REPORT_STATUS = {
    * (`statusAsRead`), so no write — and no lock — has to say what becomes of it (§12.5.6's task-41 row (2)).
    */
   READY_TO_FILE: 'ready_to_file',
-  /** Filed. Written by task 47's export history, not yet reachable. */
+  /**
+   * The reporter marked it filed (task 47.5; FR-41; 182/19) — **read from the mark, never stored here**: the mark is a
+   * record of its own beside this column, which a lock or a reopening leaves alone (§12.5.6's task-47 row (1)), and it
+   * reads over the lock's two states and over readiness.
+   */
   FILED: 'filed',
 } as const;
 
@@ -110,12 +114,32 @@ export interface ReportSubject {
 }
 
 /**
- * The status a reader is shown (task 41.3; 182/19): `ready_to_file` for an open report its latest validation run left
- * ready, and the stored status otherwise — the lock's `locked` stays `locked`. **Only at the wire**: every rule about a
- * report (a reminder refused once it is no longer open, the lock) reads the stored status, which readiness never moves.
+ * The status a reader is shown (tasks 41.3, 47.5; 182/19): `filed` for a report its reporter marked filed, whether its
+ * period is open or locked (§12.5.6's task-47 row (1)); otherwise `ready_to_file` for an open report its latest
+ * validation run left ready, and the stored status otherwise — the lock's `locked` stays `locked`. **Only at the wire**:
+ * every rule about a report (a reminder refused once it is no longer open, the lock) reads the stored status, which
+ * neither readiness nor the mark moves.
  */
-export const statusAsRead = (report: { readonly status: ReportStatus; readonly readyToFile: boolean }): ReportStatus =>
-  report.status === REPORT_STATUS.OPEN && report.readyToFile ? REPORT_STATUS.READY_TO_FILE : report.status;
+export const statusAsRead = (report: {
+  readonly status: ReportStatus;
+  readonly readyToFile: boolean;
+  readonly filed: boolean;
+}): ReportStatus => {
+  if (report.filed) return REPORT_STATUS.FILED;
+  return report.status === REPORT_STATUS.OPEN && report.readyToFile ? REPORT_STATUS.READY_TO_FILE : report.status;
+};
+
+/**
+ * The reporter's record that a report has left the building (task 47.5; FR-41; §12.5.6's task-47 row (1)–(4)): the day
+ * they say it was filed, and who recorded it when — the database's, from the request's own binding.
+ */
+export interface ReportFiling {
+  /** The day the reporter says it was filed — a calendar date in the period's zone (NFR-34). */
+  readonly filedOn: LegalDate;
+  readonly filedAt: Date;
+  /** Who marked it, by the name they are shown under (UX-137) — a `null` name where the account is gone. */
+  readonly filedBy: { readonly accountId: string; readonly name: string | null };
+}
 
 /**
  * What a report's latest validation run came to, as a list shows it (task 42.2; FR-23, FR-25; §12.5.6's task-42 row
@@ -141,6 +165,8 @@ export interface Report {
   readonly readyToFile: boolean;
   /** What its latest validation run came to (task 42.2), or `null` where it was never checked. */
   readonly validation: ReportValidationSummary | null;
+  /** The reporter's filed mark (task 47.5), or `null` where it was never marked or the mark was withdrawn. */
+  readonly filing: ReportFiling | null;
   /**
    * DR-4's pin — FR-66's *explicit template and taxonomy version against every report*.
    *

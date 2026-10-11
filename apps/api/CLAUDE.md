@@ -18,7 +18,8 @@ one-click unsubscribe since task 52, the calculator since tasks 37 … 39, and v
 roll-up since task 41, over `@easyesg/validation`'s interpreter, and NFR-87's version-pinned suite over both since
 task 201, and FR-164's and FR-165's notices on the worker's first scheduled job since task 51.2, and the PDF export's job on the worker since
 task 44 — printed by the renderer service, stored and recorded — and the Excel export's beside it since task 46, the report
-written into the EFRAG template it pins through a map per template version; validation's screens, export's request and history, billing, the console's
+written into the EFRAG template it pins through a map per template version, and since task 47 an export's request, its history, its
+file and the filed mark; validation's screens, billing, the console's
 screens, edge and deploy, the public tier and the Comprehensive Module are not. `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
@@ -155,9 +156,13 @@ traps each one left — grouped by area rather than by the task that built it.
   `REPORT_WORKBOOK_WRITER` (`infrastructure/adapters/workbook`) patches the binary through `@easyesg/xlsx-patch`, words
   the notes in the export's language and names the platform as the file's writer (§12.5.6's task-46 row). One attempt's
   shape — compose, produce, store, settle, the failure on the last attempt — is `runExportAttempt`, shared by both.
-  The request (`POST /reports/{id}/exports`), the history, the re-download and the completion
-  notice are task 47's.
-- **Not live**: export's request and history (47), billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
+  **Since task 47 S-11's api** (`ExportsController`, `ReportFilingController`; §12.5.6's task-47 row): the request
+  (`POST /reports/{id}/exports`), which runs validation, keeps the run, and refuses unresolved findings with them listed
+  until acknowledged; the history (`GET /reports/{id}/exports`, filtered by format, language, version and status); one
+  export and its file (`GET /exports/{id}`, `…/file`, streamed byte for byte); the dialogue's languages with their labels'
+  standing; the completion notice (`reporting.export_finished`) to the person who asked, past 30 s; and the filed mark
+  (`PUT`/`DELETE /reports/{id}/filing`), its own columns on `core.report`.
+- **Not live**: billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -528,7 +533,9 @@ Four things to know before touching it:
 - **The period lock is the only writer of `open` and `locked`.** Storing the lifecycle on the report
   makes those two true in two places, and the cost is paid in `ReportingPeriodStoreRepository`'s own
   transaction: `lock`/`reopen` move every report inside the period. `ready_to_file` (task 41.3) and
-  `filed` (task 47) are declared and unreachable; each owes an answer about what a lock does to it.
+  `filed` (task 47) are **read, never stored** (`statusAsRead`): readiness from the last run, and `filed` from the mark,
+  its own columns, which a lock leaves alone — so a filed report reads `filed` over the lock, and **the report answers
+  `locked` beside its status**, which is what a client takes read-only from (§12.5.6's task-47 row (o)).
 - **A `BEFORE UPDATE` trigger refuses a locked report's every write but `status`**, so a scope change
   inside a locked period is refused below the application as well as above it (P-4). Row comparison,
   not a column list, exactly as task 31.2's.

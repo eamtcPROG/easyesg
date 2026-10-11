@@ -66,7 +66,8 @@ export class ReportsController {
     reportingEntityId?: string,
   ): Promise<ReportResponseDto[]> {
     const reports = await this.reports.list({ reportingEntityId });
-    return reports.map((report) => new ReportResponseDto(report));
+    const adopted = this.reports.adopted();
+    return reports.map((report) => new ReportResponseDto(report, adopted));
   }
 
   @Get(':id')
@@ -80,7 +81,7 @@ export class ReportsController {
   @ApiObjectResponse(ReportResponseDto, { status: 200, description: 'The report.' })
   @ApiResponse({ status: 404, description: NO_SUCH_REPORT })
   async view(@Param('id', ParseUUIDPipe) id: string): Promise<ReportResponseDto> {
-    return new ReportResponseDto(await this.reports.view(id));
+    return new ReportResponseDto(await this.reports.view(id), this.reports.adopted());
   }
 
   @Post()
@@ -105,7 +106,7 @@ export class ReportsController {
       reportingPeriodId: body.reportingPeriodId,
       scope: body.scope,
     });
-    return new ReportResponseDto(report);
+    return new ReportResponseDto(report, this.reports.adopted());
   }
 
   @Patch(':id')
@@ -125,7 +126,7 @@ export class ReportsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateReportRequestDto,
   ): Promise<ReportResponseDto> {
-    return new ReportResponseDto(await this.reports.update({ reportId: id, patch: body }));
+    return new ReportResponseDto(await this.reports.update({ reportId: id, patch: body }), this.reports.adopted());
   }
 
   @Post(':id/reminders')

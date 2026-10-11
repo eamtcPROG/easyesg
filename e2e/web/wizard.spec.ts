@@ -131,8 +131,8 @@ test('opens at a step, moves between modules, and every step restores from its U
 
 /**
  * S-07's chrome as the artboards draw it (task 179.1; `design_spec.md` S-07's amendment of 30 Sep 2026) — what only a
- * browser can show: the bar names the report from the read, an action drawn ahead of its screen says why it cannot be
- * used, and below `wide` the module list opens as a drawer that moves between steps and closes behind itself.
+ * browser can show: the bar names the report from the read and leads to S-11, and below `wide` the module list opens as
+ * a drawer that moves between steps and closes behind itself.
  */
 test('the bar names the report, and at 390 the modules open as a drawer (S-07, task 179.1)', async ({ page }) => {
   const reportId = await signedInWithReport(page, 'chrome');
@@ -144,18 +144,11 @@ test('the bar names the report, and at 390 the modules open as a drawer (S-07, t
     page.getByText(new RegExp(`^${RUN_PREFIX}-entity · 1 ianuarie\\s–\\s31 decembrie 2026 · În lucru$`, 'u')),
   ).toBeVisible();
 
-  // Drawn and not available: still reachable, heard as unavailable with its reason, and the reason shown on a press.
-  const exportAction = page.getByRole('button', { name: 'Exportați', exact: true });
-  await expect(exportAction).toHaveAttribute('aria-disabled', 'true');
-  await expect(exportAction).toHaveAccessibleDescription(/Exportul nu este încă disponibil/u);
-  // By the keyboard, which is the claim: a `disabled` button could not be focused at all. (Playwright's `click()`
-  // counts `aria-disabled` as not enabled and would wait on it, though a pointer press reaches it as a key does.)
-  await untilHydrated(exportAction);
-  await exportAction.focus();
-  await page.keyboard.press('Enter');
-  // Radix's popover content is a `dialog`, unnamed — the only one open at this moment.
-  await expect(page.getByRole('dialog')).toContainText('Exportul nu este încă disponibil');
-  await page.keyboard.press('Escape');
+  // *Export* opens S-11 since task 47.3, beside *Review the report* — a link like it, left by the exit's own rule.
+  await expect(page.getByRole('link', { name: 'Exportați', exact: true })).toHaveAttribute(
+    'href',
+    new RegExp(`/reports/${reportId}/export$`, 'u'),
+  );
 
   await page.setViewportSize({ width: 390, height: 844 });
   // The docked list leaves the page at this width; the stepper names where the reader is.

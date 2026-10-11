@@ -53,6 +53,7 @@ interface PeriodRow {
   report_status: ReportStatus | null;
   report_updated_at: Date | null;
   report_ready_to_file: boolean;
+  report_filed: boolean;
   report_validation_summary: ValidationSummaryColumn | null;
 }
 
@@ -94,6 +95,7 @@ const PERIOD_COLUMNS = `p.id, p.reporting_entity_id, p.fiscal_year,
         p.locked_at, p.locked_by, p.locked_rule_set_revision, p.created_at, p.updated_at,
         e.name AS entity_name, e.status AS entity_status, r.id AS report_id, r.status AS report_status,
         (r.id IS NOT NULL AND ${readyToFileOf('r')}) AS report_ready_to_file,
+        (r.filed_on IS NOT NULL) AS report_filed,
         ${validationSummaryOf('r')} AS report_validation_summary,
         r.updated_at AS report_updated_at`;
 
@@ -143,6 +145,7 @@ const toPeriod = (row: PeriodRow): ReportingPeriod => ({
           id: row.report_id,
           status: row.report_status,
           readyToFile: row.report_ready_to_file,
+          filed: row.report_filed,
           validation: row.report_validation_summary,
           updatedAt: row.report_updated_at,
         }
@@ -469,11 +472,9 @@ export class ReportingPeriodStoreRepository
    * The report's own `refuse_locked_write` trigger admits this write, and only this write, while a
    * report is locked — the row comparison it makes ignores `status` and `updated_at` alone.
    *
-   * **It moves every report in the period unconditionally**, which is right while `open` and
-   * `locked` are the only reachable states and is a question the moment they are not: task 41.3's
-   * `ready_to_file` and task 47's `filed` each have to say what a lock does to them, and each owns
-   * that answer. Guessing one here would be a policy nobody asked for, on a state nothing can
-   * currently produce.
+   * **It moves every report in the period unconditionally**, and may: `open` and `locked` are the only states this
+   * column holds. Task 41.3's `ready_to_file` is read from the last run and task 47.5's `filed` from a mark of its own
+   * (§12.5.6's task-47 row (1)), so a lock or a reopening leaves both as they were.
    */
   private async moveReportStatus(
     periodId: string,

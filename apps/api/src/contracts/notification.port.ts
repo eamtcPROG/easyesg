@@ -47,6 +47,12 @@ export const NOTIFICATION_CATEGORY = {
    * each lead time, each its own notice (182/132). **Optional**, in-app and email.
    */
   REPORT_DEADLINE: 'reporting.report_deadline',
+  /**
+   * An export's file is ready, or could not be produced (task 47.3; FR-49 behaviour 1, UX-46; §12.5.6's task-47 row
+   * (5)): to the person who asked, raised only when the job settled more than 30 s after the request — a quicker one
+   * is watched to its end on S-11. **Optional**, in-app and email; it opens S-11.
+   */
+  EXPORT_FINISHED: 'reporting.export_finished',
 } as const;
 
 export type NotificationCategoryKey = (typeof NOTIFICATION_CATEGORY)[keyof typeof NOTIFICATION_CATEGORY];

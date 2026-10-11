@@ -3246,6 +3246,114 @@
         ]
       }
     },
+    "/api/v1/reports/{id}/filing": {
+      "put": {
+        "description": "Records that the report has left the building, on the day stated, and who recorded it. Allowed once an export of the report has completed; unresolved findings do not prevent it. A locked report is marked like an open one. Marking again replaces the day.",
+        "operationId": "ReportFilingController_mark",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkReportFiledRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The report, marked filed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ReportResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The day is not a real calendar day."
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          },
+          "409": {
+            "description": "No export of the report has completed yet."
+          }
+        },
+        "summary": "Mark the report filed (FR-41)",
+        "tags": [
+          "report"
+        ]
+      },
+      "delete": {
+        "description": "Clears the mark, and who and when with it; the change trail keeps both acts. No reason is asked.",
+        "operationId": "ReportFilingController_withdraw",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The report as it now stands.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ReportResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization."
+          }
+        },
+        "summary": "Withdraw the filed mark (FR-41)",
+        "tags": [
+          "report"
+        ]
+      }
+    },
     "/api/v1/reports/{id}/modules": {
       "get": {
         "description": "S-07's persistent module list (UX-5). Resolved from the report's OWN pinned taxonomy version, never the newest registered (DR-4).",
@@ -3497,7 +3605,7 @@
             "name": "filters",
             "required": false,
             "in": "query",
-            "description": "Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder, reporting.report_update, reporting.outstanding_report, reporting.report_deadline. A value outside these, or a field this route does not define, is ignored rather than refused.",
+            "description": "Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder, reporting.report_update, reporting.outstanding_report, reporting.report_deadline, reporting.export_finished. A value outside these, or a field this route does not define, is ignored rather than refused.",
             "schema": {}
           }
         ],
@@ -4433,6 +4541,299 @@
           }
         },
         "summary": "The report as its document, without generating a file",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/exports": {
+      "post": {
+        "description": "Runs validation, keeping the run as the report’s, then queues the file in the language asked for, at the report’s own pinned versions (FR-51). A report holding unresolved findings is refused with them listed unless the request acknowledges them (FR-44). The report’s status is not changed (FR-41).",
+        "operationId": "ExportsController_request",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestExportRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The export, requested; its id is its job’s.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ExportResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The report holds unresolved findings and the request did not acknowledge them (problem type export-findings-unacknowledged); `findings` lists them as this request evaluated them, each as the report’s validation read names it.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "503": {
+            "description": "No validation rule set can be read, so the request cannot be judged.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Ask for an export of the report (UC-42, UC-43)",
+        "tags": [
+          "export"
+        ]
+      },
+      "get": {
+        "description": "Every export of the report — requested, completed or failed — with its format, language, pinned versions, when and by whom it was asked for (UX-49).",
+        "operationId": "ExportsController_list",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "onpage",
+            "required": false,
+            "in": "query",
+            "description": "Exports per page, 25 unless given. `-1` (all rows) is refused on this route.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "One ordering, `requested,<asc|desc>`. Defaults to `requested,desc` — newest first.",
+            "schema": {}
+          },
+          {
+            "name": "filters",
+            "required": false,
+            "in": "query",
+            "description": "Compact facets, pipe-separated: `format,<pdf|xlsx>`, `language,<ro|en|ru>`, `taxonomyVersion,<version>` and `status,<requested|completed|failed>`, each taking several values. A value no export can hold is ignored rather than refused.",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the history. `total` counts the exports the facets admit; `unfiltered` counts the report’s exports before them, which tells an empty page whether nothing has been exported yet or the facets matched nothing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ExportResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "The report’s export history (UC-44)",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/exports/languages": {
+      "get": {
+        "description": "Every language a file may be written in, each with whether its labels are EFRAG’s own or platform-authored at the report’s pinned taxonomy version — what the export dialogue says beside a language that carries no EFRAG standing.",
+        "operationId": "ExportsController_languages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The languages, in the platform’s order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ExportLanguagesResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "The languages an export of the report may be written in (FR-52, UX-47)",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/exports/{id}": {
+      "get": {
+        "description": "What S-11 watches while the file is produced — polled every five seconds while it is requested (OQ-36).",
+        "operationId": "ExportsController_find",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The export as it stands.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/ExportResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such export in the active organization.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "One export (FR-49)",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/exports/{id}/file": {
+      "get": {
+        "description": "The stored file, byte for byte, never regenerated — and never refused for the plan the organization is on (FR-104). Answered as itself, not inside the response envelope.",
+        "operationId": "ExportsController_file",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file."
+          },
+          "404": {
+            "description": "No such export in the active organization.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "The export is still being produced, or failed (problem type export-file-unavailable).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "The export’s file, exactly as it was produced (UC-44; FR-53)",
         "tags": [
           "export"
         ]
@@ -6988,7 +7389,8 @@
                 "reporting.manual_reminder",
                 "reporting.report_update",
                 "reporting.outstanding_report",
-                "reporting.report_deadline"
+                "reporting.report_deadline",
+                "reporting.export_finished"
               ],
               "type": "string"
             }
@@ -7076,7 +7478,8 @@
                 "reporting.manual_reminder",
                 "reporting.report_update",
                 "reporting.outstanding_report",
-                "reporting.report_deadline"
+                "reporting.report_deadline",
+                "reporting.export_finished"
               ],
               "type": "string"
             }
@@ -7170,7 +7573,8 @@
                 "reporting.manual_reminder",
                 "reporting.report_update",
                 "reporting.outstanding_report",
-                "reporting.report_deadline"
+                "reporting.report_deadline",
+                "reporting.export_finished"
               ],
               "type": "string"
             }
@@ -10071,6 +10475,69 @@
           "scope"
         ]
       },
+      "FilingPersonDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account that marked the report filed."
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Their display name as it reads now, or null where the account no longer exists."
+          }
+        },
+        "required": [
+          "accountId",
+          "name"
+        ]
+      },
+      "ReportFilingDto": {
+        "type": "object",
+        "properties": {
+          "filedOn": {
+            "description": "The day the reporter says the report was filed.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDateDto"
+              }
+            ]
+          },
+          "filedAt": {
+            "type": "number",
+            "description": "When it was marked — Unix epoch milliseconds, UTC."
+          },
+          "filedBy": {
+            "$ref": "#/components/schemas/FilingPersonDto"
+          }
+        },
+        "required": [
+          "filedOn",
+          "filedAt",
+          "filedBy"
+        ]
+      },
+      "SupersedingPinDto": {
+        "type": "object",
+        "properties": {
+          "taxonomyVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The VSME taxonomy release a new report would pin today."
+          },
+          "templateVersion": {
+            "type": "string",
+            "example": "1.3.0",
+            "description": "The EFRAG Digital Template release a new report would pin today."
+          }
+        },
+        "required": [
+          "taxonomyVersion",
+          "templateVersion"
+        ]
+      },
       "ReportSubjectDto": {
         "type": "object",
         "properties": {
@@ -10137,7 +10604,11 @@
               "ready_to_file",
               "filed"
             ],
-            "description": "Where the report stands. Open and locked follow the reporting period’s lock, which is their only writer (FR-22). An open report whose latest validation run left nothing outstanding reads ready to file (FR-41, 182/19) — read, never written."
+            "description": "Where the report stands. Open and locked follow the reporting period’s lock, which is their only writer (FR-22). An open report whose latest validation run left nothing outstanding reads ready to file (FR-41, 182/19) — read, never written. A report its reporter marked filed reads filed, whether its period is open or locked (task 47.5)."
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "Whether the report’s period is locked (FR-22), so it takes no writes from anyone — whatever its status reads: a filed report in a locked period reads filed (task 47.5)."
           },
           "validation": {
             "nullable": true,
@@ -10149,9 +10620,29 @@
               }
             ]
           },
+          "filing": {
+            "nullable": true,
+            "description": "The reporter’s filed mark (FR-41), or null where it was never marked or the mark was withdrawn.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportFilingDto"
+              }
+            ]
+          },
+          "supersededBy": {
+            "nullable": true,
+            "description": "The versions a new report would pin today, where they differ from this report’s pin (FR-51) — or null where its pin is current. An export always uses the report’s own pin.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SupersedingPinDto"
+              }
+            ]
+          },
           "templateVersion": {
             "type": "string",
-            "example": "2026-05-01",
+            "example": "1.3.0",
             "description": "The EFRAG Digital Template release this report is pinned to (DR-4, FR-66). Copied from the reporting period at creation and moved only by an explicit migration run (FR-69)."
           },
           "taxonomyVersion": {
@@ -10176,7 +10667,10 @@
           "reportingPeriodId",
           "scope",
           "status",
+          "locked",
           "validation",
+          "filing",
+          "supersededBy",
           "templateVersion",
           "taxonomyVersion",
           "createdAt",
@@ -10235,6 +10729,19 @@
         },
         "required": [
           "membershipId"
+        ]
+      },
+      "MarkReportFiledRequestDto": {
+        "type": "object",
+        "properties": {
+          "filedOn": {
+            "type": "string",
+            "example": "2026-10-09",
+            "description": "The day the report was filed, as a calendar date with no time and no offset; read in the reporting period’s time zone (NFR-34). S-11 offers today; the wire has no default."
+          }
+        },
+        "required": [
+          "filedOn"
         ]
       },
       "ApplicabilityDriverDto": {
@@ -10990,7 +11497,8 @@
               "reporting.manual_reminder",
               "reporting.report_update",
               "reporting.outstanding_report",
-              "reporting.report_deadline"
+              "reporting.report_deadline",
+              "reporting.export_finished"
             ],
             "description": "What kind of notice this is — a key for the client to act on, never text to show."
           },
@@ -11082,7 +11590,8 @@
               "reporting.manual_reminder",
               "reporting.report_update",
               "reporting.outstanding_report",
-              "reporting.report_deadline"
+              "reporting.report_deadline",
+              "reporting.export_finished"
             ],
             "description": "The category — a key for the client to act on, never text to show."
           },
@@ -11136,7 +11645,8 @@
               "reporting.manual_reminder",
               "reporting.report_update",
               "reporting.outstanding_report",
-              "reporting.report_deadline"
+              "reporting.report_deadline",
+              "reporting.export_finished"
             ],
             "description": "The category — a key for the client to act on, never text to show."
           },
@@ -11158,7 +11668,7 @@
         "type": "object",
         "properties": {
           "switchedOff": {
-            "maxItems": 16,
+            "maxItems": 18,
             "description": "Every pair the person has switched off, among those the read offers; every offered pair not named is switched on. A pair the read does not offer — a mandatory category, or a channel the category does not travel on — refuses the whole write. Empty switches everything on.",
             "type": "array",
             "items": {
@@ -11192,7 +11702,8 @@
               "reporting.manual_reminder",
               "reporting.report_update",
               "reporting.outstanding_report",
-              "reporting.report_deadline"
+              "reporting.report_deadline",
+              "reporting.export_finished"
             ],
             "description": "The category the link is about — a key to act on, never text to show. Absent when unusable."
           },
@@ -12124,6 +12635,180 @@
           }
         }
       },
+      "ExportRequesterDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account that asked for the export."
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Their display name as it reads now, or null where the account no longer exists."
+          }
+        },
+        "required": [
+          "accountId",
+          "name"
+        ]
+      },
+      "ExportResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The export — also its job’s id, which S-11 watches."
+          },
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "xlsx"
+            ]
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ],
+            "description": "The file’s language (FR-52)."
+          },
+          "templateVersion": {
+            "type": "string",
+            "example": "1.3.0",
+            "description": "The EFRAG Digital Template release it was produced at (DR-4)."
+          },
+          "taxonomyVersion": {
+            "type": "string",
+            "example": "2026-05-01",
+            "description": "The VSME taxonomy release it was produced at (DR-4)."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "requested",
+              "completed",
+              "failed"
+            ],
+            "description": "Requested while its job runs, completed once its file is stored, failed after its last attempt."
+          },
+          "requestedAt": {
+            "type": "number",
+            "description": "When it was asked for — Unix epoch milliseconds, UTC."
+          },
+          "requestedBy": {
+            "$ref": "#/components/schemas/ExportRequesterDto"
+          },
+          "completedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "When its file was stored — Unix epoch milliseconds, UTC. Null until it is."
+          },
+          "failedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "When its last attempt failed — Unix epoch milliseconds, UTC. Null unless it did."
+          },
+          "byteSize": {
+            "type": "number",
+            "nullable": true,
+            "description": "The stored file’s size in bytes, null until it is stored."
+          }
+        },
+        "required": [
+          "id",
+          "reportId",
+          "format",
+          "locale",
+          "templateVersion",
+          "taxonomyVersion",
+          "status",
+          "requestedAt",
+          "requestedBy",
+          "completedAt",
+          "failedAt",
+          "byteSize"
+        ]
+      },
+      "RequestExportRequestDto": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "xlsx"
+            ],
+            "description": "The file: the PDF, or the EFRAG Digital Template."
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ],
+            "description": "The file’s language, chosen independently of the interface’s (FR-52). S-11 starts from the account’s export language; the request always names one."
+          },
+          "acknowledgeUnresolvedFindings": {
+            "type": "boolean",
+            "description": "That the person asking has seen the report’s unresolved findings and exports with them (FR-44). Absent is not acknowledged: a report holding unresolved findings is then refused with them listed, and the same request carrying this is accepted."
+          }
+        },
+        "required": [
+          "format",
+          "locale"
+        ]
+      },
+      "ExportLanguageDto": {
+        "type": "object",
+        "properties": {
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ]
+          },
+          "labelStanding": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "official",
+              "platform_authored"
+            ],
+            "description": "Whether the labels in this language are EFRAG’s own or platform-authored at the report’s pinned taxonomy version (UX-47, T-14). Null where the version carries no labels in this language."
+          }
+        },
+        "required": [
+          "locale",
+          "labelStanding"
+        ]
+      },
+      "ExportLanguagesResponseDto": {
+        "type": "object",
+        "properties": {
+          "languages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportLanguageDto"
+            }
+          }
+        },
+        "required": [
+          "languages"
+        ]
+      },
       "SupportAccessDecisionResponseDto": {
         "type": "object",
         "properties": {
@@ -13024,7 +13709,8 @@
               "reporting.manual_reminder",
               "reporting.report_update",
               "reporting.outstanding_report",
-              "reporting.report_deadline"
+              "reporting.report_deadline",
+              "reporting.export_finished"
             ],
             "nullable": true,
             "description": "The notification category, where the target is a category’s configuration version (task 67.10)."
@@ -13530,7 +14216,8 @@
               "reporting.manual_reminder",
               "reporting.report_update",
               "reporting.outstanding_report",
-              "reporting.report_deadline"
+              "reporting.report_deadline",
+              "reporting.export_finished"
             ],
             "description": "A key for the console to act on, never text to show."
           },

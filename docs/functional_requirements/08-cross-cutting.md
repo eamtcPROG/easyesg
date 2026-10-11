@@ -18,7 +18,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-153 — Report operations are reachable through the documented API
 
-**Status.** Partial — delivered 2, 3, 21, 31 (31.3), 41 (the validation routes), 89 · remaining 47 (the export routes), 192 (report deletion, FR-210)
+**Status.** Partial — delivered 2, 3, 21, 31 (31.3), 41 (the validation routes), 89, 47 (the export routes: the request, the history, one export, its file, the languages and the filed mark) · remaining 192 (report deletion, FR-210)
 
 **Obligation.** The system shall expose report CRUD, validation and export operations through a documented, authenticated API and not only through the interface.
 
@@ -33,7 +33,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 2. The surface is one versioned REST API under `/api/v1`, authenticated by a bearer access token. The active organization comes from the session, never from a header or a path segment (`architecture.md` §6.8).
 3. The contract is **generated from the controllers** and diffed in CI together with the types generated from it. A controller change that is not committed as a contract change fails `openapi:check` (§6.8; P-5).
 4. Breaking changes are introduced only in a new version and only after a stated deprecation window (NFR-83). The window's length is deferred to the day a second version is planned, on the recorded assumption that none exists before the pilot (§12.5.6 task-182 tracking row, 182/163).
-5. Of the six named operations, create, read and update of a report are built (`POST /reports`, `GET /reports[/{id}]`, `PATCH /reports/{id}` for the scope) together with the value and calculator routes. Validation's routes are built — `POST /reports/{id}/validation/runs`, `GET /reports/{id}/validation` and `GET /reports/{id}/validation/rules` (task 41) — and export has none yet (tasks 44, 47). **Delete is an operation** on a report (182/23): `DELETE /reports/{id}`, the Organization Administrator's alone, soft, only while the period is open and only if the report has never been exported, and specified by FR-210. It is not built (192).
+5. Of the six named operations, create, read and update of a report are built (`POST /reports`, `GET /reports[/{id}]`, `PATCH /reports/{id}` for the scope) together with the value and calculator routes. Validation's routes are built — `POST /reports/{id}/validation/runs`, `GET /reports/{id}/validation` and `GET /reports/{id}/validation/rules` (task 41) — and so are export's (task 47): `POST /reports/{id}/exports`, `GET /reports/{id}/exports` and `…/exports/languages`, `GET /exports/{id}` and its file, and the filed mark's `PUT`/`DELETE /reports/{id}/filing`. **Delete is an operation** on a report (182/23): `DELETE /reports/{id}`, the Organization Administrator's alone, soft, only while the period is open and only if the report has never been exported, and specified by FR-210. It is not built (192).
 
 **Refusals.** A request with no valid credential → 401 `authentication-required`. Authorization refusals are FR-158's.
 
@@ -45,7 +45,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - **AC-3** Given a controller route is added, changed or removed, when `openapi:check` runs without the contract and the generated types being regenerated and committed, then the gate fails. *(source: §6.8; P-5; NFR-83)*
 - **AC-4** Given the web app's server tier acts for a signed-in user, then it calls only routes that appear in the contract. *(source: AD-9)*
 - **AC-5** Given a report, when validation is requested through the API, then it is performed under authentication. *(source: FR text)* Met since 41: `POST /reports/{id}/validation/runs`, under authentication.
-- **AC-6** Given a report, when an export is requested through the API, then it is queued under authentication. *(source: FR text; AD-10)* Unmet until 47.4, whose route writes the request task 44's job produces.
+- **AC-6** Given a report, when an export is requested through the API, then it is queued under authentication. *(source: FR text; AD-10)* Met by 47.4: `POST /reports/{id}/exports` answers 202 and writes the record and its job's outbox event together.
 - **AC-7** Given every tenant-facing capability, then 100% is reachable through the documented API under identical authorization, with zero interface-only routes. *(source: NFR-16)* The verification is `openapi:check`, the route-permission table and the two boundary rules `web-not-to-api-src` and `admin-not-to-api-src`, which together stand for the route-coverage diff NFR-16 named: a client can reach the API only through its public address and cannot import its source (§12.5.6 task-182 tracking row, 182/162).
 
 **History.**

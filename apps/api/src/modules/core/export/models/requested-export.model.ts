@@ -11,4 +11,10 @@ export interface RequestedExport {
   readonly locale: Locale;
   /** Who asked, by the name they are shown under (UX-137) — `null` where the account is gone. */
   readonly requestedBy: string | null;
+  /** Who asked, by account — the one person its completion notice reaches (task 47.3). */
+  readonly requestedById: string;
+  /** When it was asked for — what decides whether its completion is worth a notice (§12.5.6's task-47 row (5)). */
+  readonly requestedAt: Date;
+  /** The undertaking and the year the report is of, which the notice names. */
+  readonly subject: { readonly entityName: string; readonly fiscalYear: number };
 }

@@ -31,6 +31,9 @@ export const EXPORT_STATUS = {
 
 export type ExportStatus = (typeof EXPORT_STATUS)[keyof typeof EXPORT_STATUS];
 
+/** Whether a stored status is one the `CHECK` admits — asked of a row read. */
+export const isExportStatus = (value: string): value is ExportStatus => (Object.values(EXPORT_STATUS) as string[]).includes(value);
+
 /** What a file is — `core.export_artifact.format`'s `CHECK`, mirrored; the Excel export joined it with task 46. */
 export const EXPORT_FORMAT = { PDF: 'pdf', XLSX: 'xlsx' } as const;
 
@@ -39,8 +42,24 @@ export type ExportFormat = (typeof EXPORT_FORMAT)[keyof typeof EXPORT_FORMAT];
 /** Whether a stored format is one this platform produces — the `CHECK`'s own question, asked of a row read. */
 export const isExportFormat = (value: string): value is ExportFormat => (Object.values(EXPORT_FORMAT) as string[]).includes(value);
 
+/** Each format's file extension — its stored object's and its downloaded file's (tasks 44.2, 47.1). */
+export const EXPORT_EXTENSION: Readonly<Record<ExportFormat, string>> = { [EXPORT_FORMAT.PDF]: 'pdf', [EXPORT_FORMAT.XLSX]: 'xlsx' };
+
 /** Each format's media type — what the stored object is served as, and what a re-download answers (task 47.1). */
 export const EXPORT_MEDIA_TYPE: Readonly<Record<ExportFormat, string>> = {
   [EXPORT_FORMAT.PDF]: 'application/pdf',
   [EXPORT_FORMAT.XLSX]: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+};
+
+/**
+ * How long after its request an export must settle for its notice to be raised (task 47.3; NFR-42, UX-46; §12.5.6's
+ * task-47 row (5)): a quicker one was watched to its end on S-11, and a notice for it would only repeat what the
+ * screen already said.
+ */
+export const EXPORT_NOTICE_AFTER_MS = 30_000;
+
+/** The job each format's request writes (task 47.4) — the event its handler claims on the export queue. */
+export const EXPORT_REQUESTED_EVENT: Readonly<Record<ExportFormat, string>> = {
+  [EXPORT_FORMAT.PDF]: EXPORT_PDF_REQUESTED,
+  [EXPORT_FORMAT.XLSX]: EXPORT_XLSX_REQUESTED,
 };
