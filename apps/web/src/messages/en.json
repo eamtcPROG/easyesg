@@ -902,7 +902,7 @@
           "action": "Archive the entity",
           "panelTitle": "Archived, never deleted",
           "title": "Archive this entity?",
-          "consequence": "The entity leaves active selection: you can no longer open new periods for it and it stops appearing in lists. Its master data becomes uneditable.",
+          "consequence": "The entity leaves active selection: you can no longer open new periods for it and it stops appearing in lists. Its master data becomes uneditable. A report already under way for one of its periods becomes read-only: it can be checked, exported and marked as filed, but not changed — finish it before archiving.",
           "retained": "Reports already filed and their exports remain available exactly as they were distributed. Nothing is deleted.",
           "confirm": "Archive the entity",
           "cancel": "Cancel"
@@ -1181,6 +1181,7 @@
         "menu": "More actions for the {entity} report for {year}",
         "item": "Delete this report…",
         "unavailable": {
+          "archived": "Delete this report — kept, its entity was archived",
           "locked": "Delete this report — not while its period is locked",
           "exported": "Delete this report — kept, a file of it was exported"
         },
@@ -1476,6 +1477,8 @@
         "retry": "Try again"
       },
       "readOnly": {
+        "archivedTitle": "The entity has been archived",
+        "archivedBody": "The report can be read but not changed, and an archive is not undone. You can still check it, preview it, export it and mark it as filed.",
         "lockedTitle": "The reporting period is locked",
         "lockedBody": "The report can be read but not changed. An organization administrator can reopen the period from its record, with a recorded reason.",
         "lockedAction": "Open the reporting period",

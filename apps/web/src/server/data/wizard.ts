@@ -1,5 +1,6 @@
 import 'server-only';
 import {
+  ENTITY_STATUS,
   MEMBERSHIP_ROLE,
   type DisclosureModuleSummary,
   type DisclosureStep,
@@ -41,6 +42,11 @@ import {
  * a cause with no producer would be a screen state nothing can enter.
  */
 export const READ_ONLY_CAUSE = {
+  /**
+   * The report's entity is archived (FR-20 behaviour 7; task 214): read-only for everyone, for good — nothing restores
+   * editing, there being no un-archive — while it can still be checked, exported and marked filed.
+   */
+  ARCHIVED: 'archived',
   /** UC-57: the reporting period is locked, so the report takes no writes from anyone (FR-22). */
   LOCKED: 'locked',
   /** A view-only membership (UC-17): the same screens without the edit affordances. */
@@ -131,14 +137,17 @@ export async function readWizardStep(input: {
 
 /**
  * The lock outranks the role: a locked period is read-only for the administrator too (task 31.2's
- * "the lock is not a role gate"), so it is the cause named even when the reader is also a viewer.
+ * "the lock is not a role gate"), so it is the cause named even when the reader is also a viewer. **The archive
+ * outranks the lock** (task 214; §12.5.6's task-214 row (a)): reopening an archived entity's period restores no
+ * editing, so naming the lock would name a remedy that does not work.
  */
 export function readOnlyCauseOf(input: {
   /** `locked`, never the status: a filed report reads `filed` over its period's lock (task 47.5). */
-  readonly report: Pick<Report, 'locked'>;
+  readonly report: Pick<Report, 'locked'> & { readonly subject: Pick<Report['subject'], 'entityStatus'> };
   /** The contract's own union, never `string` — a renamed role must fail here, not read as editable. */
   readonly role: MembershipRole | null;
 }): ReadOnlyCause | null {
+  if (input.report.subject.entityStatus === ENTITY_STATUS.ARCHIVED) return READ_ONLY_CAUSE.ARCHIVED;
   if (input.report.locked) return READ_ONLY_CAUSE.LOCKED;
   if (input.role === MEMBERSHIP_ROLE.VIEWER) return READ_ONLY_CAUSE.VIEWER;
   return null;

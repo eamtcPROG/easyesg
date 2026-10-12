@@ -902,7 +902,7 @@
           "action": "Arhivați entitatea",
           "panelTitle": "Se arhivează, nu se șterge",
           "title": "Arhivați această entitate?",
-          "consequence": "Entitatea iese din selecția activă: nu mai puteți deschide perioade noi pentru ea și nu mai apare în liste. Datele ei de bază devin needitabile.",
+          "consequence": "Entitatea iese din selecția activă: nu mai puteți deschide perioade noi pentru ea și nu mai apare în liste. Datele ei de bază devin needitabile. Un raport deja început pentru una dintre perioadele ei devine doar pentru citire: îl puteți verifica, exporta și marca ca depus, dar nu și modifica — finalizați-l înainte de arhivare.",
           "retained": "Rapoartele deja depuse și exporturile lor rămân disponibile exact așa cum au fost distribuite. Nimic nu se șterge.",
           "confirm": "Arhivați entitatea",
           "cancel": "Renunțați"
@@ -1181,6 +1181,7 @@
         "menu": "Mai multe acțiuni pentru raportul {entity} pentru {year}",
         "item": "Ștergeți acest raport…",
         "unavailable": {
+          "archived": "Ștergeți acest raport — se păstrează, entitatea lui a fost arhivată",
           "locked": "Ștergeți acest raport — nu cât timp perioada lui este blocată",
           "exported": "Ștergeți acest raport — se păstrează, un fișier al lui a fost exportat"
         },
@@ -1476,6 +1477,8 @@
         "retry": "Încercați din nou"
       },
       "readOnly": {
+        "archivedTitle": "Entitatea a fost arhivată",
+        "archivedBody": "Raportul poate fi citit, dar nu modificat, iar arhivarea nu se poate anula. Îl puteți în continuare verifica, previzualiza, exporta și marca ca depus.",
         "lockedTitle": "Perioada de raportare este blocată",
         "lockedBody": "Raportul poate fi citit, dar nu modificat. Un administrator al organizației poate redeschide perioada din fișa acesteia, cu un motiv consemnat.",
         "lockedAction": "Deschideți perioada de raportare",

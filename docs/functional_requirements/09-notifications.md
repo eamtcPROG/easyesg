@@ -384,7 +384,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 **Refusals.**
 - *A-17:* a rule above forbids the behaviour → 400 `validation-failed` (`platform.notification.category_refused.<reason>`: `mandatory_classification`, `mandatory_without_email`, `address_notice_in_app`, `wording_missing`, `cadence_missing`, `cadence_not_kept`) · a newer revision is in force → 409 `notification-category-changed` · the change is what is in force, or nothing to revert to → 409 `conflict` (`platform.notification.category_unchanged`, `…category_nothing_to_revert`) · unknown category → 404 `not-found` · not a Platform Administrator → 403 `insufficient-role` · no session → 401.
-- *Reminder:* not an Organization Administrator → 403 `insufficient-role` · unknown report, or no active member holds that membership → 404 (`core.report.reminder_recipient_not_found`) · the report is no longer open → 409 `conflict` (`core.report.reminder_not_outstanding`) · the membership is the sender's own → 409 `conflict` (`core.report.reminder_to_self`) · a note over 500 characters → 400 `validation-failed` (request DTO).
+- *Reminder:* not an Organization Administrator → 403 `insufficient-role` · unknown report, or no active member holds that membership → 404 (`core.report.reminder_recipient_not_found`) · the report is no longer open — or its entity is archived (FR-20 behaviour 7; §12.5.6's task-214 row (2)) → 409 `conflict` (`core.report.reminder_not_outstanding`) · the membership is the sender's own → 409 `conflict` (`core.report.reminder_to_self`) · a note over 500 characters → 400 `validation-failed` (request DTO).
 
 **Effects.** A reminder is accepted (202) and delivered by the worker. The categories' publications are audited (A-08).
 

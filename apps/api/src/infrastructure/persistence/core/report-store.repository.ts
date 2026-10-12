@@ -8,7 +8,6 @@ import type {
 import { isConsolidationBasis } from '@api/modules/core/entity/models/reporting-entity.model';
 import {
   ReportAlreadyExistsError,
-  ReportNotEditableError,
 } from '@api/modules/core/disclosure/errors/report.errors';
 import type {
   NewReport,
@@ -20,6 +19,8 @@ import type {
 import { displayName } from '@api/modules/identity/account/domain/display-name';
 import { returnedRows } from '../returned-rows';
 import { SQL_STATE, hasSqlState } from '../sql-state';
+import { reportWriteRefusal } from './report-write-refusal';
+import type { EntityStatus } from '@api/modules/core/entity/models/reporting-entity.model';
 import { TenantRepository } from '../tenant-repository';
 import { readyToFileOf } from './report-readiness';
 import { validationSummaryOf, type ValidationSummaryColumn } from './report-validation-summary';
@@ -52,6 +53,7 @@ interface ReportRow {
   // exact failure, reintroduced at the boundary meant to uphold it.
   reporting_entity_id: string;
   entity_name: string;
+  entity_status: EntityStatus;
   fiscal_year: number;
   period_start: string;
   period_start_tz: string;
@@ -77,7 +79,7 @@ const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, r.status, ${readyT
         r.filed_on::text AS filed_on, r.filed_on_tz, r.filed_at, r.filed_by, filer.id IS NOT NULL AS filer_found,
         filer.email AS filer_email, filer.given_name AS filer_given_name, filer.family_name AS filer_family_name,
         r.template_version, r.taxonomy_version, r.reporting_currency, r.created_at, r.updated_at,
-        p.reporting_entity_id, e.name AS entity_name, p.fiscal_year,
+        p.reporting_entity_id, e.name AS entity_name, e.status AS entity_status, p.fiscal_year,
         p.period_start::text AS period_start, p.period_start_tz,
         p.period_end::text   AS period_end,   p.period_end_tz,
         p.due_date::text     AS due_date,     p.due_date_tz`;
@@ -117,6 +119,7 @@ const toReport = (row: ReportRow): Report => ({
   subject: {
     reportingEntityId: row.reporting_entity_id,
     entityName: row.entity_name,
+    entityStatus: row.entity_status,
     fiscalYear: row.fiscal_year,
     periodStart: { date: row.period_start, timezone: row.period_start_tz },
     periodEnd: { date: row.period_end, timezone: row.period_end_tz },
@@ -145,12 +148,12 @@ function filingOf(row: ReportRow): Report['filing'] {
 }
 
 /**
- * The two SQLSTATEs this table answers with a domain error.
+ * The SQLSTATEs this table answers with a domain error.
  *
  * `23505` is PostgreSQL's own `unique_violation`, raised by the one-report-per-period constraint.
- * `45001` is ours, raised by the lock trigger. Both now come from `../sql-state`, which task 34.1
- * extracted when a third adapter declared its own copy — see that module for why the names had
- * already drifted.
+ * `45001` and, since task 214, `45002` are ours, raised by the lock trigger and the archive's, and read by
+ * `report-write-refusal.ts` as every report-scoped store reads them. All come from `../sql-state`, which task 34.1
+ * extracted when a third adapter declared its own copy — see that module for why the names had already drifted.
  */
 /**
  * **The lock is re-raised from the database even though the use case checks it first**, and that is
@@ -201,7 +204,8 @@ const toSnapshot = (row: { taken_at: Date; payload: unknown }): EntitySnapshot =
 
 const translate = (error: unknown): never => {
   if (hasSqlState(error, SQL_STATE.UNIQUE_VIOLATION)) throw new ReportAlreadyExistsError();
-  if (hasSqlState(error, SQL_STATE.LOCKED)) throw new ReportNotEditableError();
+  const refused = reportWriteRefusal(error);
+  if (refused !== null) throw refused;
   throw error;
 };
 

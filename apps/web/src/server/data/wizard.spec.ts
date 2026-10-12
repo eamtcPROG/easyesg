@@ -1,4 +1,4 @@
-import { MEMBERSHIP_ROLE } from '@easyesg/contracts';
+import { ENTITY_STATUS, MEMBERSHIP_ROLE } from '@easyesg/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import { READ_ONLY_CAUSE, readOnlyCauseOf, resumeModule } from './wizard';
 
@@ -9,17 +9,32 @@ vi.mock('server-only', () => ({}));
  * UX-13's cause, as a rule (task 35.2): which of the reachable causes S-07 names, and that the lock
  * outranks the role — task 31.2's "the lock is not a role gate", restated at the screen.
  */
+const ACTIVE = { entityStatus: ENTITY_STATUS.ACTIVE };
+const ARCHIVED = { entityStatus: ENTITY_STATUS.ARCHIVED };
+
 describe('readOnlyCauseOf', () => {
   it('names the lock even for a viewer, the role for an open report, and nothing for an editor', () => {
-    expect(readOnlyCauseOf({ report: { locked: true }, role: MEMBERSHIP_ROLE.VIEWER })).toBe(READ_ONLY_CAUSE.LOCKED);
+    expect(readOnlyCauseOf({ report: { locked: true, subject: ACTIVE }, role: MEMBERSHIP_ROLE.VIEWER })).toBe(READ_ONLY_CAUSE.LOCKED);
     expect(
-      readOnlyCauseOf({ report: { locked: true }, role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR }),
+      readOnlyCauseOf({ report: { locked: true, subject: ACTIVE }, role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR }),
     ).toBe(READ_ONLY_CAUSE.LOCKED);
-    expect(readOnlyCauseOf({ report: { locked: false }, role: MEMBERSHIP_ROLE.VIEWER })).toBe(READ_ONLY_CAUSE.VIEWER);
-    expect(readOnlyCauseOf({ report: { locked: false }, role: MEMBERSHIP_ROLE.EDITOR })).toBeNull();
+    expect(readOnlyCauseOf({ report: { locked: false, subject: ACTIVE }, role: MEMBERSHIP_ROLE.VIEWER })).toBe(READ_ONLY_CAUSE.VIEWER);
+    expect(readOnlyCauseOf({ report: { locked: false, subject: ACTIVE }, role: MEMBERSHIP_ROLE.EDITOR })).toBeNull();
     // No membership resolved is not "viewer": the API is the authority on the role, and a screen
     // that could not read it must not invent one.
-    expect(readOnlyCauseOf({ report: { locked: false }, role: null })).toBeNull();
+    expect(readOnlyCauseOf({ report: { locked: false, subject: ACTIVE }, role: null })).toBeNull();
+  });
+
+  it('names the archive over the lock and the role — reopening an archived entity’s period restores nothing (task 214)', () => {
+    expect(readOnlyCauseOf({ report: { locked: false, subject: ARCHIVED }, role: MEMBERSHIP_ROLE.EDITOR })).toBe(
+      READ_ONLY_CAUSE.ARCHIVED,
+    );
+    expect(
+      readOnlyCauseOf({ report: { locked: true, subject: ARCHIVED }, role: MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR }),
+    ).toBe(READ_ONLY_CAUSE.ARCHIVED);
+    expect(readOnlyCauseOf({ report: { locked: false, subject: ARCHIVED }, role: MEMBERSHIP_ROLE.VIEWER })).toBe(
+      READ_ONLY_CAUSE.ARCHIVED,
+    );
   });
 });
 

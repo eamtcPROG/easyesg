@@ -1,4 +1,5 @@
 import type { LegalDate } from '@api/contracts/types/time';
+import type { EntityStatus } from '@api/modules/core/entity/models/reporting-entity.model';
 
 /**
  * The report — FR-24 … FR-32, FR-66, FR-177 (task 31.3; UC-17, UC-18).
@@ -107,6 +108,11 @@ export interface ReportSubject {
    *  This is a wayfinding label on an index, so the current name is what a reader is looking for;
    *  what the filing discloses comes from the snapshot and is task 36's. */
   readonly entityName: string;
+  /**
+   * The entity's standing (task 214): an archived entity's report is read-only from the archive (FR-20 behaviour 7), and
+   * S-06 and S-07 name that cause from this rather than infer it, as `GET /periods` serves it since task 187.
+   */
+  readonly entityStatus: EntityStatus;
   readonly fiscalYear: number;
   readonly periodStart: LegalDate;
   readonly periodEnd: LegalDate;

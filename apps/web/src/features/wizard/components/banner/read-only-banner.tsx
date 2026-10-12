@@ -8,7 +8,8 @@ import { WIZARD_MESSAGES } from '../shared/wizard-messages';
  * UX-13: *"a persistent banner stating which of the three causes applies and what restores
  * editing. Three different causes shall never produce one indistinguishable read-only screen."*
  * Each cause has its own words and its own remedy — the lock's is the period record (S-14), where
- * an administrator reopens it (UC-58); a viewer's is a person who can change their role.
+ * an administrator reopens it (UC-58); a viewer's is a person who can change their role. **The archive's is none**
+ * (task 214; FR-20 behaviour 7): there is no un-archive, so it says that, and what the report still accepts.
  */
 export async function ReadOnlyBanner({
   cause,
@@ -18,6 +19,13 @@ export async function ReadOnlyBanner({
   readonly periodHref: string;
 }) {
   const t = await getTranslations(`${WIZARD_MESSAGES}.readOnly`);
+  if (cause === READ_ONLY_CAUSE.ARCHIVED) {
+    return (
+      <Banner intent={CALLOUT_INTENT.INFO} title={t('archivedTitle')} action={null}>
+        {t('archivedBody')}
+      </Banner>
+    );
+  }
   if (cause === READ_ONLY_CAUSE.LOCKED) {
     return (
       <Banner

@@ -1,6 +1,11 @@
 import { NOTIFICATION_CATEGORY, type NotificationPort } from '@api/contracts/notification.port';
 import { outstandingReportSubject } from '@api/contracts/report-notices';
-import { ReportExportedError, ReportNotEditableError, ReportNotFoundError } from '../errors/report.errors';
+import {
+  ReportEntityArchivedError,
+  ReportExportedError,
+  ReportNotEditableError,
+  ReportNotFoundError,
+} from '../errors/report.errors';
 import type { ReportDeletionStore } from '../interfaces/report-deletion.interface';
 import { REPORT_DELETION } from '../models/report-deletion.model';
 
@@ -30,6 +35,7 @@ export class DeleteReport {
   async execute(command: DeleteReportCommand): Promise<void> {
     const outcome = await this.deletion.delete({ reportId: command.reportId });
     if (outcome === REPORT_DELETION.NOT_FOUND) throw new ReportNotFoundError();
+    if (outcome === REPORT_DELETION.ARCHIVED) throw new ReportEntityArchivedError();
     if (outcome === REPORT_DELETION.LOCKED) throw new ReportNotEditableError();
     if (outcome === REPORT_DELETION.EXPORTED) throw new ReportExportedError();
     await this.notifications.cancel({

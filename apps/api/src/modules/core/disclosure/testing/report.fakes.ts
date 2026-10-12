@@ -1,3 +1,4 @@
+import { ENTITY_STATUS } from '@api/modules/core/entity/models/reporting-entity.model';
 import type { ReportStore } from '../interfaces/report-store.interface';
 import type { EntitySnapshot } from '../models/entity-snapshot.model';
 import {
@@ -28,6 +29,7 @@ const CHISINAU = 'Europe/Chisinau';
 export const aReportSubject = (over: Partial<Report['subject']> = {}): Report['subject'] => ({
   reportingEntityId: '00000000-0000-0000-0000-0000000000b1',
   entityName: 'Brutăria Lina',
+  entityStatus: ENTITY_STATUS.ACTIVE,
   fiscalYear: 2026,
   periodStart: { date: '2026-01-01', timezone: CHISINAU },
   periodEnd: { date: '2026-12-31', timezone: CHISINAU },

@@ -22,6 +22,9 @@ export type EntityStatus = (typeof ENTITY_STATUS)[keyof typeof ENTITY_STATUS];
 
 type WireEntityStatus = components['schemas']['ReportingEntityResponseDto']['status'];
 type WirePeriodEntityStatus = components['schemas']['ReportingPeriodResponseDto']['entityStatus'];
+/** A report's subject names its entity's standing since task 214 — read-only from the archive (FR-20). */
+type WireReportEntityStatus = components['schemas']['ReportSubjectDto']['entityStatus'];
 
 export const ENTITY_STATUS_MIRRORS_WIRE: SameSet<EntityStatus, WireEntityStatus> = true;
 export const PERIOD_ENTITY_STATUS_MIRRORS_WIRE: SameSet<EntityStatus, WirePeriodEntityStatus> = true;
+export const REPORT_ENTITY_STATUS_MIRRORS_WIRE: SameSet<EntityStatus, WireReportEntityStatus> = true;

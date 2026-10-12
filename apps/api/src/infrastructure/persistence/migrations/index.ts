@@ -72,6 +72,7 @@ import { TemplateReleasePins1792886400000 } from './1792886400000-template-relea
 import { ExportArtifactXlsx1792972800000 } from './1792972800000-export-artifact-xlsx';
 import { ReportFiling1793059200000 } from './1793059200000-report-filing';
 import { ReportDeletion1793145600000 } from './1793145600000-report-deletion';
+import { ArchivedEntityReport1793232000000 } from './1793232000000-archived-entity-report';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -164,4 +165,5 @@ export const migrations = [
   ExportArtifactXlsx1792972800000,
   ReportFiling1793059200000,
   ReportDeletion1793145600000,
+  ArchivedEntityReport1793232000000,
 ];

@@ -386,6 +386,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **Refusals.**
 - Not the Organization Administrator (editor, view-only member, advisor acting in the client) → 403 `insufficient-role`
+- The report's entity archived → 409 `entity-archived` (`core.report.entity_archived`; FR-20 behaviour 7, which outranks the lock; §12.5.6's task-214 row (2))
 - Period locked → 409 `report-not-editable` (FR-22: the lock outranks the role)
 - Report exported, or an export requested → 409 `report-exported`, a problem type of its own so that the screen can name the reason (the report is distribution evidence)
 - Unknown report, one outside the active organization, or one already deleted → 404 `not-found`

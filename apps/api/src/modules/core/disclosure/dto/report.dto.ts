@@ -1,3 +1,4 @@
+import { ENTITY_STATUS, type EntityStatus } from '@api/modules/core/entity/models/reporting-entity.model';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsUUID } from 'class-validator';
 import {
@@ -104,6 +105,14 @@ export class ReportSubjectDto {
   })
   readonly entityName: string;
 
+  @ApiProperty({
+    enum: Object.values(ENTITY_STATUS),
+    description:
+      'The standing of the entity the report is for (task 214). A report on an archived entity is read-only: it takes ' +
+      'no write to its answers and cannot be deleted, and can still be checked, exported and marked filed (FR-20).',
+  })
+  readonly entityStatus: EntityStatus;
+
   @ApiProperty({ example: 2026 })
   readonly fiscalYear: number;
 
@@ -119,6 +128,7 @@ export class ReportSubjectDto {
   constructor(subject: ReportSubject) {
     this.reportingEntityId = subject.reportingEntityId;
     this.entityName = subject.entityName;
+    this.entityStatus = subject.entityStatus;
     this.fiscalYear = subject.fiscalYear;
     this.periodStart = subject.periodStart;
     this.periodEnd = subject.periodEnd;

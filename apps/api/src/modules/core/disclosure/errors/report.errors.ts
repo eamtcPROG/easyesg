@@ -226,6 +226,27 @@ export class UnknownDerivationInputError extends DomainError {
 }
 
 /**
+ * FR-20's behaviour 7 (task 214; `architecture.md` §12.5.6's task-214 row): the report's entity is archived, so the
+ * report takes no write to what it answers and cannot be deleted — it can still be checked, exported and marked filed.
+ *
+ * **Under the entity's own problem type, `entity-archived`**, which is what a front end branches on for every write an
+ * archive refuses; the message is the report's, since what the reader can still do with a report is not what they can
+ * do with the record. **Distinct from `ReportNotEditableError`** because the remedy differs: a lock is reopened, an
+ * archive is not undone.
+ *
+ * Raised from SQLSTATE `45002`, which the report-scoped guard raises where the entity is archived, and by the deletion's
+ * own answer.
+ */
+export class ReportEntityArchivedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.EntityArchived;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.entity_archived');
+  }
+}
+
+/**
  * UC-175's reminder names a report that is no longer open — its period locked, or the report ready to file or filed
  * (§12.5.6's task-50.3 row (1)). **Under the generic conflict slug**, `PeriodLockStateError`'s reasoning: S-16
  * offers open reports only, so this is a screen showing a state the report has moved on from, and refreshing it

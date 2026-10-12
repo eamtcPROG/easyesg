@@ -1,3 +1,4 @@
+import { ENTITY_STATUS, type EntityStatus } from '@api/modules/core/entity/models/reporting-entity.model';
 import type { NotificationPort, RaiseNotificationCommand } from '@api/contracts/notification.port';
 import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
 import { MEMBERSHIP_STATUS } from '@api/modules/identity/membership/models/membership.model';
@@ -47,10 +48,18 @@ const parties = (
     ),
 });
 
-const build = (options: { status?: (typeof REPORT_STATUS)[keyof typeof REPORT_STATUS] } = {}) => {
+const build = (
+  options: { status?: (typeof REPORT_STATUS)[keyof typeof REPORT_STATUS]; entityStatus?: EntityStatus } = {},
+) => {
   const reports = new FakeReportStore(
     [],
-    [aReport({ id: REPORT_ID, status: options.status ?? REPORT_STATUS.OPEN, subject: aReportSubject() })],
+    [
+      aReport({
+        id: REPORT_ID,
+        status: options.status ?? REPORT_STATUS.OPEN,
+        subject: aReportSubject({ entityStatus: options.entityStatus ?? ENTITY_STATUS.ACTIVE }),
+      }),
+    ],
   );
   const notifications = new RecordingNotifications();
   let next = 0;
@@ -133,6 +142,13 @@ describe('SendReportReminder', () => {
       expect(notifications.raised).toEqual([]);
     },
   );
+
+  it('refuses an open report whose entity is archived, which nobody can act on, and raises nothing (task 214)', async () => {
+    const { useCase, notifications } = build({ entityStatus: ENTITY_STATUS.ARCHIVED });
+
+    await expect(send(useCase)).rejects.toBeInstanceOf(ReportNotOutstandingError);
+    expect(notifications.raised).toEqual([]);
+  });
 
   it('answers a report the organization does not hold as not found', async () => {
     const { useCase, notifications } = build();

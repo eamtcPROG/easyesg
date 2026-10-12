@@ -371,3 +371,36 @@ test('an editor is offered no ⋯, on the list or in the bar (task 192)', async 
   await expect(page.getByRole('button', { name: 'Mai multe acțiuni pentru acest raport' })).toHaveCount(0);
 });
 
+
+/**
+ * FR-20's behaviour 7 (task 214; `design_spec.md` S-06's and S-07's amendments of 12 Oct 2026): a report opened before
+ * its entity was archived keeps its row, its ⋯ saying why it cannot be deleted, and opens read-only — the archive named
+ * as the cause, nothing offered to restore editing — while the check is still offered.
+ */
+test('a report on an archived entity reads only, says the archive is why, and cannot be deleted (task 214)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const organizationId = await signedIn(page, 'archived-report');
+  const entity = `${RUN_PREFIX}-Vândută`;
+  const reportId = await seedReport({ organizationId, name: entity, archived: true });
+
+  await page.goto('/reports');
+  const menu = page.getByRole('button', { name: `Mai multe acțiuni pentru raportul ${entity} pentru 2026` });
+  await untilHydrated(menu);
+  await menu.click();
+  await expect(
+    page.getByRole('menuitem', { name: 'Ștergeți acest raport — se păstrează, entitatea lui a fost arhivată' }),
+  ).toHaveAttribute('aria-disabled', 'true');
+  await page.keyboard.press('Escape');
+
+  await page.goto(`/reports/${reportId}/B1`);
+  await expect(page.getByText('Entitatea a fost arhivată', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Raportul poate fi citit, dar nu modificat, iar arhivarea nu se poate anula\./u)).toBeVisible();
+  // Read-only: the question shows its answer, and no field takes one.
+  await expect(page.getByRole('group', { name: 'Cifra de afaceri', exact: true }).getByRole('textbox')).toHaveCount(0);
+  // And the check is still offered (row (2)).
+  await expect(
+    page.getByRole('region', { name: 'Verificarea raportului' }).getByRole('button', { name: 'Verificați raportul' }),
+  ).toHaveCount(1);
+});

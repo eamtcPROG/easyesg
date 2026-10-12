@@ -15,6 +15,8 @@ export interface DeletableReport {
   readonly id: string;
   readonly entityName: string;
   readonly fiscalYear: number;
+  /** Its entity is archived, which retains its reports and outranks the lock (FR-20 behaviour 7; task 214). */
+  readonly archived: boolean;
   /** Its period is locked (FR-22). */
   readonly locked: boolean;
   /** A file of it was exported or is being made (FR-53). */
@@ -30,7 +32,7 @@ const DELETE_ITEM = 'delete-report';
  * *Delete this report* (task 192; UC-213, FR-210; `architecture.md` §12.5.6's task-192 row (3), (4)) — the last,
  * destructive item of a report's ⋯ menu, on S-06's rows and in S-07's bar, and the consequence dialogue behind it
  * (UX-70). **The caller offers it to the Organization Administrator alone**; this draws it, disabled with its reason
- * where the period is locked or a file was exported (UX-50), and runs it.
+ * where the entity is archived, the period is locked or a file was exported (UX-50), and runs it.
  *
  * **A deletion lands the reader on S-06, which says so**, from either screen. **A refusal or a failure keeps the
  * dialogue open with the api's words in it** — the reader is looking there, and S-07's bar has no notice region of its
@@ -53,7 +55,13 @@ export function useReportDeletion(report: DeletableReport): { readonly item: Ove
     });
   }, [report.id, router]);
 
-  const unavailable = report.locked ? t('unavailable.locked') : report.exported ? t('unavailable.exported') : null;
+  const unavailable = report.archived
+    ? t('unavailable.archived')
+    : report.locked
+      ? t('unavailable.locked')
+      : report.exported
+        ? t('unavailable.exported')
+        : null;
   const item: OverflowMenuItem = {
     key: DELETE_ITEM,
     label: unavailable ?? t('item'),

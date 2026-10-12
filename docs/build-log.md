@@ -31851,3 +31851,111 @@ null meaning.
 
 `vercel-react-best-practices`: `rerender-` — the control computes the figure during render (`pure-derive-during-render`),
 and `useStepFigures` is no longer read by every field, only by B3's figure.
+
+## Task 214 — an archived entity's report in progress, read-only and saying why · 2026-10-12
+
+FR-20's behaviour 7: a report opened before its entity was archived takes no write to what it answers and cannot be
+deleted, refused by the database where the lock's writes are refused. It can still be checked, previewed, exported and
+marked filed. S-07 and S-09 name the archive as the read-only cause, S-06's and S-07's *Delete* is disabled with it,
+S-16's reminder no longer offers the report, and S-13's archive dialogue says what happens to a report under way.
+
+### Decided before building (project owner, one batch of two, each the recommended option)
+
+The row asked for this to be raised. Recorded in `architecture.md` §12.5.6's new task-214 row (1)–(2). The task-187
+row, the Stage-2-close row's (4) and the task-210 row's (h) were amended in the same edit. So were FR-20 (built;
+behaviour 7; AC-9 … AC-11), FR-210's and FR-173's refusals, and S-06's, S-07's, S-09's and S-13's entries.
+
+- **(1) Read-only from the archive**, enforced by the database. *Declined:* held as it stands; archiving locks the
+  periods.
+- **(2) It still accepts a check, its preview, an export and the filed mark; deletion and a reminder are refused.**
+  *Declined:* the same and deletion; reading only.
+
+### Settled in the task
+
+Row (a)–(g):
+- The archive outranks the lock.
+- The period's lock and reopening stay the period's.
+- A cascade is unaffected.
+- The report reads carry the entity's status.
+- *Delete* is disabled with the archive as its reason, and S-16's reminder offers no such report.
+- No notice is owed.
+- The IDNO finding stays.
+
+### What the building found
+
+- **One function covered nearly every table.** Every report-scoped table that takes answers — values, derivation
+  inputs, the calculator's sources, runs and results — runs `core.refuse_locked_disclosure_write()`. So the archive is
+  one `CREATE OR REPLACE` plus a trigger for the report's own scope, and no use case gained a check. *Searched:* every
+  migration raising `45001` or naming `refuse_locked`, and every `UPDATE core.report` outside migrations. Those are the
+  lock and reopening, the filed mark, the scope and the deletion's function; of these the archive refuses the scope
+  and the deletion.
+- **A second SQLSTATE, not a re-read.** The guard raises `45002` for the archive, so a store can tell the two refusals
+  apart from the error alone. Five stores had each translated `45001` on their own, and any one left behind would have
+  answered an archived report's write with a raw database error. All five now read `report-write-refusal.ts`.
+- **The proof had a trap in it.** Reverting the migration and running the new suite through `pnpm test:e2e` passed all
+  six cases, because the script's `pretest:e2e` hook migrates the test stack first. Run as bare jest against the
+  reverted schema, the three refusal cases failed, and they passed again once re-applied. The organization's removal
+  passes either way by design: it guards the opposite property, that the cascade is not refused.
+- **The contract held the period's entity status to its vocabulary at compile time** (`PERIOD_ENTITY_STATUS_MIRRORS_WIRE`),
+  so the report's new `subject.entityStatus` got the same proof, `REPORT_ENTITY_STATUS_MIRRORS_WIRE`.
+- **The lock's spec showed how far the cause rule reached.** `readOnlyCauseOf` is read by S-07 and S-09, so both name
+  the archive with no further change.
+
+### Gates
+
+The change reaches `apps/api` (a migration, a DTO, so the contract), `apps/web`, `packages/i18n` and
+`packages/contracts`. By the close table that is each package's suite and every dependent's row, `apps/admin` among
+them. Each ran alone.
+
+- `pnpm lint`; `pnpm typecheck` in `api`, `web`, `admin` and `contracts`; `pnpm routes:check`; `pnpm docs:check`.
+- `pnpm openapi:check`, the regenerated contract staged.
+- `pnpm migrations:check`: applied, reverted and applied on the test stack, applied on the dev stack, 64 invariants each
+  time.
+- Unit:
+  - `api` 2,338 in 295 suites;
+  - `web` 1,991 in 215 files;
+  - `admin` 299;
+  - `i18n` 165.
+- Broken on purpose:
+  - the migration, reverted, against the new suite run as bare jest — three refusal cases failed;
+  - the lock put ahead of the archive in `readOnlyCauseOf`.
+- `pnpm e2e`:
+  - **The first full run failed two cases of `validation.e2e-spec.ts` on 30-second timeouts.** One was a test, and then
+    the `beforeEach` behind it waited on what the test left in flight. That suite ran first in the run, so no other
+    suite could have held anything. The trigger this task adds reads with a plain `SELECT` and takes no row lock. The
+    run's NFR-39 measurement read 195 ms where it reads about 20.
+  - The suite alone passed 25 of 25 in 15 s, and a second full run passed 74 suites, 1,805 tests, the new
+    `archived-entity-report.e2e-spec.ts` among them. **Recorded as unexplained and not reproduced**, rather than called
+    a flake.
+  - The three catalogue lines and one outbox line are the count every recent run prints.
+- `pnpm e2e:worker`: 16.
+- `pnpm e2e:web --project identity --project expansion --project admin`:
+  - **Seven journeys failed on timeouts in a run that took 29.4 minutes** (11–12 is usual). None touches this task:
+    S-16's axe scan, two notification-centre journeys, S-28's expansion, and three console journeys. The host had about
+    34 MB of memory pages free and no test process left behind.
+  - The seven ran again against the same build, and six passed. The console's identity-provider journey failed
+    differently, finding *Enable provider* enabled. Its own timed-out first attempt had registered a provider in the
+    test stack's configuration store, which a seed run never undoes (FR-74 behaviour 4). On a reset test stack it
+    passed.
+  - So all 362 journeys passed, the new archived-report journey among the 355 of the full run. The server log holds 53
+    lines of digest `2667547900` and the one `FactorSetCatalog` line.
+- **Skipped, as the table allows**: `events:check`, `facade:check`, `eslint:prove`, `boundaries:prove`, `image:check` and
+  `test:coverage` — the Stage's end runs them cold, and CI does on the next push.
+
+### Skills, read against the diff
+
+`nestjs-best-practices`: `db-use-migrations` — the guard is a migration with an exact revert, its `delete_report` body
+written once and rendered both ways so the revert cannot drift from what task 192 created. `error-use-exception-filters` —
+the refusal is a `DomainError` the existing filter shapes, under the entity's problem type.
+`security-validate-all-input` — unchanged routes, the refusal sitting below them.
+
+`one-idea-per-file`:
+- `report-write-refusal.ts` is one reading of the guard's two codes;
+- the migration is one schema change;
+- the new e2e suite is one requirement's behaviour.
+
+`one-kind-per-folder`: no web folder was added. The deletion's reason and the reminder's filter changed where they
+lived.
+
+`vercel-react-best-practices`: the read-only cause is computed on the server (`server/data/wizard.ts`), as the lock's
+is, so no Client Component holds a belief about the entity.

@@ -352,7 +352,8 @@
       "module_not_found": "This report has no such section, so there is nothing to show. Open the report again from the list of reports.",
       "not_exported": "No export of this report has finished yet, so there is nothing to record as filed. Produce the PDF or the Excel file first, then mark the report filed.",
       "exported": "A file of this report has been exported or is being made, so the report is a record of what was sent and cannot be deleted. Its files and its answers stay kept.",
-      "filing_date_invalid": "The filing date is not a real calendar day, so the mark was not recorded. Choose the day the report was filed and try again."
+      "filing_date_invalid": "The filing date is not a real calendar day, so the mark was not recorded. Choose the day the report was filed and try again.",
+      "entity_archived": "The entity this report is for has been archived, so the report can no longer be changed or deleted by anyone, and an archive is not undone. You can still check it, export it and mark it as filed."
     },
     "calculator": {
       "unknown_source": "The energy source sent is not one this report’s emission factors cover, so the line could not be saved. Refresh the page to load the sources you can choose from.",

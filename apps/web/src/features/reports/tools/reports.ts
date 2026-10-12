@@ -1,6 +1,6 @@
 import { matchesSearch } from '@/lib/search-match';
 import { DEFAULT_PAGE_SIZE, toPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
-import { REPORT_STATUS, type Report, type ReportStatus } from '@easyesg/contracts';
+import { ENTITY_STATUS, REPORT_STATUS, type Report, type ReportStatus } from '@easyesg/contracts';
 import { compareText } from '@/lib/collation';
 
 /**
@@ -71,6 +71,8 @@ export interface ReportRow {
   readonly updatedAt: number;
   /** What its last validation run came to, or `null` where none has checked it (task 42.2) — the completion column. */
   readonly validation: Report['validation'];
+  /** Its entity is archived — read-only, and why it cannot be deleted ahead of the lock (task 214). */
+  readonly archived: boolean;
   /** Its period is locked, and a file of it was exported or is being made — why it cannot be deleted (task 192). */
   readonly locked: boolean;
   readonly exported: boolean;
@@ -209,6 +211,7 @@ export const toReportRows = (reports: readonly Report[]): ReportRow[] =>
     taxonomyVersion: report.taxonomyVersion,
     updatedAt: report.updatedAt,
     validation: report.validation,
+    archived: report.subject.entityStatus === ENTITY_STATUS.ARCHIVED,
     locked: report.locked,
     exported: report.exported,
   }));

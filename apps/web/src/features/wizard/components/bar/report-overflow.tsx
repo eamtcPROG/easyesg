@@ -1,6 +1,6 @@
 'use client';
 
-import type { Report } from '@easyesg/contracts';
+import { ENTITY_STATUS, type Report } from '@easyesg/contracts';
 import { OverflowMenu } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { reportExportRoute, reportPreviewRoute } from '@/lib/routes';
@@ -27,6 +27,7 @@ export function ReportOverflow({ report, mayDelete }: { readonly report: Report;
     id: report.id,
     entityName: report.subject.entityName,
     fiscalYear: report.subject.fiscalYear,
+    archived: report.subject.entityStatus === ENTITY_STATUS.ARCHIVED,
     locked: report.locked,
     exported: report.exported,
   });

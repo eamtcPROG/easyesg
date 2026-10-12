@@ -16,6 +16,7 @@ export function ReportRowMenu({ row }: { readonly row: ReportRow }) {
     id: row.id,
     entityName: row.entityName,
     fiscalYear: row.fiscalYear,
+    archived: row.archived,
     locked: row.locked,
     exported: row.exported,
   });

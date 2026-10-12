@@ -3881,6 +3881,11 @@ export interface components {
             reportingEntityId: string;
             /** @description The undertaking’s name as it stands now — a wayfinding label. What a filing discloses comes from the period’s point-in-time snapshot instead (FR-18). */
             entityName: string;
+            /**
+             * @description The standing of the entity the report is for (task 214). A report on an archived entity is read-only: it takes no write to its answers and cannot be deleted, and can still be checked, exported and marked filed (FR-20).
+             * @enum {string}
+             */
+            entityStatus: "active" | "archived";
             /** @example 2026 */
             fiscalYear: number;
             periodStart: components["schemas"]["LegalDateDto"];

@@ -1,3 +1,4 @@
+import { ENTITY_STATUS } from '@api/modules/core/entity/models/reporting-entity.model';
 import { NOTIFICATION_CATEGORY, type NotificationPort } from '@api/contracts/notification.port';
 import { displayName } from '@api/modules/identity/account/domain/display-name';
 import { MEMBERSHIP_STATUS } from '@api/modules/identity/membership/models/membership.model';
@@ -52,7 +53,10 @@ export class SendReportReminder {
   async execute(command: SendReportReminderCommand): Promise<void> {
     const report = await this.reports.findReport({ reportId: command.reportId });
     if (!report) throw new ReportNotFoundError();
-    if (report.status !== REPORT_STATUS.OPEN) throw new ReportNotOutstandingError();
+    // No longer open — its period locked, or its entity archived, which leaves nobody able to act on it (task 214).
+    if (report.status !== REPORT_STATUS.OPEN || report.subject.entityStatus === ENTITY_STATUS.ARCHIVED) {
+      throw new ReportNotOutstandingError();
+    }
 
     const recipient = await this.parties.recipient({ membershipId: command.membershipId });
     if (recipient?.status !== MEMBERSHIP_STATUS.ACTIVE) throw new ReminderRecipientNotFoundError();

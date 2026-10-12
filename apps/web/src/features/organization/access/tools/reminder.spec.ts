@@ -44,6 +44,7 @@ const aReport = (over: Partial<Report> = {}): Report => ({
   subject: {
     reportingEntityId: 'entity-lina',
     entityName: 'Brutăria Lina',
+    entityStatus: 'active',
     fiscalYear: 2026,
     periodStart: { date: '2026-01-01', timezone: 'Europe/Chisinau' },
     periodEnd: { date: '2026-12-31', timezone: 'Europe/Chisinau' },

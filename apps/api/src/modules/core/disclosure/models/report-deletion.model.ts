@@ -6,6 +6,8 @@ export const REPORT_DELETION = {
   DELETED: 'deleted',
   /** Unknown, outside the bound organization, or deleted already — all 404, as FR-210's refusals say. */
   NOT_FOUND: 'not_found',
+  /** Its entity is archived, which retains its reports and outranks the lock (FR-20 behaviour 7; task 214). */
+  ARCHIVED: 'archived',
   /** Its period is locked (FR-22: the lock outranks the role). */
   LOCKED: 'locked',
   /** An export of it was requested or completed: distribution evidence (FR-53). */

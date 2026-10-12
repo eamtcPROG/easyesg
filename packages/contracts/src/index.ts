@@ -178,6 +178,7 @@ export {
   ENTITY_STATUS,
   ENTITY_STATUS_MIRRORS_WIRE,
   PERIOD_ENTITY_STATUS_MIRRORS_WIRE,
+  REPORT_ENTITY_STATUS_MIRRORS_WIRE,
   type EntityStatus,
 } from './entity';
 // core — reporting periods (FR-21, FR-22, FR-45, FR-66; tasks 31.1, 31.2, consumed by S-14).

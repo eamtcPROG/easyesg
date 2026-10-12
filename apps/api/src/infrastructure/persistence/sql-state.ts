@@ -34,6 +34,8 @@ export const SQL_STATE = {
   INSUFFICIENT_PRIVILEGE: '42501',
   /** Ours. Raised by every lock trigger: the period's, the report's and the disclosure value's. */
   LOCKED: '45001',
+  /** Ours. Raised by the report-scoped guard where the report's entity is archived (task 214), ahead of `LOCKED`. */
+  ARCHIVED: '45002',
 } as const;
 
 export type SqlState = (typeof SQL_STATE)[keyof typeof SQL_STATE];

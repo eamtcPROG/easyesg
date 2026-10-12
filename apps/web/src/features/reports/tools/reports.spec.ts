@@ -34,6 +34,7 @@ const row = (over: Partial<ReportRow> = {}): ReportRow => ({
   taxonomyVersion: '2026-05-01',
   updatedAt: 1_787_000_000_000,
   validation: null,
+  archived: false,
   locked: false,
   exported: false,
   ...over,
@@ -279,6 +280,7 @@ describe('the row from the wire', () => {
     subject: {
       reportingEntityId: 'e1',
       entityName: 'Brutăria Lina SRL',
+      entityStatus: 'active',
       fiscalYear: 2026,
       periodStart: { date: '2026-01-01', timezone: 'Europe/Chisinau' },
       periodEnd: { date: '2026-12-31', timezone: 'Europe/Chisinau' },

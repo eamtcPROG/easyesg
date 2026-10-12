@@ -5,9 +5,8 @@ import type {
   DerivationInputValue,
   DerivationInputWrite,
 } from '@api/modules/core/disclosure/interfaces/derivation-input-store.interface';
-import { ReportNotEditableError } from '@api/modules/core/disclosure/errors/report.errors';
 import { returnedRows } from '../returned-rows';
-import { SQL_STATE, hasSqlState } from '../sql-state';
+import { reportWriteRefusal } from './report-write-refusal';
 import { TenantRepository } from '../tenant-repository';
 
 interface DerivationInputRow {
@@ -31,7 +30,8 @@ const toValue = (row: DerivationInputRow): DerivationInputValue => ({
 });
 
 const translate = (error: unknown): never => {
-  if (hasSqlState(error, SQL_STATE.LOCKED)) throw new ReportNotEditableError();
+  const refused = reportWriteRefusal(error);
+  if (refused !== null) throw refused;
   throw error;
 };
 

@@ -15,7 +15,14 @@ vi.mock('@/i18n/navigation', () => ({ useRouter: () => ({ push }) }));
 const remove = vi.mocked(deleteReportAction);
 const copy = ro.organization.reports.deletion;
 
-const REPORT: DeletableReport = { id: 'r1', entityName: 'Brutăria Lina SRL', fiscalYear: 2026, locked: false, exported: false };
+const REPORT: DeletableReport = {
+  id: 'r1',
+  entityName: 'Brutăria Lina SRL',
+  fiscalYear: 2026,
+  archived: false,
+  locked: false,
+  exported: false,
+};
 
 /** The menu item as the menu would draw it, and the dialogue behind it. */
 function Harness({ report }: { readonly report: DeletableReport }) {
@@ -50,6 +57,11 @@ describe('useReportDeletion', () => {
     unmount();
     draw({ ...REPORT, exported: true });
     expect(screen.getByRole('button', { name: copy.unavailable.exported })).toBeDisabled();
+  });
+
+  it('names the archive as its reason over the lock — the archive retains the report (task 214; UX-50)', () => {
+    draw({ ...REPORT, archived: true, locked: true });
+    expect(screen.getByRole('button', { name: copy.unavailable.archived })).toBeDisabled();
   });
 
   it('names the report in the dialogue, deletes it, and lands the reader on the report list, which says so', async () => {

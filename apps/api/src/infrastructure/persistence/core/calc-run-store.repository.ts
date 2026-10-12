@@ -8,9 +8,8 @@ import type {
   StoredCalcRun,
 } from '@api/modules/core/calculator/models/calc-run.model';
 import type { FactorSetPin } from '@api/modules/core/calculator/models/factor-set.model';
-import { ReportNotEditableError } from '@api/modules/core/disclosure/errors/report.errors';
 import { returnedRows } from '../returned-rows';
-import { SQL_STATE, hasSqlState } from '../sql-state';
+import { reportWriteRefusal } from './report-write-refusal';
 import { TenantRepository } from '../tenant-repository';
 import {
   overridingPerson,
@@ -62,7 +61,8 @@ const toInput = (row: CalcInputRow): CalcInput => ({
 });
 
 const translate = (error: unknown): never => {
-  if (hasSqlState(error, SQL_STATE.LOCKED)) throw new ReportNotEditableError();
+  const refused = reportWriteRefusal(error);
+  if (refused !== null) throw refused;
   throw error;
 };
 

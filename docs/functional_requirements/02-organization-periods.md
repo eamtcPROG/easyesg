@@ -343,7 +343,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 ### FR-20 — Archive an entity
 
-**Status.** Partial — delivered 29.3, 30.4.3, 187 (the pickers that start new work, and a report refused on an archived entity's period) · remaining 214 (what archiving does to a report in progress)
+**Status.** Built — delivered 29.3, 30.4.3, 187 (the pickers that start new work, and a report refused on an archived entity's period), 214 (a report in progress read-only from the archive)
 
 **Obligation.** The system shall allow a reporting entity to be archived, removing it from active selection while retaining its historical reports and exports intact.
 
@@ -351,20 +351,22 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 |---|---|
 | **Actors** | Organization Administrator archives. Every member reads an archived entity. |
 | **Traces** | UC-55 · UX-70 · FR-17, FR-21 · entity *Reporting entity* |
-| **Surfaces** | S-13 (the archive control in the record's side column; archived rows in the Index) · `POST /entities/{entityId}/archive` (204) |
+| **Surfaces** | S-13 (the archive control in the record's side column; archived rows in the Index) · `POST /entities/{entityId}/archive` (204) · S-07 and S-09 (a report in progress, read-only) · S-06 (its *Delete*, disabled) |
 
 **Preconditions.** The entity is no longer reported on: sold, merged or dissolved (UC-55).
 
 **Behaviour.**
 1. **Archiving changes the entity's status; nothing is deleted.** No route removes an entity, and there is no un-archive (UC-55).
-2. **An archived entity stays readable.** It is included in `GET /entities` with its status, so its historical reports and exports remain retrievable. Its master data is frozen, a new period cannot be opened against it, and a report cannot be started on one of its periods (§12.5.6 task-187 row). A report already opened is untouched.
+2. **An archived entity stays readable.** It is included in `GET /entities` with its status, so its historical reports and exports remain retrievable. Its master data is frozen, a new period cannot be opened against it, and a report cannot be started on one of its periods (§12.5.6 task-187 row). A report already opened becomes read-only (behaviour 7).
 3. S-13 lists archived entities after active ones and does not hide them by default, so a first-use message is never shown to an organization whose entities are all archived (S-13 states; §4.6).
 4. **Archiving is a consequence-disclosing action** naming what survives (UX-70; design_spec S-13).
 5. **"Active selection" means the pickers that start new work**: the new-period entry and the new-report picker do not offer an archived entity. The S-13 Index keeps listing archived entities (item 3) (§12.5.6 task-182 identity and organization row, 182/14).
 6. **Where an action is removed for an archived entity, the screen says so** (UX-13): S-05's row of one of its periods says the entity is archived where it would offer to start a report, and S-14 says once, under its heading, that no new period can be opened — on its create address too, in the form's place. S-39 does not list it, and an address naming it reads as no choice made (§12.5.6 task-187 row).
+7. **A report already opened on one of its periods is read-only from the archive** (§12.5.6's task-214 row). Every write to what it answers — values, derivation inputs, calculator lines, an override, a carried value confirmed — and to its scope is refused, by the database as the lock's writes are (P-4). It still accepts a validation run, its preview, an export and the filed mark, so a sold company's last report can be exported and filed as it stands; its deletion and a reminder about it are refused. **The archive outranks the lock**, since reopening its period restores no editing. S-07 and S-09 name the archive as the read-only cause and say nothing restores editing (UX-13); S-06's and S-07's *Delete* is drawn disabled with the archive as its reason (UX-50); S-13's archive dialogue says reports in progress become read-only (UX-70).
 
 **Refusals.**
 - Archiving an archived entity, editing one, opening a period against one, or starting a report on one of its periods → 409 `entity-archived`
+- Writing to a report on one of its periods — its answers, inputs, calculator lines or scope — or deleting it → 409 `entity-archived` (`core.report.entity_archived`)
 - Unknown entity → 404 `not-found` · Not an Organization Administrator → 403 `insufficient-role`
 
 **Acceptance criteria.**
@@ -376,10 +378,14 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - **AC-6** Given any role, then no route deletes an entity. *(source: controller header; UC-55)*
 - **AC-7** Given an archived entity, then it is not offered by the picker that starts a report or the entry that opens a period, and it is still listed on S-13. *(source: FR text; §12.5.6 task-182 identity and organization row, 182/14)*
 - **AC-8** Given a period of an archived entity, when a report is started on it, then the answer is 409 `entity-archived` and no report is created. *(source: §12.5.6 task-187 row; `design_spec.md` S-39)*
+- **AC-9** Given a report opened before its entity was archived, when a value, a derivation input, a calculator line or its scope is written, then the answer is 409 `entity-archived` and nothing is stored — from any route, the database refusing it. *(source: behaviour 7; §12.5.6 task-214 row (1))*
+- **AC-10** Given that report, then a validation run, its preview, an export and the filed mark are accepted, and its deletion is refused with 409 `entity-archived`. *(source: behaviour 7; §12.5.6 task-214 row (2))*
+- **AC-11** Given that report on S-07, then the step is read-only with a banner naming the archive, and its period being locked too names the archive, not the lock. *(source: behaviour 7; UX-13; §12.5.6 task-214 row (a))*
 
 **History.**
 - 5 Oct 2026 · project owner · "active selection" means the pickers that start new work · §12.5.6 task-182 identity and organization row (182/14)
 - 9 Oct 2026 · project owner · a report started on an archived entity's period is refused with `entity-archived`; each removed action names its cause · §12.5.6 task-187 row
+- 12 Oct 2026 · project owner · a report in progress becomes read-only from the archive; it can still be checked, exported and marked filed, and not deleted · §12.5.6 task-214 row
 
 ### FR-21 — Open a reporting period
 

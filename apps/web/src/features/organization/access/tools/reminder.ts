@@ -1,9 +1,9 @@
-import { MEMBERSHIP_STATUS, REPORT_STATUS, type Member, type Report } from '@easyesg/contracts';
+import { ENTITY_STATUS, MEMBERSHIP_STATUS, REPORT_STATUS, type Member, type Report } from '@easyesg/contracts';
 import { ACCESS_ROW_KIND, ACCESS_STANDING, type AccessRow } from './access';
 
 /**
  * What S-16's reminder dialogue can offer, and so which of its arms it is in (task 50.3; UC-175; `architecture.md`
- * §12.5.6's task-50.3 rows (1), (4), (5)).
+ * §12.5.6's task-50.3 rows (1), (4), (5); since task 214 not an archived entity's).
  *
  * **The people are every active member but the sender**, of any role; **the reports are the organization's open
  * ones** — not locked, ready to file or filed. Neither comes from the list above the panel, which is filtered and
@@ -69,8 +69,10 @@ export const reminderRegion = (input: {
     return { arm: REMINDER_ARM.UNAVAILABLE };
   }
 
+  // Open, and on an entity still reported on: an archived entity's report is read-only, so nobody can act on a
+  // reminder about it, and the api refuses one (task 214).
   const reports = input.reports
-    .filter((report) => report.status === REPORT_STATUS.OPEN)
+    .filter((report) => report.status === REPORT_STATUS.OPEN && report.subject.entityStatus !== ENTITY_STATUS.ARCHIVED)
     .map((report) => ({ id: report.id, entityName: report.subject.entityName, fiscalYear: report.subject.fiscalYear }));
   if (reports.length === 0) return { arm: REMINDER_ARM.NO_REPORT };
 

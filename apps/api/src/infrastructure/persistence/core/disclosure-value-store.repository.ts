@@ -18,7 +18,7 @@ import type {
   DisclosureValueWrite,
 } from '@api/modules/core/disclosure/models/disclosure-value.model';
 import { returnedRows } from '../returned-rows';
-import { SQL_STATE, hasSqlState } from '../sql-state';
+import { reportWriteRefusal } from './report-write-refusal';
 import { TenantRepository } from '../tenant-repository';
 import {
   overridingPerson,
@@ -87,7 +87,8 @@ const toValue = (row: DisclosureValueRow): DisclosureValue => ({
 });
 
 const translate = (error: unknown): never => {
-  if (hasSqlState(error, SQL_STATE.LOCKED)) throw new ReportNotEditableError();
+  const refused = reportWriteRefusal(error);
+  if (refused !== null) throw refused;
   throw error;
 };
 
@@ -213,7 +214,8 @@ export class DisclosureValueStoreRepository
    * answered is the caller's intended end state, not an error.
    *
    * **A locked report refuses this, and the refusal comes from the trigger like every other write
-   * to this table.** `translate` turns its `45001` into `ReportNotEditableError`. That the lock
+   * to this table.** `translate` turns its `45001` into `ReportNotEditableError`, and since task 214 an archived
+   * entity's `45002` into `ReportEntityArchivedError` (`report-write-refusal.ts`). That the lock
    * reaches `DELETE` at all is task 34.1's recorded hole, closed by
    * `1789430400000-locked-disclosure-delete.ts` — see it for why a cascade does not trip the guard,
    * which is measured there rather than assumed.

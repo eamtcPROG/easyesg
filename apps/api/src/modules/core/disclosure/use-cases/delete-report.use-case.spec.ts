@@ -1,5 +1,10 @@
 import type { CancelNotificationCommand } from '@api/contracts/notification.port';
-import { ReportExportedError, ReportNotEditableError, ReportNotFoundError } from '../errors/report.errors';
+import {
+  ReportEntityArchivedError,
+  ReportExportedError,
+  ReportNotEditableError,
+  ReportNotFoundError,
+} from '../errors/report.errors';
 import { REPORT_DELETION, type ReportDeletion } from '../models/report-deletion.model';
 import { DeleteReport } from './delete-report.use-case';
 
@@ -39,6 +44,8 @@ describe('DeleteReport', () => {
 
   it.each([
     [REPORT_DELETION.NOT_FOUND, ReportNotFoundError],
+    // The archive retains an entity's reports (FR-20 behaviour 7; task 214).
+    [REPORT_DELETION.ARCHIVED, ReportEntityArchivedError],
     [REPORT_DELETION.LOCKED, ReportNotEditableError],
     [REPORT_DELETION.EXPORTED, ReportExportedError],
   ] as const)('answers %s with its refusal and withdraws nothing', async (outcome, refusal) => {

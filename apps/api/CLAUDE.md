@@ -576,6 +576,12 @@ Four things to know before touching it:
   leaves (`app/messages/committed-catalogues.ts`), because the seed loader starts no ICU engine and `translate()`
   answers nothing before it is initialised. The period's lock trigger leaves the pin out of the row it compares; a new
   column of the lock's own must be added to that exclusion and to `report-snapshot.e2e-spec.ts`'s bookkeeping list.
+- **An archived entity's report is read-only, refused by the database** (task 214; §12.5.6's task-214 row). The shared
+  report-scoped guard, `core.refuse_locked_disclosure_write()`, raises SQLSTATE `45002` where the report's entity is
+  archived, ahead of the lock's `45001`, and `refuse_archived_write` on `core.report` refuses a change of scope; every
+  store whose table the guard watches reads both codes through `persistence/core/report-write-refusal.ts`, and a new
+  one must too. `core.delete_report` answers `archived`. A validation run, an export and the filed mark are not
+  guarded, and stay so.
 - **A run replaces the report's run and findings** (task 41.2): `core.validation_run`, one row per report, and
   `core.validation_finding` hanging off it, deleted and written again in the request's transaction. Both sit inside
   the lock and are exempt from its trigger (182/21), carry `DELETE` grants and policies and no `UPDATE`, and cascade from
