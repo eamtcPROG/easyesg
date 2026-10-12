@@ -870,6 +870,8 @@
           "memberName": "Denumirea filialei",
           "memberNameRequired": "Scrieți denumirea filialei, altfel perimetrul nu poate fi salvat.",
           "memberIdno": "IDNO-ul filialei",
+          "memberIdnoMalformed": "IDNO-ul filialei nu are 13 cifre, așa că nu poate fi înregistrat. Rescrieți-l exact cum apare pe certificatul de înregistrare al filialei, fără spații.",
+          "memberIdnoCheckDigits": "Ultima cifră a IDNO-ului filialei, cifra de control, nu corespunde celorlalte douăsprezece, deci numărul nu este valid. Comparați-l cu certificatul de înregistrare al filialei: de obicei o cifră este greșită sau două sunt inversate.",
           "addMember": "Adăugați o filială",
           "removeMember": "Ștergeți filiala {member}",
           "membersNone": "Nicio filială inclusă în perimetru.",

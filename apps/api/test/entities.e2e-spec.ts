@@ -397,7 +397,7 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
         .send({
           name: 'Grupul Lina',
           consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED,
-          consolidationMembers: [{ name: 'Lina Retail SRL', idno: '1003600012345', countryCode: 'md' }],
+          consolidationMembers: [{ name: 'Lina Retail SRL', idno: '1003600012344', countryCode: 'md' }],
         })
         .expect(201);
       const { id } = (created.body as { object: EntityBody }).object;
@@ -406,7 +406,7 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
       const entity = (read.body as { object: EntityBody }).object;
       expect(entity.consolidationBasis).toBe(CONSOLIDATION_BASIS.CONSOLIDATED);
       expect(entity.consolidationMembers.map(({ name, idno }) => ({ name, idno }))).toEqual([
-        { name: 'Lina Retail SRL', idno: '1003600012345' },
+        { name: 'Lina Retail SRL', idno: '1003600012344' },
       ]);
     });
 
@@ -421,6 +421,63 @@ describe('reporting entities (UC-52, UC-53, UC-55)', () => {
       const listed = await http().get('/api/v1/entities').set(admin.authorization).expect(200);
       const names = (listed.body as { objects: EntityBody[] }).objects.map((entity) => entity.name);
       expect(names).not.toContain('Grupul gol');
+    });
+
+    /**
+     * FR-19's behaviour 8 (task 215): a subsidiary's IDNO and LEI are judged as the entity's are, shape and check
+     * digits, and the refusal's sentence names the subsidiary — a save sends the whole boundary, and the problem type
+     * alone cannot say which row to correct. Each refused write stores nothing: the boundary stays the one subsidiary
+     * the case above recorded.
+     */
+    it.each([
+      ['an IDNO whose check digit disagrees', { idno: '1003600005149' }, 'identifier-check-digits', 'IDNO'],
+      ['an IDNO of twelve digits', { idno: '100360000514' }, 'identifier-malformed', 'IDNO'],
+      ['an LEI whose check digits disagree', { lei: '7LTWFZYICNSX8D62K186' }, 'identifier-check-digits', 'LEI'],
+      ['an LEI of nineteen characters', { lei: '7LTWFZYICNSX8D621K8' }, 'identifier-malformed', 'LEI'],
+    ])('refuses a subsidiary with %s, naming it, on an edit and on a creation', async (_label, identifiers, type, identifier) => {
+      const subsidiary = { name: 'Lina Transport SRL', countryCode: 'md', ...identifiers };
+      const boundary = { consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED, consolidationMembers: [subsidiary] };
+
+      const onEdit = await http()
+        .patch(`/api/v1/entities/${entityId}`)
+        .set(admin.authorization)
+        .set('Accept-Language', 'ro')
+        .send(boundary)
+        .expect(400);
+      expect((onEdit.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/${type}`);
+      // The subsidiary by name, and which of its two identifiers: the slug is shared with the entity's own.
+      const { detail } = onEdit.body as { detail?: string };
+      expect(detail).toContain('filialei „Lina Transport SRL”');
+      expect(detail).toContain(identifier);
+
+      const read = await http().get(`/api/v1/entities/${entityId}`).set(admin.authorization).expect(200);
+      expect((read.body as { object: EntityBody }).object.consolidationMembers.map(({ name }) => name)).toEqual([
+        'Lina Distribuție SRL',
+      ]);
+
+      const onCreate = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({ name: 'Grupul Transport', ...boundary })
+        .expect(400);
+      expect((onCreate.body as Problem).type).toBe(`${PROBLEM_BASE_URI}/${type}`);
+    });
+
+    it('records a subsidiary whose IDNO and LEI hold, the register’s and the global index’s', async () => {
+      const created = await http()
+        .post('/api/v1/entities')
+        .set(admin.authorization)
+        .send({
+          name: 'Grupul Lina Nord',
+          consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED,
+          consolidationMembers: [
+            { name: 'Lina Nord SRL', idno: '1017600033216', lei: '7LTWFZYICNSX8D621K86', countryCode: 'md' },
+          ],
+        })
+        .expect(201);
+
+      const { consolidationMembers } = (created.body as { object: EntityBody }).object;
+      expect(consolidationMembers.map(({ idno }) => idno)).toEqual(['1017600033216']);
     });
   });
 

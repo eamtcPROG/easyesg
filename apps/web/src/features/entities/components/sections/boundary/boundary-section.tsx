@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useWatch, type Control } from 'react-hook-form';
 import { CONSOLIDATION_BASIS } from '../../../tools/entities';
 import { EMPTY_MEMBER, type EntityFields } from '../../../tools/entity-fields';
+import { IDENTIFIER_FAULT, idnoFault } from '../../../tools/identifiers';
 import { ENTITY_RECORD_MESSAGES } from '../../shared/entity-messages';
 import { EditableRow } from '../shared/editable-row';
 import { RemovedRow } from '../shared/removed-row';
@@ -22,6 +23,12 @@ import styles from '../../styles/entities.module.css';
  * boundary names no subsidiaries, so an empty list and its add control there asked a question the basis had already
  * answered; and members stored under an earlier consolidated basis stay visible, because the API keeps them whatever the
  * basis says and a list the reader cannot see is one they cannot remove from.
+ *
+ * **A subsidiary's IDNO is judged as it is typed** (task 215; FR-19's behaviour 8), by the identity section's tool and so
+ * by the function the API re-validates with (§9.8), under two sentences of this section's that send the reader to the
+ * subsidiary's certificate. Unlike the empty boundary, this is a rule the shared package holds rather than a copy of
+ * one: the field says it before the save, and the API's refusal names the subsidiary for a caller that is not this
+ * screen.
  */
 export function BoundarySection({
   control,
@@ -92,6 +99,13 @@ export function BoundarySection({
                   name={`consolidationMembers.${index}.idno`}
                   label={t('memberIdno')}
                   disabled={archived}
+                  rules={{
+                    validate: (value: string) => {
+                      const fault = idnoFault(value);
+                      if (fault === null) return true;
+                      return fault === IDENTIFIER_FAULT.MALFORMED ? t('memberIdnoMalformed') : t('memberIdnoCheckDigits');
+                    },
+                  }}
                 />
               </EditableRow>
             );

@@ -9,6 +9,10 @@ import {
   LegalFormUnknownError,
   LeiCheckDigitsError,
   LeiMalformedError,
+  MemberIdnoCheckDigitsError,
+  MemberIdnoMalformedError,
+  MemberLeiCheckDigitsError,
+  MemberLeiMalformedError,
   NaceCodeUnknownError,
 } from '../errors/entity.errors';
 import { FakeReportingEntityStore, anEntity } from '../testing/entity.fakes';
@@ -408,6 +412,95 @@ describe('ManageReportingEntity', () => {
 
       expect(created.consolidationBasis).toBeNull();
       expect(created.consolidationMembers).toHaveLength(1);
+    });
+  });
+
+  describe("a subsidiary's identifiers, judged as the entity's are (FR-19's behaviour 8, task 215)", () => {
+    // Published values (182/12's IDNO, Deutsche Bank's LEI), each with the mutation only its check digits see.
+    const IDNO = '1003600005148';
+    const LEI = '7LTWFZYICNSX8D621K86';
+    const member = (identifiers: { idno?: string | null; lei?: string | null }) => ({
+      name: 'Lina Distribuție SRL',
+      idno: null,
+      lei: null,
+      countryCode: 'MD',
+      ...identifiers,
+    });
+    const consolidated = (members: ReturnType<typeof member>[]) => ({
+      consolidationBasis: CONSOLIDATION_BASIS.CONSOLIDATED,
+      consolidationMembers: members,
+    });
+
+    it('records a subsidiary whose IDNO and LEI hold', async () => {
+      const { useCase } = build([]);
+
+      const created = await useCase.create({ entity: { ...NEW, ...consolidated([member({ idno: IDNO, lei: LEI })]) } });
+
+      expect(created.consolidationMembers.map(({ idno, lei }) => [idno, lei])).toEqual([[IDNO, LEI]]);
+    });
+
+    it.each([
+      ['an IDNO whose check digit disagrees', { idno: '1003600005149' }, MemberIdnoCheckDigitsError],
+      ['an IDNO of twelve digits', { idno: '100360000514' }, MemberIdnoMalformedError],
+      ['an LEI whose check digits disagree', { lei: '7LTWFZYICNSX8D62K186' }, MemberLeiCheckDigitsError],
+      ['an LEI in lower case', { lei: LEI.toLowerCase() }, MemberLeiMalformedError],
+    ])('refuses a subsidiary with %s, on creation and on an edit, naming it and writing nothing', async (_label, identifiers, refusal) => {
+      const { store, useCase } = build();
+      const before = store.all.length;
+
+      const onCreate = useCase.create({ entity: { ...NEW, ...consolidated([member(identifiers)]) } });
+      await expect(onCreate).rejects.toBeInstanceOf(refusal);
+      await expect(onCreate).rejects.toMatchObject({ params: { member: 'Lina Distribuție SRL' } });
+      expect(store.all).toHaveLength(before);
+
+      await expect(
+        useCase.update({ entityId: store.all[0].id, patch: consolidated([member(identifiers)]) }),
+      ).rejects.toBeInstanceOf(refusal);
+      expect(store.all[0].consolidationMembers).toHaveLength(0);
+    });
+
+    it('names the first subsidiary that fails, in the order sent, and its IDNO before its LEI', async () => {
+      const { store, useCase } = build();
+      const members = [
+        member({ idno: IDNO }),
+        { ...member({ idno: '1003600005149', lei: '7LTWFZYICNSX8D62K186' }), name: 'Lina Retail SRL' },
+        { ...member({ idno: '1003600005149' }), name: 'Lina Transport SRL' },
+      ];
+
+      await expect(
+        useCase.update({ entityId: store.all[0].id, patch: consolidated(members) }),
+      ).rejects.toMatchObject({ messageKey: 'core.entity.member_idno_check_digits', params: { member: 'Lina Retail SRL' } });
+    });
+
+    it('judges the entity’s own identifiers before any subsidiary’s', async () => {
+      const { store, useCase } = build();
+
+      await expect(
+        useCase.update({
+          entityId: store.all[0].id,
+          patch: { idno: '1003600005149', ...consolidated([member({ idno: '1003600005149' })]) },
+        }),
+      ).rejects.toBeInstanceOf(IdnoCheckDigitsError);
+    });
+
+    it('judges an IDNO whatever the subsidiary’s country, Moldova’s register alone issuing one', async () => {
+      const { store, useCase } = build();
+
+      await expect(
+        useCase.update({
+          entityId: store.all[0].id,
+          patch: consolidated([{ ...member({ idno: '1003600005149' }), countryCode: 'RO' }]),
+        }),
+      ).rejects.toBeInstanceOf(MemberIdnoCheckDigitsError);
+    });
+
+    it('judges nothing of the boundary an edit does not send', async () => {
+      // A stored subsidiary whose IDNO would now be refused: an edit leaving the boundary alone does not reach it.
+      const { store, useCase } = build([anEntity({ consolidationMembers: [{ id: 'm1', ...member({ idno: '1003600005149' }) }] })]);
+
+      const updated = await useCase.update({ entityId: store.all[0].id, patch: { name: 'Brutăria Lina Nord' } });
+
+      expect(updated.name).toBe('Brutăria Lina Nord');
     });
   });
 

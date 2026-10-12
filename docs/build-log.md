@@ -31959,3 +31959,89 @@ lived.
 
 `vercel-react-best-practices`: the read-only cause is computed on the server (`server/data/wizard.ts`), as the lock's
 is, so no Client Component holds a belief about the entity.
+
+## Task 215 — a subsidiary's identifiers, judged as the entity's are · 2026-10-12
+
+FR-19's behaviour 8: a subsidiary's IDNO and LEI are each judged by the shared rule, shape and check digits, in the use
+case that judges the entity's own. A wrong one is refused under the entity's two problem types, in a sentence naming
+the subsidiary. S-13's boundary section judges the subsidiary's IDNO as it is typed. 182/12's *every caller gains it*
+now reaches the one caller task 188 did not.
+
+### Decided before building (project owner, one batch of two, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-215 row (1)–(2). In the same edit, the task-182 row's 182/12, the
+Stage-2-close row's (4) and §7.2's identifier paragraph were annotated. FR-19 was amended (built; behaviour 8;
+refusals; AC-7 … AC-9), FR-16's behaviour 3 now points to it, and S-13's entry gained an amendment.
+
+- **(1) The IDNO and the LEI**, both. The row named the IDNO, but the LEI had the same gap. *Declined:* the IDNO
+  alone, with the LEI's check either a task of its own or an accepted gap.
+- **(2) Shape judged in the use case**: the request's two patterns go, as the entity's went in task 175. A malformed
+  subsidiary identifier is refused `identifier-malformed` by name, where it used to get the generic invalid-request
+  refusal. *Declined:* keeping the patterns.
+
+### Settled in the task
+
+Row (a)–(d):
+- The refusal names the subsidiary by its legal name. The first failing subsidiary in the order sent is the one
+  named, its IDNO before its LEI, and the entity's own identifiers come before any subsidiary's.
+- Every subsidiary a save sends is judged. This is task 188's consequence on a second table.
+- An IDNO is judged as one whatever the subsidiary's country.
+- S-13 judges the subsidiary's IDNO inline. It draws no LEI for a subsidiary, so the inline rule covers the IDNO.
+
+### What the building found
+
+- **One judgement, two sets of refusals.** `admitIdentifiers` judged the entity's pair and threw the entity's errors.
+  It now takes the four refusals as data. The entity passes `ENTITY_REFUSALS`, and each subsidiary passes four built
+  around its name. So the order of the checks, IDNO before LEI and shape before check digits, is written once.
+- **The api's own suites carried two subsidiary IDNOs the rule refuses.** `entities.e2e-spec.ts`'s `1003600012345`
+  needs the check digit 4, and `wizard.e2e-spec.ts`'s `1002600012345` needs 7. Both were invented numbers the old
+  pattern could not tell from real ones. They now carry their check digits. *Searched:* every member a suite sends
+  through the api, in `apps/api/test`, `e2e/web` and `config/golden-reports`. The other copies of those strings are
+  an organization seeded by SQL in `migration-data-steps.e2e-spec.ts` and the export's entity snapshots, which no
+  write judges.
+- **The database's shape constraints stay.** `core.consolidation_member` has checked both shapes since task 29.4, so
+  dropping the request's patterns leaves the column guarded. No migration was needed (row (2)).
+
+### Gates
+
+The change reaches `apps/api` (a DTO, so the contract), `apps/web`, `packages/i18n` and `packages/contracts`. By the
+close table that is each package's suite and every dependent's row, `apps/admin` among them. Each ran alone.
+
+- `pnpm lint`; `pnpm typecheck` in `api`, `web`, `admin` and `contracts`; `pnpm routes:check`; `pnpm docs:check` (48
+  claims).
+- `pnpm openapi:check`, the regenerated contract staged: a description on each subsidiary identifier, and no pattern
+  to drop, since the request's `@Matches` had never reached the contract.
+- Unit:
+  - `api` 2,347 in 295 suites;
+  - `web` 1,991 in 215 files;
+  - `admin` 299;
+  - `i18n` 165.
+- Broken on purpose, each restored:
+  - the use case's two calls judging the subsidiaries, against its unit spec: 6 of 40 failed;
+  - the same, against `entities.e2e-spec.ts` run as bare jest so no pre-hook rebuilt or re-migrated anything: the four
+    refusal cases failed and the acceptance case passed.
+- `pnpm e2e`: 74 suites, 1,810 tests, in 8 minutes. The log's three catalogue lines and one outbox line are the count
+  recent runs print.
+- `pnpm e2e:worker`: 16.
+- `pnpm e2e:web --project identity --project expansion --project admin`: 362 of 362 in 10.8 minutes, S-13's boundary
+  journey refusing *1003600005149* inline beside the field and in the summary, then saving *1003600005148*. The server
+  log holds 19 lines of digest `2667547900` and the one `FactorSetCatalog` line.
+- **Skipped, as the table allows**:
+  - `migrations:check` — no migration;
+  - `events:check`, `facade:check`, `eslint:prove`, `boundaries:prove`, `image:check` and `test:coverage` — the Stage's
+    end runs them cold, and CI does on the next push.
+
+### Skills, read against the diff
+
+`nestjs-best-practices`: `security-validate-all-input` — the request still bounds each identifier's length before the
+use case reads it, and the shared rule judges the rest. `error-use-exception-filters` — the four refusals are
+`DomainError`s the existing filter shapes, under the entity's problem types, with the subsidiary as an ICU parameter
+rather than a concatenated fragment. `api-use-dto-serialization` — both fields' descriptions say what is verified.
+
+`one-idea-per-file`: the refusals stay in the entity's errors file (`file-one-behaviour-api`: a vocabulary stays
+whole), and the judgement stays one function in the use case.
+
+`one-kind-per-folder`: no file was added or moved under `apps/web/src`.
+
+`vercel-react-best-practices`: the rule is a `validate` callback on an existing bound field, reading the identity
+section's pure tool, with no state, effect or memoisation.

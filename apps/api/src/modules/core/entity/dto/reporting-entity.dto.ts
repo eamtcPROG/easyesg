@@ -113,18 +113,35 @@ export class ConsolidationMemberRequestDto {
   @Length(1, 200)
   name!: string;
 
-  @ApiPropertyOptional({ type: String, nullable: true, example: '1003600158022' })
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: '1003600158022',
+    description:
+      'The subsidiary’s IDNO, judged as the entity’s is (task 215): its shape and its check digit are verified on ' +
+      'entry, each refused with its own problem type under a message naming the subsidiary. Null clears it.',
+  })
   @Trim()
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
-  @Matches(/^[0-9]{13}$/u)
+  @IsString()
+  @Length(1, 13)
   idno?: string | null;
 
-  @ApiPropertyOptional({ type: String, nullable: true, example: '7LTWFZYICNSX8D621K86' })
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: '7LTWFZYICNSX8D621K86',
+    description:
+      'The subsidiary’s Legal Entity Identifier (ISO 17442), upper case, judged as the entity’s is (task 215): its ' +
+      'shape and its ISO 7064 MOD 97-10 check digits are verified, each refused with its own problem type under a ' +
+      'message naming the subsidiary. Null clears it.',
+  })
   @Trim()
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
-  @Matches(/^[A-Z0-9]{18}[0-9]{2}$/u)
+  @IsString()
+  @Length(1, 20)
   lei?: string | null;
 
   @ApiPropertyOptional({ type: String, nullable: true, example: 'MD' })

@@ -320,7 +320,11 @@
       "idno_malformed": "The IDNO must be exactly thirteen digits and the value you entered is not, so the change was not saved. Check the number on the registration certificate and enter it again.",
       "idno_check_digits": "The IDNO has thirteen digits but the last one, its check digit, does not match the twelve before it, which usually means one digit is wrong or two are swapped. The change was not saved. Compare the number with the registration certificate and enter it again.",
       "lei_malformed": "An LEI is twenty characters of upper-case letters and digits, and the value you entered is not, so the change was not saved. Copy it from the global register and try again.",
-      "lei_check_digits": "The LEI has the right shape but its check digits do not match the rest of the value, which usually means one character is wrong or two are swapped. The change was not saved. Compare it with the source you took it from."
+      "lei_check_digits": "The LEI has the right shape but its check digits do not match the rest of the value, which usually means one character is wrong or two are swapped. The change was not saved. Compare it with the source you took it from.",
+      "member_idno_malformed": "The IDNO of the subsidiary “{member}” must be exactly thirteen digits and the value you entered is not, so the change was not saved. Check the number on the subsidiary’s registration certificate and enter it again.",
+      "member_idno_check_digits": "The IDNO of the subsidiary “{member}” has thirteen digits but the last one, its check digit, does not match the twelve before it, which usually means one digit is wrong or two are swapped. The change was not saved. Compare the number with the subsidiary’s registration certificate and enter it again.",
+      "member_lei_malformed": "The LEI of the subsidiary “{member}” must be twenty characters of upper-case letters and digits, and the value you entered is not, so the change was not saved. Copy it from the global register and try again.",
+      "member_lei_check_digits": "The LEI of the subsidiary “{member}” has the right shape but its check digits do not match the rest of the value, which usually means one character is wrong or two are swapped. The change was not saved. Compare it with the source you took it from."
     },
     "period": {
       "not_found": "That reporting period does not exist in this organization, so it could not be shown. Refresh the list to see the periods that do.",

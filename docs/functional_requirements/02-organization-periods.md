@@ -165,7 +165,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 **Behaviour.**
 1. **The identifiers are the entity's, not the organization's.** EFRAG's Digital Template ties one *Entity Identifier* to the reporting undertaking, per report, and each company of a group holds its own IDNO (§12.5.6 task-175 row (1)).
 2. **The rule is shared.** `packages/validation` holds it, so S-13 shows the same verdict inline as the server returns, and the two cannot drift (§9.8).
-3. **The IDNO is checked in full.** Government Decision 272/2002 fixes the thirteen-digit layout and says the last digit is a check digit, without giving the algorithm. The algorithm was supplied on 5 Oct 2026: the first twelve digits are multiplied by the repeating weights 7, 3, 1 and summed, and the sum modulo 10 is the thirteenth digit. It holds for 1003600005148 and 1017600033216, and its source (StephenAbbott/opencheck PR #269, `backend/opencheck/sources/asp_moldova.py`) validated all 265,814 IDNOs in the State Register export of 14 Sep 2026. It is not the weighted-modulo-11 family that §7.2 refuted on 28 Aug 2026. Thirteen digits whose last disagrees are refused, on entry by the api and inline on S-13; the validator reports the check digit as *not evaluated* only where the shape fails, which is not the same as failed (§12.5.6 task-182 identity and organization row, 182/12; §7.2).
+3. **The IDNO is checked in full.** Government Decision 272/2002 fixes the thirteen-digit layout and says the last digit is a check digit, without giving the algorithm. The algorithm was supplied on 5 Oct 2026: the first twelve digits are multiplied by the repeating weights 7, 3, 1 and summed, and the sum modulo 10 is the thirteenth digit. It holds for 1003600005148 and 1017600033216, and its source (StephenAbbott/opencheck PR #269, `backend/opencheck/sources/asp_moldova.py`) validated all 265,814 IDNOs in the State Register export of 14 Sep 2026. It is not the weighted-modulo-11 family that §7.2 refuted on 28 Aug 2026. Thirteen digits whose last disagrees are refused, on entry by the api and inline on S-13; the validator reports the check digit as *not evaluated* only where the shape fails, which is not the same as failed (§12.5.6 task-182 identity and organization row, 182/12; §7.2). A subsidiary's IDNO and LEI are held to the same rules (FR-19's behaviour 8).
 4. **The LEI is checked in full**: ISO 17442 shape, then ISO 7064 MOD 97-10. Case is not normalised; a lower-case LEI is malformed.
 5. **No uniqueness constraint on the IDNO.** A platform-wide unique index would be an existence oracle over the Moldovan company register crossed with the customer list (NFR-64), and it would need a cross-tenant read no policy grants. Duplicates are permitted (§7.2). Whether one organization's entities may share an IDNO is deferred: nothing refuses it, and if the answer is to refuse, a partial unique index on (organization, IDNO) and one problem type are what change (§12.5.6 task-175 row).
 6. **Requiredness is not enforced at the record.** That B1 cannot be filed without an IDNO is a validation rule interpreted from configuration (FR-73: the interpreter is task 40's, the rule set 41.1's), so the profile stays usable while half complete. **The IDNO reaches the interpreter as a field the entity's record answers** (§12.5.6's task-210 row (1)): a run adds it to the report's scope under B1, read from the entity as it stands — the record the Excel export writes from — and the seeded rule `b1-entity-idno` requires it, so a report whose entity holds no IDNO carries a finding, counts it outstanding in B1 and is not ready to file. The finding leads to this record, at the IDNO (row (2)). Only the IDNO answers it: an entity holding an LEI alone still carries the finding (row (b)).
@@ -304,7 +304,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 ### FR-19 — Consolidation scope
 
-**Status.** Partial — delivered 29.4, 30.4.3, 91.2, 176 · remaining 215 (a subsidiary's IDNO check digit)
+**Status.** Built — delivered 29.4, 30.4.3, 91.2, 176, 215 (a subsidiary's identifiers judged as the entity's)
 
 **Obligation.** The system shall record an entity's consolidation basis and, where consolidated, the subsidiaries inside the reporting boundary, feeding B1 and bounding every quantitative figure in the report.
 
@@ -314,7 +314,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 | **Traces** | UC-54, UC-19 · D-2 · `architecture.md` §7.2 · FR-18, FR-27, FR-73 · entity *Consolidation scope* |
 | **Surfaces** | S-13 (the basis, and the subsidiaries once consolidated) · `POST /entities`, `PATCH /entities/{entityId}` (`consolidationBasis`, `consolidationMembers`) |
 
-**Inputs.** Basis: `individual`, `consolidated` or null. Subsidiaries (up to 500): legal name (1 … 200 characters) and optionally an IDNO (thirteen digits), an LEI (twenty characters) and a country.
+**Inputs.** Basis: `individual`, `consolidated` or null. Subsidiaries (up to 500): legal name (1 … 200 characters) and optionally an IDNO (thirteen digits, its check digit verified), an LEI (twenty characters, its check digits verified) and a country.
 
 **Behaviour.**
 1. **The basis is null until stated, with no default.** VSME asks the question explicitly, and a default would answer it on the undertaking's behalf. A group that should have consolidated would file every number on the wrong boundary (build-log task 29.4).
@@ -324,8 +324,12 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 5. **B1 discloses the boundary.** The basis, and the subsidiaries' names where consolidated, are served as editable defaults (D-2): the entity is the default, never the authority, so a report may disclose a boundary that differs from the entity's current one.
 6. **Every quantitative disclosure is gathered against the boundary**: `individual` is the undertaking alone, `consolidated` is the undertaking with the listed subsidiaries. This is what the figures mean, not a validation rule (§7.2 task 29.4 paragraphs).
 7. Which boundary a filed report reflects is the snapshot's (FR-18).
+8. **A subsidiary's identifiers are judged as the entity's are** (FR-16): its IDNO and its LEI each by the shared rule, shape and check digits, on create and on edit, and every subsidiary a save sends is judged. The refusal names the subsidiary by its legal name, the first failing one in the order sent, its IDNO before its LEI. An IDNO is judged as one whatever the subsidiary's country, Moldova's State Register alone issuing it. S-13 judges a subsidiary's IDNO inline as it does the entity's; it draws no LEI for a subsidiary (§12.5.6 task-215 row).
 
-**Refusals.** Consolidated basis with no subsidiary → 400 `consolidation-boundary-empty`.
+**Refusals.**
+- Consolidated basis with no subsidiary → 400 `consolidation-boundary-empty`.
+- A subsidiary's IDNO or LEI of the wrong shape → 400 `identifier-malformed` (`core.entity.member_idno_malformed`, `core.entity.member_lei_malformed`), naming the subsidiary.
+- A subsidiary's IDNO or LEI of the right shape whose check digits disagree → 400 `identifier-check-digits` (`core.entity.member_idno_check_digits`, `core.entity.member_lei_check_digits`), naming the subsidiary.
 
 **Boundaries.** Whether a report may be filed with no basis at all is the ordinary completeness question: FR-73, tasks 40 and 41.1. The calculator's aggregation over the boundary is FR-34's.
 
@@ -336,10 +340,14 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - **AC-4** Given a basis switched from `consolidated` to `individual`, then the stored subsidiaries remain and B1 does not offer them. *(source: build-log task 29.4)*
 - **AC-5** Given an entity whose basis was never stated, then it reads null and no default is applied. *(source: build-log task 29.4)*
 - **AC-6** Given an entity is created with a basis and subsidiaries in one request, then both are recorded. *(source: `archived_tasks.md` task 176)*
+- **AC-7** Given a subsidiary whose IDNO is thirteen digits with a wrong check digit, or whose LEI's check digits disagree, on a new entity or an existing one, then the write is refused with 400 `identifier-check-digits`, its detail naming the subsidiary, and nothing is stored; a valid one is accepted. *(source: §12.5.6 task-182 row, 182/12, "every caller gains it"; task-215 row (1))*
+- **AC-8** Given a subsidiary whose IDNO is not thirteen digits, or whose LEI is not twenty upper-case letters and digits, then the write is refused with 400 `identifier-malformed`, its detail naming the subsidiary. *(source: §12.5.6 task-215 row (2))*
+- **AC-9** Given S-13's boundary section, when a subsidiary's IDNO is typed malformed or with a wrong check digit, then the field says which before the save is sent. *(source: §12.5.6 task-215 row (d); S-13's entry)*
 
 **History.**
 - 28 Aug 2026 · project owner · a subsidiary is a named record; the basis is nullable with no default; an empty consolidated boundary is refused at the record · §7.2 task 29.4 paragraphs
 - 29 Sep 2026 · build · the create path recorded neither basis nor subsidiaries, and now does · `archived_tasks.md` task 176
+- 12 Oct 2026 · project owner · a subsidiary's IDNO and LEI are judged by the shared rules, shape and check digits, in the use case, under messages naming the subsidiary · §12.5.6 task-215 row
 
 ### FR-20 — Archive an entity
 

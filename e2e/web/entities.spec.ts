@@ -400,9 +400,16 @@ test('sites and the reporting boundary are whole-collection saves (FR-19, UC-54)
   await page.getByRole('button', { name: 'Salvați modificările' }).click();
   await expect(page.getByRole('alert')).toBeVisible();
 
-  // With a subsidiary inside the boundary it saves.
+  // With a subsidiary inside the boundary it saves — once the subsidiary's IDNO holds (task 215, FR-19's behaviour 8).
+  // A published IDNO with its last digit mutated: the shape passes and only the check digit sees it, inline beside the
+  // field and in the summary that links to it, worded for the subsidiary rather than the entity.
   await page.getByRole('button', { name: 'Adăugați o filială' }).click();
   await page.getByLabel('Denumirea filialei').fill('Lina Logistic SRL');
+  const memberIdno = page.getByLabel('IDNO-ul filialei', { exact: true });
+  await memberIdno.fill('1003600005149');
+  await page.getByRole('button', { name: 'Salvați modificările' }).click();
+  await expect(page.getByText('Ultima cifră a IDNO-ului filialei, cifra de control', { exact: false })).toHaveCount(2);
+  await memberIdno.fill('1003600005148');
   await page.getByRole('button', { name: 'Salvați modificările' }).click();
   await expect(page.getByText('Entitatea a fost salvată')).toBeVisible();
 

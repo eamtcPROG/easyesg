@@ -1,4 +1,5 @@
 import { validateIdno, validateLei } from '@easyesg/validation';
+import type { DomainError } from '@api/app/filters/domain.error';
 import type { Clock } from '@api/contracts/clock.port';
 import type { OrganizationVocabulary } from '@api/modules/core/organization/interfaces/organization-vocabulary.interface';
 import type { OrganizationStore } from '@api/modules/core/organization/interfaces/organization-store.interface';
@@ -6,6 +7,7 @@ import {
   CONSOLIDATION_BASIS,
   ENTITY_STATUS,
   type ConsolidationBasis,
+  type NewConsolidationMember,
   type NewReportingEntity,
   type ReportingEntity,
   type ReportingEntityPatch,
@@ -21,6 +23,10 @@ import {
   LegalFormUnknownError,
   LeiCheckDigitsError,
   LeiMalformedError,
+  MemberIdnoCheckDigitsError,
+  MemberIdnoMalformedError,
+  MemberLeiCheckDigitsError,
+  MemberLeiMalformedError,
   NaceCodeUnknownError,
 } from '../errors/entity.errors';
 
@@ -63,7 +69,8 @@ export class ManageReportingEntity {
   ) {}
 
   async create(command: CreateEntityCommand): Promise<ReportingEntity> {
-    admitIdentifiers(command.entity);
+    admitIdentifiers({ identifiers: command.entity, refusals: ENTITY_REFUSALS });
+    admitMemberIdentifiers(command.entity.consolidationMembers);
     // FR-19 on a new entity, which has no stored state for the rule to read: what it states is what it results in.
     admitBoundary({
       basis: command.entity.consolidationBasis,
@@ -81,7 +88,8 @@ export class ManageReportingEntity {
     // stay retrievable — so this is a refusal about state rather than about existence.
     if (existing.status === ENTITY_STATUS.ARCHIVED) throw new EntityArchivedError();
 
-    admitIdentifiers(command.patch);
+    admitIdentifiers({ identifiers: command.patch, refusals: ENTITY_REFUSALS });
+    if (command.patch.consolidationMembers !== undefined) admitMemberIdentifiers(command.patch.consolidationMembers);
     if (command.patch.naceCodes !== undefined) await this.admitNaceCodes(command.patch.naceCodes);
     if (command.patch.legalForm !== undefined) await this.admitLegalForm(command.patch.legalForm);
 
@@ -158,27 +166,71 @@ export class ManageReportingEntity {
   }
 }
 
+/** What each of an identifier pair's two faults is refused with — the entity's own errors, or a subsidiary's. */
+interface IdentifierRefusals {
+  readonly idnoMalformed: () => DomainError;
+  readonly idnoCheckDigits: () => DomainError;
+  readonly leiMalformed: () => DomainError;
+  readonly leiCheckDigits: () => DomainError;
+}
+
+const ENTITY_REFUSALS: IdentifierRefusals = {
+  idnoMalformed: () => new IdnoMalformedError(),
+  idnoCheckDigits: () => new IdnoCheckDigitsError(),
+  leiMalformed: () => new LeiMalformedError(),
+  leiCheckDigits: () => new LeiCheckDigitsError(),
+};
+
 /**
- * FR-16's identifiers, as submitted (task 175 moved them here from the organization's profile with the identifiers).
+ * FR-16's identifiers, as submitted (task 175 moved them here from the organization's profile with the identifiers) —
+ * and since task 215 each subsidiary's, which FR-19 records with the same two (the task-215 row).
  *
  * **Validated here rather than by a `@Matches` on the DTO**, so the shared rule in `packages/validation` is the only
  * implementation: S-13 shows the same verdict inline as the Administrator types (§9.8), and a second copy in a
  * decorator would be the drift that package exists to prevent. It also lets the refusal tell a malformed value from
  * one whose check digits disagree, which NFR-79 needs apart — one says retype it, the other go back to the register.
+ * **The subsidiary's pair was the copy this paragraph warns of**: a request pattern judged its shape, so its check
+ * digits were never read, until task 215 brought it here. One judgement serves both; only whose refusal it raises
+ * differs.
  *
  * `null` clears an identifier and is always permitted; `undefined` leaves it alone.
  */
-function admitIdentifiers(identifiers: { readonly idno?: string | null; readonly lei?: string | null }): void {
+function admitIdentifiers(input: {
+  readonly identifiers: { readonly idno?: string | null; readonly lei?: string | null };
+  readonly refusals: IdentifierRefusals;
+}): void {
+  const { identifiers, refusals } = input;
   // `checkDigits` is `false` only when the shape passed, so each identifier's two refusals cannot overlap.
   if (identifiers.idno !== undefined && identifiers.idno !== null) {
     const verdict = validateIdno(identifiers.idno);
-    if (!verdict.shape) throw new IdnoMalformedError();
-    if (verdict.checkDigits === false) throw new IdnoCheckDigitsError();
+    if (!verdict.shape) throw refusals.idnoMalformed();
+    if (verdict.checkDigits === false) throw refusals.idnoCheckDigits();
   }
   if (identifiers.lei !== undefined && identifiers.lei !== null) {
     const verdict = validateLei(identifiers.lei);
-    if (!verdict.shape) throw new LeiMalformedError();
-    if (verdict.checkDigits === false) throw new LeiCheckDigitsError();
+    if (!verdict.shape) throw refusals.leiMalformed();
+    if (verdict.checkDigits === false) throw refusals.leiCheckDigits();
+  }
+}
+
+/**
+ * Every subsidiary a write sends, in the order sent, each refused by name (FR-19's behaviour 8). **A save sends the
+ * whole boundary**, so an identifier stored before task 215 is judged again on the next save — task 188's consequence
+ * on a second table (the Stage-2-close row's (5)) — and an IDNO is judged as one whatever the subsidiary's country,
+ * Moldova's State Register alone issuing it.
+ */
+function admitMemberIdentifiers(members: readonly NewConsolidationMember[]): void {
+  for (const member of members) {
+    const subsidiary = { member: member.name };
+    admitIdentifiers({
+      identifiers: member,
+      refusals: {
+        idnoMalformed: () => new MemberIdnoMalformedError(subsidiary),
+        idnoCheckDigits: () => new MemberIdnoCheckDigitsError(subsidiary),
+        leiMalformed: () => new MemberLeiMalformedError(subsidiary),
+        leiCheckDigits: () => new MemberLeiCheckDigitsError(subsidiary),
+      },
+    });
   }
 }
 

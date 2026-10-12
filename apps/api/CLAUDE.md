@@ -79,7 +79,9 @@ traps each one left — grouped by area rather than by the task that built it.
 - **Organization** (`core/organization`, `core/entity`; task 29): organizations and reporting
   entities, with the country's legal forms and NACE classifier as configuration artefacts. **Since task 175 the
   IDNO and LEI are each entity's** (`core.reporting_entity`), and `POST /organizations` writes the organization's
-  first entity, named after it, in the founding transaction (§12.5.6's task-175 row).
+  first entity, named after it, in the founding transaction (§12.5.6's task-175 row). **Since task 215 a subsidiary's
+  two are judged by the same function**, `admitIdentifiers` in `ManageReportingEntity`, under refusals naming the
+  subsidiary — the request DTO bounds their length and judges nothing else (§12.5.6's task-215 row).
 - **Reporting core** (`platform/taxonomy`, `core/period`, `core/disclosure`, `core/comparatives`;
   tasks 31, 33, 34, 45, 89, 91): the taxonomy registry (`TAXONOMY_REGISTRY` over three `config/seed`
   artefacts per registered version) and its typed facade in `packages/vsme`; since task 45.3 the template registry

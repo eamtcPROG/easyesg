@@ -147,3 +147,54 @@ export class LeiCheckDigitsError extends DomainError {
     super('core.entity.lei_check_digits');
   }
 }
+
+/**
+ * FR-19's behaviour 8 (task 215; `architecture.md` §12.5.6's task-215 row): **a subsidiary's identifiers are refused as
+ * the entity's are**, under the same two problem types, by sentences that name the subsidiary. A save sends the whole
+ * boundary, so without the name the reader would not know which of up to five hundred rows to correct; with it, the
+ * sentence says so in the reader's language. `member` is the subsidiary's legal name as sent, which FR-19 requires of
+ * every subsidiary.
+ */
+interface NamedSubsidiary {
+  readonly member: string;
+}
+
+/** A subsidiary's IDNO is not thirteen digits. */
+export class MemberIdnoMalformedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierMalformed;
+  readonly status = 400;
+
+  constructor(subsidiary: NamedSubsidiary) {
+    super('core.entity.member_idno_malformed', { member: subsidiary.member });
+  }
+}
+
+/** A subsidiary's LEI is not twenty characters of the classes ISO 17442 permits. */
+export class MemberLeiMalformedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierMalformed;
+  readonly status = 400;
+
+  constructor(subsidiary: NamedSubsidiary) {
+    super('core.entity.member_lei_malformed', { member: subsidiary.member });
+  }
+}
+
+/** A subsidiary's IDNO is thirteen digits and its check digit does not agree with the twelve before it (182/12). */
+export class MemberIdnoCheckDigitsError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierCheckDigits;
+  readonly status = 400;
+
+  constructor(subsidiary: NamedSubsidiary) {
+    super('core.entity.member_idno_check_digits', { member: subsidiary.member });
+  }
+}
+
+/** A subsidiary's LEI is well-formed and its ISO 7064 MOD 97-10 check digits do not agree with it. */
+export class MemberLeiCheckDigitsError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.IdentifierCheckDigits;
+  readonly status = 400;
+
+  constructor(subsidiary: NamedSubsidiary) {
+    super('core.entity.member_lei_check_digits', { member: subsidiary.member });
+  }
+}

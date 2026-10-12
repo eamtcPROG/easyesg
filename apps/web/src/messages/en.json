@@ -870,6 +870,8 @@
           "memberName": "Subsidiary name",
           "memberNameRequired": "Enter the subsidiary’s name, or the boundary cannot be saved.",
           "memberIdno": "Subsidiary IDNO",
+          "memberIdnoMalformed": "The subsidiary’s IDNO is not 13 digits, so it cannot be recorded. Retype it exactly as it appears on the subsidiary’s registration certificate, without spaces.",
+          "memberIdnoCheckDigits": "The last digit of the subsidiary’s IDNO, its check digit, does not agree with the twelve before it, so the number is not valid. Compare it with the subsidiary’s registration certificate: usually one digit is wrong or two are swapped.",
           "addMember": "Add a subsidiary",
           "removeMember": "Remove the subsidiary {member}",
           "membersNone": "No subsidiaries inside the boundary.",

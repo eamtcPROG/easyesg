@@ -658,7 +658,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     const ownEntity = (created.body as { object: { id: string } }).object.id;
     await http().patch(`/api/v1/entities/${ownEntity}`).set(admin.authorization).send({
       consolidationBasis: 'consolidated',
-      consolidationMembers: [{ name: 'Codru Sud SRL', idno: '1002600012345', countryCode: 'MD' }],
+      consolidationMembers: [{ name: 'Codru Sud SRL', idno: '1002600012347', countryCode: 'MD' }],
     }).expect(200);
     const period = (await http().post('/api/v1/periods').set(admin.authorization).send({
       reportingEntityId: ownEntity, fiscalYear: 2026,

@@ -3517,9 +3517,15 @@ export interface components {
             id?: string;
             /** @description The subsidiary’s legal name, as B1 publishes it. */
             name: string;
-            /** @example 1003600158022 */
+            /**
+             * @description The subsidiary’s IDNO, judged as the entity’s is (task 215): its shape and its check digit are verified on entry, each refused with its own problem type under a message naming the subsidiary. Null clears it.
+             * @example 1003600158022
+             */
             idno?: string | null;
-            /** @example 7LTWFZYICNSX8D621K86 */
+            /**
+             * @description The subsidiary’s Legal Entity Identifier (ISO 17442), upper case, judged as the entity’s is (task 215): its shape and its ISO 7064 MOD 97-10 check digits are verified, each refused with its own problem type under a message naming the subsidiary. Null clears it.
+             * @example 7LTWFZYICNSX8D621K86
+             */
             lei?: string | null;
             /** @example MD */
             countryCode?: string | null;
