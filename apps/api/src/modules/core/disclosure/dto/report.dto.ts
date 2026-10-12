@@ -12,6 +12,7 @@ import {
 } from '../models/report.model';
 import { ReportValidationSummaryDto } from './report-validation-summary.dto';
 import { ReportFilingDto } from './report-filing.dto';
+import { ReportFilesDto } from './report-files.dto';
 import { type SupersedingPin, supersedingPin } from '../domain/superseding-pin';
 import type { TaxonomyPin } from '@api/contracts/taxonomy-registry.port';
 import { LegalDateDto } from '@api/modules/core/period/dto/reporting-period.dto';
@@ -185,6 +186,12 @@ export class ReportResponseDto {
   readonly exported: boolean;
 
   @ApiProperty({
+    type: ReportFilesDto,
+    description: 'Its finished files — how many completed, and the latest, which S-06’s filed row downloads (FR-53).',
+  })
+  readonly files: ReportFilesDto;
+
+  @ApiProperty({
     type: ReportValidationSummaryDto,
     nullable: true,
     description: 'What its latest validation run came to (FR-41), or null where it was never checked.',
@@ -239,6 +246,7 @@ export class ReportResponseDto {
     this.status = statusAsRead({ ...report, filed: report.filing !== null });
     this.locked = report.status === REPORT_STATUS.LOCKED;
     this.exported = report.exported;
+    this.files = new ReportFilesDto(report.files);
     this.validation = report.validation === null ? null : new ReportValidationSummaryDto(report.validation);
     this.filing = report.filing === null ? null : new ReportFilingDto(report.filing);
     const superseding: SupersedingPin | null = supersedingPin({ report, adopted });

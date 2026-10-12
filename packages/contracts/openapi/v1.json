@@ -10733,6 +10733,26 @@
           "scope"
         ]
       },
+      "ReportFilesDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "minimum": 0,
+            "description": "How many of its exports completed — the files there are to download. A failed or running one is not counted."
+          },
+          "latestExportId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The export completed last, whatever its format and language — the file S-06 downloads — or null where none has completed."
+          }
+        },
+        "required": [
+          "count",
+          "latestExportId"
+        ]
+      },
       "FilingPersonDto": {
         "type": "object",
         "properties": {
@@ -10881,6 +10901,14 @@
             "type": "boolean",
             "description": "Whether a file of it was exported or is being made — an export requested or completed, never one that failed. Such a report is distribution evidence, and the Organization Administrator cannot delete it (FR-210)."
           },
+          "files": {
+            "description": "Its finished files — how many completed, and the latest, which S-06’s filed row downloads (FR-53).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportFilesDto"
+              }
+            ]
+          },
           "validation": {
             "nullable": true,
             "description": "What its latest validation run came to (FR-41), or null where it was never checked.",
@@ -10940,6 +10968,7 @@
           "status",
           "locked",
           "exported",
+          "files",
           "validation",
           "filing",
           "supersededBy",

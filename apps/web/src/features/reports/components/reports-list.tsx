@@ -6,13 +6,10 @@ import {
   COLUMN_SIZE,
   EmptyState,
   toPageSize,
-  StatusChip,
   TextLink,
   VersionPinIndicator,
 } from '@easyesg/ui';
-import { STATUS_TONE as STATUS_TONE_VALUES } from '@easyesg/ui';
-import type { DataTableColumn, StatusTone } from '@easyesg/ui';
-import { REPORT_STATUS, type ReportStatus } from '@easyesg/contracts';
+import type { DataTableColumn } from '@easyesg/ui';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useCallback, useMemo, useTransition } from 'react';
 import { IndexView } from '@/shared/index-view';
@@ -31,7 +28,8 @@ import {
   type ReportView,
 } from '../tools/reports';
 import { REPORTS_MESSAGES } from './reports-messages';
-import { ReportRowMenu } from './report-row-menu';
+import { ReportRowActions } from './report-row-actions';
+import { ReportState } from './report-state';
 import { ReportsToolbar } from './reports-toolbar';
 import styles from './reports.module.css';
 
@@ -42,12 +40,12 @@ import styles from './reports.module.css';
  * `IndexView` binding, a row navigates rather than acts, and the only state is the view, which
  * lives in the address (UX-4). No provider and no reducer for values nothing else moves with.
  *
- * **The row action is a link into the wizard, and it is one action rather than the artboard's
- * four.** The artboard draws *Continue · Open · Preview · Download* by state; a filed row's export
- * count and *Download* are task 216's, and opening the report is what every row can do, so that is
- * what every row offers. **And since task 192 the administrator's ⋯ ends each row**, holding *Delete
- * this report* (`architecture.md` §12.5.6's task-192 row (3)) — absent for anyone else, whose menu
- * would hold nothing.
+ * **Opening the report is what every row can do, so the subject's name is every row's link**; the artboard draws
+ * *Continue · Open · Preview* by state, and each is that same link. **A filed row ends in *Download*** since task 216 —
+ * its latest file, for an editor or the administrator, a view-only member being refused the file (182/22) — and its
+ * state names the day it was filed and how many files it has (`ReportState`). **And since task 192 the
+ * administrator's ⋯ ends each row**, holding *Delete this report* (`architecture.md` §12.5.6's task-192 row (3)) —
+ * absent for anyone else, whose menu would hold nothing. The actions column is drawn where either can appear.
  */
 
 /** Columns that are not sort dimensions, declared rather than written as a union — the
@@ -56,29 +54,6 @@ import styles from './reports.module.css';
 const REPORT_COLUMN = { PERIOD: 'period', COMPLETION: 'completion', PIN: 'pin', ACTIONS: 'actions' } as const;
 
 export type ReportColumnKey = ReportSort | (typeof REPORT_COLUMN)[keyof typeof REPORT_COLUMN];
-
-/**
- * The tone says **what this row asks of the reader**, which is `StatusTone`'s own vocabulary read
- * literally rather than a severity scale.
- *
- * `open` is *neutral* — the ordinary state of most rows, and the one the label already names.
- * `ready_to_file` is *pending*: the work here is done and what resolves it is an act outside this
- * screen (task 47's export, then the filing itself), which is exactly what that member means.
- * `filed` is *positive* — settled and good, the end the whole product is for. `locked` is *neutral*
- * for `PeriodsList`'s stated reason: locking is a deliberate act that gives the change history a
- * defensible endpoint, and an alarming tone would tell a reader who did the right thing that they
- * had erred. Two rows share *neutral* and are told apart by their labels, which is UX-102 working
- * as intended — colour is never the sole carrier.
- *
- * Exhaustive by `Record`: a fifth status added to the contract fails here rather than rendering a
- * row with no chip.
- */
-const STATUS_TONE: Record<ReportStatus, StatusTone> = {
-  [REPORT_STATUS.OPEN]: STATUS_TONE_VALUES.NEUTRAL,
-  [REPORT_STATUS.READY_TO_FILE]: STATUS_TONE_VALUES.PENDING,
-  [REPORT_STATUS.LOCKED]: STATUS_TONE_VALUES.NEUTRAL,
-  [REPORT_STATUS.FILED]: STATUS_TONE_VALUES.POSITIVE,
-};
 
 export interface ReportsListProps {
   readonly page: ReportPage;
@@ -93,9 +68,11 @@ export interface ReportsListProps {
   readonly canCreate: boolean;
   /** The Organization Administrator's: whether each row ends in the ⋯ that deletes it (UC-213; task 192). */
   readonly canDelete: boolean;
+  /** An editor's or the administrator's: whether a filed row ends in *Download* (FR-53; 182/22; task 216). */
+  readonly canDownload: boolean;
 }
 
-export function ReportsList({ page, view, options, canCreate, canDelete }: ReportsListProps) {
+export function ReportsList({ page, view, options, canCreate, canDelete, canDownload }: ReportsListProps) {
   const t = useTranslations(REPORTS_MESSAGES);
   const format = useFormatter();
   const router = useRouter();
@@ -153,9 +130,7 @@ export function ReportsList({ page, view, options, canCreate, canDelete }: Repor
         key: REPORT_SORT.STATUS,
         header: t('columns.status'),
         sortable: true,
-        cell: (row) => (
-          <StatusChip tone={STATUS_TONE[row.status]}>{t(`status.${row.status}`)}</StatusChip>
-        ),
+        cell: (row) => <ReportState row={row} />,
       },
       {
         key: REPORT_COLUMN.COMPLETION,
@@ -193,19 +168,20 @@ export function ReportsList({ page, view, options, canCreate, canDelete }: Repor
           </span>
         ),
       },
-      // The administrator's ⋯ (task 192): a column only where a row has something to offer in it.
-      ...(canDelete
+      // A filed row's *Download* (task 216) and the administrator's ⋯ (task 192): a column only where a row may have
+      // something to offer in it.
+      ...(canDelete || canDownload
         ? [
             {
               key: REPORT_COLUMN.ACTIONS,
               header: t('columns.actions'),
               size: COLUMN_SIZE.FIT,
-              cell: (row: ReportRow) => <ReportRowMenu row={row} />,
+              cell: (row: ReportRow) => <ReportRowActions row={row} canDownload={canDownload} canDelete={canDelete} />,
             },
           ]
         : []),
     ],
-    [canDelete, format, t],
+    [canDelete, canDownload, format, t],
   );
 
   return (

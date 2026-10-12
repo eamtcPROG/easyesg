@@ -621,7 +621,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-53 — Immutable export history
 
-**Status.** Partial — delivered 44.2 (the export's record and its stored file, the storage half of 47.1 — §12.5.6's task-44 row (2)), 46.1 (the Excel file's record), 47.1 (the history and the re-download, streamed by the api), 47.3 (S-11's history) · remaining 65.2 (AC-5, under suspension), 216 (S-06's filed row: its exports and their download)
+**Status.** Partial — delivered 44.2 (the export's record and its stored file, the storage half of 47.1 — §12.5.6's task-44 row (2)), 46.1 (the Excel file's record), 47.1 (the history and the re-download, streamed by the api), 47.3 (S-11's history), 216 (S-06's filed row: how many files, and the latest downloaded) · remaining 65.2 (AC-5, under suspension)
 
 **Obligation.** The system shall maintain an immutable export history recording format, language, taxonomy version, timestamp and generating user, and shall allow any prior export to be re-downloaded in exactly the form it was distributed.
 
@@ -629,7 +629,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 |---|---|
 | **Actors** | An editor or the OA reads the history and re-downloads; a view-only member does neither (182/22). SYS (the worker) records. |
 | **Traces** | UC-44, UC-142 · DR-4, DR-6 · NFR-22, NFR-82 · UX-49, UX-54 · D-13 · FR-104 · entity *Export record* |
-| **Surfaces** | S-11 (the history Index) · `GET /exports/{id}` (`architecture.md` §6.8, not yet in the contract) |
+| **Surfaces** | S-11 (the history Index) · S-06 (a filed report's count of files and its latest, task 216) · `GET /exports/{id}` (`architecture.md` §6.8, not yet in the contract) · `GET /reports` and `GET /reports/{id}` (`files`) |
 
 **Behaviour.**
 1. A history entry is written when an export completes: format, language, taxonomy version, timestamp (an instant, epoch milliseconds on the wire) and generating user. It also names the template version the export was produced at (task 47.1; DR-4).
@@ -639,6 +639,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 5. Every export embeds the entity, period, template and taxonomy version, factor-set version, language and generation timestamp (NFR-22).
 6. **Re-download survives a downgrade, a lapse or a suspension**: new exports are blocked, previous documents stay downloadable (FR-104; UC-142 step 3; UX-54).
 7. S-11 lists the history with the pinned version visible (task 47.3). **An artefact and its history entry are kept for the life of the organization plus one year**, like report content, and are not removed at 24 months (`architecture.md` §12.5.7 as amended; §12.5.6 task-182 data-subject requests row, 182/126). The status a report takes once it has been exported: (the report's status is not changed by an export, 182/19; FR-41).
+8. **S-06's filed row says how many files the report has and downloads the latest** (task 216): the count is of completed exports, *Download* fetches the export completed last, whatever its format and language, byte for byte through the session pass-through, and the row's chip names the filed-on date. The report's read carries the count and the latest file's id (`files`); the count is every member's, the download an editor's or the administrator's (§12.5.6's task-216 row).
 
 **Refusals.** Suspension blocks new exports and nothing else (FR-104). View-only → 403 `insufficient-role` (182/22). Unknown report → 404 `not-found`.
 
@@ -654,12 +655,14 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-7** Given an export, then the file and its history entry are kept for the life of the organization plus one year. *(source: §12.5.6 task-182 data-subject requests row, 182/126)* Held while nothing removes them; no task yet removes them when that period ends.
 - **AC-8** Given a view-only member, then the history and a re-download are refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)* Met by 47.1 (`export-history.e2e-spec.ts`; the route matrix). *(Numbered AC-7 until 12 Oct 2026, a second AC-7.)*
 - **AC-9** Given a completed export, then the report's status is unchanged. *(source: §12.5.6 task-182 validation row, 182/19)* Met by 47.1: nothing an export writes reaches the report.
+- **AC-10** Given a filed report with completed exports, then S-06's row names the day it was filed and how many files were completed, and an editor or the Organization Administrator downloads the latest of them, byte for byte; a view-only member sees the count and no download. *(source: S-06's artboard; §12.5.6's task-216 row)* Met by 216.
 
 **History.**
 - 29 Aug 2026 · project owner · there is no report snapshot table: the lock and the retained distributed file carry the guarantee that an export and a locked report cannot disagree · §12.5.6 task-31.4 row
 - 5 Oct 2026 · project owner · an export is kept for the organization's life plus one year, replacing 24 months and *regenerable*, because regeneration cannot promise the original bytes · §12.5.6 task-182 data-subject requests row (182/126)
 - 5 Oct 2026 · project owner · an export does not change the report's status; `filed` is the reporter's own act · §12.5.6 task-182 validation row (182/19)
 - 5 Oct 2026 · project owner · an editor or the OA reads the history and re-downloads; a view-only member does neither · §12.5.6 task-182 validation row (182/22)
+- 12 Oct 2026 · project owner · S-06's filed row downloads the latest completed file and counts the completed ones, and its chip names the filed-on date · §12.5.6 task-216 row
 
 ## 4. Traceability (index §3.11)
 

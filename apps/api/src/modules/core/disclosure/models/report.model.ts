@@ -148,6 +148,18 @@ export interface ReportFiling {
 }
 
 /**
+ * A report's finished files, as S-06's filed row reads them (task 216; FR-53's behaviour 8; §12.5.6's task-216 row): how
+ * many of its exports completed, and the one completed last, which *Download* fetches. A failed or running export is
+ * S-11's history's, never counted here. The latest is named by its id alone: the export module reads this one, so the
+ * file's format cannot be typed here without a circular import, and the file's own name says it.
+ */
+export interface ReportFiles {
+  readonly count: number;
+  /** The export completed last, whatever its format and language, or `null` where none has completed. */
+  readonly latestExportId: string | null;
+}
+
+/**
  * What a report's latest validation run came to, as a list shows it (task 42.2; FR-23, FR-25; §12.5.6's task-42 row
  * (f)): the modules it found complete of those it counted, and the fields it left outstanding. Read as the run left it
  * (182/26), never a percentage (182/18).
@@ -178,6 +190,8 @@ export interface Report {
    * (task 192; §12.5.6's task-192 row (1)). What makes it distribution evidence, which no deletion may remove.
    */
   readonly exported: boolean;
+  /** Its finished files — how many, and the latest (task 216). */
+  readonly files: ReportFiles;
   /**
    * DR-4's pin — FR-66's *explicit template and taxonomy version against every report*.
    *

@@ -32045,3 +32045,98 @@ whole), and the judgement stays one function in the use case.
 
 `vercel-react-best-practices`: the rule is a `validate` callback on an existing bound field, reading the identity
 section's pure tool, with no state, effect or memoisation.
+
+## Task 216 — S-06's filed row: its day, its files and the latest download · 2026-10-13
+
+FR-53's behaviour 8 and FR-25's behaviour 6, as S-06's artboard draws a filed row. Its chip names the day the mark
+records, *Depus la 19 mai 2026*. Beneath the chip it counts the completed exports, *2 exporturi*. It ends in
+*Descărcați*, which fetches the export completed last, byte for byte, through the session pass-through. The report's
+read carries the count and the latest file's id, so the list asks nothing per row.
+
+### Decided before building (project owner, one batch of three, each the recommended option)
+
+The row named all three questions. They are recorded in `architecture.md` §12.5.6's new task-216 row (1)–(3). FR-53
+(behaviour 8, AC-10, its surfaces and status), FR-25 (behaviour 6) and S-06's entry were amended in the same edit.
+
+- **(1) *Download* fetches the latest finished file**, whatever its format and language. *Declined:* the latest in
+  the reader's export language.
+- **(2) The count is of finished files.** *Declined:* every export requested.
+- **(3) The chip names the filed-on date.** *Declined:* *Filed* alone.
+
+### Settled in the task
+
+Row (a)–(e):
+- Both report reads carry `files: { count, latestExportId }`.
+- Only a filed row draws them.
+- The count is every member's, and *Download* is an editor's or the administrator's.
+- The artboard's taxonomy beside the count is the row's version column.
+- The link's accessible name names the report.
+
+### What the building found
+
+- **The format could not ride on the report's read.** `core/export` imports `core/disclosure`, so a `Report` naming its
+  latest file's `ExportFormat` would close a circle that `no-circular` refuses. The read names the latest file by id
+  alone. That moved row (e) from *the report and the file* to *the report whose latest file*, and S-06's entry and FR-53
+  followed in the same edit, before any code.
+- **A filed row always has a file.** The mark is refused until an export completes (the task-47 row (4)), so the row
+  never needs an arm for a filed report with nothing to download. `filedRowOf` still answers `null` for a filed status
+  with no mark, the one state the read cannot produce. That is better than a chip with no day.
+- **The status cell and the row's end left the list.** `ReportState` holds the tone map that was the list's and the
+  filed arm. `ReportRowActions` decides *Download* and the ⋯ together. Both are directive-free, so they can be unit
+  specs, and the list now composes them.
+- **The two subqueries carry the organization.** `export_artifact_report_history` leads with `organization_id`, so the
+  new subqueries name it as well as the report, matching the index's leading columns. No plan was measured; a list holds
+  one organization's reports.
+
+### Gates
+
+The change reaches `apps/api` (a DTO, so the contract), `apps/web` and `packages/contracts`. By the close table that is
+each package's suite and every dependent's row, `apps/admin` among them. Each ran alone.
+
+- `pnpm lint`; `pnpm typecheck` in `api`, `web`, `admin` and `contracts`; `pnpm routes:check`.
+- `pnpm docs:check` (48 claims). **Its first run failed**: FR-53's surfaces named S-06 while S-06's FR line and its
+  traceability row did not name FR-53, a one-sided link. Both now name it.
+- `pnpm openapi:check`, the regenerated contract staged: `ReportFilesDto` and `files` on the report.
+- Unit:
+  - `api` 2,347 in 295 suites;
+  - `web` 2,000 in 216 files;
+  - `admin` 299.
+  - `packages/contracts` has no test script; its proofs are compile-time.
+- Broken on purpose, each restored and compared byte for byte:
+  - the count's `status = 'completed'` dropped, then the latest ordered oldest first, each against
+    `export-history.e2e-spec.ts` run as bare jest — the new case failed both times;
+  - `ReportRowActions` ignoring `canDownload` — the view-only case failed;
+  - `filedRowOf` answering for any report with a mark or a file — two cases failed.
+- `pnpm e2e`: **74 suites, 1,811 tests, one failed**, in `report-notices.e2e-spec.ts`: the 7-day deadline notice was
+  not raised.
+  - It failed again run alone. The run had crossed midnight, and the cause is the fixture, not this change. It sets
+    its due date as now plus 7 × 24 h, twice. At 00:10 EEST on 13 Oct that put the due date on 26 Oct 23:10, past
+    Moldova's 25 Oct change to EET, so six calendar days after its check day rather than seven. An hour later the same
+    arithmetic gives the 27th.
+  - At 01:00:05 the suite passed 11 of 11 on this change. The fixture is a separate task offered to the owner, not
+    fixed here.
+  - The log's three catalogue lines and one outbox line are the count recent runs print.
+- `pnpm e2e:worker`: 16.
+- `pnpm e2e:web --project identity --project expansion --project admin`: 362 of 362 in 10.6 minutes. S-11's journey
+  files the report again, and S-06's row then reads *Depus la …* over *1 export* and downloads the PDF the history
+  serves, at the same address. The server log holds 23 lines of digest `2667547900` and the one `FactorSetCatalog`
+  line.
+- **Skipped, as the table allows**:
+  - `migrations:check` — no migration;
+  - `events:check`, `facade:check`, `eslint:prove`, `boundaries:prove`, `image:check` and `test:coverage` — the Stage's
+    end runs them cold, and CI does on the next push. Stage 3 does not end here: 75 and 48 remain, both blocked.
+
+### Skills, read against the diff
+
+`nestjs-best-practices`: `perf-optimize-database` and `db-avoid-n-plus-one` — the files are two correlated subqueries
+in the one statement every report read uses, so the list costs no request per row. `api-use-dto-serialization` —
+`ReportFilesDto` says what is and is not counted, and what the null latest means.
+
+`one-idea-per-file`: `report-state.tsx` is the status cell, `report-download.tsx` the link, `report-row-actions.tsx`
+the row's end, and `filedRowOf` the rule, beside the read model with its spec.
+
+`one-kind-per-folder`: `features/reports/components/` holds files alone, and the three new ones join them.
+
+`vercel-react-best-practices`: `server-serialization` — the row carries the day, the count and one id, not the
+history. `rerender-` — the parts are directive-free and stateless, rendered by the list's existing column definitions,
+whose memo now depends on `canDownload` too. `rendering-conditional-render` — ternaries throughout.

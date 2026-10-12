@@ -60,7 +60,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-25 — The reports list
 
-**Status.** Built — delivered 31.3, 32.2, 32.2.1, 32.2.2, 40 (the interpreter the summary reads), 42.2 (completion and validation summary: the last run's, on `GET /reports`)
+**Status.** Built — delivered 31.3, 32.2, 32.2.1, 32.2.2, 40 (the interpreter the summary reads), 42.2 (completion and validation summary: the last run's, on `GET /reports`), 216 (a filed row's date, files and download)
 
 **Obligation.** The system shall list the reports of the active organization, each with its entity, period, scope, status and last activity and its completion and validation summary, showing a view-only member the same entries without edit affordances.
 
@@ -76,6 +76,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 3. The completion column is **the last run's summary** since task 42.2 — modules complete of those counted, fields outstanding, or *not checked yet* — carried by `GET /reports` beside readiness, which the status column reads (§12.5.6's task-42 row (f)). Until then it was refused rather than drawn as *"not yet available"* (task-32.2 row).
 4. Last activity shows the instant without the person, until a read serving UX-68 exists (task-32.2.2 row).
 5. A deleted report (FR-210) is not listed.
+6. **A filed row names the day it was filed, how many files were completed, and downloads the latest** (task 216; FR-53's behaviour 8): the count for every member, the download for an editor or the Organization Administrator (182/22).
 
 **Refusals.** No membership in the active organization → 403 `membership-required` · Unknown report → 404 `not-found`
 
@@ -86,6 +87,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **History.**
 - 31 Aug 2026 · project owner · rows answer their subject; the summary columns are refused until their producers exist · §12.5.6 task-32.2 rows
+- 12 Oct 2026 · project owner · a filed row names its filed-on date, counts its completed files and downloads the latest · §12.5.6 task-216 row
 
 ### FR-26 — Who may edit, and when
 

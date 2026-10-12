@@ -1,6 +1,6 @@
 import { matchesSearch } from '@/lib/search-match';
 import { DEFAULT_PAGE_SIZE, toPageSize, type IndexPage, type PageSize } from '@easyesg/ui';
-import { ENTITY_STATUS, REPORT_STATUS, type Report, type ReportStatus } from '@easyesg/contracts';
+import { ENTITY_STATUS, REPORT_STATUS, type LegalDate, type Report, type ReportStatus } from '@easyesg/contracts';
 import { compareText } from '@/lib/collation';
 
 /**
@@ -46,6 +46,19 @@ export type ReportSortDirection =
   (typeof REPORT_SORT_DIRECTION)[keyof typeof REPORT_SORT_DIRECTION];
 
 /**
+ * What a filed row draws (task 216; `architecture.md` §12.5.6's task-216 row): the day the reporter says it was filed,
+ * how many of its files completed, and the one completed last, which *Download* fetches. **Only a filed row has it**, as
+ * the artboard draws — an unfiled report's files are S-11's — so a row that is not filed reads `null` rather than a
+ * count nobody shows.
+ */
+export interface FiledRow {
+  /** A legal date, kept as one (NFR-34): formatted as a calendar day, never turned into an instant to compare. */
+  readonly filedOn: LegalDate;
+  readonly files: number;
+  readonly latestExportId: string | null;
+}
+
+/**
  * One row of the list.
  *
  * The dates stay **strings in ISO form**, never `Date` — NFR-34 held at the last boundary that
@@ -76,6 +89,8 @@ export interface ReportRow {
   /** Its period is locked, and a file of it was exported or is being made — why it cannot be deleted (task 192). */
   readonly locked: boolean;
   readonly exported: boolean;
+  /** What its filed row draws, or `null` where it is not filed (task 216). */
+  readonly filed: FiledRow | null;
 }
 
 export interface ReportView {
@@ -214,7 +229,18 @@ export const toReportRows = (reports: readonly Report[]): ReportRow[] =>
     archived: report.subject.entityStatus === ENTITY_STATUS.ARCHIVED,
     locked: report.locked,
     exported: report.exported,
+    filed: filedRowOf(report),
   }));
+
+/**
+ * A report's filed row, from its mark and its files (task 216). **Filed by its status, dated by its mark**: the status
+ * reads `filed` exactly while a mark stands (the task-47 row (1)), so a filed status with no mark is not a state the
+ * read can answer — and this answers `null` for it rather than a chip with no date.
+ */
+export const filedRowOf = (report: Report): FiledRow | null =>
+  report.status === REPORT_STATUS.FILED && report.filing !== null
+    ? { filedOn: report.filing.filedOn, files: report.files.count, latestExportId: report.files.latestExportId }
+    : null;
 
 /** What the entity and year facets offer, entities by name and years newest first. */
 export interface ReportFilterOptions {

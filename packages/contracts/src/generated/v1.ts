@@ -3854,6 +3854,15 @@ export interface components {
             /** @description The elements a rule may read — those that apply, are in the report’s scope and are not withheld by an omission (FR-28, FR-31, FR-177). A rule naming any other is not evaluated. */
             scope: string[];
         };
+        ReportFilesDto: {
+            /** @description How many of its exports completed — the files there are to download. A failed or running one is not counted. */
+            count: number;
+            /**
+             * Format: uuid
+             * @description The export completed last, whatever its format and language — the file S-06 downloads — or null where none has completed.
+             */
+            latestExportId: string | null;
+        };
         FilingPersonDto: {
             /**
              * Format: uuid
@@ -3914,6 +3923,8 @@ export interface components {
             locked: boolean;
             /** @description Whether a file of it was exported or is being made — an export requested or completed, never one that failed. Such a report is distribution evidence, and the Organization Administrator cannot delete it (FR-210). */
             exported: boolean;
+            /** @description Its finished files — how many completed, and the latest, which S-06’s filed row downloads (FR-53). */
+            files: components["schemas"]["ReportFilesDto"];
             /** @description What its latest validation run came to (FR-41), or null where it was never checked. */
             validation: components["schemas"]["ReportValidationSummaryDto"] | null;
             /** @description The reporter’s filed mark (FR-41), or null where it was never marked or the mark was withdrawn. */

@@ -111,10 +111,9 @@ test('exports with the findings acknowledged, watches the file until it is ready
   await expect(history.getByRole('row')).toHaveCount(2);
   await expect(history.getByText('PDF · English')).toBeVisible();
   await expect(history.getByText('Gata', { exact: true })).toBeVisible();
-  await expect(history.getByRole('link', { name: /^Descărcați PDF-ul cerut la/u })).toHaveAttribute(
-    'href',
-    /^\/api\/v1\/exports\/[0-9a-f-]+\/file$/u,
-  );
+  const historyDownload = history.getByRole('link', { name: /^Descărcați PDF-ul cerut la/u });
+  await expect(historyDownload).toHaveAttribute('href', /^\/api\/v1\/exports\/[0-9a-f-]+\/file$/u);
+  const fileAddress = await historyDownload.getAttribute('href');
   await page.getByRole('combobox', { name: 'Formatul' }).click();
   await page.getByRole('option', { name: 'Excel' }).click();
   await page.waitForURL(`**/reports/${reportId}/export?format=xlsx`);
@@ -132,6 +131,21 @@ test('exports with the findings acknowledged, watches the file until it is ready
   await mark.getByRole('button', { name: 'Retrageți marcajul' }).click();
   await expect(mark).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Marcați ca depus' })).toBeVisible();
+
+  // Filed again, S-06's row says when and how many files, and downloads the latest — the one file, as the history
+  // serves it (task 216; FR-53's behaviour 8).
+  await page.getByRole('button', { name: 'Marcați ca depus' }).click();
+  await page.getByRole('button', { name: 'Marcați ca depus' }).click();
+  await expect(mark).toBeVisible();
+  await page.goto('/reports');
+  const row = page.getByRole('row').filter({ hasText: `${RUN_PREFIX}-editor SRL` });
+  await expect(row.getByText(/^Depus la \d{1,2} \p{L}+ \d{4}$/u)).toBeVisible();
+  await expect(row.getByText('1 export', { exact: true })).toBeVisible();
+  const latest = row.getByRole('link', { name: `Descărcați ultimul fișier exportat al raportului ${RUN_PREFIX}-editor SRL pe 2026` });
+  await expect(latest).toHaveAttribute('href', fileAddress ?? '');
+  const fromList = page.waitForEvent('download');
+  await latest.click();
+  expect((await fromList).suggestedFilename()).toMatch(/\.pdf$/u);
 });
 
 test('tells a view-only member why there is no export, and leads back to the report', async ({ page }) => {

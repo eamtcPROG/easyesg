@@ -1096,6 +1096,12 @@
         "ready_to_file": "Ready to file",
         "filed": "Filed"
       },
+      "filed": {
+        "chip": "Filed on {date}",
+        "files": "{count, plural, one {# export} other {# exports}}",
+        "download": "Download",
+        "downloadLabel": "Download the latest file exported for {entity}’s {year} report"
+      },
       "filter": {
         "entity": "Entity",
         "year": "Year",

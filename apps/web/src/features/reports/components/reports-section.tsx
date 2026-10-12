@@ -43,6 +43,8 @@ export async function ReportsSection({
   ]);
   const canCreate = mayWrite(membership);
   const canDelete = mayAdminister(membership);
+  // An editor's or the administrator's, as a re-download is (182/22) — `mayWrite`'s members, named for its own reason.
+  const canDownload = mayWrite(membership);
 
   let body: ReactNode;
   if (read.status === TENANT_READ.FORBIDDEN) {
@@ -82,6 +84,7 @@ export async function ReportsSection({
         options={reportFilterOptions(read.rows)}
         canCreate={canCreate}
         canDelete={canDelete}
+        canDownload={canDownload}
       />
     );
   }

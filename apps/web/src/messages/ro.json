@@ -1096,6 +1096,12 @@
         "ready_to_file": "Gata de depunere",
         "filed": "Depus"
       },
+      "filed": {
+        "chip": "Depus la {date}",
+        "files": "{count, plural, one {# export} few {# exporturi} other {# de exporturi}}",
+        "download": "Descărcați",
+        "downloadLabel": "Descărcați ultimul fișier exportat al raportului {entity} pe {year}"
+      },
       "filter": {
         "entity": "Entitatea",
         "year": "Anul",

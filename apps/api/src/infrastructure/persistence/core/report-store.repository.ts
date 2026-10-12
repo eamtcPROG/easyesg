@@ -34,6 +34,8 @@ interface ReportRow {
   validation_summary: ValidationSummaryColumn | null;
   // The filed mark (task 47.5), its person named by the same join an override's is.
   exported: boolean;
+  file_count: number;
+  latest_export_id: string | null;
   filed_on: string | null;
   filed_on_tz: string | null;
   filed_at: Date | null;
@@ -70,12 +72,22 @@ interface ReportRow {
 const EXPORTED = `EXISTS (SELECT 1 FROM core.export_artifact a WHERE a.report_id = r.id AND a.status IN ('requested', 'completed'))`;
 
 /**
+ * The report's finished files (task 216; §12.5.6's task-216 row): how many completed, and the one completed last — the
+ * file S-06's *Download* fetches. Keyed by the organization as well as the report, so both read the history's index.
+ */
+const COMPLETED_FILES = `FROM core.export_artifact a
+          WHERE a.organization_id = r.organization_id AND a.report_id = r.id AND a.status = 'completed'`;
+const FILE_COUNT = `(SELECT count(*)::int ${COMPLETED_FILES})`;
+const LATEST_EXPORT_ID = `(SELECT a.id ${COMPLETED_FILES} ORDER BY a.completed_at DESC, a.id DESC LIMIT 1)`;
+
+/**
  * Qualified with the alias every statement here uses, because one of them joins the period and an
  * unqualified `id` would be ambiguous there. One list rather than two is what keeps the three reads
  * answering the same shape.
  */
 const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, r.status, ${readyToFileOf('r')} AS ready_to_file,
         ${validationSummaryOf('r')} AS validation_summary, ${EXPORTED} AS exported,
+        ${FILE_COUNT} AS file_count, ${LATEST_EXPORT_ID} AS latest_export_id,
         r.filed_on::text AS filed_on, r.filed_on_tz, r.filed_at, r.filed_by, filer.id IS NOT NULL AS filer_found,
         filer.email AS filer_email, filer.given_name AS filer_given_name, filer.family_name AS filer_family_name,
         r.template_version, r.taxonomy_version, r.reporting_currency, r.created_at, r.updated_at,
@@ -111,6 +123,7 @@ const toReport = (row: ReportRow): Report => ({
   validation: row.validation_summary,
   filing: filingOf(row),
   exported: row.exported,
+  files: { count: row.file_count, latestExportId: row.latest_export_id },
   templateVersion: row.template_version,
   reportingCurrency: row.reporting_currency,
   taxonomyVersion: row.taxonomy_version,

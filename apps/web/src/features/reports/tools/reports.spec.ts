@@ -37,6 +37,7 @@ const row = (over: Partial<ReportRow> = {}): ReportRow => ({
   archived: false,
   locked: false,
   exported: false,
+  filed: null,
   ...over,
 });
 
@@ -272,6 +273,7 @@ describe('the row from the wire', () => {
     validation: null,
     filing: null,
     exported: false,
+    files: { count: 0, latestExportId: null },
     supersededBy: null,
     templateVersion: '1.3.0',
     taxonomyVersion: '2026-05-01',
@@ -324,5 +326,28 @@ describe('the row from the wire', () => {
 
   it('reads an absent due date as none rather than as a missing field', () => {
     expect(toReportRows([wire()])[0].due).toBeNull();
+  });
+
+  describe('a filed row: its day, its files and the latest (task 216)', () => {
+    const FILED_ON = { date: '2026-05-19', timezone: 'Europe/Chisinau' };
+    const filing = { filedOn: FILED_ON, filedAt: 3, filedBy: { accountId: 'a1', name: 'Ana Rusu' } };
+    const files = { count: 2, latestExportId: 'x2' };
+
+    it('carries the mark’s day as the legal date it is, the count of finished files and the latest', () => {
+      expect(toReportRows([wire({ status: REPORT_STATUS.FILED, filing, files })])[0]?.filed).toEqual({
+        filedOn: FILED_ON,
+        files: 2,
+        latestExportId: 'x2',
+      });
+    });
+
+    it('draws nothing of it on a row that is not filed, whatever files it has — those are S-11’s', () => {
+      expect(toReportRows([wire({ status: REPORT_STATUS.READY_TO_FILE, files })])[0]?.filed).toBeNull();
+      expect(toReportRows([wire({ status: REPORT_STATUS.LOCKED, files })])[0]?.filed).toBeNull();
+    });
+
+    it('answers none for a filed status with no mark, rather than a chip with no day', () => {
+      expect(toReportRows([wire({ status: REPORT_STATUS.FILED, files })])[0]?.filed).toBeNull();
+    });
   });
 });

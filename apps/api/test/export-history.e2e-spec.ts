@@ -293,6 +293,53 @@ describe('the export request, its history and the filed mark (task 47)', () => {
     ]);
   });
 
+  /**
+   * Task 216 (FR-53's behaviour 8; §12.5.6's task-216 row (1), (2), (a)): the report's read carries its finished files —
+   * how many completed, and the one completed last, which S-06's filed row downloads — on the record and on the list, so
+   * the list makes no request per row. A requested or a failed export is S-11's history's, never counted.
+   */
+  it('carries the report’s finished files on its read and the list: how many, and the one completed last (task 216)', async () => {
+    type FilesBody = { files: { count: number; latestExportId: string | null } };
+    const filesOf = async (account: SignedInAccount) =>
+      objectOf<FilesBody>((await http().get(`/api/v1/reports/${earlierReportId}`).set(account.authorization).expect(200)).body).files;
+    const ask = async (locale: string) =>
+      objectOf<ExportBody>((await http().post(`/api/v1/reports/${earlierReportId}/exports`).set(editor.authorization)
+        .send({ format: EXPORT_FORMAT.PDF, locale, acknowledgeUnresolvedFindings: true }).expect(202)).body).id;
+    expect(await filesOf(editor)).toEqual({ count: 0, latestExportId: null });
+
+    const english = await ask('en');
+    await settle(english);
+    const romanian = await ask('ro');
+    const russian = await ask('ru');
+    // The job's last attempt failing, as a renderer that never answers would leave it.
+    await runExportAttempt({
+      command: { organizationId: ORG, exportId: russian, attempt: 1, attempts: 1 },
+      format: EXPORT_FORMAT.PDF,
+      tenantWork: new WorkerTenantWork(worker),
+      store: new ExportArtifactStoreRepository(),
+      storage: exportStorage(),
+      notifications: app.get<NotificationPort>(NOTIFICATION_PORT, { strict: false }),
+      now: () => new Date(),
+      compose: () => Promise.resolve(null),
+      produce: () => Promise.reject(new Error('the renderer did not answer')),
+    }).catch(() => undefined);
+    expect(objectOf<ExportBody>((await http().get(`/api/v1/exports/${russian}`).set(editor.authorization).expect(200)).body).status)
+      .toBe('failed');
+    // One finished, one still being made and one failed: only the finished one is a file to count or download.
+    expect(await filesOf(editor)).toEqual({ count: 1, latestExportId: english });
+
+    // Asked for before the failed one and finished after the English one: the latest is the one completed last.
+    await settle(romanian);
+    expect(await filesOf(editor)).toEqual({ count: 2, latestExportId: romanian });
+
+    const listed = objectsOf<{ id: string } & FilesBody>(
+      (await http().get('/api/v1/reports').set(editor.authorization).expect(200)).body,
+    ).find((report) => report.id === earlierReportId);
+    expect(listed?.files).toEqual({ count: 2, latestExportId: romanian });
+    // A fact of the report, as `exported` is, so a view-only member reads it too; the file itself stays refused them.
+    expect((await filesOf(viewer)).count).toBe(2);
+  });
+
   it('refuses a view-only member every export route and the mark (182/22)', async () => {
     const [anExport] = objectsOf<ExportBody>(
       (await http().get(`/api/v1/reports/${reportId}/exports`).set(editor.authorization).expect(200)).body,
