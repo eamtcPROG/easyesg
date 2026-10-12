@@ -28,7 +28,13 @@ const PLACED = new Map<string, readonly string[]>([
 
 describe('placeFindings', () => {
   it('names the field and each related one by its label, and places each in the modules presenting it', () => {
-    const [placed] = placeFindings({ findings: [finding()], placedIn: PLACED, labels: LABELS, members: MEMBERS });
+    const [placed] = placeFindings({
+      findings: [finding()],
+      placedIn: PLACED,
+      labels: LABELS,
+      members: MEMBERS,
+      entityFieldNames: {},
+    });
     expect(placed?.field).toEqual({
       elementKey: 'NumberOfMaleEmployees',
       dimensionKey: '',
@@ -53,6 +59,7 @@ describe('placeFindings', () => {
       placedIn: PLACED,
       labels: LABELS,
       members: MEMBERS,
+      entityFieldNames: {},
     });
     expect(worded?.field.memberLabel).toBe('Regenerabilă');
     expect(country?.field.memberLabel).toBeNull();
@@ -64,7 +71,26 @@ describe('placeFindings', () => {
       placedIn: PLACED,
       labels: null,
       members: null,
+      entityFieldNames: {},
     });
     expect(placed?.field).toMatchObject({ label: null, modules: [] });
+  });
+
+  it('names a field the entity’s record answers by the api’s own word, placed where the run placed it (task 210)', () => {
+    const [placed] = placeFindings({
+      findings: [finding({ field: { elementKey: 'entity:idno', dimensionKey: '', ordinal: 0 }, related: [] })],
+      placedIn: new Map([...PLACED, ['entity:idno', ['B1']]]),
+      labels: LABELS,
+      members: MEMBERS,
+      entityFieldNames: { 'entity:idno': 'IDNO' },
+    });
+    expect(placed?.field).toEqual({
+      elementKey: 'entity:idno',
+      dimensionKey: '',
+      ordinal: 0,
+      label: 'IDNO',
+      memberLabel: null,
+      modules: ['B1'],
+    });
   });
 });

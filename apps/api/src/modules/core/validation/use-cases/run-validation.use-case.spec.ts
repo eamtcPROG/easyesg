@@ -1,9 +1,10 @@
-import type { FieldValue, Finding, RuleSet } from '@easyesg/validation';
+import { ENTITY_FIELD, type FieldValue, type Finding, type RuleSet } from '@easyesg/validation';
 import type { LegalDate } from '@api/contracts/types/time';
 import { ReportNotFoundError } from '@api/modules/core/disclosure/errors/report.errors';
 import { ValidationRulesUnavailableError } from '../errors/validation.errors';
 import type { EvaluationScopes } from '../interfaces/evaluation-scopes.interface';
 import type { PriorComparables } from '../interfaces/prior-comparables.interface';
+import type { ReportingEntityRecord } from '../interfaces/reporting-entity.interface';
 import type { ValidationReport, ValidationReports } from '../interfaces/validation-reports.interface';
 import type { RuleSetInForce, ValidationRuleSets } from '../interfaces/validation-rule-sets.interface';
 import type { ValidationStore } from '../interfaces/validation-store.interface';
@@ -51,7 +52,9 @@ class FakeStore implements ValidationStore {
   }
 }
 
-const build = (over: { report?: Partial<ValidationReport> | null; values?: FieldValue[]; scope?: string[] } = {}) => {
+const build = (
+  over: { report?: Partial<ValidationReport> | null; values?: FieldValue[]; scope?: string[]; ruleSet?: RuleSet } = {},
+) => {
   const store = new FakeStore();
   const asked: string[] = [];
   let values = over.values ?? [];
@@ -73,7 +76,9 @@ const build = (over: { report?: Partial<ValidationReport> | null; values?: Field
   };
   const scopes: EvaluationScopes = { evaluationScope: () => Promise.resolve({ values, scope, modules: ['B1'] }) };
   const priors: PriorComparables = { comparable: () => Promise.resolve([]) };
-  let todaySet: RuleSetInForce | null = { ruleSet: TODAY_SET, revision: 2 };
+  let idno: string | null = null;
+  const entities: ReportingEntityRecord = { idnoOf: () => Promise.resolve(idno) };
+  let todaySet: RuleSetInForce | null = { ruleSet: over.ruleSet ?? TODAY_SET, revision: 2 };
   const ruleSets: ValidationRuleSets = {
     inForce: ({ on }) => {
       asked.push(`on ${on}`);
@@ -87,12 +92,15 @@ const build = (over: { report?: Partial<ValidationReport> | null; values?: Field
   return {
     store,
     asked,
-    useCase: new RunValidation(reports, scopes, priors, ruleSets, store, () => NOW),
+    useCase: new RunValidation(reports, scopes, priors, entities, ruleSets, store, () => NOW),
     answer: (next: FieldValue[]) => {
       values = next;
     },
     narrow: (next: string[]) => {
       scope = new Map(next.map((key) => [key, ['B1']] as const));
+    },
+    recordIdno: (next: string | null) => {
+      idno = next;
     },
     unreadable: () => {
       todaySet = null;
@@ -175,7 +183,8 @@ describe('RunValidation (UC-40)', () => {
 
       expect(rules.ruleSet).toBe(TODAY_SET);
       expect(rules.rulesOn).toEqual({ date: '2027-03-10', timezone: 'Europe/Chisinau' });
-      expect([...rules.scope].sort()).toEqual(['Assets', 'Turnover']);
+      // The entity's IDNO with the report's elements, as a run reads them (task 210).
+      expect([...rules.scope].sort()).toEqual(['Assets', 'Turnover', 'entity:idno']);
       expect(asked).toEqual(['on 2027-03-10']);
       // A read: nothing is evaluated or written.
       expect(store.stored).toBeNull();
@@ -192,7 +201,7 @@ describe('RunValidation (UC-40)', () => {
     it('answers the scope as it stands, narrowed when the report’s shape narrows (182/26)', async () => {
       const { useCase, narrow } = build();
       narrow(['Assets']);
-      expect((await useCase.rules({ reportId: REPORT })).scope).toEqual(['Assets']);
+      expect((await useCase.rules({ reportId: REPORT })).scope).toEqual(['Assets', 'entity:idno']);
     });
 
     it('refuses where no rule set can be read, as a run does — never an empty set (task-41 row (d))', async () => {
@@ -204,6 +213,54 @@ describe('RunValidation (UC-40)', () => {
     it('answers 404 for a report outside the bound organization', async () => {
       const { useCase } = build({ report: null });
       await expect(useCase.rules({ reportId: REPORT })).rejects.toThrow(ReportNotFoundError);
+    });
+  });
+
+  /** Task 210 (FR-16 behaviour 6; §12.5.6's task-210 row (1)): the entity's record answers a field a rule requires. */
+  describe('the entity’s IDNO', () => {
+    const IDNO_SET: RuleSet = { rules: [required('b1-entity-idno', ENTITY_FIELD.IDNO)] };
+
+    it('finds it missing in B1 where the entity holds none, and the report has an outstanding field', async () => {
+      const { useCase } = build({ ruleSet: IDNO_SET });
+      const reading = await useCase.run({ reportId: REPORT });
+
+      expect(reading.findings).toEqual([
+        {
+          rule: 'b1-entity-idno',
+          verdict: 'missing',
+          field: { elementKey: 'entity:idno', dimensionKey: '', ordinal: 0 },
+          related: [],
+          message: 'validation.required',
+          params: {},
+        },
+      ]);
+      expect(reading.placedIn.get(ENTITY_FIELD.IDNO)).toEqual(['B1']);
+      expect(reading.rollUp?.modules).toEqual([{ module: 'B1', resolved: 0, reasoned: 0, outstanding: 1, outstandingFields: [reading.findings[0].field] }]);
+    });
+
+    it('finds nothing where the entity holds one, and counts it resolved in B1', async () => {
+      const { useCase, recordIdno } = build({ ruleSet: IDNO_SET });
+      recordIdno('1003600005148');
+      const reading = await useCase.run({ reportId: REPORT });
+
+      expect(reading.findings).toEqual([]);
+      expect(reading.rollUp?.report).toEqual({ resolved: 1, reasoned: 0, outstanding: 0 });
+    });
+
+    it('keeps the finding through a read, whose scope is widened by the same read (182/26)', async () => {
+      const { useCase } = build({ ruleSet: IDNO_SET });
+      await useCase.run({ reportId: REPORT });
+      const read = await useCase.read({ reportId: REPORT });
+
+      expect(read.findings.map((finding) => finding.rule)).toEqual(['b1-entity-idno']);
+      expect(read.placedIn.get(ENTITY_FIELD.IDNO)).toEqual(['B1']);
+    });
+
+    it('clears once the IDNO is recorded and the report is checked again — the entity as it stands, not as it was', async () => {
+      const { useCase, recordIdno } = build({ ruleSet: IDNO_SET });
+      await useCase.run({ reportId: REPORT });
+      recordIdno('1003600005148');
+      expect((await useCase.run({ reportId: REPORT })).findings).toEqual([]);
     });
   });
 

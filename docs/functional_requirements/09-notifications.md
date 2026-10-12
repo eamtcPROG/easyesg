@@ -319,7 +319,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 5. A dispatch already sending when a cancellation lands finishes the recipients it is sending to (row (12) and its implementation notes).
 6. Cancelling a key with no open notice is not an error (`contracts/notification.port.ts`).
 7. **A manual reminder is not cancelled when its report's period locks.** This requirement binds the notices that watch a condition (UC-169, UC-170); a reminder is one person's message to another and stays as sent (task-50.3 row (7)).
-8. The repetition schedule, and the producers that cancel on *disclosure supplied*, *section declared omitted* and *period locked*, are task 51.2's. **The write that clears the condition calls `cancel()` in its own transaction**, one call in each of those three paths, and the schedule's next evaluation is the backstop for a route with no such call, such as a bulk change or a migration (§12.5.6 task-182 notifications row, 182/134).
+8. The repetition schedule, and the producers that cancel on *disclosure supplied*, *section declared omitted* and *period locked*, are task 51.2's. **The write that clears the condition calls `cancel()` in its own transaction**, one call in each of those three paths, and the schedule's next evaluation is the backstop for a route with no such call, such as a bulk change or a migration — or, since task 210, the entity's IDNO recorded on S-13, which no report write supplies (§12.5.6's task-210 row (i)) (§12.5.6 task-182 notifications row, 182/134).
 
 **Refusals.** None on the wire. Cancellation is an internal operation, and cancelling an absent key is not refused.
 

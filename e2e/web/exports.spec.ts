@@ -83,10 +83,18 @@ test('exports with the findings acknowledged, watches the file until it is ready
   const warning = page.getByRole('alert').filter({ hasText: /^Raportul are .*nerezolvat/u });
   await expect(warning).toBeVisible();
   const listed = warning.getByRole('list', { name: 'Ce este nerezolvat' }).getByRole('listitem');
-  await expect(listed.first()).toBeVisible();
-  await expect(listed.first().getByRole('link', { name: 'Mergeți la câmp' })).toHaveAttribute(
+  // A row by the field it names, exactly, since one label can begin another.
+  const fieldLink = (field: string) =>
+    listed.filter({ has: page.getByText(field, { exact: true }) }).getByRole('link', { name: 'Mergeți la câmp' });
+  // A field a step holds leads to its step, at the field (FR-42) — turnover, unanswered on a fresh report.
+  await expect(fieldLink('Cifra de afaceri')).toHaveAttribute(
     'href',
-    new RegExp(`/reports/${reportId}/B\\d+#`, 'u'),
+    new RegExp(`/reports/${reportId}/B1#`, 'u'),
+  );
+  // And the entity's IDNO, which no step holds, to the entity's record at the field (task 210; FR-42 AC-6).
+  await expect(fieldLink('IDNO')).toHaveAttribute(
+    'href',
+    /\/entities\/[0-9a-f-]+#entity-idno$/u,
   );
   await warning.getByRole('button', { name: /^Exportați cu/u }).click();
 

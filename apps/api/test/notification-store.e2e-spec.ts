@@ -27,6 +27,7 @@ import { DeliverNotification } from '../src/modules/platform/notification/use-ca
 import { asOrganization, connectAs } from './support/database';
 import { asJob, clearSuppressedAddresses, deleteNotificationsOf, notificationStore, optOuts, unsubscribeTokens, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
 import { DisclosureLabelService } from '../src/modules/platform/localization/services/disclosure-label.service';
+import { EntityFieldNamesService } from '../src/modules/platform/localization/services/entity-field-names.service';
 import { NoticeParamsService } from '../src/modules/platform/notification/services/notice-params.service';
 
 /**
@@ -108,7 +109,7 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
         new EmailChannelService(
           emailPort,
           suppressionStore(worker),
-          new NoticeParamsService(new DisclosureLabelService()),
+          new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()),
         ),
         { channelsFor: () => [NOTIFICATION_CHANNEL.IN_APP, NOTIFICATION_CHANNEL.EMAIL] },
         notificationStore(worker),

@@ -8,7 +8,8 @@ import { createContext, use } from 'react';
  * to close the sheet S-08 is raised in below `wide`, so focus can land in the field behind it.
  *
  * **A context because the link is three components below the section that knows both**, through the body and the
- * groups that have no use for either. The section provides it around both placements, the dock and the sheet.
+ * groups that have no use for either — and since task 210 the report's entity, which a finding on its IDNO leads to.
+ * The section provides it around both placements, the dock and the sheet.
  *
  * **In `shared/` because two of the panel's folders read it**: `section/` provides it, and `findings/` reads it — this
  * folder's admission test, and nothing else.
@@ -18,6 +19,8 @@ export interface FindingFollow {
   readonly current: string;
   /** Called as a finding on the open step is followed, before the browser moves to its field. */
   readonly onFollow: () => void;
+  /** The report's entity — a finding on a field its record answers leads to that record (task 210). */
+  readonly entityId: string;
 }
 
 export const FindingFollowContext = createContext<FindingFollow | null>(null);

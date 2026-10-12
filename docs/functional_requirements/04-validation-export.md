@@ -133,7 +133,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-42 — From a finding to its field
 
-**Status.** Built — delivered 42.3 (each finding and each field it conflicts with an address that lands focus in its field). The findings it follows are 41.2's.
+**Status.** Built — delivered 42.3 (each finding and each field it conflicts with an address that lands focus in its field), 210 (a finding on the entity's IDNO, at S-13's record). The findings it follows are 41.2's.
 
 **Obligation.** The system shall allow navigation from any validation finding directly to the affected field, focused, with the rule explanation shown.
 
@@ -141,7 +141,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 |---|---|
 | **Actors** | Every member who reads the findings, a view-only member included (182/22). |
 | **Traces** | UC-39 · UX-4, UX-22 · P6 · `architecture.md` §9.8 · design_spec.md §10.4 |
-| **Surfaces** | S-08 (the finding as a link) · S-07 (the field) |
+| **Surfaces** | S-08 (the finding as a link) · S-07 (the field) · S-11 (the export's warning, each finding a link) · S-13 (the entity's IDNO) |
 
 **Preconditions.** At least one finding exists (UC-39).
 
@@ -151,6 +151,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 3. A finding in another module takes the reader to that module's step, so a long report is navigable without hunting through eleven modules (UC-39).
 4. A finding of inconsistency also links the field it conflicts with (design_spec.md §6.4).
 5. Every finding carries a deep link (§9.8).
+6. **A finding on the reporting entity's IDNO leads to S-13's record**, focus landing in its IDNO field, since no step holds it (§12.5.6's task-210 row (2)). From S-08 the link leaves the wizard by the wizard's leave guard, as its exit does (UX-37).
 
 **Boundaries.** What a finding says is FR-40's. How findings are listed and grouped is S-08's content (FR-41).
 
@@ -160,10 +161,12 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-3** Given a finding's address opened directly, then it lands on the field. *(source: UX-4; task 42.3)* Met since 42.3.
 - **AC-4** Given a finding in a module other than the open one, then selecting it opens that module's step at the field. *(source: UC-39)* Met since 42.3.
 - **AC-5** Given a finding of inconsistency, then the conflicting field is linked. *(source: design_spec.md §6.4)* Met since 42.3.
+- **AC-6** Given a finding on the entity's IDNO, when it is selected in S-08 or S-11, then S-13's record opens with focus in its IDNO field; from S-08 with unsent answers, the reader is asked first. *(source: §12.5.6 task-210 row (2); UX-22, UX-37)* Met since 210.
 
 **History.**
 - 5 Oct 2026 · project owner · every member reads the findings, a view-only member included · §12.5.6 task-182 validation row (182/22)
 - 8 Oct 2026 · project owner · a finding's address is its step's with the field's anchor, landing focus in the field's control · §12.5.6 task-42 row (g)
+- 12 Oct 2026 · project owner · a finding on the entity's IDNO leads to S-13's record, at the IDNO · §12.5.6 task-210 row (2)
 
 ### FR-43 — Validation re-run at any completeness
 

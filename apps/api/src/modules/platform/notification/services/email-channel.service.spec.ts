@@ -10,6 +10,7 @@ import { FakeSuppressionStore } from '@api/testing/fake-suppression-store';
 import { DELIVERY_OUTCOME } from '../models/notification-record.model';
 import { EmailChannelService } from './email-channel.service';
 import { DisclosureLabelService } from '@api/modules/platform/localization/services/disclosure-label.service';
+import { EntityFieldNamesService } from '@api/modules/platform/localization/services/entity-field-names.service';
 import { NoticeParamsService } from '@api/modules/platform/notification/services/notice-params.service';
 
 /**
@@ -40,7 +41,7 @@ describe('EmailChannelService (task 49.3)', () => {
   const base = { to: 'ana@example.md', locale: 'ro', params: { link: 'x' }, idempotencyKey: 'k' } as const;
 
   const suppression = () => new FakeSuppressionStore();
-  const channel = (port: EmailPort, store = suppression()) => new EmailChannelService(port, store, new NoticeParamsService(new DisclosureLabelService()));
+  const channel = (port: EmailPort, store = suppression()) => new EmailChannelService(port, store, new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()));
 
   it("hands the provider the category's key as the wording, and everything else unchanged", async () => {
     const provider = new RecordingEmailPort();

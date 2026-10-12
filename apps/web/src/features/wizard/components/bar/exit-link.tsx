@@ -4,7 +4,7 @@ import type { NavLinkComponent } from '@easyesg/ui';
 import type { ComponentProps, MouseEvent } from 'react';
 import { Link } from '@/i18n/navigation';
 import { isPlainClick } from '../../tools/plain-click';
-import { useLeaveGuard } from './use-leave-guard';
+import { useLeaveGuard } from '../shared/use-leave-guard';
 
 /**
  * UX-5's single, always-visible way out — and UX-37's second half (task 35.2): *"warned again — with a chance to

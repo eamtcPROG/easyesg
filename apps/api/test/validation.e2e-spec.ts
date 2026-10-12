@@ -80,9 +80,9 @@ describe('validation runs and their findings (task 41.2)', () => {
   const objectsOf = <T>(body: unknown): T[] => (body as { objects: T[] }).objects;
   const rulesOf = (validation: Validation): string[] => validation.findings.map((finding) => finding.rule);
 
-  const openReport = async (year: number): Promise<{ periodId: string; reportId: string }> => {
+  const openReport = async (year: number, entity = entityId): Promise<{ periodId: string; reportId: string }> => {
     const period = await http().post('/api/v1/periods').set(admin.authorization).send({
-      reportingEntityId: entityId,
+      reportingEntityId: entity,
       fiscalYear: year,
       periodStart: { date: `${year}-01-01`, timezone: CHISINAU },
       periodEnd: { date: `${year}-12-31`, timezone: CHISINAU },
@@ -143,8 +143,9 @@ describe('validation runs and their findings (task 41.2)', () => {
         ]));
     }
 
+    // An IDNO, which a filing needs since task 210 — the cases below are about the report's own answers.
     const entity = await http().post('/api/v1/entities').set(admin.authorization).send({
-      name: 'Fabrica Validare', legalForm: 'srl', naceCodes: ['10.71'],
+      name: 'Fabrica Validare', legalForm: 'srl', naceCodes: ['10.71'], idno: '1003600005148',
       sites: [{ name: 'Fabrica', locality: 'Chișinău', countryCode: 'MD' }],
     }).expect(201);
     entityId = objectOf<{ id: string }>(entity.body).id;
@@ -355,7 +356,8 @@ describe('validation runs and their findings (task 41.2)', () => {
       const { rollUp } = await run(reportId);
 
       const b1 = rollUp?.modules.find((module) => module.module === 'B1');
-      expect(b1).toMatchObject({ resolved: 1, reasoned: 0, status: 'in_progress' });
+      // The assets typed, and the entity's IDNO, which its record answers (task 210).
+      expect(b1).toMatchObject({ resolved: 2, reasoned: 0, status: 'in_progress' });
       expect(b1?.outstanding).toBeGreaterThan(0);
       expect(b1?.outstandingFields).toContainEqual({ elementKey: 'Turnover', dimensionKey: '', ordinal: 0 });
       // A Basic report's modules, in the standard's order, and no Comprehensive one.
@@ -450,6 +452,67 @@ describe('validation runs and their findings (task 41.2)', () => {
       await run(reportId);
       await http().post(`/api/v1/periods/${periodId}/lock`).set(admin.authorization).expect(200);
       expect(await statusOf(reportId)).toBe('locked');
+    });
+
+    /**
+     * FR-16's behaviour 6 (task 210; AC-11, AC-12; §12.5.6's task-210 row): the entity's IDNO is a field its record
+     * answers, which the seeded rule set requires — so a report otherwise complete is not ready to file without one.
+     */
+    describe('the entity’s IDNO, which a filing needs (task 210)', () => {
+      const entityWithoutIdno = async (): Promise<string> =>
+        objectOf<{ id: string }>((await http().post('/api/v1/entities').set(admin.authorization).send({
+          name: `Fabrica fără IDNO ${randomUUID().slice(0, 8)}`, legalForm: 'srl',
+        }).expect(201)).body).id;
+
+      it('finds it missing in B1, named as S-13 names it, and the report is not ready to file (AC-11)', async () => {
+        const bare = await entityWithoutIdno();
+        const { periodId, reportId } = await openReport(2026, bare);
+        await makeComplete(reportId);
+        const { findings, rollUp } = await run(reportId);
+
+        expect(findings).toEqual([
+          {
+            rule: 'b1-entity-idno',
+            verdict: 'missing',
+            field: { elementKey: 'entity:idno', dimensionKey: '', ordinal: 0, label: 'IDNO', memberLabel: null, modules: ['B1'] },
+            related: [],
+            message: 'validation.entity_idno',
+            params: {},
+          },
+        ]);
+        expect(rollUp?.modules.find((module) => module.module === 'B1')).toMatchObject({
+          outstanding: 1,
+          outstandingFields: [{ elementKey: 'entity:idno', dimensionKey: '', ordinal: 0 }],
+        });
+        expect(await statusOf(reportId)).toBe('open');
+        expect(await periodStatusOf(periodId)).toBe('open');
+        // Kept by a read, whose scope is the run's (182/26).
+        expect(rulesOf(await read(reportId))).toEqual(['b1-entity-idno']);
+      });
+
+      it('clears once the administrator records it, and the report reads ready — the entity as it stands (AC-12)', async () => {
+        const bare = await entityWithoutIdno();
+        const { reportId } = await openReport(2026, bare);
+        await makeComplete(reportId);
+        const before = await run(reportId);
+
+        await http().patch(`/api/v1/entities/${bare}`).set(admin.authorization).send({ idno: '1017600033216' }).expect(200);
+        const after = await run(reportId);
+        expect(after.findings).toEqual([]);
+        // Resolved in B1 now, where it was outstanding.
+        const b1 = (validation: Validation) => validation.rollUp?.modules.find((module) => module.module === 'B1');
+        expect(b1(after)?.resolved).toBe((b1(before)?.resolved ?? -1) + 1);
+        expect(await statusOf(reportId)).toBe('ready_to_file');
+      });
+
+      it('is among the rules the browser reads, its field in the report’s scope (task 42.1)', async () => {
+        const { reportId } = await openReport(2026, await entityWithoutIdno());
+        const rules = objectOf<{ ruleSet: { rules: { id: string }[] }; scope: string[] }>(
+          (await http().get(`/api/v1/reports/${reportId}/validation/rules`).set(editor.authorization).expect(200)).body,
+        );
+        expect(rules.ruleSet.rules.map((rule) => rule.id)).toContain('b1-entity-idno');
+        expect(rules.scope).toContain('entity:idno');
+      });
     });
   });
 

@@ -33,11 +33,14 @@ import { PanelBody } from './panel-body';
  */
 export function ValidationSection({
   reportId,
+  entityId,
   module,
   moduleOrder,
   mayRun,
 }: {
   readonly reportId: string;
+  /** The report's entity, whose record a finding on its IDNO leads to (task 210). */
+  readonly entityId: string;
   /** The step that is open — a finding on it is followed in place (task 42.3). */
   readonly module: string;
   /** The modules the report's scope asks, in the list's order — the order the panel groups by. */
@@ -65,7 +68,7 @@ export function ValidationSection({
     followed.current = true;
     setSheetOpen(false);
   }, [sheetOpen]);
-  const follow = useMemo<FindingFollow>(() => ({ current: module, onFollow }), [module, onFollow]);
+  const follow = useMemo<FindingFollow>(() => ({ current: module, onFollow, entityId }), [module, onFollow, entityId]);
   const keepFocusWhenFollowed = useCallback((event: Event) => {
     if (!followed.current) return;
     followed.current = false;

@@ -590,6 +590,14 @@ Four things to know before touching it:
   names, in every locale — `isWordedAsFindingInEveryLocale` refuses anything else at publication, the seed included,
   and since task 42.4 `committed-catalogues.spec.ts` holds the whole `validation` namespace to it, so a message no seeded
   rule names yet cannot ship in one sentence.
+- **The entity's record answers a field a rule may read** (task 210; §12.5.6's task-210 row). `RunValidation` widens
+  the report's scope by `withEntityFields` — `entity:idno` under B1 — in the run, the read and the browser's rules alike,
+  and a run adds the IDNO the entity holds as a row (`REPORTING_ENTITY_RECORD`, the query the Excel export writes it
+  from), so the seeded `b1-entity-idno` is an ordinary `required` rule. Its name is `ENTITY_FIELD_NAMES`', a
+  `contracts/` port `platform/localization` answers beside the disclosure labels, read by `NameFindings` and by a
+  notice's field list; the Excel export notes its finding on the template's identifier cell. A new field the record
+  answers is a member of `@easyesg/validation`'s `ENTITY_FIELD`, which `typecheck` then asks a name, an input and an
+  anchor of.
 - **A finding names its field, in the HTTP process only** (task 42.2; §12.5.6's task-42 row (e)). `NameFindings` adds to
   each finding and each field it relates to the field's label and a member's, from the catalogue of the version the
   report pins, and the modules presenting it in the scope the run read; the service composes it after the run or the

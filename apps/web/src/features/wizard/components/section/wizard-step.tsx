@@ -162,6 +162,7 @@ export async function WizardStep({
           panel={
             <ValidationSection
               reportId={reportId}
+              entityId={read.report.subject.reportingEntityId}
               module={module}
               moduleOrder={modules.map((summary) => summary.module)}
               mayRun={mayWrite(membership)}

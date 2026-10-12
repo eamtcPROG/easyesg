@@ -80,6 +80,18 @@ describe('outstandingCleared (task 51.2)', () => {
     ).toBe(true);
   });
 
+  it('keeps the entity’s IDNO listed through every disclosure write — the next check is its backstop (task 210)', () => {
+    // The record answers it, never a disclosure row, so no write can be what cleared it (§12.5.6's task-210 row (i)).
+    expect(
+      outstandingCleared({
+        listed: [address('Turnover'), address('entity:idno')],
+        answers: [{ value: { elementKey: 'Turnover', valueNumeric: '1200000' }, updatedAt: AFTER }],
+        ranAt: RAN,
+        inScope: null,
+      }),
+    ).toBe(false);
+  });
+
   it('clears nothing when the run listed nothing', () => {
     expect(outstandingCleared({ listed: [], answers: [], ranAt: RAN, inScope: null })).toBe(false);
   });

@@ -1,5 +1,6 @@
 import type { Locale } from '@easyesg/i18n';
 import type { DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
+import type { EntityFieldNames } from '@api/contracts/entity-field-names.port';
 import { placeFindings } from '../domain/finding-places';
 import type { NamedValidation, ValidationReading } from '../models/validation-run.model';
 
@@ -16,9 +17,14 @@ export interface NameFindingsCommand {
  * **Its own use case rather than a step of the run**, because a run is also the worker's (task 51.2's notice check),
  * which names nothing and has no reader: naming is what an HTTP answer adds, so the request tier composes it after
  * the run or the read, and the run stays the same for every caller.
+ *
+ * **A field the entity's record answers is named by the api's own word** (task 210), since no version's labels hold it.
  */
 export class NameFindings {
-  constructor(private readonly labels: DisclosureLabelResolver) {}
+  constructor(
+    private readonly labels: DisclosureLabelResolver,
+    private readonly entityFields: EntityFieldNames,
+  ) {}
 
   name(command: NameFindingsCommand): NamedValidation {
     const at = { version: command.reading.taxonomyVersion, locale: command.locale };
@@ -30,6 +36,7 @@ export class NameFindings {
         placedIn: command.reading.placedIn,
         labels: this.labels.labels(at),
         members: this.labels.memberLabels(at),
+        entityFieldNames: this.entityFields.namesIn({ locale: command.locale }),
       }),
     };
   }

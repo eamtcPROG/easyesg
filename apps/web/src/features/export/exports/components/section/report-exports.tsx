@@ -77,6 +77,7 @@ export async function ReportExports({
       {report.supersededBy === null ? null : <SupersededNotice report={report} supersededBy={report.supersededBy} />}
       <ExportDialogue
         reportId={reportId}
+        entityId={report.subject.reportingEntityId}
         languages={read.languages}
         initialLanguage={initialExportLanguage({ exportLocale: read.exportLocale, reader })}
       />

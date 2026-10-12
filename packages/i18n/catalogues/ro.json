@@ -218,6 +218,11 @@
       "happened": "Această cifră a trecut de la {prior} în perioada anterioară la {current} acum, o schimbare de {change}, mai mare decât de obicei de la un an la altul.",
       "consequence": "O schimbare mare poate fi corectă, dar un cititor o va pune la îndoială.",
       "action": "Verificați cifra și, dacă este corectă, explicați schimbarea în raport."
+    },
+    "entity_idno": {
+      "happened": "Entitatea pentru care este întocmit raportul nu are încă un IDNO înregistrat.",
+      "consequence": "Raportul nu poate fi depus fără numărul ei de identificare, așa că nu este complet.",
+      "action": "Un administrator al organizației îl înregistrează în fișa entității, la Entități."
     }
   },
   "identity": {
@@ -363,7 +368,10 @@
       "unknown_figure": "Cifra indicată nu este una pe care o produce calculatorul de carbon, așa că nu poate fi explicată sau înlocuită aici. Reîmprospătați pagina și alegeți domeniul de aplicare 1 sau 2."
     },
     "validation": {
-      "rules_unavailable": "Regulile după care este verificat raportul nu pot fi citite în acest moment, așa că raportul nu a fost verificat și nimic nu s-a modificat. Problema se rezolvă de partea noastră; încercați din nou peste puțin timp și contactați echipa de asistență dacă persistă."
+      "rules_unavailable": "Regulile după care este verificat raportul nu pot fi citite în acest moment, așa că raportul nu a fost verificat și nimic nu s-a modificat. Problema se rezolvă de partea noastră; încercați din nou peste puțin timp și contactați echipa de asistență dacă persistă.",
+      "entity_fields": {
+        "idno": "IDNO"
+      }
     },
     "export": {
       "document": {

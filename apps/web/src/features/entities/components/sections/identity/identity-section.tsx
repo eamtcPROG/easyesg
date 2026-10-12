@@ -5,6 +5,8 @@ import { FormSelect, FormTextField } from '@easyesg/ui/forms';
 import { useTranslations } from 'next-intl';
 import type { Control } from 'react-hook-form';
 import type { NaceCodeMatch } from '@easyesg/contracts';
+import { ENTITY_FIELD } from '@easyesg/validation';
+import { ENTITY_FIELD_ANCHOR } from '@/lib/entity-field-route';
 import type { EntityFields } from '../../../tools/entity-fields';
 import { IDENTIFIER_FAULT, idnoFault, leiFault } from '../../../tools/identifiers';
 import { ActivityPicker } from './activity-picker';
@@ -23,6 +25,9 @@ import styles from '../../styles/entities.module.css';
  * retyped, disagreeing check digits mean the wrong identifier was copied (`tools/identifiers.ts`, since task 188 for
  * the IDNO's check digit too). **The LEI is labelled with its expansion**,
  * never the bare abbreviation, which a Moldovan reader takes for the currency (S-15's rule, moved with the field).
+ *
+ * **The IDNO carries the anchor a finding on it leads to** (task 210): a report whose entity holds none is not ready to
+ * file, and S-08's and S-11's link lands here, focus in the input (`use-field-landing.ts`).
  */
 export function IdentitySection({
   control,
@@ -65,21 +70,23 @@ export function IdentitySection({
         />
       </div>
       <div className={styles.fieldPair}>
-        <FormTextField
-          control={control}
-          name="idno"
-          label={t('identity.idno')}
-          help={t('identity.idnoHelp')}
-          inputMode="numeric"
-          disabled={archived}
-          rules={{
-            validate: (value: string) => {
-              const fault = idnoFault(value);
-              if (fault === null) return true;
-              return fault === IDENTIFIER_FAULT.MALFORMED ? t('identity.idnoMalformed') : t('identity.idnoCheckDigits');
-            },
-          }}
-        />
+        <div id={ENTITY_FIELD_ANCHOR[ENTITY_FIELD.IDNO]}>
+          <FormTextField
+            control={control}
+            name="idno"
+            label={t('identity.idno')}
+            help={t('identity.idnoHelp')}
+            inputMode="numeric"
+            disabled={archived}
+            rules={{
+              validate: (value: string) => {
+                const fault = idnoFault(value);
+                if (fault === null) return true;
+                return fault === IDENTIFIER_FAULT.MALFORMED ? t('identity.idnoMalformed') : t('identity.idnoCheckDigits');
+              },
+            }}
+          />
+        </div>
         <FormTextField
           control={control}
           name="lei"

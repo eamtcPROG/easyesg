@@ -15,6 +15,9 @@ import type { FieldPlace, PlacedFinding } from '../models/validation-run.model';
  * from its own catalogue, task 36.9) or a classification's published entry. Never the member key itself, which is an
  * XBRL identifier the reader may not see.
  *
+ * **A field the entity's record answers is named by the api's own word for it** (task 210; §12.5.6's task-210 row (e)) —
+ * the IDNO, which no taxonomy labels — and placed where the run's scope placed it, in B1.
+ *
  * Pure, so the naming is a spec rather than a journey: the caller passes the version's labels.
  */
 export function placeFindings(input: {
@@ -23,10 +26,12 @@ export function placeFindings(input: {
   readonly placedIn: ReadonlyMap<string, readonly string[]>;
   readonly labels: Readonly<Record<string, DisclosureLabel>> | null;
   readonly members: Readonly<Record<string, DisclosureLabel>> | null;
+  /** What the fields the entity's record answers are called, in the reader's language (`EntityFieldNames`). */
+  readonly entityFieldNames: Readonly<Record<string, string>>;
 }): readonly PlacedFinding[] {
   const place = (address: FieldAddress): FieldPlace => ({
     ...address,
-    label: input.labels?.[address.elementKey]?.text ?? null,
+    label: input.labels?.[address.elementKey]?.text ?? input.entityFieldNames[address.elementKey] ?? null,
     memberLabel: address.dimensionKey === '' ? null : (input.members?.[address.dimensionKey]?.text ?? null),
     // A field the scope no longer presents — a related field whose module has since been omitted — has nowhere to go.
     modules: input.placedIn.get(address.elementKey) ?? [],

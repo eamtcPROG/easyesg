@@ -86,6 +86,11 @@ export type { FieldAddress, FieldValue } from './rules/field-value.js';
  * from its content, by this one predicate, in the api's readers and the interpreter alike.
  */
 export { isAnswered, isDeclaredUnavailable } from './rules/field-value.js';
+/**
+ * **The fields a reporting entity's record answers** (task 210): read into a run beside the report's answers, so a rule
+ * requires the entity's IDNO as it requires an answer, and a finding on one leads to the record rather than to a step.
+ */
+export { ENTITY_FIELD, isEntityField, type EntityField } from './rules/entity-field.js';
 export type { Finding } from './rules/finding.js';
 /** A finding's message: three parts by construction — NFR-79's, each a leaf under the rule's key (task 42). */
 export {

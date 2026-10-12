@@ -1,5 +1,5 @@
 import { LABEL_STANDING, type LabelStanding, roundHalfUp } from '@easyesg/i18n';
-import type { Finding } from '@easyesg/validation';
+import { ENTITY_FIELD, type Finding } from '@easyesg/validation';
 import { CELL_VALUE_KIND, type CellValue } from '@easyesg/xlsx-patch';
 import {
   type DigitalTemplateMap,
@@ -371,6 +371,12 @@ export function assembleReportWorkbook(sources: WorkbookSources, map: DigitalTem
   // ── Findings, inputs, gates and the statement ──────────────────────────────────────────────────────────────────
   const byAddress = new Map(written.map((field) => [`${field.elementKey}|${field.dimensionKey}|${field.ordinal}`, field]));
   for (const finding of sources.findings ?? []) {
+    // The entity's IDNO, which the record answers and no disclosure holds, is noted on the template's identifier cell —
+    // the cell it would be written in (task 210; §12.5.6's task-210 row (e)).
+    if (finding.field.elementKey === ENTITY_FIELD.IDNO) {
+      note(finding.field, '', map.report.identifier, { kind: WORKBOOK_NOTE.FINDING, message: finding.message, params: finding.params });
+      continue;
+    }
     const field = byAddress.get(`${finding.field.elementKey}|${finding.field.dimensionKey}|${finding.field.ordinal}`);
     if (field === undefined) continue;
     const place = placeOf(field);

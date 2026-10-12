@@ -34,10 +34,13 @@ import { LanguageCaveat } from './language-caveat';
  */
 export function ExportDialogue({
   reportId,
+  entityId,
   languages,
   initialLanguage,
 }: {
   readonly reportId: string;
+  /** The report's entity, whose record a finding on its IDNO leads to (task 210). */
+  readonly entityId: string;
   readonly languages: readonly ExportLanguage[];
   readonly initialLanguage: Locale;
 }) {
@@ -138,7 +141,13 @@ export function ExportDialogue({
           </Button>
         </div>
       ) : (
-        <FindingsWarning reportId={reportId} findings={findings} busy={submitting} onAcknowledge={submit} />
+        <FindingsWarning
+          reportId={reportId}
+          entityId={entityId}
+          findings={findings}
+          busy={submitting}
+          onAcknowledge={submit}
+        />
       )}
     </Panel>
   );

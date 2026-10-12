@@ -31621,3 +31621,136 @@ naming its three readers; `client/history/` holds the read and its query beside 
 `vercel-react-best-practices`: `server-parallel-fetching` — `HistoryScope` reads the cached membership and the session
 together; `rerender-` — the provider's value is memoised over a stable `open`, the request one `useState`.
 `vercel-composition-patterns`: `DisclosureField` grew a slot, `history`, not a flag.
+
+## Task 210 — the IDNO a filing needs, read from the entity's record · 2026-10-12
+
+FR-16's behaviour 6 as a seeded rule: a run reads the reporting entity's IDNO beside the report's answers, as a field
+the entity's record answers, and `b1-entity-idno` requires it. A report whose entity holds none carries a finding in B1
+and is not ready to file. Its finding is named *IDNO* on S-08, on S-11 and in the outstanding-report notice, and leads
+to S-13's record with focus in the IDNO's input.
+
+### Decided before building (project owner, one batch of two, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-210 row (1)–(2). The task-40 row's scope sentence, the task-41 row's
+(1)(i) and the Stage-2-close row's (3) were amended in the same edit. So were FR-16 (built; behaviour 6; AC-11 … AC-13),
+FR-42 (behaviour 6, AC-6), FR-73 (behaviour 10), and S-08's, S-11's and S-13's entries with their FR lines.
+
+- **(1) A field the entity's record answers, not a ninth rule kind.** `ENTITY_FIELD.IDNO`, keyed `entity:idno`, is
+  added to the scope under B1 and answered from the entity, so the interpreter, the roll-up, S-08's placement and the
+  browser's per-step gating need nothing new. *Declined:* a kind with the entity as a second input. It would still
+  need the same address, module and name for its finding.
+- **(2) The finding leads to S-13's record, at the IDNO.** From S-08 the way out is the wizard's leave guard; S-11's
+  warning links there directly. *Declined:* a read-only IDNO row on B1's step; no link.
+
+### Settled in the task
+
+Row (a)–(i):
+- The IDNO is read from the entity as it stands, by the query the Excel export writes it from. The period's snapshot
+  holds none.
+- The IDNO alone counts, as FR-16 names it: an LEI does not stand in.
+- The rule checks presence, not validity, since entry already refuses a wrong check digit.
+- The rule has its own message key, because the shared `required` wording would tell the reader to do what S-07
+  cannot.
+- How it is named in each place: by the api's own word (S-08, S-11, the notice), by its message alone (the PDF), and
+  as a note on the identifier cell (the Excel export).
+- A new kept rule-set version.
+- The scope a rule may read is widened by this field.
+- An archived entity's report keeps the finding, which is task 214's to answer.
+- A notice listing the IDNO is withdrawn by the next scheduled check, not by a write.
+
+### What the building found
+
+- **Every reader of a finding was found by its import, and each answered differently.**
+  - `placeFindings` names from the taxonomy's labels, so it gained the entity field's name.
+  - The read's `findingsInScope` drops a finding whose field has left the scope, so the read widens the scope by the
+    same function the run does. Breaking that on purpose failed `run-validation.use-case.spec.ts`.
+  - The browser's `stepFindings` evaluates only what the open step presents, so the run's word stands there unchanged.
+  - The PDF names a finding from the steps it prints, and prints no identifier, so it lists this one by its message.
+  - The workbook notes a finding on its field's cell, and the identifier cell is that field's.
+  - The outstanding-report notice leaves a field with no label out of its list (task 51.2, by design: never a key).
+    Left so, a report missing only its IDNO would have been named by its module alone. The name became a
+    `contracts/` port, `ENTITY_FIELD_NAMES`, answered by `platform/localization` beside the disclosure labels. A
+    notice and S-08 now read the same word.
+  - *Searched:* every importer of `placeFindings`, `NameFindings`, `RunValidation`, `Finding` in `export/domain/`, and
+    `NoticeParamsService`'s nine hand-built call sites.
+- **The outstanding-report notice could not be withdrawn by a write while it lists the IDNO**, found when
+  `report-notices.e2e-spec.ts` counted three fields where it expected two. `outstandingCleared` clears a listed field
+  only on an answer written since the run, and no disclosure write holds the IDNO. Recording it on S-13 is the entity's
+  write, which runs nothing on the report. So the notice waits for the next scheduled check, which is 182/134's own
+  backstop, the same as for a field a consistency finding holds. Recorded as row (i) with what changes if that is too
+  slow, and pinned in `outstanding-cleared.spec.ts`. The notices suite's entity gained an IDNO, its cases being about
+  the report's answers.
+- **The browser fixtures seed entities with no IDNO.** They were kept that way, so every S-08 journey's run now
+  carries the IDNO finding, as a real entity created without one does. One journey changed: S-11's warning asserted
+  that its *first* finding led to a step, and the IDNO rule, first in the template's order, now heads the list. It
+  asserts turnover's row and the IDNO's row by name instead, `.first()` being the ambiguity-hiding locator the root
+  `CLAUDE.md` names. The api's validation suite gave its entity an IDNO, its cases being about the report's answers.
+  One B1 count rose by the IDNO, read against the change that moved it.
+- **`lib/routes.ts` could not carry the anchor.** `proxy.ts` reads it, and `ENTITY_FIELD` would have taken
+  `@easyesg/validation` into the proxy's bundle, so the anchor and its route are `lib/entity-field-route.ts`.
+- **S-13's focus lands through the form's own `setFocus`**, not the wizard's `focusField`, which finds a field by the
+  group a disclosure draws and leaves every other fragment to the browser. Widening it to any element a fragment names
+  would have taken fragments it means to leave alone, and the form already knows its input.
+- **The leave guard moved to the wizard's `components/shared/`**, S-08's link being its second region, by
+  `one-kind-per-folder`'s `shared-how-many-siblings`.
+- **The kept rule set's findings moved in one report only.** "Nothing answered" gained `b1-entity-idno`. The other
+  three answer the IDNO in their scope and came to what they recorded.
+- **A first run of `pnpm e2e` was stopped and discarded.** Source was edited while it ran (the notice's naming), so
+  suites starting later would have compiled a tree that was neither before nor after. Two small specs had also run
+  beside it, against the one-suite-at-a-time rule. Every gate below is from a run with nothing else running and no
+  edit in between.
+
+### Gates
+
+The change reaches `apps/api`, `apps/web`, `packages/validation` and `packages/i18n`. By the close table that is each
+package's suite and every dependent's row, `apps/admin` among them. Each ran alone.
+
+- `pnpm lint`; `pnpm typecheck` in `api`, `web`, `admin` and `validation`; `pnpm boundaries`, since a port moved into
+  `contracts/`; `pnpm routes:check`.
+- `pnpm docs:check`: 48 claims. It found two one-sided screen links when FR-16's surfaces named S-08 and S-11, and
+  both screens now name FR-16.
+- Unit:
+  - `api` 2,335 in 295 suites, the kept rule set's new version among them;
+  - `web` 1,975 in 214 files;
+  - `admin` 299;
+  - `validation` 187;
+  - `i18n` 163.
+- Broken on purpose, each failing its spec and then restored:
+  - the read's scope widening, against `run-validation.use-case.spec.ts`;
+  - the IDNO's answer row, against the same spec;
+  - the workbook's identifier note;
+  - the S-08 link's guard.
+- `pnpm e2e`: 73 suites, 1,798 tests. Its first full run failed six cases in `report-notices.e2e-spec.ts` on the third
+  outstanding field, which the item above records. That suite ran alone again, 11 of 11, after its fixture and nothing
+  else changed. `pnpm e2e:worker`: 16, the worker booting with the entity's record and the field names in its graph.
+- `pnpm e2e:web --project identity --project expansion --project admin`: 361 of 361 in 12.0 minutes, the new S-08 → S-13
+  journey and S-11's two addresses among them. The server log holds 28 lines of *the destination stream closed early*,
+  every one digest `2667547900`, and the one `FactorSetCatalog` line S-09's journey asks for.
+- **Skipped, as the table allows**:
+  - `openapi:check` — no controller or DTO changed shape;
+  - `migrations:check` — no migration;
+  - `events:check`, `facade:check`, `eslint:prove`, `boundaries:prove`, `image:check` and `test:coverage` — the Stage's
+    end runs them cold, and CI does on the next push.
+
+### Skills, read against the diff
+
+`nestjs-best-practices`: `di-use-interfaces-tokens` for the entity's record and the field names. Under
+`arch-avoid-circular-deps`, `core/validation` reaches the entity through a port of its own rather than `core/entity`, and
+the names through `contracts/`. *Declined*: `arch-module-sharing`'s one-provider-per-class. `EntityIdentifiersRepository`
+is bound in the export module and the validation module under two ports, and it is stateless over the request's unit of
+work. `one-idea-per-file`:
+- `domain/entity-fields.ts` is the entity's fields in a run, with its spec;
+- `lib/entity-field-route.ts` is the address of a field on S-13;
+- `tools/field-landing.ts` is that address read back, with its spec;
+- `use-field-landing.ts` is the effect;
+- `entity-field-link.tsx` is S-08's one arm that needs a hook.
+
+`one-kind-per-folder`:
+- the guard moved to `shared/` with its new reader named in its docblock;
+- the landing hook sits beside its one reader, the form.
+
+`vercel-react-best-practices`:
+- `bundle-` — the validation package is kept out of the proxy's graph;
+- `rerender-` — the finding context's memo gains one primitive dependency, the entity's id.
+
+`vercel-composition-patterns`: no component gained a flag. The link's third arm is a component of its own.

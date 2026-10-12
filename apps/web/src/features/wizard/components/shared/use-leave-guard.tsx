@@ -6,7 +6,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { useAutosaveContext } from '../providers/autosave-context';
 import { useWhenSessionHeld } from '../providers/use-when-session-held';
-import { WIZARD_MESSAGES } from '../shared/wizard-messages';
+import { WIZARD_MESSAGES } from './wizard-messages';
 
 /**
  * Leaving the step for somewhere else in the app — the reports list, or since task 43.2 the report's preview — with
@@ -18,6 +18,9 @@ import { WIZARD_MESSAGES } from '../shared/wizard-messages';
  * by whoever calls the hook. **The question lasts only while something is at stake**: an answer in flight at the press
  * is unsent, and once the queue drains the reader goes where they asked. Until task 43.2 the dialogue stayed open
  * over *0 changes have not been sent yet*, found by S-10's journey leaving B1 as its record values were sent.
+ *
+ * **In `shared/` since task 210**, when S-08's finding link became its second region: a finding on the entity's IDNO
+ * leaves the wizard for S-13's record by the same rule (FR-42 behaviour 6). The bar's exit and ⋯ are the first.
  */
 export function useLeaveGuard(): { readonly leave: (href: string) => void; readonly guard: ReactNode } {
   const t = useTranslations(WIZARD_MESSAGES);

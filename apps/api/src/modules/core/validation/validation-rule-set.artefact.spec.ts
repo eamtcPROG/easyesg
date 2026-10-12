@@ -1,4 +1,12 @@
-import { CONDITION_KIND, RULE_KIND, elementsOf, type FieldSelector, type Rule } from '@easyesg/validation';
+import {
+  CONDITION_KIND,
+  ENTITY_FIELD,
+  RULE_KIND,
+  elementsOf,
+  isEntityField,
+  type FieldSelector,
+  type Rule,
+} from '@easyesg/validation';
 import { isWordedAsFindingInEveryLocale } from '@api/app/messages/committed-catalogues';
 import type { ConfigurationHistory } from '@api/infrastructure/configuration/configuration-history.service';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
@@ -16,6 +24,9 @@ import { ValidationRuleSetCatalog } from './services/validation-rule-set-catalog
  * skipped by design (task-40 row (1)), so a typo would make its check silently never run; **a member no axis or domain
  * declares** — a selector or a condition naming one matches no row, ever; and **a message key no locale words**, which
  * the store refuses at publication but which a seed edit would otherwise meet only at `config:seed`.
+ *
+ * **A field the entity's record answers is declared by `ENTITY_FIELD`, not by a taxonomy** (task 210; §12.5.6's
+ * task-210 row (1)), so it is held to that vocabulary instead — a typo there would make the IDNO's check never run too.
  */
 describe('the shipped validation rule set', () => {
   const entries = readSeedEntries();
@@ -39,6 +50,12 @@ describe('the shipped validation rule set', () => {
     expect(ruleSetRefusal({ payload: shipped?.payload, wordedAsFinding: isWordedAsFindingInEveryLocale })).toBeNull();
   });
 
+  it('requires the entity’s IDNO, which a filing cannot be made without (FR-16 behaviour 6; task 210)', () => {
+    expect(rules).toContainEqual(
+      expect.objectContaining({ kind: RULE_KIND.REQUIRED, verdict: 'missing', fields: [{ element: ENTITY_FIELD.IDNO }] }),
+    );
+  });
+
   it('carries 182/28’s one year-over-year rule at its starting proportion, ±50%', () => {
     const yearOverYear = rules.filter((rule) => rule.kind === RULE_KIND.YEAR_OVER_YEAR);
     expect(yearOverYear).toEqual([expect.objectContaining({ proportion: '0.5' })]);
@@ -49,7 +66,7 @@ describe('the shipped validation rule set', () => {
     const elements = new Map((taxonomy?.elements ?? []).map((element) => [element.key, element]));
 
     for (const rule of rules) {
-      for (const key of elementsOf(rule)) expect({ rule: rule.id, key, declared: elements.has(key) }).toEqual({
+      for (const key of elementsOf(rule)) expect({ rule: rule.id, key, declared: elements.has(key) || isEntityField(key) }).toEqual({
         rule: rule.id,
         key,
         declared: true,

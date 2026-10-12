@@ -7,7 +7,7 @@ import { reportExportRoute, reportPreviewRoute } from '@/lib/routes';
 import { useReportDeletion } from '@/shared/report-deletion';
 import { BAR_ACTION } from '../../tools/bar-actions';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
-import { useLeaveGuard } from './use-leave-guard';
+import { useLeaveGuard } from '../shared/use-leave-guard';
 
 /**
  * The bar's ⋯ at `compact` — the *S-07/S-08 narrow* frame's, holding the actions the wider bar draws as buttons

@@ -218,6 +218,11 @@
       "happened": "This figure went from {prior} in the previous period to {current} now, a change of {change}, which is larger than usual from one year to the next.",
       "consequence": "A large change may be correct, but a reader will question it.",
       "action": "Check the figure, and if it is right, explain the change in the report."
+    },
+    "entity_idno": {
+      "happened": "The entity this report is for has no IDNO recorded yet.",
+      "consequence": "The report cannot be filed without its identification number, so it is not complete.",
+      "action": "An organization administrator records it on the entity’s record, under Entities."
     }
   },
   "identity": {
@@ -363,7 +368,10 @@
       "unknown_figure": "That figure is not one the carbon calculator produces, so it cannot be explained or replaced here. Refresh the page and choose Scope 1 or Scope 2."
     },
     "validation": {
-      "rules_unavailable": "The rules the report is checked against cannot be read right now, so it was not checked and nothing was changed. This is resolved on our side; try again shortly, and contact support if it persists."
+      "rules_unavailable": "The rules the report is checked against cannot be read right now, so it was not checked and nothing was changed. This is resolved on our side; try again shortly, and contact support if it persists.",
+      "entity_fields": {
+        "idno": "IDNO"
+      }
     },
     "export": {
       "document": {

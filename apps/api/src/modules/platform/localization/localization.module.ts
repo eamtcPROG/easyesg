@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { DISCLOSURE_LABELS } from '@api/contracts/disclosure-label.port';
+import { ENTITY_FIELD_NAMES } from '@api/contracts/entity-field-names.port';
 import { ELEMENT_PRECISION, PRESENTATION_PRECISION } from '@api/contracts/presentation-precision.port';
 import { DisclosureLabelService } from './services/disclosure-label.service';
+import { EntityFieldNamesService } from './services/entity-field-names.service';
 import { PresentationPrecisionService } from './services/presentation-precision.service';
 
 /**
@@ -28,13 +30,17 @@ import { PresentationPrecisionService } from './services/presentation-precision.
  * `presentation_precision` artefact; §12.5.6's task-39 row (5)) — a presentation concern beside the wording, registered in
  * both modes for the same reason: S-09 reads it on the HTTP tier, and the exports will on the worker. **Since task 46 the
  * same artefact's element places too** (`ELEMENT_PRECISION`, the one service's second face), which only the exports read.
+ *
+ * **Since task 210 the names of the fields a reporting entity's record answers** (`ENTITY_FIELD_NAMES`) — the IDNO, which
+ * no taxonomy labels — beside the labels it stands in for, so a finding and a notice name it as they name a disclosure.
  */
 @Module({
   providers: [
     { provide: DISCLOSURE_LABELS, useClass: DisclosureLabelService },
     { provide: PRESENTATION_PRECISION, useClass: PresentationPrecisionService },
     { provide: ELEMENT_PRECISION, useExisting: PRESENTATION_PRECISION },
+    { provide: ENTITY_FIELD_NAMES, useClass: EntityFieldNamesService },
   ],
-  exports: [DISCLOSURE_LABELS, PRESENTATION_PRECISION, ELEMENT_PRECISION],
+  exports: [DISCLOSURE_LABELS, PRESENTATION_PRECISION, ELEMENT_PRECISION, ENTITY_FIELD_NAMES],
 })
 export class LocalizationModule {}

@@ -150,7 +150,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 
 ### FR-16 — Entity identifiers
 
-**Status.** Partial — delivered 29.2, 30.3, 175, 188 (the IDNO check digit) · remaining 210 (the IDNO a filing needs, as a validation rule)
+**Status.** Built — delivered 29.2, 30.3, 175, 188 (the IDNO check digit), 210 (the IDNO a filing needs, as a validation rule)
 
 **Obligation.** The system shall maintain each reporting entity's identifiers, with **IDNO as primary** and **LEI as an optional additional identifier**, validating format and checksum on entry. DUNS, EU ID and PermID are not modelled at MVP.
 
@@ -158,7 +158,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 |---|---|
 | **Actors** | Organization Administrator enters. SYS validates. |
 | **Traces** | UC-51 · OQ-18 · NFR-64, NFR-79 · FR-17, FR-73, FR-107 · entity *Entity identifier* |
-| **Surfaces** | S-13 (the record; the Index lists each entity's IDNO) · `POST /entities` · `PATCH /entities/{entityId}` · S-15 |
+| **Surfaces** | S-13 (the record; the Index lists each entity's IDNO) · `POST /entities` · `PATCH /entities/{entityId}` · S-15 · S-08 and S-11 (a report whose entity holds no IDNO) |
 
 **Inputs.** IDNO: thirteen digits. LEI: twenty characters, eighteen of upper-case letters and digits then two digits. Either is null until stated, and null clears.
 
@@ -168,7 +168,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 3. **The IDNO is checked in full.** Government Decision 272/2002 fixes the thirteen-digit layout and says the last digit is a check digit, without giving the algorithm. The algorithm was supplied on 5 Oct 2026: the first twelve digits are multiplied by the repeating weights 7, 3, 1 and summed, and the sum modulo 10 is the thirteenth digit. It holds for 1003600005148 and 1017600033216, and its source (StephenAbbott/opencheck PR #269, `backend/opencheck/sources/asp_moldova.py`) validated all 265,814 IDNOs in the State Register export of 14 Sep 2026. It is not the weighted-modulo-11 family that §7.2 refuted on 28 Aug 2026. Thirteen digits whose last disagrees are refused, on entry by the api and inline on S-13; the validator reports the check digit as *not evaluated* only where the shape fails, which is not the same as failed (§12.5.6 task-182 identity and organization row, 182/12; §7.2).
 4. **The LEI is checked in full**: ISO 17442 shape, then ISO 7064 MOD 97-10. Case is not normalised; a lower-case LEI is malformed.
 5. **No uniqueness constraint on the IDNO.** A platform-wide unique index would be an existence oracle over the Moldovan company register crossed with the customer list (NFR-64), and it would need a cross-tenant read no policy grants. Duplicates are permitted (§7.2). Whether one organization's entities may share an IDNO is deferred: nothing refuses it, and if the answer is to refuse, a partial unique index on (organization, IDNO) and one problem type are what change (§12.5.6 task-175 row).
-6. **Requiredness is not enforced at the record.** That B1 cannot be filed without an IDNO is a validation rule interpreted from configuration (FR-73: the interpreter is task 40's, the rule set 41.1's), so the profile stays usable while half complete. **No rule kind could read the entity's identifiers**, so the rule set carries none and a report whose entity holds no IDNO reads ready to file until task 210 gives the interpreter that reading (§12.5.6's Stage-2-close row, item (3)).
+6. **Requiredness is not enforced at the record.** That B1 cannot be filed without an IDNO is a validation rule interpreted from configuration (FR-73: the interpreter is task 40's, the rule set 41.1's), so the profile stays usable while half complete. **The IDNO reaches the interpreter as a field the entity's record answers** (§12.5.6's task-210 row (1)): a run adds it to the report's scope under B1, read from the entity as it stands — the record the Excel export writes from — and the seeded rule `b1-entity-idno` requires it, so a report whose entity holds no IDNO carries a finding, counts it outstanding in B1 and is not ready to file. The finding leads to this record, at the IDNO (row (2)). Only the IDNO answers it: an entity holding an LEI alone still carries the finding (row (b)).
 
 **Refusals.**
 - IDNO not thirteen digits, or LEI not of the right shape → 400 `identifier-malformed` (`core.entity.idno_malformed`, `core.entity.lei_malformed`)
@@ -189,6 +189,9 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - **AC-8** Given two entities holding the same IDNO, then both are accepted. *(source: §7.2, no uniqueness at MVP)*
 - **AC-9** Given thirteen digits whose check digit is wrong, then the IDNO is refused with 400 `identifier-check-digits` and nothing is stored. *(source: FR text, "checksum on entry"; §12.5.6 task-182 identity and organization row, 182/12)*
 - **AC-10** Given 1003600005148 or 1017600033216, then the IDNO is accepted. *(source: §12.5.6 task-182 identity and organization row, 182/12)*
+- **AC-11** Given a report whose entity holds no IDNO, when it is checked, then it carries a missing-value finding on the entity's IDNO, B1 counts it outstanding, and the report is not ready to file. *(source: behaviour 6; §12.5.6 Stage-2-close row, item (3); task-210 row (1))*
+- **AC-12** Given a report whose entity holds a valid IDNO, when it is checked, then it carries no finding on the IDNO, and B1 counts it resolved. *(source: behaviour 6; task-210 row (1))*
+- **AC-13** Given that finding, when it is followed from S-08 or S-11, then S-13's record opens with focus in its IDNO field. *(source: FR-42; task-210 row (2))*
 
 **History.**
 - 18 Aug 2026 · OQ-18 closed · IDNO primary, LEI optional, the other schemes removed · `architecture.md` §18 OQ-18
@@ -196,6 +199,8 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - 28 Aug 2026 · correction · the acceptance column carried the superseded scheme (LEI primary with DUNS, EU ID and PermID) and contradicted its own requirement · OQ-18
 - 29 Sep 2026 · project owner · the identifiers are held on each reporting entity · §12.5.6 task-175 row (1)
 - 5 Oct 2026 · project owner · the IDNO's check digit is known and is built; the VAT code gets a shape check only (FR-107) · §12.5.6 task-182 identity and organization row (182/12)
+- 9 Oct 2026 · project owner · that a filing needs an IDNO is a validation rule, and task 210 builds it · §12.5.6 Stage-2-close row, item (3)
+- 12 Oct 2026 · project owner · the IDNO reaches the interpreter as a field the entity's record answers, and its finding leads to S-13's record · §12.5.6 task-210 row
 
 ## 2. Entity and period (index §3.4)
 

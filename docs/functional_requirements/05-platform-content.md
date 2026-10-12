@@ -498,6 +498,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 7. How a verdict reaches a form field was OQ-49, **closed 8 Oct 2026** (project owner, task 42.1; §12.5.6's task-42 row (1)): as data computed from the answers the wizard holds, not through the form library.
 8. A publication is refused with 400 `validation-failed` when any locale's catalogue lacks the message key a rule names, as A-17 refuses a notification category with no wording. UX-97 makes a missing key invisible at runtime, so publication is the only place the gap is seen (182/51). **The configuration store refuses it before writing**, against the release's committed catalogues, so the seed meets the same refusal as A-05 will; the 400 is A-05's to answer (task 41.1, §12.5.6's task-41 row (c)).
 9. Rules are read as at today while a period is open, and once it is locked, **the set in force when the period was locked** — its revision recorded on the period by the lock and cleared by a reopening (§12.5.6's task-41 row (5), 8 Oct 2026; *as at the date the period was locked* until then). A rule published mid-year reaches drafts, and a locked report's findings do not move under a later rule (NFR-87). A reopened period is open again and reads as at today (182/44). *Today* is the day in the period's own zone (§12.5.6's task-41 row (b)).
+10. **A rule reads the report's answers in its scope, and the fields the reporting entity's record answers** — today the IDNO, which a run adds to the scope under B1 so that FR-16's *no filing without an IDNO* is a rule like any other (§12.5.6's task-210 row (1), (g)).
 
 **Boundaries.** The five validation states and who they roll up to are FR-40 and FR-41. The finding's shape (field, rule, plain-language explanation, link) is FR-42. The notice a rule change may owe is FR-166's (task 67.8).
 
@@ -516,6 +517,7 @@ All four requirements ride on task 16's configuration store (AD-4, DR-3): immuta
 - 7 Oct 2026 · project owner · the rule definition is a closed vocabulary of eight kinds, each rule carrying its verdict; a rule set the vocabulary cannot hold is refused by one reader shared by the api and A-05 · §12.5.6 task-40 row
 - 8 Oct 2026 · project owner · one artefact scoped by the standard; *today* in the period's own zone; the store refuses an unworded key at publication; a locked period's rule set is pinned at the lock rather than read as at its date · §12.5.6 task-41 row (5)
 - 8 Oct 2026 · project owner · every rule set the seed ships is kept with reports pinned to it and re-evaluated on every unit run; a rule no kept report makes fire fails the suite · §12.5.6's task-201 row (task 201)
+- 12 Oct 2026 · project owner · a rule may read the fields the reporting entity's record answers, the IDNO first; no new rule kind · §12.5.6's task-210 row
 
 ### FR-74 — Content-only and rule-only changes without a redeploy
 

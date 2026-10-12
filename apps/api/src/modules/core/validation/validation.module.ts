@@ -1,6 +1,7 @@
 import { Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
+import { EntityIdentifiersRepository } from '@api/infrastructure/persistence/core/entity-identifiers.repository';
 import { ValidationReportsRepository } from '@api/infrastructure/persistence/core/validation-reports.repository';
 import { ValidationStoreRepository } from '@api/infrastructure/persistence/core/validation-store.repository';
 import { ComparativesModule } from '@api/modules/core/comparatives/comparatives.module';
@@ -26,6 +27,7 @@ import { ValidationController } from './controllers/validation.controller';
 import { comparablePrior } from './domain/comparable-prior';
 import { EVALUATION_SCOPES, type EvaluationScopes } from './interfaces/evaluation-scopes.interface';
 import { PRIOR_COMPARABLES, type PriorComparables } from './interfaces/prior-comparables.interface';
+import { REPORTING_ENTITY_RECORD, type ReportingEntityRecord } from './interfaces/reporting-entity.interface';
 import { VALIDATION_REPORTS, type ValidationReports } from './interfaces/validation-reports.interface';
 import { VALIDATION_RULE_SETS, type ValidationRuleSets } from './interfaces/validation-rule-sets.interface';
 import { VALIDATION_STORE, type ValidationStore } from './interfaces/validation-store.interface';
@@ -34,6 +36,7 @@ import { ValidationService } from './services/validation.service';
 import { RunValidation } from './use-cases/run-validation.use-case';
 import { NameFindings } from './use-cases/name-findings.use-case';
 import { DISCLOSURE_LABELS, type DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
+import { ENTITY_FIELD_NAMES, type EntityFieldNames } from '@api/contracts/entity-field-names.port';
 import { LocalizationModule } from '@api/modules/platform/localization/localization.module';
 
 /**
@@ -53,6 +56,8 @@ import { LocalizationModule } from '@api/modules/platform/localization/localizat
  * - **Task 51.2 brings the notices' schedule** — on the worker, a daily sweep and a check per period that owes one,
  *   each check a validation run stored as the platform's, then FR-164's and FR-165's notices raised or withdrawn. An
  *   export request (47.4) will evaluate there too.
+ * - **Task 210 brings the entity's record into a run** — its IDNO, read through `REPORTING_ENTITY_RECORD` by the query
+ *   the Excel export writes it from, so FR-16's *no filing without an IDNO* is a seeded rule like any other.
  *
  * Boundary: `modules/core/**` and `modules/billing/**` may not import each other.
  * Both may import `contracts/**`. Enforced by dependency-cruiser, not by review.
@@ -82,31 +87,42 @@ const runProviders: Provider[] = [
       comparable: async (query) => comparablePrior((await comparatives.read(query)).values),
     }),
   },
+  { provide: REPORTING_ENTITY_RECORD, useClass: EntityIdentifiersRepository },
   {
     provide: RunValidation,
-    inject: [VALIDATION_REPORTS, EVALUATION_SCOPES, PRIOR_COMPARABLES, VALIDATION_RULE_SETS, VALIDATION_STORE, CLOCK],
+    inject: [
+      VALIDATION_REPORTS,
+      EVALUATION_SCOPES,
+      PRIOR_COMPARABLES,
+      REPORTING_ENTITY_RECORD,
+      VALIDATION_RULE_SETS,
+      VALIDATION_STORE,
+      CLOCK,
+    ],
     useFactory: (
       reports: ValidationReports,
       scopes: EvaluationScopes,
       priors: PriorComparables,
+      entities: ReportingEntityRecord,
       ruleSets: ValidationRuleSets,
       store: ValidationStore,
       now: Clock,
-    ) => new RunValidation(reports, scopes, priors, ruleSets, store, now),
+    ) => new RunValidation(reports, scopes, priors, entities, ruleSets, store, now),
   },
 ];
 
 /**
  * The request tier names what a run or a read found for its reader (task 42.2): the labels of the version the report
- * pins, which `LocalizationModule` provides in both modes and only the HTTP answer reads.
+ * pins, which `LocalizationModule` provides in both modes and only the HTTP answer reads — and since task 210 the
+ * api's own names for the fields the entity's record answers.
  */
 const httpProviders: Provider[] = [
   ValidationService,
   ...runProviders,
   {
     provide: NameFindings,
-    inject: [DISCLOSURE_LABELS],
-    useFactory: (labels: DisclosureLabelResolver) => new NameFindings(labels),
+    inject: [DISCLOSURE_LABELS, ENTITY_FIELD_NAMES],
+    useFactory: (labels: DisclosureLabelResolver, entityFields: EntityFieldNames) => new NameFindings(labels, entityFields),
   },
 ];
 
@@ -144,7 +160,8 @@ const workerProviders: Provider[] = [
 
 @Module({
   // `NotificationModule` for the cadence the notices keep and the port they raise through (task 51.2).
-  // `LocalizationModule` for the labels a finding's field is named by (task 42.2).
+  // `LocalizationModule` for the labels a finding's field is named by (task 42.2), and since task 210 the names of the
+  // fields the entity's record answers.
   imports: [DisclosureModule, ComparativesModule, NotificationModule, LocalizationModule],
   controllers: mode === APP_MODE.WORKER ? [] : [ValidationController],
   providers: [

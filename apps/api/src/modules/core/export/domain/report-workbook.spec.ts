@@ -355,6 +355,30 @@ describe('the report as the Digital Template takes it', () => {
       ]);
     });
 
+    it('notes a finding on the entity’s IDNO on the template’s identifier cell, which it leaves blank (task 210)', () => {
+      const finding = {
+        rule: 'b1-entity-idno',
+        verdict: 'missing',
+        field: { elementKey: 'entity:idno', dimensionKey: '', ordinal: 0 },
+        related: [],
+        message: 'validation.entity_idno',
+        params: {},
+      } as const;
+      const workbook = assembleReportWorkbook(
+        sources([], { findings: [finding], report: { ...sources([]).report, idno: null } }),
+        map,
+      );
+      expect(writtenAt(workbook, named('template_reporting_entity_identifier'))).toBeUndefined();
+      expect(workbook.notes).toEqual([
+        {
+          element: 'entity:idno',
+          dimension: '',
+          at: named('template_reporting_entity_identifier'),
+          says: { kind: WORKBOOK_NOTE.FINDING, message: 'validation.entity_idno', params: {} },
+        },
+      ]);
+    });
+
     it('states, in a language whose labels are the platform’s, that its wording has no EFRAG standing — on B1’s basis (46.3)', () => {
       const workbook = assembleReportWorkbook(sources([], { labelStanding: LABEL_STANDING.PLATFORM_AUTHORED }), map);
       expect(workbook.notes).toEqual([

@@ -267,3 +267,41 @@ test('a finding followed from the sheet closes it and leaves focus in the field 
   await expect(page).toHaveURL(new RegExp(`#${TURNOVER_ANCHOR}$`, 'u'));
   await expect(page.getByRole('textbox', { name: TURNOVER, exact: true })).toBeFocused();
 });
+
+/** The three parts of `validation.entity_idno`, as the shared catalogue words them in Romanian (task 210). */
+const IDNO_WORDS =
+  'Entitatea pentru care este întocmit raportul nu are încă un IDNO înregistrat. ' +
+  'Raportul nu poate fi depus fără numărul ei de identificare, așa că nu este complet. ' +
+  'Un administrator al organizației îl înregistrează în fișa entității, la Entități.';
+
+test('a finding on the entity’s IDNO leads to S-13’s record, focus in the IDNO, and clears once it is recorded (FR-42 AC-6; FR-16 AC-11 … AC-13)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  // The fixture's entity holds no IDNO, as an entity created without one does.
+  const reportId = await signedInWithReport(page, 'idno');
+  await page.goto(`/reports/${reportId}/B1`);
+  const panel = page.getByRole('region', { name: PANEL });
+  await checkReport(panel);
+
+  // Listed in B1, named as S-13 names the field, in the message's own three parts — and no step holds it.
+  const row = findingRow(panel.getByRole('list', { name: 'B1 — Baza de întocmire' }), 'IDNO');
+  await expect(row).toHaveCount(1);
+  await expect(row.getByText(IDNO_WORDS, { exact: true })).toHaveCount(1);
+  await expect(page.getByRole('group', { name: 'IDNO', exact: true })).toHaveCount(0);
+
+  // Followed, it leaves the wizard for the entity's record, with focus in the IDNO's input (row (2)).
+  await row.getByRole('link', { name: 'Mergeți la câmp' }).click();
+  await page.waitForURL(/\/entities\/[0-9a-f-]+#entity-idno$/u);
+  const idno = page.getByRole('textbox', { name: 'IDNO', exact: true });
+  await expect(idno).toBeFocused();
+
+  // Recorded by the administrator, and the next check finds nothing there: the entity as it stands (row (a)).
+  await idno.fill('1003600005148');
+  await page.getByRole('button', { name: 'Salvați modificările' }).click();
+  await expect(page.getByText('Entitatea a fost salvată')).toBeVisible();
+  await page.goto(`/reports/${reportId}/B1`);
+  const checked = page.getByRole('region', { name: PANEL });
+  await checkReport(checked);
+  await expect(findingRow(checked.getByRole('list', { name: 'B1 — Baza de întocmire' }), 'IDNO')).toHaveCount(0);
+});

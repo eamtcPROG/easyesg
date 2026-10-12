@@ -465,6 +465,49 @@
       "scope": ["BasisForReporting", "NameOfTheSubsidiary"],
       "values": [{"elementKey": "BasisForReporting", "valueText": "vsme:ConsolidatedMember", "state": "not_available"}],
       "findings": []
+    },
+    {
+      "name": "a field the entity’s record answers is required like any other: the entity’s IDNO, not held, is missing (task 210)",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-entity-idno",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.entity_idno",
+            "fields": [{"element": "entity:idno"}]
+          }
+        ]
+      },
+      "scope": ["entity:idno"],
+      "values": [],
+      "findings": [
+        {
+          "rule": "b1-entity-idno",
+          "verdict": "missing",
+          "field": {"elementKey": "entity:idno", "dimensionKey": "", "ordinal": 0},
+          "related": [],
+          "message": "validation.entity_idno",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "the entity’s IDNO, held, is answered (task 210)",
+      "rules": {
+        "rules": [
+          {
+            "id": "b1-entity-idno",
+            "kind": "required",
+            "verdict": "missing",
+            "message": "validation.entity_idno",
+            "fields": [{"element": "entity:idno"}]
+          }
+        ]
+      },
+      "scope": ["entity:idno"],
+      "values": [{"elementKey": "entity:idno", "valueText": "1003600005148"}],
+      "findings": []
     }
   ]
 }

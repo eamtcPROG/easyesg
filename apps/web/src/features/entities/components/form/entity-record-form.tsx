@@ -34,6 +34,7 @@ import { EntityHistoryPanel } from './entity-history-panel';
 import { EntityBreadcrumb } from './entity-breadcrumb';
 import { EntityControls } from './entity-controls';
 import { EntityPeriodsPanel } from './entity-periods-panel';
+import { useFieldLanding } from './use-field-landing';
 
 /**
  * S-13's Record — UC-52, UC-53, UC-54 and UC-55 on one screen (FR-17 … FR-20).
@@ -101,10 +102,12 @@ export function EntityRecordForm({
   // What the record is called, in its heading and at the end of the way back alike.
   const title = entity ? entity.name : t('createTitle');
 
-  const { control, handleSubmit, reset, formState } = useForm<EntityFields>({
+  const { control, handleSubmit, reset, formState, setFocus } = useForm<EntityFields>({
     mode: 'onTouched',
     defaultValues: toFields(entity),
   });
+  // A finding on the entity's IDNO, followed from S-08 or S-11, lands focus in its input (task 210).
+  useFieldLanding(setFocus);
 
   // The activity list lives outside the form, so `isDirty` cannot see it — OR'd in from the state.
   const dirty = formState.isDirty || codesChanged(state);

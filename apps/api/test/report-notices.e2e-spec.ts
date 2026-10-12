@@ -27,6 +27,7 @@ import { RunValidation } from '../src/modules/core/validation/use-cases/run-vali
 import { SweepReportNotices } from '../src/modules/core/validation/use-cases/sweep-report-notices.use-case';
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { DisclosureLabelService } from '../src/modules/platform/localization/services/disclosure-label.service';
+import { EntityFieldNamesService } from '../src/modules/platform/localization/services/entity-field-names.service';
 import { NotificationRaisedHandler } from '../src/modules/platform/notification/consumers/notification-raised.handler';
 import { NOTIFICATION_CANCELLED, NOTIFICATION_RAISED } from '../src/modules/platform/notification/constants/notification.constants';
 import { CategoryChannels } from '../src/modules/platform/notification/services/category-channels.service';
@@ -143,7 +144,7 @@ describe('the outstanding-report and deadline notices (task 51.2)', () => {
         new EmailChannelService(
           { send: () => Promise.resolve({}) },
           suppressionStore(worker),
-          new NoticeParamsService(new DisclosureLabelService()),
+          new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()),
         ),
         new CategoryChannels(new NotificationCategoryCatalog(categories)),
         notificationStore(worker),
@@ -172,9 +173,10 @@ describe('the outstanding-report and deadline notices (task 51.2)', () => {
     return objectOf<{ id: string }>(period.body).id;
   };
 
+  // With an IDNO, which a filing needs since task 210 — the notices here are about the report's own answers.
   const newEntity = async (name: string): Promise<string> =>
     objectOf<{ id: string }>((await http().post('/api/v1/entities').set(people.admin.authorization).send({
-      name, legalForm: 'srl', naceCodes: ['10.71'],
+      name, legalForm: 'srl', naceCodes: ['10.71'], idno: '1003600005148',
       sites: [{ name: 'Fabrica', locality: 'Chișinău', countryCode: 'MD' }],
     }).expect(201)).body).id;
 

@@ -1,6 +1,17 @@
 {
   "rules": [
     {
+      "id": "b1-entity-idno",
+      "kind": "required",
+      "verdict": "missing",
+      "message": "validation.entity_idno",
+      "fields": [
+        {
+          "element": "entity:idno"
+        }
+      ]
+    },
+    {
       "id": "b1-basis-for-preparation",
       "kind": "required",
       "verdict": "missing",
