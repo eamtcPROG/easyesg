@@ -132,7 +132,8 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
    * **Scoped to this suite's own organization** (27 Aug 2026, review).
    *
    * It was an unscoped `DELETE FROM audit.outbox_event`, which today is harmless only because
-   * `test:e2e` runs `--runInBand` and `pnpm gates` runs the browser suite after this one — so no
+   * `test:e2e` runs one file at a time (`--maxWorkers=1` since task 47's close, recycling its worker; `--runInBand` until
+   * then) and `pnpm gates` runs the browser suite after this one — so no
    * two writers of this table are ever live at once. That is a property of the runner, not of the
    * test, and the day someone parallelises the e2e suites (the obvious optimisation as they grow)
    * this would silently delete another suite's pending rows and the failures would surface over
@@ -297,7 +298,7 @@ describe('transactional outbox (AD-6, P-8, T-5)', () => {
      * of §6.7's single producer. So this test cannot be scoped the way the cleanup above is — it is
      * asserting that a global sweep finds nothing.
      *
-     * It therefore depends on no other suite holding an undispatched row, which `--runInBand` plus
+     * It therefore depends on no other suite holding an undispatched row, which one file at a time (`--maxWorkers=1`) plus
      * `gates`' sequencing currently guarantees. Stated here rather than left implicit, so that a
      * later move to parallel e2e has one place telling it what breaks and why.
      */

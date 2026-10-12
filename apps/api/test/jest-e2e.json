@@ -24,5 +24,6 @@
     "<rootDir>/support/close-applications.ts",
     "<rootDir>/support/supertest-loopback.ts"
   ],
-  "testTimeout": 30000
+  "testTimeout": 30000,
+  "workerIdleMemoryLimit": "1GB"
 }

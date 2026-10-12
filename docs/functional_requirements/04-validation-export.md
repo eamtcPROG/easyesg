@@ -618,7 +618,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-53 — Immutable export history
 
-**Status.** Partial — delivered 44.2 (the export's record and its stored file, the storage half of 47.1 — §12.5.6's task-44 row (2)), 46.1 (the Excel file's record), 47.1 (the history and the re-download, streamed by the api), 47.3 (S-11's history) · remaining 65.2 (AC-5, under suspension)
+**Status.** Partial — delivered 44.2 (the export's record and its stored file, the storage half of 47.1 — §12.5.6's task-44 row (2)), 46.1 (the Excel file's record), 47.1 (the history and the re-download, streamed by the api), 47.3 (S-11's history) · remaining 65.2 (AC-5, under suspension), 216 (S-06's filed row: its exports and their download)
 
 **Obligation.** The system shall maintain an immutable export history recording format, language, taxonomy version, timestamp and generating user, and shall allow any prior export to be re-downloaded in exactly the form it was distributed.
 

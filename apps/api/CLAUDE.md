@@ -953,7 +953,7 @@ Run boundary and lint checks from the **repo root**; they are workspace-wide.
 | here | `pnpm start:dev` | HTTP mode. `pnpm start:worker` for `MODE=worker` |
 | here | `pnpm db:migrate` / `db:revert` / `db:show` | Needs the Compose stack (`pnpm dev:up`) and `apps/api/.env`. Connects as `esg_migrator`, never as `esg_app` |
 | here | `pnpm db:invariants` | §7's structural rules against the migrated database. Each proves its own rule bites |
-| here | `pnpm test:e2e` | Runs against the **test stack** (task 174), which its pre-hook brings up, migrates and seeds. Runs the tenant-context probe and the schema invariants |
+| here | `pnpm test:e2e` | Runs against the **test stack** (task 174), which its pre-hook brings up, migrates and seeds. Runs the tenant-context probe and the schema invariants. **One file at a time in one worker, replaced once its heap passes 1 GB** (`--maxWorkers=1`, `workerIdleMemoryLimit`; §12.5.6's task-47 row (p)) — `--runInBand` held all 71 files in one process and outgrew this host's ~2 GB default heap |
 | here | `pnpm test:worker` | The same `AppModule` booted as `MODE=worker`, against the test stack. The tenth gate, added 26 Aug 2026 — see below |
 | root | `pnpm migrations:check` | The ninth gate: apply → revert → apply → invariants on the test stack, then apply → invariants on the dev stack — never a revert over a developer's rows. Needs Docker, unlike the other eight |
 

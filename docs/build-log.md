@@ -31417,3 +31417,22 @@ one file and are two. `nestjs-best-practices` (the api half): `di-use-interfaces
 object reader, a second face of the storage adapter (`di-interface-segregation`) rather than a read on the writer's port;
 `error-use-exception-filters` for the refusal's `findings`, an extension member the filter spreads. *Declined*:
 `error-throw-http-exceptions`, which the architecture forbids in use cases.
+
+## The api's e2e suite recycles its worker; task 216 appended · 2026-10-12
+
+The owner's two answers to what task 47's close raised.
+
+**`pnpm e2e` runs its files in one worker that is replaced as its heap grows** (`architecture.md` §12.5.6's task-47 row
+(p)). `test:e2e` passes `--maxWorkers=1` where it passed `--runInBand`, and `jest-e2e.json` sets
+`workerIdleMemoryLimit` to 1 GB. Read in the installed jest 30.4.2 before choosing: `shouldRunInBand` runs in the
+parent process at one worker *unless* a memory limit is set, so the limit is what makes the worker exist at all; the
+child inherits the parent's `execArgv` (`--experimental-vm-modules` and both `--env-file`s); and the figure compared is
+the child's `heapUsed` — the one that overflowed. Files still run one at a time, which the outbox suite's two premises
+rest on; their comments now name `--maxWorkers=1`. `test:worker` keeps `--runInBand`: one file. *Proven:* at this host's
+default heap, 71 suites and 1,762 tests in 466 s, where the single process had aborted at about 552 s. *Declined:* a
+4 GB heap on the script, which hides the growth; leaving it to CI's larger runners.
+
+**Task 216 is appended to Stage 3**: S-06's filed row — its export count and the taxonomy it was exported at, and
+*Download* — which task 32.2.2's entry assigned to task 47 and task 47's row never carried. Its row names the three
+questions to ask before building it, and FR-53's status names it as remaining; task 65's Covered FR already carries
+FR-53 for 65.2.
