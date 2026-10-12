@@ -328,6 +328,12 @@ export type ReportFiling = components['schemas']['ReportFilingDto'];
 export type MarkReportFiledRequest = components['schemas']['MarkReportFiledRequestDto'];
 /** The versions a new report would pin today, where they differ from the report's own (FR-51; UX-48). */
 export type SupersedingPin = components['schemas']['SupersedingPinDto'];
+// Change history — S-12's three reads, newest first (task 84; FR-54, FR-55, UC-47).
+export { CHANGE_SOURCE, CHANGE_SOURCE_MIRRORS_WIRE, type ChangeSource } from './change-history';
+/** One change: when, by whom — a member since removed marked so — and each field it moved, worded (UC-47). */
+export type ChangeEntry = components['schemas']['ChangeEntryDto'];
+export type ChangeActor = components['schemas']['ChangeActorDto'];
+export type FieldChange = components['schemas']['FieldChangeDto'];
 /** The prior-period comparative (task 34.3; UC-45, FR-46). */
 export type PriorPeriodComparatives = components['schemas']['PriorPeriodResponseDto'];
 

@@ -32,6 +32,7 @@ import { ModuleSwitcher } from '../rail/module-switcher';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import { CalculatorEntry } from '@/features/calculator/components/entry/calculator-entry';
 import { CALCULATOR_MODULE } from '@/features/calculator/tools/calculator-module';
+import { HistoryScope } from '@/features/history/components/provider/history-scope';
 
 /**
  * S-07's one region: the reads, which of §8.1's arms applies, and the shell over the step (cut out
@@ -113,7 +114,7 @@ export async function WizardStep({
   // Where the step stands, computed once for the heading, the stepper and the foot (`section-compute-once`).
   const place = placeOf({ modules, current: module });
   const readOnly = read.readOnly !== null;
-  const fields = labelledOptions(read.step.fields, messages.organization.countries);
+  const fields = labelledOptions(read.step.fields, messages.vocabulary.countries);
   // Last year's comparable answers, indexed by the queue's key — read beside each field, and by the interpreter for the
   // year-over-year rule (FR-46).
   const prior = priorValuesOf(read.prior);
@@ -179,16 +180,19 @@ export async function WizardStep({
           <AutosaveBanner />
           {/* B3's figures are the carbon calculator's to work out from the bills (task 39.2; S-09's entry point). */}
           {module === CALCULATOR_MODULE ? <CalculatorEntry reportId={reportId} /> : null}
-          <StepFiguresProvider reportId={reportId} precision={read.step.precision} calculator={calculatorFigures}>
-            <StepFields
-              fields={fields}
-              axes={read.step.axes}
-              derivationInputs={read.step.derivationInputs}
-              priorValues={prior}
-              readOnly={readOnly}
-              scope={{ accountId: session.account.id, reportId }}
-            />
-          </StepFiguresProvider>
+          {/* Each field's change history (S-12; task 84), opened from its footer by a member who may read the trail. */}
+          <HistoryScope>
+            <StepFiguresProvider reportId={reportId} precision={read.step.precision} calculator={calculatorFigures}>
+              <StepFields
+                fields={fields}
+                axes={read.step.axes}
+                derivationInputs={read.step.derivationInputs}
+                priorValues={prior}
+                readOnly={readOnly}
+                scope={{ accountId: session.account.id, reportId }}
+              />
+            </StepFiguresProvider>
+          </HistoryScope>
           {/* A finding's address lands focus in its field — opened, shared or followed from S-08 (task 42.3). */}
           <FieldFocus />
         </WizardShell>

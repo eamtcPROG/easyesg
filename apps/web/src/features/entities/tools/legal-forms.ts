@@ -16,7 +16,7 @@ export interface LegalFormOption {
  * mode compared the country code with the entity's legal form until this task, and so always offered the first
  * country's — right only while one country is configured.
  *
- * `labels` is the catalogue's `organization.legalForms` object; a form registered ahead of its wording shows its key,
+ * `labels` is the shared catalogue's `vocabulary.legalForms` object; a form registered ahead of its wording shows its key,
  * which next-intl makes visible rather than silent — the trade the country list takes.
  */
 export const legalFormOptions = (input: {

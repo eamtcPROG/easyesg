@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { readOrganizationProfile } from '@/server/data/organization-profile';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
+import { HistoryScope } from '@/features/history/components/provider/history-scope';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { OrganizationProfileForm } from '../form/organization-profile-form';
@@ -53,12 +54,17 @@ export async function ProfileSection() {
       </Callout>
     );
   } else {
-    const countryLabels: Readonly<Record<string, string>> = messages.organization.countries;
+    const countryLabels: Readonly<Record<string, string>> = messages.vocabulary.countries;
     const countries = read.countries.map((country) => ({
       value: country.countryCode,
       label: countryLabels[country.countryCode] ?? country.countryCode,
     }));
-    body = <OrganizationProfileForm organization={read.organization} countries={countries} />;
+    // S-12's way in sits on the attribution line (task 84) — the Organization Administrator's, as this screen is.
+    body = (
+      <HistoryScope>
+        <OrganizationProfileForm organization={read.organization} countries={countries} />
+      </HistoryScope>
+    );
   }
 
   return (

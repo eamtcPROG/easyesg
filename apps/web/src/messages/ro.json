@@ -595,9 +595,6 @@
       "problemBody": "Organizația nu a fost creată din cauza unei erori la procesarea cererii.",
       "loading": "Se încarcă țările disponibile…"
     },
-    "countries": {
-      "MD": "Republica Moldova"
-    },
     "home": {
       "enrolmentPrompt": {
         "title": "Protejați organizația cu verificarea în doi pași",
@@ -686,18 +683,6 @@
         }
       }
     },
-    "legalForms": {
-      "srl": "Societate cu răspundere limitată (SRL)",
-      "sa": "Societate pe acțiuni (SA)",
-      "snc": "Societate în nume colectiv (SNC)",
-      "sc": "Societate în comandită (SC)",
-      "ii": "Întreprindere individuală (ÎI)",
-      "cp": "Cooperativă de producție (CP)",
-      "ci": "Cooperativă de întreprinzător (CÎ)",
-      "is": "Întreprindere de stat (ÎS)",
-      "im": "Întreprindere municipală (ÎM)",
-      "gt": "Gospodărie țărănească (GȚ)"
-    },
     "profile": {
       "title": "Profilul organizației",
       "lede": "Contul organizației în easyESG: numele ei și cum vă contactăm. Ce se tipărește în rapoarte ține de fiecare companie, la Entități.",
@@ -779,10 +764,6 @@
         "panelTitle": "Perioadele entității",
         "panelNone": "Pentru această entitate nu s-a deschis încă nicio perioadă.",
         "unavailable": "Perioadele nu au putut fi afișate aici. Linkul de mai jos deschide în continuare lista lor."
-      },
-      "standing": {
-        "active": "Activă",
-        "archived": "Arhivată"
       },
       "filter": {
         "standing": "Filtrați după stare",
@@ -885,10 +866,6 @@
           "basis": "Baza de consolidare",
           "basisHelp": "Standardul cere un răspuns explicit, așa că nu alegem noi în locul dumneavoastră.",
           "basisPlaceholder": "Alegeți baza",
-          "options": {
-            "individual": "Individuală — doar această entitate",
-            "consolidated": "Consolidată — entitatea și filialele ei"
-          },
           "member": "Filiala {position}",
           "memberName": "Denumirea filialei",
           "memberNameRequired": "Scrieți denumirea filialei, altfel perimetrul nu poate fi salvat.",
@@ -946,7 +923,11 @@
         }
       },
       "loading": "Se încarcă lista entităților…",
-      "searchLabel": "Căutați după denumire sau IDNO"
+      "searchLabel": "Căutați după denumire sau IDNO",
+      "history": {
+        "panelTitle": "Istoricul modificărilor",
+        "body": "Cine a schimbat datele acestei entități, când și ce era înainte."
+      }
     },
     "periods": {
       "title": "Perioade de raportare",
@@ -2444,5 +2425,40 @@
         "autosave": "Răspunsurile din raport încă netrimise, ca să nu se piardă dacă rămâneți fără conexiune."
       }
     }
+  },
+  "history": {
+    "title": "Istoricul modificărilor",
+    "close": "Închideți",
+    "open": "Vedeți istoricul",
+    "fieldFooter": "{count, plural, one {Modificat o dată} few {Modificat de # ori} other {Modificat de # de ori}} · istoric",
+    "list": "Modificările, de la cea mai recentă",
+    "current": "Actuală",
+    "change": "{from} → {to}",
+    "changeSpoken": "din {from} în {to}",
+    "nothing": "—",
+    "when": "{at} · {source}",
+    "sources": {
+      "typed": "introdusă în raport",
+      "carried_forward": "preluată din raportul anterior",
+      "calculated": "calculată de calculatorul de carbon",
+      "overridden": "înlocuită de companie, cu motiv"
+    },
+    "actor": {
+      "platform": "Platforma easyESG",
+      "erased": "Un cont care nu mai există",
+      "yourself": "{name} · dumneavoastră",
+      "removed": "Acces retras"
+    },
+    "empty": "Nicio modificare înregistrată încă.",
+    "loading": "Se încarcă istoricul modificărilor…",
+    "earlier": "Arătați modificările anterioare",
+    "earlierFailed": "Modificările anterioare nu au putut fi încărcate.",
+    "retry": "Încercați din nou",
+    "unreachable": {
+      "title": "Istoricul nu a putut fi încărcat",
+      "body": "Datele înseși nu sunt afectate. Încercați din nou peste câteva momente.",
+      "action": "Încercați din nou"
+    },
+    "note": "Nimic din această listă nu se modifică și nu se șterge. Cine a pierdut accesul la organizație își păstrează intrările, marcate ca atare."
   }
 }

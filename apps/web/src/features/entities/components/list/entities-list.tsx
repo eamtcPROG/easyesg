@@ -78,6 +78,8 @@ export interface EntitiesListProps {
 
 export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
   const t = useTranslations(ENTITIES_MESSAGES);
+  // A standing's word is the shared catalogue's, which S-12's history words it by too (task 84).
+  const tStanding = useTranslations('vocabulary.entityStatuses');
   const router = useRouter();
   const [, startNavigation] = useTransition();
 
@@ -171,7 +173,7 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         align: COLUMN_ALIGN.CENTER,
         size: COLUMN_SIZE.FIT,
         cell: (row) => (
-          <StatusChip tone={STANDING_TONE[row.standing]}>{t(`standing.${row.standing}`)}</StatusChip>
+          <StatusChip tone={STANDING_TONE[row.standing]}>{tStanding(row.standing)}</StatusChip>
         ),
       },
       {
@@ -210,7 +212,7 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         },
       },
     ],
-    [t, legalForms],
+    [t, tStanding, legalForms],
   );
 
   return (

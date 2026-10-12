@@ -3961,6 +3961,232 @@
         ]
       }
     },
+    "/api/v1/organization/history": {
+      "get": {
+        "description": "Its name, country and contact details as each was changed (FR-54), reached from S-15’s attribution line.",
+        "operationId": "ChangeHistoryController_organization",
+        "parameters": [
+          {
+            "name": "onpage",
+            "required": false,
+            "in": "query",
+            "description": "Entries per page, 25 unless given. `-1` (every entry) is refused.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the history, newest first. Each entry is one change: when, by whom, and each field it moved from what to what, every value in the reader’s language.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ChangeEntryDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "The organization’s change history (UC-47)",
+        "tags": [
+          "trace"
+        ]
+      }
+    },
+    "/api/v1/entities/{id}/history": {
+      "get": {
+        "description": "The entity’s own fields — its name, legal form, activities, identifiers, address, report contact, basis and standing — as each was changed (FR-54), reached from S-13’s record.",
+        "operationId": "ChangeHistoryController_entity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "onpage",
+            "required": false,
+            "in": "query",
+            "description": "Entries per page, 25 unless given. `-1` (every entry) is refused.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the history, newest first. Each entry is one change: when, by whom, and each field it moved from what to what, every value in the reader’s language.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ChangeEntryDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such entity in the active organization.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "A reporting entity’s change history (UC-47)",
+        "tags": [
+          "trace"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/values/{elementKey}/history": {
+      "get": {
+        "description": "Its answer as each change left it, with where it came from — typed, carried forward, calculated or overridden (FR-54), reached from the field on S-07. A field never answered has no history yet.",
+        "operationId": "ChangeHistoryController_value",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "elementKey",
+            "required": true,
+            "in": "path",
+            "description": "The field’s element.",
+            "schema": {
+              "example": "NumberOfEmployees",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dimensionKey",
+            "required": false,
+            "in": "query",
+            "description": "An axis member; empty, the default, for an undimensioned element.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ordinal",
+            "required": false,
+            "in": "query",
+            "description": "Position within a repeating group; 0, the default, where there is none.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "onpage",
+            "required": false,
+            "in": "query",
+            "description": "Entries per page, 25 unless given. `-1` (every entry) is refused.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "1-based.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of the history, newest first. Each entry is one change: when, by whom, and each field it moved from what to what, every value in the reader’s language.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultListDto"
+                    },
+                    {
+                      "properties": {
+                        "objects": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ChangeEntryDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such report in the active organization.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "One disclosure field’s change history (UC-47)",
+        "tags": [
+          "trace"
+        ]
+      }
+    },
     "/api/v1/reports/{id}/prior-period": {
       "get": {
         "description": "Resolves the prior period from the linkage rather than from the caller (FR-45), and answers each value with whether it is comparable across the two pinned taxonomy versions (FR-46). Where there is no comparative, `availability` says which of the two reasons applies.",
@@ -11176,6 +11402,10 @@
                 "$ref": "#/components/schemas/ApplicabilityCauseDto"
               }
             ]
+          },
+          "changeCount": {
+            "type": "number",
+            "description": "How many changes the field’s history holds (UC-47) — S-07’s footer, *Changed N times*; 0 for a field never answered. Its entries are `GET /reports/{id}/values/{elementKey}/history`."
           }
         },
         "required": [
@@ -11210,7 +11440,8 @@
           "carriedForward",
           "fromRecord",
           "applicable",
-          "applicabilityCause"
+          "applicabilityCause",
+          "changeCount"
         ]
       },
       "DisclosureAxisDto": {
@@ -11768,6 +11999,97 @@
         },
         "required": [
           "token"
+        ]
+      },
+      "ChangeActorDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "The person’s name as the platform shows it (UX-137); null once their account is erased (FR-55)."
+          },
+          "removed": {
+            "type": "boolean",
+            "description": "Whether they no longer hold access to the organization (UX-69): marked, never hidden."
+          }
+        },
+        "required": [
+          "accountId",
+          "name",
+          "removed"
+        ]
+      },
+      "FieldChangeDto": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "nullable": true,
+            "description": "The field’s name; null where the change is the subject itself — a disclosure field’s answer, which the panel is titled with."
+          },
+          "from": {
+            "type": "string",
+            "nullable": true,
+            "description": "The value before, worded; null where it held none."
+          },
+          "to": {
+            "type": "string",
+            "nullable": true,
+            "description": "The value after, worded; null where it holds none."
+          }
+        },
+        "required": [
+          "field",
+          "from",
+          "to"
+        ]
+      },
+      "ChangeEntryDto": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "number",
+            "description": "When the change was made — epoch milliseconds.",
+            "example": 1785843060000
+          },
+          "actor": {
+            "nullable": true,
+            "description": "Who made it; null where no person did — the platform’s change.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChangeActorDto"
+              }
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "typed",
+              "carried_forward",
+              "calculated",
+              "overridden"
+            ],
+            "nullable": true,
+            "description": "Where a disclosure value came from as this change left it — typed, carried forward from the prior period, calculated by the carbon calculator, or overridden; null for a record’s history."
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldChangeDto"
+            }
+          }
+        },
+        "required": [
+          "at",
+          "actor",
+          "source",
+          "changes"
         ]
       },
       "PriorReportPinDto": {

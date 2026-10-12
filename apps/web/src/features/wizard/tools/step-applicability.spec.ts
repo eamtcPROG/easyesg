@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { askedFields, askedInputsOf, derivedElements } from './step-applicability';
 
 const field = (over: Partial<DisclosureField> & { elementKey: string }): DisclosureField => ({
+  changeCount: 0,
   dimensionKey: '',
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,

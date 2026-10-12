@@ -11,9 +11,9 @@ every screen. Cite them; do not re-derive them.
 ## Current state
 
 Identity, organization, periods, reports, entities, the wizard with its validation, the calculator, the notification centre and
-the profile are live, and preview and export since tasks 43 and 47; checkout and billing and the public tier are the
+the profile are live, and preview and export since tasks 43 and 47, and S-12's change history since task 84; checkout and billing and the public tier are the
 fourteen addresses `AddressNotice` answers for (fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across seven route groups,
-8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 16 feature folders (13 built),
+8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 17 feature folders (14 built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
 browser (`pnpm e2e:web`).
@@ -32,7 +32,9 @@ language until another is chosen, its pages opened in the frame, reached from S-
 47 — the export dialogue's two decisions with the caveat beside a language whose labels carry no EFRAG standing, the
 warning listing a report's unresolved findings and the export that acknowledges them, the file watched until it is ready
 through the pass-through, the history with its download per file, and the filed mark made and withdrawn, reached from
-S-07's and S-10's *Export* — S-27 profile,
+S-07's and S-10's *Export* — S-12 since task 84 — a field's, an entity's or the organization's change history in a
+non-modal panel at the window's end, every entry worded by the api, opened from S-07's field footer, S-13's side column
+and S-15's attribution line for an editor or the administrator (`features/history/`'s `HistoryScope` decides) — S-27 profile,
 languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
 layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
 complete your account, S-37 choose organization, S-38 unsubscribe from an email; §4.2's global tier with, since task
@@ -461,11 +463,11 @@ src/
 ├─ proxy.ts        Next 16's middleware. Locale AND session — see below
 ├─ i18n/           next-intl: routing · navigation · request · formats · page (the per-page ritual)
 ├─ app/            routes only, thin. No logic, no data access
-├─ features/       16 domains, mirroring apps/api/src/modules names where one exists (`credentials` and `profile` are S-28's and S-27's)
+├─ features/       17 domains, mirroring apps/api/src/modules names where one exists (`credentials` and `profile` are S-28's and S-27's)
 │                 └─ a domain serving SEVERAL screens splits per screen — see below
 ├─ shared/         chrome owned by no single feature (GlobalTier, AccountCorner, SiteFooter), S-37's gate
 ├─ server/         server-only: session/ · api/ · sealed/ · data/ · messages/
-├─ client/         browser-only: applicability (task 95 — which of S-07's applicability notes a reader dismissed, in the tab's `sessionStorage` since Stage 2's close), autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), spreadsheet (task 204.2 — an `.xlsx` or `.csv` read into rows of text, its two readers loaded when the import opens), unsent-work, polling, session (task 92 — the probe and the re-authentication posts), notifications (task 50.2 — the count's poll, the panel's read, the opening mark), push (task 149 — AD-15's socket, its backoff and `useFrame`), query (the one Query client)
+├─ client/         browser-only: history (task 84 — S-12's read through the pass-through and its paged query), applicability (task 95 — which of S-07's applicability notes a reader dismissed, in the tab's `sessionStorage` since Stage 2's close), autosave (live since task 35.2 — hook, IndexedDB queue, the PUT), spreadsheet (task 204.2 — an `.xlsx` or `.csv` read into rows of text, its two readers loaded when the import opens), unsent-work, polling, session (task 92 — the probe and the re-authentication posts), notifications (task 50.2 — the count's poll, the panel's read, the opening mark), push (task 149 — AD-15's socket, its backoff and `useFrame`), query (the one Query client)
 └─ lib/            env, pagination, session-cookie, routes, route-access, notice, api-outcome, legal-date, locale-path, revalidate-paths, requested-path
 ```
 
@@ -1017,7 +1019,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **220 files here are Client Components** (12 Oct 2026: three more since task 192 — the report's deletion in `shared/`,
+  **231 files here are Client Components** (12 Oct 2026: eleven more since task 84 — S-12's provider, panel, entries' section, list, entry, three states and the way in under `features/history/components/`, the entries' paged query in `client/history/`, and S-13's *Change history* side panel; the scope that mounts the provider is a Server Component; three more since task 192 — the report's deletion in `shared/`,
   which S-06's rows and S-07's bar both read, S-06's row ⋯ and S-07's ⋯ from `medium` up; nine more since task 47 built S-11 — the dialogue, its pending
   card, the history, its columns, its filters and the status cell that watches a row still being made, the filed mark
   and the panel that makes one, and the export's watch in `client/exports/` — and one fewer, the bar's action drawn ahead

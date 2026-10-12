@@ -9,6 +9,7 @@ import { keptAnswerOf } from './kept-answer';
 
 const field = (over: Partial<DisclosureField>): DisclosureField => ({
   elementKey: 'TotalWaterConsumption',
+  changeCount: 0,
   dimensionKey: '',
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,

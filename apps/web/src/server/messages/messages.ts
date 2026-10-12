@@ -43,11 +43,16 @@ import sharedRu from '@easyesg/i18n/catalogues/ru.json';
  * screen's — a rule set is refused unless every locale words its messages in NFR-79's three parts there — and the
  * browser evaluates findings live, so it words them itself. Read from `packages/i18n` beside this app's own, never
  * copied into `src/messages`: a copy would be a second wording free to drift from the one publication checks.
+ *
+ * **And a second, `vocabulary`** (task 84; §12.5.6's task-84 row (e)): the words of the closed vocabularies a record
+ * stores — legal forms, countries, consolidation bases, an entity's standing — which S-12's change history words on the
+ * api as well. They moved out of this app's `organization` namespace rather than being copied into the api's, for the
+ * same reason.
  */
 const CATALOGUES: Readonly<Record<Locale, MessageCatalogue>> = {
-  ro: { ...ro, validation: sharedRo.validation },
-  en: { ...en, validation: sharedEn.validation },
-  ru: { ...ru, validation: sharedRu.validation },
+  ro: { ...ro, validation: sharedRo.validation, vocabulary: sharedRo.vocabulary },
+  en: { ...en, validation: sharedEn.validation, vocabulary: sharedEn.vocabulary },
+  ru: { ...ru, validation: sharedRu.validation, vocabulary: sharedRu.vocabulary },
 };
 
 /**

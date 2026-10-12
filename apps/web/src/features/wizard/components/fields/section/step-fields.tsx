@@ -410,6 +410,7 @@ export function StepFields({
     return (
       <StepField
         key={writeKey(served)}
+        reportId={scope.reportId}
         served={served}
         named={named}
         // **A derived figure is read-only even on an editable step** (FR-29, task 36.10). The api

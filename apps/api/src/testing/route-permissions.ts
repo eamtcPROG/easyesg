@@ -345,6 +345,8 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // privilege than editing it.
   'GET /organization': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'PATCH /organization': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
+  // Its change history (task 84; UC-47): the same settings, so the same reader — the OA alone.
+  'GET /organization/history': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
 
   // ── Reporting entities (UC-52, UC-53, UC-55). **The reads are the interesting rows**: D-2 makes
   // master data OA-*owned*, which is about who maintains it, and UC-19 has the Contributor
@@ -356,6 +358,8 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // vocabulary it is classified by would make the wizard's own source unreadable to its author.
   'GET /entities/nace-codes': ALL_MEMBERS,
   'GET /entities/:entityId': ALL_MEMBERS,
+  // An entity's change history (task 84; UC-47) — an editor's or the OA's, refused to a view-only member (182/22).
+  'GET /entities/:id/history': WRITING_MEMBERS,
   'POST /entities': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'PATCH /entities/:entityId': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   'POST /entities/:entityId/archive': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
@@ -427,6 +431,8 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // UC-41's preview (task 43.1; FR-48): the report as its document — an editor's or the OA's, and refused to a
   // view-only member, who reads findings and the roll-up only (182/22).
   'GET /reports/:id/preview': WRITING_MEMBERS,
+  // One disclosure field's change history (task 84; UC-47), reached from S-07's field — an editor's or the OA's (182/22).
+  'GET /reports/:id/values/:elementKey/history': WRITING_MEMBERS,
   // S-11's api (tasks 47.1, 47.4; FR-44, FR-49 … FR-53): asking for an export, the history, watching one and its file —
   // an editor's or the OA's, and refused to a view-only member, for the history and the re-download too (182/22).
   'POST /reports/:id/exports': WRITING_MEMBERS,

@@ -34,9 +34,9 @@ export async function NewEntitySection() {
   const legalForms = legalFormOptions({
     vocabulary: registered,
     countryCode: country,
-    labels: messages.organization.legalForms,
+    labels: messages.vocabulary.legalForms,
   });
-  const countries = countryOptions({ vocabulary: registered, labels: messages.organization.countries });
+  const countries = countryOptions({ vocabulary: registered, labels: messages.vocabulary.countries });
 
   return (
     <div className={styles.screen}>

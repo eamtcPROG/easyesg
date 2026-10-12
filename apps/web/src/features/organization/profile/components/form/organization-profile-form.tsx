@@ -143,7 +143,7 @@ export function OrganizationProfileForm({
       <RecordShell
         title={t('title')}
         summary={t('lede')}
-        attribution={<ProfileAttribution lastChange={state.record.lastChange} />}
+        attribution={<ProfileAttribution lastChange={state.record.lastChange} name={state.record.name} />}
         actions={
           <RecordControls
             dirty={formState.isDirty}

@@ -60,6 +60,7 @@ describe('writeFor', () => {
  * the pair is what these cases pin.
  */
 const shaped = (over: Partial<DisclosureField> & { elementKey: string }): DisclosureField => ({
+  changeCount: 0,
   dimensionKey: '',
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,

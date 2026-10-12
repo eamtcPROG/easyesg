@@ -17,6 +17,7 @@ import {
 } from 'class-validator';
 import { LABEL_STANDING, LOCALES, type LabelStanding, type Locale } from '@easyesg/i18n';
 import { DISCLOSURE_KIND } from '@easyesg/vsme';
+import { fieldChangeKey } from '@api/contracts/field-change-counts.port';
 import { PERIOD_TYPE } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
 import { APPLICABILITY_CONDITION, type ApplicabilityCondition } from '../models/applicability.model';
@@ -451,7 +452,15 @@ export class DisclosureFieldDto {
   })
   readonly applicabilityCause: ApplicabilityCauseDto | null;
 
-  constructor(field: DisclosureField) {
+  @ApiProperty({
+    description:
+      'How many changes the field’s history holds (UC-47) — S-07’s footer, *Changed N times*; 0 for a field never ' +
+      'answered. Its entries are `GET /reports/{id}/values/{elementKey}/history`.',
+  })
+  readonly changeCount: number;
+
+  constructor(field: DisclosureField, changeCount: number) {
+    this.changeCount = changeCount;
     this.elementKey = field.elementKey;
     this.dimensionKey = field.dimensionKey;
     this.ordinal = field.ordinal;
@@ -627,7 +636,9 @@ export class DisclosureStepDto {
   constructor(step: PresentedDisclosureStep) {
     this.module = step.module;
     this.taxonomyVersion = step.taxonomyVersion;
-    this.fields = step.fields.map((field) => new DisclosureFieldDto(field));
+    this.fields = step.fields.map(
+      (field) => new DisclosureFieldDto(field, step.changeCounts.get(fieldChangeKey(field)) ?? 0),
+    );
     this.axes = step.axes.map((axis) => new DisclosureAxisDto(axis));
     this.derivationInputs = step.derivationInputs.map((input) => new DerivationInputDto(input));
     this.precision = { ...step.precision };

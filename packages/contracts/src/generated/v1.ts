@@ -1415,6 +1415,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organization/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The organization’s change history (UC-47)
+         * @description Its name, country and contact details as each was changed (FR-54), reached from S-15’s attribution line.
+         */
+        get: operations["ChangeHistoryController_organization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/entities/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A reporting entity’s change history (UC-47)
+         * @description The entity’s own fields — its name, legal form, activities, identifiers, address, report contact, basis and standing — as each was changed (FR-54), reached from S-13’s record.
+         */
+        get: operations["ChangeHistoryController_entity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{id}/values/{elementKey}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One disclosure field’s change history (UC-47)
+         * @description Its answer as each change left it, with where it came from — typed, carried forward, calculated or overridden (FR-54), reached from the field on S-07. A field never answered has no history yet.
+         */
+        get: operations["ChangeHistoryController_value"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/{id}/prior-period": {
         parameters: {
             query?: never;
@@ -4065,6 +4125,8 @@ export interface components {
             applicable: boolean;
             /** @description Why, for the fields a rule governs; null for the ones no rule names. */
             applicabilityCause: components["schemas"]["ApplicabilityCauseDto"] | null;
+            /** @description How many changes the field’s history holds (UC-47) — S-07’s footer, *Changed N times*; 0 for a field never answered. Its entries are `GET /reports/{id}/values/{elementKey}/history`. */
+            changeCount: number;
         };
         DisclosureAxisDto: {
             /** @example TypeOfPollutantAxis */
@@ -4283,6 +4345,37 @@ export interface components {
         UnsubscribeTokenRequestDto: {
             /** @description The signed token from the unsubscribe link. In the body, as the invitation’s is, so the api’s own logs never carry it; the link that holds it is a page on the tenant application. */
             token: string;
+        };
+        ChangeActorDto: {
+            /** Format: uuid */
+            accountId: string;
+            /** @description The person’s name as the platform shows it (UX-137); null once their account is erased (FR-55). */
+            name: string | null;
+            /** @description Whether they no longer hold access to the organization (UX-69): marked, never hidden. */
+            removed: boolean;
+        };
+        FieldChangeDto: {
+            /** @description The field’s name; null where the change is the subject itself — a disclosure field’s answer, which the panel is titled with. */
+            field: string | null;
+            /** @description The value before, worded; null where it held none. */
+            from: string | null;
+            /** @description The value after, worded; null where it holds none. */
+            to: string | null;
+        };
+        ChangeEntryDto: {
+            /**
+             * @description When the change was made — epoch milliseconds.
+             * @example 1785843060000
+             */
+            at: number;
+            /** @description Who made it; null where no person did — the platform’s change. */
+            actor: components["schemas"]["ChangeActorDto"] | null;
+            /**
+             * @description Where a disclosure value came from as this change left it — typed, carried forward from the prior period, calculated by the carbon calculator, or overridden; null for a record’s history.
+             * @enum {string|null}
+             */
+            source: "typed" | "carried_forward" | "calculated" | "overridden" | null;
+            changes: components["schemas"]["FieldChangeDto"][];
         };
         PriorReportPinDto: {
             /** Format: uuid */
@@ -8420,6 +8513,115 @@ export interface operations {
             };
             /** @description The link can switch nothing off — it was not issued by this platform, or its category may no longer be switched off (problem type validation-failed). Nothing changed. */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ChangeHistoryController_organization: {
+        parameters: {
+            query?: {
+                /** @description Entries per page, 25 unless given. `-1` (every entry) is refused. */
+                onpage?: number;
+                /** @description 1-based. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of the history, newest first. Each entry is one change: when, by whom, and each field it moved from what to what, every value in the reader’s language. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["ChangeEntryDto"][];
+                    };
+                };
+            };
+        };
+    };
+    ChangeHistoryController_entity: {
+        parameters: {
+            query?: {
+                /** @description Entries per page, 25 unless given. `-1` (every entry) is refused. */
+                onpage?: number;
+                /** @description 1-based. */
+                page?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of the history, newest first. Each entry is one change: when, by whom, and each field it moved from what to what, every value in the reader’s language. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["ChangeEntryDto"][];
+                    };
+                };
+            };
+            /** @description No such entity in the active organization. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ChangeHistoryController_value: {
+        parameters: {
+            query?: {
+                /** @description An axis member; empty, the default, for an undimensioned element. */
+                dimensionKey?: string;
+                /** @description Position within a repeating group; 0, the default, where there is none. */
+                ordinal?: number;
+                /** @description Entries per page, 25 unless given. `-1` (every entry) is refused. */
+                onpage?: number;
+                /** @description 1-based. */
+                page?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+                /** @description The field’s element. */
+                elementKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of the history, newest first. Each entry is one change: when, by whom, and each field it moved from what to what, every value in the reader’s language. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["ChangeEntryDto"][];
+                    };
+                };
+            };
+            /** @description No such report in the active organization. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

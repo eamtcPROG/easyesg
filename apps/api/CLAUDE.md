@@ -19,7 +19,7 @@ roll-up since task 41, over `@easyesg/validation`'s interpreter, and NFR-87's ve
 task 201, and FR-164's and FR-165's notices on the worker's first scheduled job since task 51.2, and the PDF export's job on the worker since
 task 44 — printed by the renderer service, stored and recorded — and the Excel export's beside it since task 46, the report
 written into the EFRAG template it pins through a map per template version, and since task 47 an export's request, its history, its
-file and the filed mark; validation's screens, billing, the console's
+file and the filed mark, and since task 84 the change trail's three reads, every entry worded; billing, the console's
 screens, edge and deploy, the public tier and the Comprehensive Module are not. `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
@@ -162,6 +162,20 @@ traps each one left — grouped by area rather than by the task that built it.
   export and its file (`GET /exports/{id}`, `…/file`, streamed byte for byte); the dialogue's languages with their labels'
   standing; the completion notice (`reporting.export_finished`) to the person who asked, past 30 s; and the filed mark
   (`PUT`/`DELETE /reports/{id}/filing`), its own columns on `core.report`.
+- **Trace** (`core/trace`; task 84): UC-47's three reads of `core.field_change` — `GET /organization/history`, the
+  Organization Administrator's as `GET /organization` is, and `GET /entities/{id}/history` and
+  `GET /reports/{id}/values/{elementKey}/history`, an editor's too — each a page, newest first, and the count each
+  stored field's footer states, which `core/disclosure`'s step read reaches through `FIELD_CHANGE_COUNTS`
+  (`contracts/field-change-counts.port.ts`, because the trace reads the disclosure's vocabulary and an import back would
+  close a cycle). **An entry is one statement**: `entriesOf` (`domain/trail-entries.ts`) cuts a record's rows by their
+  transaction's instant in microseconds and their actor, rebuilds the record's image row by row, and keeps a statement
+  only where a registered field moved — the count is the same function's length. **The registry is the whole of what
+  S-12 can say** (`domain/history-subjects.ts`): each subject's fields, the columns each reads and how — a column added
+  to an audited table reaches the panel only by being registered there, and `history-wording.spec.ts` holds every
+  field's name and every seeded vocabulary member worded in every locale. **The api words every value** in the reader's
+  language (`providers/change-words.factory.ts`): a disclosure answer through the export's own `documentWords`, so it
+  reads as the document prints it; a closed vocabulary from the shared catalogue's `vocabulary` namespace, which
+  `apps/web` reads too; an activity code with the classifier's label (§12.5.6's task-84 row).
 - **Not live**: billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
@@ -884,10 +898,11 @@ believing the invariants.
 
 **Not built yet, and do not assume otherwise** (rewritten 31 Aug 2026 — the previous version was
 taken 25 Aug and had been overtaken by tasks 29, 30, 31 and 33, which is the failure mode a
-current-state list has): **one of the four edge guards** — `EntitlementGuard` (task 54; `AdminRealmGuard` shipped with
-task 67.3 and `AuditInterceptor` with task 67.4, both under Identity above). No **disclosure
-value** store (task 34), no calculator, validation, comparatives, export or trace body, and no
-`billing` or `platform` body beyond `admin`, `configuration`, `localization`, `notification` (task 49) and `taxonomy`.
+current-state list has; the core's bodies it listed as missing — the disclosure store, the calculator, validation,
+comparatives, export and the trace — have all shipped since, the trace last with task 84): **one of the four edge
+guards** — `EntitlementGuard` (task 54; `AdminRealmGuard` shipped with task 67.3 and `AuditInterceptor` with task 67.4,
+both under Identity above) — no `billing` body, and `platform/metering` a module shell, `platform/audit` holding only
+the log's vocabulary.
 
 **Read the module tree and `src/testing/route-permissions.ts` rather than a list here.** That table
 is the surface, it is a gate, and it cannot go stale — which is exactly why enumerating controllers

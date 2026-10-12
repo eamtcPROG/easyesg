@@ -537,6 +537,36 @@
       "findings_unacknowledged": "Raportul are încă {count, plural, one {# constatare nerezolvată} few {# constatări nerezolvate} other {# de constatări nerezolvate}}, așa că exportul nu a fost pornit. Consultați lista, apoi exportați din nou, confirmând că exportați cu ele.",
       "file_unavailable": "Acest export nu are încă un fișier: este fie în curs de generare, fie a eșuat. Așteptați să se încheie sau exportați din nou raportul.",
       "not_found": "Acest export nu există în organizația dumneavoastră. Deschideți istoricul exporturilor raportului pentru a-l găsi."
+    },
+    "trace": {
+      "fields": {
+        "organization": {
+          "name": "Numele organizației",
+          "country": "Țara",
+          "contactEmail": "E-mailul pentru mesajele easyESG",
+          "contactPhone": "Telefonul"
+        },
+        "entity": {
+          "name": "Denumirea entității",
+          "legalForm": "Forma juridică",
+          "activities": "Activitățile entității (CAEM)",
+          "idno": "IDNO",
+          "lei": "Identificatorul de entitate juridică (LEI)",
+          "addressLine1": "Strada și numărul",
+          "addressLine2": "Detalii suplimentare ale adresei (bloc, oficiu)",
+          "locality": "Localitatea",
+          "postalCode": "Codul poștal",
+          "contactName": "Numele persoanei de contact",
+          "contactEmail": "E-mailul persoanei de contact",
+          "consolidationBasis": "Baza de consolidare",
+          "standing": "Starea entității"
+        },
+        "value": {
+          "notAvailableReason": "Motivul pentru care valoarea nu este disponibilă",
+          "explanation": "Explicația cifrei"
+        }
+      },
+      "activity": "{code} · {label}"
     }
   },
   "notification": {
@@ -696,6 +726,31 @@
         "cadence_missing": "Această categorie se trimite după un calendar — la un interval de repetare sau cu un număr de zile înaintea termenului — iar publicarea nu îl include, așa că nu s-a publicat nimic. Completați-l și publicați din nou.",
         "cadence_not_kept": "Această categorie nu se trimite la un interval de repetare și nici cu zile înaintea unui termen, așa că nu s-a publicat nimic. Eliminați aceste valori."
       }
+    }
+  },
+  "vocabulary": {
+    "legalForms": {
+      "srl": "Societate cu răspundere limitată (SRL)",
+      "sa": "Societate pe acțiuni (SA)",
+      "snc": "Societate în nume colectiv (SNC)",
+      "sc": "Societate în comandită (SC)",
+      "ii": "Întreprindere individuală (ÎI)",
+      "cp": "Cooperativă de producție (CP)",
+      "ci": "Cooperativă de întreprinzător (CÎ)",
+      "is": "Întreprindere de stat (ÎS)",
+      "im": "Întreprindere municipală (ÎM)",
+      "gt": "Gospodărie țărănească (GȚ)"
+    },
+    "countries": {
+      "MD": "Republica Moldova"
+    },
+    "consolidationBases": {
+      "individual": "Individuală — doar această entitate",
+      "consolidated": "Consolidată — entitatea și filialele ei"
+    },
+    "entityStatuses": {
+      "active": "Activă",
+      "archived": "Arhivată"
     }
   }
 }

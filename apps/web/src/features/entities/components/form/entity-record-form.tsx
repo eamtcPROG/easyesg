@@ -30,6 +30,7 @@ import { IdentitySection } from '../sections/identity/identity-section';
 import { SitesSection } from '../sections/sites/sites-section';
 import { ENTITY_RECORD_MESSAGES } from '../shared/entity-messages';
 import { EntityArchivePanel } from './entity-archive-panel';
+import { EntityHistoryPanel } from './entity-history-panel';
 import { EntityBreadcrumb } from './entity-breadcrumb';
 import { EntityControls } from './entity-controls';
 import { EntityPeriodsPanel } from './entity-periods-panel';
@@ -204,10 +205,12 @@ export function EntityRecordForm({
             )
           }
           aside={
-            // The periods first, as the record artboard stacks them; the archive only while there is one to make.
+            // The periods first, as the record artboard stacks them, then the change history (task 84); the archive only
+            // while there is one to make.
             entity ? (
               <>
                 <EntityPeriodsPanel entityId={entity.id} periods={periods} />
+                <EntityHistoryPanel entityId={entity.id} name={entity.name} />
                 {archived ? null : (
                   <EntityArchivePanel
                     onArchiveRequestedAction={() => dispatch({ kind: ENTITY_EVENT.ARCHIVE_REQUESTED })}

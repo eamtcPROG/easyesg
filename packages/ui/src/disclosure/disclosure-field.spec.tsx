@@ -60,6 +60,14 @@ describe('DisclosureField (§6.2, §11.5)', () => {
     expect(screen.queryByRole('button', { name: 'Carry forward' })).not.toBeInTheDocument();
   });
 
+  it('keeps the history footer on a read-only field, where the affordances go (UX-68, UX-13)', () => {
+    render(<DisclosureField {...base} readOnly history={<button type="button">Changed 4 times · history</button>} />);
+
+    // The history reads, it never writes: a locked report's trail is still the reader's to open.
+    expect(screen.getByRole('button', { name: 'Changed 4 times · history' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mark not available' })).toBeNull();
+  });
+
   it('carries the comparative and its carry-forward together (FR-46, FR-47)', () => {
     render(
       <DisclosureField

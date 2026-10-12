@@ -368,6 +368,12 @@ export interface DisclosureStep {
  */
 export interface PresentedDisclosureStep extends DisclosureStep {
   readonly precision: Readonly<Record<string, number>>;
+  /**
+   * How many entries each stored field's change history holds, keyed by `fieldChangeKey` (task 84; §12.5.6's task-84
+   * row (2)) — S-07's field footer. **Added by the service, as the places are**: the trail is `core/trace`'s, and the
+   * worker's composition of a document has no footer to state it in.
+   */
+  readonly changeCounts: ReadonlyMap<string, number>;
 }
 
 /**

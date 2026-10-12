@@ -537,6 +537,36 @@
       "findings_unacknowledged": "The report still has {count, plural, one {# unresolved finding} other {# unresolved findings}}, so the export was not started. Review the list, then export again, confirming that you are exporting with them.",
       "file_unavailable": "This export has no file yet: it is still being produced, or it failed. Wait for it to finish, or export the report again.",
       "not_found": "This export does not exist in your organization. Open the report’s export history to find it."
+    },
+    "trace": {
+      "fields": {
+        "organization": {
+          "name": "Organisation name",
+          "country": "Country",
+          "contactEmail": "Email for easyESG messages",
+          "contactPhone": "Phone"
+        },
+        "entity": {
+          "name": "Entity name",
+          "legalForm": "Legal form",
+          "activities": "Entity activities (NACE)",
+          "idno": "IDNO",
+          "lei": "Legal Entity Identifier (LEI)",
+          "addressLine1": "Street and number",
+          "addressLine2": "Further address detail (block, office)",
+          "locality": "Town or city",
+          "postalCode": "Postal code",
+          "contactName": "Contact name",
+          "contactEmail": "Contact email",
+          "consolidationBasis": "Consolidation basis",
+          "standing": "Entity status"
+        },
+        "value": {
+          "notAvailableReason": "Why the value is not available",
+          "explanation": "Explanation of the figure"
+        }
+      },
+      "activity": "{code} · {label}"
     }
   },
   "notification": {
@@ -696,6 +726,31 @@
         "cadence_missing": "This category is sent on a schedule — at a repeat interval, or a number of days before a due date — and the publication does not include it, so nothing was published. Fill it in and publish again.",
         "cadence_not_kept": "This category is sent neither at a repeat interval nor a number of days before a due date, so nothing was published. Remove those values."
       }
+    }
+  },
+  "vocabulary": {
+    "legalForms": {
+      "srl": "Limited liability company (SRL)",
+      "sa": "Joint-stock company (SA)",
+      "snc": "General partnership (SNC)",
+      "sc": "Limited partnership (SC)",
+      "ii": "Sole proprietorship (ÎI)",
+      "cp": "Production cooperative (CP)",
+      "ci": "Entrepreneurs’ cooperative (CÎ)",
+      "is": "State-owned enterprise (ÎS)",
+      "im": "Municipal enterprise (ÎM)",
+      "gt": "Peasant farm (GȚ)"
+    },
+    "countries": {
+      "MD": "Republic of Moldova"
+    },
+    "consolidationBases": {
+      "individual": "Individual — this entity alone",
+      "consolidated": "Consolidated — the entity and its subsidiaries"
+    },
+    "entityStatuses": {
+      "active": "Active",
+      "archived": "Archived"
     }
   }
 }

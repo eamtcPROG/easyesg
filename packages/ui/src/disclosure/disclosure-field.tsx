@@ -15,6 +15,7 @@ import styles from './disclosure-field.module.css';
  * ⓘ state message: what / consequence / action
  * [Mark not available ▾]          ← always present
  * ⌄ Why this is asked · standard reference · example
+ * Changed 4 times · history       ← S-12's way in, where the field has changed (task 84)
  * ```
  *
  * **The input is a slot, and that is what "every variant shares one anatomy" means.** Ten disclosure
@@ -92,6 +93,12 @@ export interface DisclosureFieldProps {
   /** UX-17's progressive disclosure: rationale, standard reference, worked example. */
   moreLabel?: string;
   more?: ReactNode;
+  /**
+   * The field's footer — its change history's way in, *Changed 4 times · history*, as `EasyESG Reporting Core.dc.html`'s
+   * S-12 frame draws it beneath the field (UX-68; task 84). **Kept on a read-only field**: the history is read-only by
+   * nature, and a locked report's trail still reads.
+   */
+  history?: ReactNode;
   /** Read-only (UX-13) removes the affordances and keeps the layout, rather than greying a form. */
   readOnly?: boolean;
   /**
@@ -116,6 +123,7 @@ export function DisclosureField({
   notAvailable,
   moreLabel,
   more,
+  history,
   readOnly = false,
   labelId,
 }: DisclosureFieldProps) {
@@ -184,6 +192,8 @@ export function DisclosureField({
           <div className={styles.moreBody}>{more}</div>
         </details>
       ) : null}
+
+      {history ? <div className={styles.history}>{history}</div> : null}
     </section>
   );
 }

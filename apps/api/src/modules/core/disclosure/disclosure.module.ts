@@ -19,6 +19,7 @@ import { OrganizationModule } from '@api/modules/core/organization/organization.
 import { LocalizationModule } from '@api/modules/platform/localization/localization.module';
 import { NotificationModule } from '@api/modules/platform/notification/notification.module';
 import { TaxonomyModule } from '@api/modules/platform/taxonomy/taxonomy.module';
+import { TraceModule } from '../trace/trace.module';
 import { ReportsController } from './controllers/reports.controller';
 import { WizardController } from './controllers/wizard.controller';
 import { AXIS_SHAPES, type AxisShapes } from './interfaces/axis-shape.interface';
@@ -304,7 +305,8 @@ const httpProviders: Provider[] = [
   // `OrganizationModule` for its vocabulary port (task 91.1): the wizard names NACE members in the
   // platform's own Romanian and Russian and offers the countries the platform registers.
   // `NotificationModule` for `NOTIFICATION_PORT` (task 50.3), which the reminder raises through.
-  imports: [TaxonomyModule, LocalizationModule, OrganizationModule, NotificationModule],
+  // `TraceModule` for `FIELD_CHANGE_COUNTS` (task 84), which the step read's field footers state.
+  imports: [TaxonomyModule, LocalizationModule, OrganizationModule, NotificationModule, TraceModule],
   controllers: mode === APP_MODE.WORKER ? [] : [ReportsController, ReportFilingController, WizardController],
   providers: mode === APP_MODE.WORKER ? evaluationProviders : httpProviders,
   // `ReportService` and `WizardService` since task 67.9: a read under a support-access grant runs exactly the

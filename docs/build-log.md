@@ -31519,3 +31519,105 @@ deletion's port, its own beside the report store since one route writes it; `db-
 the mark in the request's transaction, the row locked first. *Declined*: `error-throw-http-exceptions`, which the
 architecture forbids in use cases.
 
+## Task 84 — S-12, the change trail read back where the value is · 2026-10-12
+
+UC-47's three reads of `core.field_change` in a new body for the `core/trace` shell — the organization's, an entity's
+and one disclosure field's, each a page, newest first, every value worded by the api in the reader's language — the
+count each stored field's footer states on S-07's step read, and S-12: a non-modal panel opened from that footer, from
+S-13's side column and from S-15's attribution line, for an editor or the Organization Administrator.
+
+### Decided before building (project owner, one batch of four, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-84 row (1)–(4); amended in the same edits §6.8's three route rows, FR-54
+(built; behaviour 8 and 9, its surfaces, AC-4 … AC-8 met), FR-55 (built; AC-5), FR-15's boundary, and S-12's entry with
+S-05's, S-13's and S-15's in `design_spec.md`.
+
+- **(1) S-07's fields, S-13's entity record and S-15's attribution line.** S-14's period, a site, a subsidiary and an
+  invoice line wait. *Declined:* S-07 alone; those three and S-14.
+- **(2) One subject's entries with the field's footer count; no restore, no module or report tabs** — the artboard draws
+  both, and restoring is a write no requirement names. *Declined:* adding *Restore*; adding the tabs.
+- **(3) The api words every entry, from a registry of each subject's fields.** *Declined:* kinds on the wire and the
+  browser wording them, which it cannot do for a taxonomy member.
+- **(4) A disclosure value's source read from the trail** — `origin` and `carried_forward` as the change left them.
+  *Declined:* no source at MVP.
+
+### Settled in the task
+
+Row (a)–(g): the three routes; an entry as one statement over a rebuilt image, the count the same function's length; the
+person as UX-137's name, removed where they hold no active membership, the platform's where no person acted; a disclosure
+answer worded as the document prints it; the closed vocabularies' words moved to the shared catalogue; the panel at the
+window's end rather than docked in S-08's rail; the count served to every member and the footer drawn only for a reader.
+
+### What the building found
+
+- **The organization's history would have widened a read.** The batch's options said *an editor or the OA* for all
+  three routes, which is FR-54's actors line — but `GET /organization` is the OA's alone (actors.md gives the
+  Contributor no access to organization settings, D-2), and the organization's history states the same name, country,
+  email and phone. Caught writing the route table, before a test: the organization's route is the OA's, the entity's and
+  the field's an editor's too, and row (a) says so. `change-history.e2e-spec.ts` refuses the editor and the viewer.
+- **A value's words lived only in the browser.** Legal forms, countries, consolidation bases and an entity's standing
+  were `apps/web`'s `organization.*` keys, which the api cannot read. They moved, not copied, to `packages/i18n`'s
+  catalogues as `vocabulary`, which the web merges beside its own exactly as `validation` (task 42.1), typed through
+  `global.d.ts`; eight readers repointed. `history-wording.spec.ts` holds every seeded legal form and country, both
+  bases and both standings worded in every locale, read from `config/seed` and the entity model rather than listed.
+  *Searched:* every `messages.organization.{legalForms,countries}` and every `t('standing.…')` / `t('options.…')` under
+  `features/entities` — the periods' standings are S-14's own words and stay.
+- **A disclosure answer reads as the document prints it** because the history uses `documentWords` — the export's yes,
+  no, marks and unit symbols, a figure every digit of it — rather than a third copy of those words.
+- **The trail is text, so an image is rebuilt rather than read.** An insert records every column, an update only those
+  it moved, `jsonb ->>` spelling a boolean `'true'` and an array its JSON; a disclosure answer is six columns read
+  together, so a unit moved under the same figure is a change. Grouping is by the transaction's instant in
+  microseconds, as text — a `Date` would merge two statements a microsecond apart — and ordered as numbers: compared as
+  text, `10000000` sorts before `9000000`. Both cases were broken on purpose and each failed its spec.
+- **`EXPLAIN` with sequential scans off**: the trail read uses `field_change_record_idx`'s three leading columns on every
+  yearly partition and the default one; the step's count is one such read for the module's stored fields.
+- **A boundary break had survived from task 47's close.** `boundaries` refused `exports.controller.ts` importing
+  `domain/export-file-name.ts` (`controllers-not-to-use-cases` covers `domain/`): the file route built its
+  `content-disposition` in the controller. Task 47 closed on the gates its change reached, which do not include
+  `boundaries`, and nothing has been pushed since, so CI had not seen it. Two lines moved it into `ExportService.file`.
+  Recorded as the rule asks — a close's break surviving towards the Stage's end — though it cost less here than the
+  skipped run would have.
+- **A field's count is the step's read**, so it moves when the step is read again rather than with each save; the panel
+  reads fresh on every opening. Stated in S-12's amendment rather than left to be found.
+- **A history is its current row's.** A repeating row removed and added again has a new id, so its history starts anew;
+  the removed row is not on the screen to open one from.
+
+### Gates
+
+The change reaches `apps/api` (a controller and DTOs, the module graph — `TraceModule` now imported by
+`DisclosureModule` in both modes), `apps/web`, `packages/ui` (the field's slot), `packages/contracts` (regenerated, 125 to
+128 paths) and `packages/i18n` (the moved vocabulary and the history's words) — so every dependent's row, one suite at a
+time, no dev server running:
+
+- `pnpm lint`; `pnpm typecheck`, every workspace; `pnpm boundaries`, after the export controller's fix above;
+  `pnpm docs:check`, 48 claims, after the paths, the archive's counts, the web's feature folders (16 to 17, 13 built to
+  14) and its Client Components (220 to 231) moved, and two one-sided screen links the surfaces edit made; `pnpm
+  routes:check`; `pnpm openapi:check` staged.
+- Unit: `api` 2,308 in 292 suites, and the export and trace modules' 105 again after the controller's fix; `web` 1,961
+  in 211 files; `admin` 299; `ui` 490; `i18n` 163. Two cases broken on purpose in `trail-entries.spec.ts` (grouping
+  without the actor, ordering as text) and the panel's focus hand-back removed in `history-link.spec.tsx`: each failed.
+- `pnpm e2e`: 73 suites, 1,795 tests, `change-history.e2e-spec.ts` among them. `pnpm e2e:worker`: 16 — the worker boots
+  with the trace module in its graph.
+- `pnpm e2e:web --project identity --project expansion --project admin`: 360 of 360 in 11.2 minutes, the three S-12
+  journeys and their axe scan among them. The server log holds nineteen lines of *the destination stream closed early*,
+  every one digest `2667547900` (`apps/web/CLAUDE.md`'s abandoned prefetch), and one `FactorSetCatalog` line from S-09's
+  journey asking for a revision that does not exist, which is what it asks.
+- **Skipped, as the table allows**: `migrations:check` (no migration), `events:check` (no event), `facade:check` (no
+  taxonomy), `eslint:prove` and `boundaries:prove` (no rule changed), `image:check` and `test:coverage` — the Stage's
+  end runs them cold, and CI on the next push.
+
+### Skills, read against the diff
+
+`nestjs-best-practices`: `arch-avoid-circular-deps` is why the count crosses a port — the trace reads the disclosure's
+vocabulary, so `DisclosureModule` imports `TraceModule` and never the reverse; `di-use-interfaces-tokens` for the trail
+store and the count; `db-avoid-n-plus-one` — the step's count is one read for every field, not one per field;
+`security-validate-all-input` — the report and entity ids through `ParseUUIDPipe`, the ordinal through `ParseIntPipe`, and
+the element key a bound parameter. *Declined*: `error-throw-http-exceptions`, which the architecture forbids in use cases.
+`one-idea-per-file`: the reconstruction, the answer's words and an entry's words are a pure file each with a spec, the
+wording's builder a provider of its own, and the person's arms in the browser `tools/entry-actor.ts` with its spec.
+`one-kind-per-folder`: `features/history/` serves one panel and no route, so its `components/` is cut by its parts — the
+provider that mounts the panel, the panel, its entries (`section/`, `list/`, `states/`) and the way in — with `shared/`
+naming its three readers; `client/history/` holds the read and its query beside the other browser reads.
+`vercel-react-best-practices`: `server-parallel-fetching` — `HistoryScope` reads the cached membership and the session
+together; `rerender-` — the provider's value is memoised over a stable `open`, the request one `useState`.
+`vercel-composition-patterns`: `DisclosureField` grew a slot, `history`, not a flag.

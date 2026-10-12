@@ -5,6 +5,7 @@ import { ROUTES } from '@/lib/routes';
 import { readEntityRecord } from '@/server/data/entities';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
+import { HistoryScope } from '@/features/history/components/provider/history-scope';
 import { countryOptions } from '../../tools/countries';
 import { legalFormOptions } from '../../tools/legal-forms';
 import { EntityRecordForm } from '../form/entity-record-form';
@@ -68,21 +69,24 @@ export async function EntityRecordSection({ entityId }: { readonly entityId: str
   const legalForms = legalFormOptions({
     vocabulary: read.countries,
     countryCode: read.countryCode,
-    labels: messages.organization.legalForms,
+    labels: messages.vocabulary.legalForms,
   });
   // The countries a site may be in (task 180.1) — the same set B1's `CountryOfSite` offers.
-  const countries = countryOptions({ vocabulary: read.countries, labels: messages.organization.countries });
+  const countries = countryOptions({ vocabulary: read.countries, labels: messages.vocabulary.countries });
 
   return (
     <div className={styles.screen}>
-      <EntityRecordForm
-        entity={read.entity}
-        activity={read.activity}
-        suggestions={read.suggestions}
-        legalForms={legalForms}
-        countries={countries}
-        periods={read.periods}
-      />
+      {/* The record's change history (S-12; task 84), offered in its side column to a member who may read the trail. */}
+      <HistoryScope>
+        <EntityRecordForm
+          entity={read.entity}
+          activity={read.activity}
+          suggestions={read.suggestions}
+          legalForms={legalForms}
+          countries={countries}
+          periods={read.periods}
+        />
+      </HistoryScope>
     </div>
   );
 }

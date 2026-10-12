@@ -31,6 +31,8 @@ export function BoundarySection({
   readonly archived: boolean;
 }) {
   const t = useTranslations(`${ENTITY_RECORD_MESSAGES}.boundary`);
+  // A basis's word is the shared catalogue's, which S-12's history words it by too (task 84).
+  const tBasis = useTranslations('vocabulary.consolidationBases');
   const basis = useWatch({ control, name: 'consolidationBasis' });
   const members = useRemovableRows({ control, name: ROW_COLLECTION.MEMBERS, blank: EMPTY_MEMBER });
   const offersMembers = basis === CONSOLIDATION_BASIS.CONSOLIDATED || members.entries.length > 0;
@@ -47,7 +49,7 @@ export function BoundarySection({
           disabled={archived}
           options={Object.values(CONSOLIDATION_BASIS).map((option) => ({
             value: option,
-            label: t(`options.${option}`),
+            label: tBasis(option),
           }))}
         />
       </div>

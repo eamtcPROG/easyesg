@@ -134,7 +134,7 @@ Business rules held here: BR-PER-1 … BR-PER-3 (§4.1) and BR-ACC-1 (§4.2). En
 - Country registers no vocabulary → 400 `country-not-supported`
 - Blank name, malformed email, overlong phone → 400 `validation-failed`
 
-**Boundaries.** The legal form, the registered address, the report-cover contact and the identifiers are FR-17's and FR-16's. The history panel behind the attribution line is S-12, task 84. **A change of country is not checked against the legal forms of the organization's entities**, because one country registers a vocabulary and no move between two is possible yet; the second registered country has to add that check (§12.5.6 task-177 row, deferral with its assumption).
+**Boundaries.** The legal form, the registered address, the report-cover contact and the identifiers are FR-17's and FR-16's. The history panel behind the attribution line is S-12, built by task 84 (FR-54). **A change of country is not checked against the legal forms of the organization's entities**, because one country registers a vocabulary and no move between two is possible yet; the second registered country has to add that check (§12.5.6 task-177 row, deferral with its assumption).
 
 **Acceptance criteria.**
 - **AC-1** Given an Organization Administrator, when they change the name, country, contact email or phone, then the change is stored and read back. *(source: FR text; UC-50 step 1)*

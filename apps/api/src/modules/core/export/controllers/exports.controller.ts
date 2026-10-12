@@ -12,7 +12,6 @@ import { NO_SUCH_REPORT } from '@api/modules/core/disclosure/errors/report.error
 import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
 import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
 import { EXPORT_FORMAT, EXPORT_MEDIA_TYPE, EXPORT_STATUS } from '../constants/export.constants';
-import { attachmentDisposition } from '../domain/export-file-name';
 import { ExportResponseDto } from '../dto/export.dto';
 import { ExportLanguagesResponseDto } from '../dto/export-languages.dto';
 import { RequestExportRequestDto } from '../dto/export-request.dto';
@@ -167,10 +166,10 @@ export class ExportsController {
   @Header('Cache-Control', 'private, no-store')
   @Header('X-Content-Type-Options', 'nosniff')
   async file(@Param('id', ParseUUIDPipe) id: string): Promise<StreamableFile> {
-    const { record, body, fileName } = await this.exports.file(id);
+    const { record, body, disposition } = await this.exports.file(id);
     return new StreamableFile(body, {
       type: EXPORT_MEDIA_TYPE[record.format],
-      disposition: attachmentDisposition(fileName),
+      disposition,
       length: body.length,
     });
   }

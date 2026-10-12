@@ -148,3 +148,11 @@
   max-width: var(--measure-text);
   color: var(--text-muted);
 }
+
+/* The footer (task 84): S-12's way in, quiet and last, as the S-12 frame draws it beneath the field. */
+.history {
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--border-default);
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}

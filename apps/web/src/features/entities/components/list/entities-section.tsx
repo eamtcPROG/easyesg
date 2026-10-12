@@ -62,7 +62,7 @@ export async function EntitiesSection({
   } else {
     const view = readEntityView(query);
     const page = applyEntityView({ rows: read.rows, view });
-    const legalForms: Readonly<Record<string, string>> = messages.organization.legalForms;
+    const legalForms: Readonly<Record<string, string>> = messages.vocabulary.legalForms;
     body = <EntitiesList page={page} view={view} legalForms={legalForms} />;
   }
 

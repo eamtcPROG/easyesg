@@ -37,7 +37,7 @@ export function FindingRow({
   const format = useFormatter();
   // The country names by ISO code, the step's own source for them (task 36.9) — a record keyed by a value the read
   // supplies, which a translator call cannot take (`apps/web/CLAUDE.md`, task 158's third kind).
-  const countries = useMessages().organization.countries as Readonly<Record<string, string>>;
+  const countries = useMessages().vocabulary.countries as Readonly<Record<string, string>>;
   const { finding, weight } = entry;
   const words = findingWords({ t: tValidation, format, finding });
   const detail = fieldDetail({ field: finding.field, countries });

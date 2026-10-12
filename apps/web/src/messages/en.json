@@ -595,9 +595,6 @@
       "problemBody": "The organisation was not created because the request could not be processed.",
       "loading": "Loading the countries you can choose…"
     },
-    "countries": {
-      "MD": "Republic of Moldova"
-    },
     "home": {
       "enrolmentPrompt": {
         "title": "Protect this organization with two-step verification",
@@ -686,18 +683,6 @@
         }
       }
     },
-    "legalForms": {
-      "srl": "Limited liability company (SRL)",
-      "sa": "Joint-stock company (SA)",
-      "snc": "General partnership (SNC)",
-      "sc": "Limited partnership (SC)",
-      "ii": "Sole proprietorship (ÎI)",
-      "cp": "Production cooperative (CP)",
-      "ci": "Entrepreneurs’ cooperative (CÎ)",
-      "is": "State-owned enterprise (ÎS)",
-      "im": "Municipal enterprise (ÎM)",
-      "gt": "Peasant farm (GȚ)"
-    },
     "profile": {
       "title": "Organisation profile",
       "lede": "Your organisation’s account on easyESG: its name and how we reach you. What a report prints belongs to each company, under Entities.",
@@ -779,10 +764,6 @@
         "panelTitle": "Periods on this entity",
         "panelNone": "No period has been opened for this entity yet.",
         "unavailable": "The periods could not be shown here. The link below still opens their list."
-      },
-      "standing": {
-        "active": "Active",
-        "archived": "Archived"
       },
       "filter": {
         "standing": "Filter by status",
@@ -885,10 +866,6 @@
           "basis": "Consolidation basis",
           "basisHelp": "The standard asks for an explicit answer, so we do not choose one on your behalf.",
           "basisPlaceholder": "Choose a basis",
-          "options": {
-            "individual": "Individual — this entity alone",
-            "consolidated": "Consolidated — the entity and its subsidiaries"
-          },
           "member": "Subsidiary {position}",
           "memberName": "Subsidiary name",
           "memberNameRequired": "Enter the subsidiary’s name, or the boundary cannot be saved.",
@@ -946,7 +923,11 @@
         }
       },
       "loading": "Loading the reporting entities…",
-      "searchLabel": "Search by name or IDNO"
+      "searchLabel": "Search by name or IDNO",
+      "history": {
+        "panelTitle": "Change history",
+        "body": "Who changed this entity’s details, when, and what they were before."
+      }
     },
     "periods": {
       "title": "Reporting periods",
@@ -2444,5 +2425,40 @@
         "autosave": "Report answers not yet sent, so that they are not lost if you lose your connection."
       }
     }
+  },
+  "history": {
+    "title": "Change history",
+    "close": "Close",
+    "open": "See the history",
+    "fieldFooter": "{count, plural, one {Changed once} other {Changed # times}} · history",
+    "list": "Changes, newest first",
+    "current": "Current",
+    "change": "{from} → {to}",
+    "changeSpoken": "from {from} to {to}",
+    "nothing": "—",
+    "when": "{at} · {source}",
+    "sources": {
+      "typed": "typed into the report",
+      "carried_forward": "carried forward from the previous report",
+      "calculated": "calculated by the carbon calculator",
+      "overridden": "replaced by the company, with a reason"
+    },
+    "actor": {
+      "platform": "The easyESG platform",
+      "erased": "An account that no longer exists",
+      "yourself": "{name} · you",
+      "removed": "Access removed"
+    },
+    "empty": "No changes recorded yet.",
+    "loading": "Loading the change history…",
+    "earlier": "Show earlier changes",
+    "earlierFailed": "The earlier changes could not be loaded.",
+    "retry": "Try again",
+    "unreachable": {
+      "title": "The history could not be loaded",
+      "body": "The data itself is unaffected. Try again in a few moments.",
+      "action": "Try again"
+    },
+    "note": "Nothing in this list is ever changed or removed. Someone who has lost access to the organisation keeps their entries, marked as such."
   }
 }

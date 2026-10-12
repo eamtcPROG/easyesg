@@ -40,7 +40,7 @@ export async function CreateOrganizationSection() {
    * visible: nobody creates an organization in a country the platform did not confirm it operates
    * in.
    */
-  const labels: Readonly<Record<string, string>> = messages.organization.countries;
+  const labels: Readonly<Record<string, string>> = messages.vocabulary.countries;
   const countries: CountryOption[] =
     outcome.status === API_OUTCOME.Ok
       ? outcome.value.items.map((entry) => ({

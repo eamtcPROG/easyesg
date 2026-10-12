@@ -17,6 +17,7 @@ import { markerFor } from './field-marker';
  */
 const field = (over: Partial<DisclosureField>): DisclosureField => ({
   elementKey: 'EnergyConsumptionFromFuels',
+  changeCount: 0,
   dimensionKey: '',
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,

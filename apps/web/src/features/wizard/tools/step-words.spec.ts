@@ -18,6 +18,7 @@ const option = (over: Partial<DisclosureOption>): DisclosureOption => ({
 
 const field = (options: DisclosureOption[] | null): DisclosureField => ({
   elementKey: 'CountryOfEmploymentContract',
+  changeCount: 0,
   dimensionKey: '',
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,

@@ -2,6 +2,8 @@
 
 import type { Organization } from '@easyesg/contracts';
 import { useFormatter, useTranslations } from 'next-intl';
+import { HISTORY_SUBJECT } from '@/client/history/history-subject';
+import { HistoryLink } from '@/features/history/components/trigger/history-link';
 import { PROFILE_MESSAGES } from '../shared/profile-messages';
 
 /**
@@ -22,25 +24,38 @@ import { PROFILE_MESSAGES } from '../shared/profile-messages';
  * The moment is the catalogue's `stamp` format, whose own declaration names audit surfaces as its
  * consumers — a date and a time, from the active locale, with no pattern written here (NFR-26).
  *
- * **The *history* link the artboard draws is absent.** S-12 is task 84, appended when this screen
- * went looking for its owner and found none; a link to nothing is worse than no link.
+ * **The *history* link the artboard draws opens S-12 since task 84**, on the organization's own fields — drawn beside
+ * every arm, *nothing recorded yet* included, since the panel says so itself.
  */
 export function ProfileAttribution({
   lastChange,
+  name,
 }: {
   readonly lastChange: Organization['lastChange'];
+  /** The organization's name, as stored — what the history's panel names under its title. */
+  readonly name: string;
 }) {
   const t = useTranslations(PROFILE_MESSAGES);
   const format = useFormatter();
+  const history = (
+    <HistoryLink request={{ subject: { kind: HISTORY_SUBJECT.ORGANIZATION }, naming: name }} />
+  );
 
-  if (lastChange === null) return <>{t('attribution.unknown')}</>;
+  if (lastChange === null) {
+    return (
+      <>
+        {t('attribution.unknown')} {history}
+      </>
+    );
+  }
 
   const at = format.dateTime(new Date(lastChange.at), 'stamp');
   return (
     <>
       {lastChange.email
         ? t('attribution.by', { email: lastChange.email, at })
-        : t('attribution.anonymous', { at })}
+        : t('attribution.anonymous', { at })}{' '}
+      {history}
     </>
   );
 }

@@ -12,6 +12,7 @@ import type { PendingWrite } from './autosave-state';
 /** The answers the browser's interpreter reads (task 42.1; OQ-49) — served, then acknowledged, then unacknowledged. */
 const field = (over: Partial<DisclosureField>): DisclosureField => ({
   elementKey: 'NumberOfEmployees',
+  changeCount: 0,
   dimensionKey: '',
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,

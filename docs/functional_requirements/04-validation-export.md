@@ -11,7 +11,7 @@ Part 4 of the eleven parts of [`functional_requirements.md`](../functional_requi
 
 Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held here: §5.
 
-**What is built and what is not.** Comparatives (FR-45 … FR-47) are built end to end. Traceability is half built: the capture of every change is the database's and has been since task 14, and nothing yet reads the trail as a screen (tasks 84.1, 84.2). Validation has its interpreter since task 40 — `packages/validation` holds the rule definition, the reader that admits a rule set and the interpreter, proven identical in the api's runtime and the browser application's over one corpus — since 41.1 the rule set in force, from the configuration store, written from the template's own status columns, since 41.2 the api's run and its findings, and since 41.3 the roll-up and readiness to file; and since task 42 the screens — each field's verdict where it is answered, live, S-08 with the run's roll-up on S-07, S-05 and S-06, each finding an address that lands focus in its field, and every finding's text held by test to its three parts and to no internal identifier. Export (tasks 43 … 47, with the template package, 45) is not started: `core/export` and `core/trace` are empty module shells, `packages/xlsx-patch` does not exist, and the contract has no path for previewing or exporting. The blocks for those requirements state what the sources decided and, where no source decided, what the owner settled on 5 Oct 2026 (`architecture.md` §12.5.6's task-182 rows).
+**What is built and what is not.** Comparatives (FR-45 … FR-47) are built end to end. Traceability is built: the capture of every change is the database's and has been since task 14, and since task 84 S-12 reads the trail — a disclosure field's from its footer on S-07, an entity's from S-13's record and the organization's from S-15's attribution line, each entry worded by the api. Validation has its interpreter since task 40 — `packages/validation` holds the rule definition, the reader that admits a rule set and the interpreter, proven identical in the api's runtime and the browser application's over one corpus — since 41.1 the rule set in force, from the configuration store, written from the template's own status columns, since 41.2 the api's run and its findings, and since 41.3 the roll-up and readiness to file; and since task 42 the screens — each field's verdict where it is answered, live, S-08 with the run's roll-up on S-07, S-05 and S-06, each finding an address that lands focus in its field, and every finding's text held by test to its three parts and to no internal identifier. Export is built (tasks 43 … 47, with the template package, 45): the preview, both files on the worker, the request, the history and the filed mark. The blocks for those requirements state what the sources decided and, where no source decided, what the owner settled on 5 Oct 2026 (`architecture.md` §12.5.6's task-182 rows).
 
 **Who uses these capabilities.** Two facts are built. The prior-period read (FR-45) is open to every member of the active organization, view-only included. The change trail is captured for every write, whoever makes it. For the rest, **the rule settled on 5 Oct 2026** (project owner, task 182; `architecture.md` §12.5.6 task-182 validation row, 182/22) is this. An **editor** and the **Organization Administrator** run validation, preview and export, re-download exports and read the change trail. A **view-only** member reads validation findings and the roll-up and nothing else of these: no validation run, no preview, no export, no export history or re-download and no trail (403 `insufficient-role` where a route is asked). `actors.md` §5 had granted the Organization Administrator a roll-up read and none of the others, and said nothing of a view-only member; it is amended to match. The blocks below write *editor or OA* for these, as part 3 does for writes.
 
@@ -662,7 +662,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-54 — Who changed a field, when, and from what
 
-**Status.** Partial — delivered 14, 30.3 (one reader), 34.1, 38.1 · remaining 84.1, 84.2
+**Status.** Built — delivered 14, 30.3 (one reader), 34.1, 38.1, 84.1, 84.2
 
 **Obligation.** The system shall record, per field, who changed a value, when, and what the previous value was.
 
@@ -670,7 +670,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 |---|---|
 | **Actors** | Recorded for every write, whoever makes it. An editor or the OA reads the trail; a view-only member does not (182/22). |
 | **Traces** | UC-47 · P-11 · DR-6 · NFR-7, NFR-35 · UX-68 · AD-14 constraint 5 · FR-55, FR-159 · entity *Field change record* |
-| **Surfaces** | S-12 (the Panel) · S-07 (the field's history entry point) · S-05 and S-13 (record-level history) · `GET /organization` (`updatedBy`) |
+| **Surfaces** | S-12 (the Panel) · S-07 (each field's footer) · S-13 (the entity record's side column) and S-15 (the attribution line) for record-level history · `GET /organization` (`updatedBy`) · `GET /organization/history`, `GET /entities/{id}/history`, `GET /reports/{id}/values/{elementKey}/history` |
 
 **Behaviour.**
 1. **Capture is a database trigger.** `core.capture_field_change` runs `AFTER INSERT OR UPDATE OR DELETE` on each audited table, so no application path can skip it and a plain `UPDATE` written later cannot bypass it. The function is `SECURITY DEFINER`: the application role holds `SELECT` on `core.field_change` and no `INSERT`, and the table is append-only and partitioned by year (task 14).
@@ -678,10 +678,10 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 3. **Audited**: organization, relationship, reporting entity, site, consolidation member, period, report, disclosure value, derivation input, invoice line (`calc_source`), membership and invitation. A gate requires every tenant table to be either audited or listed unaudited with its reason, and every audited table to carry the trigger (`schema-invariants`).
 4. **Not audited, with reasons**: the immutable record tables (entity snapshot, period reopening, calculation run, input and result), whose writing is the record; the audit tables; the trail itself; and the account's name columns, because FR-54 and FR-55 govern disclosure attribution inside an organization and a person's edits to their own profile are not that (task 139, 12 Sep 2026).
 5. The disclosure value table has a surrogate id so the trigger has a subject; a composite key would have raised on every write (§12.5.6 task-34.1 row). Any disclosure field is covered (FR-54's acceptance).
-6. A change by an account since erased still states the field and the moment: the actor is nullable and its name a left join (task-30.3 row; task 84.1).
+6. A change by an account since erased still states the field and the moment: the actor is nullable and its name a left join (task-30.3 row; task 84.1), and S-12 names it as an account that no longer exists.
 7. The trail is the reconciliation record for last-write-wins autosave (FR-37).
-8. **One reader exists today**: `GET /organization` answers `updatedBy` from the newest row for the record, not from a column the application maintains (task-30.3 row). The trail's own read and screen are tasks 84.1 and 84.2. That attribution is a single line served to every member and is not the trail: the trail's read admits an editor or the OA, and refuses a view-only member with 403 `insufficient-role` (182/22).
-9. S-12 is a Panel: who, when and the previous value per field, reachable from the field itself and not only from an audit screen (UX-68). The old and new values it shows are user-facing text: no internal key or enum member reaches it (task 84.2).
+8. **Two readers.** `GET /organization` answers `updatedBy` from the newest row for the record, not from a column the application maintains (task-30.3 row) — a single line served to every member, which is not the trail. **The trail's own read is task 84's** (§12.5.6 task-84 row): three routes, a page each, newest first — the organization's, the Organization Administrator's alone as its profile is; an entity's and a disclosure field's, an editor's or the OA's — and a view-only member is refused 403 `insufficient-role` (182/22). An entry is one statement: the record's image is rebuilt from the trail's rows, and a statement that moved no field a reader sees is no entry. S-07's step read carries each field's count of entries, by the same function, for its footer.
+9. S-12 is a Panel: per entry, what changed from what to what, who (a person since removed marked so), when, and for a disclosure value where it came from — typed, carried forward, calculated or overridden, read from the row's own columns as that change left them — reachable from the field itself and not only from an audit screen (UX-68). **Every value is worded by the api** in the reader's language from a registry of each subject's fields: a closed vocabulary's word from the shared catalogue, an activity code with its label, a disclosure answer as the document prints it; a column the registry does not name is never shown (task 84.2). No restore, and no module or report scope (§12.5.6 task-84 row (2)).
 
 **Refusals.** Another organization's records read as absent, by the same row-level policy as the rows they describe.
 
@@ -689,11 +689,11 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-1** Given a change to any audited record, then a trail row holds the actor, the instant and the previous value, written by the database in the same statement. *(source: FR text; task 14; §12.5.6 task-34.1 row)*
 - **AC-2** Given the application role, then it can read the trail and cannot insert, alter or delete a row of it. *(source: task 14 build-log; `architecture.md` AD-14 constraint 5)*
 - **AC-3** Given a tenant table, then it is audited or declared unaudited with a reason, and every audited table carries the trigger. *(source: task 14; `schema-invariants.e2e-spec.ts`)*
-- **AC-4** Given a change by an account since erased, then the entry still states the field and the moment. *(source: §12.5.6 task-30.3 row)* Unmet until 84.1 for the screen.
-- **AC-5** Given a disclosure field with changes, then S-12 lists, for each, who changed it, when and the previous value. *(source: FR text; design_spec.md S-12)* Unmet until 84.1, 84.2.
-- **AC-6** Given a field, then its history is reachable from the field. *(source: UX-68)* Unmet until 84.2.
-- **AC-7** Given the old and new values, then they read in the reader's language with no internal identifier. *(source: task 84.2; user-facing text rule)* Unmet until 84.2.
-- **AC-8** Given a view-only member, when they read a field's trail, then it is refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)* Unmet until 84.1.
+- **AC-4** Given a change by an account since erased, then the entry still states the field and the moment. *(source: §12.5.6 task-30.3 row)*
+- **AC-5** Given a disclosure field with changes, then S-12 lists, for each, who changed it, when and the previous value. *(source: FR text; design_spec.md S-12)*
+- **AC-6** Given a field, then its history is reachable from the field. *(source: UX-68)*
+- **AC-7** Given the old and new values, then they read in the reader's language with no internal identifier. *(source: task 84.2; user-facing text rule)*
+- **AC-8** Given a view-only member, when they read a field's trail, then it is refused with 403. *(source: §12.5.6 task-182 validation row, 182/22)*
 
 **History.**
 - 20 Aug 2026 · project owner · capture is a trigger, not an application function · `architecture.md` AD-14 constraint 5 amended, §12.3; task 14
@@ -702,10 +702,11 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 12 Sep 2026 · project owner · the account's name columns carry no trail · build-log task 139
 - 1 Oct 2026 · project owner · the invoice lines are audited and the immutable run records are not · task 38.1 (`schema-invariants`)
 - 5 Oct 2026 · project owner · an editor or the OA reads the trail; a view-only member does not · §12.5.6 task-182 validation row (182/22)
+- 12 Oct 2026 · project owner · S-12 is reached from S-07's fields, S-13's record and S-15's attribution line; a field's entries with a footer count, no restore; the api words every entry from a registry; a disclosure value's source is read from the trail; the organization's history is the OA's alone · §12.5.6 task-84 row
 
 ### FR-55 — Attribution survives removal of access
 
-**Status.** Partial — delivered 14, 25.1, 25.2, 26.4 · remaining 84.1, 84.2
+**Status.** Built — delivered 14, 25.1, 25.2, 26.4, 84.1, 84.2
 
 **Obligation.** The system shall retain historical attribution after a user's access to the organization is removed, so that revoking access never erases the audit trail.
 
@@ -729,10 +730,11 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-2** Given the removal dialogue, then it states that what the member entered stays attributed. *(source: UX-69; task 26.4)*
 - **AC-3** Given the trail, then its actor column has no foreign key to the account. *(source: task 14 build-log)*
 - **AC-4** Given a membership, then no runtime role can delete it. *(source: task 25.1)*
-- **AC-5** Given a removed member's changes, then the history screen still names them. *(source: UX-69; design_spec.md S-12)* Unmet until 84.1, 84.2.
+- **AC-5** Given a removed member's changes, then the history screen still names them, marked as without access. *(source: UX-69; design_spec.md S-12; task 84)*
 
 **History.**
 - 5 Oct 2026 · project owner · who reads the trail: an editor or the OA · §12.5.6 task-182 validation row (182/22)
+- 12 Oct 2026 · project owner · S-12 marks a person since removed rather than hiding them, and names an erased account's change as one · §12.5.6 task-84 row (c)
 
 ## 5. Business rules held in this part
 

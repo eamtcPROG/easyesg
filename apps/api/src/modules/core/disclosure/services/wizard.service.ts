@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { FIELD_CHANGE_COUNTS, type FieldChangeCounts } from '@api/contracts/field-change-counts.port';
 import { PRESENTATION_PRECISION, type PresentationPrecision } from '@api/contracts/presentation-precision.port';
 
 import { requestContext, requestLocale } from '@api/infrastructure/persistence/request-context';
@@ -31,6 +32,7 @@ export class WizardService {
     private readonly derivationWrites: WriteDerivationInputs,
     @Inject(PRESENTATION_PRECISION) private readonly precision: PresentationPrecision,
     private readonly clearance: ClearOutstandingNotice,
+    @Inject(FIELD_CHANGE_COUNTS) private readonly changes: FieldChangeCounts,
   ) {}
 
   modules(query: { readonly reportId: string }): Promise<readonly DisclosureModuleSummary[]> {
@@ -43,9 +45,14 @@ export class WizardService {
     // Falls back to source rather than throwing: a step with unresolved wording is still an
     // answerable step, and refusing it would make a missing header fatal to the whole product.
     const step = await this.reads.step({ ...query, locale: requestLocale() });
+    // Each stored field's count of changes, for its footer (task 84) — read after the step, which names the elements.
+    const changeCounts = await this.changes.count({
+      reportId: query.reportId,
+      elementKeys: [...new Set(step.fields.map((field) => field.elementKey))],
+    });
     // The places a computed or derived figure is shown to (task 39.3; §12.5.6's task-39 row (7)) — the same rule S-09,
     // the PDF and the Excel export round by, so the wizard cannot disagree with them about a figure.
-    return { ...step, precision: this.precision.places() };
+    return { ...step, precision: this.precision.places(), changeCounts };
   }
 
   /**

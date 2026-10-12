@@ -16,9 +16,9 @@ import type { formats } from '@/i18n/formats';
  */
 declare module 'next-intl' {
   interface AppConfig {
-    // The `validation` namespace is the shared catalogue's, read beside this app's own (task 42.1;
-    // `server/messages/messages.ts` says why).
-    Messages: typeof ro & Pick<typeof sharedRo, 'validation'>;
+    // The `validation` and `vocabulary` namespaces are the shared catalogue's, read beside this app's own (tasks 42.1,
+    // 84; `server/messages/messages.ts` says why).
+    Messages: typeof ro & Pick<typeof sharedRo, 'validation' | 'vocabulary'>;
     Formats: typeof formats;
     Locale: import('@easyesg/i18n').Locale;
   }

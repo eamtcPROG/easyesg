@@ -32,7 +32,9 @@ import {
   withCommitted,
   writeFor,
 } from '../../../tools/values';
+import { HISTORY_SUBJECT } from '@/client/history/history-subject';
 import { CalculatedFigure } from '@/features/calculator/components/figure/calculated-figure';
+import { HistoryLink } from '@/features/history/components/trigger/history-link';
 import { useAutosaveContext } from '../../providers/autosave-context';
 import { useValidationContext } from '../../providers/validation-context';
 import { DisclosureControl } from '../controls/disclosure-control';
@@ -58,6 +60,7 @@ import { FindingMessages } from './finding-messages';
  * with a precedence rather than three states.
  */
 export function StepField({
+  reportId,
   served,
   named,
   readOnly,
@@ -65,6 +68,8 @@ export function StepField({
   onChooseUnit,
   prior,
 }: {
+  /** The report the field is of — what its change history is addressed by (task 84). */
+  readonly reportId: string;
   readonly served: DisclosureFieldShape;
   readonly named?: string | null;
   readonly readOnly: boolean;
@@ -140,6 +145,7 @@ export function StepField({
   // Last year's answer in this field's own value column, or '' where it holds none there.
   const priorDraft = prior === null ? '' : priorDraftOf({ field, prior });
   const labelId = fieldAnchor(key);
+  const label = named === undefined ? (field.label ?? tField('unnamed')) : (named ?? tField('unnamed'));
 
   return (
     <DisclosureField
@@ -155,7 +161,7 @@ export function StepField({
        * not happen: an unnamed member must render as an unnamed column, a visible defect rather
        * than a plausible-looking wrong word.
        */
-      label={named === undefined ? (field.label ?? tField('unnamed')) : (named ?? tField('unnamed'))}
+      label={label}
       /*
        * **UX-30's statement is the omitted-disclosures element's own help since task 94** — *"the
        * interface shall say so at the point of entry"* — authored by the platform and held
@@ -258,6 +264,25 @@ export function StepField({
           onResume={() => change(resumeWrite(field))}
         />
         )
+      }
+      // S-12's way in (task 84; UX-68): where the field has changed, and for a reader who may read its trail — the link
+      // draws nothing for anyone else. The count is the step read's, so it moves when the step is read again.
+      history={
+        served.changeCount > 0 ? (
+          <HistoryLink
+            count={served.changeCount}
+            request={{
+              subject: {
+                kind: HISTORY_SUBJECT.VALUE,
+                reportId,
+                elementKey: served.elementKey,
+                dimensionKey: served.dimensionKey,
+                ordinal: served.ordinal,
+              },
+              naming: label,
+            }}
+          />
+        ) : undefined
       }
       readOnly={readOnly}
     >

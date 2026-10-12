@@ -8,7 +8,7 @@ import { ReportNotFoundError } from '@api/modules/core/disclosure/errors/report.
 import { REPORT_STORE, type ReportStore } from '@api/modules/core/disclosure/interfaces/report-store.interface';
 import { ValidationFindingDto } from '@api/modules/core/validation/dto/validation.dto';
 import { ValidationService } from '@api/modules/core/validation/services/validation.service';
-import { exportFileName } from '../domain/export-file-name';
+import { attachmentDisposition, exportFileName } from '../domain/export-file-name';
 import { toExportHistoryQuery } from '../domain/export-history-query';
 import { ExportFindingsUnacknowledgedError, ExportNotFoundError } from '../errors/export.errors';
 import { EXPORT_HISTORY, type ExportHistoryStore } from '../interfaces/export-history.interface';
@@ -76,8 +76,12 @@ export class ExportService {
     return stored.record;
   }
 
-  /** The stored file, and the name it is saved under — the undertaking and the year from the report it was made of. */
-  async file(exportId: string): Promise<{ readonly record: ExportRecord; readonly body: Buffer; readonly fileName: string }> {
+  /**
+   * The stored file, and the `content-disposition` it is saved under — named for the undertaking and the year of the
+   * report it was made of. **The header is built here, not in the controller** (`controllers-not-to-use-cases`, which
+   * covers `domain/`: a controller maps transport and calls this service, nothing deeper).
+   */
+  async file(exportId: string): Promise<{ readonly record: ExportRecord; readonly body: Buffer; readonly disposition: string }> {
     const { record, body } = await this.files.execute({ exportId });
     const report = await this.reports.findReport({ reportId: record.reportId });
     if (!report) throw new ExportNotFoundError();
@@ -87,6 +91,6 @@ export class ExportService {
       locale: record.locale,
       format: record.format,
     });
-    return { record, body, fileName };
+    return { record, body, disposition: attachmentDisposition(fileName) };
   }
 }
