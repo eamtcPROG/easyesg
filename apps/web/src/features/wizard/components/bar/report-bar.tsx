@@ -2,11 +2,13 @@ import type { DisclosureModuleSummary, Report } from '@easyesg/contracts';
 import { BUTTON_VARIANT, Button, WizardBar } from '@easyesg/ui';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { ROUTES, reportExportRoute, reportPreviewRoute } from '@/lib/routes';
+import { mayAdminister, readActiveMembership } from '@/server/data/memberships';
 import type { ReadOnlyCause } from '@/server/data/wizard';
 import { reportIdentity } from '../../tools/report-identity';
 import { initialSavedAt } from '../../tools/saved-at';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import { ExitLink } from './exit-link';
+import { ReportMenu } from './report-menu';
 import { ReportOverflow } from './report-overflow';
 import { SaveState } from './save-state';
 
@@ -33,12 +35,16 @@ export async function ReportBar({
   readonly modules: readonly DisclosureModuleSummary[];
   readonly readOnly: ReadOnlyCause | null;
 }) {
-  const [t, tReports, format] = await Promise.all([
+  const [t, tReports, format, membership] = await Promise.all([
     getTranslations(WIZARD_MESSAGES),
     getTranslations('organization.reports'),
     getFormatter(),
+    // React-`cache()`d and already read by the global tier, so this costs no round trip.
+    readActiveMembership(),
   ]);
   const { title, meta } = reportIdentity({ report, t, tReports, format });
+  // UC-213's deletion is the administrator's alone (task 192); anyone else's ⋯ at `medium` would hold nothing.
+  const mayDelete = mayAdminister(membership);
 
   return (
     <WizardBar
@@ -57,9 +63,10 @@ export async function ReportBar({
           <Button asChild variant={BUTTON_VARIANT.PRIMARY}>
             <ExitLink href={reportPreviewRoute({ reportId: report.id })}>{t('bar.review')}</ExitLink>
           </Button>
+          {mayDelete ? <ReportMenu report={report} /> : null}
         </>
       }
-      overflow={<ReportOverflow reportId={report.id} />}
+      overflow={<ReportOverflow report={report} mayDelete={mayDelete} />}
     />
   );
 }

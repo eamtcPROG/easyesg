@@ -88,7 +88,7 @@ traps each one left — grouped by area rather than by the task that built it.
   no template for a pin it does not pair with its taxonomy; reporting periods
   (`GET/POST /periods`, `GET/PATCH /periods/{id}`) with the lock
   (`POST /periods/{id}/{lock,reopening}`, `GET /periods/{id}/reopenings`); the report
-  (`GET/POST /reports`, `GET/PATCH /reports/{id}`) carrying its pinned taxonomy; the disclosure
+  (`GET/POST /reports`, `GET/PATCH /reports/{id}`, and since task 192 `DELETE /reports/{id}`) carrying its pinned taxonomy; the disclosure
   store and the wizard's step read with applicability, derivations, template defaults and omissions;
   and `GET /reports/{id}/prior-period` (34.3).
 - **Calculator** (`core/calculator`; task 37): emission factor sets as configuration — `emission_factor_set`, one
@@ -536,6 +536,14 @@ Four things to know before touching it:
   `filed` (task 47) are **read, never stored** (`statusAsRead`): readiness from the last run, and `filed` from the mark,
   its own columns, which a lock leaves alone — so a filed report reads `filed` over the lock, and **the report answers
   `locked` beside its status**, which is what a client takes read-only from (§12.5.6's task-47 row (o)).
+- **A deleted report is hidden by row security, not by a filter** (task 192; §12.5.6's task-192 row). `deleted_at`
+  marks it, and `report_not_deleted` — restrictive, `FOR SELECT`, `TO esg_app, esg_worker` — leaves it out of every read
+  those roles make, the joins and the worker's sweeps included, so a read written later needs no clause. Two things
+  follow. **The deletion is `core.delete_report(uuid)`**, `SECURITY DEFINER`, because a policy hiding a row refuses the
+  update that hides it (the new row fails it — measured); it locks the row, checks the lock and the exports, and marks.
+  **A role the policy does not name sees deleted reports**: `esg_admin_ro` bypasses row security, so the console
+  register's count filters `deleted_at IS NULL` itself — a new reader in another role must be named in the policy or
+  filter the same way. The one-report-per-period key is a partial unique index over reports not deleted.
 - **A `BEFORE UPDATE` trigger refuses a locked report's every write but `status`**, so a scope change
   inside a locked period is refused below the application as well as above it (P-4). Row comparison,
   not a column list, exactly as task 31.2's.

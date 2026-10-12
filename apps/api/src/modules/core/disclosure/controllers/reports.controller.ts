@@ -1,6 +1,7 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiListResponse, ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
+import { NO_CONTENT_RESPONSE } from '@api/app/interceptors/global-response.interceptor';
 import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
 import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
 import {
@@ -127,6 +128,30 @@ export class ReportsController {
     @Body() body: UpdateReportRequestDto,
   ): Promise<ReportResponseDto> {
     return new ReportResponseDto(await this.reports.update({ reportId: id, patch: body }), this.reports.adopted());
+  }
+
+  @Delete(':id')
+  @RequiresRole(MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR)
+  @ApiOperation({
+    summary: 'Delete a report made in error (UC-213, FR-210)',
+    description:
+      'The Organization Administrator alone, while the report’s period is open and only if no export of it was ' +
+      'requested or completed. Soft: the report leaves every list and route, and its values, runs, trail and export ' +
+      'records stay stored until the organization’s retention ends. The period stays open, and a new report may be ' +
+      'opened for it.',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 204, description: 'The report is deleted.' })
+  @ApiResponse({ status: 404, description: `${NO_SUCH_REPORT} Or it was deleted already.` })
+  @ApiResponse({
+    status: 409,
+    description:
+      'The reporting period is locked (problem type report-not-editable), or a file of the report was exported or is ' +
+      'being made (problem type report-exported).',
+  })
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<typeof NO_CONTENT_RESPONSE> {
+    await this.reports.delete({ reportId: id });
+    return NO_CONTENT_RESPONSE;
   }
 
   @Post(':id/reminders')

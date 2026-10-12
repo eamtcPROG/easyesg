@@ -105,6 +105,20 @@ export class ReportNotExportedError extends DomainError {
 }
 
 /**
+ * FR-210's deletion of a report an export of which was requested or completed (task 192; §12.5.6's task-192 row (1)) —
+ * a file left the platform or is being made, so the report is distribution evidence (FR-53) and stays. A type of its own
+ * so the screen can name the reason; the way on is none, which the wording says.
+ */
+export class ReportExportedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ReportExported;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.exported');
+  }
+}
+
+/**
  * The report pins a taxonomy version the registry no longer carries.
  *
  * **An explicit failure rather than an empty form**, which is the position `TAXONOMY_REGISTRY`'s own

@@ -756,14 +756,14 @@ their numbers put them.
 - **Primary actor:** OA
 - **Module:** Report access
 - **Stakeholders and interests:** Organization Administrator — removes a report started by mistake, such as the wrong entity or period, so that it does not stand in the lists; organization — wants nothing that has left the platform to vanish; a future limited-assurance reviewer — needs the deletion attributable.
-- **Preconditions:** A report exists in the active organization. Its reporting period is open (UC-57). No export of the report has completed (UC-42, UC-43).
+- **Preconditions:** A report exists in the active organization. Its reporting period is open (UC-57). No export of the report has been requested or has completed (UC-42, UC-43); a failed one leaves nothing and does not count *(amended 12 Oct 2026, `architecture.md` §12.5.6's task-192 row (1))*.
 - **Trigger:** The Administrator chooses to delete the report.
 - **Main success scenario:**
   1. The Administrator asks to delete the report.
   2. The system names the report and says what follows: it disappears from the lists, and its data is held until the organization's retention ends. The Administrator confirms.
   3. The system marks the report deleted and records the deletion with the acting user and the time (FR-159).
   4. The report no longer appears in any list or route.
-- **Exception flows:** Where the period is locked the deletion is refused and the lock is named; reopening the period (UC-58) lifts it. Where an export of the report has completed, the deletion is refused and the reason is named. An editor or a view-only member is not offered the action.
+- **Exception flows:** Where the period is locked the deletion is refused and the lock is named; reopening the period (UC-58) lifts it. Where an export of the report has completed or is being made, the deletion is refused and the reason is named. An editor or a view-only member is not offered the action.
 - **Postconditions:** The report is absent from every list and route. Its values, calculation runs, change trail and export records remain stored until the organization's retention ends (FR-207 governs erasure). The period has no report standing against it, and a new one may be created.
 - **Business rules:** Once a PDF or an Excel file has left the platform the report is distribution evidence (FR-53, UC-44) and cannot be deleted. The deletion is soft: nothing is physically removed, so a calculation run keeps its retained inputs (FR-33). The decision was taken on 5 Oct 2026 (project owner, task 182; `architecture.md` §12.5.6's task-182 validation row, 182/23). D-13 is not engaged: it forbids a downgrade or non-payment from destroying report data, and this is an administrator's own act on a report that never left the platform.
 - **Related FRs:** FR-210, FR-153

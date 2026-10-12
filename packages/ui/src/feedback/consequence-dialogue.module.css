@@ -45,6 +45,10 @@
   color: var(--text-muted);
 }
 
+.failure {
+  margin-block-start: var(--space-5);
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;

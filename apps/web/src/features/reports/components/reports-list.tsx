@@ -3,6 +3,7 @@
 import {
   Button,
   BUTTON_VARIANT,
+  COLUMN_SIZE,
   EmptyState,
   toPageSize,
   StatusChip,
@@ -30,6 +31,7 @@ import {
   type ReportView,
 } from '../tools/reports';
 import { REPORTS_MESSAGES } from './reports-messages';
+import { ReportRowMenu } from './report-row-menu';
 import { ReportsToolbar } from './reports-toolbar';
 import styles from './reports.module.css';
 
@@ -41,17 +43,17 @@ import styles from './reports.module.css';
  * lives in the address (UX-4). No provider and no reducer for values nothing else moves with.
  *
  * **The row action is a link into the wizard, and it is one action rather than the artboard's
- * four.** The artboard draws *Continue · Open · Preview · Download* by state; preview is S-11
- * (task 43) and download is the export re-fetch (task 47), and neither screen exists — a control
- * that cannot act is worse than an absent one, which is task 30.1's rule and the reason task 32.2.2
- * was blocked at all until S-07 became real. What every row can do today is open, so that is what
- * every row offers.
+ * four.** The artboard draws *Continue · Open · Preview · Download* by state; a filed row's export
+ * count and *Download* are task 216's, and opening the report is what every row can do, so that is
+ * what every row offers. **And since task 192 the administrator's ⋯ ends each row**, holding *Delete
+ * this report* (`architecture.md` §12.5.6's task-192 row (3)) — absent for anyone else, whose menu
+ * would hold nothing.
  */
 
 /** Columns that are not sort dimensions, declared rather than written as a union — the
  *  convention's own reason: a hand-written union has no runtime value, so a typo makes a second
  *  column instead of failing. */
-const REPORT_COLUMN = { PERIOD: 'period', COMPLETION: 'completion', PIN: 'pin' } as const;
+const REPORT_COLUMN = { PERIOD: 'period', COMPLETION: 'completion', PIN: 'pin', ACTIONS: 'actions' } as const;
 
 export type ReportColumnKey = ReportSort | (typeof REPORT_COLUMN)[keyof typeof REPORT_COLUMN];
 
@@ -89,9 +91,11 @@ export interface ReportsListProps {
    * go, because creating a report is the one write this screen offers and a viewer's would be refused.
    */
   readonly canCreate: boolean;
+  /** The Organization Administrator's: whether each row ends in the ⋯ that deletes it (UC-213; task 192). */
+  readonly canDelete: boolean;
 }
 
-export function ReportsList({ page, view, options, canCreate }: ReportsListProps) {
+export function ReportsList({ page, view, options, canCreate, canDelete }: ReportsListProps) {
   const t = useTranslations(REPORTS_MESSAGES);
   const format = useFormatter();
   const router = useRouter();
@@ -189,8 +193,19 @@ export function ReportsList({ page, view, options, canCreate }: ReportsListProps
           </span>
         ),
       },
+      // The administrator's ⋯ (task 192): a column only where a row has something to offer in it.
+      ...(canDelete
+        ? [
+            {
+              key: REPORT_COLUMN.ACTIONS,
+              header: t('columns.actions'),
+              size: COLUMN_SIZE.FIT,
+              cell: (row: ReportRow) => <ReportRowMenu row={row} />,
+            },
+          ]
+        : []),
     ],
-    [format, t],
+    [canDelete, format, t],
   );
 
   return (

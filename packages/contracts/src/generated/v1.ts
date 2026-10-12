@@ -1113,7 +1113,11 @@ export interface paths {
         get: operations["ReportsController_view"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete a report made in error (UC-213, FR-210)
+         * @description The Organization Administrator alone, while the report’s period is open and only if no export of it was requested or completed. Soft: the report leaves every list and route, and its values, runs, trail and export records stay stored until the organization’s retention ends. The period stays open, and a new report may be opened for it.
+         */
+        delete: operations["ReportsController_delete"];
         options?: never;
         head?: never;
         /**
@@ -3837,6 +3841,8 @@ export interface components {
             status: "open" | "locked" | "ready_to_file" | "filed";
             /** @description Whether the report’s period is locked (FR-22), so it takes no writes from anyone — whatever its status reads: a filed report in a locked period reads filed (task 47.5). */
             locked: boolean;
+            /** @description Whether a file of it was exported or is being made — an export requested or completed, never one that failed. Such a report is distribution evidence, and the Organization Administrator cannot delete it (FR-210). */
+            exported: boolean;
             /** @description What its latest validation run came to (FR-41), or null where it was never checked. */
             validation: components["schemas"]["ReportValidationSummaryDto"] | null;
             /** @description The reporter’s filed mark (FR-41), or null where it was never marked or the mark was withdrawn. */
@@ -7818,6 +7824,40 @@ export interface operations {
             };
             /** @description No such report in the active organization. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReportsController_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The report is deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such report in the active organization. Or it was deleted already. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The reporting period is locked (problem type report-not-editable), or a file of the report was exported or is being made (problem type report-exported). */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

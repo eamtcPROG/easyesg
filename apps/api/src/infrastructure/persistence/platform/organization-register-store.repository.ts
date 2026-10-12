@@ -36,7 +36,8 @@ interface RegisterDbRow {
  * **count**, and the most recent sign-in by an active member. **The IDNO is an entity's since task 175**
  * (FR-16 as amended): the row shows its earliest entity holding one, and a search matches every entity's,
  * so a group is found by any of its companies' numbers. No column of `core.report` beyond its
- * existence is read, and `identity.session` is readable by this role only as `(account_id,
+ * existence is read — and whether it was deleted (task 192): this role bypasses row security, so the policy that hides a
+ * deleted report from the application does not reach it, and the count says so itself, and `identity.session` is readable by this role only as `(account_id,
  * created_at)` — the migration's column grant, so a later edit reaching for more fails at the
  * database rather than in review.
  *
@@ -62,7 +63,7 @@ const REGISTER = `
          (SELECT count(*)::int FROM core.reporting_entity e
            WHERE e.organization_id = o.id AND e.status = '${ENTITY_STATUS.ACTIVE}') AS entity_count,
          (SELECT count(*)::int FROM core.report r
-           WHERE r.organization_id = o.id) AS report_count,
+           WHERE r.organization_id = o.id AND r.deleted_at IS NULL) AS report_count,
          (SELECT max(s.created_at)
             FROM identity.membership m
             JOIN identity.session s ON s.account_id = m.account_id

@@ -1017,7 +1017,8 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **217 files here are Client Components** (12 Oct 2026: nine more since task 47 built S-11 — the dialogue, its pending
+  **220 files here are Client Components** (12 Oct 2026: three more since task 192 — the report's deletion in `shared/`,
+  which S-06's rows and S-07's bar both read, S-06's row ⋯ and S-07's ⋯ from `medium` up; nine more since task 47 built S-11 — the dialogue, its pending
   card, the history, its columns, its filters and the status cell that watches a row still being made, the filed mark
   and the panel that makes one, and the export's watch in `client/exports/` — and one fewer, the bar's action drawn ahead
   of its screen, which S-11 retired. 10 Oct 2026: one more since task 43.2 — the wizard's leave guard,

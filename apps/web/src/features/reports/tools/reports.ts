@@ -71,6 +71,9 @@ export interface ReportRow {
   readonly updatedAt: number;
   /** What its last validation run came to, or `null` where none has checked it (task 42.2) — the completion column. */
   readonly validation: Report['validation'];
+  /** Its period is locked, and a file of it was exported or is being made — why it cannot be deleted (task 192). */
+  readonly locked: boolean;
+  readonly exported: boolean;
 }
 
 export interface ReportView {
@@ -206,6 +209,8 @@ export const toReportRows = (reports: readonly Report[]): ReportRow[] =>
     taxonomyVersion: report.taxonomyVersion,
     updatedAt: report.updatedAt,
     validation: report.validation,
+    locked: report.locked,
+    exported: report.exported,
   }));
 
 /** What the entity and year facets offer, entities by name and years newest first. */

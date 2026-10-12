@@ -55,6 +55,12 @@ export interface ConsequenceDialogueProps {
   readonly retained?: ReactNode;
   readonly confirmLabel: ReactNode;
   readonly cancelLabel: ReactNode;
+  /**
+   * Why the last confirmation did not go through — the caller's `Callout`, drawn above the two buttons — where the
+   * dialogue stays open after its action was refused or could not be sent (task 192). The reader is looking here, and a
+   * screen with no notice region near the control that opened it would otherwise have nowhere to say so.
+   */
+  readonly failure?: ReactNode;
   readonly busy?: boolean;
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
@@ -68,6 +74,7 @@ export function ConsequenceDialogue({
   retained,
   confirmLabel,
   cancelLabel,
+  failure,
   busy = false,
   onConfirm,
   onCancel,
@@ -107,6 +114,8 @@ export function ConsequenceDialogue({
               {retained ? <p className={`t-body ${styles.retained}`}>{retained}</p> : null}
             </div>
           </AlertDialog.Description>
+
+          {failure ? <div className={styles.failure}>{failure}</div> : null}
 
           <div className={styles.actions}>
             {/* `Cancel` is a Radix part because it is what takes initial focus — the safe choice

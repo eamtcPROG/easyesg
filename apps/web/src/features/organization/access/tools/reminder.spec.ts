@@ -35,6 +35,7 @@ const aReport = (over: Partial<Report> = {}): Report => ({
   locked: false,
   validation: null,
   filing: null,
+  exported: false,
   supersededBy: null,
   templateVersion: '1.3.0',
   taxonomyVersion: '2026-05-01',

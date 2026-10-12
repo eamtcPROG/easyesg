@@ -31436,3 +31436,86 @@ default heap, 71 suites and 1,762 tests in 466 s, where the single process had a
 *Download* — which task 32.2.2's entry assigned to task 47 and task 47's row never carried. Its row names the three
 questions to ask before building it, and FR-53's status names it as remaining; task 65's Covered FR already carries
 FR-53 for 65.2.
+
+## Task 192 — a report deleted by its administrator, and hidden by row security · 2026-10-12
+
+`DELETE /reports/{id}` for the Organization Administrator, soft, through `core.delete_report`; a deleted report hidden
+from every read the application and the worker make; and *Delete this report* as the last item of the report's ⋯ on
+S-06's rows and in S-07's bar, behind the consequence dialogue, disabled and saying why where it cannot act.
+
+### Decided before building (project owner, one batch of four, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-192 row (1)–(4); amended in the same edits §6.8's report route, FR-210
+behaviour 1 and 2 with its preconditions and refusals, UC-213's precondition and exception flow, and S-06's and S-07's
+spec entries.
+
+- **(1) A requested or a completed export refuses a deletion; a failed one does not.** Task 47 writes the record at the
+  request, so FR-210's *no export record* and UC-213's *no export has completed* had come apart. *Declined:* any record;
+  completed only.
+- **(2) Row security hides a deleted report**, and the deletion is a `SECURITY DEFINER` function, since a policy hiding a
+  row refuses the update that hides it — measured on the test stack's PostgreSQL 18 before the question was asked, so
+  the option said what it would cost. *Declined:* a filter in each of the forty-odd statements that read the table.
+- **(3) The report's ⋯ on S-06's rows and in S-07's bar at every width**, the Components artboard's *Report actions*.
+  *Declined:* either screen alone.
+- **(4) Disabled with its reason where it cannot act** (UX-50), the report answering `exported` beside `locked`.
+  *Declined:* always offered; omitted.
+
+### Settled in the task
+
+Row (a)–(f): the route and its four answers, `report-exported` a type of its own; the one-report key a partial unique
+index; the report's outstanding-report notice withdrawn in the deletion's transaction while the period's deadline
+notices stand; an export racing a deletion produces no file, the function locking the row before it reads the exports;
+the trail the table's own capture; and S-06's after-deletion sentence from its address, as S-05's `joined` is.
+
+### What the building found
+
+- **The console register's report count runs as the role row security does not reach.** `esg_admin_ro` bypasses it, so
+  the count filters `deleted_at IS NULL` itself, and the api's notes say a reader in a new role must be named in the
+  policy or filter the same way. *Searched:* every statement under `persistence/` naming `core.report`, by role — the
+  support-access reads go through the application's own connection and are covered.
+- **A refused deletion had nowhere to be said on S-07.** The console's confirmations close and report above their list;
+  S-07's bar has no notice region. `ConsequenceDialogue` gains an optional `failure` slot above its buttons, so the
+  dialogue stays open with the api's words in it — the inventory's change, its spec showing the slot drawn and absent.
+- **S-06's list said S-11 and the download did not exist.** True when written; its docblock now says the filed row's
+  export count and download are task 216's.
+- **S-07 and S-09 told a reader with a dead link to try again later.** The browser journey deleted a report from S-07's
+  bar, landed on S-06, then opened the report's step address — and got HTTP 200 and S-07's *unreachable* state: its
+  read and S-09's turned the api's 404 into *the service could not be reached*, which was wrong for any unknown report
+  long before a deletion made one common. S-10 and S-11 had each declared a *report not found* arm for themselves. The
+  arm is `TENANT_READ.NOT_FOUND` with `isNotFound` in `server/data/tenant-read.ts` now, beside the permission refusal,
+  and all four reads use it; the two per-screen copies are gone. *Searched:* every read under `server/data/` that reads
+  `/reports/{id}` — the entry already answered 404 for anything not ready.
+- **The trail records the creation too.** The suite's first assertion counted every `deleted_at` change for the report
+  and found two — the insert writing it empty, and the mark — so it asserts on the mark.
+
+### Gates
+
+The change reaches `apps/api` (a migration, a controller and DTO, the module graph), `apps/web`, `packages/ui` (the
+dialogue's slot), `packages/contracts` (regenerated) and `packages/i18n` — so every dependent's row, one suite at a time,
+no dev server running:
+
+- `pnpm lint`; `pnpm typecheck`, every workspace; `pnpm docs:check`, 48 claims, after the archive's counts and the web's
+  Client Components (217 to 220) moved; `pnpm events:check`; `pnpm routes:check`; `pnpm openapi:check` staged.
+- Unit: `api` 2,291 in 288 suites, `web` 1,933, `admin` 299, `ui` 489.
+- `pnpm migrations:check`, both stacks, 64 and 64 — the policy, the function and the partial key apply, revert and
+  re-apply.
+- `pnpm e2e`: 72 suites, 1,772 tests, 508 s, at the default heap in its recycled worker; the log holds only the
+  warnings other suites provoke. `pnpm e2e:worker`: 16.
+- `pnpm e2e:web`, all three projects, twice. The first: 356 of 357, S-07's deletion journey red on the dead-link
+  finding above. The second, after the fix: 355 of 357 in 19 minutes against the first's ten, the two red ones S-07's
+  draft across two devices and B9's derived rate, each timing out on a save landing; both passed alone, 2 of 2, and
+  both had passed in the first run. Recorded as timing under load on this host, not as a pass.
+
+### Skills, read against the diff
+
+`vercel-react-best-practices`: `server-cache-react` is why S-07's bar reads the membership itself — the global tier's
+cached read, no round trip and no prop threaded through two sections; `rerender-` — the list's columns memoise on
+`canDelete` beside their other inputs, and the deletion's state is one value over a union, not two setters.
+`vercel-composition-patterns`: the dialogue grew a slot, `failure`, not a flag. `one-kind-per-folder`: the deletion's
+hook and its Server Action sit in the app's flat `shared/`, read by S-06's rows and S-07's bar, the hook's docblock
+naming both; S-06's components stay flat files. `one-idea-per-file`: the row's ⋯, the bar's ⋯ and the list's sentence are
+a file each, and the action is its own `'use server'` module. `nestjs-best-practices`: `di-use-interfaces-tokens` for the
+deletion's port, its own beside the report store since one route writes it; `db-use-transactions` — the conditions and
+the mark in the request's transaction, the row locked first. *Declined*: `error-throw-http-exceptions`, which the
+architecture forbids in use cases.
+

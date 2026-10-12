@@ -253,6 +253,21 @@ export const reportPreviewRoute = (input: { readonly reportId: string; readonly 
     input.language ? `${PREVIEW_LANGUAGE_PARAM}=${encodeURIComponent(input.language)}` : '',
   );
 
+/**
+ * S-06 after a report was deleted (task 192; `architecture.md` §12.5.6's task-192 row (f)) — the address names what
+ * happened from a closed set, and the list says it in a fixed sentence, as S-05's `joined` does; a value it does not
+ * recognise says nothing.
+ */
+export const DELETION_NOTICE = { REPORT: 'report' } as const;
+
+export type DeletionNotice = (typeof DELETION_NOTICE)[keyof typeof DELETION_NOTICE];
+
+/** The query parameter that carries it — one spelling for the writer and the reader. */
+export const DELETION_NOTICE_PARAM = 'deleted';
+
+export const reportsAfterDeletionRoute = (): string =>
+  withQuery(ROUTES.REPORTS, `${DELETION_NOTICE_PARAM}=${DELETION_NOTICE.REPORT}`);
+
 /** The query parameter S-10's language choice writes and its page reads — one spelling for both. */
 export const PREVIEW_LANGUAGE_PARAM = 'language';
 

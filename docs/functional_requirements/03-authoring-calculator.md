@@ -360,7 +360,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-210 — Delete a report
 
-**Status.** Not started — remaining 192
+**Status.** Built — delivered 192 (`DELETE /reports/{id}` through `core.delete_report`, the report hidden by row security, and the report's ⋯ on S-06 and S-07)
 
 **Obligation.** The system shall let the Organization Administrator delete a report, only while the report's period is open and only if the report has never been exported, by removing it from every list and route while its values, calculation runs, change trail and export records stay stored until the organization's retention ends.
 
@@ -368,13 +368,13 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 |---|---|
 | **Actors** | OA alone. An editor and a view-only member are refused. An advisor acting in a client organization acts as an editor there (`actors.md` §5) and is refused too. |
 | **Traces** | UC-213 · UC-42, UC-43, UC-57, UC-58 · D-13 · FR-22, FR-26, FR-33, FR-45, FR-53, FR-54, FR-153, FR-159, FR-164, FR-207 · UX-70 · `architecture.md` §12.5.7, OQ-20 · entity *Report* |
-| **Surfaces** | S-06 and S-07 (the control and its consequence dialogue; the placement is drawn by 192) · `DELETE /reports/{id}`, not yet in `openapi/v1.json` |
+| **Surfaces** | S-06's row ⋯ and S-07's bar ⋯ (*Delete this report*, and its consequence dialogue; task 192) · `DELETE /reports/{id}` |
 
-**Preconditions.** A report in the active organization. Its period is open. No export of it has completed.
+**Preconditions.** A report in the active organization. Its period is open. No export of it has been requested or has completed (amended 12 Oct 2026, below).
 
 **Behaviour.**
-1. **The conditions are checked together with the deletion.** The role (OA), the period's state (open) and the absence of any export record (FR-53) are read, and the report marked deleted, in one transaction.
-2. **Once a PDF or an Excel file has left the platform, the report is distribution evidence (FR-53) and cannot be deleted.** A history entry is written when an export completes (FR-53), so a preview, which produces no file and no record (FR-48/AC-2), does not count. A report with an export record stays refused whatever its period's state later becomes.
+1. **The conditions are checked together with the deletion.** The role (OA), the period's state (open) and the absence of any export requested or completed (FR-53) are read, and the report marked deleted, in one transaction — `core.delete_report`, which locks the report's row first (`architecture.md` §12.5.6's task-192 row (2), (d)).
+2. **Once a PDF or an Excel file has left the platform, or is being made, the report is distribution evidence (FR-53) and cannot be deleted.** An export's record is written when it is asked for (task 47), so a requested export refuses as a completed one does, and a failed one, which left nothing, does not; a preview, which produces no file and no record (FR-48/AC-2), does not count either. A report with such an export stays refused whatever its period's state later becomes. *(Amended 12 Oct 2026, project owner, §12.5.6's task-192 row (1): this read "an export record" and assumed the record was written at completion.)*
 3. **The deletion is soft.** The report is marked deleted and no row is removed. From that moment it is absent from every list (FR-25, the organization's overview of FR-23, S-05) and from every route over it, which answer 404 `not-found` as they do for a report outside the organization. It is not one of the organization's reports for FR-164's notices.
 4. **What stays.** Its disclosure values, derivation inputs, calculator lines, calculation runs with their retained inputs and results, change trail and any export record remain stored until the organization's retention ends, which is organization life plus one year (`architecture.md` §12.5.7). Erasure is FR-207's. Run permanence (FR-33; OQ-20) is untouched, because nothing is physically removed.
 5. **The deletion is audited** (FR-159). Marking the report is a change to its row, which the change-trail trigger records with the actor and the instant (FR-54); the trail row outlives the report's disappearance.
@@ -384,7 +384,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Refusals.**
 - Not the Organization Administrator (editor, view-only member, advisor acting in the client) → 403 `insufficient-role`
 - Period locked → 409 `report-not-editable` (FR-22: the lock outranks the role)
-- Report exported → 409, with a problem type of its own so that the screen can name the reason (the report is distribution evidence), named by 192 as `report-already-exists` was
+- Report exported, or an export requested → 409 `report-exported`, a problem type of its own so that the screen can name the reason (the report is distribution evidence)
 - Unknown report, one outside the active organization, or one already deleted → 404 `not-found`
 
 **Effects.** The report is marked deleted, with the instant, and the change-trail trigger records who did it. Nothing is removed.
@@ -394,18 +394,19 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Boundaries.** Deleting what a report holds (a calculator line, FR-33) is not this requirement, and a locked report's values refuse a DELETE (FR-26). Erasing an organization's data is FR-207's and NFR-28's. Locking and reopening a period are FR-22's. The export history is FR-53's.
 
 **Acceptance criteria.**
-- **AC-1** Given the Organization Administrator, a report whose period is open and which has never been exported, when they delete it, then it is absent from the reports list and every route over it answers 404. *(source: §12.5.6 task-182 validation row, 182/23)* Unmet until 192.
-- **AC-2** Given an editor, a view-only member or an advisor acting in the client, when they delete a report, then it is refused with 403 and the report is unchanged. *(source: §12.5.6 task-182 validation row, 182/23)* Unmet until 192.
-- **AC-3** Given a locked period, when the Organization Administrator deletes a report in it, then it is refused with 409 `report-not-editable`. *(source: §12.5.6 task-182 validation row, 182/23; FR-22)* Unmet until 192.
-- **AC-4** Given a report from which a PDF or Excel export has completed, when the Organization Administrator deletes it, then it is refused with 409 and the report stays. *(source: §12.5.6 task-182 validation row, 182/23; FR-53)* Unmet until 192.
-- **AC-5** Given a report that was only previewed, then it can be deleted. *(source: FR-48/AC-2; FR-53)* Unmet until 192.
-- **AC-6** Given a deleted report, then its values, calculation runs with their retained inputs, change trail and export records are still stored, and no row has been removed. *(source: §12.5.6 task-182 validation row, 182/23)* Unmet until 192.
-- **AC-7** Given a deletion, then the change trail holds a row naming the actor and the instant. *(source: §12.5.6 task-182 validation row, 182/23; FR-159)* Unmet until 192.
-- **AC-8** Given a deleted report, then the organization's overview and FR-164's notices do not count it. *(source: §12.5.6 task-182 validation row, 182/23)* Unmet until 192.
-- **AC-9** Given the period of a deleted report, then a new report can be created for it. *(source: §12.5.6 task-182 validation row, 182/23, recorded assumption)* Unmet until 192.
+- **AC-1** Given the Organization Administrator, a report whose period is open and which has never been exported, when they delete it, then it is absent from the reports list and every route over it answers 404. *(source: §12.5.6 task-182 validation row, 182/23)* Met by 192: every read of the report answers 404 and the list leaves it out (`report-deletion.e2e-spec.ts`; `reports.spec.ts` deletes from S-06's row and from S-07's bar).
+- **AC-2** Given an editor, a view-only member or an advisor acting in the client, when they delete a report, then it is refused with 403 and the report is unchanged. *(source: §12.5.6 task-182 validation row, 182/23)* Met by 192 (`report-deletion.e2e-spec.ts`; the route matrix), and the screens offer neither an editor nor a viewer the ⋯.
+- **AC-3** Given a locked period, when the Organization Administrator deletes a report in it, then it is refused with 409 `report-not-editable`. *(source: §12.5.6 task-182 validation row, 182/23; FR-22)* Met by 192 (`report-deletion.e2e-spec.ts`); the screens draw the item disabled, saying why.
+- **AC-4** Given a report from which a PDF or Excel export has completed, when the Organization Administrator deletes it, then it is refused with 409 and the report stays. *(source: §12.5.6 task-182 validation row, 182/23; FR-53)* Met by 192 for a requested export too (§12.5.6's task-192 row (1); `report-deletion.e2e-spec.ts`), as `report-exported`.
+- **AC-5** Given a report that was only previewed, then it can be deleted. *(source: FR-48/AC-2; FR-53)* Met by 192: a preview writes no record, so a previewed report deletes as any never-exported one does; one whose only export failed deletes too (`report-deletion.e2e-spec.ts`).
+- **AC-6** Given a deleted report, then its values, calculation runs with their retained inputs, change trail and export records are still stored, and no row has been removed. *(source: §12.5.6 task-182 validation row, 182/23)* Met by 192: the row is marked, never removed, and its run is still stored (`report-deletion.e2e-spec.ts`).
+- **AC-7** Given a deletion, then the change trail holds a row naming the actor and the instant. *(source: §12.5.6 task-182 validation row, 182/23; FR-159)* Met by 192: the field-change capture records `deleted_at` with the actor (`report-deletion.e2e-spec.ts`).
+- **AC-8** Given a deleted report, then the organization's overview and FR-164's notices do not count it. *(source: §12.5.6 task-182 validation row, 182/23)* Met by 192: the period's read and the worker's role find no report, and its outstanding-report notice is withdrawn in the deletion's transaction (`report-deletion.e2e-spec.ts`).
+- **AC-9** Given the period of a deleted report, then a new report can be created for it. *(source: §12.5.6 task-182 validation row, 182/23, recorded assumption)* Met by 192: the one-report key counts only reports not deleted (`report-deletion.e2e-spec.ts`).
 
 **History.**
 - 5 Oct 2026 · project owner · a report is deletable by the Organization Administrator alone, while its period is open and only if never exported; the deletion is soft; FR-153 keeps *delete* and points here · §12.5.6 task-182 validation row (182/23)
+- 12 Oct 2026 · project owner · a requested export refuses as a completed one does, a failed one does not; a deleted report is hidden by row security and deleted through a database function; the control is the report's ⋯ menu on S-06 and S-07, disabled with its reason where it cannot act · §12.5.6 task-192 row (1)–(4)
 
 ## 2. Carbon calculator (index §3.6)
 

@@ -56,9 +56,12 @@ import { DisclosureFacade } from './services/disclosure-facade.service';
 import { ReportService } from './services/report.service';
 import { MarkReportFiled } from './use-cases/mark-report-filed.use-case';
 import { WithdrawReportFiling } from './use-cases/withdraw-report-filing.use-case';
+import { DeleteReport } from './use-cases/delete-report.use-case';
+import { REPORT_DELETION_STORE, type ReportDeletionStore } from './interfaces/report-deletion.interface';
 import { ReportFilingController } from './controllers/report-filing.controller';
 import { REPORT_FILING_STORE, type ReportFilingStore } from './interfaces/report-filing-store.interface';
 import { ReportFilingStoreRepository } from '@api/infrastructure/persistence/core/report-filing-store.repository';
+import { ReportDeletionStoreRepository } from '@api/infrastructure/persistence/core/report-deletion-store.repository';
 import { WizardService } from './services/wizard.service';
 import { CreateReport } from './use-cases/create-report.use-case';
 import { SendReportReminder } from './use-cases/send-report-reminder.use-case';
@@ -189,6 +192,13 @@ const httpProviders: Provider[] = [
     provide: WithdrawReportFiling,
     inject: [REPORT_STORE, REPORT_FILING_STORE],
     useFactory: (reports: ReportStore, filing: ReportFilingStore) => new WithdrawReportFiling(reports, filing),
+  },
+  // UC-213's deletion (task 192): the database judges and marks; the use case withdraws the report's notice.
+  { provide: REPORT_DELETION_STORE, useClass: ReportDeletionStoreRepository },
+  {
+    provide: DeleteReport,
+    inject: [REPORT_DELETION_STORE, NOTIFICATION_PORT],
+    useFactory: (deletion: ReportDeletionStore, notifications: NotificationPort) => new DeleteReport(deletion, notifications),
   },
   // Task 34.2's facade. Takes the store, and takes the *descriptor* from its caller rather than
   // importing one version's — DR-4 makes two coexist, and which applies is a property of the report

@@ -32,6 +32,7 @@ interface ReportRow {
   ready_to_file: boolean;
   validation_summary: ValidationSummaryColumn | null;
   // The filed mark (task 47.5), its person named by the same join an override's is.
+  exported: boolean;
   filed_on: string | null;
   filed_on_tz: string | null;
   filed_at: Date | null;
@@ -61,12 +62,18 @@ interface ReportRow {
 }
 
 /**
+ * A requested or a completed export of the report — a file that left or is being made, never a failed one (task 192;
+ * §12.5.6's task-192 row (1)). `core.delete_report` asks the same of the same table where it refuses.
+ */
+const EXPORTED = `EXISTS (SELECT 1 FROM core.export_artifact a WHERE a.report_id = r.id AND a.status IN ('requested', 'completed'))`;
+
+/**
  * Qualified with the alias every statement here uses, because one of them joins the period and an
  * unqualified `id` would be ambiguous there. One list rather than two is what keeps the three reads
  * answering the same shape.
  */
 const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, r.status, ${readyToFileOf('r')} AS ready_to_file,
-        ${validationSummaryOf('r')} AS validation_summary,
+        ${validationSummaryOf('r')} AS validation_summary, ${EXPORTED} AS exported,
         r.filed_on::text AS filed_on, r.filed_on_tz, r.filed_at, r.filed_by, filer.id IS NOT NULL AS filer_found,
         filer.email AS filer_email, filer.given_name AS filer_given_name, filer.family_name AS filer_family_name,
         r.template_version, r.taxonomy_version, r.reporting_currency, r.created_at, r.updated_at,
@@ -101,6 +108,7 @@ const toReport = (row: ReportRow): Report => ({
   readyToFile: row.ready_to_file,
   validation: row.validation_summary,
   filing: filingOf(row),
+  exported: row.exported,
   templateVersion: row.template_version,
   reportingCurrency: row.reporting_currency,
   taxonomyVersion: row.taxonomy_version,

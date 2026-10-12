@@ -78,6 +78,7 @@ export async function CalculatorStep({
       </Callout>
     );
   }
+  if (read.status === TENANT_READ.NOT_FOUND) notFound();
   if (read.status === TENANT_READ.UNREACHABLE || session === null) {
     return (
       <Callout intent={CALLOUT_INTENT.ERROR} title={t('unreachable.title')} action={null}>

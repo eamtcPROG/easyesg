@@ -90,7 +90,7 @@ export async function WizardStep({
   }
   // A module the pinned taxonomy does not carry — the api's 404 since task 183 — is the same screen as one outside the
   // report's scope, below.
-  if (read.status === WIZARD_READ.MODULE_NOT_FOUND) notFound();
+  if (read.status === WIZARD_READ.MODULE_NOT_FOUND || read.status === TENANT_READ.NOT_FOUND) notFound();
   if (read.status === TENANT_READ.UNREACHABLE || session === null) {
     return (
       <Callout intent={CALLOUT_INTENT.ERROR} title={t('unreachable.title')} action={null}>

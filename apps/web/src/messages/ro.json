@@ -1100,7 +1100,8 @@
         "pin": "Versiunea",
         "template": "Șablon",
         "taxonomy": "Taxonomie",
-        "completion": "Completare"
+        "completion": "Completare",
+        "actions": "Acțiuni"
       },
       "scope": {
         "basic": "VSME Basic",
@@ -1194,7 +1195,29 @@
         "loading": "Se încarcă entitățile și perioadele…"
       },
       "loading": "Se încarcă lista rapoartelor…",
-      "searchLabel": "Căutați după entitate sau an fiscal"
+      "searchLabel": "Căutați după entitate sau an fiscal",
+      "deletion": {
+        "menu": "Mai multe acțiuni pentru raportul {entity} pentru {year}",
+        "item": "Ștergeți acest raport…",
+        "unavailable": {
+          "locked": "Ștergeți acest raport — nu cât timp perioada lui este blocată",
+          "exported": "Ștergeți acest raport — se păstrează, un fișier al lui a fost exportat"
+        },
+        "object": "Raportul {entity} pentru {year}",
+        "title": "Ștergeți acest raport?",
+        "consequence": "Raportul dispare din lista de rapoarte și din toate paginile, iar nimeni din organizație nu îl mai poate deschide.",
+        "retained": "Răspunsurile, calculele și istoricul lor se păstrează până la sfârșitul perioadei de păstrare a datelor organizației, iar perioada de raportare rămâne deschisă pentru un raport nou.",
+        "confirm": "Ștergeți raportul",
+        "cancel": "Păstrați raportul",
+        "unreachable": {
+          "title": "Raportul nu a putut fi șters",
+          "body": "Serviciul nu a putut fi accesat chiar acum. Raportul nu s-a schimbat; încercați din nou peste câteva momente."
+        }
+      },
+      "deleted": {
+        "title": "Raportul a fost șters",
+        "body": "Nu mai apare în nicio listă. Datele lui se păstrează până la sfârșitul perioadei de păstrare a datelor organizației."
+      }
     },
     "access": {
       "title": "Utilizatori și acces",

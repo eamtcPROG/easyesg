@@ -14,6 +14,7 @@ import {
 import { MarkReportFiled, type MarkReportFiledCommand } from '../use-cases/mark-report-filed.use-case';
 import { SendReportReminder, type SendReportReminderCommand } from '../use-cases/send-report-reminder.use-case';
 import { WithdrawReportFiling } from '../use-cases/withdraw-report-filing.use-case';
+import { DeleteReport } from '../use-cases/delete-report.use-case';
 
 /**
  * The Nest-aware seam between `ReportsController` and the use case (house rule: controllers call
@@ -26,6 +27,8 @@ import { WithdrawReportFiling } from '../use-cases/withdraw-report-filing.use-ca
  * **UC-175's reminder takes its sender and organization from the request** (task 50.3), `PeriodService`'s rule for
  * who locked a period: an attribution a caller could name is not an attribution.
  *
+ * **UC-213's deletion** (task 192) takes its organization from the request too, for the notice it withdraws.
+ *
  * **FR-41's filed mark** (task 47.5) is made and withdrawn here, and `adopted()` says what a new report would pin today,
  * which every route answering a report states beside it (FR-51; §12.5.6's task-47 row (6)).
  */
@@ -37,6 +40,7 @@ export class ReportService {
     private readonly reminders: SendReportReminder,
     private readonly marking: MarkReportFiled,
     private readonly withdrawing: WithdrawReportFiling,
+    private readonly deleting: DeleteReport,
     @Inject(TAXONOMY_REGISTRY) private readonly registry: TaxonomyRegistry,
   ) {}
 
@@ -69,6 +73,14 @@ export class ReportService {
 
   update(command: UpdateReportCommand): Promise<Report> {
     return this.reports.update(command);
+  }
+
+  /** UC-213 (task 192): the organization is the request's, for the notice the deletion withdraws. */
+  delete(command: { readonly reportId: string }): Promise<void> {
+    const organizationId = requestContext()?.organizationId;
+    // The tenant transaction has bound it before a controller runs; its absence is not a refusal to word.
+    if (organizationId === undefined) throw new Error('A report was deleted with no organization bound');
+    return this.deleting.execute({ reportId: command.reportId, organizationId });
   }
 
   remind(command: Omit<SendReportReminderCommand, 'senderAccountId' | 'organizationId'>): Promise<void> {

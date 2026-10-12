@@ -4,9 +4,11 @@ import {
   cleanupOrganizations,
   grantMembership,
   seedOpenPeriod,
+  seedPriorPeriod,
   seedReport,
   verificationTokenFor,
 } from './support/db';
+import { untilHydrated } from './support/hydration';
 
 /**
  * S-06 and its creation flow in a real browser (UC-17, UC-18; FR-25, FR-26 — tasks 32.2.2, 32.3).
@@ -302,3 +304,70 @@ test('searches the reports and offers a page size, both kept in the address (UX-
   await page.waitForURL('**/reports?onpage=50');
   await expect(rowOf('Brutăria')).toHaveCount(1);
 });
+
+/**
+ * UC-213 (task 192; FR-210; `design_spec.md` S-06's and S-07's amendments of 12 Oct 2026): the administrator's ⋯ deletes
+ * a report from its row or from S-07's bar, behind the consequence dialogue, and S-06 says so; a report whose period is
+ * locked keeps the item, disabled, saying why; and anyone else is offered no ⋯ at all.
+ */
+test('an administrator deletes a report from its row, and the list says so — a locked one says why it cannot be (task 192)', async ({
+  page,
+}) => {
+  const organizationId = await signedIn(page, 'delete-row');
+  const entity = `${RUN_PREFIX}-Ștearsă`;
+  const reportId = await seedReport({ organizationId, name: entity });
+  // A locked FY2025 beside it, of the same entity.
+  await seedPriorPeriod({ organizationId, reportId, values: {} });
+  await page.goto('/reports');
+
+  const lockedMenu = page.getByRole('button', { name: `Mai multe acțiuni pentru raportul ${entity} pentru 2025` });
+  await untilHydrated(lockedMenu);
+  await lockedMenu.click();
+  await expect(
+    page.getByRole('menuitem', { name: 'Ștergeți acest raport — nu cât timp perioada lui este blocată' }),
+  ).toHaveAttribute('aria-disabled', 'true');
+  await page.keyboard.press('Escape');
+
+  await page.getByRole('button', { name: `Mai multe acțiuni pentru raportul ${entity} pentru 2026` }).click();
+  await page.getByRole('menuitem', { name: 'Ștergeți acest raport…' }).click();
+  const dialogue = page.getByRole('alertdialog', { name: 'Ștergeți acest raport?' });
+  await expect(dialogue).toContainText(`Raportul ${entity} pentru 2026`);
+  await dialogue.getByRole('button', { name: 'Ștergeți raportul' }).click();
+
+  await page.waitForURL('**/reports?deleted=report');
+  await expect(page.getByRole('status').filter({ hasText: 'Raportul a fost șters' })).toBeVisible();
+  const table = page.getByRole('table');
+  await expect(table.getByRole('row')).toHaveCount(2);
+  await expect(table.getByText('2025', { exact: true })).toBeVisible();
+});
+
+test('S-07’s bar deletes the report it is in, and lands on the list (task 192)', async ({ page }) => {
+  const organizationId = await signedIn(page, 'delete-bar');
+  const reportId = await seedReport({ organizationId, name: `${RUN_PREFIX}-Ștearsă din pas` });
+  await page.goto(`/reports/${reportId}/B1`);
+
+  // At this width the bar's buttons stand and its ⋯ holds what they do not; the compact one is not drawn.
+  const menu = page.getByRole('button', { name: 'Mai multe acțiuni pentru acest raport' });
+  await untilHydrated(menu);
+  await menu.click();
+  await page.getByRole('menuitem', { name: 'Ștergeți acest raport…' }).click();
+  await page.getByRole('alertdialog', { name: 'Ștergeți acest raport?' }).getByRole('button', { name: 'Ștergeți raportul' }).click();
+
+  await page.waitForURL('**/reports?deleted=report');
+  await expect(page.getByRole('status').filter({ hasText: 'Raportul a fost șters' })).toBeVisible();
+  // Every route over it answers as for a report that never existed.
+  const gone = await page.goto(`/reports/${reportId}/B1`);
+  expect(gone?.status()).toBe(404);
+});
+
+test('an editor is offered no ⋯, on the list or in the bar (task 192)', async ({ page }) => {
+  const organizationId = await signedIn(page, 'delete-editor', 'editor');
+  const reportId = await seedReport({ organizationId, name: `${RUN_PREFIX}-Neatinsă` });
+  await page.goto('/reports');
+  await expect(page.getByRole('table').getByRole('row')).toHaveCount(2);
+  await expect(page.getByRole('button', { name: /^Mai multe acțiuni pentru raportul/u })).toHaveCount(0);
+  await page.goto(`/reports/${reportId}/B1`);
+  await expect(page.getByRole('link', { name: 'Exportați', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mai multe acțiuni pentru acest raport' })).toHaveCount(0);
+});
+

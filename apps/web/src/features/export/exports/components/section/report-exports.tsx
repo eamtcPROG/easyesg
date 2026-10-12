@@ -43,7 +43,7 @@ export async function ReportExports({
     language,
   ]);
 
-  if (read.status === EXPORTS_READ.REPORT_NOT_FOUND) notFound();
+  if (read.status === TENANT_READ.NOT_FOUND) notFound();
   if (read.status === TENANT_READ.FORBIDDEN) {
     await redirectToChoiceIfOwed();
     return (

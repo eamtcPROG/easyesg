@@ -71,6 +71,7 @@ import { OrganizationInvitationPolicyRole1792800000000 } from './1792800000000-o
 import { TemplateReleasePins1792886400000 } from './1792886400000-template-release-pins';
 import { ExportArtifactXlsx1792972800000 } from './1792972800000-export-artifact-xlsx';
 import { ReportFiling1793059200000 } from './1793059200000-report-filing';
+import { ReportDeletion1793145600000 } from './1793145600000-report-deletion';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -162,4 +163,5 @@ export const migrations = [
   TemplateReleasePins1792886400000,
   ExportArtifactXlsx1792972800000,
   ReportFiling1793059200000,
+  ReportDeletion1793145600000,
 ];

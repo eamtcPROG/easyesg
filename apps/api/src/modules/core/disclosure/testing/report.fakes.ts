@@ -45,6 +45,7 @@ export const aReport = (overrides: Partial<Report> = {}): Report => ({
   validation: null,
   // Never marked filed (task 47.5) — the mark is the reporter's own act.
   filing: null,
+  exported: false,
   // The column's own DEFAULT, mirrored rather than invented: a fake that disagreed with the schema
   // would make every monetary field's currency a property of the test rather than of the filing.
   reportingCurrency: 'MDL',

@@ -3,7 +3,13 @@ import type { CalcFigures, Calculator, DisclosureModuleSummary, Report } from '@
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '../api/api-client';
 import { readActiveMembership } from './memberships';
-import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
+import {
+  TENANT_READ,
+  isNotFound,
+  isPermissionRefusal,
+  type TenantReadNotFound,
+  type TenantReadRefusal,
+} from './tenant-read';
 import { readOnlyCauseOf, type ReadOnlyCause } from './wizard';
 
 /**
@@ -23,6 +29,7 @@ export type CalculatorRead =
       /** `null` where the reader may write — S-07's own causes, by S-07's own rule. */
       readonly readOnly: ReadOnlyCause | null;
     }
+  | TenantReadNotFound
   | TenantReadRefusal;
 
 export async function readCalculator(reportId: string): Promise<CalculatorRead> {
@@ -37,6 +44,8 @@ export async function readCalculator(reportId: string): Promise<CalculatorRead> 
   if (isPermissionRefusal(modules) || isPermissionRefusal(report) || isPermissionRefusal(calculator)) {
     return { status: TENANT_READ.FORBIDDEN };
   }
+  // A report the organization does not hold — unknown, or deleted (FR-210; task 192): the 404 screen, not *try again*.
+  if (isNotFound(report)) return { status: TENANT_READ.NOT_FOUND };
   if (
     modules.status !== API_OUTCOME.Ok ||
     report.status !== API_OUTCOME.Ok ||

@@ -18,7 +18,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-153 — Report operations are reachable through the documented API
 
-**Status.** Partial — delivered 2, 3, 21, 31 (31.3), 41 (the validation routes), 89, 47 (the export routes: the request, the history, one export, its file, the languages and the filed mark) · remaining 192 (report deletion, FR-210)
+**Status.** Built — delivered 2, 3, 21, 31 (31.3), 41 (the validation routes), 89, 47 (the export routes: the request, the history, one export, its file, the languages and the filed mark), 192 (report deletion, FR-210)
 
 **Obligation.** The system shall expose report CRUD, validation and export operations through a documented, authenticated API and not only through the interface.
 
@@ -33,7 +33,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 2. The surface is one versioned REST API under `/api/v1`, authenticated by a bearer access token. The active organization comes from the session, never from a header or a path segment (`architecture.md` §6.8).
 3. The contract is **generated from the controllers** and diffed in CI together with the types generated from it. A controller change that is not committed as a contract change fails `openapi:check` (§6.8; P-5).
 4. Breaking changes are introduced only in a new version and only after a stated deprecation window (NFR-83). The window's length is deferred to the day a second version is planned, on the recorded assumption that none exists before the pilot (§12.5.6 task-182 tracking row, 182/163).
-5. Of the six named operations, create, read and update of a report are built (`POST /reports`, `GET /reports[/{id}]`, `PATCH /reports/{id}` for the scope) together with the value and calculator routes. Validation's routes are built — `POST /reports/{id}/validation/runs`, `GET /reports/{id}/validation` and `GET /reports/{id}/validation/rules` (task 41) — and so are export's (task 47): `POST /reports/{id}/exports`, `GET /reports/{id}/exports` and `…/exports/languages`, `GET /exports/{id}` and its file, and the filed mark's `PUT`/`DELETE /reports/{id}/filing`. **Delete is an operation** on a report (182/23): `DELETE /reports/{id}`, the Organization Administrator's alone, soft, only while the period is open and only if the report has never been exported, and specified by FR-210. It is not built (192).
+5. Of the six named operations, create, read and update of a report are built (`POST /reports`, `GET /reports[/{id}]`, `PATCH /reports/{id}` for the scope) together with the value and calculator routes. Validation's routes are built — `POST /reports/{id}/validation/runs`, `GET /reports/{id}/validation` and `GET /reports/{id}/validation/rules` (task 41) — and so are export's (task 47): `POST /reports/{id}/exports`, `GET /reports/{id}/exports` and `…/exports/languages`, `GET /exports/{id}` and its file, and the filed mark's `PUT`/`DELETE /reports/{id}/filing`. **Delete is an operation** on a report (182/23): `DELETE /reports/{id}`, the Organization Administrator's alone, soft, only while the period is open and only if the report has never been exported, and specified by FR-210; built by task 192.
 
 **Refusals.** A request with no valid credential → 401 `authentication-required`. Authorization refusals are FR-158's.
 
@@ -52,7 +52,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - 5 Oct 2026 · project owner · the route-coverage diff NFR-16 names is discharged by the contract gate, the route-permission table and the two boundary rules, and NFR-16's verification says so · §12.5.6 task-182 tracking row (182/162)
 - 5 Oct 2026 · project owner · the deprecation window's length is deferred to the day a second version is planned · §12.5.6 task-182 tracking row (182/163)
 
-- **AC-8** Given the Organization Administrator and a never-exported report in an open period, when the same request that the interface offers is sent to the documented API, then the report is deleted as FR-210 states. *(source: FR text; §12.5.6 task-182 validation row, 182/23)* Unmet until 192.
+- **AC-8** Given the Organization Administrator and a never-exported report in an open period, when the same request that the interface offers is sent to the documented API, then the report is deleted as FR-210 states. *(source: FR text; §12.5.6 task-182 validation row, 182/23)* Met by 192: `DELETE /reports/{id}`, the route S-06 and S-07 call (`report-deletion.e2e-spec.ts`).
 
 **History.**
 - 5 Oct 2026 · project owner · *delete* stays in the obligation and is FR-210's · §12.5.6 task-182 validation row (182/23)

@@ -34,6 +34,8 @@ const row = (over: Partial<ReportRow> = {}): ReportRow => ({
   taxonomyVersion: '2026-05-01',
   updatedAt: 1_787_000_000_000,
   validation: null,
+  locked: false,
+  exported: false,
   ...over,
 });
 
@@ -268,6 +270,7 @@ describe('the row from the wire', () => {
     locked: false,
     validation: null,
     filing: null,
+    exported: false,
     supersededBy: null,
     templateVersion: '1.3.0',
     taxonomyVersion: '2026-05-01',
@@ -300,6 +303,11 @@ describe('the row from the wire', () => {
     const summary = { modulesComplete: 7, modulesCounted: 11, outstanding: 3 };
     expect(toReportRows([wire({ validation: summary })])[0]?.validation).toEqual(summary);
     expect(toReportRows([wire()])[0]?.validation).toBeNull();
+  });
+
+  it('carries what decides whether the administrator may delete it — the lock and an export (task 192)', () => {
+    expect(toReportRows([wire({ locked: true, exported: true })])[0]).toMatchObject({ locked: true, exported: true });
+    expect(toReportRows([wire()])[0]).toMatchObject({ locked: false, exported: false });
   });
 
   it('carries the subject the join answers, so no row has to fetch its own name', () => {

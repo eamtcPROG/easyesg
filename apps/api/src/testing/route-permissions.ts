@@ -386,6 +386,9 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'GET /reports/:id': ALL_MEMBERS,
   'POST /reports': WRITING_MEMBERS,
   'PATCH /reports/:id': WRITING_MEMBERS,
+  // UC-213's deletion (task 192; FR-210; 182/23): the administrator's alone — an editor and an advisor acting as one are
+  // refused, since a report that disappears from every list is not an authoring act.
+  'DELETE /reports/:id': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,
   // UC-175's reminder about a report (task 50.3). The administrator's alone: UC-175's actor is the OA, and S-16,
   // where it is sent from, is the administrator's screen.
   'POST /reports/:id/reminders': `${PERMISSION.ROLE}:${MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR}`,

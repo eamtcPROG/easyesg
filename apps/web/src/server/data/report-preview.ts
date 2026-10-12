@@ -4,17 +4,16 @@ import { isLocale, type Locale } from '@easyesg/i18n';
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '../api/api-client';
 import { mayWrite, readActiveMembership } from './memberships';
-import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
-
-const NOT_FOUND_STATUS = 404;
-
-/** S-10's read's one answer of its own: a report this organization does not hold. */
-export const PREVIEW_READ = {
-  REPORT_NOT_FOUND: 'report-not-found',
-} as const;
+import {
+  TENANT_READ,
+  isNotFound,
+  isPermissionRefusal,
+  type TenantReadNotFound,
+  type TenantReadRefusal,
+} from './tenant-read';
 
 export type ReportPreviewRead =
-  | { readonly status: typeof PREVIEW_READ.REPORT_NOT_FOUND }
+  | TenantReadNotFound
   | {
       readonly status: typeof TENANT_READ.READY;
       readonly report: Report;
@@ -44,9 +43,7 @@ export async function readReportPreview(reportId: string): Promise<ReportPreview
   ]);
 
   if (isPermissionRefusal(report) || isPermissionRefusal(modules)) return { status: TENANT_READ.FORBIDDEN };
-  if (report.status === API_OUTCOME.Problem && report.problem.status === NOT_FOUND_STATUS) {
-    return { status: PREVIEW_READ.REPORT_NOT_FOUND };
-  }
+  if (isNotFound(report)) return { status: TENANT_READ.NOT_FOUND };
   if (report.status !== API_OUTCOME.Ok || modules.status !== API_OUTCOME.Ok || report.value === null) {
     return { status: TENANT_READ.UNREACHABLE };
   }

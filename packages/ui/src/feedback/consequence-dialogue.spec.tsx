@@ -37,6 +37,14 @@ describe('ConsequenceDialogue (UX-70, UX-69)', () => {
     expect(screen.getByText(/stay in the change history/)).toBeInTheDocument();
   });
 
+  it('says why the last confirmation failed, above its buttons, and nothing when it has not (task 192)', () => {
+    const { rerender } = render(<ConsequenceDialogue {...props} />);
+    expect(screen.queryByText('The service could not be reached.')).not.toBeInTheDocument();
+
+    rerender(<ConsequenceDialogue {...props} failure={<p>The service could not be reached.</p>} />);
+    expect(screen.getByRole('alertdialog')).toHaveTextContent('The service could not be reached.');
+  });
+
   /** The safe choice takes focus, not the destructive one. */
   it('sends initial focus to the cancelling button', () => {
     render(<ConsequenceDialogue {...props} />);

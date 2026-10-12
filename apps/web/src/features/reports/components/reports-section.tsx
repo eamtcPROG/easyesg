@@ -1,13 +1,14 @@
 import { Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
-import { mayWrite, readActiveMembership } from '@/server/data/memberships';
+import { mayAdminister, mayWrite, readActiveMembership } from '@/server/data/memberships';
 import { readReportList } from '@/server/data/reports';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
 import { applyReportView, readReportView, reportFilterOptions } from '../tools/reports';
+import { ReportDeletedNotice } from './report-deleted-notice';
 import { ReportsList } from './reports-list';
 import { REPORTS_MESSAGES } from './reports-messages';
 import styles from './reports.module.css';
@@ -41,6 +42,7 @@ export async function ReportsSection({
     getTranslations(REPORTS_MESSAGES),
   ]);
   const canCreate = mayWrite(membership);
+  const canDelete = mayAdminister(membership);
 
   let body: ReactNode;
   if (read.status === TENANT_READ.FORBIDDEN) {
@@ -74,7 +76,13 @@ export async function ReportsSection({
     const view = readReportView(query);
     const page = applyReportView({ rows: read.rows, view });
     body = (
-      <ReportsList page={page} view={view} options={reportFilterOptions(read.rows)} canCreate={canCreate} />
+      <ReportsList
+        page={page}
+        view={view}
+        options={reportFilterOptions(read.rows)}
+        canCreate={canCreate}
+        canDelete={canDelete}
+      />
     );
   }
 
@@ -84,6 +92,7 @@ export async function ReportsSection({
         <h1 className={`t-heading-1 ${styles.title}`}>{t('title')}</h1>
         <p className={`t-body ${styles.lede}`}>{t('lede')}</p>
       </hgroup>
+      <ReportDeletedNotice query={query} />
       {body}
     </div>
   );

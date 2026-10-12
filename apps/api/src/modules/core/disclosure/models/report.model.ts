@@ -168,6 +168,11 @@ export interface Report {
   /** The reporter's filed mark (task 47.5), or `null` where it was never marked or the mark was withdrawn. */
   readonly filing: ReportFiling | null;
   /**
+   * Whether a file of it was exported or is being made — an export requested or completed, never one that failed
+   * (task 192; §12.5.6's task-192 row (1)). What makes it distribution evidence, which no deletion may remove.
+   */
+  readonly exported: boolean;
+  /**
    * DR-4's pin — FR-66's *explicit template and taxonomy version against every report*.
    *
    * **Copied from the period at creation and never resolved a second time** (§12.5.6's task-31.3

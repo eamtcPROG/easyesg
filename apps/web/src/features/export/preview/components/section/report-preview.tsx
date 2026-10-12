@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { WIZARD_MESSAGES } from '@/features/wizard/components/shared/wizard-messages';
 import { moduleName } from '@/features/wizard/tools/module-words';
 import { PREVIEW_LANGUAGE_PARAM } from '@/lib/routes';
-import { PREVIEW_READ, readReportPreview } from '@/server/data/report-preview';
+import { readReportPreview } from '@/server/data/report-preview';
 import { TENANT_READ } from '@/server/data/tenant-read';
 import { redirectToChoiceIfOwed } from '@/shared/organization-choice-gate';
 import { PREVIEW_FRAME, documentAddress, documentPages, previewLanguage } from '../../tools/preview';
@@ -38,7 +38,7 @@ export async function ReportPreview({
     searchParams,
   ]);
 
-  if (read.status === PREVIEW_READ.REPORT_NOT_FOUND) notFound();
+  if (read.status === TENANT_READ.NOT_FOUND) notFound();
   if (read.status === TENANT_READ.FORBIDDEN) {
     await redirectToChoiceIfOwed();
     return (

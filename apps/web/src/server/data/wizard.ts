@@ -11,7 +11,13 @@ import {
 import { API_OUTCOME } from '@/lib/api-outcome';
 import { api } from '../api/api-client';
 import { readActiveMembership } from './memberships';
-import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
+import {
+  TENANT_READ,
+  isNotFound,
+  isPermissionRefusal,
+  type TenantReadNotFound,
+  type TenantReadRefusal,
+} from './tenant-read';
 
 /**
  * S-07's reads (task 35.1) over task 89's routes — and, from task 35.2, the report itself.
@@ -43,9 +49,6 @@ export const READ_ONLY_CAUSE = {
 
 export type ReadOnlyCause = (typeof READ_ONLY_CAUSE)[keyof typeof READ_ONLY_CAUSE];
 
-/** The status a missing module is answered with — HTTP's, compared as a number rather than spelled at the site. */
-const NOT_FOUND_STATUS = 404;
-
 export const WIZARD_READ = {
   MODULE_NOT_FOUND: 'module-not-found',
 } as const;
@@ -66,6 +69,7 @@ export type WizardStepRead =
       /** `null` where the reader may write. */
       readonly readOnly: ReadOnlyCause | null;
     }
+  | TenantReadNotFound
   | TenantReadRefusal;
 
 export async function readWizardStep(input: {
@@ -90,6 +94,8 @@ export async function readWizardStep(input: {
   if (isPermissionRefusal(modules) || isPermissionRefusal(step) || isPermissionRefusal(report)) {
     return { status: TENANT_READ.FORBIDDEN };
   }
+  // A report the organization does not hold — unknown, or deleted (FR-210; task 192): the 404 screen, not *try again*.
+  if (isNotFound(report)) return { status: TENANT_READ.NOT_FOUND };
   // The step read's one answer of its own (task 183's consequence): the report and its module list read, and the step
   // answered 404 — the api's word, since task 183, for a module the pinned taxonomy does not carry. The section answers
   // it as it answers a module outside the report's scope: the 404 screen, never the unreachable state, which would tell
@@ -97,8 +103,7 @@ export async function readWizardStep(input: {
   if (
     modules.status === API_OUTCOME.Ok &&
     report.status === API_OUTCOME.Ok &&
-    step.status === API_OUTCOME.Problem &&
-    step.problem.status === NOT_FOUND_STATUS
+    isNotFound(step)
   ) {
     return { status: WIZARD_READ.MODULE_NOT_FOUND };
   }

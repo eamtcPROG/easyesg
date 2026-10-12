@@ -2,6 +2,9 @@ import 'server-only';
 import { PROBLEM_TYPE } from '@easyesg/contracts';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
 
+/** HTTP's, compared as a number rather than spelled at each site. */
+const NOT_FOUND_STATUS = 404;
+
 /**
  * What a tenant-scoped Server Component read can answer — the three arms every such screen draws
  * (extracted 29 Aug 2026, task 30.3).
@@ -26,6 +29,13 @@ export const TENANT_READ = {
   FORBIDDEN: 'forbidden',
   /** No answer, or one this tier could not read. Same fact and same remedy as the API being down. */
   UNREACHABLE: 'unreachable',
+  /**
+   * The thing the screen is about does not exist here — unknown, another organization's, or a report deleted (FR-210)
+   * — which the api answers 404. **The 404 screen, never *unreachable*** (task 192): *try again in a moment* is the wrong
+   * remedy for a stale link, and S-10 and S-11 each declared this arm for themselves until it was found missing from
+   * S-07 and S-09.
+   */
+  NOT_FOUND: 'not-found',
 } as const;
 
 export type TenantReadStatus = (typeof TENANT_READ)[keyof typeof TENANT_READ];
@@ -45,6 +55,13 @@ const PERMISSION_PROBLEMS: readonly string[] = [
 
 export const isPermissionRefusal = (outcome: ApiOutcome<unknown>): boolean =>
   outcome.status === API_OUTCOME.Problem && PERMISSION_PROBLEMS.includes(outcome.problem.type);
+
+/** The api's 404 — the thing the screen is about is not this organization's to read (`TENANT_READ.NOT_FOUND`). */
+export const isNotFound = (outcome: ApiOutcome<unknown>): boolean =>
+  outcome.status === API_OUTCOME.Problem && outcome.problem.status === NOT_FOUND_STATUS;
+
+/** The answer a read gives for `TENANT_READ.NOT_FOUND` — one shape, which each screen meets with `notFound()`. */
+export type TenantReadNotFound = { readonly status: typeof TENANT_READ.NOT_FOUND };
 
 /**
  * The arms every tenant read shares beside its own ready one — declared once, because the pair of them was

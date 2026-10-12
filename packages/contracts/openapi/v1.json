@@ -3202,6 +3202,36 @@
         "tags": [
           "report"
         ]
+      },
+      "delete": {
+        "description": "The Organization Administrator alone, while the report’s period is open and only if no export of it was requested or completed. Soft: the report leaves every list and route, and its values, runs, trail and export records stay stored until the organization’s retention ends. The period stays open, and a new report may be opened for it.",
+        "operationId": "ReportsController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The report is deleted."
+          },
+          "404": {
+            "description": "No such report in the active organization. Or it was deleted already."
+          },
+          "409": {
+            "description": "The reporting period is locked (problem type report-not-editable), or a file of the report was exported or is being made (problem type report-exported)."
+          }
+        },
+        "summary": "Delete a report made in error (UC-213, FR-210)",
+        "tags": [
+          "report"
+        ]
       }
     },
     "/api/v1/reports/{id}/reminders": {
@@ -10610,6 +10640,10 @@
             "type": "boolean",
             "description": "Whether the report’s period is locked (FR-22), so it takes no writes from anyone — whatever its status reads: a filed report in a locked period reads filed (task 47.5)."
           },
+          "exported": {
+            "type": "boolean",
+            "description": "Whether a file of it was exported or is being made — an export requested or completed, never one that failed. Such a report is distribution evidence, and the Organization Administrator cannot delete it (FR-210)."
+          },
           "validation": {
             "nullable": true,
             "description": "What its latest validation run came to (FR-41), or null where it was never checked.",
@@ -10668,6 +10702,7 @@
           "scope",
           "status",
           "locked",
+          "exported",
           "validation",
           "filing",
           "supersededBy",

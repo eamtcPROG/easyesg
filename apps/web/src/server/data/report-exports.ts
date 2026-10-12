@@ -12,13 +12,16 @@ import type { IndexPage } from '@easyesg/ui';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
 import type { ListQuery } from '@/lib/pagination';
 import { api } from '../api/api-client';
-import { TENANT_READ, isPermissionRefusal, type TenantReadRefusal } from './tenant-read';
+import {
+  TENANT_READ,
+  isNotFound,
+  isPermissionRefusal,
+  type TenantReadNotFound,
+  type TenantReadRefusal,
+} from './tenant-read';
 
-const NOT_FOUND_STATUS = 404;
-
-/** S-11's read's two answers of its own: a report this organization does not hold, and a reader who may not export. */
+/** S-11's read's one answer of its own: a reader who may not export. */
 export const EXPORTS_READ = {
-  REPORT_NOT_FOUND: 'report-not-found',
   /** A view-only member (182/22): the history and the re-download are refused as well as the request. */
   REFUSED: 'refused',
 } as const;
@@ -37,7 +40,7 @@ export interface ReportExports {
 }
 
 export type ReportExportsRead =
-  | { readonly status: typeof EXPORTS_READ.REPORT_NOT_FOUND }
+  | TenantReadNotFound
   | { readonly status: typeof EXPORTS_READ.REFUSED; readonly report: Report }
   | ReportExports
   | TenantReadRefusal;
@@ -68,9 +71,7 @@ export async function readReportExports(input: {
   ]);
 
   if (isPermissionRefusal(report)) return { status: TENANT_READ.FORBIDDEN };
-  if (report.status === API_OUTCOME.Problem && report.problem.status === NOT_FOUND_STATUS) {
-    return { status: EXPORTS_READ.REPORT_NOT_FOUND };
-  }
+  if (isNotFound(report)) return { status: TENANT_READ.NOT_FOUND };
   if (report.status !== API_OUTCOME.Ok || report.value === null) return { status: TENANT_READ.UNREACHABLE };
   if (refusesTheRole(history)) return { status: EXPORTS_READ.REFUSED, report: report.value };
   if (isPermissionRefusal(history)) return { status: TENANT_READ.FORBIDDEN };

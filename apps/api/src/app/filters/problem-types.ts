@@ -168,6 +168,9 @@ export const ProblemType = {
   /** FR-41 (task 47.5): a report is marked filed only once an export of it has completed — there is nothing yet to have
    *  sent (§12.5.6's task-47 row (4)). Its own slug, since S-11's way out is producing a file, not changing the mark. */
   ReportNotExported: 'report-not-exported',
+  /** FR-210 (task 192): a report an export of which was requested or completed is not deleted — it is distribution
+   *  evidence (§12.5.6's task-192 row (1)). Its own slug, so S-06 and S-07 can name why the deletion was refused. */
+  ReportExported: 'report-exported',
   /** FR-44 (task 47.4; 182/20): an export of a report holding unresolved findings was asked for without acknowledging
    *  them. The document lists the findings as the request evaluated them, so the warning a client draws is that list. */
   ExportFindingsUnacknowledged: 'export-findings-unacknowledged',

@@ -168,6 +168,13 @@ export class ReportResponseDto {
   readonly locked: boolean;
 
   @ApiProperty({
+    description:
+      'Whether a file of it was exported or is being made — an export requested or completed, never one that failed. ' +
+      'Such a report is distribution evidence, and the Organization Administrator cannot delete it (FR-210).',
+  })
+  readonly exported: boolean;
+
+  @ApiProperty({
     type: ReportValidationSummaryDto,
     nullable: true,
     description: 'What its latest validation run came to (FR-41), or null where it was never checked.',
@@ -221,6 +228,7 @@ export class ReportResponseDto {
     this.scope = report.scope;
     this.status = statusAsRead({ ...report, filed: report.filing !== null });
     this.locked = report.status === REPORT_STATUS.LOCKED;
+    this.exported = report.exported;
     this.validation = report.validation === null ? null : new ReportValidationSummaryDto(report.validation);
     this.filing = report.filing === null ? null : new ReportFilingDto(report.filing);
     const superseding: SupersedingPin | null = supersedingPin({ report, adopted });
