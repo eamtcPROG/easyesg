@@ -10,6 +10,7 @@ import { keptAnswerOf } from './kept-answer';
 const field = (over: Partial<DisclosureField>): DisclosureField => ({
   elementKey: 'TotalWaterConsumption',
   changeCount: 0,
+  places: null,
   dimensionKey: '',
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,
@@ -57,7 +58,16 @@ describe('keptAnswerOf', () => {
     expect(keptAnswerOf(field({ valueNumeric: '0' }))).toEqual({ kind: 'number', value: '0', unitCode: null });
   });
 
-  it('reads a percent as the figure it is stored as, and an amount with the filing’s currency', () => {
+  it('reads a figure the platform worked out as its field shows it — a share as one, with its places (task 211)', () => {
+    expect(
+      keptAnswerOf(field({ kind: DISCLOSURE_KIND.PERCENT, derived: true, valueNumeric: '0.125', places: 2 })),
+    ).toEqual({ kind: 'computed', figure: { value: '0.125', places: 2, share: true }, unitCode: null });
+    expect(
+      keptAnswerOf(field({ origin: DISCLOSURE_ORIGIN.CALCULATED, valueNumeric: '34.9168437216', places: 2 })),
+    ).toEqual({ kind: 'computed', figure: { value: '34.9168437216', places: 2, share: false }, unitCode: null });
+  });
+
+  it('reads a typed percent as the figure it is stored as, and an amount with the filing’s currency', () => {
     expect(keptAnswerOf(field({ kind: DISCLOSURE_KIND.PERCENT, valueNumeric: '0.125' }))).toEqual({
       kind: 'number',
       value: '0.125',

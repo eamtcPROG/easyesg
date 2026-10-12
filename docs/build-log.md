@@ -31754,3 +31754,100 @@ work. `one-idea-per-file`:
 - `rerender-` — the finding context's memo gains one primitive dependency, the entity's id.
 
 `vercel-composition-patterns`: no component gained a flag. The link's third arm is a component of its own.
+
+## Task 211 — a figure with no unit, rounded on S-07 as the report prints it · 2026-10-12
+
+FR-29's behaviour 4 on S-07: a computed or derived figure is shown at the places the step read now serves each field
+— the intensity to seven, the accident rate to two, B3's total at tonnes' two — and a share (B8's turnover rate,
+B10's coverage and pay gap) as a percentage to two decimals of the percent. UX-28's notice quotes a hidden one the same
+way. The places were set by task 46 (`architecture.md` §12.5.6's task-46 row (10)); this task makes S-07 read them.
+
+### Decided before building (project owner, one batch of two, each the recommended option)
+
+Recorded in `architecture.md` §12.5.6's new task-211 row (1)–(2). The task-39 row's (7), the task-46 row's (10) and the
+Stage-2-close row's (4) were amended in the same edit. So were FR-29 (built; behaviour 4; AC-7, AC-8) and S-07's
+entry.
+
+- **(1) The api serves each field's places**, chosen by the rule the PDF chooses by. `presentedPlaces` moved from
+  `core/export` to `core/disclosure` and is read in both. *Declined:* serving the element map and choosing in the
+  browser.
+- **(2) The field and the kept-answer notice follow**; a finding's quoted figures stay as the interpreter quotes them.
+  *Declined:* wording a year-over-year finding on a share as percentages; the field alone.
+
+### Settled in the task
+
+Row (a)–(c):
+- A share is a field of the percent kind. All three registered percent elements are derived.
+- A typed figure is still shown as typed.
+- Half-up on a signed figure rounds the magnitude and keeps the sign, and a figure that rounds to nothing carries none.
+
+### What the building found
+
+- **A negative figure was rounded by no shared code.** `roundHalfUp` answered anything with a sign unrounded, and its
+  spec pinned that. S-07's figure layout refused a sign outright, so B10's pay gap, kept signed, would have shown raw.
+  The PDF rounded it only because it hands `Intl` the unrounded string, and `Intl` rounds half away from zero
+  (`halfExpand`). `roundHalfUp` now does what `Intl` did, and its spec pins the two agreeing, so S-07 and the document
+  round a negative gap by one function. The PDF prints every negative figure as before but one: a figure that rounds
+  to nothing, which `Intl` printed *−0,00* and now reads *0,00*.
+- **B3's total is stored with no unit**, so S-07, which rounded by the stored unit, showed it with every digit. Its
+  element admits tonnes alone, which the served places now carry (`presentedUnit`, the rule the files had since task
+  46).
+- **The step's unit map stays.** B3's calculator figure (task 39.3) rounds by it. Only `DisclosureControl` stopped
+  reading it, and the context's docblock says which reader is left.
+- **UX-28's notice had the reason written down.** `kept-answer.ts` said a percent was quoted as stored *because* the
+  field showed it so, and that a notice adding `%` would disagree with its field. With the field now showing a
+  percentage, that same reason carries the notice with it. `computed-figure.ts` is the one description both read, so
+  the two cannot come apart.
+- **The kept-answer journey (`wizard.spec.ts`) asserted the fraction** — *Păstrat: 0,125* and a restored *0,125*.
+  Both now read *12,50 %*, which makes that journey this task's browser proof. B9's journey gained the rate on screen
+  at its places, *8,00*.
+- **`'hidden.quantity'` reached three call sites** with the computed arm, and `sonarjs/no-duplicate-string` refused
+  it. The three became one local helper in `keptWords`.
+
+### Gates
+
+The change reaches `apps/api` (a DTO, so the contract), `apps/web`, `packages/i18n` and `packages/contracts`. By the
+close table that is each package's suite and every dependent's row, `apps/admin` among them. Each ran alone.
+
+- `pnpm lint`; `pnpm typecheck` in `api`, `web` and `admin`; `pnpm routes:check`; `pnpm docs:check` (48 claims).
+- `pnpm openapi:check`, the regenerated contract staged: one field, `places`, on a disclosure field.
+- Unit:
+  - `api` 2,336 in 295 suites;
+  - `web` 1,989 in 215 files;
+  - `admin` 299;
+  - `i18n` 165.
+- Broken on purpose, each failing its specs and then restored:
+  - the share flag in `computed-figure.ts` (two specs);
+  - the sign in `roundHalfUp`;
+  - the served places in `WizardService.step`, against `wizard.e2e-spec.ts`, where both places cases failed.
+- `pnpm e2e`: 73 suites, 1,799 tests. **The first full run failed one case, my own**: the new places case named B3's
+  total `…GreenhouseGasEmissions`, a key I misremembered for the taxonomy's `…GHGEmissions`. Corrected, the suite ran
+  again alone, 76 of 76. The first sabotage proof of the served places had counted that case failing for the wrong
+  reason, so it was run again, and both cases failed on the places. The log's three catalogue lines and one outbox
+  line are the same count task 210's run printed.
+- `pnpm e2e:worker`: 16.
+- `pnpm e2e:web --project identity --project expansion --project admin`: 361 of 361 in 11.2 minutes. The kept share
+  reads *Păstrat: 12,50 %*, the restored field *12,50 %*, and B9's rate *8,00*. The server log holds 21 lines of
+  digest `2667547900` and the one `FactorSetCatalog` line S-09's journey asks for.
+- **Skipped, as the table allows**:
+  - `migrations:check` — no migration;
+  - `events:check`, `facade:check`, `eslint:prove`, `boundaries:prove`, `image:check` and `test:coverage` — the Stage's
+    end runs them cold, and CI does on the next push.
+
+### Skills, read against the diff
+
+`nestjs-best-practices`: `di-use-interfaces-tokens` — the element places reach the wizard's service through the
+existing `ELEMENT_PRECISION` port. Under `arch-avoid-circular-deps`, the places rule moved to the module whose field it
+reads, which `core/export` already imported. `api-use-dto-serialization` — `places` is a DTO field documented with its
+null meaning.
+
+`one-idea-per-file`:
+- `tools/computed-figure.ts` is what S-07 counts as the platform's figure and how it reads, with its spec;
+- `formatShare` sits beside `formatFigure`, the same idea for a share;
+- the kept answer's numeric arm became a function of its own rather than a block inside a switch.
+
+`one-kind-per-folder`: the new tool is in the wizard's `tools/`, read by `components/fields/` and by `tools/`'s own
+`kept-answer.ts`.
+
+`vercel-react-best-practices`: `rerender-` — the control computes the figure during render (`pure-derive-during-render`),
+and `useStepFigures` is no longer read by every field, only by B3's figure.

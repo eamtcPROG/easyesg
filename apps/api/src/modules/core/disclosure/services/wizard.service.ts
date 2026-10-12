@@ -1,8 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { FIELD_CHANGE_COUNTS, type FieldChangeCounts } from '@api/contracts/field-change-counts.port';
-import { PRESENTATION_PRECISION, type PresentationPrecision } from '@api/contracts/presentation-precision.port';
+import {
+  ELEMENT_PRECISION,
+  PRESENTATION_PRECISION,
+  type ElementPrecision,
+  type PresentationPrecision,
+} from '@api/contracts/presentation-precision.port';
 
 import { requestContext, requestLocale } from '@api/infrastructure/persistence/request-context';
+import { presentedPlaces } from '../domain/figure-precision';
 import type { DisclosureValue } from '../models/disclosure-value.model';
 import type { DisclosureModuleSummary, PresentedDisclosureStep } from '../models/wizard-step.model';
 import { ClearOutstandingNotice } from '../use-cases/clear-outstanding-notice.use-case';
@@ -33,6 +39,7 @@ export class WizardService {
     @Inject(PRESENTATION_PRECISION) private readonly precision: PresentationPrecision,
     private readonly clearance: ClearOutstandingNotice,
     @Inject(FIELD_CHANGE_COUNTS) private readonly changes: FieldChangeCounts,
+    @Inject(ELEMENT_PRECISION) private readonly elementPrecision: ElementPrecision,
   ) {}
 
   modules(query: { readonly reportId: string }): Promise<readonly DisclosureModuleSummary[]> {
@@ -50,9 +57,12 @@ export class WizardService {
       reportId: query.reportId,
       elementKeys: [...new Set(step.fields.map((field) => field.elementKey))],
     });
-    // The places a computed or derived figure is shown to (task 39.3; §12.5.6's task-39 row (7)) — the same rule S-09,
-    // the PDF and the Excel export round by, so the wizard cannot disagree with them about a figure.
-    return { ...step, precision: this.precision.places(), changeCounts };
+    // The places a computed or derived figure is shown to (task 39.3; §12.5.6's task-39 row (7)) — by unit for S-09's
+    // figure, and since task 211 each field's own, chosen by the rule the PDF and the Excel export choose by, so the
+    // wizard cannot disagree with them about a figure (§12.5.6's task-211 row (1)).
+    const precision = { units: this.precision.places(), elements: this.elementPrecision.elementPlaces() };
+    const fields = step.fields.map((field) => ({ ...field, places: presentedPlaces({ field, precision }) }));
+    return { ...step, fields, precision: precision.units, changeCounts };
   }
 
   /**

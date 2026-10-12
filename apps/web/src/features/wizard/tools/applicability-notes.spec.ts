@@ -19,6 +19,7 @@ import { layOutStep } from './step-layout';
 
 const field = (over: Partial<DisclosureField> & { elementKey: string }): DisclosureField => ({
   changeCount: 0,
+  places: null,
   dimensionKey: '',
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,

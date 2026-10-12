@@ -5,12 +5,13 @@ import { createContext, use, useMemo, type ReactNode } from 'react';
 
 /**
  * What a step's computed figures are shown with (task 39.3; §12.5.6's task-39 row (7)): the places
- * `presentation_precision` gives each unit — S-07 rounds a computed or derived figure to them, the rule every surface
- * rounds by — and, on B3, the figures the calculator wrote, so an overridden scope shows the computed figure it
- * superseded beside the substitute (UX-43), and the report the figure actions act on.
+ * `presentation_precision` gives each unit, which B3's calculated scopes round to, and on B3 the figures the calculator
+ * wrote, so an overridden scope shows the computed figure it superseded beside the substitute (UX-43), and the report the
+ * figure actions act on. **A field's own figure rounds to the places its field carries since task 211** — chosen on the
+ * api by the rule the PDF chooses by (§12.5.6's task-211 row (1)) — and needs nothing here.
  *
  * **A context rather than three props threaded through `StepFields` and each `StepField`**: the section reads them once
- * and the few fields that need them — derived figures anywhere, B3's two scopes — reach for them where they render.
+ * and the few fields that need them — B3's two scopes — reach for them where they render.
  */
 export interface StepFigures {
   readonly reportId: string;

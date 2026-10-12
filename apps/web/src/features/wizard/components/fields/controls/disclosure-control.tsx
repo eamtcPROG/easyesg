@@ -2,7 +2,6 @@
 
 import {
   DISCLOSURE_KIND,
-  DISCLOSURE_ORIGIN,
   type DisclosureField as DisclosureFieldShape,
   type DisclosureValueWrite,
 } from '@easyesg/contracts';
@@ -10,8 +9,6 @@ import { DateField, RadioGroup, Select, TextArea, TextField } from '@easyesg/ui'
 import { useFormatter, useTranslations } from 'next-intl';
 import { useState, type FocusEvent } from 'react';
 import { parseDecimalInput } from '@/lib/decimal-input';
-import { formatFigure } from '@/lib/figure-format';
-import { useStepFigures } from '../../providers/step-figures-context';
 import {
   BOOLEAN_CHOICE,
   COLUMN_OF_KIND,
@@ -20,6 +17,7 @@ import {
   storedDraftOf,
   writeFor,
 } from '../../../tools/values';
+import { computedFigureOf, computedFigureWords } from '../../../tools/computed-figure';
 import { CHOICE_CONTROL, choiceOf } from '../../../tools/option-cards';
 import { FIELD_MESSAGES } from '../shared/step-messages';
 import { ChoiceSet } from './choice-set';
@@ -74,7 +72,6 @@ export function DisclosureControl({
 }) {
   const t = useTranslations(FIELD_MESSAGES);
   const format = useFormatter();
-  const { precision } = useStepFigures();
   // One value, because its three parts move together (the reducer rule): `draft` is what the input
   // shows, `committed` is what this control last sent, `server` is what the field arrived holding.
   // A blur with `draft === committed` writes nothing.
@@ -120,21 +117,18 @@ export function DisclosureControl({
         />
       );
     }
-    // **A computed or derived figure is shown rounded** — once, half-up, to its unit's configured places (task 39.3;
-    // §12.5.6's task-39 row (7)), the rule S-09, the PDF and the Excel export round by. A figure the reporter typed is
-    // shown as typed: it is an answer, not a computation.
-    const computed = field.derived || field.origin !== DISCLOSURE_ORIGIN.REPORTED;
+    // **A computed or derived figure is shown rounded** — once, half-up, to the places the step read serves its field,
+    // its unit's or its element's, and a share as a percentage (tasks 39.3, 211; §12.5.6's task-211 row): the rule S-09,
+    // the PDF and the Excel export round by. A figure the reporter typed is shown as typed: it is an answer, not a
+    // computation (`computedFigureOf` answers `null` for it).
+    const figure = computedFigureOf(field, draft);
     const shown =
       field.kind === DISCLOSURE_KIND.ENUMERATION
         ? enumerationWord(field.options, draft, t('unnamed'))
         : column === VALUE_COLUMN.BOOLEAN
           ? booleanLabel(draft, { yes: t('yes'), no: t('no') })
-          : column === VALUE_COLUMN.NUMERIC && computed && draft !== ''
-            ? formatFigure({
-                value: draft,
-                places: field.unitCode === null ? undefined : precision[field.unitCode],
-                format,
-              })
+          : figure !== null
+            ? computedFigureWords({ figure, format })
             : draft;
     return shown === '' ? (
       <p className={styles.readOnlyEmpty}>{t('unanswered')}</p>

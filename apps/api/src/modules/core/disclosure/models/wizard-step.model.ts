@@ -362,11 +362,23 @@ export interface DisclosureStep {
 }
 
 /**
- * A step as the wizard is served it (task 39.3): the step, and the places a computed or derived figure on it is shown to
- * — `presentation_precision`, by unit (§12.5.6's task-39 row (7)). **Added by the service, not the use case**: the
- * places are presentation, the same for every step, and the use case answers what the report holds.
+ * A field as the wizard is served it (task 211): the field, and the places a computed or derived figure in it is shown to
+ * — its unit's, else its element's, chosen by the rule the files choose by (`presentedPlaces`; §12.5.6's task-211 row
+ * (1)). `null` keeps every digit: no places are configured for it, or it holds no figure.
  */
-export interface PresentedDisclosureStep extends DisclosureStep {
+export interface PresentedDisclosureField extends DisclosureField {
+  readonly places: number | null;
+}
+
+/**
+ * A step as the wizard is served it (task 39.3): the step, and the places a computed or derived figure on it is shown to
+ * — `presentation_precision`, by unit (§12.5.6's task-39 row (7)), and since task 211 each field's own. **Added by the
+ * service, not the use case**: the places are presentation, the same for every step, and the use case answers what the
+ * report holds.
+ */
+export interface PresentedDisclosureStep extends Omit<DisclosureStep, 'fields'> {
+  readonly fields: readonly PresentedDisclosureField[];
+  /** By unit — what S-09's figure on B3 rounds by (task 39.3), beside each field's own places. */
   readonly precision: Readonly<Record<string, number>>;
   /**
    * How many entries each stored field's change history holds, keyed by `fieldChangeKey` (task 84; §12.5.6's task-84

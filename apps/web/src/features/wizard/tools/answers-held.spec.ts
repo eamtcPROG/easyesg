@@ -13,6 +13,7 @@ import type { PendingWrite } from './autosave-state';
 const field = (over: Partial<DisclosureField>): DisclosureField => ({
   elementKey: 'NumberOfEmployees',
   changeCount: 0,
+  places: null,
   dimensionKey: '',
   dimensionLabel: null,
   origin: DISCLOSURE_ORIGIN.REPORTED,

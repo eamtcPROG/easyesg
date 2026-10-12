@@ -9,7 +9,7 @@ import type { Report } from '@api/modules/core/disclosure/models/report.model';
 import type { DisclosureModuleSummary, DisclosureStep } from '@api/modules/core/disclosure/models/wizard-step.model';
 import type { ReadWizardStep } from '@api/modules/core/disclosure/use-cases/read-wizard-step.use-case';
 import type { RunValidation } from '@api/modules/core/validation/use-cases/run-validation.use-case';
-import type { FigurePrecision } from '../domain/figure-precision';
+import type { FigurePrecision } from '@api/modules/core/disclosure/domain/figure-precision';
 import { modulesToRead } from '../domain/report-document';
 
 /** A report's contents as both of its files read them — the reads the screens already make, in one language. */

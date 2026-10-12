@@ -68,6 +68,11 @@ export const formats = {
      * rounded once to the places `presentation_precision` gives its unit (`lib/figure-format.ts`).
      */
     exact: { maximumSignificantDigits: 15 },
+    /**
+     * A share with its every digit, as a percentage — what a computed share is shown as where the configuration gives it
+     * no places (task 211; `lib/figure-format.ts`'s `formatShare`), on `exact`'s fifteen significant digits.
+     */
+    exactShare: { style: 'percent', maximumSignificantDigits: 15 },
     // Gender pay gap (B10), turnover rate (B8), completeness.
     percent: { style: 'percent', maximumFractionDigits: 1 },
     // MDL is the ledger currency (D-14). A document issued in EUR or USD passes its own

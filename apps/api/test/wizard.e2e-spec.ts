@@ -82,6 +82,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     } | null;
     applicable: boolean;
     applicabilityCause: Cause | null;
+    /** The places a computed figure in the field is shown to — its unit's, else its element's (task 211). */
+    places: number | null;
   }
   interface Axis { key: string; label: string | null; memberLanguage: string | null; members: { value: string; label: string | null; code: string | null; hazardous: boolean | null }[] }
   interface DerivationInput {
@@ -1705,6 +1707,20 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       // 12 ÷ ((100 + 80) ÷ 2)
       expect(Number(rate?.valueNumeric)).toBeCloseTo(0.13333333, 6);
       expect(rate?.origin).toBe('calculated');
+      // A share with no unit, served its element's places — decimals of the percent, as the PDF prints it (task 211).
+      expect(rate?.places).toBe(2);
+    });
+
+    it('serves each field the places a computed figure in it is shown to, chosen as the PDF chooses (task 211)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const b3 = await readStep(reportId, 'B3');
+      // Stored with no unit; its element admits tonnes alone, so it is shown at tonnes' places (task-46 row (10)).
+      expect(field(b3, 'TotalGrossLocationBasedScope1AndScope2GHGEmissions')?.places).toBe(2);
+      // No unit at all: its element's own places, the digits EFRAG's template shows the cell at.
+      expect(field(b3, 'Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased')?.places).toBe(7);
+      expect(field(await readStep(reportId, 'B9'), ACCIDENT_RATE)?.places).toBe(2);
+      // A field the configuration gives no places keeps every digit.
+      expect(field(await readStep(reportId, 'B1'), 'Turnover')?.places).toBeNull();
     });
 
     it('clears a derived figure when its operands stop being complete', async () => {

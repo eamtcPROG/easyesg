@@ -140,6 +140,15 @@ describe('keptWords', () => {
     expect(kept('en', en, { kind: KEPT_ANSWER.NUMBER, value: '4', unitCode: 'sqkm' })).toBe('4 sqkm');
   });
 
+  it('writes a figure the platform worked out as its field shows it — a share as a percentage (task 211)', () => {
+    const share = { kind: KEPT_ANSWER.COMPUTED, figure: { value: '0.125', places: 2, share: true }, unitCode: null } as const;
+    expect(kept('ro', ro, share)).toBe('12,50\u00a0%');
+    expect(kept('en', en, share)).toBe('12.50%');
+    expect(
+      kept('en', en, { kind: KEPT_ANSWER.COMPUTED, figure: { value: '250.456', places: 2, share: false }, unitCode: 'm3' }),
+    ).toBe('250.46 m³');
+  });
+
   it('writes an amount with its currency, a boolean and a declaration', () => {
     expect(kept('en', en, { kind: KEPT_ANSWER.AMOUNT, value: '900', currency: 'MDL' })).toBe('900 MDL');
     expect(kept('en', en, { kind: KEPT_ANSWER.BOOLEAN, value: false })).toBe('No');

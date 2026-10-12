@@ -20,10 +20,13 @@ import type { useFormatter } from 'next-intl';
  * (§12.5.6's task-39 row (7)) — two features, one rounding, which is the whole of 182/3's *one rule binds all four*.
  * **The rounding itself is `@easyesg/i18n`'s since task 43**, which the api's document rounds by too; this keeps the
  * layout.
+ *
+ * **A signed figure is laid out with its sign since task 211** — B10's pay gap is kept signed — rounded by the same
+ * half-up, which rounds its magnitude (§12.5.6's task-211 row (c)); until then a negative figure was shown raw.
  */
 type Formatter = Pick<ReturnType<typeof useFormatter>, 'number'>;
 
-const DECIMAL = /^(\d+)(?:\.(\d+))?$/u;
+const DECIMAL = /^-?\d+(?:\.\d+)?$/u;
 
 export function formatFigure(input: {
   readonly value: string;
@@ -34,6 +37,27 @@ export function formatFigure(input: {
   if (!DECIMAL.test(input.value)) return input.value;
   if (input.places === undefined) return input.format.number(Number(input.value), 'exact');
   return input.format.number(Number(roundHalfUp(input.value, input.places)), {
+    minimumFractionDigits: input.places,
+    maximumFractionDigits: input.places,
+  });
+}
+
+/**
+ * **A share as a reader is shown it** (task 211; FR-29; §12.5.6's task-211 row (2), (a)) — stored as the fraction it is,
+ * shown as a percentage, as the PDF prints it: rounded once, half-up, **two places further along**, since a share's
+ * places count decimals of the percent (`0.1020408163` to two is *10,20 %*), then laid out by the locale's own percent
+ * pattern. Places `undefined` keeps every digit — the named `exactShare`.
+ */
+export function formatShare(input: {
+  readonly value: string;
+  /** Decimals of the percent, or `undefined` for every digit. */
+  readonly places: number | undefined;
+  readonly format: Formatter;
+}): string {
+  if (!DECIMAL.test(input.value)) return input.value;
+  if (input.places === undefined) return input.format.number(Number(input.value), 'exactShare');
+  return input.format.number(Number(roundHalfUp(input.value, input.places + 2)), {
+    style: 'percent',
     minimumFractionDigits: input.places,
     maximumFractionDigits: input.places,
   });

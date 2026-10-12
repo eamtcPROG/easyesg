@@ -194,7 +194,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-29 — Quantities in the standard's units, intensities derived
 
-**Status.** Partial — delivered 36.4 … 36.12, 38.4, 39.2, 39.3, 91.4, 183, 46 (a figure with no unit, rounded in the exports) · remaining 211 (and on S-07)
+**Status.** Built — delivered 36.4 … 36.12, 38.4, 39.2, 39.3, 91.4, 183, 46 (a figure with no unit, rounded in the exports), 211 (and on S-07)
 
 **Obligation.** The system shall capture each quantitative disclosure in the unit the standard states for it, or with no unit where it states none, letting the reporter choose where several are admitted and defaulting to none; and shall derive, rather than accept typed, the figures the standard computes. Those figures are B3's total and GHG intensity, B8's turnover rate, B9's accident rate and B10's collective-agreement coverage and pay gap.
 
@@ -202,7 +202,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 |---|---|
 | **Actors** | Editor or OA enters. Nobody writes a derived figure. |
 | **Traces** | UC-21 … UC-28 · `design_spec.md` OQ-22 · FR-34 |
-| **Surfaces** | S-07 (unit chooser, currency, derived figure shown beside its inputs) · `unitCodes` and `currency` on the step read · `PUT /reports/{id}/derivation-inputs` |
+| **Surfaces** | S-07 (unit chooser, currency, derived figure shown beside its inputs) · `unitCodes`, `currency` and each field's `places` on the step read · `PUT /reports/{id}/derivation-inputs` |
 
 **Inputs.** A value with its `unitCode` where the element admits several units. A fixed unit is the field's own. A monetary value is in the report's single currency (`core.report.reporting_currency`, ISO 4217, default MDL). Derivation inputs that the taxonomy does not carry (B8, B9) go through `derivation-inputs`.
 
@@ -210,7 +210,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 1. The unit lists are EFRAG's `measurementGuidance`. Of 42 elements, 25 admit one unit, 13 admit several and 4 (the intensities) admit none. The unit is chosen per element, not per row (task-91.4 and task-36.5 rows).
 2. Headcount and FTE are B1's two **bases** of a count, not units (task-36.9).
 3. Derivations: turnover rate; accident rate = accidents ÷ (hours × headcount) × 200 000, where hours default to 2 000 as data; coverage = covered ÷ headcount; pay gap = (male − female) ÷ male, kept signed; B3 total = Scope 1 + location-based Scope 2; **B3 intensity = that total ÷ B1 turnover, in the report's currency** (task-36.10, task-36.11, task-38.4 rows; §12.5.6 task-182 row (2)).
-4. **Rounding.** Derived and computed figures are stored exact, apart from intensity at ten significant figures half-up. Each surface rounds once, half-up, to a per-unit precision held as configuration and set by its presentation task (§12.5.6 task-182 row (3)). **A figure with no unit — B3's intensity, B8 … B10's rates — has no precision to read**, so S-07 shows it as stored until task 211 gives it places (§12.5.6's Stage-2-close row, item (4)). **Amended 11 Oct 2026** (project owner, task 46; §12.5.6's task-46 row (10)): the places are its element's, in `presentation_precision` beside the units', set to the digits EFRAG's template shows the same cell at, and a figure stored with no unit whose element admits one unit is in that unit — B3's calculated scopes and total in tonnes CO2e. The PDF and the Excel export read them; S-07 rounding to them is what remains of task 211.
+4. **Rounding.** Derived and computed figures are stored exact, apart from intensity at ten significant figures half-up. Each surface rounds once, half-up, to a per-unit precision held as configuration and set by its presentation task (§12.5.6 task-182 row (3)). **A figure with no unit — B3's intensity, B8 … B10's rates — has no precision to read**, so S-07 shows it as stored until task 211 gives it places (§12.5.6's Stage-2-close row, item (4)). **Amended 11 Oct 2026** (project owner, task 46; §12.5.6's task-46 row (10)): the places are its element's, in `presentation_precision` beside the units', set to the digits EFRAG's template shows the same cell at, and a figure stored with no unit whose element admits one unit is in that unit — B3's calculated scopes and total in tonnes CO2e. The PDF and the Excel export read them. **Since task 211 S-07 rounds to them too** (§12.5.6's task-211 row): the step read serves each field's places, chosen by the rule the PDF chooses them by, and S-07 shows a computed or derived figure rounded to them, a share — a field of the percent kind — as a percentage, two places further along, and UX-28's notice quotes a hidden one the same way. Half-up on a signed figure — B10's pay gap — rounds its magnitude and keeps the sign, as the PDF does.
 
 **Refusals.**
 - A derived figure written → 400 `validation-failed` (`core.report.derived_disclosure_not_writable`)
@@ -228,12 +228,15 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-4** Given a write naming a unit outside the element's list, then it is refused with 400. *(source: §12.5.6 task-182 row (6))*
 - **AC-5** Given the inputs of each derived figure, then the figure is computed by its formula, and a write to it is refused with 400. *(source: §12.5.6 task-36.10, task-36.11 and task-38.4 rows)*
 - **AC-6** Given turnover is absent or zero, then there is no B3 intensity. *(source: §12.5.6 task-38.4 row)*
+- **AC-7** Given a computed figure with no stored unit — B3's intensity, B9's accident rate — then S-07 shows it rounded once, half-up, to its element's places, as the PDF prints it. *(source: behaviour 4; §12.5.6 task-46 row (10), task-211 row (1))*
+- **AC-8** Given a share — B8's turnover rate, B10's coverage and pay gap — then S-07 shows it as a percentage to its element's places of the percent, signed where it is negative, and a hidden one is quoted the same way in UX-28's notice. *(source: behaviour 4; §12.5.6 task-211 row (2), (a), (c))*
 
 **History.**
 - 8 Sep 2026 · project owner · unit lists from EFRAG, chosen per element, no default · §12.5.6 task-91.4 and task-36.5 rows
 - 9 Sep 2026 · project owner (spec-reviewed) · headcount and FTE are not units but B1 bases; the criterion gains *no unit where the standard states none*; the first version of this amendment wrongly said no FTE existed · task 36.9; UC-19, UC-26; OQ-22
 - 9 Sep 2026 · project owner · EFRAG's derivations computed; the currency on the report · §12.5.6 task-36.10, task-36.11 and task-36.12 rows
 - 5 Oct 2026 · project owner · the derived set named; intensity over turnover; one rounding rule · §12.5.6 task-182 row (2), (3)
+- 12 Oct 2026 · project owner · S-07 rounds a figure with no unit to its element's places, served per field; a share as a percentage, in the field and in UX-28's notice · §12.5.6 task-211 row
 
 ### FR-30 — Zero is an answer
 

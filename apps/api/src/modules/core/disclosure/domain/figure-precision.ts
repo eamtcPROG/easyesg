@@ -1,8 +1,12 @@
-import type { DisclosureField } from '@api/modules/core/disclosure/models/wizard-step.model';
+import type { DisclosureField } from '../models/wizard-step.model';
 
 /**
  * How many digits a figure the files print is shown to (`architecture.md` §12.5.6's task-182 row (3); task-46 row (10)):
  * the `presentation_precision` artefact, by unit and — for a figure the platform computes with no unit — by element.
+ *
+ * **In `core/disclosure` since task 211**, beside the field it reads (§12.5.6's task-211 row (1)): the PDF and the Excel
+ * export choose a figure's places by it, and so does the step read that serves S-07 each field's places — one rule, so
+ * the wizard cannot round a figure to different digits from the files.
  */
 export interface FigurePrecision {
   /** By unit code — `tCO2e`, `MWh`. */

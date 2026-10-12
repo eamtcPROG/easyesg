@@ -36,7 +36,7 @@ import type {
   DerivationInputField,
   DisclosureAxis,
   DisclosureDefault,
-  DisclosureField,
+  PresentedDisclosureField,
   DisclosureModuleSummary,
   DisclosureOption,
   PresentedDisclosureStep,
@@ -459,8 +459,20 @@ export class DisclosureFieldDto {
   })
   readonly changeCount: number;
 
-  constructor(field: DisclosureField, changeCount: number) {
+  @ApiProperty({
+    type: 'integer',
+    nullable: true,
+    example: 2,
+    description:
+      'The decimal places a computed or derived figure in this field is shown to — once, half-up — chosen as the PDF ' +
+      'and the Excel export choose them: its unit’s, else its element’s (FR-29). A share’s count decimals of the ' +
+      'percent. Null keeps every digit. A figure the reporter typed is shown as typed.',
+  })
+  readonly places: number | null;
+
+  constructor(field: PresentedDisclosureField, changeCount: number) {
     this.changeCount = changeCount;
+    this.places = field.places;
     this.elementKey = field.elementKey;
     this.dimensionKey = field.dimensionKey;
     this.ordinal = field.ordinal;

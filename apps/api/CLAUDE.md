@@ -664,7 +664,9 @@ Four things to know before touching it:
 - **A computed figure is written exact; a reporter's rounds** (§12.5.6's task-46 row (10)): a calculated or derived
   figure is stored with no unit, and the template's formulas compute from it, so rounding it in the cell would make B3's
   total disagree with the platform's. The digits a reader sees are EFRAG's cell formats, which the PDF prints to through
-  `figure-precision.ts` and the `elements` places in `presentation_precision`.
+  `figure-precision.ts` and the `elements` places in `presentation_precision`. **That rule is `core/disclosure`'s since
+  task 211** (`domain/figure-precision.ts`): the step read serves each field the places it chooses, so S-07 rounds to
+  what the files round to, and `WizardService.step` is its third reader.
 - **The Excel suites read every file in LibreOffice Calc** — the test stack's `calc` service (`infra/compose/calc`),
   run once per file with no network, with Calc's own defaults: the export names the platform as its writer, so Calc
   computes the template's formulas on open. `pnpm test:up` builds the image only when it is absent; a changed one needs

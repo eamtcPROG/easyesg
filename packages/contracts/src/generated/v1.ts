@@ -4127,6 +4127,11 @@ export interface components {
             applicabilityCause: components["schemas"]["ApplicabilityCauseDto"] | null;
             /** @description How many changes the field’s history holds (UC-47) — S-07’s footer, *Changed N times*; 0 for a field never answered. Its entries are `GET /reports/{id}/values/{elementKey}/history`. */
             changeCount: number;
+            /**
+             * @description The decimal places a computed or derived figure in this field is shown to — once, half-up — chosen as the PDF and the Excel export choose them: its unit’s, else its element’s (FR-29). A share’s count decimals of the percent. Null keeps every digit. A figure the reporter typed is shown as typed.
+             * @example 2
+             */
+            places: number | null;
         };
         DisclosureAxisDto: {
             /** @example TypeOfPollutantAxis */

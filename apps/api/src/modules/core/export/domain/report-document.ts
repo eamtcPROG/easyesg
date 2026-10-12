@@ -23,7 +23,7 @@ import {
 import { DISCLOSURE_ORIGIN, DISCLOSURE_STATE } from '@api/modules/core/disclosure/models/disclosure-value.model';
 import { scopeAsks, type ReportScope } from '@api/modules/core/disclosure/models/report.model';
 import type { DisclosureField, DisclosureModuleSummary } from '@api/modules/core/disclosure/models/wizard-step.model';
-import { type FigurePrecision, presentedPlaces, presentedUnit } from './figure-precision';
+import { type FigurePrecision, presentedPlaces, presentedUnit } from '@api/modules/core/disclosure/domain/figure-precision';
 
 /**
  * What the report's document prints, decided from what the screens already read (task 43; FR-48, UX-119;

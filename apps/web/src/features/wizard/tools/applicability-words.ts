@@ -2,6 +2,7 @@ import { APPLICABILITY_CONDITION, type ApplicabilityCause } from '@easyesg/contr
 import type { useFormatter, useTranslations } from 'next-intl';
 import { calendarDay, legalDate } from '@/lib/legal-date';
 import type { ApplicabilityNote } from './applicability-notes';
+import { computedFigureWords } from './computed-figure';
 import { KEPT_ANSWER, type KeptAnswer } from './kept-answer';
 
 /**
@@ -98,17 +99,20 @@ export function keptWords(input: {
   readonly no: string;
 }): string {
   const { t, format, kept } = input;
+  /** A figure beside what it is counted in — a unit's symbol, or the unit code where none is known; a currency code. */
+  const quantity = (value: string, unit: string | null): string =>
+    unit === null ? value : t('hidden.quantity', { value, unit });
+  const unitOf = (code: string | null): string | null => (code === null ? null : (input.units[code] ?? code));
   switch (kept.kind) {
     case KEPT_ANSWER.NOT_AVAILABLE:
       return t('hidden.notAvailable');
     case KEPT_ANSWER.NUMBER:
-      return kept.unitCode === null
-        ? numberOf(format, kept.value)
-        : t('hidden.quantity', { value: numberOf(format, kept.value), unit: input.units[kept.unitCode] ?? kept.unitCode });
+      return quantity(numberOf(format, kept.value), unitOf(kept.unitCode));
+    case KEPT_ANSWER.COMPUTED:
+      // As its field showed it (task 211): rounded to its places, a share as a percentage.
+      return quantity(computedFigureWords({ figure: kept.figure, format }), unitOf(kept.unitCode));
     case KEPT_ANSWER.AMOUNT:
-      return kept.currency === null
-        ? numberOf(format, kept.value)
-        : t('hidden.quantity', { value: numberOf(format, kept.value), unit: kept.currency });
+      return quantity(numberOf(format, kept.value), kept.currency);
     case KEPT_ANSWER.BOOLEAN:
       return kept.value ? input.yes : input.no;
     case KEPT_ANSWER.DATE: {

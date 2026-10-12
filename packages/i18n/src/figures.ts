@@ -10,20 +10,26 @@
  * application's own formatter, and this touches none of them: it answers a decimal string, which a formatter then lays
  * out with that many places.
  */
-const DECIMAL = /^(\d+)(?:\.(\d+))?$/u;
+const DECIMAL = /^(-?)(\d+)(?:\.(\d+))?$/u;
 
 /**
- * A non-negative decimal string rounded half-up to `places`, exactly — `'0.125'`, 2 → `'0.13'` — never through a float,
- * where `0.125` is not what it looks like. A figure with no more places than asked, and anything that is not such a
- * decimal, is answered as it was.
+ * A decimal string rounded half-up to `places`, exactly — `'0.125'`, 2 → `'0.13'` — never through a float, where
+ * `0.125` is not what it looks like. A figure with no more places than asked, and anything that is not a decimal, is
+ * answered as it was.
+ *
+ * **A signed figure rounds its magnitude and keeps its sign** — half away from zero, `'-0.125'` → `'-0.13'` — which is
+ * how `Intl`'s `halfExpand` rounds, and so how the PDF printed B10's signed pay gap before this took a sign (task 211;
+ * `architecture.md` §12.5.6's task-211 row (c)). **A figure that rounds to nothing carries no sign**: `'-0.001'` to two
+ * places is `'0.00'`, never a *−0,00* no reader can act on.
  */
 export function roundHalfUp(value: string, places: number): string {
   const match = DECIMAL.exec(value);
   if (match === null) return value;
-  const [, whole, fraction = ''] = match;
+  const [, sign, whole, fraction = ''] = match;
   if (fraction.length <= places) return value;
   const kept = BigInt(whole + fraction.slice(0, places));
   const rounded = Number(fraction[places]) >= 5 ? kept + 1n : kept;
   const digits = rounded.toString().padStart(places + 1, '0');
-  return places === 0 ? digits : `${digits.slice(0, -places)}.${digits.slice(-places)}`;
+  const magnitude = places === 0 ? digits : `${digits.slice(0, -places)}.${digits.slice(-places)}`;
+  return rounded === 0n ? magnitude : `${sign}${magnitude}`;
 }

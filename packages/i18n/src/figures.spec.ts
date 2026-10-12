@@ -17,8 +17,24 @@ describe('roundHalfUp (task 39.2; shared since task 43)', () => {
     expect(roundHalfUp('0.5', 2)).toBe('0.5');
   });
 
-  it('answers what is not a non-negative decimal as it was', () => {
-    expect(roundHalfUp('-0.125', 2)).toBe('-0.125');
+  it('rounds a signed figure’s magnitude, half away from zero, as Intl’s halfExpand does (task 211)', () => {
+    // B10's pay gap is kept signed: where the women's pay exceeds the men's, the gap is negative.
+    expect(roundHalfUp('-0.125', 2)).toBe('-0.13');
+    expect(roundHalfUp('-0.0526315789', 4)).toBe('-0.0526');
+    expect(roundHalfUp('-2.5', 0)).toBe('-3');
+    expect(new Intl.NumberFormat('en', { maximumFractionDigits: 2 }).format('-0.125' as Intl.StringNumericLiteral)).toBe(
+      '-0.13',
+    );
+  });
+
+  it('gives a figure that rounds to nothing no sign', () => {
+    expect(roundHalfUp('-0.001', 2)).toBe('0.00');
+    expect(roundHalfUp('-0.4', 0)).toBe('0');
+  });
+
+  it('answers what is not a decimal as it was', () => {
     expect(roundHalfUp('', 2)).toBe('');
+    expect(roundHalfUp('1e-7', 2)).toBe('1e-7');
+    expect(roundHalfUp('--1.25', 1)).toBe('--1.25');
   });
 });

@@ -823,7 +823,8 @@ test('B8 asks headcount per named country, and turnover only past fifty (UC-26)'
     ),
   ).toBeVisible();
   await expect(page.getByText('Răspunsul dat anterior a fost păstrat')).toBeVisible();
-  await expect(page.getByText('Păstrat: 0,125')).toBeVisible();
+  // A share, quoted as its field showed it: a percentage to its element's two places, not its stored 0.125 (task 211).
+  await expect(page.getByText('Păstrat: 12,50\u00a0%')).toBeVisible();
 
   // …and the answer is **retained** while the question is gone. Read from the store rather than from
   // the screen, which is the only place it can be read now — and the assertion the "field stays
@@ -855,9 +856,9 @@ test('B8 asks headcount per named country, and turnover only past fifty (UC-26)'
   // The note returns with the question: reading B8 at ten forgot its dismissal (task 95), which is the change UX-27
   // wants announced — and the notice the hidden question stood as is gone.
   await expect(page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' })).toHaveCount(1);
-  await expect(page.getByText('Păstrat: 0,125')).toHaveCount(0);
-  // Laid out for the locale, every digit kept (§12.5.6's task-39 row (7)).
-  await expect(restored).toContainText('0,125');
+  await expect(page.getByText('Păstrat: 12,50\u00a0%')).toHaveCount(0);
+  // A share, shown as a percentage to the places the step read serves it, laid out for the locale (task 211).
+  await expect(restored).toContainText('12,50\u00a0%');
   // And the inputs come back carrying what was entered, which is the same claim one layer down.
   await expect(page.getByRole('textbox', { name: 'Angajați la începutul perioadei' })).toHaveValue('100');
 });
@@ -1325,6 +1326,10 @@ test('B9 computes the accident rate from fields the reporter can see (UC-27)', a
       { timeout: 15_000 },
     )
     .toBe('nil_return');
+
+  // The rate as S-07 shows it: rounded once to its element's two places, as the PDF prints it (task 211; FR-29 AC-7).
+  await page.reload();
+  await expect(rateGroup.getByText('8,00', { exact: true })).toHaveCount(1);
 });
 
 /**

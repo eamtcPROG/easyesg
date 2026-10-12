@@ -22,7 +22,7 @@ import type { LegalDate } from '@api/contracts/types/time';
 import { DISCLOSURE_ORIGIN } from '@api/modules/core/disclosure/models/disclosure-value.model';
 import type { DerivationInputField, DisclosureField } from '@api/modules/core/disclosure/models/wizard-step.model';
 import { FIELD_HOLDING, holdingOf } from './workbook-answers';
-import { type FigurePrecision, presentedPlaces, presentedUnit } from './figure-precision';
+import { type FigurePrecision, presentedPlaces, presentedUnit } from '@api/modules/core/disclosure/domain/figure-precision';
 import { gateIsAffirmed, type HeldAnswers } from './workbook-gates';
 import { tableRows, type TableRows } from './workbook-rows';
 import { convertFigure, isConvertible, placedUnit } from './workbook-units';
