@@ -51,7 +51,12 @@ const ORG = '01930000-0000-7000-8000-000000051201';
 const SUITE = 'report-notices.test';
 const EMAILS = { admin: `oa@${SUITE}`, editor: `rc@${SUITE}`, viewer: `vo@${SUITE}` };
 const CHISINAU = 'Europe/Chisinau';
-const DAY = 86_400_000;
+
+/** The calendar day a number of days after a `YYYY-MM-DD`, counted on the calendar rather than in hours. */
+const calendarDaysAfter = (input: { readonly date: string; readonly days: number }): string => {
+  const [year, month, day] = input.date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + input.days)).toISOString().slice(0, 10);
+};
 
 /** Every module but B1 withdrawn, so a check lists only what B1 leaves. */
 const OMITTED_MODULES = [
@@ -230,15 +235,14 @@ describe('the outstanding-report and deadline notices (task 51.2)', () => {
     }
 
     // The report is created now, so a check seven days on is its first repeat day, and its due date seven days after
-    // that is the 7-day lead time: one moment owes both notices.
+    // that is the 7-day lead time: one moment owes both notices. Both steps are taken on Chișinău's calendar, as the
+    // check counts them: seven times 24 hours across the end of summer time lands on the sixth day when it starts in
+    // the hour after midnight, and on the eighth across its start when it starts in the hour before.
     const entityId = await newEntity('Brutăria Notițe');
-    const now = new Date();
-    asOf = new Date(now.getTime() + 7 * DAY);
-    periodId = await openPeriod({
-      entityId,
-      year: 2026,
-      dueDate: calendarDateIn({ instant: new Date(asOf.getTime() + 7 * DAY), timezone: CHISINAU }),
-    });
+    const checkDay = calendarDaysAfter({ date: calendarDateIn({ instant: new Date(), timezone: CHISINAU }), days: 7 });
+    // Midday UTC is the same day in Chișinău at either offset.
+    asOf = new Date(`${checkDay}T12:00:00Z`);
+    periodId = await openPeriod({ entityId, year: 2026, dueDate: calendarDaysAfter({ date: checkDay, days: 7 }) });
     reportId = objectOf<{ id: string }>((await http().post('/api/v1/reports').set(people.editor.authorization)
       .send({ reportingPeriodId: periodId }).expect(201)).body).id;
     await write([

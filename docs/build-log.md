@@ -32140,3 +32140,43 @@ the row's end, and `filedRowOf` the rule, beside the read model with its spec.
 `vercel-react-best-practices`: `server-serialization` — the row carries the day, the count and one id, not the
 history. `rerender-` — the parts are directive-free and stateless, rendered by the list's existing column definitions,
 whose memo now depends on `canDownload` too. `rendering-conditional-render` — ternaries throughout.
+
+## The notices suite's dates, counted on Chișinău's calendar · 2026-10-13
+
+Task 216's entry records `report-notices.e2e-spec.ts` failing in the first hour after midnight on 13 Oct, and leaves
+the fixture to a change of its own. This is that change.
+
+**Both of the fixture's steps were 7 × 24 h, and both went wrong across a change of offset.** The due date's was the
+one measured. The check's own moment, `asOf`, had the same flaw: started on 19 Oct at 00:10 EEST, now plus 168 h is
+25 Oct 23:10 EET, six calendar days after the report was created, so the outstanding notice would not have been due
+either. In March it runs the other way, from the hour before midnight onto the eighth day. The fixture now reads
+today's date in Chișinău with `calendarDateIn`, adds seven days on the calendar twice (`calendarDaysAfter`, UTC-midnight
+arithmetic on the `YYYY-MM-DD`, declared in the file that is its one reader), and makes `asOf` midday UTC on the check's
+day, which is that day in Chișinău at either offset.
+
+**The product does not share the assumption.** `notice-days.ts` counts the days remaining and the repeat interval with
+`daysBetween` over two calendar dates, each taken with `calendarDateIn` in its zone, dividing the difference of their
+UTC midnights, which no offset change moves. `notice-days.spec.ts` already pins 20 → 27 Oct as seven days. Nothing to
+raise with the owner.
+
+**Searched for the shape**, per the root file's rule: `* DAY` and `DAY *` in `apps/api/test` and `e2e/web` (these two
+lines only); every other day-length spelling — `86_400_000`, `24 * 60 * 60 …`, `DAY_MS`, `ONE_DAY` — there and in
+`apps/api/src`; `calendarDateIn` in every test; and every period, due or start date a test builds. The other test hits
+— two session windows, a setup deadline, a cookie expiry, an invitation's `expires_at` — are instants, and so are the
+source's seven: token, session, invitation and support-access lifetimes. No other legal date in a test is made from an
+instant; the rest are literals or `${year}-01-01`.
+
+**What it still assumes**: the report is created on the day `today` was read. A run that crosses midnight between
+reading the clock and inserting the report — the length of two requests — gives a report a day later and fails. Not
+built around; the old fixture had the same window, without the DST hour.
+
+### Verification
+
+- An arithmetic sweep in a scratch script, old against new. At 00:10 EEST on 13 Oct the old fixture reads 7 days since
+  creation and 6 remaining; at 00:10 on 19 Oct, 6 and 7; at 23:30 EET on 20 and 22 March, 7 and 8, then 8 and 7. The
+  new arithmetic reads 7 and 7 at every hour of 2026.
+- `pnpm --filter @easyesg/api test:e2e test/report-notices.e2e-spec.ts`: 11 of 11, at 10:25 EEST. That is outside the
+  failing hour, so the live run proves the fixture still owes both notices, and the sweep is what proves it at midnight.
+- `notice-days.spec.ts`: 9 of 9. `pnpm --filter @easyesg/api typecheck` and `pnpm lint`: clean.
+- **Skipped**: `pnpm e2e` and the api's whole unit run. The change reaches one e2e file, which nothing imports, and no
+  source or entrypoint; CI runs both on the next push.
