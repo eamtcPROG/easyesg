@@ -76,7 +76,7 @@ import { ADMIN_ROLE } from '@api/modules/platform/admin/models/admin-session.mod
 export const PERMISSION = {
   /**
    * No session. Every use carries its own reason at the call site — see `public.decorator.ts`,
-   * which enumerates the three legitimate classes and warns that the admin realm's `@Public()`
+   * which enumerates the four legitimate classes and warns that the admin realm's `@Public()`
    * means public to the *tenant* guard and nothing more.
    */
   PUBLIC: 'public',
@@ -171,6 +171,9 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
 
   // ── Social sign-in, the other way a session comes to exist (UC-02, UC-05).
   'GET /auth/social/providers': PERMISSION.PUBLIC,
+  // The operator the legal documents name (task 75; FR-205): read before anyone has an account, because the documents
+  // are a precondition of registering — `public.decorator.ts`'s fourth kind.
+  'GET /legal/controller': PERMISSION.PUBLIC,
   'POST /auth/social/:provider/challenge': PERMISSION.PUBLIC,
   'POST /auth/social/:provider/session': PERMISSION.PUBLIC,
   // The confirmation link's first password (task 155). Public for the funnel's reason: the account
@@ -242,6 +245,10 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'POST /admin/notification-categories/:category/preview': PLATFORM_ADMINISTRATORS,
   'POST /admin/notification-categories/:category/publication': PLATFORM_ADMINISTRATORS,
   'POST /admin/notification-categories/:category/reversion': PLATFORM_ADMINISTRATORS,
+  // ── A-21 (task 75): the platform operator the legal documents name — its reading, and one write that publishes a
+  // configuration revision and declares an audit action naming it. A Platform Administrator's, as A-18's are.
+  'GET /admin/legal-controller': PLATFORM_ADMINISTRATORS,
+  'POST /admin/legal-controller/publication': PLATFORM_ADMINISTRATORS,
   // ── A-19 (task 144): the operator's own credentials — both roles, because every operator holds a
   // password and a second factor, and each write declares an action naming the operator's own account.
   'GET /admin/credentials': OPERATORS,

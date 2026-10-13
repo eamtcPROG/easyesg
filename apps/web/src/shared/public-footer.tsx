@@ -16,8 +16,7 @@ import styles from './public-footer.module.css';
  * UX-89 names. It owns the `<footer>` element and `SiteFooter` the content, as `FocusShell` does for the identity
  * screens: one `contentinfo` landmark per page.
  *
- * Its links answer §8.1's *not yet available* (task 103) until task 75 publishes the documents, as they already do from
- * the identity and workspace screens.
+ * Its links open the three legal documents since task 75, as they do from the identity and workspace screens.
  */
 export function PublicFooter() {
   return (

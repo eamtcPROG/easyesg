@@ -164,6 +164,12 @@
     },
     "export-file-unavailable": {
       "title": "Fișier indisponibil"
+    },
+    "legal-controller-changed": {
+      "title": "Datele operatorului s-au schimbat între timp"
+    },
+    "legal-controller-unavailable": {
+      "title": "Datele operatorului nu pot fi citite acum"
     }
   },
   "validation": {
@@ -713,7 +719,18 @@
         "disabled": "Furnizorul este deja dezactivat, așa că nu s-a modificat nimic. Reîncărcați pagina pentru a vedea starea actuală."
       },
       "identity_provider_issuer_invalid": "Emitentul trebuie să fie o adresă https completă, fără parametri, așa că configurarea nu a fost salvată. Introduceți adresa emitentului publicată de furnizor.",
-      "identity_provider_redirect_invalid": "Fiecare adresă de întoarcere trebuie să fie o adresă completă care se termină cu {path}, fără parametri, așa că configurarea nu a fost salvată. Corectați adresele care nu au această formă."
+      "identity_provider_redirect_invalid": "Fiecare adresă de întoarcere trebuie să fie o adresă completă care se termină cu {path}, fără parametri, așa că configurarea nu a fost salvată. Corectați adresele care nu au această formă.",
+      "legal_controller_changed": "Alt administrator a salvat datele operatorului după ce le-ați deschis, așa că modificarea dumneavoastră nu a fost aplicată. Verificați valorile actuale și salvați din nou, dacă este încă nevoie.",
+      "legal_controller_unchanged": "Valorile trimise sunt identice cu cele în vigoare, așa că nu s-a salvat o versiune nouă. Modificați un câmp înainte de a salva.",
+      "legal_controller_invalid": {
+        "name_missing": "Denumirea înregistrată lipsește, așa că documentele juridice nu ar putea numi operatorul. Introduceți denumirea așa cum apare în registrul de stat.",
+        "idno_missing": "IDNO lipsește, așa că documentele juridice nu ar putea identifica operatorul. Introduceți cele 13 cifre din certificatul de înregistrare.",
+        "idno_malformed": "Un IDNO are exact 13 cifre, așa că valoarea introdusă nu este un IDNO. Verificați numărul în certificatul de înregistrare.",
+        "idno_check_digit": "Ultima cifră a IDNO, cifra de control, nu corespunde celor douăsprezece dinaintea ei, așa că numărul nu este valid. Comparați-l cu certificatul de înregistrare: de obicei o cifră este greșită sau două sunt inversate.",
+        "address_missing": "Adresa juridică lipsește, așa că documentele juridice nu ar putea spune unde este înregistrat operatorul. Introduceți adresa așa cum apare în registrul de stat.",
+        "email_missing": "Adresa de contact pentru protecția datelor lipsește, așa că nimeni nu ar ști unde să trimită o întrebare despre datele sale. Introduceți o adresă de e-mail.",
+        "email_malformed": "Contactul pentru protecția datelor nu are forma unei adrese de e-mail, așa că întrebările nu ar ajunge nicăieri. Verificați adresa și corectați-o."
+      }
     },
     "support_access": {
       "organization_not_found": "Organizația nu există, așa că cererea de acces nu a fost trimisă. Deschideți organizația din registru și încercați din nou.",
@@ -739,6 +756,9 @@
         "cadence_missing": "Această categorie se trimite după un calendar — la un interval de repetare sau cu un număr de zile înaintea termenului — iar publicarea nu îl include, așa că nu s-a publicat nimic. Completați-l și publicați din nou.",
         "cadence_not_kept": "Această categorie nu se trimite la un interval de repetare și nici cu zile înaintea unui termen, așa că nu s-a publicat nimic. Eliminați aceste valori."
       }
+    },
+    "legal": {
+      "controller_unavailable": "Datele operatorului platformei nu pot fi citite acum, așa că termenii și condițiile și politica de confidențialitate nu sunt afișate. Reveniți puțin mai târziu."
     }
   },
   "vocabulary": {

@@ -26,9 +26,7 @@ const PUBLIC_ADDRESSES = [
   '/help',
   '/help/contact',
   '/help/oarecare-articol',
-  '/legal/terms',
-  '/legal/privacy',
-  // `/legal/cookies` left this list with task 75.3, which drew the cookie policy's disclosure there.
+  // The legal set left this list with task 75: `/legal/cookies` at 75.3, the terms and the privacy notice at 75.4.
 ] as const;
 
 /** `(app)/(workspace)` — the proxy bounces these to sign-in without a session, so they need one. */

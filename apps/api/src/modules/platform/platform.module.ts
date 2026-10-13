@@ -8,6 +8,7 @@ import { AuditModule } from './audit/audit.module';
 import { SupportAccessModule } from './support-access/support-access.module';
 import { AdminModule } from './admin/admin.module';
 import { PushModule } from './push/push.module';
+import { LegalModule } from './legal/legal.module';
 
 /** Namespace barrel for `modules/platform/*` (architecture.md §5.2, §6.7). */
 @Module({
@@ -21,6 +22,7 @@ import { PushModule } from './push/push.module';
     SupportAccessModule,
     AdminModule,
     PushModule,
+    LegalModule,
   ],
   // Re-exported so `AppModule` resolves `AuditInterceptor`'s writer (task 67.4) — `IdentityModule`
   // re-exports `SessionModule` for `AuthGuard` for the same reason.

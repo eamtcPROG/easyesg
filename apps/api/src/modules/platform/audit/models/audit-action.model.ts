@@ -106,6 +106,12 @@ export const AUDIT_ACTION = {
    * about their account (FR-9). The target is the person's account, which A-08's log names by its address.
    */
   ADMIN_MEMBER_PHONE_DISCLOSED: 'admin.member_phone.disclosed',
+  /**
+   * A Platform Administrator saved the platform operator the legal documents name — its registered name, IDNO,
+   * registered address and data-protection contact (task 75; FR-205). The target is the configuration version put in
+   * force.
+   */
+  ADMIN_LEGAL_CONTROLLER_PUBLISHED: 'admin.legal_controller.published',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];

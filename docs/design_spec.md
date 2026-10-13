@@ -48,7 +48,7 @@ This document is one of seven baseline files. Each register is owned by exactly 
 | `functional_requirements.md` | `FR-1` … `FR-173` |
 | `non_functional_requirements.md` | `NFR-1` … `NFR-93` (MVP) and `NFR-94` … `NFR-105` (deferred) |
 | `architecture.md` | `AD-1` … `AD-14`, `DR-1` … `DR-11` — this file consolidates, and replaces, the two source titles *Architecture Overview (MVP)* and *System Architecture (MVP)* |
-| `design_spec.md` (this file) | `UX-1` … `UX-142`, `S-01` … `S-42`, `A-01` … `A-20` |
+| `design_spec.md` (this file) | `UX-1` … `UX-142`, `S-01` … `S-42`, `A-01` … `A-21` |
 
 Where this document and any of those disagree, they win on their subject and this document is amended.
 
@@ -360,8 +360,9 @@ Screens are design containers; a screen may serve several use cases and a use ca
 | A-18 | Identity provider configuration | PA | UC-70 | Editor (built as Record) |
 | A-19 | My credentials (operator's own password, second factor, recovery codes) | PA, BO | UC-212 | Record |
 | A-20 | Accept an administrator invitation | PA, BO | UC-87 | Focus |
+| A-21 | The platform operator (the legal documents' controller) | PA | — (what UC-178's documents name) | Record |
 
-**Count:** 62 screens — 42 tenant (`S-01 … S-42`) and 20 administrative (`A-01 … A-20`). **S-39 … S-42 were added 6 Oct 2026** (project owner): S-39 *New report* closes OQ-21, and S-40 … S-42 are the advisor firm's roster, request form and status board (OQ-26); the other advisor use cases are served by amendments to S-04, S-16, S-17, S-22, S-37 and A-09. **S-38 was added 23 Sep 2026** with task 52.2.2, when FR-169's one-click unsubscribe needed a page: a link that switched off on `GET` would be followed by the scanners that prefetch a message's links. **S-37 was added 15 Sep 2026** with task 83, when §4.3's *Choose organization* step became a screen of its own rather than a prompt in the global tier. **S-36 was added 14 Sep 2026** with task 155, when a provider registration gained its password and name steps. **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
+**Count:** 63 screens — 42 tenant (`S-01 … S-42`) and 21 administrative (`A-01 … A-21`). **A-21 was added 13 Oct 2026** (project owner, task 75): the controller the legal documents name became store data a Platform Administrator edits (`architecture.md` §12.5.6's task-75 row (7)). **S-39 … S-42 were added 6 Oct 2026** (project owner): S-39 *New report* closes OQ-21, and S-40 … S-42 are the advisor firm's roster, request form and status board (OQ-26); the other advisor use cases are served by amendments to S-04, S-16, S-17, S-22, S-37 and A-09. **S-38 was added 23 Sep 2026** with task 52.2.2, when FR-169's one-click unsubscribe needed a page: a link that switched off on `GET` would be followed by the scanners that prefetch a message's links. **S-37 was added 15 Sep 2026** with task 83, when §4.3's *Choose organization* step became a screen of its own rather than a prompt in the global tier. **S-36 was added 14 Sep 2026** with task 155, when a provider registration gained its password and name steps. **A-20 was added 13 Sep 2026** with task 67.4, when account creation moved to invitation: the invitee sets their own password and second factor on a screen A-01 cannot be, since A-01 admits a credential that already exists. *(This line read 52 and `S-01 … S-34` until 12 Sep 2026; S-35 was added with task 25.4 on 25 Aug 2026 and carries both an inventory row and a §5 entry, so the count had been one short of its own table for a fortnight — found while adding A-19.)* **A-19 was added 12 Sep 2026** with UC-212 and FR-80's amendment: the realm had no surface for an operator's own credentials at all, and it is a screen of its own rather than a region on A-08 because A-08 is *other people's* accounts — putting self-service there is two ideas on one screen. `S-29 … S-34` were added 24 Aug 2026 closing OQ-12, with the Visitor actor (`actors.md` §4) and UC-177 … UC-182 that UX-7 requires them to trace to. **UX-7 gains no exemption class** — the horn OQ-12 offered — because these screens now trace to use cases like every other, which is what the rule asks for rather than a way around it.
 
 ### 4.5 Use cases served without a dedicated screen
 
@@ -509,7 +510,7 @@ Key. `<report>` is the report as the wizard bar names it, e.g. *VSME 2025 — Ba
 **What each role sees (§5.2, owner 13 Sep 2026, code `consoleSectionsFor`).** An operator sees only their own realm's section. The other section is not drawn; the realm guard, not the navigation, is the boundary.
 - **Platform Administrator (PA)**: the *Platform* section only.
 - **Billing Operator (BO)**: the *Billing* section only.
-- A section with no destination that renders is omitted. The navigation carries only what renders, so a destination enters it with its screen. **As built today, PA sees five destinations; BO sees none**, so a BO has no side navigation at all until A-09/A-10 ship.
+- A section with no destination that renders is omitted. The navigation carries only what renders, so a destination enters it with its screen. **As built today, PA sees six destinations; BO sees none**, so a BO has no side navigation at all until A-09/A-10 ship.
 
 **Platform section, in order** (artboard labels in quotes; the code catalogue's Romanian labels are in the Notes):
 
@@ -523,9 +524,10 @@ Key. `<report>` is the report as the wizard bar names it, e.g. *VSME 2025 — Ba
 | 6 | A-06 Adoption metrics | "Adoption" | not built; position (derived 6 Oct 2026) |
 | 7 | A-07 Support access request and audit log | "Support access" | built (code places it after A-08) |
 | 8 | A-18 Identity provider configuration | "Identity providers" | built (code order) |
-| 9 | A-17 Notification categories and templates | "Notification templates" | built, last (code and artboard) |
+| 9 | A-17 Notification categories and templates | "Notification templates" | built (code and artboard) |
+| 10 | A-21 The platform operator | — (no artboard) | built, last (code; added 13 Oct 2026, task 75) |
 
-Built order is exactly `CONSOLE_DESTINATIONS`: A-02, A-08, A-07, A-18, A-17. The artboard's order is A-02, A-03, A-04, A-05, A-06, A-07, A-08, A-18, A-17. The two agree except for A-08, which the spec and code put second. The unbuilt A-03 … A-06 keep their artboard order and slot between A-08 and A-07 (derived 6 Oct 2026). The owner may prefer them directly after A-02, which would push A-08 to seventh and contradict §5.2 and the code.
+Built order is exactly `CONSOLE_DESTINATIONS`: A-02, A-08, A-07, A-18, A-17, A-21. The artboard's order is A-02, A-03, A-04, A-05, A-06, A-07, A-08, A-18, A-17. The two agree except for A-08, which the spec and code put second. The unbuilt A-03 … A-06 keep their artboard order and slot between A-08 and A-07 (derived 6 Oct 2026). The owner may prefer them directly after A-02, which would push A-08 to seventh and contradict §5.2 and the code.
 
 **Billing section, in order.** This is the artboard's order, which is also the inventory's A-id order. Nothing is built; the code's `billing` list is empty.
 
@@ -590,6 +592,7 @@ Conventions for the console:
 | A-18 Identity provider configuration | — | — | None; two providers | — | Fixed order (Google, then Microsoft) | Not paged, count beneath | Provider dialogue (`?provider=`): connection form, state, accounts reached. Row *edit* + ⋯ (enable or disable, confirms) |
 | A-19 My credentials | — | ↩ to origin (the page the account menu was opened from), console home when none | — | — | — | — | Reached from the account menu (first item) or A-01 after recovery. Sections: password, second factor (re-enrol, two steps), recovery codes. Arrival notice |
 | A-20 Accept an administrator invitation | — | — | — | — | — | — | Focus card, steps: set password → scan or type secret → confirm code. Exit → A-01 on completion. Only the emailed link reaches it |
+| A-21 The platform operator | — | — | — | — | — | — | One record on the page, no list and no dialogue: the four facts in one form, explicit save, the last change's operator and time |
 
 ---
 
@@ -1459,7 +1462,7 @@ No navigation is added beyond the above: no tabs, no step list (the three decisi
 - **Entry points:** the `SiteFooter` legal links, present on every screen that renders it; S-29; a link from the registration screen.
 - **Layout and regions:** one shared layout treating the three documents as a set — a tab strip across them, a plain-language summary above the formal text of each. Reading measure, not the workspace grid. **The cookie policy's table keeps its four columns at every width** (task 75, 9 Oct 2026), as a table does at `compact` (UX-77; `DataTable`'s card): at a phone's frame they fit with every word whole, and where one word outgrows its column — 320px in Russian on a browser with no Russian hyphenation, UX-103's frame — the table's card scrolls sideways inside itself and is then a region a keyboard can reach. The page never scrolls sideways, and no column is dropped (UX-76).
 - **Content and data shown:** terms of service; privacy notice; cookie policy. **Where the text lives: in the release** (**amended 5 Oct 2026**, project owner, task 182, 182/116). FR-61 as narrowed by `architecture.md` OQ-43 names help-centre articles and plan presentation copy and *not* legal documents, so a terms change is a release, like the wording of messages. It carries a version and an effective date that the release supplies, and this screen displays both.
-- **Who writes the text** (**amended 9 Oct 2026**, project owner, task 75; `architecture.md` §12.5.6's task-75 row): the owner or counsel, in all three locales — not drafted from the prototype, whose text is structure only. The controller's identity is a recorded gap until supplied, and no document naming it goes live before then. The cookie policy's factual sections — every cookie by purpose and how long it lasts, what is not set, the storage that is not a cookie — are drawn from task 75.2's inventory and ship ahead of the text; the terms and the privacy notice answer *not yet available* until theirs arrives.
+- **Who writes the text** (**amended 9 Oct 2026**, project owner, task 75; `architecture.md` §12.5.6's task-75 row): the owner or counsel, in all three locales — not drafted from the prototype, whose text is structure only. The controller's identity is a recorded gap until supplied, and no document naming it goes live before then. The cookie policy's factual sections — every cookie by purpose and how long it lasts, what is not set, the storage that is not a cookie — are drawn from task 75.2's inventory and ship ahead of the text; the terms and the privacy notice answer *not yet available* until theirs arrives. **Amended 13 Oct 2026** (project owner, task 75's second batch; the task-75 row (6) … (9)): the text is drafted in the repository, each locale on its own, and each document says it is **provisional** until counsel approves it — a release-checklist item before task 48. **The controller block** — registered name, IDNO, registered address, data-protection contact — is read from the store, where A-21 edits it; with none readable in force the terms and the privacy notice answer *not yet available*. **Each of the three shows its version and effective date in the archetype's standing line**, from a registry committed with the text, and while provisional a notice above the summary saying so.
 - **Controls and actions:** move between the documents; reach the cookie choice (S-31).
 - **Open:** **how many documents the set holds was OQ-18, closed 5 Oct 2026 (project owner, task 182, 182/121): three.** This entry is written for three because three is what every normative source says; the prototype's tab strip draws five, adding a data processing agreement and a sub-processor list. The peer strip is a fixed element of the Content archetype either way, so the count changes the scope of task 75 and not the shape of this screen.
 - **States:** ready; error — system.
@@ -1850,6 +1853,21 @@ The administrative console shares tokens and primitives with the tenant applicat
 - **FRs:** FR-80, FR-75.
 
 **A screen of its own, not a step of A-01.** A-01 admits someone who already holds a credential; this one creates the credential, and the two share a layout and nothing else. **Added 13 Sep 2026 with task 67.4**, when the project owner chose invitation over a handed-over secret: a password and a TOTP seed shown to the inviting operator would pass a credential through a second person, which is the thing UC-68's "elevated credentials are held apart" exists to prevent.
+
+### A-21 — The platform operator
+
+- **Purpose:** keep the facts the legal documents state about who runs the platform true without a release.
+- **Primary actors:** PA.
+- **Archetype:** Record — **no artboard exists**, so the layout is Record's fixed elements as A-19 draws them (added 13 Oct 2026, project owner, task 75).
+- **Entry points:** console navigation, the Platform section's last destination.
+- **Layout and regions:** identity header with a lede saying where the facts are shown; one group of four fields; explicit save and cancel; change attribution — the operator and the time of the last change, or that the values in force are the platform's starting values.
+- **Content and data shown:** the operator's registered name, IDNO, registered address and data-protection contact (an email address) — the controller the terms of service and the privacy notice name (`architecture.md` §12.5.6's task-75 row (7)). Each is one value as registered, not per locale.
+- **Controls and actions:** edit the four; save; cancel, which restores the values in force.
+- **States:** loading — initial; error — recoverable (a refusal as the api words it: a blank field, an IDNO whose shape or check digit is wrong, an address that is not an email address, a save identical to what is in force); **error — permission** (a Billing Operator reaching the address, refused by `AdminRealmGuard`); **error — conflict** (another operator saved first — the form reloads with their values); pending — a save in flight; success. **Not applicable:** empty (the seed always holds values, and with none readable the read answers *unavailable*, the recoverable error).
+- **Validation behaviour:** the IDNO is checked by the same rule a reporting entity's is (`packages/validation`), at the field and again at publication. **A save changes the published documents within seconds**, and the screen says so beside the save; it does not version them (the task-75 row (7)). Each save is a row in the system audit log, read on A-08.
+- **Exits:** the effect is visible on S-30's terms of service and privacy notice.
+- **Use cases:** none of its own; it maintains what UC-178's documents name.
+- **FRs:** FR-205.
 
 ## 6. Key interaction patterns
 
@@ -2780,6 +2798,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | A-18 | Identity provider configuration | PA | UC-70 | FR-74, FR-82 |
 | A-19 | My credentials (operator's own password, second factor, recovery codes) | PA, BO | UC-212 | FR-80 |
 | A-20 | Accept an administrator invitation | PA, BO | UC-87 | FR-75, FR-80 |
+| A-21 | The platform operator (the legal documents' controller) | PA | — | FR-205 |
 | *(global tier)* | User menu — log out | CA | UC-06 | FR-5 |
 | *(inline)* | Re-authentication over preserved context | CA | UC-07 | FR-5 |
 | *(global tier)* | Organization switcher | CA | UC-16 | FR-12 |

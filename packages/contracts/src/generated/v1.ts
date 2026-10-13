@@ -2619,6 +2619,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/legal-controller": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the platform operator the legal documents name
+         * @description FR-205. The registered name, IDNO, registered address and data-protection contact in force, the revision a change is made against, and who published them.
+         */
+        get: operations["AdminLegalControllerController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/legal-controller/publication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save the platform operator the legal documents name
+         * @description FR-205. Publishes a new revision, which the terms of service and the privacy notice state within seconds and with no release. It does not change either document’s version. Recorded in the system audit log.
+         */
+        post: operations["AdminLegalControllerController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/session/socket-ticket": {
         parameters: {
             query?: never;
@@ -2633,6 +2673,26 @@ export interface paths {
          * @description A single-use ticket, valid for thirty seconds, for opening the socket over which the platform hints that a screen’s data changed. It carries no personal data; the socket re-reads this session when it is presented.
          */
         post: operations["SocketTicketController_issue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/legal/controller": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the operator the legal documents name
+         * @description UC-178. The platform operator’s registered name, IDNO, registered address and data-protection contact, as the terms of service and the privacy notice state them. Edited on the console; an edit is served within seconds.
+         */
+        get: operations["LegalDocumentsController_controller"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5237,7 +5297,7 @@ export interface components {
              * @description What happened.
              * @enum {string}
              */
-            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled" | "admin.notification_category.published" | "admin.notification_category.reverted" | "admin.member_phone.disclosed";
+            action: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled" | "admin.notification_category.published" | "admin.notification_category.reverted" | "admin.member_phone.disclosed" | "admin.legal_controller.published";
             /**
              * Format: uuid
              * @description The operator who acted. Null for the provisioning command, and for a sign-in attempt against an address that matches no account.
@@ -5529,11 +5589,76 @@ export interface components {
             /** @description The revision in force when the revert was asked for. */
             expectedRevision: number;
         };
+        LegalControllerRecordResponseDto: {
+            /** @description The operator’s name as registered; empty until one is published. */
+            registeredName: string;
+            /** @description The operator’s IDNO; empty until one is published. */
+            idno: string;
+            /** @description The operator’s registered address; empty until one is published. */
+            registeredAddress: string;
+            /** @description Where questions about personal data are sent; empty until one is published. */
+            dataProtectionEmail: string;
+            /** @description The configuration revision in force, sent back with a change so that a newer one refuses it. 0 before anything was published. */
+            revision: number;
+            /**
+             * Format: email
+             * @description The operator who published the values in force. Null for the platform’s starting values.
+             */
+            changedByEmail: string | null;
+            /** @description Unix epoch milliseconds when the values in force were published. */
+            changedAt: number | null;
+        };
+        LegalControllerPublicationResponseDto: {
+            /**
+             * Format: uuid
+             * @description The configuration version now in force.
+             */
+            id: string;
+            /** @description Its revision — what the next change is made against. */
+            revision: number;
+        };
+        PublishLegalControllerRequestDto: {
+            /**
+             * @description The operator’s name as registered.
+             * @example EasyESG SRL
+             */
+            registeredName: string;
+            /**
+             * @description The operator’s IDNO — 13 digits, the last a check digit, judged as a reporting entity’s is.
+             * @example 1099600012345
+             */
+            idno: string;
+            /** @description The operator’s registered address, as registered. */
+            registeredAddress: string;
+            /** @description Where questions about personal data are sent. */
+            dataProtectionEmail: string;
+            /** @description The revision this change was made against — the one the reading answered. A newer one in force refuses the change (problem type legal-controller-changed). */
+            revision: number;
+        };
         SocketTicketResponseDto: {
             /** @description Single-use and opaque; carries no personal data. Present it as the `ticket` query parameter of the socket upgrade within thirty seconds. */
             ticket: string;
             /** @description When the ticket stops working, unused. Unix epoch milliseconds, UTC. */
             expiresAt: number;
+        };
+        LegalControllerResponseDto: {
+            /**
+             * @description The operator’s name as registered.
+             * @example EasyESG SRL
+             */
+            registeredName: string;
+            /**
+             * @description The operator’s IDNO — 13 digits, the last a check digit.
+             * @example 1099600012345
+             */
+            idno: string;
+            /** @description The operator’s registered address, as registered. */
+            registeredAddress: string;
+            /**
+             * Format: email
+             * @description Where questions about personal data are sent.
+             */
+            dataProtectionEmail: string;
         };
     };
     responses: never;
@@ -10849,7 +10974,7 @@ export interface operations {
                 /** @description Unix epoch milliseconds; only events at or after it. */
                 from?: number;
                 /** @description Only this kind of event. */
-                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled" | "admin.notification_category.published" | "admin.notification_category.reverted" | "admin.member_phone.disclosed";
+                action?: "admin.sign_in.succeeded" | "admin.sign_in.credential_refused" | "admin.sign_in.factor_refused" | "admin.sign_in.blocked" | "admin.sign_in.throttled" | "admin.sign_in.recovered" | "admin.sign_in.recovery_refused" | "admin.invitation.issued" | "admin.invitation.resent" | "admin.invitation.revoked" | "admin.invitation.accepted" | "admin.account.suspended" | "admin.account.reactivated" | "admin.account.removed" | "admin.account.lockout_released" | "admin.account.provisioned" | "admin.password.changed" | "admin.factor.reenrolment_started" | "admin.factor.reenrolled" | "admin.recovery_codes.issued" | "admin.support_access.requested" | "admin.support_access.ended" | "admin.identity_provider.configured" | "admin.identity_provider.enabled" | "admin.identity_provider.disabled" | "admin.notification_category.published" | "admin.notification_category.reverted" | "admin.member_phone.disclosed" | "admin.legal_controller.published";
                 /** @description Only what this operator account did (uuid). */
                 operator?: unknown;
             };
@@ -11644,6 +11769,108 @@ export interface operations {
             };
         };
     };
+    AdminLegalControllerController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The operator in force. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["LegalControllerRecordResponseDto"];
+                    };
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    AdminLegalControllerController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishLegalControllerRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The configuration revision now in force. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["LegalControllerPublicationResponseDto"];
+                    };
+                };
+            };
+            /** @description A field is blank, the IDNO is not 13 digits or its check digit is wrong, or the contact is not an email address (problem type validation-failed, with the fault as `fault`). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A newer revision is in force (problem type legal-controller-changed), or the values are those in force (problem type conflict). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
     SocketTicketController_issue: {
         parameters: {
             query?: never;
@@ -11666,6 +11893,37 @@ export interface operations {
             };
             /** @description No usable session (problem type authentication-required or session-expired). */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    LegalDocumentsController_controller: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The operator in force. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["LegalControllerResponseDto"];
+                    };
+                };
+            };
+            /** @description No readable operator is in force (problem type legal-controller-unavailable). */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

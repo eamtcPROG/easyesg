@@ -9,7 +9,7 @@
       "ru": "Русский"
     },
     "footer": {
-      "legalNote": "© {year} EasyESG SRL · Chișinău",
+      "legalNote": "© {year} EasyESG · Chișinău",
       "legalNav": "Legal documents",
       "terms": "Terms of service",
       "privacy": "Privacy notice",
@@ -171,7 +171,8 @@
       "alreadyHave": "Already have an account?",
       "signIn": "Sign in",
       "problemTitle": "The request could not be processed",
-      "problemBody": "The account was not created because the request could not be processed."
+      "problemBody": "The account was not created because the request could not be processed.",
+      "legalNotice": "By creating an account you accept the <terms>Terms of service</terms> and the <privacy>Privacy notice</privacy>."
     },
     "verify": {
       "title": "Confirm your email address",
@@ -2366,7 +2367,55 @@
   },
   "legal": {
     "privacy": {
-      "phone": "If you add a phone number to your profile, it is kept only so that support can reach you about your account. Only the platform’s administrators can see it, one person at a time, and each time they do is recorded. You can remove it from your profile at any time."
+      "phone": "If you add a phone number to your profile, it is kept only so that support can reach you about your account. Only the platform’s administrators can see it, one person at a time, and each time they do is recorded. You can remove it from your profile at any time.",
+      "lede": "What personal data we keep about you, why, for how long, and what rights you have.",
+      "summary": "<ul><li>We keep only what your account and your report need: your name, email address, role, language and, if you add one, your phone number.</li><li>We do not sell your data, use it for advertising or feed it to artificial intelligence models.</li><li>Your data is kept in the European Union or the European Economic Area.</li><li>For data about people inside a report, the controller is the organisation preparing the report.</li><li>You can ask at any time to see, correct, erase or receive your data, and we answer within 30 days.</li></ul>",
+      "sections": {
+        "controller": {
+          "heading": "Who is responsible for your data",
+          "body": "<p>The controller of the personal data tied to your account is {registeredName}, whose registration details are below. For any question about your data, write to {email}.</p><p>For data about people that an organisation enters into a report, the controller is that organisation; we process the data on its behalf, under the terms of service.</p>"
+        },
+        "collect": {
+          "heading": "What we keep",
+          "body": "<ul><li><strong>Your account:</strong> your name, your email address, the language you chose, and your password, kept only as a cryptographic fingerprint we cannot read back.</li><li><strong>How you sign in:</strong> if you sign in with Google or Microsoft, your account’s identifier with that provider; if you turn on two-step sign-in, its secret, kept encrypted.</li><li><strong>Your organisations:</strong> which organisations you belong to, and in what role.</li><li><strong>Activity:</strong> when you signed in, failed sign-in attempts and the internet address they came from, to protect accounts; and who changed each value in a report, and when.</li><li><strong>Notifications:</strong> which messages we sent you, on which channel, and whether they arrived.</li></ul>"
+        },
+        "purposes": {
+          "heading": "Why we use it, and on what basis",
+          "body": "<ul><li>To give you the account and the service you asked for — the basis is our contract with you, the terms of service.</li><li>To keep accounts safe and stop repeated attempts to guess a password — the basis is our legitimate interest in protecting the service.</li><li>So that a report can be checked — who changed a value, and when — the basis is our legitimate interest in a report that can be verified.</li><li>To send you messages about your account and your reports. Those that are not essential you can turn off in your notification preferences.</li></ul><p>We take no automated decisions with legal effects on you, and we do not build a profile of you.</p>"
+        },
+        "recipients": {
+          "heading": "Who can see it",
+          "body": "<ul><li>Members of your organisation see what their role allows.</li><li>Platform administrators read an organisation’s reports only with its consent, for a limited time, and every read is recorded.</li><li>The providers that host the platform and send its email process the data only on our behalf.</li><li>Authorities, only where the law requires us to disclose it.</li></ul>"
+        },
+        "location": {
+          "heading": "Where it is kept",
+          "body": "<p>Your data is kept in the European Union or the European Economic Area: the database, its backups, the exports we generate and our logs.</p><p>The one exception is sending email: while the platform is being prepared for launch, the email provider may be outside that area. Only the message and the address it goes to pass through it.</p>"
+        },
+        "retention": {
+          "heading": "How long we keep it",
+          "body": "<ul><li>Your account — for as long as it exists. If you ask us to erase it, we delete your profile, your memberships, your sessions, your preferences and the record of messages sent to you straight away.</li><li>Report content, generated exports and the history of changes — for the life of the organisation and one year after.</li><li>Figures entered in the emissions calculator — without a time limit, so that a reported figure can always be reproduced.</li><li>Notifications — for the life of the organisation and one year after; a platform announcement, one year from sending.</li><li>The system audit log — 24 months.</li><li>Invoices and accounting records — 6 years, as the law requires.</li></ul>"
+        },
+        "security": {
+          "heading": "How we protect it",
+          "body": "<ul><li>Each organisation’s data is kept apart in the database itself, not only in the application.</li><li>Passwords are never stored in readable form, and secrets that must be recovered are encrypted.</li><li>Connections are encrypted, and a session ends after 7 days without use and after 30 days at most.</li><li>The history of changes cannot be altered or deleted from within the application.</li><li>Two-step sign-in is available for every account.</li></ul>"
+        },
+        "rights": {
+          "heading": "Your rights",
+          "body": "<p>Under Law No. 195/2024 on personal data protection and, where it applies to you, Regulation (EU) 2016/679 — the General Data Protection Regulation — you have the right to ask us:</p><ul><li>to see the data we keep about you;</li><li>to correct data that is wrong — your name and phone number you can correct yourself, in your profile;</li><li>to erase data we no longer need;</li><li>to give you your data in an open, machine-readable format;</li><li>to restrict a use of your data, or to object to a use based on our legitimate interest.</li></ul><p>Write to us at {email}; we answer within 30 days. Data the law obliges us to keep, invoices for example, cannot be erased before its time, and our answer tells you which data that is.</p><p>For data in an organisation’s reports, contact the organisation; we can point you to it.</p>"
+        },
+        "breaches": {
+          "heading": "Security breaches",
+          "body": "<p>If a breach of security puts your rights at risk, we notify the supervisory authority within 72 hours of learning of it, and if the risk to you is high, we tell you as well, without delay.</p>"
+        },
+        "complaints": {
+          "heading": "Complaints",
+          "body": "<p>You can write to us first, at {email}. You also have the right to complain directly to the National Center for Personal Data Protection of the Republic of Moldova or, where the General Data Protection Regulation applies to you, to the supervisory authority of the state where you live or work.</p>"
+        },
+        "changes": {
+          "heading": "Changes to this notice",
+          "body": "<p>When we change this notice we publish a new version, with its number and the date it applies from, and tell you in advance if the change concerns you.</p>"
+        }
+      }
     },
     "set": {
       "eyebrow": "Legal documents",
@@ -2434,6 +2483,82 @@
         "resetAddress": "The address you asked to reset a password for, so that you do not type it again.",
         "dismissedNotes": "The notes in your report you have hidden, so that they do not come back while you work.",
         "autosave": "Report answers not yet sent, so that they are not lost if you lose your connection."
+      },
+      "summary": "<ul><li>The site keeps only what it needs to work in your browser: your sign-in, the language you chose and the steps of a sign-in in progress.</li><li>We use no statistics, advertising or third-party cookies.</li><li>There is nothing for you to accept or decline; if you delete them, you are signed out.</li></ul>"
+    },
+    "standing": {
+      "version": "Version {version}",
+      "effective": "In force from {date}"
+    },
+    "provisional": {
+      "title": "Provisional version",
+      "body": "This text has not yet been reviewed by a lawyer. Before the platform launches it will be replaced by a reviewed version, with the date it applies from."
+    },
+    "summary": {
+      "heading": "In short"
+    },
+    "controller": {
+      "registeredName": "Registered name",
+      "idno": "IDNO",
+      "registeredAddress": "Registered address",
+      "dataProtectionEmail": "Data protection contact"
+    },
+    "unavailable": {
+      "title": "This document cannot be shown right now",
+      "body": "The details it needs could not be read, so the text is not shown. Reload the page in a few moments; the other documents in the set are still within reach, above."
+    },
+    "terms": {
+      "lede": "What you agree to when you use EasyESG during its free pilot: what the service does, what we ask of you and what we take on.",
+      "summary": "<ul><li>EasyESG helps you prepare your sustainability report under the VSME standard; your figures and answers remain your organisation’s.</li><li>The pilot is free. Before anything is charged, we will ask you to accept a new version of these terms.</li><li>You are responsible for what you enter and for who has access to your organisation’s account.</li><li>We process the personal data in your reports only to provide the service, on your organisation’s instructions.</li><li>You can stop at any time. These terms are governed by the law of the Republic of Moldova.</li></ul>",
+      "sections": {
+        "operator": {
+          "heading": "Who we are",
+          "body": "<p>EasyESG is provided by {registeredName}, whose registration details are below. These terms apply to anyone who creates an account on the platform or is invited into an organisation on it.</p>"
+        },
+        "service": {
+          "heading": "What the service does, and what it does not",
+          "body": "<p>The service lets you prepare your sustainability report under the voluntary VSME standard published by EFRAG, calculate your Scope 1 and location-based Scope 2 emissions from the energy you use, and export the report as a PDF document and in EFRAG’s official digital template.</p><p>We do not check whether the data you enter is correct, we do not file or publish anything on your behalf, and we do not give legal, tax or sustainability advice. We do not guarantee that a bank, a buyer or an authority will accept the report.</p><p>A report stays tied to the version of the standard and of the emission factors it was started under, even if those change later.</p>"
+        },
+        "pilot": {
+          "heading": "The free pilot",
+          "body": "<p>This version of the terms covers the platform’s free pilot. During the pilot we charge nothing and ask for no payment details.</p><p>Plans, prices and invoicing will be set out in a new version of these terms, and you will not be asked to pay anything before you accept it.</p>"
+        },
+        "account": {
+          "heading": "Your account and the people you invite",
+          "body": "<p>You create your account with your work email address and your name, and you are responsible for what is done through it. Keep your password to yourself: a colleague who needs access receives an invitation and an account of their own.</p><p>In an organisation, the administrator invites people and sets their role — administrator, edit or view only. An organisation always keeps at least one administrator.</p><p>We recommend turning on two-step sign-in.</p>"
+        },
+        "use": {
+          "heading": "Acceptable use",
+          "body": "<p>In using the service, you agree not to:</p><ul><li>try to reach another organisation’s data or get around the service’s security;</li><li>enter unlawful content, or data about people you have no basis to process;</li><li>load the service with automated requests in a way that stops it working for others;</li><li>pass yourself off as another person or another organisation;</li><li>resell access to the service.</li></ul>"
+        },
+        "content": {
+          "heading": "Your content stays yours",
+          "body": "<p>The data and answers you enter belong to your organisation, and you can export them at any time while the account is open.</p><p>You give us only the right to keep and process them as far as providing the service requires. We do not sell them, we do not use them for advertising, and we do not use them to train artificial intelligence models.</p>"
+        },
+        "personalData": {
+          "heading": "Personal data in your reports",
+          "body": "<p>A report may contain data about people — about employees, for example. For that data your organisation is the controller, and we process it on its behalf as processor. This section takes the place of a separate data processing agreement.</p><ul><li>We process that data only to provide the service, on the instructions you give us by using it.</li><li>The people on our team who can reach it are bound to confidentiality. A platform administrator can read an organisation’s report only with that organisation’s consent, for a limited time, and every read is recorded.</li><li>We keep the data in the European Union or the European Economic Area and protect it with the measures the privacy notice describes.</li><li>We help you answer requests from the people the data is about, and tell you without undue delay if we learn of a security breach that affects it.</li><li>When your organisation leaves, the data is deleted on the timescales in the privacy notice; until then you can export it.</li></ul>"
+        },
+        "availability": {
+          "heading": "Availability",
+          "body": "<p>We work to keep the service available, but during the pilot we do not guarantee any particular level of availability. Where planned work interrupts the service, we tell you in advance whenever we can.</p>"
+        },
+        "liability": {
+          "heading": "Liability",
+          "body": "<p>We are responsible for providing the service as these terms describe it. We are not responsible for the accuracy of the data you enter, for decisions taken on the strength of the report, or for how a third party receives it.</p><p>To the extent the law of the Republic of Moldova allows, we are not liable for indirect losses. Nothing in these terms limits liability for intentional acts or gross negligence.</p>"
+        },
+        "termination": {
+          "heading": "Ending",
+          "body": "<p>You can stop using the service at any time and ask for your account to be closed by writing to {email}. Export anything you want to keep first.</p><p>We may suspend an account that breaches these terms. We will tell you beforehand, unless we have to stop an attack or a harm at once.</p><p>Once an account is closed, its data is kept and deleted on the timescales in the privacy notice.</p>"
+        },
+        "changes": {
+          "heading": "Changes to these terms",
+          "body": "<p>When we change these terms we publish a new version, with its number and the date it applies from, and tell you in advance. The version in force is always the one shown on this page.</p>"
+        },
+        "law": {
+          "heading": "Governing law and disputes",
+          "body": "<p>These terms are governed by the law of the Republic of Moldova.</p><p>If a disagreement arises, write to us first at {email} and we will try to settle it with you in writing. If that fails, the dispute is decided by the competent courts of the municipality of Chișinău.</p>"
+        }
       }
     }
   },

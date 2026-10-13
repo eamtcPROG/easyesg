@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 import { Client } from 'pg';
 
 /**
- * Publishes a configuration entry for the browser e2e (task 24) — an `identity_provider`'s, and since task 67.10 a
- * `notification_category`'s — the
+ * Publishes a configuration entry for the browser e2e (task 24) — an `identity_provider`'s, since task 67.10 a
+ * `notification_category`'s, and since task 75 the `legal_controller` — the
  * same three statements `ConfigurationPublisher.publish` runs, restated here because the api
  * under test is a separate process whose publisher has no route until A-18 (task 67). Wire
  * literals are pinned on purpose, as everywhere in the suites: a renamed table or kind must
@@ -22,7 +22,11 @@ const asOwner = () => ({
   password: process.env.DB_MIGRATOR_PASSWORD ?? 'devonly-migrator',
 });
 
-const KIND = { IDENTITY_PROVIDER: 'identity_provider', NOTIFICATION_CATEGORY: 'notification_category' } as const;
+const KIND = {
+  IDENTITY_PROVIDER: 'identity_provider',
+  NOTIFICATION_CATEGORY: 'notification_category',
+  LEGAL_CONTROLLER: 'legal_controller',
+} as const;
 type Kind = (typeof KIND)[keyof typeof KIND];
 /** The publisher's unbounded validity literal — PostgreSQL canonicalises it to `(,)`. */
 const UNBOUNDED = '[,)';
@@ -137,12 +141,19 @@ export const snapshotIdentityProvider = (scope: string): Promise<SlotSnapshot> =
 export const snapshotNotificationCategory = (scope: string): Promise<SlotSnapshot> =>
   snapshotEntry(KIND.NOTIFICATION_CATEGORY, scope);
 
+/** The platform operator the legal documents name (task 75), which A-21 publishes and S-30 reads. */
+export const snapshotLegalController = (): Promise<SlotSnapshot> => snapshotEntry(KIND.LEGAL_CONTROLLER, 'global');
+
+/** The seed file a kind's scope is published from — `<kind with dashes>.<scope>.json`, as the loader reads it. */
+const SEED_FILE_PREFIX = {
+  [KIND.IDENTITY_PROVIDER]: 'identity-provider',
+  [KIND.NOTIFICATION_CATEGORY]: 'notification-category',
+  [KIND.LEGAL_CONTROLLER]: 'legal-controller',
+} as const satisfies Record<Kind, string>;
+
 /** Puts a snapshot back under its original publisher; the committed seed only where nothing was in force. */
 export async function restoreSlot(snapshot: SlotSnapshot): Promise<void> {
-  const seedFile =
-    snapshot.kind === KIND.IDENTITY_PROVIDER
-      ? `identity-provider.${snapshot.scope}.json`
-      : `notification-category.${snapshot.scope}.json`;
+  const seedFile = `${SEED_FILE_PREFIX[snapshot.kind]}.${snapshot.scope}.json`;
   await publishEntry({
     kind: snapshot.kind,
     scope: snapshot.scope,

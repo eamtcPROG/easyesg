@@ -20,8 +20,11 @@ invisible because nothing in this directory said the rules applied.
 
 ## Current state
 
-**A-01, the chrome, A-02, A-07, A-08, A-17, A-18, A-19 and A-20.** Route files cover the eighteen scaffolded screens
-(`A-01` … `A-18`), A-19 and A-20. **A-02's organization register is live since task 67.3** —
+**A-01, the chrome, A-02, A-07, A-08, A-17, A-18, A-19, A-20 and A-21.** Route files cover the eighteen scaffolded screens
+(`A-01` … `A-18`), A-19, A-20 and A-21. **A-21, the platform operator, since task 75**, in
+`features/platform/admin/legal-controller/` — the four facts the legal documents state about who runs the platform, one
+form keyed by the revision it opened on, its IDNO judged at the field by `@easyesg/validation`'s rule, a save on S-30 within
+seconds and on A-08's log. **A-02's organization register is live since task 67.3** —
 `features/platform/admin/organization-register/`, reading `GET /admin/organizations` through
 `AdminRealmGuard` — its record listing the organization's people since task 167, each phone shown one person at
 a time and logged, and its entities with their IDNOs since task 175 — and **A-08's accounts and system audit log since
@@ -216,7 +219,7 @@ src/
 
 - **The console nav is presentation, never the boundary** (task 67.1). It shows an operator their
   own realm's section, and only destinations whose screen renders — `realm/tools/console-sections.ts`
-  holds both rules and the destination table, which holds A-02, A-08, A-07, A-18 and A-17 for a Platform Administrator. A hidden link refuses nothing:
+  holds both rules and the destination table, which holds A-02, A-08, A-07, A-18, A-17 and A-21 for a Platform Administrator. A hidden link refuses nothing:
   `AdminRealmGuard` (task 67.3) is what stops a Billing Operator reaching A-02 by typing its
   address. **A screen that ships adds its destination in the same change**, with its label under
   `realm.chrome.destinations` — the table's type will not accept a key the catalogue lacks. **A-19 is

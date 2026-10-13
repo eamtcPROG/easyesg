@@ -1,24 +1,43 @@
 import { FocusColumn } from '@easyesg/ui';
 import { notFound } from 'next/navigation';
+import { readLegalController } from '@/server/data/legal-controller';
 import { NotYetAvailable } from '@/shared/not-yet-available';
+import { LEGAL_CONTROLLER_READ, readLegalControllerOutcome } from '../../tools/legal-controller-read';
 import { LEGAL_DOCUMENT, isLegalDocument } from '../../tools/legal-documents';
 import { CookiePolicy } from '../cookie-policy/cookie-policy';
+import { PrivacyNotice } from '../privacy/privacy-notice';
+import { LegalUnavailable } from '../shared/legal-unavailable';
+import { TermsOfService } from '../terms/terms-of-service';
 
 /**
- * S-30's one region (FR-205; task 75.3): which of the legal set's documents an address names, and what answers for it.
+ * S-30's one region (FR-205; tasks 75.3, 75.4): which of the legal set's documents an address names, and what answers
+ * for it. **The section reads and the documents render**: the cookie policy names no operator and reads nothing; the
+ * terms and the privacy notice name the platform operator, read here once.
  *
- * **Only the cookie policy is drawn yet.** Its facts come from task 75.2's inventory; the text of the terms of service
- * and the privacy notice is the owner's or counsel's to supply (`architecture.md` §12.5.6's task-75 row), and until it
- * arrives those two answer §8.1's *not yet available* (task 103) — the same answer the footer's links met before. **An
- * address naming no document of the set does not exist**, so it answers the 404 rather than *not yet available*: the
- * set is three (182/121), and a fourth is not coming.
+ * - **An address naming no document of the set does not exist**, so it answers the 404 — the set is three (182/121).
+ * - **No operator in force answers *not yet available*** (task 103), the `architecture.md` §12.5.6 task-75 row (7)'s rule
+ *   that no document naming a missing controller goes live — AC-13.
+ * - **A read that failed keeps the frame** with a callout in the text's place — the archetype's *error — recoverable*.
  */
-export function LegalDocument({ document }: { readonly document: string }) {
+export async function LegalDocument({ document }: { readonly document: string }) {
   if (!isLegalDocument(document)) notFound();
   if (document === LEGAL_DOCUMENT.COOKIES) return <CookiePolicy />;
-  return (
-    <FocusColumn>
-      <NotYetAvailable />
-    </FocusColumn>
-  );
+
+  const read = readLegalControllerOutcome(await readLegalController());
+  switch (read.kind) {
+    case LEGAL_CONTROLLER_READ.NONE_IN_FORCE:
+      return (
+        <FocusColumn>
+          <NotYetAvailable />
+        </FocusColumn>
+      );
+    case LEGAL_CONTROLLER_READ.FAILED:
+      return <LegalUnavailable document={document} />;
+    case LEGAL_CONTROLLER_READ.READY:
+      return document === LEGAL_DOCUMENT.TERMS ? (
+        <TermsOfService controller={read.controller} />
+      ) : (
+        <PrivacyNotice controller={read.controller} />
+      );
+  }
 }

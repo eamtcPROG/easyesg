@@ -2,6 +2,10 @@ import { ContentContents, ContentSection, ContentShell, ContentWide } from '@eas
 import { getTranslations } from 'next-intl/server';
 import { LEGAL_DOCUMENT } from '../../tools/legal-documents';
 import { LegalPeers } from '../shared/legal-peers';
+import { LegalProvisional } from '../shared/legal-provisional';
+import { LEGAL_RICH_TAGS } from '../shared/legal-rich-tags';
+import { LegalStandingLine } from '../shared/legal-standing-line';
+import { LEGAL_SUMMARY_ID, LegalSummary } from '../shared/legal-summary';
 import { BrowserStorage } from './browser-storage';
 import { CookieTable } from './cookie-table';
 
@@ -11,9 +15,9 @@ import { CookieTable } from './cookie-table';
  * does. **No accept or decline and nothing remembered**: every cookie is strictly necessary (OQ-23), so the page
  * informs and stores nothing to record that it did.
  *
- * **Its facts are task 75.2's inventory**, so the page is true of the build by that inventory's gate. **Its other text
- * is the owner's or counsel's** (`architecture.md` §12.5.6's task-75 row), which is why it carries no standing — the set's
- * version and effective date arrive with the documents (75.4).
+ * **Its facts are task 75.2's inventory**, so the page is true of the build by that inventory's gate. **Its summary and
+ * its standing arrived with the set's text** (task 75.4; `architecture.md` §12.5.6's task-75 row (6), (9)): drafted here and
+ * provisional until counsel approves it, like the other two. It names no operator, so it reads nothing.
  */
 const SECTION = {
   SET: 'set',
@@ -26,6 +30,7 @@ export async function CookiePolicy() {
   const [tSet, t] = await Promise.all([getTranslations('legal'), getTranslations('legal.cookies')]);
 
   const sections = [
+    { id: LEGAL_SUMMARY_ID, label: tSet('summary.heading') },
     { id: SECTION.SET, label: t('sections.set.heading') },
     { id: SECTION.NOT_SET, label: t('sections.notSet.heading') },
     { id: SECTION.STORAGE, label: t('sections.storage.heading') },
@@ -37,9 +42,12 @@ export async function CookiePolicy() {
       eyebrow={tSet('set.eyebrow')}
       title={tSet(`documents.${LEGAL_DOCUMENT.COOKIES}`)}
       lede={t('lede')}
+      standing={<LegalStandingLine document={LEGAL_DOCUMENT.COOKIES} />}
       peers={<LegalPeers current={LEGAL_DOCUMENT.COOKIES} />}
       contents={<ContentContents label={tSet('set.contents')} sections={sections} />}
     >
+      <LegalProvisional document={LEGAL_DOCUMENT.COOKIES} />
+      <LegalSummary>{t.rich('summary', LEGAL_RICH_TAGS)}</LegalSummary>
       {/* The table is the section's content, so the section takes the wider measure and its prose keeps the reading one. */}
       <ContentWide>
         <ContentSection id={SECTION.SET} heading={t('sections.set.heading')} number={1}>

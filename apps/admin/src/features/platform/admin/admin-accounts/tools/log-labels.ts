@@ -40,6 +40,7 @@ export const LOG_ACTION_LABEL = {
   [SYSTEM_AUDIT_ACTION.ADMIN_NOTIFICATION_CATEGORY_PUBLISHED]: 'notificationCategoryPublished',
   [SYSTEM_AUDIT_ACTION.ADMIN_NOTIFICATION_CATEGORY_REVERTED]: 'notificationCategoryReverted',
   [SYSTEM_AUDIT_ACTION.ADMIN_MEMBER_PHONE_DISCLOSED]: 'memberPhoneDisclosed',
+  [SYSTEM_AUDIT_ACTION.ADMIN_LEGAL_CONTROLLER_PUBLISHED]: 'legalControllerPublished',
 } as const satisfies Record<SystemAuditAction, string>;
 
 export const LOG_OBJECT = {

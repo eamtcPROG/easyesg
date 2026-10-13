@@ -125,7 +125,8 @@ test.describe('the public footer', () => {
         '/legal/privacy',
       );
       await expect(legal.getByRole('link', { name: 'Politica de cookie-uri' })).toHaveAttribute('href', '/legal/cookies');
-      await expect(footer).toContainText('EasyESG SRL · Chișinău');
+      // The brand, not the company: the registered name is the store's since task 75 (§12.5.6's task-75 row (8)).
+      await expect(footer).toContainText('EasyESG · Chișinău');
     });
   }
 

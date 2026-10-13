@@ -42,7 +42,7 @@ export const SECTION_OF_ROLE = {
 
 /**
  * Every destination with a screen that renders — A-02's register (67.3), A-08's accounts (67.4), A-07's support
- * access (67.9), A-18's identity providers (67.11), A-17's notification categories (67.10).
+ * access (67.9), A-18's identity providers (67.11), A-17's notification categories (67.10), A-21's platform operator (75).
  */
 export const CONSOLE_DESTINATIONS: ConsoleDestinations = {
   [CONSOLE_SECTION.PLATFORM]: [
@@ -53,8 +53,10 @@ export const CONSOLE_DESTINATIONS: ConsoleDestinations = {
     { href: '/support-access', label: 'destinations.supportAccess' },
     // A-18, since task 67.11.
     { href: '/identity-providers', label: 'destinations.identityProviders' },
-    // A-17, since task 67.10 — last, as the artboard's navigation draws it.
+    // A-17, since task 67.10 — last of the artboard's destinations, as its navigation draws it.
     { href: '/notification-templates', label: 'destinations.notificationCategories' },
+    // A-21, since task 75 — after them, since the artboard has no A-21 to place it (`design_spec.md` §4.7).
+    { href: '/legal-controller', label: 'destinations.legalController' },
   ],
   [CONSOLE_SECTION.BILLING]: [],
 };

@@ -185,6 +185,23 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
 
           <PolicyPasswordField control={control} name="password" label={t('passwordLabel')} />
 
+          {/* FR-205 AC-7, AC-8 (182/115): continuing is acceptance of the terms and the notice, said where personal data
+              is collected, before the button — and nothing records it until task 195. */}
+          <p className={styles.legalNotice}>
+            {t.rich('legalNotice', {
+              terms: (chunks) => (
+                <TextLink asChild>
+                  <Link href={ROUTES.LEGAL_TERMS}>{chunks}</Link>
+                </TextLink>
+              ),
+              privacy: (chunks) => (
+                <TextLink asChild>
+                  <Link href={ROUTES.LEGAL_PRIVACY}>{chunks}</Link>
+                </TextLink>
+              ),
+            })}
+          </p>
+
           <CredentialSubmit busy={pending}>
             {t('submit')}
           </CredentialSubmit>

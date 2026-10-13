@@ -911,7 +911,7 @@ Business rules held here: BR-ENT-1 … BR-ENT-5, BR-SUB-1 … BR-SUB-7, BR-FIS-1
 
 ### FR-111 — Evidence of what was agreed
 
-**Status.** Not started — remaining 58.5 (the terms capture), 63.3; 75.4 (the terms document's version, built with its text, which 63.3 records)
+**Status.** Not started — delivered none · remaining 58.5 (the terms capture), 63.3, which records the terms document's version 75.4 built with its text (`apps/web`'s `legal-standing.ts`)
 
 **Obligation.** The system shall record the accepted terms version, timestamp and acting user against the order on confirmation.
 

@@ -102,3 +102,56 @@
   font: 400 13px/19px var(--font-text);
   color: var(--text-muted);
 }
+
+/*
+ * A list inside a document's text (task 75.4): the summary's points and a section's enumerations, at the reading
+ * measure the paragraphs keep, marked as a list rather than as loose lines.
+ */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 70ch;
+  padding-inline-start: var(--space-5);
+  list-style: disc;
+}
+
+/*
+ * The platform operator a document names (task 75; FR-205): four facts, label beside value from `sm` up and above it
+ * below — the shape A-18's facts take on the console, through the same cascade.
+ */
+.facts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-1) var(--space-4);
+  max-width: 70ch;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+.facts dt {
+  color: var(--text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 40rem) {
+  .facts {
+    grid-template-columns: auto 1fr;
+  }
+}
+
+/* The document's version and the day it applies from, at the head's far end. */
+.standing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+}

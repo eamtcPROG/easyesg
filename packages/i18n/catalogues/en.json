@@ -164,6 +164,12 @@
     },
     "export-file-unavailable": {
       "title": "File not available"
+    },
+    "legal-controller-changed": {
+      "title": "The operator’s details changed in the meantime"
+    },
+    "legal-controller-unavailable": {
+      "title": "The operator’s details cannot be read right now"
     }
   },
   "validation": {
@@ -713,7 +719,18 @@
         "disabled": "The provider is already disabled, so nothing was changed. Reload the page to see its current state."
       },
       "identity_provider_issuer_invalid": "The issuer must be a complete https address with no parameters, so the configuration was not saved. Enter the issuer address the provider publishes.",
-      "identity_provider_redirect_invalid": "Every redirect address must be a complete address ending in {path}, with no parameters, so the configuration was not saved. Correct the addresses that do not have this form."
+      "identity_provider_redirect_invalid": "Every redirect address must be a complete address ending in {path}, with no parameters, so the configuration was not saved. Correct the addresses that do not have this form.",
+      "legal_controller_changed": "Another administrator saved the operator’s details after you opened them, so your change was not applied. Check the values now in force and save again if it is still needed.",
+      "legal_controller_unchanged": "The values you sent are the ones in force, so no new version was saved. Change a field before saving.",
+      "legal_controller_invalid": {
+        "name_missing": "The registered name is missing, so the legal documents could not name the operator. Enter the name as it appears in the state register.",
+        "idno_missing": "The IDNO is missing, so the legal documents could not identify the operator. Enter the 13 digits from the registration certificate.",
+        "idno_malformed": "An IDNO is exactly 13 digits, so what was entered is not one. Check the number on the registration certificate.",
+        "idno_check_digit": "The IDNO’s last digit, its check digit, does not agree with the twelve before it, so the number is not valid. Compare it with the registration certificate: usually one digit is wrong or two are swapped.",
+        "address_missing": "The registered address is missing, so the legal documents could not say where the operator is registered. Enter the address as it appears in the state register.",
+        "email_missing": "The data-protection contact is missing, so nobody would know where to send a question about their data. Enter an email address.",
+        "email_malformed": "The data-protection contact is not shaped like an email address, so questions would go nowhere. Check the address and correct it."
+      }
     },
     "support_access": {
       "organization_not_found": "The organization does not exist, so the access request was not sent. Open the organization from the register and try again.",
@@ -739,6 +756,9 @@
         "cadence_missing": "This category is sent on a schedule — at a repeat interval, or a number of days before a due date — and the publication does not include it, so nothing was published. Fill it in and publish again.",
         "cadence_not_kept": "This category is sent neither at a repeat interval nor a number of days before a due date, so nothing was published. Remove those values."
       }
+    },
+    "legal": {
+      "controller_unavailable": "The platform operator’s details cannot be read right now, so the terms of service and the privacy notice are not shown. Come back a little later."
     }
   },
   "vocabulary": {

@@ -9,7 +9,7 @@
       "ru": "Русский"
     },
     "footer": {
-      "legalNote": "© {year} EasyESG SRL · Chișinău",
+      "legalNote": "© {year} EasyESG · Chișinău",
       "legalNav": "Documente legale",
       "terms": "Termeni și condiții",
       "privacy": "Politica de confidențialitate",
@@ -171,7 +171,8 @@
       "alreadyHave": "Aveți deja un cont?",
       "signIn": "Autentificați-vă",
       "problemTitle": "Cererea nu a putut fi procesată",
-      "problemBody": "Contul nu a fost creat din cauza unei erori la procesarea cererii."
+      "problemBody": "Contul nu a fost creat din cauza unei erori la procesarea cererii.",
+      "legalNotice": "Creând un cont, acceptați <terms>Termenii și condițiile</terms> și <privacy>Politica de confidențialitate</privacy>."
     },
     "verify": {
       "title": "Confirmați-vă adresa de e-mail",
@@ -2366,7 +2367,55 @@
   },
   "legal": {
     "privacy": {
-      "phone": "Numărul de telefon, dacă îl adăugați în profil, este păstrat doar pentru ca echipa de asistență să vă poată contacta în legătură cu contul dumneavoastră. Îl pot vedea numai administratorii platformei, câte o persoană odată, iar fiecare vizualizare este înregistrată. Îl puteți șterge oricând din profil."
+      "phone": "Numărul de telefon, dacă îl adăugați în profil, este păstrat doar pentru ca echipa de asistență să vă poată contacta în legătură cu contul dumneavoastră. Îl pot vedea numai administratorii platformei, câte o persoană odată, iar fiecare vizualizare este înregistrată. Îl puteți șterge oricând din profil.",
+      "lede": "Ce date cu caracter personal păstrăm despre dumneavoastră, de ce, cât timp și ce drepturi aveți.",
+      "summary": "<ul><li>Păstrăm doar ce le trebuie contului și raportului: numele, adresa de e-mail, rolul, limba și, dacă îl adăugați, numărul de telefon.</li><li>Nu vindem datele, nu le folosim pentru publicitate și nu le dăm unor modele de inteligență artificială.</li><li>Datele sunt păstrate în Uniunea Europeană sau în Spațiul Economic European.</li><li>Pentru datele despre persoane dintr-un raport, operatorul este organizația care întocmește raportul.</li><li>Ne puteți cere oricând să vedeți, să corectați, să ștergeți sau să primiți datele dumneavoastră, iar noi răspundem în cel mult 30 de zile.</li></ul>",
+      "sections": {
+        "controller": {
+          "heading": "Cine răspunde de datele dumneavoastră",
+          "body": "<p>Operatorul datelor cu caracter personal legate de contul dumneavoastră este {registeredName}, ale cărei date de înregistrare sunt mai jos. Pentru orice întrebare despre datele dumneavoastră, scrieți la {email}.</p><p>Pentru datele despre persoane pe care o organizație le introduce într-un raport, operatorul este acea organizație; noi le prelucrăm în numele ei, după termenii și condițiile serviciului.</p>"
+        },
+        "collect": {
+          "heading": "Ce date păstrăm",
+          "body": "<ul><li><strong>Contul:</strong> numele, adresa de e-mail, limba aleasă și parola, păstrată doar ca amprentă criptografică, pe care nu o putem citi.</li><li><strong>Conectarea:</strong> dacă vă conectați prin Google sau Microsoft, identificatorul contului dumneavoastră la acel furnizor; dacă activați autentificarea în doi pași, secretul acesteia, păstrat criptat.</li><li><strong>Organizațiile:</strong> din ce organizații faceți parte și cu ce rol.</li><li><strong>Activitatea:</strong> când v-ați conectat, încercările de conectare eșuate și adresa de internet de la care au venit, ca să protejăm conturile; și cine a modificat fiecare valoare dintr-un raport și când.</li><li><strong>Notificările:</strong> ce mesaje v-am trimis, pe ce canal și dacă au ajuns.</li></ul>"
+        },
+        "purposes": {
+          "heading": "De ce le folosim și pe ce temei",
+          "body": "<ul><li>Ca să vă oferim contul și serviciul pe care l-ați cerut — temeiul este contractul cu dumneavoastră, adică termenii și condițiile.</li><li>Ca să păstrăm conturile în siguranță și să oprim încercările repetate de a ghici o parolă — temeiul este interesul nostru legitim de a proteja serviciul.</li><li>Ca un raport să poată fi verificat: cine a schimbat o valoare și când — temeiul este interesul nostru legitim ca raportul să poată fi verificat.</li><li>Ca să vă trimitem mesaje despre cont și despre rapoarte. Pe cele care nu sunt indispensabile le puteți opri din preferințele de notificare.</li></ul><p>Nu luăm decizii automate cu efecte juridice asupra dumneavoastră și nu vă creăm un profil.</p>"
+        },
+        "recipients": {
+          "heading": "Cine are acces la date",
+          "body": "<ul><li>Membrii organizației dumneavoastră văd ce le permite rolul lor.</li><li>Administratorii platformei citesc rapoartele unei organizații numai cu acordul acesteia, pe durată limitată, iar fiecare citire este înregistrată.</li><li>Furnizorii care găzduiesc platforma și trimit mesajele ei e-mail prelucrează datele numai în numele nostru.</li><li>Autoritățile, numai când legea ne obligă să le comunicăm.</li></ul>"
+        },
+        "location": {
+          "heading": "Unde sunt păstrate",
+          "body": "<p>Datele dumneavoastră sunt păstrate în Uniunea Europeană sau în Spațiul Economic European: baza de date, copiile ei de rezervă, exporturile pe care le generăm și jurnalele.</p><p>Singura excepție este trimiterea mesajelor e-mail: cât timp platforma se pregătește de lansare, furnizorul de e-mail se poate afla în afara acestui spațiu. Prin el trec doar mesajul și adresa la care este trimis.</p>"
+        },
+        "retention": {
+          "heading": "Cât timp le păstrăm",
+          "body": "<ul><li>Contul — cât timp există. Dacă ne cereți ștergerea lui, ștergem imediat profilul, apartenența la organizații, sesiunile, preferințele și evidența mesajelor trimise dumneavoastră.</li><li>Conținutul rapoartelor, exporturile generate și istoricul modificărilor — cât timp există organizația și încă un an după aceea.</li><li>Datele introduse în calculatorul de emisii — fără limită de timp, pentru ca o cifră raportată să poată fi refăcută oricând.</li><li>Notificările — cât timp există organizația și încă un an; un anunț al platformei, un an de la trimitere.</li><li>Jurnalul de audit al sistemului — 24 de luni.</li><li>Facturile și evidența contabilă — 6 ani, cât cere legea.</li></ul>"
+        },
+        "security": {
+          "heading": "Cum le protejăm",
+          "body": "<ul><li>Datele fiecărei organizații sunt despărțite în baza de date însăși, nu doar în aplicație.</li><li>Parolele nu sunt păstrate niciodată în formă lizibilă, iar secretele care trebuie recuperate sunt criptate.</li><li>Conexiunile sunt criptate, iar o sesiune se încheie după 7 zile de nefolosire și după cel mult 30 de zile.</li><li>Istoricul modificărilor nu poate fi schimbat sau șters din aplicație.</li><li>Autentificarea în doi pași este disponibilă pentru orice cont.</li></ul>"
+        },
+        "rights": {
+          "heading": "Drepturile dumneavoastră",
+          "body": "<p>În temeiul Legii nr. 195/2024 privind protecția datelor cu caracter personal și, acolo unde vi se aplică, al Regulamentului (UE) 2016/679, Regulamentul general privind protecția datelor, aveți dreptul să ne cereți:</p><ul><li>să vedeți datele pe care le păstrăm despre dumneavoastră;</li><li>să corectați datele greșite — numele și numărul de telefon le puteți corecta singur, din profil;</li><li>să ștergem datele de care nu mai avem nevoie;</li><li>să primiți datele dumneavoastră într-un format deschis, care poate fi citit automat;</li><li>să restrângem o utilizare a datelor sau să vă opuneți unei utilizări întemeiate pe interesul nostru legitim.</li></ul><p>Scrieți-ne la {email}; răspundem în cel mult 30 de zile. Datele pe care legea ne obligă să le păstrăm, de exemplu facturile, nu pot fi șterse înainte de termen, iar în răspuns vă spunem care sunt acestea.</p><p>Pentru datele din rapoartele unei organizații, adresați-vă organizației; vă putem îndruma către ea.</p>"
+        },
+        "breaches": {
+          "heading": "Încălcările securității",
+          "body": "<p>Dacă o încălcare a securității datelor pune în pericol drepturile dumneavoastră, anunțăm autoritatea de supraveghere în cel mult 72 de ore de când am aflat de ea, iar dacă riscul pentru dumneavoastră este ridicat, vă anunțăm și pe dumneavoastră, fără întârziere.</p>"
+        },
+        "complaints": {
+          "heading": "Plângerile",
+          "body": "<p>Ne puteți scrie mai întâi nouă, la {email}. Aveți însă și dreptul să depuneți o plângere direct la Centrul Național pentru Protecția Datelor cu Caracter Personal al Republicii Moldova sau, dacă vi se aplică Regulamentul general privind protecția datelor, la autoritatea de supraveghere din statul în care locuiți sau lucrați.</p>"
+        },
+        "changes": {
+          "heading": "Modificarea acestei politici",
+          "body": "<p>Când schimbăm această politică, publicăm o versiune nouă, cu numărul ei și cu data de la care se aplică, și vă anunțăm din timp dacă schimbarea vă privește.</p>"
+        }
+      }
     },
     "set": {
       "eyebrow": "Documente legale",
@@ -2434,6 +2483,82 @@
         "resetAddress": "Adresa pentru care ați cerut resetarea parolei, ca să nu o scrieți din nou.",
         "dismissedNotes": "Notele din raport pe care le-ați ascuns, ca să nu reapară cât lucrați.",
         "autosave": "Răspunsurile din raport încă netrimise, ca să nu se piardă dacă rămâneți fără conexiune."
+      },
+      "summary": "<ul><li>Site-ul păstrează în browserul dumneavoastră doar ce îi trebuie ca să funcționeze: conectarea, limba aleasă și pașii unei autentificări în curs.</li><li>Nu folosim cookie-uri de statistică, de publicitate sau ale unor terți.</li><li>Nu aveți nimic de acceptat sau de refuzat; dacă le ștergeți, veți fi deconectat.</li></ul>"
+    },
+    "standing": {
+      "version": "Versiunea {version}",
+      "effective": "În vigoare din {date}"
+    },
+    "provisional": {
+      "title": "Versiune provizorie",
+      "body": "Acest text nu a fost încă revizuit de un jurist. Înainte de lansarea platformei va fi înlocuit de o versiune revizuită, cu data de la care se aplică."
+    },
+    "summary": {
+      "heading": "Pe scurt"
+    },
+    "controller": {
+      "registeredName": "Denumirea",
+      "idno": "IDNO",
+      "registeredAddress": "Adresa juridică",
+      "dataProtectionEmail": "Contact pentru protecția datelor"
+    },
+    "unavailable": {
+      "title": "Documentul nu poate fi afișat acum",
+      "body": "Datele de care are nevoie nu au putut fi citite, așa că textul nu este afișat. Reîncărcați pagina peste câteva momente; celelalte documente ale setului rămân la îndemână, mai sus."
+    },
+    "terms": {
+      "lede": "Ce acceptați atunci când folosiți EasyESG în pilotul gratuit: ce face serviciul, ce vă cerem și ce ne asumăm.",
+      "summary": "<ul><li>EasyESG vă ajută să întocmiți raportul de sustenabilitate după standardul VSME; cifrele și răspunsurile rămân ale organizației dumneavoastră.</li><li>În pilot serviciul este gratuit. Înainte de orice plată, vă vom cere să acceptați o versiune nouă a acestor termeni.</li><li>Răspundeți pentru ce introduceți și pentru cine are acces la contul organizației.</li><li>Prelucrăm datele cu caracter personal din rapoarte doar ca să furnizăm serviciul, la instrucțiunea organizației dumneavoastră.</li><li>Puteți renunța oricând. Termenilor li se aplică legea Republicii Moldova.</li></ul>",
+      "sections": {
+        "operator": {
+          "heading": "Cine suntem",
+          "body": "<p>Serviciul EasyESG este furnizat de {registeredName}, ale cărei date de înregistrare sunt mai jos. Termenii se aplică oricui își creează un cont pe platformă sau este invitat într-o organizație de pe ea.</p>"
+        },
+        "service": {
+          "heading": "Ce face serviciul și ce nu face",
+          "body": "<p>Serviciul vă permite să întocmiți raportul de sustenabilitate după standardul voluntar VSME, publicat de EFRAG, să calculați emisiile din domeniul 1 și din domeniul 2 (metoda bazată pe localizare) pornind de la energia consumată și să exportați raportul ca document PDF și în șablonul digital oficial al EFRAG.</p><p>Nu verificăm dacă datele introduse sunt corecte, nu depunem și nu publicăm nimic în numele dumneavoastră și nu oferim consultanță juridică, fiscală sau de sustenabilitate. Nu garantăm că o bancă, un cumpărător sau o autoritate va accepta raportul.</p><p>Un raport rămâne legat de versiunea standardului și a factorilor de emisie sub care a fost început, chiar dacă acestea se schimbă ulterior.</p>"
+        },
+        "pilot": {
+          "heading": "Pilotul gratuit",
+          "body": "<p>Această versiune a termenilor acoperă pilotul gratuit al platformei. În pilot nu percepem nicio plată și nu vă cerem date de plată.</p><p>Planurile, prețurile și facturarea vor fi stabilite printr-o versiune nouă a acestor termeni, iar nimic nu vi se va cere să plătiți înainte de a o accepta.</p>"
+        },
+        "account": {
+          "heading": "Contul și persoanele pe care le invitați",
+          "body": "<p>Vă creați contul cu adresa de e-mail de serviciu și cu numele dumneavoastră și răspundeți pentru ce se face din el. Păstrați parola doar pentru dumneavoastră: un coleg care are nevoie de acces primește o invitație și propriul cont.</p><p>Într-o organizație, administratorul invită persoane și le stabilește rolul — administrator, editare sau doar vizualizare. O organizație are mereu cel puțin un administrator.</p><p>Vă recomandăm să activați autentificarea în doi pași.</p>"
+        },
+        "use": {
+          "heading": "Utilizarea acceptabilă",
+          "body": "<p>Folosind serviciul, vă angajați să nu:</p><ul><li>încercați să ajungeți la datele altei organizații sau să ocoliți măsurile de securitate ale serviciului;</li><li>introduceți conținut ilegal sau date despre persoane pe care nu aveți temei să le prelucrați;</li><li>încărcați serviciul cu cereri automate în așa fel încât să nu mai funcționeze pentru ceilalți;</li><li>vă dați drept altă persoană sau altă organizație;</li><li>revindeți accesul la serviciu.</li></ul>"
+        },
+        "content": {
+          "heading": "Conținutul rămâne al dumneavoastră",
+          "body": "<p>Datele și răspunsurile pe care le introduceți aparțin organizației dumneavoastră și le puteți exporta oricând, cât timp contul este deschis.</p><p>Ne acordați doar dreptul de a le păstra și prelucra în măsura în care o cere furnizarea serviciului. Nu le vindem, nu le folosim pentru publicitate și nu le folosim pentru antrenarea modelelor de inteligență artificială.</p>"
+        },
+        "personalData": {
+          "heading": "Datele cu caracter personal din rapoarte",
+          "body": "<p>Un raport poate conține date despre persoane — de exemplu, despre angajați. Pentru aceste date, organizația dumneavoastră este operatorul, iar noi le prelucrăm în numele ei, ca persoană împuternicită. Această secțiune ține locul unui acord separat de prelucrare a datelor.</p><ul><li>Prelucrăm aceste date doar ca să furnizăm serviciul, la instrucțiunea pe care ne-o dați folosindu-l.</li><li>Persoanele din echipa noastră care pot ajunge la ele sunt obligate să păstreze confidențialitatea. Un administrator al platformei poate citi raportul unei organizații doar cu acordul acesteia, pe durată limitată, iar fiecare citire este înregistrată.</li><li>Păstrăm datele în Uniunea Europeană sau în Spațiul Economic European și le protejăm prin măsurile descrise în politica de confidențialitate.</li><li>Vă ajutăm să răspundeți cererilor persoanelor la care se referă datele și vă anunțăm fără întârziere nejustificată dacă aflăm de o încălcare a securității care le privește.</li><li>Când organizația pleacă, datele se șterg după termenele din politica de confidențialitate; până atunci le puteți exporta.</li></ul>"
+        },
+        "availability": {
+          "heading": "Disponibilitatea",
+          "body": "<p>Ne străduim ca serviciul să fie disponibil, dar în pilot nu garantăm un anumit nivel de disponibilitate. Lucrările planificate care întrerup serviciul vi le anunțăm din timp, ori de câte ori ne este posibil.</p>"
+        },
+        "liability": {
+          "heading": "Răspunderea",
+          "body": "<p>Răspundem pentru furnizarea serviciului așa cum îl descriu acești termeni. Nu răspundem pentru corectitudinea datelor introduse de dumneavoastră, pentru deciziile luate pe baza raportului sau pentru felul în care un terț primește raportul.</p><p>În măsura permisă de legea Republicii Moldova, nu răspundem pentru pierderi indirecte. Nimic din acești termeni nu limitează răspunderea pentru fapte săvârșite cu intenție sau din culpă gravă.</p>"
+        },
+        "termination": {
+          "heading": "Încetarea",
+          "body": "<p>Puteți înceta oricând să folosiți serviciul și puteți cere închiderea contului scriindu-ne la {email}. Înainte, exportați ce doriți să păstrați.</p><p>Putem suspenda un cont care încalcă acești termeni. Vă anunțăm înainte, cu excepția cazului în care trebuie să oprim imediat un atac sau un prejudiciu.</p><p>După închiderea contului, datele lui se păstrează și se șterg după termenele din politica de confidențialitate.</p>"
+        },
+        "changes": {
+          "heading": "Modificarea termenilor",
+          "body": "<p>Când schimbăm acești termeni, publicăm o versiune nouă, cu numărul ei și cu data de la care se aplică, și vă anunțăm din timp. Versiunea în vigoare este întotdeauna cea afișată pe această pagină.</p>"
+        },
+        "law": {
+          "heading": "Legea aplicabilă și litigiile",
+          "body": "<p>Acestor termeni li se aplică legea Republicii Moldova.</p><p>Dacă apare o neînțelegere, scrieți-ne mai întâi la {email}, iar noi vom încerca să o rezolvăm împreună cu dumneavoastră, în scris. Dacă nu reușim, litigiul este soluționat de instanțele competente din municipiul Chișinău.</p>"
+        }
       }
     }
   },

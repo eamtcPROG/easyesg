@@ -12,6 +12,7 @@ import { SystemAuditLogReaderRepository } from '@api/infrastructure/persistence/
 import { AuditModule } from '@api/modules/platform/audit/audit.module';
 import { AdminSessionStoreRepository } from '@api/infrastructure/persistence/platform/admin-session-store.repository';
 import { IdentityProviderConfigurationStoreRepository } from '@api/infrastructure/persistence/platform/identity-provider-configuration-store.repository';
+import { LegalControllerStoreRepository } from '@api/infrastructure/persistence/platform/legal-controller-store.repository';
 import { ConfigProviderEnvironment } from '@api/infrastructure/adapters/provider-environment/config-provider-environment.adapter';
 import { OrganizationEntitiesStoreRepository } from '@api/infrastructure/persistence/platform/organization-entities-store.repository';
 import { OrganizationMembersStoreRepository } from '@api/infrastructure/persistence/platform/organization-members-store.repository';
@@ -26,6 +27,7 @@ import { AdminInvitationEmailHandler } from './consumers/admin-invitation-email.
 import { AdminAccountsController } from './controllers/admin-accounts.controller';
 import { AdminCredentialsController } from './controllers/admin-credentials.controller';
 import { AdminIdentityProvidersController } from './controllers/admin-identity-providers.controller';
+import { AdminLegalControllerController } from './controllers/admin-legal-controller.controller';
 import { AdminInvitationAcceptanceController } from './controllers/admin-invitation-acceptance.controller';
 import { AdminNotificationCategoriesController } from './controllers/admin-notification-categories.controller';
 import { AdminInvitationsController } from './controllers/admin-invitations.controller';
@@ -58,6 +60,7 @@ import {
   type IdentityProviderConfigurationStore,
 } from './interfaces/identity-provider-configuration-store.interface';
 import { PROVIDER_ENVIRONMENT, type ProviderEnvironment } from './interfaces/provider-environment.interface';
+import { LEGAL_CONTROLLER_STORE, type LegalControllerStore } from './interfaces/legal-controller-store.interface';
 import {
   ORGANIZATION_REGISTER_STORE,
   type OrganizationRegisterStore,
@@ -76,6 +79,7 @@ import { AdminInvitationAcceptanceService } from './services/admin-invitation-ac
 import { AdminInvitationsService } from './services/admin-invitations.service';
 import { AdminSessionService } from './services/admin-session.service';
 import { IdentityProvidersService } from './services/identity-providers.service';
+import { LegalControllerConsoleService } from './services/legal-controller-console.service';
 import { OrganizationEntitiesService } from './services/organization-entities.service';
 import { OrganizationMembersService } from './services/organization-members.service';
 import { OrganizationRegisterService } from './services/organization-register.service';
@@ -93,6 +97,8 @@ import { InviteAdministrator } from './use-cases/invite-administrator.use-case';
 import { IssueAdminRecoveryCodes } from './use-cases/issue-admin-recovery-codes.use-case';
 import { ListAdminRoster } from './use-cases/list-admin-roster.use-case';
 import { ListIdentityProviders } from './use-cases/list-identity-providers.use-case';
+import { PublishLegalController } from './use-cases/publish-legal-controller.use-case';
+import { ReadLegalController } from './use-cases/read-legal-controller.use-case';
 import { ListOrganizationRegister } from './use-cases/list-organization-register.use-case';
 import { ListSystemAuditLog } from './use-cases/list-system-audit-log.use-case';
 import { PreviewAdminInvitation } from './use-cases/preview-admin-invitation.use-case';
@@ -285,6 +291,19 @@ const httpProviders: Provider[] = [
     useFactory: (store: IdentityProviderConfigurationStore, environment: ProviderEnvironment) =>
       new ChangeIdentityProviderState(store, environment),
   },
+  // A-21 (task 75): the platform operator the legal documents name, published into the store as A-18's providers are.
+  { provide: LEGAL_CONTROLLER_STORE, useClass: LegalControllerStoreRepository },
+  LegalControllerConsoleService,
+  {
+    provide: ReadLegalController,
+    inject: [LEGAL_CONTROLLER_STORE],
+    useFactory: (store: LegalControllerStore) => new ReadLegalController(store),
+  },
+  {
+    provide: PublishLegalController,
+    inject: [LEGAL_CONTROLLER_STORE],
+    useFactory: (store: LegalControllerStore) => new PublishLegalController(store),
+  },
   // A-19 (task 144): the operator's own credentials, over a store of their own that seals the staged factor.
   { provide: ADMIN_CREDENTIAL_STORE, useClass: AdminCredentialStoreRepository },
   AdminCredentialsService,
@@ -409,6 +428,7 @@ const workerProviders: Provider[] = [AdminInvitationEmailHandler];
           AdminCredentialsController,
           AdminIdentityProvidersController,
           AdminNotificationCategoriesController,
+          AdminLegalControllerController,
         ],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
   // Since task 67.9, for `SupportAccessModule`. **`AdminSessionService`, not the guards**: a guard named in

@@ -94,7 +94,7 @@ test.describe('the legal footer', () => {
 
   test('states the current year, not a year baked into the catalogue', async ({ page }) => {
     await page.goto('/register');
-    await expect(page.getByText(`© ${currentYear()} EasyESG SRL · Chișinău`)).toBeVisible();
+    await expect(page.getByText(`© ${currentYear()} EasyESG · Chișinău`)).toBeVisible();
   });
 
   test('renders the year without a thousands separator in every locale', async ({ page }) => {

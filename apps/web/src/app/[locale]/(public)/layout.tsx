@@ -21,9 +21,8 @@ import styles from './layout.module.css';
  * and `/legal/*` are all inside the group, so all three gain it at once.
  *
  * **And the footer since 9 Oct 2026** (74.1's other half; `architecture.md` §12.5.6's task-74 row, item (1)). It was
- * held back on 4 Sep because its three legal links returned `null`; since task 103 they answer a designed *not yet
- * available* with a way back, as they already do from the identity and workspace screens, until task 75 publishes the
- * documents.
+ * held back on 4 Sep because its three legal links returned `null`; since task 103 they answered a designed *not yet
+ * available* with a way back, and since task 75 all three open their document.
  */
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (

@@ -7,8 +7,8 @@ export const IS_PUBLIC = 'easyesg:public';
  * Marks a route reachable without a tenant session — the exception to the closed-by-default rule
  * `AuthGuard` establishes (task 28.1).
  *
- * **Every use of this is a decision, so each carries its reason at the route.** There are three
- * kinds and no fourth:
+ * **Every use of this is a decision, so each carries its reason at the route.** There are four
+ * kinds and no fifth:
  *
  *  - **The routes that make a session exist.** Register, verify, sign in, refresh, reset, the
  *    social exchange. Requiring a token to obtain a token is the obvious circularity, and sign-out
@@ -23,6 +23,9 @@ export const IS_PUBLIC = 'easyesg:public';
  *    carry `@RequiresAdminRole`, which marks them `IS_ADMIN_REALM` for the tenant guard and applies
  *    `AdminRealmGuard` — this marker is only the handshake's. Marking it here is what stops the tenant guard 401-ing the
  *    more privileged surface for not carrying the less privileged surface's token.
+ *  - **What a reader is owed before an account exists** (task 75; §12.5.6's task-75 row (8)). The legal documents
+ *    are a precondition of a lawful registration (FR-205), so the operator they name is read without a session —
+ *    `GET /legal/controller`, which discloses only what those documents publish.
  *
  * Swagger's `/docs` needs no marker: `SwaggerModule.setup` mounts express middleware rather than a
  * Nest route, so no `APP_GUARD` ever runs for it.

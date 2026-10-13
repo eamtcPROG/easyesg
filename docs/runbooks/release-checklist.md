@@ -34,3 +34,33 @@ template `1.2.0`, the release with no Footnotes sheet — once in English.
    recorded is the platform.
 
 Record the Excel build numbers checked, and the outcome of each item, in the release's notes.
+
+## The legal documents and the operator they name, before the pilot (FR-205, NFR-5, NFR-23; task 75)
+
+**Why by hand.** The terms of service, the privacy notice and the cookie policy are drafted in the repository and
+published **provisional** (`architecture.md` §12.5.6's task-75 row (6)); whether they are lawful is counsel's judgement,
+and the operating company's registered details are a fact only the owner holds (row (7)). Neither is a property a gate
+can test. **This item binds the release that opens the pilot (task 48)** — until then each page says it is provisional,
+and the operator named is the seed's temporary *EasyESG SRL*.
+
+**Before that release:**
+
+1. **Counsel has approved the three documents in Romanian, English and Russian** — the Russian by a Russian-speaking
+   reviewer, each locale on its own (NFR-23) — and has said which locale's text binds, if any: the documents state none,
+   by row (6). Counsel has also said whether Law No. 195/2024 requires a data protection officer for this processing; if
+   it does, the contact A-21 holds is theirs.
+2. **The approved text is in the catalogues** (`apps/web/src/messages/{ro,en,ru}.json`, namespace `legal`), and
+   `apps/web/src/features/public/legal/tools/legal-standing.ts` gives each document its version, its effective date as a
+   calendar day in Chișinău, and `provisional: false` — so no page shows *Versiune provizorie* any more.
+3. **A-21 holds the operating company** — its registered name, IDNO, registered address and data-protection contact,
+   not the seed's *EasyESG SRL* and IDNO `1099600012345` — and its change attribution names the operator who saved it.
+   The terms and the privacy notice, read with no session, show the same four facts.
+4. **What the privacy notice says of the deployment is still true of it**: the hosting region (NFR-27); the email
+   provider's location — the notice states the pre-launch exception NFR-27's amendment allows, so if the pilot counts
+   as production, that sentence goes or the provider moves; and the retention periods (FR-207 behaviour 7).
+5. **The supervisory authority** the privacy notice names — the National Center for Personal Data Protection of the
+   Republic of Moldova — is current, and counsel has said whether its address belongs on the page.
+6. **The registration screen's sentence** opens both documents it names, in each locale.
+
+Record the approval — its date and its reviewers — the versions and effective dates published, and the operator's
+details as saved, in the release's notes.

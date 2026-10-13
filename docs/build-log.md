@@ -32180,3 +32180,101 @@ built around; the old fixture had the same window, without the DST hour.
 - `notice-days.spec.ts`: 9 of 9. `pnpm --filter @easyesg/api typecheck` and `pnpm lint`: clean.
 - **Skipped**: `pnpm e2e` and the api's whole unit run. The change reaches one e2e file, which nothing imports, and no
   source or entrypoint; CI runs both on the next push.
+
+## Task 75 — the legal set's text, drafted here and provisional, and its operator kept on A-21 · 2026-10-13
+
+75.3, 75.4 and the new 75.6 close the task the 9 Oct batch left `BLOCKED` on counsel's text and the controller. The
+owner asked to close it ahead of counsel: the company data editable from the console and seeded with temporary values.
+Building that surfaced that the text, not only the controller, was missing, so the batch below settled both.
+
+### Decided before building (project owner, one batch of four)
+
+Recorded in `architecture.md` §12.5.6's task-75 row as (6) … (9), cross-logged in `design_spec.md` S-30, A-21 and §4.7,
+FR-205 behaviours 9 and 10 with AC-12 … AC-14, §17.5's new `platform/legal` row, and the release checklist.
+
+- **The text is drafted in the repository and published provisional** (reverses (1)'s declined option, the recommended
+  answer): each locale authored on its own, from `design/legal-drafts.md` brought up to the code and the specification,
+  marked provisional until counsel approves it — a release-checklist item before the pilot.
+- **The controller is a store artefact edited on a new A-21** (the recommended answer): `legal_controller`, scope
+  `global`, a Platform Administrator's, audited, with A-18's revision check. *Declined:* a section of A-18; a table.
+- **Four fields** — registered name, IDNO, registered address, data-protection contact — one value each, as registered
+  (the recommended answer).
+- **The seed reads as real**: *EasyESG SRL* rather than placeholder markers (the owner's own answer, beside the
+  recommended *[de completat]* values). The IDNO carries the year segment `099`, so its check digit is valid and no
+  registered company holds it; the address is a street that is not one, *str. Exemplului*.
+
+### What the building settled
+
+- **Which locale's text binds is not decided.** The draft said Romanian, citing the prototype; no document in the set
+  says so, and writing it into row (6) would have closed a legal question in passing. It came out of the amendment and
+  went onto the checklist as counsel's.
+- **A controller's change does not version the documents** (row (7)): the facts fill places the release's text leaves,
+  and the audit log is the record. The footer's copyright note dropped *SRL* — *© EasyESG · Chișinău* — so the registered
+  name has one home, the store.
+- **One function judges a controller on both paths**: `legalControllerFault` is the use case's refusal and, through
+  `readLegalController`, the kind's publication rule, which the seed loader runs too. So the store adapter maps no
+  `ConfigurationPayloadRefusedError` — a refusal there would be a defect to see, not a sentence to word.
+- **The public read is `@Public()`'s fourth kind** (row (8)), and `public.decorator.ts` and the permission table's
+  docblock now say four. It reads the store's cache, and fails closed: nothing readable in force answers 503
+  `legal-controller-unavailable`, which S-30 reads as *not yet available* (AC-13) — distinct from a read that failed,
+  which keeps the Content frame with a callout (`LEGAL_CONTROLLER_READ`).
+- **The version and effective date are `legal-standing.ts`**, a committed registry beside the text (row (9)): the
+  effective date a `LegalDate` in Chișinău, formatted by `calendarDay`, and `provisional` driving the notice above every
+  document's summary. All three documents carry it, the cookie policy included, with a summary of its own.
+- **A section of legal text is one rich message** — `<p>`, `<ul>`, `<li>`, `<strong>` — so counsel's revision changes
+  words, not code; the padding harness appends after the closing tag, so the tags survive it.
+- **The retention periods are FR-207 behaviour 7's**, not the draft's `[TO DECIDE]` rows — calculator inputs *without a
+  time limit* included, stated as the specification states it. **The email exception is NFR-27's amendment**, said on the
+  page; whether the pilot still counts as pre-launch is on the checklist.
+- **Registration now says continuing accepts the two documents and links both** (FR-205 AC-7, AC-8), which 182/115
+  claimed the shipped screen did and it did not.
+- **A-21 is a Record on the page, not a dialogue over a list** — one record has no list — keyed by the revision it opened
+  on, with the IDNO judged at the field by `@easyesg/validation`'s rule, the one the api reads.
+
+### Read against the skills
+
+- **`one-idea-per-file`**: `reason-measure-structural-claims` took one sentence out of `legal-rich-tags.tsx`, which said
+  what next-intl does with an unknown tag without anyone having measured it. **Declined, `shell-boundary-per-reading-region`**:
+  S-30's route reads the operator and has no `loading.tsx`, because it answers 404 for an address outside the set, and a
+  route-level loading state flushes a 200 first (`apps/web/CLAUDE.md`'s `notFound()` trap).
+- **`one-kind-per-folder`**: A-21 is a single-screen root — `components/ · queries/ · tools/` — with `components/`
+  holding the shell and the one region it returns; S-30's new parts sit beside the cookie policy's, `terms/` and
+  `privacy/` one folder each and the six parts both read in `shared/`.
+- **`vercel-react-best-practices`**: the documents translate in parallel, `LegalDocument` checks the address before its
+  one read, and nothing serialises to a client. **`nestjs-best-practices`**: `error-throw-http-exceptions` declined by the
+  architecture, as always; `security-rate-limiting` for the public read is the edge's per-IP budget (task 71).
+
+### Proven to bite
+
+- **The publication rule refuses what A-21 refuses**: `legal-controller.spec.ts` names each of the seven faults and reads
+  a payload with a wrong check digit, a blank address or a missing field as no controller; the seed loader published
+  `legal_controller/global` at revision 1 on the test stack, so the committed values pass the same rule.
+- **The public read fails closed**: `legal-controller.service.spec.ts` — nothing in force, and a payload missing a field,
+  each refused with `legal-controller-unavailable` rather than half an operator.
+- **A save over a colleague's is refused**: the fake store models the revision check, and the e2e sends a revision one
+  behind and finds the slot unmoved; the conflict asserts the wire literal, which the console branches on.
+- **The effect on S-30**: `e2e/admin/legal-controller.spec.ts` saves a name on A-21 and a visitor with no session reads
+  it on the terms; the IDNO's inline refusal is asserted as one sentence on an `aria-invalid` field, not a `.first()`.
+
+### Gates
+
+The change reaches `apps/api` (a module, a controller, DTOs, a kind rule, the seed), `apps/admin`, `apps/web`, and two
+shared packages — `packages/contracts` and `packages/i18n` — so the close ran every dependent's row:
+
+- `pnpm lint`, clean; `pnpm typecheck`, every workspace; `pnpm boundaries`, no violations; `pnpm docs:check`, 48 claims
+  — after it caught five moved counts (the forms binding's import sites, the api's modules twice, its leaf modules, the
+  contract's paths) and FR-205's status line naming *task 48*, which the Covered-FR rule reads as a coverage.
+- `pnpm openapi:check`, with the regenerated contract staged — three new paths, 131.
+- `pnpm --filter @easyesg/api test` — 2,375 tests in 299 suites, one failing: `argon2-binding.spec.ts`, timed at 54 s
+  under the whole run and green alone in 2.7 s. `pnpm e2e` — 1,829 in 75 files. `pnpm e2e:worker` — 16 of 16, the worker
+  booting with `LegalModule` registered empty and the kind rule's new import.
+- `pnpm --filter @easyesg/admin test` — 315 in 40 files; `pnpm routes:check`, the regenerated tree staged.
+- `pnpm --filter @easyesg/web test` — the first whole run failed two specs this change does not reach, S-13's sites and
+  S-16's reminder, each at 70 … 95 s and green alone; the second whole run, 2,007 in 218 files, all green.
+- `pnpm e2e:web --project identity --project expansion --project admin` — 362 passed and six failed, every one an
+  assertion on what this task changed on purpose: the footer's *EasyESG SRL* (four) and the cookie policy's contents,
+  which the summary took from four links to five (two). Corrected, `legal`, `public-header` and `routing` on `identity`:
+  35 of 35. The one `⨯` line carried digest `2667547900`, the abandoned stream `apps/web/CLAUDE.md` describes.
+- The api run's `MessageCatalogue … before initialiseCatalogue()` lines come from the notification and outbox suites'
+  failure arms, which build their services without the catalogue; none is this task's.
+- **Skipped**: none of the table's rows. No review agents: this closes a task, not Stage 3, which still holds task 48.

@@ -287,7 +287,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-205 — The legal documents
 
-**Status.** Partial — delivered 74.1 and 74.2 (the chrome and the archetype it is drawn on), 75.1 (the decisions written) · remaining 75.3 (the set drawn: the cookie policy is, the terms and the privacy notice wait on their text), 75.4 (the text, the owner's or counsel's), 195
+**Status.** Partial — delivered 74.1 and 74.2 (the chrome and the archetype it is drawn on), 75.1 (the decisions written), 75.3 (the set drawn), 75.4 (the text in three locales, drafted in the repository and provisional until counsel approves it — a release-checklist item before the pilot), 75.6 (the operator the documents name, kept on A-21) · remaining 195 (the recorded acceptance, AC-9)
 
 **Obligation.** The system shall publish the terms of service, the privacy notice and the cookie policy as one set, readable without signing in and from the footer of every screen, each with a plain-language summary above its formal text, a version and an effective date, in each of the three locales, so that a person is told what is agreed to and how personal data is handled before any is collected.
 
@@ -295,7 +295,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 |---|---|
 | **Actors** | VI reads. Every authenticated actor reads through the footer. |
 | **Traces** | UC-178 · UC-01, UC-179, UC-177 · NFR-5 · NFR-23 · `design_spec.md` OQ-17, OQ-18, OQ-24 · FR-9 |
-| **Surfaces** | S-30 (Content archetype) · the footer's three legal links · a link from the registration screen (S-01) · S-31 |
+| **Surfaces** | S-30 (Content archetype) · the footer's three legal links · a link from the registration screen (S-01) · S-31 · A-21, where the controller the documents name is kept |
 
 **Behaviour.**
 1. The three documents are one set with one navigation, so a reader at any of them can see the other two (UC-178). The set is three documents: the terms of service, the privacy notice and the cookie policy. A data processing agreement and a sub-processor list are not published, because each would commit the platform to maintaining it (§12.5.6 task-182 public tier row, 182/121).
@@ -306,6 +306,8 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 6. The privacy notice renders the sentence `legal.privacy.phone`: what is kept of a member's phone number, its one purpose and who reads it. It is already written in all three catalogues, and the notice may not ship without it (§12.5.6 task-167 row (2); task 75.3).
 7. The documents are authored separately in Romanian, English and Russian, and never machine-translated (task 75.4 row).
 8. Acceptance of the terms and the notice is **implied, not recorded**, for the pilot: the registration screen states it in its copy and nothing in the identity schema records it. Once the documents carry a version (behaviour 5), registration records the version accepted and a timestamp, and an account created before then is asked to accept again (195; `design_spec.md` OQ-24; §12.5.6 task-182 public tier row, 182/115).
+9. **The controller the terms and the privacy notice name is store data, not text**: the operator's registered name, IDNO, registered address and data-protection contact, kept as the `legal_controller` artefact and edited by a Platform Administrator on A-21. A change is published within seconds, recorded in the system audit log, and does not version the documents. With no readable controller in force, the two documents that name it answer *not yet available* rather than going live without one (§12.5.6 task-75 row (7)).
+10. **A document published before counsel has approved it says it is provisional**, above its summary, until the release that carries the approved text drops the marking (§12.5.6 task-75 row (6)).
 
 **Refusals.** None. The one failure state is *error — system* (`design_spec.md` S-30).
 
@@ -323,12 +325,16 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - **AC-9** Given the documents carry a version, when an account registers, then the version accepted and the time are recorded against it, and an account created before then is asked to accept again. *(source: §12.5.6 task-182 public tier row, 182/115)* Unmet until 75.1 and 195.
 - **AC-10** Given a document, then its version and effective date are the ones the release that carries it supplies. *(source: §12.5.6 task-182 public tier row, 182/116)* Unmet until 75.4, which builds the version with the text (§12.5.6 task-75 row (5)).
 - **AC-11** Given the footer, then it links to exactly three legal documents. *(source: §12.5.6 task-182 public tier row, 182/121)*
+- **AC-12** Given a Platform Administrator saves the controller on A-21, when the terms or the privacy notice is next read, then it names the saved values, and the save is a row in the system audit log. *(source: §12.5.6 task-75 row (7))*
+- **AC-13** Given no readable controller is in force, then the terms and the privacy notice answer *not yet available*, and the cookie policy is unaffected. *(source: §12.5.6 task-75 row (7))*
+- **AC-14** Given a document marked provisional in the release, then it says so above its summary. *(source: §12.5.6 task-75 row (6))*
 
 **History.**
 - 5 Oct 2026 · project owner · written to close G-9 for UC-178, from UC-178 and S-30 · index §9.4 G-9
 - 5 Oct 2026 · project owner · acceptance is implied for the pilot and recorded with the document version once there is one · §12.5.6 task-182 public tier row (182/115)
 - 5 Oct 2026 · project owner · the legal text is committed to the release, which supplies its version and effective date · §12.5.6 task-182 public tier row (182/116)
 - 5 Oct 2026 · project owner · the set is three documents · §12.5.6 task-182 public tier row (182/121)
+- 13 Oct 2026 · project owner · the text is drafted here and published provisional; the controller is store data edited on A-21; the version and effective date are a registry committed with the text · §12.5.6 task-75 row (6) … (9)
 
 ### FR-206 — The cookie choice
 

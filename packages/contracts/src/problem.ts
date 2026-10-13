@@ -83,6 +83,11 @@ export const PROBLEM_TYPE = {
   IdentityProviderChanged: 'https://easyesg.md/problems/identity-provider-changed',
   /** Task 67.10: A-17 published against a revision no longer in force; the console redraws what is. */
   NotificationCategoryChanged: 'https://easyesg.md/problems/notification-category-changed',
+  /** Task 75: A-21 saved the platform operator against a revision no longer in force; the console redraws what is. */
+  LegalControllerChanged: 'https://easyesg.md/problems/legal-controller-changed',
+  /** Task 75: no readable platform operator is in force, so S-30's terms and privacy notice answer *not yet available*
+   *  rather than the error state a failed read draws (§12.5.6's task-75 row (7)). */
+  LegalControllerUnavailable: 'https://easyesg.md/problems/legal-controller-unavailable',
   /** An account still completing its setup reached a route other than its setup routes (task 155). The web tier's proxy
    *  sends an account its session cookie calls in setup to S-36 before any route is asked; a cookie sealed before that
    *  task reads as active and meets this refusal on screen until its next rotation (architecture.md's web cookie row). */

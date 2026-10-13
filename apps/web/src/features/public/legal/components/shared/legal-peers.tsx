@@ -8,7 +8,7 @@ import { LEGAL_DOCUMENT, legalDocumentHref, type LegalDocument } from '../../too
  * documents by name, the one being read marked as current, through the app's own link so the locale prefix holds.
  *
  * **In `shared/` because every document of the set draws it** — the cookie policy since task 75.3, the terms and the
- * privacy notice when their text arrives (75.4).
+ * privacy notice since 75.4, and the frame a failed read keeps.
  */
 export async function LegalPeers({ current }: { readonly current: LegalDocument }) {
   const t = await getTranslations('legal');

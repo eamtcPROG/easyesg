@@ -140,6 +140,12 @@ export const ProblemType = {
   /** Task 67.10: A-17 published a category's behaviour against a revision no longer in force — another operator saved
    *  first. Its own slug for `IdentityProviderChanged`'s reason: the console redraws what is in force. */
   NotificationCategoryChanged: 'notification-category-changed',
+  /** Task 75: A-21 saved the platform operator against a revision no longer in force — another operator saved first.
+   *  Its own slug for `IdentityProviderChanged`'s reason: the console redraws what is in force. */
+  LegalControllerChanged: 'legal-controller-changed',
+  /** Task 75: no readable operator is in force, so the documents naming it are not served (§12.5.6's task-75 row
+   *  (7)). A configuration fault the platform corrects — its way out is to wait, as `seat-allowance-unavailable`'s is. */
+  LegalControllerUnavailable: 'legal-controller-unavailable',
   TenantContextMissing: 'tenant-context-missing',
   /** UC-56 refused: another reporting period for the same entity already covers part of these
    *  dates. Its own slug because S-14 must name the way out — adjust the dates, or edit the period

@@ -64,7 +64,7 @@ traps each one left — grouped by area rather than by the task that built it.
   nothing else, opaque refresh rows rotated by conditional consume with a 30 s race grace and
   reuse-revocation, 7 d idle / 30 d absolute computed at the point of use, OQ-35), password reset,
   §12.5.6's throttle and lockout; the admin realm (`POST /auth/admin/session/challenge` →
-  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3) with its record's people — `GET /admin/organizations/{id}/members` and `POST …/members/{accountId}/phone-disclosure`, one phone at a time, each an `@AuditAction` row naming the person (167), and its entities — `GET /admin/organizations/{id}/entities`, each with its IDNO (175); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4); A-19's own credentials (`GET /admin/credentials`, `POST /admin/credentials/{password,totp/enrolment,totp/confirmation,recovery-codes}`) and the recovery sign-in (`POST /auth/admin/session/recovery`) (144); support access (`GET/POST /admin/support-access`, `POST /admin/organizations/{id}/support-access/{requestId}/end` with its three report reads, `GET /support-access`, `POST /support-access/{requestId}/{grant,decline,end}`) and one register row by id (`GET /admin/organizations/{id}`) (67.9); A-18's identity providers (`GET /admin/identity-providers`, `POST /admin/identity-providers/{provider}/{configuration,enablement,disablement}`) (67.11); A-17's notification categories (`GET /admin/notification-categories`, `POST /admin/notification-categories/{category}/{preview,publication,reversion}`) (67.10);
+  `POST/GET/DELETE /auth/admin/session`, mandatory TOTP over `otpauth`, the `admin:provision` CLI) and A-02's organization register (`GET /admin/organizations`, 67.3) with its record's people — `GET /admin/organizations/{id}/members` and `POST …/members/{accountId}/phone-disclosure`, one phone at a time, each an `@AuditAction` row naming the person (167), and its entities — `GET /admin/organizations/{id}/entities`, each with its IDNO (175); A-08's accounts, invitations and system audit log (`/admin/accounts`, `/admin/invitations`, `GET /admin/audit-log`) and A-20's acceptance (`POST /auth/admin/invitation/{preview,enrolment,acceptance}`), with `AuditInterceptor` (67.4); A-19's own credentials (`GET /admin/credentials`, `POST /admin/credentials/{password,totp/enrolment,totp/confirmation,recovery-codes}`) and the recovery sign-in (`POST /auth/admin/session/recovery`) (144); support access (`GET/POST /admin/support-access`, `POST /admin/organizations/{id}/support-access/{requestId}/end` with its three report reads, `GET /support-access`, `POST /support-access/{requestId}/{grant,decline,end}`) and one register row by id (`GET /admin/organizations/{id}`) (67.9); A-18's identity providers (`GET /admin/identity-providers`, `POST /admin/identity-providers/{provider}/{configuration,enablement,disablement}`) (67.11); A-17's notification categories (`GET /admin/notification-categories`, `POST /admin/notification-categories/{category}/{preview,publication,reversion}`) (67.10); A-21's platform operator (`GET /admin/legal-controller`, `POST /admin/legal-controller/publication`), the `legal_controller` artefact `platform/legal` owns, with its public read `GET /legal/controller` — `@Public()`'s fourth kind (75);
   social sign-in (`POST /auth/social/{provider}/{challenge,session}`, `GET /auth/social/providers`), and the
   setup a provider registration completes (`GET /account/setup`, `POST /account/setup/{password,profile}`,
   `POST /auth/account-setup/password`) (155);
@@ -178,7 +178,7 @@ traps each one left — grouped by area rather than by the task that built it.
   language (`providers/change-words.factory.ts`): a disclosure answer through the export's own `documentWords`, so it
   reads as the document prints it; a closed vocabulary from the shared catalogue's `vocabulary` namespace, which
   `apps/web` reads too; an activity code with the classifier's label (§12.5.6's task-84 row).
-- **Not live**: billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18 and A-19 (67 … 70), edge and deploy
+- **Not live**: billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18, A-19 and A-21 (67 … 70), edge and deploy
   (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
@@ -1011,7 +1011,7 @@ src/
 ├─ app/          cross-cutting only: dto/ filters/ interceptors/ guards/ decorators/ constants/ interfaces/ messages/
 ├─ config/       ConfigService schema. Never process.env in business logic
 ├─ contracts/    the ONLY cross-context surface: ports, events/, types/
-├─ modules/      core/(9) identity/(6) billing/(13) platform/(9) — 37, plus the four context modules: 41 `*.module.ts`
+├─ modules/      core/(9) identity/(6) billing/(13) platform/(10) — 38, plus the four context modules: 42 `*.module.ts`
 └─ infrastructure/  persistence/ outbox/ queue/ adapters/ openapi/ observability/ configuration/ provisioning/
 ```
 

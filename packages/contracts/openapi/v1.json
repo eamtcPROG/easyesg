@@ -6937,7 +6937,8 @@
                 "admin.identity_provider.disabled",
                 "admin.notification_category.published",
                 "admin.notification_category.reverted",
-                "admin.member_phone.disclosed"
+                "admin.member_phone.disclosed",
+                "admin.legal_controller.published"
               ],
               "type": "string"
             }
@@ -7905,6 +7906,120 @@
         ]
       }
     },
+    "/api/v1/admin/legal-controller": {
+      "get": {
+        "description": "FR-205. The registered name, IDNO, registered address and data-protection contact in force, the revision a change is made against, and who published them.",
+        "operationId": "AdminLegalControllerController_read",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The operator in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/LegalControllerRecordResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Read the platform operator the legal documents name",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/admin/legal-controller/publication": {
+      "post": {
+        "description": "FR-205. Publishes a new revision, which the terms of service and the privacy notice state within seconds and with no release. It does not change either document’s version. Recorded in the system audit log.",
+        "operationId": "AdminLegalControllerController_publish",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishLegalControllerRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The configuration revision now in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/LegalControllerPublicationResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A field is blank, the IDNO is not 13 digits or its check digit is wrong, or the contact is not an email address (problem type validation-failed, with the fault as `fault`).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "401": {
+            "description": "No usable operator session (problem type authentication-required), or its lifetimes ran out (problem type session-expired).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "The operator’s role is not platform_administrator (problem type insufficient-role), or the request came from an origin other than the console’s.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "409": {
+            "description": "A newer revision is in force (problem type legal-controller-changed), or the values are those in force (problem type conflict).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Save the platform operator the legal documents name",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
     "/api/v1/session/socket-ticket": {
       "post": {
         "description": "A single-use ticket, valid for thirty seconds, for opening the socket over which the platform hints that a screen’s data changed. It carries no personal data; the socket re-reads this session when it is presented.",
@@ -7942,6 +8057,46 @@
         "summary": "Mint a ticket to open the hint socket",
         "tags": [
           "identity"
+        ]
+      }
+    },
+    "/api/v1/legal/controller": {
+      "get": {
+        "description": "UC-178. The platform operator’s registered name, IDNO, registered address and data-protection contact, as the terms of service and the privacy notice state them. Edited on the console; an edit is served within seconds.",
+        "operationId": "LegalDocumentsController_controller",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The operator in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/LegalControllerResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No readable operator is in force (problem type legal-controller-unavailable).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Read the operator the legal documents name",
+        "tags": [
+          "platform"
         ]
       }
     }
@@ -14066,7 +14221,8 @@
               "admin.identity_provider.disabled",
               "admin.notification_category.published",
               "admin.notification_category.reverted",
-              "admin.member_phone.disclosed"
+              "admin.member_phone.disclosed",
+              "admin.legal_controller.published"
             ],
             "description": "What happened."
           },
@@ -14859,6 +15015,108 @@
           "expectedRevision"
         ]
       },
+      "LegalControllerRecordResponseDto": {
+        "type": "object",
+        "properties": {
+          "registeredName": {
+            "type": "string",
+            "description": "The operator’s name as registered; empty until one is published."
+          },
+          "idno": {
+            "type": "string",
+            "description": "The operator’s IDNO; empty until one is published."
+          },
+          "registeredAddress": {
+            "type": "string",
+            "description": "The operator’s registered address; empty until one is published."
+          },
+          "dataProtectionEmail": {
+            "type": "string",
+            "description": "Where questions about personal data are sent; empty until one is published."
+          },
+          "revision": {
+            "type": "number",
+            "description": "The configuration revision in force, sent back with a change so that a newer one refuses it. 0 before anything was published."
+          },
+          "changedByEmail": {
+            "type": "string",
+            "nullable": true,
+            "format": "email",
+            "description": "The operator who published the values in force. Null for the platform’s starting values."
+          },
+          "changedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unix epoch milliseconds when the values in force were published."
+          }
+        },
+        "required": [
+          "registeredName",
+          "idno",
+          "registeredAddress",
+          "dataProtectionEmail",
+          "revision",
+          "changedByEmail",
+          "changedAt"
+        ]
+      },
+      "LegalControllerPublicationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The configuration version now in force."
+          },
+          "revision": {
+            "type": "number",
+            "description": "Its revision — what the next change is made against."
+          }
+        },
+        "required": [
+          "id",
+          "revision"
+        ]
+      },
+      "PublishLegalControllerRequestDto": {
+        "type": "object",
+        "properties": {
+          "registeredName": {
+            "type": "string",
+            "maxLength": 300,
+            "example": "EasyESG SRL",
+            "description": "The operator’s name as registered."
+          },
+          "idno": {
+            "type": "string",
+            "maxLength": 32,
+            "example": "1099600012345",
+            "description": "The operator’s IDNO — 13 digits, the last a check digit, judged as a reporting entity’s is."
+          },
+          "registeredAddress": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "The operator’s registered address, as registered."
+          },
+          "dataProtectionEmail": {
+            "type": "string",
+            "maxLength": 254,
+            "description": "Where questions about personal data are sent."
+          },
+          "revision": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The revision this change was made against — the one the reading answered. A newer one in force refuses the change (problem type legal-controller-changed)."
+          }
+        },
+        "required": [
+          "registeredName",
+          "idno",
+          "registeredAddress",
+          "dataProtectionEmail",
+          "revision"
+        ]
+      },
       "SocketTicketResponseDto": {
         "type": "object",
         "properties": {
@@ -14874,6 +15132,36 @@
         "required": [
           "ticket",
           "expiresAt"
+        ]
+      },
+      "LegalControllerResponseDto": {
+        "type": "object",
+        "properties": {
+          "registeredName": {
+            "type": "string",
+            "example": "EasyESG SRL",
+            "description": "The operator’s name as registered."
+          },
+          "idno": {
+            "type": "string",
+            "example": "1099600012345",
+            "description": "The operator’s IDNO — 13 digits, the last a check digit."
+          },
+          "registeredAddress": {
+            "type": "string",
+            "description": "The operator’s registered address, as registered."
+          },
+          "dataProtectionEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "Where questions about personal data are sent."
+          }
+        },
+        "required": [
+          "registeredName",
+          "idno",
+          "registeredAddress",
+          "dataProtectionEmail"
         ]
       }
     }

@@ -105,7 +105,8 @@
         "accounts": "Conturi de administrator",
         "supportAccess": "Acces de suport",
         "identityProviders": "Furnizori de identitate",
-        "notificationCategories": "Categorii de notificări"
+        "notificationCategories": "Categorii de notificări",
+        "legalController": "Operatorul platformei"
       },
       "account": "Contul dumneavoastră",
       "signOut": "Ieșiți din consolă",
@@ -506,7 +507,8 @@
           "identityProviderDisabled": "A dezactivat un furnizor de identitate",
           "notificationCategoryPublished": "A publicat setările unei categorii de notificări",
           "notificationCategoryReverted": "A readus setările anterioare ale unei categorii de notificări",
-          "memberPhoneDisclosed": "A văzut numărul de telefon al unei persoane"
+          "memberPhoneDisclosed": "A văzut numărul de telefon al unei persoane",
+          "legalControllerPublished": "A salvat datele operatorului platformei"
         }
       }
     },
@@ -902,6 +904,59 @@
         "changedBody": "Alt administrator a publicat setări pentru {category} după ce ați deschis fișa, așa că modificarea dumneavoastră nu a fost aplicată. Fișa arată acum setările în vigoare; verificați-le și reluați modificarea, dacă este încă nevoie.",
         "refusedTitle": "Setările nu au fost publicate",
         "refusedBody": "Cererea nu a primit un răspuns utilizabil, așa că nu se știe dacă setările au fost publicate. Reîncărcați pagina pentru a vedea setările în vigoare."
+      }
+    },
+    "legalController": {
+      "title": "Operatorul platformei",
+      "lede": "Compania care operează platforma, așa cum o numesc termenii și condițiile și politica de confidențialitate publicate.",
+      "loading": "Se încarcă datele operatorului.",
+      "unavailable": {
+        "title": "Datele operatorului nu pot fi afișate acum",
+        "body": "Consola nu a primit un răspuns, așa că valorile în vigoare nu pot fi afișate. Încercați din nou peste câteva momente.",
+        "action": "Încercați din nou"
+      },
+      "forbidden": {
+        "title": "Datele operatorului sunt gestionate de administratorii platformei",
+        "body": "Rolul dumneavoastră de operator de facturare nu include această pagină, așa că valorile nu sunt afișate. Dacă trebuie schimbat ceva, cereți unui administrator al platformei."
+      },
+      "attribution": {
+        "label": "Ultima modificare",
+        "by": "{email}, {time}",
+        "seeded": "Valorile de pornire ale platformei — niciun administrator nu le-a modificat încă.",
+        "never": "Nu s-a salvat încă niciun operator, așa că termenii și politica de confidențialitate nu sunt publicate."
+      },
+      "form": {
+        "title": "Datele de înregistrare",
+        "summaryTitle": "Datele operatorului nu pot fi salvate încă",
+        "registeredNameLabel": "Denumirea înregistrată",
+        "registeredNameHelp": "Așa cum apare în registrul de stat, cu forma juridică — de exemplu, SRL.",
+        "registeredNameMissing": "Denumirea înregistrată lipsește, așa că documentele nu ar putea numi operatorul. Introduceți denumirea din registrul de stat.",
+        "registeredNameTooLong": "Denumirea are cel mult 300 de caractere, așa că nu poate fi salvată. Verificați valoarea introdusă.",
+        "idnoLabel": "IDNO",
+        "idnoHelp": "Cele 13 cifre din certificatul de înregistrare.",
+        "idnoMissing": "IDNO lipsește, așa că documentele nu ar putea identifica operatorul. Introduceți cele 13 cifre din certificatul de înregistrare.",
+        "idnoMalformed": "Un IDNO are exact 13 cifre, așa că valoarea introdusă nu este un IDNO. Verificați numărul în certificatul de înregistrare.",
+        "idnoCheckDigit": "Ultima cifră a IDNO, cifra de control, nu corespunde celor douăsprezece dinaintea ei, așa că numărul nu este valid. Comparați-l cu certificatul de înregistrare: de obicei o cifră este greșită sau două sunt inversate.",
+        "registeredAddressLabel": "Adresa juridică",
+        "registeredAddressHelp": "Așa cum apare în registrul de stat.",
+        "registeredAddressMissing": "Adresa juridică lipsește, așa că documentele nu ar putea spune unde este înregistrat operatorul. Introduceți adresa din registrul de stat.",
+        "registeredAddressTooLong": "Adresa are cel mult 500 de caractere, așa că nu poate fi salvată. Verificați valoarea introdusă.",
+        "dataProtectionEmailLabel": "Contactul pentru protecția datelor",
+        "dataProtectionEmailHelp": "Adresa de e-mail la care oricine poate scrie despre datele sale personale.",
+        "dataProtectionEmailMissing": "Contactul pentru protecția datelor lipsește, așa că nimeni nu ar ști unde să scrie despre datele sale. Introduceți o adresă de e-mail.",
+        "dataProtectionEmailMalformed": "Contactul nu are forma unei adrese de e-mail, așa că întrebările nu ar ajunge nicăieri. Verificați adresa și corectați-o.",
+        "dataProtectionEmailTooLong": "Adresa are cel mult 254 de caractere, așa că nu poate fi salvată. Verificați valoarea introdusă.",
+        "effect": "Termenii și condițiile și politica de confidențialitate afișează valorile salvate în câteva secunde. Versiunea documentelor nu se schimbă, iar salvarea apare în jurnalul de audit.",
+        "save": "Salvați datele",
+        "reset": "Renunțați la modificări"
+      },
+      "notice": {
+        "doneTitle": "Datele operatorului au fost salvate",
+        "doneBody": "Termenii și condițiile și politica de confidențialitate le afișează în câteva secunde.",
+        "changedTitle": "Alt administrator a salvat între timp",
+        "changedBody": "Formularul arată acum valorile în vigoare, iar modificarea dumneavoastră nu a fost aplicată. Verificați-le și salvați din nou, dacă este încă nevoie.",
+        "refusedTitle": "Datele operatorului nu au fost salvate",
+        "refusedBody": "Consola nu a primit un răspuns, așa că nu se știe dacă modificarea a fost aplicată. Reîncărcați pagina și verificați valorile în vigoare."
       }
     }
   }

@@ -16,6 +16,7 @@ import { Route as FocusSignInRouteImport } from './routes/_focus/sign-in';
 import { Route as RealmAccountsRouteImport } from './routes/_realm/accounts';
 import { Route as RealmCredentialsRouteImport } from './routes/_realm/credentials';
 import { Route as RealmIdentityProvidersRouteImport } from './routes/_realm/identity-providers';
+import { Route as RealmLegalControllerRouteImport } from './routes/_realm/legal-controller';
 import { Route as RealmMetricsRouteImport } from './routes/_realm/metrics';
 import { Route as RealmNotificationTemplatesRouteImport } from './routes/_realm/notification-templates';
 import { Route as RealmOrganizationsRouteImport } from './routes/_realm/organizations';
@@ -67,6 +68,11 @@ const RealmCredentialsRoute = RealmCredentialsRouteImport.update({
 const RealmIdentityProvidersRoute = RealmIdentityProvidersRouteImport.update({
   id: '/identity-providers',
   path: '/identity-providers',
+  getParentRoute: () => RealmRoute,
+} as any);
+const RealmLegalControllerRoute = RealmLegalControllerRouteImport.update({
+  id: '/legal-controller',
+  path: '/legal-controller',
   getParentRoute: () => RealmRoute,
 } as any);
 const RealmMetricsRoute = RealmMetricsRouteImport.update({
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/accounts': typeof RealmAccountsRoute;
   '/credentials': typeof RealmCredentialsRoute;
   '/identity-providers': typeof RealmIdentityProvidersRoute;
+  '/legal-controller': typeof RealmLegalControllerRoute;
   '/metrics': typeof RealmMetricsRoute;
   '/notification-templates': typeof RealmNotificationTemplatesRoute;
   '/organizations': typeof RealmOrganizationsRoute;
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/accounts': typeof RealmAccountsRoute;
   '/credentials': typeof RealmCredentialsRoute;
   '/identity-providers': typeof RealmIdentityProvidersRoute;
+  '/legal-controller': typeof RealmLegalControllerRoute;
   '/metrics': typeof RealmMetricsRoute;
   '/notification-templates': typeof RealmNotificationTemplatesRoute;
   '/organizations': typeof RealmOrganizationsRoute;
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/_realm/accounts': typeof RealmAccountsRoute;
   '/_realm/credentials': typeof RealmCredentialsRoute;
   '/_realm/identity-providers': typeof RealmIdentityProvidersRoute;
+  '/_realm/legal-controller': typeof RealmLegalControllerRoute;
   '/_realm/metrics': typeof RealmMetricsRoute;
   '/_realm/notification-templates': typeof RealmNotificationTemplatesRoute;
   '/_realm/organizations': typeof RealmOrganizationsRoute;
@@ -256,6 +265,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/credentials'
     | '/identity-providers'
+    | '/legal-controller'
     | '/metrics'
     | '/notification-templates'
     | '/organizations'
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/credentials'
     | '/identity-providers'
+    | '/legal-controller'
     | '/metrics'
     | '/notification-templates'
     | '/organizations'
@@ -310,6 +321,7 @@ export interface FileRouteTypes {
     | '/_realm/accounts'
     | '/_realm/credentials'
     | '/_realm/identity-providers'
+    | '/_realm/legal-controller'
     | '/_realm/metrics'
     | '/_realm/notification-templates'
     | '/_realm/organizations'
@@ -386,6 +398,13 @@ declare module '@tanstack/react-router' {
       path: '/identity-providers';
       fullPath: '/identity-providers';
       preLoaderRoute: typeof RealmIdentityProvidersRouteImport;
+      parentRoute: typeof RealmRoute;
+    };
+    '/_realm/legal-controller': {
+      id: '/_realm/legal-controller';
+      path: '/legal-controller';
+      fullPath: '/legal-controller';
+      preLoaderRoute: typeof RealmLegalControllerRouteImport;
       parentRoute: typeof RealmRoute;
     };
     '/_realm/metrics': {
@@ -540,6 +559,7 @@ interface RealmRouteChildren {
   RealmAccountsRoute: typeof RealmAccountsRoute;
   RealmCredentialsRoute: typeof RealmCredentialsRoute;
   RealmIdentityProvidersRoute: typeof RealmIdentityProvidersRoute;
+  RealmLegalControllerRoute: typeof RealmLegalControllerRoute;
   RealmMetricsRoute: typeof RealmMetricsRoute;
   RealmNotificationTemplatesRoute: typeof RealmNotificationTemplatesRoute;
   RealmOrganizationsRoute: typeof RealmOrganizationsRoute;
@@ -564,6 +584,7 @@ const RealmRouteChildren: RealmRouteChildren = {
   RealmAccountsRoute: RealmAccountsRoute,
   RealmCredentialsRoute: RealmCredentialsRoute,
   RealmIdentityProvidersRoute: RealmIdentityProvidersRoute,
+  RealmLegalControllerRoute: RealmLegalControllerRoute,
   RealmMetricsRoute: RealmMetricsRoute,
   RealmNotificationTemplatesRoute: RealmNotificationTemplatesRoute,
   RealmOrganizationsRoute: RealmOrganizationsRoute,

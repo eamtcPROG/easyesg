@@ -141,6 +141,8 @@ export type SocialChallengeResponse = components['schemas']['SocialChallengeResp
 export type CompleteSocialSignInRequest =
   components['schemas']['CompleteSocialSignInRequestDto'];
 export type SocialProvidersResponse = components['schemas']['SocialProvidersResponseDto'];
+/** The operator the legal documents name, as the public read answers it (FR-205; task 75). */
+export type LegalControllerResponse = components['schemas']['LegalControllerResponseDto'];
 
 // core — the organization (FR-13 … FR-16; task 29). `Organization` is the whole profile; S-04
 // creates it with four of those fields and S-15 fills in the rest, so the create request is its
@@ -448,6 +450,14 @@ export type ConfigureIdentityProviderRequest = components['schemas']['ConfigureI
 export type IdentityProviderRevisionRequest = components['schemas']['IdentityProviderRevisionRequestDto'];
 /** The configuration revision a write just put in force. */
 export type IdentityProviderPublication = components['schemas']['IdentityProviderPublicationResponseDto'];
+
+// platform — A-21's platform operator, the controller the legal documents name, and its one save, which publishes a new
+// revision (FR-205; task 75).
+/** The operator as A-21 shows it — the four facts in force, the revision a change is made against, who changed them. */
+export type LegalControllerRecord = components['schemas']['LegalControllerRecordResponseDto'];
+export type PublishLegalControllerRequest = components['schemas']['PublishLegalControllerRequestDto'];
+/** The configuration revision a save just put in force. */
+export type LegalControllerPublication = components['schemas']['LegalControllerPublicationResponseDto'];
 
 // platform — A-17's notification categories: each category's behaviour in force, its switch-offs and its wording, the
 // preview that discloses what a change does for recipients, and the two writes that each publish a revision (FR-173,

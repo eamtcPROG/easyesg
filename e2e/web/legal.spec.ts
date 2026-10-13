@@ -1,15 +1,18 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { STACK_API_BASE } from '../stack';
 import { cleanupAccounts, cleanupOrganizations, grantMembership, verificationTokenFor } from './support/db';
 
 /**
- * S-30's legal set and the cookie policy's disclosure (FR-205, FR-206; task 75.3 and 75.5) in a real browser.
+ * S-30's legal set and the cookie policy's disclosure (FR-205, FR-206; tasks 75.3 … 75.6) in a real browser.
  *
  * **What only a browser can say is that the policy is true of what the browser was given.** The inventory's own spec
  * holds the policy to the source; here a real sign-in collects the cookies the site actually set and each must be on
  * the page — the claim UC-179 makes, read from the far end.
  *
- * The terms and the privacy notice wait for their text (task 75.4), so they still answer *not yet available*.
+ * **The terms and the privacy notice name the platform operator A-21 keeps** (task 75): the operator expected here is the
+ * one the api's public read answers, so the case holds whatever an operator has saved — that a save reaches the page is
+ * `e2e/admin/legal-controller.spec.ts`'s journey.
  */
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 const RUN_PREFIX = `e2e-web-legal-${process.pid}-${Date.now()}`;
@@ -94,15 +97,64 @@ test('reading the policy stores nothing and raises nothing over the page', async
   expect((await context.cookies()).map((cookie) => cookie.name).filter((name) => !COOKIES.includes(name))).toEqual([]);
 });
 
-test('the terms and the privacy notice wait for their text, and a document outside the set does not exist', async ({
+/** The operator the documents must name — the api's own answer, read as a visitor with no session reads it. */
+async function operatorInForce(page: Page): Promise<Record<string, string>> {
+  const response = await page.request.get(`${STACK_API_BASE}/legal/controller`);
+  expect(response.ok()).toBe(true);
+  return ((await response.json()) as { object: Record<string, string> }).object;
+}
+
+test('the terms and the privacy notice name the operator in force, state their standing, and say they are provisional', async ({
   page,
 }) => {
-  for (const document of ['terms', 'privacy']) {
+  const operator = await operatorInForce(page);
+
+  for (const [document, title] of [
+    ['terms', 'Termeni și condiții'],
+    ['privacy', 'Politica de confidențialitate'],
+  ] as const) {
     await page.goto(`/legal/${document}`);
-    await expect(page.getByRole('heading', { level: 1, name: 'Această parte nu este încă disponibilă' })).toBeVisible();
+    const main = page.getByRole('main');
+    await expect(main.getByRole('heading', { level: 1, name: title })).toBeVisible();
+
+    // FR-205 AC-4, AC-10: the release's version and effective date; AC-14: provisional, above the summary.
+    await expect(main.getByText('Versiunea 1.0', { exact: true })).toBeVisible();
+    await expect(main.getByText('În vigoare din 13 octombrie 2026', { exact: true })).toBeVisible();
+    await expect(main.getByText('Versiune provizorie', { exact: true })).toBeVisible();
+    await expect(main.getByRole('heading', { level: 2, name: 'Pe scurt' })).toBeVisible();
+
+    // AC-12: the four facts A-21 keeps, the contact a link that writes to it.
+    const facts = main.getByRole('definition');
+    await expect(facts.filter({ hasText: operator.registeredName })).toHaveCount(1);
+    await expect(facts.filter({ hasText: operator.idno })).toHaveCount(1);
+    await expect(facts.filter({ hasText: operator.registeredAddress })).toHaveCount(1);
+    await expect(main.getByRole('link', { name: operator.dataProtectionEmail, exact: true })).toHaveAttribute(
+      'href',
+      `mailto:${operator.dataProtectionEmail}`,
+    );
+
+    // AC-3: the other two documents of the set are one step away.
+    await expect(page.getByRole('navigation', { name: 'Setul de documente legale' }).getByRole('link')).toHaveCount(3);
   }
+
+  // FR-205 behaviour 6: the privacy notice states what is kept of a phone, its one purpose and who reads it.
+  await expect(page.getByText(/Numărul de telefon, dacă îl adăugați în profil/u)).toBeVisible();
+});
+
+test('a document outside the set does not exist', async ({ page }) => {
   const outside = await page.goto('/legal/sub-processors');
   expect(outside?.status()).toBe(404);
+});
+
+test('registration links the terms and the notice, and says continuing accepts them', async ({ page }) => {
+  await page.goto('/register');
+  const sentence = page.getByText(/Creând un cont, acceptați/u);
+  await expect(sentence).toBeVisible();
+  await expect(sentence.getByRole('link', { name: 'Termenii și condițiile' })).toHaveAttribute('href', '/legal/terms');
+  await expect(sentence.getByRole('link', { name: 'Politica de confidențialitate' })).toHaveAttribute(
+    'href',
+    '/legal/privacy',
+  );
 });
 
 test('the policy is live in all three locales', async ({ page }) => {
@@ -117,6 +169,16 @@ test('the policy is live in all three locales', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Политика cookie' })).toBeVisible();
 });
 
+test('the terms and the privacy notice are live in all three locales', async ({ page }) => {
+  await page.goto('/en/legal/terms');
+  await expect(page.getByRole('heading', { level: 1, name: 'Terms of service' })).toBeVisible();
+  await expect(page.getByText('Provisional version', { exact: true })).toBeVisible();
+
+  await page.goto('/ru/legal/privacy');
+  await expect(page.getByRole('heading', { level: 1, name: 'Политика конфиденциальности' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Коротко' })).toBeVisible();
+});
+
 /** `design_spec.md` §4.6, resolved 9 Oct 2026: docked contents at `wide`, a closed disclosure and a scrolled strip below. */
 test.describe('the Content archetype at its frames', () => {
   test('docks the contents beside the text at wide', async ({ page }) => {
@@ -125,7 +187,8 @@ test.describe('the Content archetype at its frames', () => {
     const docked = page.getByRole('navigation', { name: 'Pe această pagină' });
     // Exactly one is exposed: the disclosure's copy is not displayed at this width.
     await expect(docked).toHaveCount(1);
-    await expect(docked.getByRole('link')).toHaveCount(4);
+    // The summary and the four sections (task 75.4 put the summary above the formal text).
+    await expect(docked.getByRole('link')).toHaveCount(5);
     await expect(page.locator('summary', { hasText: 'Pe această pagină' })).toBeHidden();
   });
 
@@ -139,7 +202,7 @@ test.describe('the Content archetype at its frames', () => {
     await expect(summary).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Pe această pagină' })).toHaveCount(0);
     await summary.click();
-    await expect(page.getByRole('navigation', { name: 'Pe această pagină' }).getByRole('link')).toHaveCount(4);
+    await expect(page.getByRole('navigation', { name: 'Pe această pagină' }).getByRole('link')).toHaveCount(5);
 
     // The last of the three is the one being read; the strip shows it whole. Read inside the strip: the footer carries a
     // link of the same name.

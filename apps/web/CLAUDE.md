@@ -12,7 +12,8 @@ every screen. Cite them; do not re-derive them.
 
 Identity, organization, periods, reports, entities, the wizard with its validation, the calculator, the notification centre and
 the profile are live, and preview and export since tasks 43 and 47, and S-12's change history since task 84; checkout and billing and the public tier are the
-fourteen addresses `AddressNotice` answers for (fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across seven route groups,
+thirteen addresses `AddressNotice` answers for (fourteen until task 75 gave the terms and the privacy notice their
+text, fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across seven route groups,
 8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 17 feature folders (14 built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
@@ -37,11 +38,13 @@ non-modal panel at the window's end, every entry worded by the api, opened from 
 and S-15's attribution line for an editor or the administrator (`features/history/`'s `HistoryScope` decides) — S-27 profile,
 languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
 layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
-complete your account, S-37 choose organization, S-38 unsubscribe from an email; §4.2's global tier with, since task
+complete your account, S-37 choose organization, S-38 unsubscribe from an email; S-30 the legal set since task 75 — the cookie policy, and the terms and the
+privacy notice naming the platform operator A-21 keeps, each with its standing and, until counsel approves it, marked
+provisional; §4.2's global tier with, since task
 83.2, the organization switcher, and the workspace tier with its drawer, and since task 67.9 UX-124's support-access
 banner across every signed-in screen, and since task 50.2.1 the band's notification bell with the unread count, polled
 every minute, and its row in the compact drawer, the bell opening the panel of the latest notices since 50.2.2. **Not
-live** beyond those fourteen addresses: nothing — S-11, the last wizard screen that returned `null`, is built since
+live** beyond those thirteen addresses: nothing — S-11, the last wizard screen that returned `null`, is built since
 task 47.
 
 `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must. What follows is what a reader needs in hand for each live slice, grouped by
@@ -360,7 +363,7 @@ phone's width the count was only in the drawer. Five things to know before touch
   Radix unmounts on close — so every opening starts on *Unread*, as the artboards draw it.
 
 **Every address answers something (task 103).** `shared/address-notice.tsx` is the anatomy under §8.1's two
-address states, `not-yet-available.tsx` and `address-not-found.tsx` — `error — not yet available` for the fourteen routes whose screens have not
+address states, `not-yet-available.tsx` and `address-not-found.tsx` — `error — not yet available` for the thirteen routes whose screens have not
 shipped, and `error — not found` for an address that does not exist. `design_spec.md` §4.5
 records them as **patterns, not screens**: UX-7 governs destinations serving a use case, and
 these are the answer when none applies, so §4.4's count stays at 52 and neither gained an

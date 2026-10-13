@@ -12,6 +12,8 @@ import {
 import { digitalTemplateRefusal } from '@api/modules/platform/taxonomy/domain/digital-template-entry';
 import { digitalTemplateMapRefusal } from '@api/modules/platform/taxonomy/domain/digital-template-map-refusal';
 import { committedTemplate, efragDirectory } from '@api/modules/platform/taxonomy/services/committed-template';
+import { LEGAL_CONTROLLER_CONFIG_KIND } from '@api/modules/platform/legal/constants/legal-controller.constants';
+import { legalControllerRefusal } from '@api/modules/platform/legal/domain/legal-controller';
 
 /**
  * What a publication asks of a kind beyond writing it (tasks 37.3, 37.4; `architecture.md` §12.5.6's task-37.3/37.4
@@ -51,6 +53,10 @@ const RULES: Readonly<Record<string, ConfigurationKindRule>> = {
     refusal: (payload) =>
       digitalTemplateMapRefusal({ payload, binaryOf: (map) => committedTemplate({ directory: efragDirectory(), ...map }) }),
   },
+  // A controller the legal documents could not name whole — a blank field, an IDNO whose check digit is wrong, an
+  // address that is not one — is refused before it is written, the seed included, rather than found by the terms of
+  // service answering *not yet available* (task 75).
+  [LEGAL_CONTROLLER_CONFIG_KIND]: { refusal: legalControllerRefusal },
 };
 
 /** The kind's rule, or none: most kinds are written as they come and announce nothing. */

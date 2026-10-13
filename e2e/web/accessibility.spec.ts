@@ -40,6 +40,11 @@ const SCREENS = [
   '/legal/cookies',
   '/en/legal/cookies',
   '/ru/legal/cookies',
+  // The terms and the privacy notice since task 75.4, with the operator's facts and the provisional notice.
+  '/legal/terms',
+  '/legal/privacy',
+  '/en/legal/privacy',
+  '/ru/legal/terms',
 ];
 
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
