@@ -3,6 +3,7 @@ import { ReportNotFoundError, UnknownDerivationInputError } from '../errors/repo
 import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
 import { OPERAND_SOURCE } from '../models/derivation.model';
+import type { RefusedInput } from '../models/refused-write.model';
 import type {
   DerivationRecalculator,
   Derivations,
@@ -45,7 +46,7 @@ export class WriteDerivationInputs {
     private readonly calculator: DerivationRecalculator,
   ) {}
 
-  async write(command: WriteDerivationInputsCommand): Promise<void> {
+  async write(command: WriteDerivationInputsCommand): Promise<{ readonly refused: RefusedInput[] }> {
     const report = await this.reports.findReport({ reportId: command.reportId });
     // RLS makes "not yours" and "not there" one answer (task 31.3).
     if (report === null) throw new ReportNotFoundError();
@@ -60,12 +61,14 @@ export class WriteDerivationInputs {
           .map((operand) => operand.key),
       ),
     );
-    // Refused before any write, so a batch is all-or-nothing about what it names.
-    if (command.inputs.some((input) => !registered.has(input.inputKey))) {
-      throw new UnknownDerivationInputError();
-    }
+    // **Each input judged on its own, and what is admitted stored** (task 218; §12.5.6's task-218 row (1), (4)) — the
+    // reason `WriteDisclosureValues` states: one input refused for good must not hold the rest of the queue back.
+    const refused: RefusedInput[] = command.inputs
+      .filter((input) => !registered.has(input.inputKey))
+      .map((input) => ({ inputKey: input.inputKey, refusal: new UnknownDerivationInputError() }));
+    const admitted = command.inputs.filter((input) => registered.has(input.inputKey));
 
-    for (const input of command.inputs) {
+    for (const input of admitted) {
       if (input.valueNumeric === null) {
         await this.inputs.remove({ reportId: command.reportId, inputKey: input.inputKey });
         continue;
@@ -80,10 +83,13 @@ export class WriteDerivationInputs {
     // After the batch rather than per input, for the reason `WriteDisclosureValues` states: B8's
     // three turnover inputs can arrive in one request, and recomputing between them would write a
     // rate from a half-applied batch.
-    await this.calculator.recompute({
-      reportId: command.reportId,
-      standard: TAXONOMY_STANDARD.VSME,
-      touched: new Set(command.inputs.map((input) => input.inputKey)),
-    });
+    if (admitted.length > 0) {
+      await this.calculator.recompute({
+        reportId: command.reportId,
+        standard: TAXONOMY_STANDARD.VSME,
+        touched: new Set(admitted.map((input) => input.inputKey)),
+      });
+    }
+    return { refused };
   }
 }

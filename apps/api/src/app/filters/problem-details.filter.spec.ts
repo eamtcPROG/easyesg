@@ -2,6 +2,7 @@ import { ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { runInRequestContext } from '@api/infrastructure/persistence/request-context';
 import { DomainError } from './domain.error';
+import { ItemsRefusedError } from './items-refused.error';
 import { ProblemDetailsFilter } from './problem-details.filter';
 import { ProblemType, ProblemTypeSlug, PROBLEM_BASE_URI } from './problem-types';
 
@@ -117,6 +118,22 @@ describe('ProblemDetailsFilter', () => {
 
   it('preserves domain extension members', async () => {
     expect((await capture(new QuotaExceededError())).limit).toBe(3);
+  });
+
+  it('answers a request whose every item was refused as its first refusal, listing them all (task 218)', async () => {
+    const first = new QuotaExceededError();
+    const refused = [{ elementKey: 'A' }, { elementKey: 'B' }];
+    const body = await capture(new ItemsRefusedError({ first, refused }));
+    const alone = await capture(first);
+    // The first refusal's own status, type and wording — so a one-item refusal reads as it did before.
+    expect({ type: body.type, status: body.status, title: body.title, detail: body.detail }).toEqual({
+      type: alone.type,
+      status: alone.status,
+      title: alone.title,
+      detail: alone.detail,
+    });
+    // And the list, whose presence says the refusal is the items' rather than the report's.
+    expect(body.refused).toEqual(refused);
   });
 
   it.each(['ro', 'en', 'ru'] as const)('produces a valid document in %s', async (locale) => {

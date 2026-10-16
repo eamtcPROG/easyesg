@@ -417,6 +417,13 @@ Five things to know before touching it:
   rail and re-authentication — so the bar's indicator, the exit's warning and the organization switch all count its
   lines. **The durable store now recognises each shape it reads back** (`storedQueue`): it read `elementKey` alone, so a
   queue holding a derivation input was emptied on reload from task 36.10 until then.
+- **A write the api refuses for its own sake is set aside, never sent again** (task 218; §12.5.6's task-218 row). The api
+  stores what it admits and names each refusal — in `{ stored, refused }`, or as a problem's `refused` extension where
+  nothing was stored — and `client/autosave/refused-items.ts` reads them, validated. The reducer moves each into
+  `setAside`, kept in IndexedDB beside the queue under `<scope>/set-aside`, which a change to that field or *Discard my
+  change* (`SetAsideBanner`) empties. **A problem without `refused` is about the report** and holds the queue as before.
+  `saveStateOf` reads *failed* while anything is set aside, so the indicator never says *saved* over a refused answer,
+  and a set-aside write is not *unsynced*: it is not on its way, it survives a reload, and leaving abandons nothing.
 - **Every field's help is the api's** (tasks 91.1, 94): EFRAG's documentation label where it publishes
   one, the platform's own sentence for every other element, with `helpStanding` beside it — so
   `StepField` passes `field.help` and adds nothing of its own. UX-30's statement on the
@@ -1022,7 +1029,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **231 files here are Client Components** (12 Oct 2026: eleven more since task 84 — S-12's provider, panel, entries' section, list, entry, three states and the way in under `features/history/components/`, the entries' paged query in `client/history/`, and S-13's *Change history* side panel; the scope that mounts the provider is a Server Component; three more since task 192 — the report's deletion in `shared/`,
+  **233 files here are Client Components** (16 Oct 2026: two more since task 218 — the set-aside banner and its row under `features/wizard/components/banner/`, beside the unsynced banner `autosave-banner.tsx` became when it gained a sibling; 12 Oct 2026: eleven more since task 84 — S-12's provider, panel, entries' section, list, entry, three states and the way in under `features/history/components/`, the entries' paged query in `client/history/`, and S-13's *Change history* side panel; the scope that mounts the provider is a Server Component; three more since task 192 — the report's deletion in `shared/`,
   which S-06's rows and S-07's bar both read, S-06's row ⋯ and S-07's ⋯ from `medium` up; nine more since task 47 built S-11 — the dialogue, its pending
   card, the history, its columns, its filters and the status cell that watches a row still being made, the filed mark
   and the panel that makes one, and the export's watch in `client/exports/` — and one fewer, the bar's action drawn ahead

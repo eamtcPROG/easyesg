@@ -4,6 +4,7 @@ import type { Locale } from '@easyesg/i18n';
 import { requestLocale } from '@api/infrastructure/persistence/request-context';
 import { translate } from '../messages/catalogue';
 import { DomainError } from './domain.error';
+import { refusalWords } from './refusal-words';
 import { ProblemDetails, ProblemType, ProblemTypeSlug, problemTypeUri } from './problem-types';
 
 /**
@@ -72,10 +73,8 @@ export class ProblemDetailsFilter implements ExceptionFilter {
 
     if (exception instanceof DomainError) {
       return {
-        type: problemTypeUri(exception.problemType),
-        title: this.title(exception.problemType, locale),
+        ...refusalWords({ refusal: exception, locale }),
         status: exception.status,
-        detail: translate(locale, exception.messageKey, exception.params),
         instance,
         correlationId,
         ...exception.extensions,

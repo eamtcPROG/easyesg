@@ -3517,21 +3517,18 @@
         },
         "responses": {
           "200": {
-            "description": "What was durably committed — UX-36 acknowledges the commit, not local state.",
+            "description": "What was durably committed — UX-36 acknowledges the commit, not local state — and each value refused for its own sake, the rest having been stored (task 218).",
             "content": {
               "application/json": {
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "#/components/schemas/ResultListDto"
+                      "$ref": "#/components/schemas/ResultObjectDto"
                     },
                     {
                       "properties": {
-                        "objects": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/DisclosureValueResponseDto"
-                          }
+                        "object": {
+                          "$ref": "#/components/schemas/WriteDisclosureValuesResponseDto"
                         }
                       }
                     }
@@ -3541,13 +3538,13 @@
             }
           },
           "400": {
-            "description": "A field the pinned version does not name; a value marked not available with no reason (or a blank one), or a reason on any other state; a unit outside the element’s admitted list, where the standard states one."
+            "description": "Nothing was stored, every value being refused, as the first is — a field the pinned version does not name; a member its axes do not admit; a derived figure; a value marked not available with no reason (or a blank one), or a reason on any other state; a unit outside the element’s admitted list. The document lists each in `refused`."
           },
           "404": {
             "description": "No such report in the active organization."
           },
           "409": {
-            "description": "The reporting period is locked (FR-22)."
+            "description": "The reporting period is locked (FR-22), with no `refused` — or, listing them in `refused`, every value reached a figure the calculator computed, whose replacement is the override route."
           }
         },
         "summary": "Persist one or more field values (autosave)",
@@ -3582,11 +3579,29 @@
           }
         },
         "responses": {
-          "204": {
-            "description": "Stored, and the figures they feed recomputed."
+          "200": {
+            "description": "Stored, and the figures they feed recomputed — with each input refused for its own sake, the rest having been stored (task 218).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/WriteDerivationInputsResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           },
           "400": {
-            "description": "An input no registered derivation reads."
+            "description": "Nothing was stored: every input is one no registered derivation reads. The document lists each in `refused`."
           },
           "404": {
             "description": "No such report in the active organization."
@@ -11845,6 +11860,88 @@
           "updatedAt"
         ]
       },
+      "RefusedValueDto": {
+        "type": "object",
+        "properties": {
+          "elementKey": {
+            "type": "string",
+            "example": "EnergyConsumptionFromElectricity"
+          },
+          "dimensionKey": {
+            "type": "string",
+            "example": "RenewableEnergyMember",
+            "description": "Empty where the field has no dimension."
+          },
+          "ordinal": {
+            "type": "number",
+            "minimum": 0
+          },
+          "modules": {
+            "example": [
+              "B3"
+            ],
+            "description": "The modules presenting the field, to lead to it.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "The field's name in the reader's language."
+          },
+          "memberLabel": {
+            "type": "string",
+            "nullable": true,
+            "description": "The member's name — the breakdown row or the choice."
+          },
+          "type": {
+            "type": "string",
+            "description": "The refusal’s problem type, as a problem document names it."
+          },
+          "title": {
+            "type": "string",
+            "description": "The refusal’s title. Omitted where none is worded."
+          },
+          "detail": {
+            "type": "string",
+            "description": "What happened, so what, and what now (NFR-79)."
+          }
+        },
+        "required": [
+          "elementKey",
+          "dimensionKey",
+          "ordinal",
+          "modules",
+          "label",
+          "memberLabel",
+          "type"
+        ]
+      },
+      "WriteDisclosureValuesResponseDto": {
+        "type": "object",
+        "properties": {
+          "stored": {
+            "description": "What was durably committed — UX-36 acknowledges the commit, not local state.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DisclosureValueResponseDto"
+            }
+          },
+          "refused": {
+            "description": "Each value refused for its own sake; the rest were stored.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RefusedValueDto"
+            }
+          }
+        },
+        "required": [
+          "stored",
+          "refused"
+        ]
+      },
       "DisclosureValueWriteDto": {
         "type": "object",
         "properties": {
@@ -11913,6 +12010,46 @@
         },
         "required": [
           "values"
+        ]
+      },
+      "RefusedInputDto": {
+        "type": "object",
+        "properties": {
+          "inputKey": {
+            "type": "string",
+            "example": "AnnualHoursWorkedPerEmployee"
+          },
+          "type": {
+            "type": "string",
+            "description": "The refusal’s problem type, as a problem document names it."
+          },
+          "title": {
+            "type": "string",
+            "description": "The refusal’s title. Omitted where none is worded."
+          },
+          "detail": {
+            "type": "string",
+            "description": "What happened, so what, and what now (NFR-79)."
+          }
+        },
+        "required": [
+          "inputKey",
+          "type"
+        ]
+      },
+      "WriteDerivationInputsResponseDto": {
+        "type": "object",
+        "properties": {
+          "refused": {
+            "description": "Each input refused for its own sake; the rest were stored.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RefusedInputDto"
+            }
+          }
+        },
+        "required": [
+          "refused"
         ]
       },
       "DerivationInputWriteDto": {

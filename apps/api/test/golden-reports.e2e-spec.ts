@@ -177,7 +177,7 @@ describe.each(corpus)('the golden report $name (task 46.4)', ({ name, report, ex
     reportId = objectOf<{ id: string }>(created.body).id;
 
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({ values: report.values }).expect(200);
-    await http().put(`/api/v1/reports/${reportId}/derivation-inputs`).set(editor.authorization).send({ values: report.derivationInputs }).expect(204);
+    await http().put(`/api/v1/reports/${reportId}/derivation-inputs`).set(editor.authorization).send({ values: report.derivationInputs }).expect(200);
     for (const source of report.calculator.sources) {
       await http().put(`/api/v1/reports/${reportId}/calculator/sources/${randomUUID()}`).set(editor.authorization).send(source).expect(200);
     }

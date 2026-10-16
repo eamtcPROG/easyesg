@@ -85,6 +85,7 @@ describe('autosaveReducer (UC-35)', () => {
 
     const acknowledged = autosaveReducer(corrected, {
       type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      refused: [],
       committed: [committed('NumberOfEmployees', '42')],
       lines: [],
     });
@@ -103,6 +104,7 @@ describe('autosaveReducer (UC-35)', () => {
     );
     const settled = autosaveReducer(started(dirty), {
       type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      refused: [],
       committed: [committed('A', '1'), committed('B', '2')],
       lines: [],
     });
@@ -159,6 +161,7 @@ describe('autosaveReducer (UC-35)', () => {
     const edited = changed(online(), write('A', 'newer'));
     const restored = autosaveReducer(edited, {
       type: AUTOSAVE_EVENT.RESTORED,
+      setAside: [],
       writes: [write('A', 'older'), write('B', 'queued')],
     });
 
@@ -332,6 +335,7 @@ describe('calculator lines', () => {
     };
     const settled = autosaveReducer(started(changed(online(), gas('520'))), {
       type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      refused: [],
       committed: [],
       lines: [{ lineId: 'line-1', stored }],
     });
@@ -340,6 +344,7 @@ describe('calculator lines', () => {
 
     const gone = autosaveReducer(started(changed(settled, { lineId: 'line-1', removed: true })), {
       type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      refused: [],
       committed: [],
       lines: [{ lineId: 'line-1', stored: null }],
     });
@@ -359,9 +364,93 @@ describe('calculator lines', () => {
     const before = online();
     const settled = autosaveReducer(started(changed(before, write('A', '1'))), {
       type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      refused: [],
       committed: [committed('A', '1')],
       lines: [],
     });
     expect(settled.committedLines).toBe(before.committedLines);
+  });
+});
+
+/**
+ * Task 218: a write the api refused for its own sake is set aside, and holds nothing else back — §12.5.6's task-218
+ * row (2), (3). Each transition is one a browser journey can reach only by planting a refusal.
+ */
+describe('a write set aside (task 218)', () => {
+  const refusal = { detail: 'The category is not admitted.', label: 'Emissions to air', memberLabel: null, modules: ['B4'] };
+
+  /** A flush of A and B, the api storing A and refusing B. */
+  const oneRefused = () => {
+    const out = started(changed(changed(online(), write('A', '1')), write('B', '2')));
+    return autosaveReducer(out, {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      committed: [committed('A', '1')],
+      lines: [],
+      refused: [{ key: writeKey(write('B', '2')), refusal }],
+    });
+  };
+
+  it('stores the rest, sets the refused one aside with its reason, and sends it no more', () => {
+    const state = oneRefused();
+    expect(state.pending).toEqual({});
+    expect(state.setAside[writeKey(write('B', '2'))]).toEqual({
+      key: writeKey(write('B', '2')),
+      write: write('B', '2'),
+      refusal,
+    });
+    // Nothing pending, so nothing flushes: the refused write is not on its way.
+    expect(canFlush(state)).toBe(false);
+    expect(state.failure).toBeNull();
+  });
+
+  it('reads failed while anything is set aside, though the rest has landed', () => {
+    const state = oneRefused();
+    expect(saveStateOf(state)).toBe(SAVE_STATE.FAILED);
+    expect(syncStateOf(state, writeKey(write('B', '2')))).toBe(SAVE_STATE.FAILED);
+    expect(syncStateOf(state, writeKey(write('A', '1')))).toBe(SAVE_STATE.SAVED);
+  });
+
+  it('lets a later edit of another field go out alone, the refused one left aside', () => {
+    const later = changed(oneRefused(), write('C', '3'));
+    expect(canFlush(later)).toBe(true);
+    expect(flushSnapshot(later).writes).toEqual([write('C', '3')]);
+  });
+
+  it('keeps a newer edit made while the refused value was in flight, which replaces it', () => {
+    const out = started(changed(online(), write('B', '2')));
+    const corrected = changed(out, write('B', '20'));
+    const settled = autosaveReducer(corrected, {
+      type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+      committed: [],
+      lines: [],
+      refused: [{ key: writeKey(write('B', '2')), refusal }],
+    });
+    expect(settled.setAside).toEqual({});
+    expect(numericOf(settled.pending[writeKey(write('B', '20'))]?.write)).toBe('20');
+  });
+
+  it('moves the field back into the queue when the reporter changes it', () => {
+    const fixed = changed(oneRefused(), write('B', '5'));
+    expect(fixed.setAside).toEqual({});
+    expect(numericOf(fixed.pending[writeKey(write('B', '5'))]?.write)).toBe('5');
+  });
+
+  it('lets a discarded change go, and reads saved again', () => {
+    const discarded = autosaveReducer(oneRefused(), { type: AUTOSAVE_EVENT.DISCARDED, key: writeKey(write('B', '2')) });
+    expect(discarded.setAside).toEqual({});
+    expect(saveStateOf(discarded)).toBe(SAVE_STATE.SAVED);
+  });
+
+  it('restores what was set aside, unless a change since mount has replaced it', () => {
+    const item = { key: writeKey(write('B', '2')), write: write('B', '2'), refusal };
+    const restored = autosaveReducer(online(), { type: AUTOSAVE_EVENT.RESTORED, writes: [], setAside: [item] });
+    expect(restored.setAside[item.key]).toEqual(item);
+
+    const replaced = autosaveReducer(changed(online(), write('B', '9')), {
+      type: AUTOSAVE_EVENT.RESTORED,
+      writes: [],
+      setAside: [item],
+    });
+    expect(replaced.setAside).toEqual({});
   });
 });

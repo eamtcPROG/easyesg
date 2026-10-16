@@ -181,7 +181,7 @@ describe('the Excel export (task 46)', () => {
         { inputKey: 'NumberOfEmployeesAtTheBeginningOfTheReportingPeriod', valueNumeric: '40' },
         { inputKey: 'NumberOfEmployeesAtTheEndOfTheReportingPeriod', valueNumeric: '20' },
       ],
-    }).expect(204);
+    }).expect(200);
     await http().put(`/api/v1/reports/${reportId}/calculator/sources/${randomUUID()}`).set(editor.authorization)
       .send({ siteOrdinal: 0, sourceKey: 'natural_gas', description: 'Oven and boiler', quantity: '500', unitCode: 'm3' }).expect(200);
     await http().post(`/api/v1/reports/${reportId}/calculator/runs`).set(editor.authorization).expect(201);

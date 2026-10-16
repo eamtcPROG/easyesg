@@ -1,26 +1,21 @@
-import type { TaxonomyRegistry } from '@api/contracts/taxonomy-registry.port';
+import type { TaxonomyAxis, TaxonomyRegistry } from '@api/contracts/taxonomy-registry.port';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
-import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/report.errors';
 import {
-  DerivedDisclosureNotWritableError,
-  NotAvailableReasonRequiredError,
-  NotAvailableReasonUnexpectedError,
-  UnitNotAdmittedError,
-  UnknownDisclosureDimensionError,
-  UnknownDisclosureElementError,
+  ComputedFigureNotWritableError,
+  ReportNotFoundError,
+  TaxonomyVersionUnavailableError,
 } from '../errors/report.errors';
-import { unitIsAdmitted } from '../models/admitted-unit';
-import { NOT_AVAILABLE_REASON, notAvailableReasonVerdict } from '../models/not-available-reason';
+import { valueRefusal } from '../domain/value-refusal';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
 import type { AxisShapes } from '../interfaces/axis-shape.interface';
-import { admitsMember } from '../models/axis-leaves';
 import {
   answeredState,
   type DisclosureValue,
   type DisclosureValueContents,
   type DisclosureValueKey,
 } from '../models/disclosure-value.model';
+import type { RefusedValue, WriteDisclosureValuesOutcome } from '../models/refused-write.model';
 import type {
   DerivationRecalculator,
   Derivations,
@@ -69,7 +64,7 @@ export class WriteDisclosureValues {
     private readonly axisShapes: AxisShapes,
   ) {}
 
-  async write(command: WriteDisclosureValuesCommand): Promise<DisclosureValue[]> {
+  async write(command: WriteDisclosureValuesCommand): Promise<WriteDisclosureValuesOutcome> {
     const report = await this.reports.findReport({ reportId: command.reportId });
     // RLS makes "not yours" and "not there" one answer (task 31.3).
     if (report === null) throw new ReportNotFoundError();
@@ -81,87 +76,69 @@ export class WriteDisclosureValues {
     if (registered === null) throw new TaxonomyVersionUnavailableError();
 
     const known = new Map(registered.elements.map((element) => [element.key, element]));
-    // Refused before any write, so a batch is all-or-nothing about what it names. A partially
-    // applied autosave would leave the indicator saying `saved` over a step that is not.
-    const unknown = command.values.filter((value) => !known.has(value.elementKey));
-    if (unknown.length > 0) throw new UnknownDisclosureElementError();
-
-    // **And the dimension, since task 36.5.** A classification's rows are derived from the store,
-    // so a `dimension_key` the element's axes do not declare is no longer merely unread — it draws
-    // a row. Checked here rather than trusted from the browser, which is P-4: the client that must
-    // not send one is not the layer that can guarantee nobody does.
-    //
-    // **A breakdown admits the rows the step read serves, its total included** (task 217): the read
-    // and this check ask the same function, so the row offered first can no longer be the one refused.
     const breakdowns = this.axisShapes.breakdownAxes({ standard: registered.standard });
-    const misdimensioned = command.values.filter((value) => {
-      if (value.dimensionKey === '') return false;
-      return !known.get(value.elementKey)?.axes.some((key) => {
-        const axis = this.taxonomy.axis({
-          standard: TAXONOMY_STANDARD.VSME,
-          version: report.taxonomyVersion,
-          key,
-        });
-        if (axis === null) return false;
-        // **A category is not an answer** (task 36.8): EFRAG's own workbook says a reporter must
-        // select a type of waste rather than a category, so a member with children is refused here
-        // for the same reason an undeclared one is — the step read offers only the leaves, and a row
-        // under a category would draw on every element of the axis while rendering *unnamed*.
-        //
-        // **The rule is `models/axis-leaves.ts`'s, not this file's** (convention review, 9 Sep
-        // 2026). 36.8's fix wrote *"one answer for three readers"* and then left a second copy of it
-        // here — locally correct, and free to drift from the picker's the day the leaf definition
-        // moves.
-        return admitsMember({ axis, member: value.dimensionKey, breakdown: breakdowns.has(key) });
+    const derived = new Set(this.derivations.all({ standard: TAXONOMY_STANDARD.VSME }).keys());
+
+    // **Each value is judged on its own, and what is admitted is stored** (task 218; §12.5.6's task-218 row (1)). Until
+    // then a batch was all-or-nothing about what it named, so the indicator could never say *saved* over half a step —
+    // and one answer refused for good held every later one back, since autosave flushes its queue in one request. The
+    // indicator's truth is kept by the client instead: a refused value is set aside and reads *failed* (row (3)).
+    const refused: RefusedValue[] = [];
+    const admitted: DisclosureValueInput[] = [];
+    for (const value of command.values) {
+      const refusal = valueRefusal({
+        value,
+        known,
+        breakdowns,
+        derived,
+        axisOf: (key) => this.axisOf(report.taxonomyVersion, key),
       });
-    });
-    if (misdimensioned.length > 0) throw new UnknownDisclosureDimensionError();
-
-    // **And a figure the platform derives is not the reporter's to write** (task 36.10, FR-29).
-    // Refused before any write, like the two checks above, so a batch stays all-or-nothing about
-    // what it names — a partially applied autosave leaves the indicator saying `saved` over a step
-    // that is not.
-    const derived = this.derivations.all({ standard: TAXONOMY_STANDARD.VSME });
-    if (command.values.some((value) => derived.has(value.elementKey))) {
-      throw new DerivedDisclosureNotWritableError();
+      if (refusal === null) admitted.push(value);
+      else refused.push({ key: keyOf(value), modules: known.get(value.elementKey)?.modules ?? [], refusal });
     }
 
-    // **And the shape of each value, since task 183** (§12.5.6's task-182 authoring row (6)) — before any write, for the
-    // batch's reason above. The reason and its state were left to the store's CHECK, which answered a mismatch with a
-    // 500; a unit was checked by nothing, though two comments said it was.
-    for (const value of command.values) {
-      const verdict = notAvailableReasonVerdict(value.contents);
-      if (verdict === NOT_AVAILABLE_REASON.MISSING) throw new NotAvailableReasonRequiredError();
-      if (verdict === NOT_AVAILABLE_REASON.UNEXPECTED) throw new NotAvailableReasonUnexpectedError();
-      const admitted = known.get(value.elementKey)?.unitCodes ?? [];
-      if (!unitIsAdmitted({ unitCode: value.contents.unitCode, admitted })) throw new UnitNotAdmittedError();
-    }
-
-    const written: DisclosureValue[] = [];
-    for (const value of command.values) {
-      written.push(
-        await this.values.write({
-          key: {
-            reportId: command.reportId,
-            elementKey: value.elementKey,
-            dimensionKey: value.dimensionKey,
-            ordinal: value.ordinal,
-          },
-          // FR-30: an answered zero is a nil return, decided from the value rather than taken from
-          // the caller (P-4). See `answeredState` for why it settles both directions.
-          contents: { ...value.contents, state: answeredState(value.contents) },
-        }),
-      );
+    const stored: DisclosureValue[] = [];
+    for (const value of admitted) {
+      try {
+        stored.push(
+          await this.values.write({
+            key: { reportId: command.reportId, ...keyOf(value) },
+            // FR-30: an answered zero is a nil return, decided from the value rather than taken from
+            // the caller (P-4). See `answeredState` for why it settles both directions.
+            contents: { ...value.contents, state: answeredState(value.contents) },
+          }),
+        );
+      } catch (error) {
+        // **A figure the calculator computed is the field's refusal, not the report's** (task 38.4): its guarded upsert
+        // writes nothing and raises nothing, so the transaction stands and the rest may still be stored. A lock or an
+        // archived entity raises in the database, aborts the transaction, and refuses the report — rethrown.
+        if (!(error instanceof ComputedFigureNotWritableError)) throw error;
+        refused.push({ key: keyOf(value), modules: known.get(value.elementKey)?.modules ?? [], refusal: error });
+      }
     }
 
     // Anything a derivation reads may have just moved. Recomputed **after** the batch rather than
     // per value, because a formula's operands can arrive in one request — B8's three turnover inputs
-    // do — and recomputing between them would write a rate from a half-applied batch.
-    await this.calculator.recompute({
-      reportId: command.reportId,
-      standard: TAXONOMY_STANDARD.VSME,
-      touched: new Set(command.values.map((value) => value.elementKey)),
-    });
-    return written;
+    // do — and recomputing between them would write a rate from a half-applied batch. Over what was
+    // stored: a refused value moved nothing.
+    if (stored.length > 0) {
+      await this.calculator.recompute({
+        reportId: command.reportId,
+        standard: TAXONOMY_STANDARD.VSME,
+        touched: new Set(stored.map((value) => value.elementKey)),
+      });
+    }
+    return { stored, refused, taxonomyVersion: report.taxonomyVersion };
+  }
+
+  private axisOf(version: string, key: string): TaxonomyAxis | null {
+    return this.taxonomy.axis({ standard: TAXONOMY_STANDARD.VSME, version, key });
   }
 }
+
+/** One value's key without its report — what a refusal names. */
+const keyOf = (value: DisclosureValueInput): RefusedValue['key'] => ({
+  elementKey: value.elementKey,
+  dimensionKey: value.dimensionKey,
+  ordinal: value.ordinal,
+});

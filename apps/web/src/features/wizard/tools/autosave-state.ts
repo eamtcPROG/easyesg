@@ -27,8 +27,8 @@ import { SESSION_STANDING, endsSession, type SessionStanding } from '@/lib/sessi
  * never blocked).
  *
  * **The indicator is derived, never stored.** UX-35's four states are a function of this value:
- * nothing pending is *saved*; pending while offline is *queued*; pending after a refusal is
- * *failed*; pending past NFR-38's budget is *saving*; and pending inside the budget is still
+ * nothing pending and nothing set aside is *saved*; pending while offline is *queued*; pending after a
+ * refusal, or anything set aside (task 218), is *failed*; pending past NFR-38's budget is *saving*; and pending inside the budget is still
  * *saved*, because UX-36 moves the indicator only when the budget is exceeded — a save that lands
  * in 80 ms never flickers through *saving*.
  *
@@ -105,6 +105,35 @@ export interface CommittedLine {
 }
 
 /**
+ * Why the api refused one write for its own sake, and what to call it (task 218; §12.5.6's task-218 row (a), (3)) — its
+ * refusal worded in the reader's language, and, for an answer, its field and member named and the modules presenting
+ * it, so the banner can lead to a field on a step that is not on screen. An input or a line is named by its own shape.
+ */
+export interface Refusal {
+  readonly title?: string;
+  readonly detail?: string;
+  readonly label: string | null;
+  readonly memberLabel: string | null;
+  readonly modules: readonly string[];
+}
+
+/** A write the api refused, by the key it was queued under. */
+export interface RefusedWrite {
+  readonly key: string;
+  readonly refusal: Refusal;
+}
+
+/**
+ * A refused write set aside (task 218): kept on the device, never sent again, until the reporter changes its field —
+ * which replaces it — or discards it. It survives a reload beside the queue.
+ */
+export interface SetAsideWrite {
+  readonly key: string;
+  readonly write: QueuedWrite;
+  readonly refusal: Refusal;
+}
+
+/**
  * Is this queued write a derivation input? **The one place the two shapes are told apart**, so a
  * reader never repeats the discriminating property and the union never grows a third answer by
  * accident.
@@ -142,6 +171,11 @@ export interface AutosaveState {
    * overlays a field.
    */
   readonly committedLines: Readonly<Record<string, CalcLine | null>>;
+  /**
+   * What the api refused for its own sake, set aside by key (task 218): sent no more, and not counted as unsynced — it
+   * is not on its way — but read as *failed* until each is changed or discarded.
+   */
+  readonly setAside: Readonly<Record<string, SetAsideWrite>>;
   /** The durable queue has been read into `pending`; until then nothing may be written back to it. */
   readonly hydrated: boolean;
   readonly nextSequence: number;
@@ -172,24 +206,34 @@ export const AUTOSAVE_EVENT = {
   SESSION_ENDED: 'session_ended',
   /** The reader signed in again over the step, as the account the queue belongs to (task 92). */
   SESSION_RESUMED: 'session_resumed',
+  /** The reader let a set-aside write go (task 218). */
+  DISCARDED: 'discarded',
 } as const;
 
 export type AutosaveEvent =
   | { readonly type: typeof AUTOSAVE_EVENT.CHANGED; readonly write: QueuedWrite }
-  | { readonly type: typeof AUTOSAVE_EVENT.RESTORED; readonly writes: readonly QueuedWrite[] }
+  | {
+      readonly type: typeof AUTOSAVE_EVENT.RESTORED;
+      readonly writes: readonly QueuedWrite[];
+      /** What was set aside when the page last held it (task 218). */
+      readonly setAside: readonly SetAsideWrite[];
+    }
   | { readonly type: typeof AUTOSAVE_EVENT.FLUSH_STARTED; readonly sent: Readonly<Record<string, number>> }
   | {
       readonly type: typeof AUTOSAVE_EVENT.FLUSH_SUCCEEDED;
       readonly committed: readonly DisclosureValueResponse[];
       /** The lines the flush carried, as the api answered each (task 39.1). */
       readonly lines: readonly CommittedLine[];
+      /** What the api refused for its own sake, the rest having been stored (task 218). */
+      readonly refused: readonly RefusedWrite[];
     }
   | { readonly type: typeof AUTOSAVE_EVENT.FLUSH_FAILED; readonly failure: FlushFailure }
   | { readonly type: typeof AUTOSAVE_EVENT.CONNECTION_CHANGED; readonly connection: Connection }
   | { readonly type: typeof AUTOSAVE_EVENT.BUDGET_ELAPSED }
   | { readonly type: typeof AUTOSAVE_EVENT.RETRY_REQUESTED }
   | { readonly type: typeof AUTOSAVE_EVENT.SESSION_ENDED }
-  | { readonly type: typeof AUTOSAVE_EVENT.SESSION_RESUMED };
+  | { readonly type: typeof AUTOSAVE_EVENT.SESSION_RESUMED }
+  | { readonly type: typeof AUTOSAVE_EVENT.DISCARDED; readonly key: string };
 
 /** NFR-38: the acknowledgement budget. Past it the indicator moves to *saving* (UX-36). */
 export const ACKNOWLEDGEMENT_BUDGET_MS = 250;
@@ -226,6 +270,7 @@ export const initialAutosaveState = (input: { readonly online: boolean }): Autos
   budgetExceeded: false,
   committed: {},
   committedLines: {},
+  setAside: {},
   hydrated: false,
   nextSequence: 1,
 });
@@ -246,16 +291,25 @@ const withWrites = (
 
 export function autosaveReducer(state: AutosaveState, event: AutosaveEvent): AutosaveState {
   switch (event.type) {
-    case AUTOSAVE_EVENT.CHANGED:
+    case AUTOSAVE_EVENT.CHANGED: {
       // A newer sequence than anything in flight, so an acknowledgement of the older value cannot
       // remove this one. The failure is kept: a refusal stands until a flush succeeds.
-      return { ...state, ...withWrites(state, [event.write]) };
+      // **A change to a set-aside field replaces what was refused** (task 218): it is the reporter's answer to the
+      // refusal, so the old value leaves the set and the new one is sent.
+      const key = writeKey(event.write);
+      return { ...state, ...withWrites(state, [event.write]), setAside: without(state.setAside, key) };
+    }
 
     case AUTOSAVE_EVENT.RESTORED: {
       // What the durable queue held is older than anything changed since mount, so a key already
       // pending keeps its newer value and the restored one is dropped.
       const fresh = event.writes.filter((write) => !(writeKey(write) in state.pending));
-      return { ...state, ...withWrites(state, fresh), hydrated: true };
+      // A set-aside write a change since mount has already replaced stays replaced.
+      const setAside = { ...state.setAside };
+      for (const item of event.setAside) {
+        if (!(item.key in state.pending) && !(item.key in setAside)) setAside[item.key] = item;
+      }
+      return { ...state, ...withWrites(state, fresh), setAside, hydrated: true };
     }
 
     case AUTOSAVE_EVENT.FLUSH_STARTED:
@@ -263,10 +317,19 @@ export function autosaveReducer(state: AutosaveState, event: AutosaveEvent): Aut
 
     case AUTOSAVE_EVENT.FLUSH_SUCCEEDED: {
       const sent = state.inFlight ?? {};
+      const refusals = new Map(event.refused.map((refused) => [refused.key, refused.refusal]));
       const pending: Record<string, PendingWrite> = {};
+      const setAside = { ...state.setAside };
       for (const [key, write] of Object.entries(state.pending)) {
         // Acknowledged only if nothing newer was written for this key while the flush was out.
-        if (sent[key] !== write.sequence) pending[key] = write;
+        if (sent[key] !== write.sequence) {
+          pending[key] = write;
+          continue;
+        }
+        // **Refused for its own sake: set aside rather than acknowledged** (task 218) — kept with its reason and sent
+        // no more, so it holds nothing else back. A newer edit made while it was out is pending above, and stands.
+        const refusal = refusals.get(key);
+        if (refusal !== undefined) setAside[key] = { key, write: write.write, refusal };
       }
       const committed = { ...state.committed };
       for (const value of event.committed) committed[writeKey(value)] = value;
@@ -283,6 +346,7 @@ export function autosaveReducer(state: AutosaveState, event: AutosaveEvent): Aut
         failure: null,
         committed,
         committedLines,
+        setAside,
         // The budget restarts for whatever is still pending — it measures the wait for *an*
         // acknowledgement, and one just arrived.
         budgetExceeded: settled ? false : state.budgetExceeded,
@@ -325,10 +389,24 @@ export function autosaveReducer(state: AutosaveState, event: AutosaveEvent): Aut
       // The refusal was the session's, so it goes with it: what waited leaves in the next flush.
       return { ...state, session: SESSION_STANDING.HELD, failure: null };
 
+    case AUTOSAVE_EVENT.DISCARDED:
+      // The field shows what is stored, which is what the reporter chose to keep.
+      return event.key in state.setAside ? { ...state, setAside: without(state.setAside, event.key) } : state;
+
     default:
       return state;
   }
 }
+
+/** The record without one key — the same object where it was not there, so a reader keyed on it hears nothing. */
+function without<T>(record: Readonly<Record<string, T>>, key: string): Readonly<Record<string, T>> {
+  if (!(key in record)) return record;
+  const { [key]: _gone, ...rest } = record;
+  return rest;
+}
+
+/** Whether anything is set aside — what keeps the indicator at *failed* once the rest has landed (task 218). */
+export const hasSetAside = (state: AutosaveState): boolean => Object.keys(state.setAside).length > 0;
 
 export const hasUnsynced = (state: AutosaveState): boolean =>
   Object.keys(state.pending).length > 0;
@@ -365,8 +443,12 @@ export const flushSnapshot = (
 
 /** UX-35's four states, derived (see the module docblock for the order and the reason). */
 export function saveStateOf(state: AutosaveState): SaveState {
-  if (!hasUnsynced(state)) return SAVE_STATE.SAVED;
+  // **A set-aside write is not saved** (task 218; §12.5.6's task-218 row (3)): the rest may have landed, and the
+  // indicator still says *failed* until each refused one is changed or discarded — which is what lets the api store
+  // the rest without the indicator ever saying *saved* over a step that is not.
+  if (!hasUnsynced(state)) return hasSetAside(state) ? SAVE_STATE.FAILED : SAVE_STATE.SAVED;
   if (state.connection === CONNECTION.OFFLINE) return SAVE_STATE.QUEUED;
+  if (hasSetAside(state)) return SAVE_STATE.FAILED;
   // An ended session holds a flush as surely as a refusal does, and must never read as on its way.
   if (state.failure !== null || state.session === SESSION_STANDING.ENDED) return SAVE_STATE.FAILED;
   if (state.budgetExceeded) return SAVE_STATE.SAVING;
@@ -381,6 +463,8 @@ export function saveStateOf(state: AutosaveState): SaveState {
  * transition, not the field's).
  */
 export function syncStateOf(state: AutosaveState, key: string): SaveState {
+  // A field whose write was set aside is the one place the refusal belongs (task 218).
+  if (key in state.setAside) return SAVE_STATE.FAILED;
   if (!(key in state.pending)) return SAVE_STATE.SAVED;
   if (state.connection === CONNECTION.OFFLINE) return SAVE_STATE.QUEUED;
   if (state.failure !== null || state.session === SESSION_STANDING.ENDED) return SAVE_STATE.FAILED;

@@ -1483,6 +1483,12 @@
         "unreachableBody": "{count, plural, one {O modificare nu a ajuns} few {# modificări nu au ajuns} other {# de modificări nu au ajuns}} la server. Le vom trimite din nou peste puțin timp; puteți continua să completați.",
         "refusedTitle": "Modificările au fost respinse",
         "refusedBody": "{count, plural, one {O modificare nu a putut fi salvată} few {# modificări nu au putut fi salvate} other {# de modificări nu au putut fi salvate}}. Verificați starea perioadei de raportare și încercați din nou.",
+        "setAsideTitle": "{count, plural, one {O modificare nu a fost salvată} few {# modificări nu au fost salvate} other {# de modificări nu au fost salvate}}",
+        "setAsideBody": "Celelalte modificări au fost salvate. Corectați câmpul de mai jos sau renunțați la modificare; până atunci, raportul păstrează valoarea salvată anterior.",
+        "setAsideField": "Un câmp fără denumire",
+        "setAsideInput": "O valoare din care se calculează un indicator",
+        "setAsideLine": "Un rând din calculatorul de carbon",
+        "discard": "Renunțați la modificare",
         "retry": "Încercați din nou"
       },
       "readOnly": {

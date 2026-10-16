@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Put } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Put } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiListResponse, ApiObjectResponse } from '@api/app/decorators/api-envelope.decorator';
 import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
@@ -6,10 +6,10 @@ import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/members
 import {
   DisclosureModuleSummaryDto,
   DisclosureStepDto,
-  DisclosureValueResponseDto,
   WriteDerivationInputsRequestDto,
   WriteDisclosureValuesRequestDto,
 } from '../dto/wizard-step.dto';
+import { WriteDerivationInputsResponseDto, WriteDisclosureValuesResponseDto } from '../dto/write-outcome.dto';
 import { NO_SUCH_REPORT } from '../errors/report.errors';
 import { WizardService } from '../services/wizard.service';
 
@@ -96,22 +96,30 @@ export class WizardController {
       "while the report's period is locked (FR-22), by the database as well as by the use case.",
   })
   @ApiParam({ name: 'id', format: 'uuid' })
-  @ApiListResponse(DisclosureValueResponseDto, {
+  @ApiObjectResponse(WriteDisclosureValuesResponseDto, {
     status: 200,
-    description: 'What was durably committed — UX-36 acknowledges the commit, not local state.',
+    description:
+      'What was durably committed — UX-36 acknowledges the commit, not local state — and each value refused for its ' +
+      'own sake, the rest having been stored (task 218).',
   })
   @ApiResponse({
     status: 400,
     description:
-      'A field the pinned version does not name; a value marked not available with no reason (or a blank one), or ' +
-      'a reason on any other state; a unit outside the element’s admitted list, where the standard states one.',
+      'Nothing was stored, every value being refused, as the first is — a field the pinned version does not name; a ' +
+      'member its axes do not admit; a derived figure; a value marked not available with no reason (or a blank one), ' +
+      'or a reason on any other state; a unit outside the element’s admitted list. The document lists each in `refused`.',
   })
   @ApiResponse({ status: 404, description: NO_SUCH_REPORT })
-  @ApiResponse({ status: 409, description: 'The reporting period is locked (FR-22).' })
+  @ApiResponse({
+    status: 409,
+    description:
+      'The reporting period is locked (FR-22), with no `refused` — or, listing them in `refused`, every value ' +
+      'reached a figure the calculator computed, whose replacement is the override route.',
+  })
   async write(
     @Param('id', ParseUUIDPipe) reportId: string,
     @Body() body: WriteDisclosureValuesRequestDto,
-  ): Promise<DisclosureValueResponseDto[]> {
+  ): Promise<WriteDisclosureValuesResponseDto> {
     const written = await this.wizard.write({
       reportId,
       values: body.values.map((value) => ({
@@ -130,7 +138,7 @@ export class WizardController {
         },
       })),
     });
-    return written.map((value) => new DisclosureValueResponseDto(value));
+    return new WriteDisclosureValuesResponseDto(written);
   }
   @Put(':id/derivation-inputs')
   @RequiresRole(MEMBERSHIP_ROLE.EDITOR, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR)
@@ -144,22 +152,30 @@ export class WizardController {
       "report's period is locked (FR-22), by the database as well as by the use case.",
   })
   @ApiParam({ name: 'id', format: 'uuid' })
-  @ApiResponse({ status: 204, description: 'Stored, and the figures they feed recomputed.' })
-  @ApiResponse({ status: 400, description: 'An input no registered derivation reads.' })
+  @ApiObjectResponse(WriteDerivationInputsResponseDto, {
+    status: 200,
+    description:
+      'Stored, and the figures they feed recomputed — with each input refused for its own sake, the rest having been ' +
+      'stored (task 218).',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Nothing was stored: every input is one no registered derivation reads. The document lists each in `refused`.',
+  })
   @ApiResponse({ status: 404, description: NO_SUCH_REPORT })
   @ApiResponse({ status: 409, description: 'The reporting period is locked (FR-22).' })
-  @HttpCode(204)
   async writeDerivationInputs(
     @Param('id', ParseUUIDPipe) reportId: string,
     @Body() body: WriteDerivationInputsRequestDto,
-  ): Promise<void> {
-    await this.wizard.writeDerivationInputs({
+  ): Promise<WriteDerivationInputsResponseDto> {
+    const written = await this.wizard.writeDerivationInputs({
       reportId,
       inputs: body.values.map((value) => ({
         inputKey: value.inputKey,
         valueNumeric: value.valueNumeric ?? null,
       })),
     });
+    return new WriteDerivationInputsResponseDto(written);
   }
 
 }

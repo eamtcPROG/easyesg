@@ -49,19 +49,43 @@ function controllableFetch() {
         });
       }),
   );
-  const answer = (index: number) => {
+  /**
+   * The api's answer to a write (task 218): everything stored but the elements named in `refusing`, each refused for
+   * its own sake — `{ stored, refused }`, or, where nothing was stored, a problem carrying the same `refused`.
+   */
+  const answer = (index: number, refusing: readonly string[] = []) => {
     const call = calls[index];
     if (!call) throw new Error(`no request ${index}`);
+    const refused = call.body.values
+      .filter((value) => refusing.includes(value.elementKey))
+      .map((value) => ({
+        elementKey: value.elementKey,
+        dimensionKey: value.dimensionKey ?? '',
+        ordinal: value.ordinal ?? 0,
+        modules: ['B1'],
+        label: `Label ${value.elementKey}`,
+        memberLabel: null,
+        type: 'https://easyesg.md/problems/validation-failed',
+        title: 'Missing or incorrect details',
+        detail: `Refused ${value.elementKey}.`,
+      }));
+    const stored = call.body.values.filter((value) => !refusing.includes(value.elementKey)).map(committedRow);
     call.resolve(
-      new Response(
-        JSON.stringify({
-          objects: call.body.values.map(committedRow),
-          total: call.body.values.length,
-          totalpages: 1,
-          messages: [],
-        }),
-        { status: 200, headers: { 'content-type': 'application/json' } },
-      ),
+      stored.length === 0 && refused.length > 0
+        ? new Response(
+            JSON.stringify({
+              type: 'https://easyesg.md/problems/validation-failed',
+              status: 400,
+              title: 'Missing or incorrect details',
+              detail: refused[0]?.detail,
+              refused,
+            }),
+            { status: 400, headers: { 'content-type': 'application/problem+json' } },
+          )
+        : new Response(JSON.stringify({ object: { stored, refused }, messages: [] }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
     );
   };
   return { fetchImpl: fetchImpl as unknown as typeof fetch, calls, answer };
@@ -130,6 +154,68 @@ describe('useAutosave', () => {
     await waitFor(() => expect(result.current.state.pending).toEqual({}));
   });
 
+  it('sets a refused change aside, keeps it on the device, and sends the next change alone (task 218)', async () => {
+    const { fetchImpl, calls, answer } = controllableFetch();
+    const store = memoryPendingWriteStore();
+    const { result } = renderHook(
+      () => useAutosave({ reportId: 'r1', scope: 'a/r1', store, fetch: fetchImpl }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.state.hydrated).toBe(true));
+
+    // In one act, so both are pending when the flush leaves and travel in one request — the api storing A and refusing B.
+    act(() => {
+      result.current.change(write('A', '1'));
+      result.current.change(write('B', '2'));
+    });
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]?.body.values.map((v) => v.elementKey)).toEqual(['A', 'B']);
+    act(() => answer(0, ['B']));
+
+    const refusedKey = writeKey({ elementKey: 'B' });
+    await waitFor(() => expect(result.current.state.setAside[refusedKey]).toBeDefined());
+    expect(result.current.state.pending).toEqual({});
+    expect(saveStateOf(result.current.state)).toBe(SAVE_STATE.FAILED);
+    expect(result.current.state.setAside[refusedKey]?.refusal).toMatchObject({ label: 'Label B', detail: 'Refused B.' });
+    // Kept beside the queue, so a reload still shows it.
+    await waitFor(async () => expect((await store.loadSetAside('a/r1')).map((item) => item.key)).toEqual([refusedKey]));
+
+    // **The refusal holds nothing back**: the next change goes out alone.
+    const sent = calls.length;
+    act(() => result.current.change(write('C', '3')));
+    await waitFor(() => expect(calls).toHaveLength(sent + 1));
+    expect(calls[sent]?.body.values.map((v) => v.elementKey)).toEqual(['C']);
+    act(() => answer(sent));
+    await waitFor(() => expect(result.current.state.pending).toEqual({}));
+    // Still failed — B is set aside — until it is discarded.
+    expect(saveStateOf(result.current.state)).toBe(SAVE_STATE.FAILED);
+    act(() => result.current.discard(refusedKey));
+    expect(saveStateOf(result.current.state)).toBe(SAVE_STATE.SAVED);
+  });
+
+  it('holds the queue on a refusal of the report, which names no item (task 218)', async () => {
+    const calls: unknown[] = [];
+    const fetchImpl = vi.fn(() => {
+      calls.push(null);
+      return Promise.resolve(
+        new Response(JSON.stringify({ type: 'https://easyesg.md/problems/report-not-editable', status: 409 }), {
+          status: 409,
+          headers: { 'content-type': 'application/problem+json' },
+        }),
+      );
+    }) as unknown as typeof fetch;
+    const { result } = renderHook(
+      () => useAutosave({ reportId: 'r1', scope: 'a/r1', store: memoryPendingWriteStore(), fetch: fetchImpl }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.state.hydrated).toBe(true));
+
+    act(() => result.current.change(write('A', '1')));
+    await waitFor(() => expect(result.current.state.failure).not.toBeNull());
+    expect(result.current.state.setAside).toEqual({});
+    expect(Object.keys(result.current.state.pending)).toEqual([writeKey({ elementKey: 'A' })]);
+  });
+
   it('restores the durable queue at mount and flushes it without a new change', async () => {
     const { fetchImpl, calls, answer } = controllableFetch();
     const store = memoryPendingWriteStore();
@@ -161,6 +247,8 @@ describe('useAutosave', () => {
         saves.push(writes);
         return Promise.resolve();
       },
+      loadSetAside: () => Promise.resolve([]),
+      saveSetAside: () => Promise.resolve(),
     };
     const { fetchImpl, calls, answer } = controllableFetch();
     const { result } = renderHook(
@@ -261,7 +349,7 @@ describe('useAutosave', () => {
         );
       if (url.endsWith('/values')) {
         const values = (body as { values: DisclosureValueWrite[] }).values;
-        return json({ objects: values.map(committedRow), total: values.length, totalpages: 1, messages: [] });
+        return json({ object: { stored: values.map(committedRow), refused: [] }, messages: [] });
       }
       if (init?.method === 'DELETE') return Promise.resolve(new Response(null, { status: 204 }));
       return json({ object: stored, messages: [] });

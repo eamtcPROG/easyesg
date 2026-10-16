@@ -245,6 +245,94 @@ test('a queued change survives the tab being closed and is sent when the report 
   await expect(saveState(next)).toHaveText(/sunt salvate/u);
 });
 
+/**
+ * **One refused answer no longer holds the rest** (task 218; FR-38 behaviour 5, AC-6; §12.5.6's task-218 row).
+ *
+ * The case that found it: a queued write the api refuses for its own sake, flushed with the reporter's other answers.
+ * Before this task every save was refused with it, on every step, for as long as the queue held it. **Planted in the
+ * durable queue** because no screen will send one — that is the point of the fields offering only what the api admits —
+ * while a queue a release ago could hold one, which is how it reached a reporter.
+ */
+test('a refused answer is set aside and named, and every other answer still saves (task 218)', async ({
+  page,
+  context,
+}) => {
+  const { reportId, organizationId } = await signedInWithReport(page, 'set-aside');
+  await openB1(page, reportId);
+
+  // A real change queued offline, so the queue's own record exists under the account's scope.
+  await context.setOffline(true);
+  await answer(page, { label: EMPLOYEES.label, value: '12' });
+  await expect.poll(() => durablyQueued(page, EMPLOYEES.elementKey)).toBe(true);
+  // And beside it, a value under a member the pollutant axis does not declare — refused by the api, for its own sake.
+  await page.evaluate(async () => {
+    const open = indexedDB.open('easyesg-autosave', 1);
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      open.onsuccess = () => resolve(open.result);
+      open.onerror = () => reject(open.error ?? new Error('IndexedDB open failed'));
+    });
+    try {
+      const store = db.transaction('pending', 'readwrite').objectStore('pending');
+      const [scope] = await new Promise<IDBValidKey[]>((resolve) => {
+        const keys = store.getAllKeys();
+        keys.onsuccess = () => resolve(keys.result);
+      });
+      if (scope === undefined) throw new Error('no queue to plant beside');
+      const queue = await new Promise<unknown[]>((resolve) => {
+        const read = store.get(scope);
+        read.onsuccess = () => resolve(read.result as unknown[]);
+      });
+      await new Promise<void>((resolve) => {
+        const written = store.put(
+          [
+            ...queue,
+            {
+              elementKey: 'AmountOfEmissionToAir',
+              dimensionKey: 'NotAPollutantMember',
+              ordinal: 0,
+              valueNumeric: '12',
+              unitCode: 'kg',
+              state: 'ok',
+            },
+          ],
+          scope,
+        );
+        written.onsuccess = () => resolve();
+      });
+    } finally {
+      db.close();
+    }
+  });
+  await page.close();
+
+  // Reopened online: the queue is restored and sent in one request, which the api partly refuses.
+  await context.setOffline(false);
+  const next = await context.newPage();
+  await openB1(next, reportId);
+
+  // The rest is on the record…
+  await expect
+    .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: EMPLOYEES.elementKey }))
+    .toMatchObject({ valueNumeric: '12' });
+  // …and the refused one is named, with a way to its field on B4, while the indicator says it is not all saved.
+  const banner = next.getByRole('status').filter({ hasText: 'O modificare nu a fost salvată' });
+  await expect(banner).toBeVisible();
+  await expect(banner.getByRole('listitem')).toHaveCount(1);
+  await expect(banner.getByRole('link')).toHaveAttribute('href', /\/B4#/u);
+  await expect(saveState(next)).toHaveText(/Salvarea nu a reușit/u);
+
+  // **It holds nothing back**: a later answer saves on its own.
+  await answer(next, { label: TURNOVER.label, value: '500000' });
+  await expect
+    .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: TURNOVER.elementKey }))
+    .toMatchObject({ valueNumeric: '500000' });
+
+  // And letting it go clears the banner and the indicator.
+  await banner.getByRole('button', { name: 'Renunțați la modificare' }).click();
+  await expect(banner).toHaveCount(0);
+  await expect(saveState(next)).toHaveText(/sunt salvate/u);
+});
+
 test('leaving the wizard with unsent changes asks first, with a chance to stay (UX-37)', async ({
   page,
   context,

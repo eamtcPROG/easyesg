@@ -628,7 +628,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 4. **One readable row becomes one new line holding one figure for the period** (FR-33's one line per invoice). The monthly form is not an import shape, and the figure is read as a typed one is (`1 700`, `1700,5`). A row whose source admits several units needs its unit; a row whose source admits one takes it (row (2), (3)).
 5. **A row is unreadable** where its source, unit or site is unmatched, its unit is not one its source admits, it has no figure or a figure that is not a non-negative number, or its description is longer than a line holds. A row with no figure is reported, never imported as an explained line: why a figure is missing is a person's to write (row (3)). A row with nothing in it is not a row.
 6. **Before anything is added, the import reports** every unreadable row by its row number in the file and what is wrong with it, in NFR-79's three parts, beside the number of lines it will add. The reporter imports the readable rows or cancels (row (4)).
-7. **An imported line is a typed line.** Each is written through FR-38's queue under a fresh id its client chooses, so it is on screen at once and sent when the network allows, and it is checked by the api as FR-33 checks any line. Because a refused write holds the queue (FR-38), a row the api would refuse is reported under 5 and never queued (row (1)).
+7. **An imported line is a typed line.** Each is written through FR-38's queue under a fresh id its client chooses, so it is on screen at once and sent when the network allows, and it is checked by the api as FR-33 checks any line. A row the api would refuse is reported under 5 and never queued (row (1)), so it is named against the file rather than set aside as a failed line (FR-38).
 8. **An import only adds.** The lines already on S-09 are untouched; a file imported twice is entered twice, and S-09's removal takes a line out (row (3)).
 
 **Refusals.**
@@ -698,7 +698,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-38 — Queue offline and warn while unsynced
 
-**Status.** Built — delivered 35.2, 36.2, 92, 93, 39.1
+**Status.** Built — delivered 35.2, 36.2, 92, 93, 39.1, 218
 
 **Obligation.** The system shall queue changes durably on the device and retry them when the network or the session is unavailable, warning the user while anything remains unsynced and before any action that would abandon the queue.
 
@@ -713,6 +713,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 2. A queued write is retried when connectivity returns. A write refused with 401 is kept under the account's key and sent after inline re-authentication, which happens in place and never as a redirect.
 3. Signing out sends what is unsent. Only when it cannot go (offline, refused, or the session has ended) does the dialogue ask. Switching organization and leaving the wizard do the same.
 4. Every queue operation is ordered behind the last, over one connection.
+5. A write the api refuses for its own sake — an answer, a derivation input or a calculator line — is set aside and the rest is stored. The set-aside write is kept on the device under its field, marked *failed* with the api's reason, and never sent again until the reporter changes that field, which replaces it, or discards it. While anything is set aside the indicator reads *failed* and the banner names each refused field with a link to it. A refusal of the whole report — a locked period, an archived entity, a role, a session — holds the queue as before (§12.5.6 task-218 row).
 
 **Configuration-held values.** None. The retry policy is code: 3 transport retries with a delay doubling from 1 s up to 30 s, then a 30 s retry while unreachable.
 
@@ -724,12 +725,14 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-3** Given the session has expired, when a write is refused with 401, then it is kept, and it is sent after re-authentication in place. *(source: §12.5.6 task-35.3 and task-92 rows)*
 - **AC-4** Given an unsent queue, when the user signs out, switches organization or leaves the wizard and the queue cannot be sent, then a dialogue warns and offers to cancel. *(source: UX-37; §12.5.6 task-93 and task-83 rows)*
 - **AC-5** Given the network is unavailable, when a calculator line is written, then it is queued and sent on reconnection like any field. *(source: §12.5.6 task-182 row (5); `e2e/web/calculator.spec.ts`)*
+- **AC-6** Given a queued answer the api refuses, when the queue is sent, then every other answer is stored, the refused one is marked *failed* with the api's reason and named in the banner, and changing or discarding it clears *failed*. *(source: §12.5.6 task-218 row)*
 
 **History.**
 - 2 Sep 2026 · build · the queue is scoped to the account · §12.5.6 task-35.2 row
 - 4 Sep 2026 · build · one connection, operations ordered · §12.5.6 task-36.2 row
 - 15–16 Sep 2026 · project owner · inline re-authentication; sign-out drains or asks · §12.5.6 task-92 and task-93 rows
 - 5 Oct 2026 · project owner · calculator lines share the queue · §12.5.6 task-182 row (5)
+- 16 Oct 2026 · project owner · a refused write is set aside and the rest stored · §12.5.6 task-218 row
 
 ### FR-39 — Resume where the work was left
 

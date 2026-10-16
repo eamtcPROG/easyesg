@@ -354,10 +354,13 @@ describe('the calculator’s lines and runs (task 38.1)', () => {
   ])('refuses %s, saying what to do', async (_case, body) => {
     const { reportId } = await openReport(2026);
 
-    const refused = await putLine(reportId, randomUUID(), body).expect(400);
+    const lineId = randomUUID();
+    const refused = await putLine(reportId, lineId, body).expect(400);
     expect(problemType(refused)).toBe(`${PROBLEM}/validation-failed`);
     // A message from the catalogue, not a bare status: a key with no entry would leave `detail` out.
     expect((refused.body as { detail?: string }).detail).toEqual(expect.any(String));
+    // **And it names the line** (task 218): the line's own refusal, so autosave sets this line aside and keeps sending.
+    expect((refused.body as { refused?: { lineId: string }[] }).refused?.map((item) => item.lineId)).toEqual([lineId]);
   });
 
   it('will not move a line to another report', async () => {

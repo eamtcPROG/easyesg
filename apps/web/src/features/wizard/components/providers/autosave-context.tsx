@@ -32,6 +32,10 @@ export interface AutosaveContextValue {
   readonly hasUnsynced: boolean;
   readonly change: ReturnType<typeof useAutosave>['change'];
   readonly retry: ReturnType<typeof useAutosave>['retry'];
+  /** Lets a set-aside write go (task 218) — the banner's, per item. */
+  readonly discard: ReturnType<typeof useAutosave>['discard'];
+  /** The report the queue is this report's — what a set-aside item's link leads into (task 218). */
+  readonly reportId: string;
   /** The session tier said the session has ended (task 92) — the rail's and the exit's probe. */
   readonly endSession: ReturnType<typeof useAutosave>['endSession'];
   /** The reader signed in again over the step (task 92) — the dialogue's. */
@@ -56,7 +60,7 @@ export function AutosaveProvider({
   // per render would reload the queue on every keystroke.
   const [store] = useState(browserPendingWriteStore);
   const scope = pendingWriteScope({ accountId, reportId });
-  const { state, change, retry, endSession, resume, durable } = useAutosave({ reportId, scope, store });
+  const { state, change, retry, discard, endSession, resume, durable } = useAutosave({ reportId, scope, store });
 
   // A non-primitive handed to a provider: memoized, or every consumer re-renders on every render
   // of this component regardless of whether the state moved (the rerender rule, by hand — no
@@ -69,11 +73,13 @@ export function AutosaveProvider({
       hasUnsynced: hasUnsynced(state),
       change,
       retry,
+      discard,
+      reportId,
       endSession,
       resume,
       durable,
     }),
-    [state, change, retry, endSession, resume, durable],
+    [state, change, retry, discard, reportId, endSession, resume, durable],
   );
 
   // Task 83.2: the step's standing, told to the `(app)` layout's registry, so an organization switch in

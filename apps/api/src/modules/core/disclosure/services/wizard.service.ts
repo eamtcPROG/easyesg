@@ -7,9 +7,14 @@ import {
   type PresentationPrecision,
 } from '@api/contracts/presentation-precision.port';
 
+import { DISCLOSURE_LABELS, type DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
+import { ItemsRefusedError } from '@api/app/filters/items-refused.error';
+import { refusalWords } from '@api/app/filters/refusal-words';
 import { requestContext, requestLocale } from '@api/infrastructure/persistence/request-context';
 import { presentedPlaces } from '../domain/figure-precision';
+import { wordRefusedValues } from '../domain/refused-value-words';
 import type { DisclosureValue } from '../models/disclosure-value.model';
+import type { WordedRefusedInput, WordedRefusedValue } from '../models/refused-write.model';
 import type { DisclosureModuleSummary, PresentedDisclosureStep } from '../models/wizard-step.model';
 import { ClearOutstandingNotice } from '../use-cases/clear-outstanding-notice.use-case';
 import { ReadWizardStep } from '../use-cases/read-wizard-step.use-case';
@@ -40,6 +45,7 @@ export class WizardService {
     private readonly clearance: ClearOutstandingNotice,
     @Inject(FIELD_CHANGE_COUNTS) private readonly changes: FieldChangeCounts,
     @Inject(ELEMENT_PRECISION) private readonly elementPrecision: ElementPrecision,
+    @Inject(DISCLOSURE_LABELS) private readonly labels: DisclosureLabelResolver,
   ) {}
 
   modules(query: { readonly reportId: string }): Promise<readonly DisclosureModuleSummary[]> {
@@ -69,27 +75,52 @@ export class WizardService {
    * The ordinary write, then — **on the same transaction** — FR-164's notice withdrawn if the write answered the last of
    * what it listed (task 51.2; 182/134). Two flows composed here rather than one use case doing both: what a write admits
    * is `WriteDisclosureValues`' rule, and whether it cleared a notice is `ClearOutstandingNotice`'s.
+   *
+   * **What it refused is worded here, in the request's language** (task 218; §12.5.6's task-218 row (a)), with each
+   * field named by the version the report pins. **Where nothing was stored, the request is refused** — as its first
+   * refusal, carrying them all — so a write that changed nothing is never a success.
    */
   async write(command: {
     readonly reportId: string;
     readonly values: readonly DisclosureValueInput[];
-  }): Promise<DisclosureValue[]> {
-    const written = await this.writes.write(command);
+  }): Promise<{ readonly stored: DisclosureValue[]; readonly refused: WordedRefusedValue[] }> {
+    const outcome = await this.writes.write(command);
+    const locale = requestLocale();
+    const at = { version: outcome.taxonomyVersion, locale };
+    const refused = wordRefusedValues({
+      refused: outcome.refused,
+      labels: outcome.refused.length === 0 ? null : this.labels.labels(at),
+      members: outcome.refused.length === 0 ? null : this.labels.memberLabels(at),
+      words: (refusal) => refusalWords({ refusal, locale }),
+    });
+    const first = outcome.refused[0];
+    if (outcome.stored.length === 0 && first !== undefined) {
+      throw new ItemsRefusedError({ first: first.refusal, refused });
+    }
+
     const organizationId = requestContext()?.organizationId;
     // The tenant transaction has bound it before a controller runs; its absence is not a refusal to word.
     if (organizationId === undefined) throw new Error('A disclosure was written with no organization bound');
     await this.clearance.execute({
       reportId: command.reportId,
       organizationId,
-      writtenElements: command.values.map((value) => value.elementKey),
+      writtenElements: outcome.stored.map((value) => value.elementKey),
     });
-    return written;
+    return { stored: outcome.stored, refused };
   }
 
-  writeDerivationInputs(command: {
+  /** The inputs a derived figure is computed from, by `write`'s rule for what it refuses (task 218). */
+  async writeDerivationInputs(command: {
     readonly reportId: string;
     readonly inputs: readonly DerivationInputWriteInput[];
-  }): Promise<void> {
-    return this.derivationWrites.write(command);
+  }): Promise<{ readonly refused: WordedRefusedInput[] }> {
+    const outcome = await this.derivationWrites.write(command);
+    const locale = requestLocale();
+    const refused = outcome.refused.map(({ inputKey, refusal }) => ({ ...refusalWords({ refusal, locale }), inputKey }));
+    const first = outcome.refused[0];
+    if (refused.length === command.inputs.length && first !== undefined) {
+      throw new ItemsRefusedError({ first: first.refusal, refused });
+    }
+    return { refused };
   }
 }

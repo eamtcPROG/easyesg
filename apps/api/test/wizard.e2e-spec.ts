@@ -49,6 +49,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
   const http = () => request(app.getHttpServer());
   const objectOf = <T>(body: unknown): T => (body as { object: T }).object;
   const objectsOf = <T>(body: unknown): T[] => (body as { objects: T[] }).objects;
+  /** What a write stored — its answer is `{ stored, refused }` since task 218. */
+  const storedOf = <T>(body: unknown): T[] => objectOf<{ stored: T[] }>(body).stored;
 
   interface Cause {
     condition: string;
@@ -197,7 +199,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
   it('says where work last happened, per module, from the values themselves (FR-39, task 35.3)', async () => {
     const reportId = await createReport(await openPeriod(2026));
 
-    const written = objectsOf<{ updatedAt: number }>((await http()
+    const written = storedOf<{ updatedAt: number }>((await http()
       .put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
         values: [{ elementKey: B1_ELEMENT, valueText: 'Individual', state: DISCLOSURE_STATE.OK }],
       }).expect(200)).body);
@@ -224,7 +226,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     // The MOST RECENT answer in the module, not the last one in the taxonomy's order: `Assets`
     // iterates before `BasisForPreparation`, and it is answered second, so a summary that took the
     // last element it met would report the older timestamp.
-    const later = objectsOf<{ updatedAt: number }>((await http()
+    const later = storedOf<{ updatedAt: number }>((await http()
       .put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
         values: [{ elementKey: 'Assets', valueNumeric: '1000', state: DISCLOSURE_STATE.OK }],
       }).expect(200)).body);
@@ -273,7 +275,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
   it('persists a value, acknowledges the commit, and reads it back on the step', async () => {
     const reportId = await createReport(await openPeriod(2026));
 
-    const written = objectsOf<{ elementKey: string; valueText: string | null; state: string }>(
+    const written = storedOf<{ elementKey: string; valueText: string | null; state: string }>(
       (await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
         values: [{ elementKey: B1_ELEMENT, valueText: 'Consolidated', state: DISCLOSURE_STATE.OK }],
       }).expect(200)).body);
@@ -361,9 +363,9 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       values: [{ elementKey: B1_ELEMENT, valueText: 'Individual', state: DISCLOSURE_STATE.OK }],
     };
 
-    const first = objectsOf<{ id: string }>((await http()
+    const first = storedOf<{ id: string }>((await http()
       .put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send(body).expect(200)).body);
-    const again = objectsOf<{ id: string }>((await http()
+    const again = storedOf<{ id: string }>((await http()
       .put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send(body).expect(200)).body);
 
     // An offline queue that retries must not leave two answers to one question.
@@ -410,7 +412,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
   it('keeps a cleared field as a row in state ok, and reads it as unanswered (182/17)', async () => {
     const reportId = await createReport(await openPeriod(2026));
     const write = async (value: Record<string, unknown>) =>
-      objectsOf<{ state: string; valueNumeric: string | null }>(
+      storedOf<{ state: string; valueNumeric: string | null }>(
         (await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({ values: [value] })
           .expect(200)).body,
       );
@@ -850,9 +852,91 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     const reportId = await createReport(periodId);
     await http().post(`/api/v1/periods/${periodId}/lock`).set(admin.authorization).expect(200);
 
-    await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+    const refused = await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
       values: [{ elementKey: B1_ELEMENT, valueText: 'late', state: DISCLOSURE_STATE.OK }],
     }).expect(409);
+    // **A refusal of the report names no item** (task 218): its absence is what tells autosave to hold the queue,
+    // since nothing it holds could be stored.
+    expect((refused.body as { refused?: unknown }).refused).toBeUndefined();
+  });
+
+  /**
+   * **A refused value no longer holds the rest** (task 218; §12.5.6's task-218 row). The write stores what it admits
+   * and names what it refuses, worded and with its field named, so autosave can set that one aside.
+   */
+  describe('a value refused for its own sake (task 218)', () => {
+    interface Refused {
+      elementKey: string; dimensionKey: string; ordinal: number; modules: string[];
+      label: string | null; memberLabel: string | null; type: string; title?: string; detail?: string;
+    }
+    const UNKNOWN_MEMBER = {
+      elementKey: 'AmountOfEmissionToAir',
+      dimensionKey: 'NotAPollutantMember',
+      ordinal: 0,
+      valueNumeric: '12',
+      unitCode: 'kg',
+      state: DISCLOSURE_STATE.OK,
+    };
+
+    it('stores the rest, and names the refused one with its field, its reason and where it is', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const answer = objectOf<{ stored: { elementKey: string }[]; refused: Refused[] }>(
+        (await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+          values: [UNKNOWN_MEMBER, { elementKey: B1_ELEMENT, valueText: 'Consolidated', state: DISCLOSURE_STATE.OK }],
+        }).expect(200)).body,
+      );
+
+      expect(answer.stored.map((value) => value.elementKey)).toEqual([B1_ELEMENT]);
+      expect(answer.refused).toHaveLength(1);
+      expect(answer.refused[0]).toMatchObject({
+        elementKey: 'AmountOfEmissionToAir',
+        dimensionKey: 'NotAPollutantMember',
+        ordinal: 0,
+        modules: ['B4'],
+        type: `${PROBLEM_BASE_URI}/validation-failed`,
+        // A member the version does not name is named nothing — never its key.
+        memberLabel: null,
+      });
+      // The field is named in the reader's language, and the reason is worded — NFR-79's three parts, not a slug.
+      expect(answer.refused[0]?.label).toEqual(expect.any(String));
+      expect(answer.refused[0]?.label).not.toBe('AmountOfEmissionToAir');
+      expect(answer.refused[0]?.detail).toEqual(expect.any(String));
+
+      // The admitted value is on the record; the refused one drew no row.
+      const b1 = (await readStep(reportId, 'B1')).fields.find((f) => f.elementKey === B1_ELEMENT);
+      expect(b1?.valueText).toBe('Consolidated');
+      expect((await readStep(reportId, 'B4')).fields.filter((f) => f.dimensionKey !== '')).toEqual([]);
+    });
+
+    it('refuses a request it stored nothing of as its first refusal, listing every one', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const response = await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: [UNKNOWN_MEMBER, { elementKey: 'NotAnElement', valueText: 'x', state: DISCLOSURE_STATE.OK }],
+      }).expect(400);
+
+      const body = response.body as { type: string; refused?: Refused[] };
+      expect(body.type).toBe(`${PROBLEM_BASE_URI}/validation-failed`);
+      expect(body.refused?.map((item) => item.elementKey)).toEqual(['AmountOfEmissionToAir', 'NotAnElement']);
+    });
+
+    it('stores the inputs it admits, and names the one no derivation reads', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const answer = objectOf<{ refused: { inputKey: string; type: string }[] }>(
+        (await http().put(`/api/v1/reports/${reportId}/derivation-inputs`).set(editor.authorization).send({
+          values: [
+            { inputKey: 'NotAnInput', valueNumeric: '1' },
+            { inputKey: 'NumberOfEmployeesAtTheBeginningOfTheReportingPeriod', valueNumeric: '40' },
+          ],
+        }).expect(200)).body,
+      );
+      expect(answer.refused.map((item) => [item.inputKey, item.type])).toEqual([
+        ['NotAnInput', `${PROBLEM_BASE_URI}/validation-failed`],
+      ]);
+      const stored = (await readStep(reportId, 'B8')).derivationInputs.find(
+        (input) => input.key === 'NumberOfEmployeesAtTheBeginningOfTheReportingPeriod',
+      );
+      expect(stored?.value).toBe('40');
+    });
   });
 
   /**
@@ -1593,7 +1677,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
           { inputKey: 'NumberOfEmployeesWhoLeftDuringTheReportingPeriod', valueNumeric: '12' },
           { inputKey: 'NumberOfEmployeesAtTheBeginningOfTheReportingPeriod', valueNumeric: '100' },
           { inputKey: 'NumberOfEmployeesAtTheEndOfTheReportingPeriod', valueNumeric: '92' },
-        ] }).expect(204);
+        ] }).expect(200);
       expect((await moduleOf(reportId, 'B8'))?.answered).toBe(1);
 
       await write(reportId, [headcount('40')]);
@@ -1612,7 +1696,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       // equivalent act is now writing an input, since the figure itself is the platform's to set.
       await http().put(`/api/v1/reports/${reportId}/derivation-inputs`).set(editor.authorization)
         .send({ values: [{ inputKey: 'NumberOfEmployeesWhoLeftDuringTheReportingPeriod', valueNumeric: '13' }] })
-        .expect(204);
+        .expect(200);
     });
 
     it('takes a threshold change from the store, with no redeploy and no restart (FR-72, UC-81)', async () => {
@@ -1675,7 +1759,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     const putInputs = async (
       reportId: string,
       values: Record<string, unknown>[],
-      status = 204,
+      status = 200,
     ): Promise<void> => {
       await http().put(`/api/v1/reports/${reportId}/derivation-inputs`).set(editor.authorization)
         .send({ values }).expect(status);

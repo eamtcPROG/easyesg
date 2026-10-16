@@ -1,4 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { ItemsRefusedError } from '@api/app/filters/items-refused.error';
+import { refusalWords } from '@api/app/filters/refusal-words';
+import { requestLocale } from '@api/infrastructure/persistence/request-context';
 import type { ScopeTotal } from '../domain/scope-total';
 import type { CalcRun, StoredCalcRun } from '../models/calc-run.model';
 import type { CalcSource, CalcSourceKey } from '../models/calc-source.model';
@@ -13,6 +16,7 @@ import { ReadCalculator } from '../use-cases/read-calculator.use-case';
 import { RecordCalcRun } from '../use-cases/record-calc-run.use-case';
 import { RemoveCalcSource } from '../use-cases/remove-calc-source.use-case';
 import { RestoreFigure } from '../use-cases/restore-figure.use-case';
+import { isLineRefusal } from '../use-cases/calc-source-refusal-error';
 import { WriteCalcSource, type WriteCalcSourceCommand } from '../use-cases/write-calc-source.use-case';
 
 /**
@@ -47,8 +51,19 @@ export class CalculatorService {
     return this.readSources.execute(query);
   }
 
-  write(command: WriteCalcSourceCommand): Promise<CalcSource> {
-    return this.writeSource.execute(command);
+  /**
+   * A line written whole. **A refusal of the line names it** (task 218; §12.5.6's task-218 row (a), (b)): the problem
+   * carries `refused`, which tells autosave to set this line aside and keep sending the rest of its queue; a refusal of
+   * the report carries none and holds the queue.
+   */
+  async write(command: WriteCalcSourceCommand): Promise<CalcSource> {
+    try {
+      return await this.writeSource.execute(command);
+    } catch (error) {
+      if (!isLineRefusal(error)) throw error;
+      const words = refusalWords({ refusal: error, locale: requestLocale() });
+      throw new ItemsRefusedError({ first: error, refused: [{ ...words, lineId: command.sourceId }] });
+    }
   }
 
   remove(command: CalcSourceKey): Promise<void> {

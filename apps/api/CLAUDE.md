@@ -563,6 +563,13 @@ Four things to know before touching it:
 - **A `BEFORE UPDATE` trigger refuses a locked report's every write but `status`**, so a scope change
   inside a locked period is refused below the application as well as above it (P-4). Row comparison,
   not a column list, exactly as task 31.2's.
+- **A disclosure write stores what it admits and names what it refuses** (task 218; §12.5.6's task-218 row). Each
+  value meets `domain/value-refusal.ts` on its own, the store's computed-figure guard is caught per value, and the
+  answer is `{ stored, refused }`; where nothing was stored, `ItemsRefusedError` answers as the first refusal with all
+  of them in `refused`. The derivation inputs follow the same rule, and a calculator line's own refusals
+  (`isLineRefusal`) name the line. **That extension is how autosave tells an item's refusal from the report's**, so a
+  new per-value check belongs in `valueRefusal` and a new line refusal in `isLineRefusal` — thrown anywhere else, it
+  names no item and holds the reporter's whole queue.
 - **The writes admit the editor**, which is the opposite of the split `EntitiesController` and
   `PeriodsController` carry — master data is OA-owned (D-2), a report is the Contributor's workspace
   (UC-18, FR-26). A create route the RC could not reach means the author cannot start their report.

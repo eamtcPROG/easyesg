@@ -1,13 +1,32 @@
 import {
   readProblemDocument,
-  readResultList,
+  readResultObject,
   type DerivationInputWrite,
   type DisclosureValueResponse,
   type DisclosureValueWrite,
+  type ProblemDocument,
   type WriteDerivationInputsRequest,
   type WriteDisclosureValuesRequest,
 } from '@easyesg/contracts';
+import type { RefusedWrite } from '@/features/wizard/tools/autosave-state';
 import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
+import { refusedInputs, refusedValues } from './refused-items';
+
+/** What a write came to: what the api stored, and what it refused for each write's own sake (task 218). */
+export interface WriteAnswered<TStored> {
+  readonly stored: TStored;
+  readonly refused: readonly RefusedWrite[];
+}
+
+/**
+ * **A problem that names its items is about them, not the report** (task 218; §12.5.6's task-218 row (b)): nothing was
+ * stored, and every item it names is refused for its own sake — an answer the queue sets aside rather than a failure
+ * that holds it. A problem naming none, or naming them in a shape this reader does not know, stays the failure it is.
+ */
+function itemsRefused(problem: ProblemDocument, read: (value: unknown) => RefusedWrite[] | null): RefusedWrite[] | null {
+  const items = problem.extensions?.refused;
+  return items === undefined ? null : read(items);
+}
 
 /**
  * The browser's one write (task 35.2): `PUT /api/v1/reports/{id}/values` through the token-attaching
@@ -37,7 +56,7 @@ export async function putDisclosureValues(input: {
   readonly reportId: string;
   readonly values: readonly DisclosureValueWrite[];
   readonly fetch?: typeof fetch;
-}): Promise<ApiOutcome<DisclosureValueResponse[]>> {
+}): Promise<ApiOutcome<WriteAnswered<DisclosureValueResponse[]>>> {
   const body: WriteDisclosureValuesRequest = { values: [...input.values] };
   const send = input.fetch ?? fetch;
   let response: Response;
@@ -55,13 +74,22 @@ export async function putDisclosureValues(input: {
 
   const parsed: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    return { status: API_OUTCOME.Problem, problem: readProblemDocument(parsed, response.status) };
+    const problem = readProblemDocument(parsed, response.status);
+    const refused = itemsRefused(problem, refusedValues);
+    return refused === null
+      ? { status: API_OUTCOME.Problem, problem }
+      : { status: API_OUTCOME.Ok, value: { stored: [], refused }, messages: [] };
   }
   try {
-    const list = readResultList<DisclosureValueResponse>(parsed, VALUES_PATH(input.reportId));
-    return { status: API_OUTCOME.Ok, value: list.items, messages: list.messages };
-  } catch {
+    const result = readResultObject<{ stored: DisclosureValueResponse[]; refused: unknown }>(
+      parsed,
+      VALUES_PATH(input.reportId),
+    );
+    const refused = refusedValues(result.object.refused);
     // An answer this tier could not read is the same fact, with the same remedy, as no answer.
+    if (refused === null || !Array.isArray(result.object.stored)) return { status: API_OUTCOME.Unreachable };
+    return { status: API_OUTCOME.Ok, value: { stored: result.object.stored, refused }, messages: result.messages };
+  } catch {
     return { status: API_OUTCOME.Unreachable };
   }
 }
@@ -78,16 +106,15 @@ const INPUTS_PATH = (reportId: string): string => `/api/v1/reports/${reportId}/d
  * would be the per-screen divergence UX-89 exists to prevent. What differs is only where they land,
  * and that is `flushSnapshot`'s partition rather than a branch anyone writing a field has to know.
  *
- * **204, so there is nothing to read back.** A derivation input has no server-computed properties —
- * unlike a disclosure, whose state the api settles (FR-30) — so the acknowledgement is the status
- * code. The queue clears on what it *sent* rather than on what came back, which is what makes an
- * empty response sufficient here and is already true of the other path.
+ * **The answer names what it refused, and nothing else** (task 218): a derivation input has no server-computed
+ * properties — unlike a disclosure, whose state the api settles (FR-30) — so what was stored is what was sent and not
+ * refused, and the queue clears on what it *sent*.
  */
 export async function putDerivationInputs(input: {
   readonly reportId: string;
   readonly values: readonly DerivationInputWrite[];
   readonly fetch?: typeof fetch;
-}): Promise<ApiOutcome<null>> {
+}): Promise<ApiOutcome<WriteAnswered<null>>> {
   const body: WriteDerivationInputsRequest = { values: [...input.values] };
   const send = input.fetch ?? fetch;
   let response: Response;
@@ -102,7 +129,20 @@ export async function putDerivationInputs(input: {
   } catch {
     return { status: API_OUTCOME.Unreachable };
   }
-  if (response.ok) return { status: API_OUTCOME.Ok, value: null, messages: [] };
   const parsed: unknown = await response.json().catch(() => null);
-  return { status: API_OUTCOME.Problem, problem: readProblemDocument(parsed, response.status) };
+  if (!response.ok) {
+    const problem = readProblemDocument(parsed, response.status);
+    const refused = itemsRefused(problem, refusedInputs);
+    return refused === null
+      ? { status: API_OUTCOME.Problem, problem }
+      : { status: API_OUTCOME.Ok, value: { stored: null, refused }, messages: [] };
+  }
+  try {
+    const result = readResultObject<{ refused: unknown }>(parsed, INPUTS_PATH(input.reportId));
+    const refused = refusedInputs(result.object.refused);
+    if (refused === null) return { status: API_OUTCOME.Unreachable };
+    return { status: API_OUTCOME.Ok, value: { stored: null, refused }, messages: result.messages };
+  } catch {
+    return { status: API_OUTCOME.Unreachable };
+  }
 }

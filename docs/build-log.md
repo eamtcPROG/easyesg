@@ -32342,3 +32342,93 @@ Row (a) and (b):
   one browser journey that writes under the axis.
 - **Skipped**: `openapi:check`, since no controller or DTO changed, and `migrations:check`, since there is no
   migration. No review agents: this closes a task, not Stage 3, which still holds task 48.
+
+## Task 218 — a refused answer no longer holds the rest · 2026-10-16
+
+The follow-up task 217's entry named. Autosave sends everything pending in one request, the api refused a batch whole
+(task 36.5), and the queue outlives a reload (FR-38), so **one answer the api refuses for good held every later edit
+back**, on every step, with the indicator saying *failed* and nothing naming the field. Task 217 removed the one
+refusal a reporter actually met. This task removes the shape.
+
+### Decided (project owner, one batch of four)
+
+`architecture.md` §12.5.6's new task-218 row (1)–(4). FR-38 gains behaviour 5 and AC-6, and FR-204's sentence that
+leaned on the old behaviour (*"Because a refused write holds the queue"*) was restated in the same edit.
+
+- **(1) The api saves what it admits and names what it refuses.** *Declined:* the batch refused whole with the
+  refused ones named (my recommendation); the client finding them by sending each alone. This **reverses task 36.5's
+  all-or-nothing batch**, and the row says why that is safe: 36.5's reason was the indicator, and (3) answers it.
+- **(2) A refused write is kept on the device, marked *failed*, and never sent again** until its field changes or it
+  is discarded. *Declined:* dropped with a notice.
+- **(3) The indicator stays *failed* while anything is set aside, and the banner names each field.** *Declined:*
+  *saved*, with only the field marked.
+- **(4) All three of the queue's kinds.** *Declined:* answers only.
+
+### Settled in the task
+
+Row (a)–(d), each derived rather than asked:
+
+- **The contract**: `PUT /values` answers an object, `{ stored, refused }`, in place of the list. Each refused value
+  carries its key, its refusal worded as a problem words it, and its field's and member's names and modules, by the
+  labels of the pinned version (task 42.2's naming). **Where nothing was stored, the request answers as its first
+  refusal**, carrying the same `refused` as an extension (`ItemsRefusedError`), so a one-value refusal reads exactly
+  as it did. That is why every existing single-value refusal case in `wizard.e2e-spec.ts` passed unchanged. Inputs answer
+  `{ refused }` with 200 in place of 204; a line's own refusals name the line.
+- **The extension is the discriminator**: a problem with `refused` is about those items, one without it is about
+  the report (not found, a lock or an archive from the database's `45001`/`45002`, a role, a session, no factor set).
+  Which refusals are an item's is decided once per write: `domain/value-refusal.ts` for a value, the store's
+  computed-figure guard caught per value because it writes nothing and raises nothing, and `isLineRefusal` beside
+  `calcSourceRefusalError` for a line.
+- **One wording rule**: `refusalWords` (`app/filters/refusal-words.ts`) words a refusal for the problem filter and for
+  a refused item alike, so the two cannot drift.
+- **The client**: the reducer's `setAside`, beside `pending`, kept in IndexedDB under `<scope>/set-aside` and read
+  back through its own validator. `FLUSH_SUCCEEDED` carries `refused`, `CHANGED` on a set-aside key moves it back into the
+  queue, and `DISCARDED` lets it go. `saveStateOf` reads *failed* while anything is set aside. A set-aside write is
+  **not** *unsynced*: it is not on its way, it survives a reload, and leaving abandons nothing, so the unload warning
+  and the organization switch's *blocked* still read `pending` alone.
+- **The screen**: `AutosaveBanner` composes two banners, the old one renamed `UnsyncedBanner` and the new
+  `SetAsideBanner`. Each item names its field and member, links to the field on the first step presenting it (as a
+  finding links) or to S-09 for a line, shows the api's detail, and offers *Discard my change*. Six strings in each of
+  the three catalogues.
+
+### What the building found
+
+- **A decision row can be right while the code is not, and the reverse.** 36.5's *"all-or-nothing"* comment was
+  correct about the indicator and silent about the queue. The defect was in neither half alone; it was in how they
+  composed. The searched shape was every `throw` inside the three write use cases: each is now per item, or a refusal
+  of the report on purpose.
+- **The test harness pinned the old contract in two places a type could not see**: `use-autosave.spec.tsx`'s fake
+  api answered the old list envelope, and the line case's own fake did too. Both read as *unreachable* after the
+  change, which is the reader's correct verdict on an answer it does not recognise.
+- **`docs:check`'s Covered-FR claim** read FR-38's Status line as the authority, so the row covers FR-38 alone; FR-37's
+  text did not change.
+
+### Conventions read against the diff
+
+`nestjs-best-practices`: the use cases stay framework-free, and `di-use-interfaces-tokens` and
+`di-prefer-constructor-injection` hold for the new `DISCLOSURE_LABELS` dependency of `WizardService`.
+`error-throw-http-exceptions` is declined as this repository always declines it: `ItemsRefusedError` is a
+`DomainError`. `one-idea-per-file`: the per-value check left the use case for `domain/` with a spec
+(`file-one-behaviour-api`), as did the naming (`refused-value-words.ts`) and the banner's subject
+(`tools/set-aside-subject.ts`). `one-kind-per-folder`: `banner/` stays files only. `vercel-react-best-practices`:
+`discard` is a `useCallback` over `dispatch` and joins the memoized context value; the per-render `Object.values`
+over `setAside` is declined as `rerender-simple-expression-in-memo` directs, since it is a handful of entries.
+
+### The close ran
+
+A shared package changed (`packages/contracts`), so every dependent's row ran:
+
+- `pnpm lint`; `typecheck` in `contracts`, `api`, `web` and `admin`; `pnpm openapi:check`, after regenerating and
+  staging the contract; `pnpm routes:check`; `pnpm docs:check`, 48 of 48 after the counts this task moves.
+- Unit suites: `api`, with `value-refusal`, `refused-value-words`, `isLineRefusal` and the filter's `ItemsRefusedError`
+  case new; `web`, with the reducer's set-aside cases, `refused-items`, `set-aside-subject`, `storedSetAside` and two
+  hook cases new; `admin`.
+- `pnpm e2e`: 75 suites, 1,833 tests. `pnpm e2e:worker`: 16 of 16. `pnpm e2e:web`, all three projects: 368 of 369.
+  **The one failure was my assertion**: the *failed* indicator draws a `×` glyph before its words, so an exact text
+  match missed. It now matches the words, as the sibling journey at line 436 already did, and the journey passes alone.
+- **The new browser journey does what the reporter met**: a real change queued offline, one write the api refuses
+  planted beside it in IndexedDB, the tab closed, the report reopened online. The good answer is stored, the refused
+  one is named with a link to B4, a later answer saves on its own, and *Discard my change* clears *failed*. Before this
+  task the poll for the good answer would never have been satisfied.
+- **Skipped**: `migrations:check`, since there is no migration. No review agents: this closes a task, not Stage 3,
+  which still holds task 48.

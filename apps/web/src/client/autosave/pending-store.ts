@@ -1,4 +1,4 @@
-import type { QueuedWrite } from '@/features/wizard/tools/autosave-state';
+import type { QueuedWrite, SetAsideWrite } from '@/features/wizard/tools/autosave-state';
 
 /**
  * The durable half of FR-38 (task 35.2): where unacknowledged changes wait between one page and the
@@ -32,6 +32,9 @@ import type { QueuedWrite } from '@/features/wizard/tools/autosave-state';
 export interface PendingWriteStore {
   load(scope: string): Promise<readonly QueuedWrite[]>;
   save(scope: string, writes: readonly QueuedWrite[]): Promise<void>;
+  /** What was set aside under this scope (task 218) — kept beside the queue, and read back with it. */
+  loadSetAside(scope: string): Promise<readonly SetAsideWrite[]>;
+  saveSetAside(scope: string, items: readonly SetAsideWrite[]): Promise<void>;
 }
 
 /** Whether the store survives the tab — what the fallback gives up, stated rather than hidden. */
@@ -93,6 +96,41 @@ const isWriteList = (value: unknown): value is QueuedWrite[] => Array.isArray(va
 export const storedQueue = (stored: unknown): readonly QueuedWrite[] => (isWriteList(stored) ? stored : []);
 
 /**
+ * The record a scope's set-aside writes are kept under (task 218) — a third segment, so it can meet no queue's scope,
+ * which is `<accountId>/<reportId>`.
+ */
+const setAsideRecord = (scope: string): string => `${scope}/set-aside`;
+
+const isTextOrNull = (value: unknown): boolean => value === null || typeof value === 'string';
+
+const isOptionalText = (value: unknown): boolean => value === undefined || typeof value === 'string';
+
+const isSetAsideItem = (item: unknown): boolean => {
+  if (typeof item !== 'object' || item === null) return false;
+  const shaped = item as { key?: unknown; write?: unknown; refusal?: unknown };
+  if (typeof shaped.key !== 'string' || !isQueuedItem(shaped.write)) return false;
+  const refusal = shaped.refusal as { title?: unknown; detail?: unknown; label?: unknown; memberLabel?: unknown; modules?: unknown } | null;
+  return (
+    typeof refusal === 'object' &&
+    refusal !== null &&
+    isOptionalText(refusal.title) &&
+    isOptionalText(refusal.detail) &&
+    isTextOrNull(refusal.label) &&
+    isTextOrNull(refusal.memberLabel) &&
+    Array.isArray(refusal.modules) &&
+    refusal.modules.every((module) => typeof module === 'string')
+  );
+};
+
+/**
+ * What a stored set-aside list reads back as (task 218): every item one this reader recognises, or nothing — for
+ * `storedQueue`'s reason, an earlier build's shape must not become a key the queue trusts. Exported for its spec.
+ */
+const isSetAsideList = (value: unknown): value is SetAsideWrite[] => Array.isArray(value) && value.every(isSetAsideItem);
+
+export const storedSetAside = (stored: unknown): readonly SetAsideWrite[] => (isSetAsideList(stored) ? stored : []);
+
+/**
  * The IndexedDB adapter, over **one connection held for the page's lifetime**.
  *
  * **Once that connection is open, a `save` needs no macrotask** — and that, rather than speed, is
@@ -144,16 +182,15 @@ export function indexedDbPendingWriteStore(indexedDb: IDBFactory): PendingWriteS
     return opening;
   };
 
-  const writeTo = (
-    db: IDBDatabase,
-    scope: string,
-    writes: readonly QueuedWrite[],
-  ): Promise<void> => {
+  const writeTo = (db: IDBDatabase, record: string, items: readonly unknown[]): Promise<void> => {
     const store = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME);
     const settled =
-      writes.length === 0 ? request(store.delete(scope)) : request(store.put([...writes], scope));
+      items.length === 0 ? request(store.delete(record)) : request(store.put([...items], record));
     return settled.then(() => undefined);
   };
+
+  const readFrom = (db: IDBDatabase, record: string): Promise<unknown> =>
+    request<unknown>(db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(record));
 
   /** One operation, behind everything already asked for. A failure does not poison the chain. */
   const inTurn = <T>(work: (db: IDBDatabase) => Promise<T>): Promise<T> => {
@@ -174,14 +211,16 @@ export function indexedDbPendingWriteStore(indexedDb: IDBFactory): PendingWriteS
   return {
     durable: true,
     load(scope) {
-      return inTurn((db) =>
-        request<unknown>(
-          db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(scope),
-        ).then(storedQueue),
-      );
+      return inTurn((db) => readFrom(db, scope).then(storedQueue));
     },
     save(scope, writes) {
       return inTurn((db) => writeTo(db, scope, writes));
+    },
+    loadSetAside(scope) {
+      return inTurn((db) => readFrom(db, setAsideRecord(scope)).then(storedSetAside));
+    },
+    saveSetAside(scope, items) {
+      return inTurn((db) => writeTo(db, setAsideRecord(scope), items));
     },
   };
 }
@@ -189,12 +228,19 @@ export function indexedDbPendingWriteStore(indexedDb: IDBFactory): PendingWriteS
 /** The in-memory adapter — the fallback, and what the hook's spec drives. */
 export function memoryPendingWriteStore(): PendingWriteStoreHandle {
   const queues = new Map<string, readonly QueuedWrite[]>();
+  const setAside = new Map<string, readonly SetAsideWrite[]>();
   return {
     durable: false,
     load: (scope) => Promise.resolve(queues.get(scope) ?? []),
     save: (scope, writes) => {
       if (writes.length === 0) queues.delete(scope);
       else queues.set(scope, [...writes]);
+      return Promise.resolve();
+    },
+    loadSetAside: (scope) => Promise.resolve(setAside.get(scope) ?? []),
+    saveSetAside: (scope, items) => {
+      if (items.length === 0) setAside.delete(scope);
+      else setAside.set(scope, [...items]);
       return Promise.resolve();
     },
   };
@@ -220,5 +266,7 @@ export function browserPendingWriteStore(): PendingWriteStoreHandle {
     },
     load: (scope) => active.load(scope).catch(() => demote().load(scope)),
     save: (scope, writes) => active.save(scope, writes).catch(() => demote().save(scope, writes)),
+    loadSetAside: (scope) => active.loadSetAside(scope).catch(() => demote().loadSetAside(scope)),
+    saveSetAside: (scope, items) => active.saveSetAside(scope, items).catch(() => demote().saveSetAside(scope, items)),
   };
 }

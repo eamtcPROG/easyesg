@@ -4289,6 +4289,39 @@ export interface components {
             /** @description Unix epoch milliseconds, UTC. */
             updatedAt: number;
         };
+        RefusedValueDto: {
+            /** @example EnergyConsumptionFromElectricity */
+            elementKey: string;
+            /**
+             * @description Empty where the field has no dimension.
+             * @example RenewableEnergyMember
+             */
+            dimensionKey: string;
+            ordinal: number;
+            /**
+             * @description The modules presenting the field, to lead to it.
+             * @example [
+             *       "B3"
+             *     ]
+             */
+            modules: string[];
+            /** @description The field's name in the reader's language. */
+            label: string | null;
+            /** @description The member's name — the breakdown row or the choice. */
+            memberLabel: string | null;
+            /** @description The refusal’s problem type, as a problem document names it. */
+            type: string;
+            /** @description The refusal’s title. Omitted where none is worded. */
+            title?: string;
+            /** @description What happened, so what, and what now (NFR-79). */
+            detail?: string;
+        };
+        WriteDisclosureValuesResponseDto: {
+            /** @description What was durably committed — UX-36 acknowledges the commit, not local state. */
+            stored: components["schemas"]["DisclosureValueResponseDto"][];
+            /** @description Each value refused for its own sake; the rest were stored. */
+            refused: components["schemas"]["RefusedValueDto"][];
+        };
         DisclosureValueWriteDto: {
             /** @example NumberOfEmployees */
             elementKey: string;
@@ -4316,6 +4349,20 @@ export interface components {
         WriteDisclosureValuesRequestDto: {
             /** @description One field on blur, or everything a step change or an offline queue accumulated (FR-37, FR-38). The write is an upsert on the natural key, so a retried queue does not double-write. */
             values: components["schemas"]["DisclosureValueWriteDto"][];
+        };
+        RefusedInputDto: {
+            /** @example AnnualHoursWorkedPerEmployee */
+            inputKey: string;
+            /** @description The refusal’s problem type, as a problem document names it. */
+            type: string;
+            /** @description The refusal’s title. Omitted where none is worded. */
+            title?: string;
+            /** @description What happened, so what, and what now (NFR-79). */
+            detail?: string;
+        };
+        WriteDerivationInputsResponseDto: {
+            /** @description Each input refused for its own sake; the rest were stored. */
+            refused: components["schemas"]["RefusedInputDto"][];
         };
         DerivationInputWriteDto: {
             /** @example HoursWorkedByOneFullTimeEmployee */
@@ -8348,18 +8395,18 @@ export interface operations {
             };
         };
         responses: {
-            /** @description What was durably committed — UX-36 acknowledges the commit, not local state. */
+            /** @description What was durably committed — UX-36 acknowledges the commit, not local state — and each value refused for its own sake, the rest having been stored (task 218). */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResultListDto"] & {
-                        objects?: components["schemas"]["DisclosureValueResponseDto"][];
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["WriteDisclosureValuesResponseDto"];
                     };
                 };
             };
-            /** @description A field the pinned version does not name; a value marked not available with no reason (or a blank one), or a reason on any other state; a unit outside the element’s admitted list, where the standard states one. */
+            /** @description Nothing was stored, every value being refused, as the first is — a field the pinned version does not name; a member its axes do not admit; a derived figure; a value marked not available with no reason (or a blank one), or a reason on any other state; a unit outside the element’s admitted list. The document lists each in `refused`. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -8373,7 +8420,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The reporting period is locked (FR-22). */
+            /** @description The reporting period is locked (FR-22), with no `refused` — or, listing them in `refused`, every value reached a figure the calculator computed, whose replacement is the override route. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -8397,14 +8444,18 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Stored, and the figures they feed recomputed. */
-            204: {
+            /** @description Stored, and the figures they feed recomputed — with each input refused for its own sake, the rest having been stored (task 218). */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["WriteDerivationInputsResponseDto"];
+                    };
+                };
             };
-            /** @description An input no registered derivation reads. */
+            /** @description Nothing was stored: every input is one no registered derivation reads. The document lists each in `refused`. */
             400: {
                 headers: {
                     [name: string]: unknown;

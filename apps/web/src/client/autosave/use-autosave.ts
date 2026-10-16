@@ -19,17 +19,23 @@ import {
   isQueuedLine,
   type CommittedLine,
   type QueuedWrite,
+  type RefusedWrite,
   type AutosaveState,
   type FlushFailure,
 } from '@/features/wizard/tools/autosave-state';
 import type { PendingWriteStore } from './pending-store';
 import { deleteCalcLine, putCalcLine } from './write-lines';
+import { refusedLine } from './refused-items';
 import { putDerivationInputs, putDisclosureValues } from './write-values';
 
-/** What a flush that landed carries back: the disclosures as committed, and each line as stored or removed. */
+/**
+ * What a flush that landed carries back: the disclosures as committed, each line as stored or removed, and what the api
+ * refused for each write's own sake, the rest having been stored (task 218).
+ */
 interface FlushCommitted {
   readonly values: readonly DisclosureValueResponse[];
   readonly lines: readonly CommittedLine[];
+  readonly refused: readonly RefusedWrite[];
 }
 
 
@@ -113,6 +119,8 @@ export interface AutosaveHandle {
   readonly change: (write: QueuedWrite) => void;
   /** Another attempt after a failure — the banner's retry, and the backoff timer's. */
   readonly retry: () => void;
+  /** The reader lets a set-aside write go, by its key (task 218). */
+  readonly discard: (key: string) => void;
   /** A navigation found the session gone (task 92): nothing flushes, and the step's dialogue opens. */
   readonly endSession: () => void;
   /** The reader signed in again over the step (task 92): what waited is sent. */
@@ -181,15 +189,23 @@ export function useAutosave(input: {
       // derived figure after each write, so sending the inputs last means the last recompute sees
       // every operand this flush carried — the reverse order computes twice and the first is stale.
       // Lines after values, so a line at a site B1 gained in the same flush finds the site there.
-      let committed: DisclosureValueResponse[] = [];
+      // **What the api refuses for a write's own sake is gathered, not failed on** (task 218; §12.5.6's task-218 row):
+      // the rest of the flush goes on, and the reducer sets each refused write aside. Only a refusal of the report — a
+      // problem naming no item — ends the flush, and holds the queue as before.
+      const refused: RefusedWrite[] = [];
+      let committed: readonly DisclosureValueResponse[] = [];
       if (values.length > 0) {
         const outcome = await putDisclosureValues({ reportId, values, fetch: input.fetch });
         if (outcome.status !== API_OUTCOME.Ok) failWith(outcome);
-        else committed = outcome.value;
+        else {
+          committed = outcome.value.stored;
+          refused.push(...outcome.value.refused);
+        }
       }
       if (inputs.length > 0) {
         const written = await putDerivationInputs({ reportId, values: inputs, fetch: input.fetch });
         if (written.status !== API_OUTCOME.Ok) failWith(written);
+        else refused.push(...written.value.refused);
       }
       const committedLines: CommittedLine[] = [];
       // One request per line, in the order they were changed: a line is written whole under its own id (task 38.1).
@@ -200,18 +216,29 @@ export function useAutosave(input: {
           committedLines.push({ lineId: line.lineId, stored: null });
         } else {
           const stored = await putCalcLine({ reportId, lineId: line.lineId, line: line.line, fetch: input.fetch });
-          if (stored.status !== API_OUTCOME.Ok) failWith(stored);
-          else committedLines.push({ lineId: line.lineId, stored: stored.value });
+          if (stored.status === API_OUTCOME.Ok) committedLines.push({ lineId: line.lineId, stored: stored.value });
+          else {
+            // A refusal that names this line is the line's: set aside, and the next line still goes.
+            const lineRefused =
+              stored.status === API_OUTCOME.Problem ? refusedLine({ problem: stored.problem, lineId: line.lineId }) : null;
+            if (lineRefused === null) failWith(stored);
+            else refused.push(lineRefused);
+          }
         }
       }
-      return { values: committed, lines: committedLines };
+      return { values: committed, lines: committedLines, refused };
     },
     networkMode: 'online',
     retry: (count, error) =>
       error.failure.kind === FLUSH_FAILURE.UNREACHABLE && count < schedule.retries,
     retryDelay: schedule.delayMs,
     onSuccess: (done) =>
-      dispatch({ type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED, committed: done.values, lines: done.lines }),
+      dispatch({
+        type: AUTOSAVE_EVENT.FLUSH_SUCCEEDED,
+        committed: done.values,
+        lines: done.lines,
+        refused: done.refused,
+      }),
     onError: (error) => dispatch({ type: AUTOSAVE_EVENT.FLUSH_FAILED, failure: error.failure }),
   });
   const { mutate, isPending } = flush;
@@ -220,8 +247,9 @@ export function useAutosave(input: {
   // is what stops the first render's empty set from wiping a queue that has not been read yet.
   useEffect(() => {
     let cancelled = false;
-    void store.load(scope).then((writes) => {
-      if (!cancelled) dispatch({ type: AUTOSAVE_EVENT.RESTORED, writes });
+    // The set-aside list beside the queue (task 218): restored together, so a reload shows a refused field as failed.
+    void Promise.all([store.load(scope), store.loadSetAside(scope)]).then(([writes, setAside]) => {
+      if (!cancelled) dispatch({ type: AUTOSAVE_EVENT.RESTORED, writes, setAside });
     });
     return () => {
       cancelled = true;
@@ -237,6 +265,12 @@ export function useAutosave(input: {
         .map((item) => item.write),
     );
   }, [store, scope, state.hydrated, state.pending]);
+
+  // And the set-aside list, under the same guard and for the same reason.
+  useEffect(() => {
+    if (!state.hydrated) return;
+    void store.saveSetAside(scope, Object.values(state.setAside));
+  }, [store, scope, state.hydrated, state.setAside]);
 
   // The one place a flush leaves from. `isPending` covers a flush Query is holding for the network
   // or a retry delay, which the reducer sees as "not in flight" between attempts.
@@ -305,8 +339,10 @@ export function useAutosave(input: {
     [],
   );
   const retry = useCallback(() => dispatch({ type: AUTOSAVE_EVENT.RETRY_REQUESTED }), []);
+  // The reader lets a set-aside write go (task 218); the field shows what is stored.
+  const discard = useCallback((key: string) => dispatch({ type: AUTOSAVE_EVENT.DISCARDED, key }), []);
   const endSession = useCallback(() => dispatch({ type: AUTOSAVE_EVENT.SESSION_ENDED }), []);
   const resume = useCallback(() => dispatch({ type: AUTOSAVE_EVENT.SESSION_RESUMED }), []);
 
-  return { state, change, retry, endSession, resume, durable: store.durable };
+  return { state, change, retry, discard, endSession, resume, durable: store.durable };
 }

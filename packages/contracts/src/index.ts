@@ -256,6 +256,15 @@ export type DerivationInput = components['schemas']['DerivationInputDto'];
 export type DerivationInputWrite = components['schemas']['DerivationInputWriteDto'];
 export type WriteDerivationInputsRequest =
   components['schemas']['WriteDerivationInputsRequestDto'];
+/**
+ * What a write answers (task 218): what it stored, and each item it refused for that item's own sake, worded in the
+ * reader's language. Where nothing was stored, the same items arrive as a problem document's `refused` extension —
+ * whose presence is what tells a client the refusal is about those items rather than the report.
+ */
+export type WriteDisclosureValuesResponse = components['schemas']['WriteDisclosureValuesResponseDto'];
+export type RefusedValue = components['schemas']['RefusedValueDto'];
+export type WriteDerivationInputsResponse = components['schemas']['WriteDerivationInputsResponseDto'];
+export type RefusedInput = components['schemas']['RefusedInputDto'];
 // The carbon calculator — S-09's read and its lines (UC-32; tasks 38.1, 39.1).
 export {
   CALCULATOR_FIGURE,

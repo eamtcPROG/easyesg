@@ -1483,6 +1483,12 @@
         "unreachableBody": "{count, plural, one {One change did not reach} other {# changes did not reach}} the server. We will send them again shortly; you can keep working.",
         "refusedTitle": "Changes were refused",
         "refusedBody": "{count, plural, one {One change could not be saved} other {# changes could not be saved}}. Check the reporting period's state and try again.",
+        "setAsideTitle": "{count, plural, one {One change was not saved} other {# changes were not saved}}",
+        "setAsideBody": "Everything else has been saved. Correct the field below or discard the change; until then the report keeps the value saved before.",
+        "setAsideField": "An unnamed field",
+        "setAsideInput": "A value a figure is calculated from",
+        "setAsideLine": "A line on the carbon calculator",
+        "discard": "Discard my change",
         "retry": "Try again"
       },
       "readOnly": {
