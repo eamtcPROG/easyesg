@@ -32278,3 +32278,67 @@ shared packages — `packages/contracts` and `packages/i18n` — so the close ra
 - The api run's `MessageCatalogue … before initialiseCatalogue()` lines come from the notification and outbox suites'
   failure arms, which build their services without the catalogue; none is this task's.
 - **Skipped**: none of the table's rows. No review agents: this closes a task, not Stage 3, which still holds task 48.
+
+## Task 217 — a breakdown's total saves, and stops holding every other answer back · 2026-10-16
+
+Found tracing a report whose answers had stopped saving: from 17:32 every `PUT /reports/{id}/values` answered 400
+*"The category selected is not one the standard admits"*, across B2, B3, B4, B5 and B10, and nine answers sat in the
+browser's queue. One of them was B3's electricity **total**, and it held the other eight back.
+
+### The cause: two readers of one rule
+
+The step read (`MemberResolver.membersFor`) served a breakdown's rows as *the axis's default member, then its members*.
+The write (`admitsMember`) admitted only `axis.members`, and the artefact lists the default member apart from them. For
+`BreakdownOfEnergyConsumptionAxis`, `TotalRenewableAndNonRenewableEnergyMember` is the default, so the row S-07 offered
+first was the one row the api always refused. No value had ever been stored under any of the axis's members, across
+every account in the dev database.
+
+**Why one refusal stopped every save.** Two correct decisions compose into it. The write is all-or-nothing about what a
+batch names (task 36.5, so the indicator never says *saved* over half a step). Autosave sends everything pending in one
+request and keeps the queue in IndexedDB across a reload (task 89, FR-38). So the refused total travelled with every
+later edit and failed each of them. Neither half is wrong. What was wrong is that one write could not be accepted
+ever, and the reporter could do nothing on the screen to fix that. This task removes that write. A queue that sets a
+permanently refused write aside, rather than retrying it forever, is a separate question and is not decided here.
+
+### Decided (project owner, asked once the defect was traced)
+
+`architecture.md` §12.5.6's new task-217 row (1): **the total is a real answer.** A breakdown admits on the write
+exactly the rows the read serves. This is what the task-36.4 row already said a breakdown is, *"one question answered
+several ways (B3's energy — total, renewable, non-renewable)"*. *Declined:* not offering the total as an editable row.
+
+### Settled in the task
+
+Row (a) and (b):
+- The rows are `breakdownMembers` in `models/axis-leaves.ts`, beside the leaf rule. `membersFor` and the write's check
+  both call it, so the two cannot drift apart again. The task-36.8 correction is the precedent: it moved the leaf
+  rule there for the same reason, and this read had kept its own copy.
+- Only a breakdown admits its default member. `admitsMember` takes `{ axis, member, breakdown }`, and the write reads
+  `AxisShapes.breakdownAxes` as the step read does. A classification's default is its domain's head
+  (`TypeOfPollutantMember`), a category, and stays refused.
+
+### Verification
+
+- **`axis-leaves.spec.ts`**, new, 7 cases. **Proven to bite**: with the breakdown branch removed, the total's two cases
+  fail (2 of 7). The file was restored and the diff checked.
+- **`wizard.e2e-spec.ts`**: *stores the total the step serves first, beside its parts* writes all three electricity
+  rows and reads them back on the step, then has `TypeOfPollutantMember` refused 400. On the old write its first `PUT`
+  answers 400.
+- **`e2e/web/wizard.spec.ts`**, B3's case: it asserted the total textbox existed and only ever filled the renewable
+  row, which is how the refusal went unseen. It now fills the total and polls the store for it under the default
+  member.
+- **Searched for the shape**: every reader of an axis's members. `answerableMembers`' other reader is
+  `MemberResolver.answerable`, the classification picker, which offers leaves and admits the same. `defaultMember` is
+  read nowhere else in `apps/api`, `apps/web` or `packages/vsme`. No other read builds rows the write does not admit.
+
+### The close ran
+
+- `pnpm --filter @easyesg/api test`: 300 suites, 2,382 tests. `pnpm typecheck` in `apps/api`. `pnpm lint`.
+  `pnpm docs:check`: 48 of 48, after the three counts this task moves.
+- `pnpm e2e`: 75 suites, 1,830 tests, the new case confirmed to run in a single verbose run of it. `pnpm e2e:worker`:
+  16 of 16. That is the api row plus the worker's boot, because the change rewires a provider the module registers in
+  both modes.
+- `pnpm e2e:web e2e/web/wizard.spec.ts --project identity -g "B3 reports energy"`: 1 of 1. This is the case the task
+  edits. **Narrowed rather than the row's two whole projects**: no `apps/web` source changed, and the B3 case is the
+  one browser journey that writes under the axis.
+- **Skipped**: `openapi:check`, since no controller or DTO changed, and `migrations:check`, since there is no
+  migration. No review agents: this closes a task, not Stage 3, which still holds task 48.

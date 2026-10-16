@@ -9,7 +9,7 @@ import {
   type TaxonomyRegistry,
 } from '@api/contracts/taxonomy-registry.port';
 import { PUBLISHED_CLASSIFICATION_LOCALE } from '../constants/classification.constants';
-import { answerableMembers } from '../models/axis-leaves';
+import { answerableMembers, breakdownMembers } from '../models/axis-leaves';
 import { NO_DIMENSION } from '../models/disclosure-value.model';
 import type { DisclosureAxis } from '../models/wizard-step.model';
 
@@ -61,13 +61,7 @@ export class MemberResolver {
     const axis = this.axis(name);
     // A typed axis registered as a breakdown is a contradiction the registry settles, not this: its
     // rows are identifiers the reporter supplies, so it keeps task 91.2's ordinals.
-    const members =
-      axis === null || axis.typed
-        ? []
-        : [
-            ...(axis.defaultMember ? [axis.defaultMember] : []),
-            ...axis.members.map((member) => member.key),
-          ];
+    const members = axis === null || axis.typed ? [] : breakdownMembers(axis);
     this.cache.set(name, members);
     return members;
   }

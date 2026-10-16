@@ -517,6 +517,24 @@ test('B3 reports energy along its breakdown, named by member (UC-21)', async ({ 
   // …and the undimensioned row — the one a breakdown that ignored its members would have written —
   // does not exist. Without this the case passes on exactly the defect it names.
   expect(await disclosureValueOf(stored)).toBeNull();
+
+  // **The total is an answer too** (task 217). It is the row the screen offers first, and the api
+  // refused it — so a reporter's total never saved, and every edit after it waited behind the refusal.
+  // Filled here and read from the store, because the indicator alone said *failed* and nothing checked it.
+  const total = group.getByRole('textbox', { name: 'Total energie regenerabilă și neregenerabilă', exact: true });
+  await total.fill('300');
+  await total.blur();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, {
+    timeout: 15_000,
+  });
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ ...stored, dimensionKey: 'TotalRenewableAndNonRenewableEnergyMember' }))
+          ?.valueNumeric,
+      { timeout: 15_000 },
+    )
+    .toBe('300');
 });
 
 /**

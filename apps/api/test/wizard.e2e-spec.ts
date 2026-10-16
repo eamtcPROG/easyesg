@@ -915,6 +915,54 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       expect(fuels.every((f) => f.ordinal === 0)).toBe(true);
     });
 
+    it('stores the total the step serves first, beside its parts (task 217)', async () => {
+      // **The row the read offers is a row the write takes.** The total is keyed by the axis's default
+      // member, which the artefact lists apart from its members, and the write admitted only the latter —
+      // so this 200 was a 400 and the total typed on S-07 never saved, holding every edit behind it.
+      const reportId = await createReport(await openPeriod(2026));
+      const write = (dimensionKey: string, valueNumeric: string) => ({
+        elementKey: 'EnergyConsumptionFromElectricity',
+        dimensionKey,
+        ordinal: 0,
+        valueNumeric,
+        state: DISCLOSURE_STATE.OK,
+        carriedForward: false,
+      });
+      await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: [
+          write('TotalRenewableAndNonRenewableEnergyMember', '100'),
+          write('RenewableEnergyMember', '40'),
+          write('NonRenewableEnergyMember', '60'),
+        ],
+      }).expect(200);
+
+      const step = objectOf<Step>(
+        (await http()
+          .get(`/api/v1/reports/${reportId}/modules/B3`)
+          .set(editor.authorization)
+          .expect(200)).body,
+      );
+      const electricity = step.fields.filter((f) => f.elementKey === 'EnergyConsumptionFromElectricity');
+      expect(electricity.map((f) => [f.dimensionKey, f.valueNumeric])).toEqual([
+        ['TotalRenewableAndNonRenewableEnergyMember', '100'],
+        ['RenewableEnergyMember', '40'],
+        ['NonRenewableEnergyMember', '60'],
+      ]);
+
+      // **And only a breakdown's default is an answer.** A classification's is its domain's head — a
+      // category — and stays refused, so the total's admission is not every default member's.
+      await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
+        values: [{
+          elementKey: 'AmountOfEmissionToAir',
+          dimensionKey: 'TypeOfPollutantMember',
+          ordinal: 0,
+          valueNumeric: '12',
+          state: DISCLOSURE_STATE.OK,
+          carriedForward: false,
+        }],
+      }).expect(400);
+    });
+
     /**
      * **The step read selects by membership, not by equality** (task 36.4).
      *

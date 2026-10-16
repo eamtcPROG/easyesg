@@ -227,6 +227,7 @@ const httpProviders: Provider[] = [
       TAXONOMY_REGISTRY,
       DERIVATIONS,
       DERIVATION_RECALCULATOR,
+      AXIS_SHAPES,
     ],
     useFactory: (
       reports: ReportStore,
@@ -234,7 +235,8 @@ const httpProviders: Provider[] = [
       taxonomy: TaxonomyRegistry,
       derivations: Derivations,
       calculator: DerivationRecalculator,
-    ) => new WriteDisclosureValues(reports, values, taxonomy, derivations, calculator),
+      axisShapes: AxisShapes,
+    ) => new WriteDisclosureValues(reports, values, taxonomy, derivations, calculator, axisShapes),
   },
   // Task 38.4: the carbon calculator's figures arrive through this module's own rules, not through its store — a run's
   // write, and UC-34's override, its removal and an explanation, one use case each behind one service.

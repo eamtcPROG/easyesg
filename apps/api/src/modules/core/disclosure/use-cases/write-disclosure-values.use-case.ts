@@ -13,6 +13,7 @@ import { unitIsAdmitted } from '../models/admitted-unit';
 import { NOT_AVAILABLE_REASON, notAvailableReasonVerdict } from '../models/not-available-reason';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
+import type { AxisShapes } from '../interfaces/axis-shape.interface';
 import { admitsMember } from '../models/axis-leaves';
 import {
   answeredState,
@@ -65,6 +66,7 @@ export class WriteDisclosureValues {
     private readonly taxonomy: TaxonomyRegistry,
     private readonly derivations: Derivations,
     private readonly calculator: DerivationRecalculator,
+    private readonly axisShapes: AxisShapes,
   ) {}
 
   async write(command: WriteDisclosureValuesCommand): Promise<DisclosureValue[]> {
@@ -88,6 +90,10 @@ export class WriteDisclosureValues {
     // so a `dimension_key` the element's axes do not declare is no longer merely unread — it draws
     // a row. Checked here rather than trusted from the browser, which is P-4: the client that must
     // not send one is not the layer that can guarantee nobody does.
+    //
+    // **A breakdown admits the rows the step read serves, its total included** (task 217): the read
+    // and this check ask the same function, so the row offered first can no longer be the one refused.
+    const breakdowns = this.axisShapes.breakdownAxes({ standard: registered.standard });
     const misdimensioned = command.values.filter((value) => {
       if (value.dimensionKey === '') return false;
       return !known.get(value.elementKey)?.axes.some((key) => {
@@ -106,7 +112,7 @@ export class WriteDisclosureValues {
         // 2026). 36.8's fix wrote *"one answer for three readers"* and then left a second copy of it
         // here — locally correct, and free to drift from the picker's the day the leaf definition
         // moves.
-        return admitsMember(axis, value.dimensionKey);
+        return admitsMember({ axis, member: value.dimensionKey, breakdown: breakdowns.has(key) });
       });
     });
     if (misdimensioned.length > 0) throw new UnknownDisclosureDimensionError();
