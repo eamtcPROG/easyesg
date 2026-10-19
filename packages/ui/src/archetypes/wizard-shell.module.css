@@ -184,8 +184,11 @@
   max-width: var(--measure-text);
 }
 
+/* The step's measure too: stacked below `wide`, the panel — S-09's summary, S-08's count — lines up with the step above
+   it and the foot below rather than running on to the body's edge. Docked beside the step, its column is narrower. */
 .panel {
   min-width: 0;
+  max-width: var(--measure-text);
 }
 
 /* Below the side-by-side width, **a slot holding S-08's count** (`ValidationCountBar`, which marks its seat) is kept in
