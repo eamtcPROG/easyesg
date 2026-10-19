@@ -1192,6 +1192,7 @@
       },
       "loading": "Loading the reports…",
       "searchLabel": "Search by entity or fiscal year",
+      "open": "Open the report",
       "deletion": {
         "menu": "More actions for the {entity} report for {year}",
         "item": "Delete this report…",

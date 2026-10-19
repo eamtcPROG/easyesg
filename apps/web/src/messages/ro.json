@@ -1192,6 +1192,7 @@
       },
       "loading": "Se încarcă lista rapoartelor…",
       "searchLabel": "Căutați după entitate sau an fiscal",
+      "open": "Deschideți raportul",
       "deletion": {
         "menu": "Mai multe acțiuni pentru raportul {entity} pentru {year}",
         "item": "Ștergeți acest raport…",
