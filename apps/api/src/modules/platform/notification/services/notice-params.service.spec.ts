@@ -21,6 +21,16 @@ describe('NoticeParamsService', () => {
     });
   });
 
+  it('never asks the disclosure labels for an entity field, which would log it as a defect (task 219)', () => {
+    const labels = new DisclosureLabelService();
+    const asked = jest.spyOn(labels, 'label');
+    const named = new NoticeParamsService(labels, new EntityFieldNamesService());
+    expect(named.forLocale({ params: outstanding(['Turnover', 'entity:idno']), locale: 'ro' })).toEqual({
+      fields: 'B1: Cifra de afaceri și IDNO',
+    });
+    expect(asked.mock.calls.map(([query]) => query.key)).toEqual(['Turnover']);
+  });
+
   it('still leaves out a key nothing names — never printed as itself', () => {
     expect(params.forLocale({ params: outstanding(['entity:lei']), locale: 'en' })).toEqual({ fields: 'B1' });
   });

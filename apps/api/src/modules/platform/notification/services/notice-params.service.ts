@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Locale } from '@easyesg/i18n';
+import { isEntityField } from '@easyesg/validation';
 import { DISCLOSURE_LABELS, type DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
 import { ENTITY_FIELD_NAMES, type EntityFieldNames } from '@api/contracts/entity-field-names.port';
 import { paramsForLocale } from '../domain/notice-params';
@@ -12,7 +13,9 @@ import { paramsForLocale } from '../domain/notice-params';
  * cannot read one way in the centre and another in the inbox.
  *
  * **A field the entity's record answers is named by the api's own word** (task 210) — the IDNO, which no version labels —
- * so an outstanding report's notice names it as S-08 does rather than leaving it out.
+ * so an outstanding report's notice names it as S-08 does rather than leaving it out. **And it is only asked of that
+ * word** (task 219): `isEntityField` decides which source names a key, because the disclosure labels log every key they
+ * cannot name as a defect, and asking them first printed a false error for the IDNO on every day's sweep.
  */
 @Injectable()
 export class NoticeParamsService {
@@ -27,7 +30,9 @@ export class NoticeParamsService {
       params: input.params,
       locale: input.locale,
       labelOf: ({ version, key }) =>
-        this.labels.label({ version, locale: input.locale, key })?.text ?? entityFieldNames[key] ?? null,
+        isEntityField(key)
+          ? (entityFieldNames[key] ?? null)
+          : (this.labels.label({ version, locale: input.locale, key })?.text ?? null),
     });
   }
 }

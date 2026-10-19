@@ -32432,3 +32432,34 @@ A shared package changed (`packages/contracts`), so every dependent's row ran:
   task the poll for the good answer would never have been satisfied.
 - **Skipped**: `migrations:check`, since there is no migration. No review agents: this closes a task, not Stage 3,
   which still holds task 48.
+
+## Task 219 — a notice names the IDNO without a false error · 2026-10-19
+
+Found on starting the worker after task 218. The day's sweep (task 51.2) opened at boot and logged
+*"[DisclosureLabelService] no label for element entity:idno at 2026-05-01 in en — a disclosure will render unnamed"*,
+an `ERROR`, for every outstanding report, in every language. The notice it wrote read *"B1: IDNO, Baza de raportare…"*:
+the IDNO was named correctly. Only the log line was false.
+
+**The cause.** `NoticeParamsService` named a field by `this.labels.label(…)?.text ?? entityFieldNames[key]`, which is the
+disclosure labels first and the entity-field names second. `DisclosureLabelService.label` logs every key it cannot name
+as a defect, which is right for a disclosure and wrong for the IDNO, which task 210 made a field the entity's *record*
+answers and which no taxonomy version labels. So the fallback worked and the first question was the wrong one to ask.
+
+**The fix.** `isEntityField`, the closed vocabulary `@easyesg/validation` declares for exactly this question since task
+210, now decides which source names a key: an entity field is named by the api's own word, and anything else by the
+disclosure labels, as before. A key that is neither still reaches the disclosure labels and is still logged, which is
+the log doing its job. **No decision was needed**: the task-210 row already says the IDNO is named *"by the api's own
+word"*, and the code now asks only that.
+
+**Searched for the shape**: every caller of the per-key `label()`. There is one, this one. `NameFindings`, the other
+reader that names the IDNO, reads the whole label map (`labels(at)`), which logs nothing, and falls back the same way,
+so it never met this.
+
+### The close ran
+
+- `notice-params.service.spec.ts`: a new case spies on the disclosure labels and holds that they are asked about
+  `Turnover` and never about `entity:idno`. **Proven to bite**: with the old order restored, it fails (1 of 3), and
+  the file was put back.
+- `pnpm lint`; `typecheck` in `api`; `pnpm --filter @easyesg/api test`, 2,395 tests; `pnpm e2e`, 1,833; `pnpm e2e:worker`,
+  16 of 16, the boot of the entrypoint whose sweep logged the line. **Skipped**: `openapi:check`, since no controller or DTO changed, and the
+  browser suite, since no screen changed. No review agents: this closes a task, not Stage 3.
