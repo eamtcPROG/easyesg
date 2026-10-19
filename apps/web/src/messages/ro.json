@@ -757,11 +757,9 @@
       },
       "rowActions": {
         "edit": "Editați",
-        "editNamed": "Editați {name}",
         "view": "Vedeți",
-        "viewNamed": "Vedeți {name}",
         "periods": "Perioade",
-        "periodsNamed": "Perioade — {name}"
+        "menu": "Mai multe acțiuni pentru {name}"
       },
       "periods": {
         "entry": "{year} {standing}",

@@ -18,8 +18,7 @@ import { useCallback, useMemo, useTransition } from 'react';
 import { IndexView } from '@/shared/index-view';
 import { ListSearch } from '@/shared/list-search';
 import { Link, useRouter } from '@/i18n/navigation';
-import { PERIODS_FROM } from '@/lib/periods-from';
-import { ROUTES, entityPeriodsRoute, entityRoute, withQuery } from '@/lib/routes';
+import { ROUTES, entityRoute, withQuery } from '@/lib/routes';
 import {
   ENTITY_FILTER_ANY,
   ENTITY_SORT,
@@ -33,6 +32,7 @@ import { ENTITIES_MESSAGES } from '../shared/entity-messages';
 import styles from '../styles/entities.module.css';
 import { EntitiesToolbar } from './entities-toolbar';
 import { EntityPeriodsCell } from './entity-periods-cell';
+import { EntityRowMenu } from './entity-row-menu';
 
 /**
  * S-13's list, as an instance of the Index archetype (§4.6).
@@ -181,35 +181,8 @@ export function EntitiesList({ page, view, legalForms }: EntitiesListProps) {
         header: t('columns.actions'),
         align: COLUMN_ALIGN.END,
         size: COLUMN_SIZE.FIT,
-        cell: (row) => {
-          // An archived record takes no change (FR-20), so its button says it opens to be read.
-          const edits = row.standing === ENTITY_STATUS.ACTIVE;
-          return (
-            <span className={styles.rowActions}>
-              {/* 30 Sep 2026, project owner: the periods cell is a link, and a reader may not know to press it — so
-                  the row says where its periods are too, as it says how to edit. Archived included: its periods stay. */}
-              <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
-                <Link
-                  href={entityPeriodsRoute(row.id, PERIODS_FROM.ENTITIES)}
-                  aria-label={t('rowActions.periodsNamed', { name: row.name })}
-                >
-                  {t('rowActions.periods')}
-                </Link>
-              </Button>
-              <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
-                <Link
-                  href={entityRoute(row.id)}
-                  // The visible word, and a name that begins with it (WCAG 2.5.3) and ends with the row.
-                  aria-label={
-                    edits ? t('rowActions.editNamed', { name: row.name }) : t('rowActions.viewNamed', { name: row.name })
-                  }
-                >
-                  {edits ? t('rowActions.edit') : t('rowActions.view')}
-                </Link>
-              </Button>
-            </span>
-          );
-        },
+        // One ⋯ per row since 19 Oct 2026 (project owner): the record to edit or view, and its periods — `EntityRowMenu`.
+        cell: (row) => <EntityRowMenu row={row} />,
       },
     ],
     [t, tStanding, legalForms],

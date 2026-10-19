@@ -93,10 +93,9 @@ test('the first-use empty state teaches, and creating from it lands on the recor
     page.getByRole('link', { name: `Nicio perioadă încă — perioadele de raportare ale entității ${RUN_PREFIX} Brutăria` }),
   ).toHaveAttribute('href', /\/entities\/[0-9a-f-]{36}\/periods\?from=entities$/);
 
-  // 29 Sep 2026, project owner: the row says how to change it. The visible word is the verb and the name is the row's.
-  const edit = page.getByRole('link', { name: `Editați ${RUN_PREFIX} Brutăria`, exact: true });
-  await expect(edit).toHaveText('Editați');
-  await edit.click();
+  // 29 Sep 2026, project owner: the row says how to change it — since 19 Oct 2026 from its ⋯, named for the row.
+  await page.getByRole('button', { name: `Mai multe acțiuni pentru ${RUN_PREFIX} Brutăria`, exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Editați', exact: true }).click();
   await page.waitForURL(/\/entities\/[0-9a-f-]{36}$/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText(`${RUN_PREFIX} Brutăria`);
 });
@@ -131,10 +130,10 @@ test('each entity leads to its reporting periods, from the list and from its rec
   await toEntities.click();
   await page.waitForURL(/\/entities$/);
 
-  // 30 Sep 2026, project owner: and a button that says so, since a reader may not know the cell is a link.
-  const periods = page.getByRole('link', { name: `Perioade — ${name}`, exact: true });
-  await expect(periods).toHaveText('Perioade');
-  await periods.click();
+  // 30 Sep 2026, project owner: and the row says so, since a reader may not know the cell is a link — from its ⋯ since
+  // 19 Oct 2026.
+  await page.getByRole('button', { name: `Mai multe acțiuni pentru ${name}`, exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Perioade', exact: true }).click();
   await page.waitForURL(`**/entities/${entityId}/periods?from=entities`);
 
   // The record's side panel: the year leads to its period, and the link beneath to the entity's whole list.
@@ -451,12 +450,11 @@ test('archiving states its consequence, and the entity leaves active selection (
   await expect(page.getByRole('link', { name: `${RUN_PREFIX} Veche`, exact: true })).toBeVisible();
 
   // An archived row's action says it opens to be read, since nothing on the record can change.
-  const view = page.getByRole('link', { name: `Vedeți ${RUN_PREFIX} Veche`, exact: true });
-  await expect(view).toHaveText('Vedeți');
-  await expect(page.getByRole('link', { name: `Editați ${RUN_PREFIX} Veche` })).toHaveCount(0);
+  await page.getByRole('button', { name: `Mai multe acțiuni pentru ${RUN_PREFIX} Veche`, exact: true }).click();
+  await expect(page.getByRole('menuitem', { name: 'Editați' })).toHaveCount(0);
 
   // And its master data is frozen: UX-13 requires the read-only state to name its cause.
-  await view.click();
+  await page.getByRole('menuitem', { name: 'Vedeți', exact: true }).click();
   await expect(page.getByText('Entitate arhivată')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Salvați modificările' })).toHaveCount(0);
 });

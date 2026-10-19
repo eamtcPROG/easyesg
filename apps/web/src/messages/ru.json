@@ -757,11 +757,9 @@
       },
       "rowActions": {
         "edit": "Изменить",
-        "editNamed": "Изменить «{name}»",
         "view": "Открыть",
-        "viewNamed": "Открыть «{name}»",
         "periods": "Периоды",
-        "periodsNamed": "Периоды — «{name}»"
+        "menu": "Другие действия с «{name}»"
       },
       "periods": {
         "entry": "{year} {standing}",

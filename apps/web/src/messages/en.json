@@ -757,11 +757,9 @@
       },
       "rowActions": {
         "edit": "Edit",
-        "editNamed": "Edit {name}",
         "view": "View",
-        "viewNamed": "View {name}",
         "periods": "Periods",
-        "periodsNamed": "Periods — {name}"
+        "menu": "More actions for {name}"
       },
       "periods": {
         "entry": "{year} {standing}",
