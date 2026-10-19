@@ -32552,3 +32552,93 @@ The change reaches `apps/web` and `packages/ui`, so every dependent's row ran:
   through it.
 - **Skipped**: `pnpm e2e` and `e2e:worker`, since nothing in `apps/api` changed and the wire is unchanged. No review
   agents: this closes a task, not Stage 3, which still holds task 48.
+
+## Task 221 — §11.5's Number-with-unit, and what a figure was recorded as · 2026-10-19
+
+The follow-up task 220 named. §11.5 lists Number-with-unit among the form controls and no task had built it: S-07's
+disclosure field drew its unit in a slot of its own, S-09's line drew a second copy and the add-source form a third,
+and a number's value was set as prose. The prose names the control and nothing more, so the Components sheet's specimen
+settles its shape — and it disagreed with this morning's unit change (commit `51c933c4`) in three places.
+
+### Decided (project owner, one batch of four)
+
+`architecture.md` §12.5.6's new task-221 row (1)–(4); `design_spec.md` §11.5 amended with the control's paragraph.
+
+- **(1) The unit keeps the owner's look**, where the sheet draws a 14 px fixed unit with a lighter edge and a white
+  select. *Declined:* following the sheet.
+- **(2) The value's box follows the sheet**: filling the row, left-aligned, tabular lining numerals at weight 500.
+  *Declined:* a box sized to a figure with right-aligned digits — this session's own suggestion, which the sheet
+  contradicts.
+- **(3) Say back what was recorded, only where its spelling changed.** *Declined:* dropping it as met by task 220
+  (recommended).
+- **(4) Every figure with a unit**, the add-source form included. *Declined:* S-07 and the line only.
+
+### Settled in the task
+
+- **Composed, drawing neither box** — the sheet's own *"composed · ui/input.tsx + ui/select.tsx"*. `NumberWithUnit`
+  places a value control and a unit; `UnitLabel` is the fixed unit's box; a chosen unit stays the `Select` it was.
+- **No selector reaches into another component's markup any more.** This morning's change styled a chosen unit with
+  `.unit [role='combobox']` from the disclosure field's stylesheet. The row now sets `--field-surface`, an inherited
+  property the select's trigger reads, and the value's type comes from the input's own `inputmode="decimal"` — so a
+  number without a unit (40 of 78 quantitative elements, OQ-22) reads the same, and no prop says it twice.
+- **Two tokens**, `--field-unit-border` (the value's edge, the owner's choice) and `--field-number-weight`, and **three
+  measured pairings** in `tokens.spec.ts` under the unit's own names, so re-pointing the unit surface is measured
+  rather than assumed. All pass in both schemes.
+- **The disclosure field keeps its unit slot**: read-only, computed and currency figures pass through it, so the row is
+  drawn there whenever a unit is given. The copies in `calculator.module.css` (`.figure`, `.unit`, `.addingFigure`,
+  `.addingUnit`) and `step.module.css` (`.unit`) are gone.
+- **The add-source row names itself**: one visible label above both boxes, the figure's and the unit select's own
+  labels hidden — so the row is a group named as its input is, and `calculator.spec.ts` now finds the figure by role,
+  because `getByLabel` rightly resolves both.
+- **The said-back line** is the reducer's `recorded`: set by a hand-on whose recorded value reads differently from the
+  text typed, kept through its own acknowledgement, dropped when the reader returns to the field or another value
+  arrives. A status, not an alert. `forms.number.{recorded, recordedIn}` in each catalogue.
+
+### What the building found
+
+- **Task 220's field lost a whole selection on entry.** The journey extended for the said-back line typed into a
+  stored figure and stored 1240,52500: Playwright's `fill`, like a browser on a tabbed-into field, selects the field's
+  text as it focuses it, and the swap from *1.240,5* to `1240,5` waited for the next render, which dropped the
+  selection — so `2500` was appended. A reader tabbing into a figure and typing met the same. Task 220's journey had
+  passed because it focused the field first and filled it while already editing, so its own run could not see this.
+- **The first fix was wrong, and the browser suite said so.** It read whether the whole text was selected as the
+  field was entered, and put the caret at the end otherwise. Playwright selects and *then* focuses, and Chromium does
+  not report that selection to the focus handler — so the rule read *not selected* and moved the caret to the end of
+  fields whose text never changed (`12`), and four journeys appended there (`1215`), B8's, B10's and S-12's among them.
+  **What stands: the swap is flushed before the focus returns (`flushSync`), and only a swap touches the selection** —
+  it selects the whole new text; where the editing text is the shown text, the browser's caret or selection stands.
+  `number-field.spec.tsx` holds both halves: the whole text selected after a swap (fails without the flush), and a
+  caret left where it was when nothing is swapped (fails with the end-of-text rule put back).
+
+### Searched for the shape
+
+Every drawing of a unit in `apps/web` (`styles.unit`, `.figure`, `.addingUnit`) and every number field's caller for
+the unit's words. The months' unit chooser stays a plain select: it stands alone, with no figure beside it. The
+override form has no unit to draw — its label names tonnes of CO₂e.
+
+### Conventions read against the diff
+
+`vercel-composition-patterns`: the unit is a slot and the row's label an optional node — no boolean prop was added to
+`TextField`, `Select` or `DisclosureField`. `one-idea-per-file`: `NumberWithUnit` and `UnitLabel` are a file each, and
+the said-back rule lives in the reducer with its spec. `vercel-react-best-practices`: `flushSync` inside a focus handler
+is the one synchronous render this adds, deliberate and measured by the spec; nothing new is memoized, as before.
+`packages/ui`'s own checklist: no text, no colour outside `tokens.css`, the barrel exports both, §11.5 amended in the
+same change, and neither component carries `'use client'` — neither holds a handler or state of its own.
+
+### The close ran
+
+The change reaches `packages/ui` and `apps/web`, so every dependent's row ran:
+
+- `pnpm lint`; `typecheck` in `ui` and `web`; `pnpm docs:check`, 48 of 48 after the counts this task moves (the
+  plan's task total, the archive's numbers and rows, and `packages/ui`'s components, specs, token lines and barrel
+  exports); `pnpm routes:check`.
+- Unit suites: `ui`, 499, with `number-with-unit.spec.tsx` and three measured pairings new; `web`, 2,065, with the
+  said-back cases and the two entering cases new; `admin`, 315. **The new cases bite**: with `sayBack` forced off two
+  fail, without the flush one fails, and with the end-of-text caret put back one fails; each file was put back.
+- `pnpm e2e:web`: all three projects ran once, **369 of 370** — the one failure the selection defect above. After the
+  wrong first fix, `identity` and `expansion` ran again and four journeys failed; after the fix that stands, they ran a
+  third time, **342 of 342**. `admin` passed on the first run against the `packages/ui` this commit holds; what changed
+  after it is `apps/web`'s number field alone. The server's log held only the abandoned-stream line (digest
+  `2667547900`).
+- **Skipped**: `pnpm e2e` and `e2e:worker`, since nothing in `apps/api` changed. No review agents: this closes a task,
+  not Stage 3, which still holds task 48.

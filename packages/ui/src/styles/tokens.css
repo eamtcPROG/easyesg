@@ -206,6 +206,11 @@
   --field-border-invalid: var(--state-error);
   --field-surface-reasoned: var(--state-reasoned-tint);
   --field-unit-surface: var(--surface-sunken);
+  /* §11.5's Number-with-unit (task 221), the Components sheet's `field.unit.border` and `field.value.font`. The unit's edge
+     is the value's own — the project owner's choice where the sheet draws a lighter one (`design_spec.md` §11.5) — and a
+     number's value is set a step heavier than prose, its numerals equal-width and lining so figures line up. */
+  --field-unit-border: var(--field-border-rest);
+  --field-number-weight: 500;
   /* The box every one-line field draws — `TextField`'s control and `Select`'s trigger alike (task 170).
      It was two numbers until then, 46px by construction on the text field and 40px on the select, so a
      filter row of both was ragged; one token is what makes their parity a fact rather than a comment.

@@ -1,6 +1,7 @@
 import { CircleAlert, Info } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useId } from 'react';
+import { NumberWithUnit } from '../form/number-with-unit';
 import styles from './disclosure-field.module.css';
 
 /**
@@ -79,7 +80,7 @@ export interface DisclosureFieldProps {
   markerTone?: FieldTone;
   /** The control for this kind: `TextField`, `Select`, `DateField`, a textarea, a checkbox. */
   children: ReactNode;
-  /** UX-14: fixed by the taxonomy or chosen from a constrained list. Never a free-text input. */
+  /** UX-14: fixed by the taxonomy (`UnitLabel`) or chosen from a constrained list (`Select`). Never a free-text input. */
   unit?: ReactNode;
   /** UX-31 / FR-46: last year's value beside this year's input, where a prior period exists. */
   priorPeriod?: ReactNode;
@@ -154,12 +155,13 @@ export function DisclosureField({
 
       <p className={styles.help}>{help}</p>
 
-      <div className={styles.entry}>
+      {/* UX-14's unit sits beside the value and is never a free-text box — the caller passes a fixed
+          `UnitLabel` or a constrained control, and §11.5's Number-with-unit gives it its place (task 221). */}
+      {unit ? (
+        <NumberWithUnit unit={unit}>{children}</NumberWithUnit>
+      ) : (
         <div className={styles.control}>{children}</div>
-        {/* UX-14's unit sits beside the value and is never a free-text box — the caller passes a
-            fixed label or a constrained control, and this only gives it its place. */}
-        {unit ? <div className={styles.unit}>{unit}</div> : null}
-      </div>
+      )}
 
       {priorPeriod ? (
         <p className={styles.prior}>

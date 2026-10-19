@@ -13,6 +13,7 @@ import {
   DisclosureField,
   FIELD_TONE,
   SAVE_STATE,
+  UnitLabel,
   type FieldTone,
   type SaveState,
 } from '@easyesg/ui';
@@ -178,7 +179,7 @@ export function StepField({
       marker={marker?.label}
       markerTone={marker?.tone}
       // **Computed, not passed as an always-truthy element.** The anatomy renders
-      // `{unit ? <div className={styles.unit}>…</div> : null}`, so a `<FieldUnit />` that returned
+      // `{unit ? <NumberWithUnit unit={unit}>…</NumberWithUnit> : …}`, so a `<FieldUnit />` that returned
       // null would still lay out an empty box beside every text field — the slot has to be
       // `undefined`, which only the caller can decide. There is something to render when the
       // standard states a unit AND either one is in force or there is still a choice to offer.
@@ -190,7 +191,7 @@ export function StepField({
         // code itself, which is the reference a reader can cite (ISO 4217), never a symbol: `L`
         // reads as several currencies and `€` as none of Moldova's.
         field.currency !== null ? (
-          <span className={styles.unit}>{field.currency}</span>
+          <UnitLabel>{field.currency}</UnitLabel>
         ) : field.unitCodes.length > 0 && (unit !== null || (!readOnly && field.unitCodes.length > 1)) ? (
           <FieldUnit
             admitted={field.unitCodes}
@@ -295,7 +296,14 @@ export function StepField({
       {calculatorFigure ? (
         <CalculatedFigure field={field} readOnly={readOnly} />
       ) : (
-        <DisclosureControl field={withUnit} readOnly={readOnly} labelledBy={labelId} onCommit={change} />
+        <DisclosureControl
+          field={withUnit}
+          readOnly={readOnly}
+          labelledBy={labelId}
+          // Said back with what a number was recorded as (task 221): the filing's currency, else the unit in force.
+          unit={field.currency ?? (unit === null ? null : (unitNames[unit] ?? unit))}
+          onCommit={change}
+        />
       )}
     </DisclosureField>
   );

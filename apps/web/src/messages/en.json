@@ -137,7 +137,9 @@
     },
     "number": {
       "ambiguous": "The number “{typed}” can be read two ways, and the two values differ a thousandfold, so it was not saved. Choose the value you meant below.",
-      "choose": "The value you meant"
+      "choose": "The value you meant",
+      "recorded": "Recorded as {value}",
+      "recordedIn": "Recorded as {value} {unit}"
     }
   },
   "identity": {

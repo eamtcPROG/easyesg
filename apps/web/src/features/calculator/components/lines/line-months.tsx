@@ -64,6 +64,7 @@ export function LineMonths({
               invalidWords={tLine('invalidNumber')}
               read={(raw) => readFigure({ raw, format })}
               onCommit={(value) => onMonth({ index, value })}
+              unit={unit}
             />
           ),
         )}

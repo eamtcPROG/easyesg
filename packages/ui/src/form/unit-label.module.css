@@ -1,0 +1,14 @@
+/* A fixed unit's box (task 221): `--field-block-size` with its edge inside it, the value's type, the unit surface. */
+.unit {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-block-size: var(--field-block-size);
+  padding-inline: var(--space-4);
+  border: 1px solid var(--field-unit-border);
+  border-radius: var(--radius-1);
+  background: var(--field-unit-surface);
+  color: var(--text-body);
+  font: 400 15px/24px var(--font-text);
+  white-space: nowrap;
+}

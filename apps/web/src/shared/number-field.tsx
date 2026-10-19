@@ -2,7 +2,8 @@
 
 import { TextField } from '@easyesg/ui';
 import { useFormatter, useTranslations } from 'next-intl';
-import { useReducer, type ReactNode } from 'react';
+import { useReducer, type FocusEvent, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 import { decimalForEditing, decimalForReading, parseDecimalInput, type DecimalReading } from '@/lib/decimal-input';
 import {
   NUMBER_EVENT,
@@ -13,6 +14,7 @@ import {
   problemWords,
 } from '@/lib/number-entry';
 import { NumberChoice } from './number-choice';
+import styles from './number-field.module.css';
 
 /**
  * A number typed and committed when the reader leaves it (task 220; UX-34, UX-96; `architecture.md` §12.5.6's task-220
@@ -26,6 +28,10 @@ import { NumberChoice } from './number-choice';
  * answering the refusal's words or `null`. **`onCommit` is called on every leave that read a number**, changed or not,
  * because S-07's pre-filled value is accepted by leaving it untouched (FR-27, UX-34) — the caller knows what it last
  * stored, and this does not.
+ *
+ * **What was recorded is said back beneath it** (task 221; §12.5.6's task-221 row (3)) — *Înregistrat ca 1.240 MWh* —
+ * only where the recorded value reads differently from what was typed, until the reader returns to the field. A status,
+ * not an alert: nothing went wrong.
  *
  * **In `shared/` on its admission test**: S-07's numeric fields and derivation inputs and S-09's figure and months draw
  * it. A Client Component because it holds the text being edited.
@@ -41,6 +47,7 @@ export function NumberField({
   invalidWords,
   read,
   onCommit,
+  unit,
 }: {
   readonly label: string;
   readonly labelHidden?: boolean;
@@ -58,6 +65,8 @@ export function NumberField({
   readonly read?: (raw: string) => DecimalReading;
   /** The value read, canonical, or `null` for an emptied field. Answers the refusal's words, or `null`. */
   readonly onCommit: (value: string | null) => string | null;
+  /** The unit's words as the reader reads them — *MWh*, *MDL* — said back with what was recorded. */
+  readonly unit?: string | null;
 }) {
   const t = useTranslations('forms.number');
   const format = useFormatter();
@@ -70,9 +79,11 @@ export function NumberField({
 
   const handOn = (next: string | null): void => {
     const refusal = onCommit(next);
+    // Said back where what will be shown is not what was typed — `1240` shown as *1.240*, `1,24` chosen for `1.240`.
+    const sayBack = next !== null && (state.text ?? '').trim() !== decimalForReading({ value: next, format });
     dispatch(
       refusal === null
-        ? { type: NUMBER_EVENT.HANDED_ON, value: next ?? '' }
+        ? { type: NUMBER_EVENT.HANDED_ON, value: next ?? '', sayBack }
         : { type: NUMBER_EVENT.REFUSED, words: refusal },
     );
   };
@@ -83,6 +94,24 @@ export function NumberField({
     if ('invalid' in reading) dispatch({ type: NUMBER_EVENT.LEFT_UNREAD });
     else if ('ambiguous' in reading) dispatch({ type: NUMBER_EVENT.LEFT_AMBIGUOUS, readings: reading.ambiguous });
     else handOn(reading.value);
+  };
+
+  /**
+   * Entering the field swaps the reader's format for the editing one **before the focus returns**, and selects the whole
+   * of the new text (task 221, found by its journey). A browser selects a field's text when it is tabbed into, and
+   * Playwright's `fill` selects it before focusing; a swap left to the next render replaced the text under that
+   * selection, so a figure typed next was appended — `1240,5` and `2500` read as 1240,52500. **Only a swap touches the
+   * selection**: where the editing text is the shown text (`12`, `0,5`) nothing is replaced, and the caret or selection
+   * the browser made stands — Chromium does not report a selection made before focus to the focus handler, so a rule
+   * that read it moved the caret to the end of `12` and appended there instead.
+   */
+  const enter = (event: FocusEvent<HTMLInputElement>): void => {
+    if (readOnly) return;
+    const input = event.currentTarget;
+    const text = current === '' ? '' : decimalForEditing({ value: current, format });
+    const swaps = state.text === null && text !== input.value;
+    flushSync(() => dispatch({ type: NUMBER_EVENT.FOCUSED, text }));
+    if (swaps) input.select();
   };
 
   const shown = state.text ?? (current === '' ? '' : decimalForReading({ value: current, format }));
@@ -99,16 +128,19 @@ export function NumberField({
         readOnly={readOnly}
         inputMode="decimal"
         value={shown}
-        onFocus={() => {
-          if (!readOnly) {
-            dispatch({ type: NUMBER_EVENT.FOCUSED, text: current === '' ? '' : decimalForEditing({ value: current, format }) });
-          }
-        }}
+        onFocus={enter}
         onChange={(event) => dispatch({ type: NUMBER_EVENT.TYPED, text: event.currentTarget.value })}
         onBlur={leave}
         error={problemWords({ problem, typed: state.text ?? '', invalidWords, ambiguousWords: (typed) => t('ambiguous', { typed }) })}
       />
       {problem?.kind === NUMBER_PROBLEM.AMBIGUOUS ? <NumberChoice readings={problem.readings} onChoose={handOn} /> : null}
+      {state.recorded === null ? null : (
+        <p className={styles.recorded} role="status">
+          {unit
+            ? t('recordedIn', { value: decimalForReading({ value: state.recorded, format }), unit })
+            : t('recorded', { value: decimalForReading({ value: state.recorded, format }) })}
+        </p>
+      )}
     </div>
   );
 }

@@ -46,7 +46,7 @@ describe('numberEntryReducer (task 220)', () => {
 
   it('shows what it handed on until the value it is given moves', () => {
     const typed = numberEntryReducer(initialNumberEntry('10'), { type: NUMBER_EVENT.TYPED, text: '1240' });
-    const handed = numberEntryReducer(typed, { type: NUMBER_EVENT.HANDED_ON, value: '1240' });
+    const handed = numberEntryReducer(typed, { type: NUMBER_EVENT.HANDED_ON, value: '1240', sayBack: false });
     expect(handed).toMatchObject({ text: null, problem: null });
     expect(currentValue(handed)).toBe('1240');
     const arrived = numberEntryReducer(handed, { type: NUMBER_EVENT.VALUE_ARRIVED, value: '1240' });
@@ -57,6 +57,28 @@ describe('numberEntryReducer (task 220)', () => {
   it('lets a value arriving from elsewhere replace what is shown at rest', () => {
     const arrived = numberEntryReducer(initialNumberEntry('10'), { type: NUMBER_EVENT.VALUE_ARRIVED, value: '20' });
     expect(currentValue(arrived)).toBe('20');
+  });
+});
+
+describe('what the field says it recorded (task 221)', () => {
+  const handed = (sayBack: boolean, value = '1240') =>
+    numberEntryReducer(numberEntryReducer(initialNumberEntry(''), { type: NUMBER_EVENT.TYPED, text: value }), {
+      type: NUMBER_EVENT.HANDED_ON,
+      value,
+      sayBack,
+    });
+
+  it('says back a value whose spelling changed, and nothing where it did not or the field was emptied', () => {
+    expect(handed(true).recorded).toBe('1240');
+    expect(handed(false).recorded).toBeNull();
+    expect(handed(true, '').recorded).toBeNull();
+  });
+
+  it('keeps it through its own acknowledgement, and drops it for another value or the reader’s return', () => {
+    const acknowledged = numberEntryReducer(handed(true), { type: NUMBER_EVENT.VALUE_ARRIVED, value: '1240' });
+    expect(acknowledged.recorded).toBe('1240');
+    expect(numberEntryReducer(acknowledged, { type: NUMBER_EVENT.VALUE_ARRIVED, value: '7' }).recorded).toBeNull();
+    expect(numberEntryReducer(acknowledged, { type: NUMBER_EVENT.FOCUSED, text: '1240' }).recorded).toBeNull();
   });
 });
 

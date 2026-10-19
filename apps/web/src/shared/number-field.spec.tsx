@@ -1,5 +1,5 @@
 import type { Locale } from '@easyesg/i18n';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
@@ -12,12 +12,17 @@ const MESSAGES = { ro, en } as const;
 const INVALID = 'Nu este un număr.';
 
 /** Formats and a time zone passed explicitly: a provider mounted here inherits neither (`apps/web/CLAUDE.md`'s trap). */
-const draw = (input: { value: string; onCommit?: (value: string | null) => string | null; locale?: 'ro' | 'en' }) => {
+const draw = (input: {
+  value: string;
+  onCommit?: (value: string | null) => string | null;
+  locale?: 'ro' | 'en';
+  unit?: string;
+}) => {
   const onCommit = vi.fn(input.onCommit ?? (() => null));
   const locale: Locale = input.locale ?? 'ro';
   render(
     <NextIntlClientProvider locale={locale} messages={MESSAGES[locale]} formats={formats} timeZone="Europe/Chisinau">
-      <NumberField label="Cifra" value={input.value} invalidWords={INVALID} onCommit={onCommit} />
+      <NumberField label="Cifra" value={input.value} invalidWords={INVALID} onCommit={onCommit} unit={input.unit} />
     </NextIntlClientProvider>,
   );
   return { onCommit, field: screen.getByRole('textbox', { name: 'Cifra' }) };
@@ -82,5 +87,58 @@ describe('NumberField (task 220)', () => {
     await user.tab();
     expect(field).toHaveValue('-3');
     expect(screen.getByText('Nicio factură nu are o cifră negativă.')).toBeInTheDocument();
+  });
+
+  it('says back what it recorded, unit included, where the spelling changed — until the reader returns (task 221)', async () => {
+    const user = userEvent.setup();
+    const { field } = draw({ value: '', unit: 'MWh' });
+    await user.type(field, '1240');
+    await user.tab();
+    expect(screen.getByRole('status')).toHaveTextContent('Înregistrat ca 1.240 MWh');
+    await user.click(field);
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('says nothing back where the figure was typed as it is shown', async () => {
+    const user = userEvent.setup();
+    const { field, onCommit } = draw({ value: '' });
+    await user.type(field, '1.240,5');
+    await user.tab();
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith('1240.5');
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('says back the reading chosen where it reads differently from what was typed', async () => {
+    const user = userEvent.setup();
+    draw({ value: '' });
+    await user.type(screen.getByRole('textbox', { name: 'Cifra' }), '1.240');
+    await user.tab();
+    await user.click(screen.getByRole('button', { name: '1,24' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Înregistrat ca 1,24');
+  });
+
+  it('keeps a field’s whole text selected as it is entered, so a figure typed next replaces it (task 221)', async () => {
+    const user = userEvent.setup();
+    const { field, onCommit } = draw({ value: '1240.5' });
+    // As a browser does when the field is tabbed into: the whole of the shown text selected, then focus.
+    act(() => {
+      (field as HTMLInputElement).select();
+      field.focus();
+    });
+    expect(field).toHaveValue('1240,5');
+    expect([(field as HTMLInputElement).selectionStart, (field as HTMLInputElement).selectionEnd]).toEqual([0, 6]);
+    await user.keyboard('2500');
+    await user.tab();
+    expect(onCommit).toHaveBeenLastCalledWith('2500');
+  });
+
+  it('leaves the caret where the browser put it when entering changes no text', () => {
+    const { field } = draw({ value: '12' });
+    act(() => {
+      (field as HTMLInputElement).setSelectionRange(1, 1);
+      field.focus();
+    });
+    expect(field).toHaveValue('12');
+    expect([(field as HTMLInputElement).selectionStart, (field as HTMLInputElement).selectionEnd]).toEqual([1, 1]);
   });
 });

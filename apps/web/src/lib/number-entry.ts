@@ -11,6 +11,10 @@
  * through the queue and its stored figure arrives later, so without it the field would show the old figure between the
  * reader leaving and the api answering. A different value arriving from outside (`VALUE_ARRIVED`) drops it.
  *
+ * **`recorded` is what the field says it recorded** (task 221; §12.5.6's task-221 row (3)): the value handed on, kept
+ * only where its spelling in the reader's format differs from what was typed — `1240` shown as *1.240* — which the
+ * caller decides, and dropped when the reader returns to the field or a different value arrives.
+ *
  * In `lib/` beside `decimal-input.ts`, whose readings it holds, because `shared/number-field.tsx` reads it and the
  * folder rule keeps a pure module out of a files-only component leaf.
  */
@@ -48,6 +52,8 @@ export interface NumberEntry {
   /** The value the field was given, as of the last render — what `VALUE_ARRIVED` compares against. */
   readonly given: string;
   readonly problem: NumberProblem | null;
+  /** The canonical value the field says it recorded, or `null` where there is nothing to say back. */
+  readonly recorded: string | null;
 }
 
 export type NumberEvent =
@@ -56,16 +62,27 @@ export type NumberEvent =
   | { readonly type: typeof NUMBER_EVENT.LEFT_UNREAD }
   | { readonly type: typeof NUMBER_EVENT.LEFT_AMBIGUOUS; readonly readings: NumberReadings }
   | { readonly type: typeof NUMBER_EVENT.REFUSED; readonly words: string }
-  | { readonly type: typeof NUMBER_EVENT.HANDED_ON; readonly value: string }
+  | {
+      readonly type: typeof NUMBER_EVENT.HANDED_ON;
+      readonly value: string;
+      /** Whether the value's spelling in the reader's format differs from what was typed, so it is said back. */
+      readonly sayBack: boolean;
+    }
   | { readonly type: typeof NUMBER_EVENT.VALUE_ARRIVED; readonly value: string };
 
-export const initialNumberEntry = (given: string): NumberEntry => ({ text: null, held: null, given, problem: null });
+export const initialNumberEntry = (given: string): NumberEntry => ({
+  text: null,
+  held: null,
+  given,
+  problem: null,
+  recorded: null,
+});
 
 export function numberEntryReducer(state: NumberEntry, event: NumberEvent): NumberEntry {
   switch (event.type) {
     case NUMBER_EVENT.FOCUSED:
-      // Returning to a field that holds a refused text keeps it, so nothing typed is lost.
-      return state.text === null ? { ...state, text: event.text } : state;
+      // Returning to a field that holds a refused text keeps it, so nothing typed is lost; what was said back has been read.
+      return state.text === null ? { ...state, text: event.text, recorded: null } : { ...state, recorded: null };
     case NUMBER_EVENT.TYPED:
       return { ...state, text: event.text, problem: null };
     case NUMBER_EVENT.LEFT_UNREAD:
@@ -75,9 +92,16 @@ export function numberEntryReducer(state: NumberEntry, event: NumberEvent): Numb
     case NUMBER_EVENT.REFUSED:
       return { ...state, problem: { kind: NUMBER_PROBLEM.REFUSED, words: event.words } };
     case NUMBER_EVENT.HANDED_ON:
-      return { ...state, text: null, held: event.value, problem: null };
+      return {
+        ...state,
+        text: null,
+        held: event.value,
+        problem: null,
+        recorded: event.sayBack && event.value !== '' ? event.value : null,
+      };
     case NUMBER_EVENT.VALUE_ARRIVED:
-      return { ...state, given: event.value, held: null };
+      // The value it said back arriving is its own acknowledgement; any other value replaces what was said.
+      return { ...state, given: event.value, held: null, recorded: event.value === state.recorded ? state.recorded : null };
   }
 }
 

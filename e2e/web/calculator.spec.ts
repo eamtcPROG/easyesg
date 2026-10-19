@@ -74,7 +74,8 @@ async function addLine(
   await page.getByRole('option', { name: new RegExp(`^${input.source}`, 'u') }).click();
   await form.getByRole('combobox', { name: 'Care locație' }).click();
   await page.getByRole('option', { name: input.site, exact: true }).click();
-  await form.getByLabel('Cifra de pe factura dumneavoastră').fill(input.figure);
+  // By role: the figure's row is a group named by the same words (§11.5's Number-with-unit, task 221).
+  await form.getByRole('textbox', { name: 'Cifra de pe factura dumneavoastră' }).fill(input.figure);
   if (input.unit !== undefined) {
     await form.getByRole('combobox', { name: 'Unitatea' }).click();
     await page.getByRole('option', { name: input.unit, exact: true }).click();

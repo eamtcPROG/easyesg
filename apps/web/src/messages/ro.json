@@ -137,7 +137,9 @@
     },
     "number": {
       "ambiguous": "Numărul „{typed}” se poate citi în două feluri, iar cele două valori diferă de o mie de ori, așa că nu a fost salvat. Alegeți mai jos valoarea pe care ați vrut să o scrieți.",
-      "choose": "Valoarea pe care ați vrut să o scrieți"
+      "choose": "Valoarea pe care ați vrut să o scrieți",
+      "recorded": "Înregistrat ca {value}",
+      "recordedIn": "Înregistrat ca {value} {unit}"
     }
   },
   "identity": {

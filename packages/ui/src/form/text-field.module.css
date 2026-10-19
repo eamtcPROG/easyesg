@@ -56,6 +56,14 @@
   color: var(--text-default);
 }
 
+/* A number's value (task 221; §11.5's Number-with-unit, `field.value.font`): equal-width lining numerals a step heavier,
+   so figures line up down a step. Read off the input's own `inputmode`, which already says it holds a number — every
+   decimal field gets it, with a unit or without one, and no prop says so a second time. */
+.input[inputmode='decimal'] {
+  font-weight: var(--field-number-weight);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
 .input:focus-visible {
   outline: none;
   box-shadow: none;

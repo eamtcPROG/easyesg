@@ -106,6 +106,8 @@ export { Select, type SelectOption, type SelectProps } from './form/select';
 export { RadioGroup, type RadioGroupProps, type RadioOption } from './form/radio-group';
 export { RequirementList, type RequirementItem, type RequirementListProps } from './form/requirement-list';
 export { TextField, type TextFieldProps } from './form/text-field';
+export { NumberWithUnit, type NumberWithUnitProps } from './form/number-with-unit';
+export { UnitLabel } from './form/unit-label';
 export { Fieldset, type FieldsetProps } from './form/fieldset';
 export { FileUpload, type FileUploadProps } from './form/file-upload';
 export { TextArea, type TextAreaProps } from './form/text-area';

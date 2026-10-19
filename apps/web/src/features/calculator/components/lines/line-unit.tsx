@@ -1,10 +1,9 @@
 'use client';
 
-import { Select } from '@easyesg/ui';
+import { Select, UnitLabel } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { CALCULATOR_MESSAGES } from '../shared/calculator-messages';
 import { useCalculatorWords } from '../shared/use-calculator-words';
-import styles from '../styles/calculator.module.css';
 
 /**
  * A line's unit (task 39.1; UX-14, UX-40): fixed where the source is entered in one, chosen from the source's own list
@@ -24,7 +23,7 @@ export function LineUnit({
 }) {
   const t = useTranslations(CALCULATOR_MESSAGES);
   const { unitName } = useCalculatorWords();
-  if (units.length === 1) return <span className={styles.unit}>{unitName(units[0])}</span>;
+  if (units.length === 1) return <UnitLabel>{unitName(units[0])}</UnitLabel>;
   return (
     <Select
       label={t('line.unit')}

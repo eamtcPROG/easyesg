@@ -1,0 +1,32 @@
+/* §11.5's Number-with-unit (task 221), as the Components sheet draws it: the label above, the value's box filling the
+   row, the unit's beside it at the sheet's 8 px. Token values only (UX-127). */
+.field {
+  display: flex;
+  flex-direction: column;
+  /* `TextField`'s label gap, so the row's label sits where a field's own would. */
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.label {
+  font: 600 14px/20px var(--font-text);
+  color: var(--text-default);
+}
+
+/* Top-aligned: the unit stays beside the value's box when a message grows beneath it. */
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.value {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+/* A chosen unit's select reads the unit surface from here (`select.module.css`). */
+.unit {
+  flex: none;
+  --field-surface: var(--field-unit-surface);
+}

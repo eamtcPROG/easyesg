@@ -133,6 +133,9 @@ const TEXT: Pairing[] = [
   { what: 'body text on a card', fg: '--text-body', bg: '--surface-default', floor: 4.5 },
   { what: 'body text on the page ground', fg: '--text-body', bg: '--surface-sunken', floor: 4.5 },
   { what: 'body text on a popover', fg: '--text-body', bg: '--surface-raised', floor: 4.5 },
+  // §11.5's Number-with-unit (task 221): a fixed unit's words, and a chosen unit's in its select, on the unit surface.
+  { what: 'a fixed unit on the unit surface', fg: '--text-body', bg: '--field-unit-surface', floor: 4.5 },
+  { what: 'a chosen unit on the unit surface', fg: '--text-default', bg: '--field-unit-surface', floor: 4.5 },
   // The three untinted surfaces only. `--text-muted` on `--accent-tint` — the highlight every menu
   // and listbox row takes — measures 4.50:1, the floor to two decimals with no margin, and the
   // tier-2 comment records that secondary text on a highlighted row uses `--text-body` instead.
@@ -221,6 +224,8 @@ const NON_TEXT: Pairing[] = [
   // rest on its own ground and on the tint it takes while a file is held over it.
   { what: 'dropzone boundary at rest', fg: '--dropzone-border-rest', bg: '--dropzone-surface', floor: 3 },
   { what: 'dropzone boundary, file held over it', fg: '--dropzone-border-active', bg: '--dropzone-surface-active', floor: 3 },
+  // §11.5's Number-with-unit (task 221): a fixed unit's box on the unit surface, and a chosen unit's select drawn on it.
+  { what: 'a unit’s box edge on the unit surface', fg: '--field-unit-border', bg: '--field-unit-surface', floor: 3 },
   { what: 'accent as an active marker', fg: '--accent', bg: '--surface-default', floor: 3 },
   { what: 'accent on its own tint', fg: '--accent', bg: '--accent-tint', floor: 3 },
   // The Enrolment code's modules on their plate (task 143). Held to 4.5 rather than 1.4.11's 3:

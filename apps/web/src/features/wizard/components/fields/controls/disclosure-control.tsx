@@ -67,12 +67,15 @@ export function DisclosureControl({
   field,
   readOnly,
   labelledBy,
+  unit,
   onCommit,
 }: {
   readonly field: DisclosureFieldShape;
   readonly readOnly: boolean;
   /** The id of the visible label the input is named by. */
   readonly labelledBy: string;
+  /** The unit's words as the reader reads them, said back with what a number was recorded as (task 221). */
+  readonly unit?: string | null;
   readonly onCommit: (write: DisclosureValueWrite) => void;
 }) {
   const t = useTranslations(FIELD_MESSAGES);
@@ -218,6 +221,7 @@ export function DisclosureControl({
           labelledBy={labelledBy}
           value={draft}
           invalidWords={t('invalidNumber')}
+          unit={unit}
           onCommit={(value) => {
             commit(value ?? '');
             return null;

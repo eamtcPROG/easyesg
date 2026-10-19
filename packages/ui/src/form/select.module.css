@@ -41,7 +41,9 @@
      recorded addition). */
   border: 1px solid var(--field-border-rest);
   border-radius: var(--radius-1);
-  background: var(--surface-default);
+  /* `--field-surface` is a surface a container hands its fields (task 221): Number-with-unit's unit slot sets the unit
+     surface, so a chosen unit reads as the unit's box. Inherited, so no stylesheet reaches into this one's markup. */
+  background: var(--field-surface, var(--surface-default));
   color: var(--text-default);
   font: 400 15px/24px var(--font-text);
   text-align: start;

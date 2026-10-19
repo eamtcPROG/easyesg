@@ -1,5 +1,4 @@
-import { Select } from '@easyesg/ui';
-import styles from '../styles/step.module.css';
+import { Select, UnitLabel } from '@easyesg/ui';
 
 /**
  * UX-14's unit, in the anatomy's own slot: *"either fixed by the taxonomy or chosen from a
@@ -32,7 +31,7 @@ export function FieldUnit({
   // One admitted unit is UX-14's *fixed by the taxonomy*: shown, never asked. Read-only takes the
   // same branch — UX-13 keeps the layout and removes the affordance.
   if (readOnly || admitted.length < 2) {
-    return chosen === null ? null : <span className={styles.unit}>{nameOf(chosen)}</span>;
+    return chosen === null ? null : <UnitLabel>{nameOf(chosen)}</UnitLabel>;
   }
   return (
     <Select

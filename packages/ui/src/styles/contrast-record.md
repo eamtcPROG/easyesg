@@ -7,7 +7,7 @@ both; UX-101 sets the floors. This table is the record that deliverable asks for
 spec that generates it is the gate — so a token change that breaks a floor fails the build
 rather than silently making this file wrong.
 
-74 pairings, each measured in both schemes.
+77 pairings, each measured in both schemes.
 
 | Pairing | Tokens | Light | Dark | Floor | Verdict |
 | --- | --- | --- | --- | --- | --- |
@@ -17,6 +17,8 @@ rather than silently making this file wrong.
 | body text on a card | `--text-body` on `--surface-default` | 10.06:1 | 11.36:1 | 4.5:1 | pass |
 | body text on the page ground | `--text-body` on `--surface-sunken` | 9.29:1 | 13.11:1 | 4.5:1 | pass |
 | body text on a popover | `--text-body` on `--surface-raised` | 10.06:1 | 9.08:1 | 4.5:1 | pass |
+| a fixed unit on the unit surface | `--text-body` on `--field-unit-surface` | 9.29:1 | 13.11:1 | 4.5:1 | pass |
+| a chosen unit on the unit surface | `--text-default` on `--field-unit-surface` | 16:1 | 17.24:1 | 4.5:1 | pass |
 | muted text on a card | `--text-muted` on `--surface-default` | 4.99:1 | 5.82:1 | 4.5:1 | pass |
 | muted text on the page ground | `--text-muted` on `--surface-sunken` | 4.61:1 | 6.72:1 | 4.5:1 | pass |
 | muted text in a popover | `--text-muted` on `--surface-raised` | 4.99:1 | 4.66:1 | 4.5:1 | pass |
@@ -79,6 +81,7 @@ rather than silently making this file wrong.
 | focus ring, halo against the ring | `--border-focus-halo` on `--border-focus` | 3.84:1 | 3.55:1 | 3:1 | pass |
 | dropzone boundary at rest | `--dropzone-border-rest` on `--dropzone-surface` | 3.11:1 | 4.52:1 | 3:1 | pass |
 | dropzone boundary, file held over it | `--dropzone-border-active` on `--dropzone-surface-active` | 5.75:1 | 7.4:1 | 3:1 | pass |
+| a unit’s box edge on the unit surface | `--field-unit-border` on `--field-unit-surface` | 3.11:1 | 4.52:1 | 3:1 | pass |
 | accent as an active marker | `--accent` on `--surface-default` | 6.38:1 | 6.08:1 | 3:1 | pass |
 | accent on its own tint | `--accent` on `--accent-tint` | 5.75:1 | 5.64:1 | 3:1 | pass |
 | enrolment code modules on their plate | `--enrolment-code-module` on `--enrolment-code-ground` | 17.33:1 | 17.33:1 | 4.5:1 | pass |

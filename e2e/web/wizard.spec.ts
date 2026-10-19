@@ -1215,7 +1215,7 @@ test('B6 applies once B1 says the undertaking manufactures, and asks in m³ (UC-
     .toMatchObject({ valueNumeric: '1450', unitCode: 'm3', state: 'ok' });
 });
 
-test('a figure that reads two ways is asked about, and a stored one reads in the reader’s format (UX-96, task 220)', async ({
+test('a figure that reads two ways is asked about, and a stored one reads in the reader’s format and is said back (UX-96, tasks 220, 221)', async ({
   page,
 }) => {
   const reportId = await signedInWithReport(page, 'two-ways');
@@ -1254,6 +1254,19 @@ test('a figure that reads two ways is asked about, and a stored one reads in the
     .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: 'TotalEnergyConsumption' }), { timeout: 15_000 })
     .toMatchObject({ valueNumeric: '1240.5' });
   await expect(figure).toHaveValue('1.240,5');
+  // Typed so, it was recorded as typed, and nothing is said back.
+  await expect(energy.getByRole('status').filter({ hasText: 'Înregistrat ca' })).toHaveCount(0);
+
+  // **What a figure was recorded as is said back where its spelling changed** (task 221), unit included, until the
+  // reader returns to the field.
+  await figure.fill('2500');
+  await figure.blur();
+  await expect(energy.getByRole('status').filter({ hasText: 'Înregistrat ca' })).toHaveText('Înregistrat ca 2.500 MWh');
+  await expect
+    .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: 'TotalEnergyConsumption' }), { timeout: 15_000 })
+    .toMatchObject({ valueNumeric: '2500' });
+  await figure.focus();
+  await expect(energy.getByRole('status').filter({ hasText: 'Înregistrat ca' })).toHaveCount(0);
 });
 
 test('a module waiting on B1 says so on the rail rather than counting to zero (FR-28, UX-9)', async ({

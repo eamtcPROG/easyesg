@@ -1,7 +1,7 @@
 'use client';
 
 import type { CalcFactorSource, CalcSite } from '@easyesg/contracts';
-import { Button, BUTTON_VARIANT } from '@easyesg/ui';
+import { Button, BUTTON_VARIANT, NumberWithUnit, UnitLabel } from '@easyesg/ui';
 import { FormCheckbox, FormSelect, FormSummary, FormTextArea, FormTextField } from '@easyesg/ui/forms';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useId } from 'react';
@@ -30,7 +30,8 @@ import styles from '../styles/calculator.module.css';
  * The rules are the form's own (root `CLAUDE.md`): required, *must read as a figure*. Whether the source, unit and
  * site are ones the report admits is the api's to say when the line arrives, and it says it through the queue. **A figure
  * that reads two ways is asked about** (task 220): `figureRule` refuses it with the question, and `FigureChoice` offers
- * the two readings beneath the figure.
+ * the two readings beneath the figure. **The figure and its unit are §11.5's Number-with-unit** (task 221): one label
+ * above both boxes, the unit chosen or shown in the unit's own box beside the figure.
  */
 interface AddSourceFields {
   sourceKey: string;
@@ -135,42 +136,46 @@ export function AddSource({
             rules={{ validate: (value) => value.trim() !== '' || t('reasonRequired') }}
           />
         ) : (
-          <div className={styles.addingFigure}>
-            <div>
-              <FormTextField
-                control={control}
-                name="quantity"
-                label={t('quantity')}
-                inputMode="decimal"
-                rules={{
-                  required: t('quantityRequired'),
-                  validate: figureRule({
-                    format,
-                    invalidWords: tLine('invalidNumber'),
-                    ambiguousWords: (typed) => tNumber('ambiguous', { typed }),
-                  }),
-                }}
-              />
-              <FigureChoice
-                control={control}
-                name="quantity"
-                onChoose={(text) => setValue('quantity', text, { shouldValidate: true })}
-              />
-            </div>
-            {units.length > 1 ? (
-              <FormSelect
-                key={sourceKey}
-                control={control}
-                name={`units.${sourceKey}`}
-                label={t('unit')}
-                placeholder={tLine('chooseUnit')}
-                options={units.map((code) => ({ value: code, label: unitName(code) }))}
-                rules={{ required: t('unitRequired') }}
-              />
-            ) : units.length === 1 ? (
-              <p className={styles.addingUnit}>{unitName(units[0])}</p>
-            ) : null}
-          </div>
+          <NumberWithUnit
+            label={t('quantity')}
+            unit={
+              units.length > 1 ? (
+                <FormSelect
+                  key={sourceKey}
+                  control={control}
+                  name={`units.${sourceKey}`}
+                  label={t('unit')}
+                  labelHidden
+                  placeholder={tLine('chooseUnit')}
+                  options={units.map((code) => ({ value: code, label: unitName(code) }))}
+                  rules={{ required: t('unitRequired') }}
+                />
+              ) : units.length === 1 ? (
+                <UnitLabel>{unitName(units[0])}</UnitLabel>
+              ) : undefined
+            }
+          >
+            <FormTextField
+              control={control}
+              name="quantity"
+              label={t('quantity')}
+              labelHidden
+              inputMode="decimal"
+              rules={{
+                required: t('quantityRequired'),
+                validate: figureRule({
+                  format,
+                  invalidWords: tLine('invalidNumber'),
+                  ambiguousWords: (typed) => tNumber('ambiguous', { typed }),
+                }),
+              }}
+            />
+            <FigureChoice
+              control={control}
+              name="quantity"
+              onChoose={(text) => setValue('quantity', text, { shouldValidate: true })}
+            />
+          </NumberWithUnit>
         )}
         <div className={styles.addingActions}>
           <Button type="button" variant={BUTTON_VARIANT.SECONDARY} onClick={onCancel}>

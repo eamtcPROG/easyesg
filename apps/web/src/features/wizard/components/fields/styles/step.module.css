@@ -74,10 +74,6 @@
   color: var(--text-muted);
 }
 
-.unit {
-  color: var(--text-body);
-  white-space: nowrap;
-}
 
 /*
  * An `enumeration_set` answer: what has been chosen, then the control that adds to it (task 36.2).
