@@ -33,6 +33,7 @@ import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import { CalculatorEntry } from '@/features/calculator/components/entry/calculator-entry';
 import { CALCULATOR_MODULE } from '@/features/calculator/tools/calculator-module';
 import { HistoryScope } from '@/features/history/components/provider/history-scope';
+import { WorkspaceFooter } from '@/shared/workspace-footer';
 
 /**
  * S-07's one region: the reads, which of §8.1's arms applies, and the shell over the step (cut out
@@ -157,6 +158,7 @@ export async function WizardStep({
             note: stepStatusNote(t, { state, checked }),
           }}
           foot={<StepFoot reportId={reportId} place={place} />}
+          footer={<WorkspaceFooter />}
           // S-08, beside the step at `wide` and a count raising it as a sheet below (task 42.2). The run control is an
           // editor's and the OA's (182/22) — on a locked period too, which is validated like any other (182/21).
           panel={

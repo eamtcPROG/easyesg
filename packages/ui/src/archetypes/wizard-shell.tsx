@@ -56,6 +56,12 @@ export interface WizardShellProps {
   children: ReactNode;
   /** Under the fields: the way to the module before and after (task 179.3). */
   foot?: ReactNode;
+  /**
+   * The page's footer — the app's own `<footer>`, its `contentinfo` — beneath the step and beside the module list, as the
+   * account screens draw theirs beside the rail (`design_spec.md` §4.2, amended 19 Oct 2026). Outside `<main>`, and
+   * inside the step's scroll region, so it scrolls with the step and rests at the foot of a short one.
+   */
+  footer?: ReactNode;
 }
 
 export function WizardShell({
@@ -70,6 +76,7 @@ export function WizardShell({
   panel,
   children,
   foot,
+  footer,
 }: WizardShellProps) {
   return (
     <div className={styles.shell}>
@@ -123,6 +130,7 @@ export function WizardShell({
 
             {foot ? <div className={styles.foot}>{foot}</div> : null}
           </main>
+          {footer}
         </div>
       </div>
     </div>

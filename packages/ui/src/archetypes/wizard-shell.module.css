@@ -58,6 +58,10 @@
    scroll container is the containing block that keeps such an element inside, and clipped by, the region it is in. */
 .scroll {
   position: relative;
+  /* A column, so the footer after `<main>` rests at the foot of a step shorter than the window (§4.2, amended 19 Oct
+     2026) — the footer pushes itself down with `margin-block-start: auto`. */
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-inline-size: 0;
   overflow-y: auto;

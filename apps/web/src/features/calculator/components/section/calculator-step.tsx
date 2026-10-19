@@ -30,6 +30,7 @@ import { NoFactorSet } from '../states/no-factor-set';
 import { NoSites } from '../states/no-sites';
 import { CalculatorCrumb } from './calculator-crumb';
 import { CalculatorFoot } from './calculator-foot';
+import { WorkspaceFooter } from '@/shared/workspace-footer';
 
 /**
  * S-09's one region: the reads, which of §8.1's arms applies, and the wizard shell around the calculator (task 39.1;
@@ -127,6 +128,7 @@ export async function CalculatorStep({
           )
         }
         foot={<CalculatorFoot reportId={reportId} module={b3} />}
+        footer={<WorkspaceFooter />}
       >
         {read.readOnly === null ? null : (
           <ReadOnlyBanner
