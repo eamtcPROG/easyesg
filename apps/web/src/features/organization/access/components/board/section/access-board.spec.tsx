@@ -163,18 +163,17 @@ const board = (given: readonly AccessRow[] = rows()) => (
 );
 
 /**
- * The resend button belonging to one invited person's row.
- *
- * No `exact` option: Testing Library matches a role's accessible name as a whole string already, so
- * the role cell beside it — named "Rolul lui <address>" — does not match. That is the opposite of
- * the Playwright query in `e2e/web/users-access.spec.ts`, which needs `exact` because its default
- * is a substring match. Two libraries, two defaults, one address.
+ * A row's ⋯, by the address it is named for (19 Oct 2026: a row's actions are one menu), and an item
+ * in it once opened. Testing Library matches a role's accessible name as a whole string, so the role
+ * cell's own control — named "Rolul lui <address>" — does not match.
  */
-const resendButtonFor = (email: string) =>
-  screen
-    .getByRole('cell', { name: email })
-    .closest('tr')!
-    .querySelector<HTMLButtonElement>('button:not([aria-haspopup])')!;
+const ACTIONS = ro.organization.access.actions;
+const menuFor = (email: string) => screen.getByRole('button', { name: ACTIONS.menu.replace('{email}', email) });
+const openMenu = async (user: ReturnType<typeof userEvent.setup>, email: string) => {
+  await user.click(menuFor(email));
+  return screen.getAllByRole('menuitem');
+};
+const itemIn = (items: readonly HTMLElement[], label: string) => items.find((item) => item.textContent === label)!;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -211,13 +210,13 @@ describe('AccessBoard · per-row pending', () => {
     resend.mockReturnValue(new Promise(() => undefined));
     render(board());
 
-    const acting = resendButtonFor('bogdan@example.md');
-    const other = resendButtonFor('corina@example.md');
+    await user.click(itemIn(await openMenu(user, 'bogdan@example.md'), ACTIONS.resend));
 
-    await user.click(acting);
-
-    await waitFor(() => expect(acting).toBeDisabled());
-    expect(other).toBeEnabled();
+    await waitFor(async () => {
+      expect(itemIn(await openMenu(user, 'bogdan@example.md'), ACTIONS.resend)).toHaveAttribute('aria-disabled', 'true');
+    });
+    await user.keyboard('{Escape}');
+    expect(itemIn(await openMenu(user, 'corina@example.md'), ACTIONS.resend)).not.toHaveAttribute('aria-disabled');
   });
 
   it('reports the outcome once the action settles', async () => {
@@ -225,7 +224,7 @@ describe('AccessBoard · per-row pending', () => {
     resend.mockResolvedValue({ status: API_OUTCOME.Ok, value: null, messages: [] });
     render(board());
 
-    await user.click(resendButtonFor('bogdan@example.md'));
+    await user.click(itemIn(await openMenu(user, 'bogdan@example.md'), ACTIONS.resend));
 
     expect(await screen.findByText(/Am trimis din nou invitația/)).toBeInTheDocument();
     // The success notice carries all three parts NFR-79 requires, the "what now" included.
@@ -245,7 +244,7 @@ describe('AccessBoard · per-row pending', () => {
     });
     render(board());
 
-    await user.click(resendButtonFor('bogdan@example.md'));
+    await user.click(itemIn(await openMenu(user, 'bogdan@example.md'), ACTIONS.resend));
 
     expect(await screen.findByText('Invitația nu mai există')).toBeInTheDocument();
     expect(screen.getByText('A fost anulată între timp. Reîncărcați lista.')).toBeInTheDocument();
@@ -388,21 +387,27 @@ describe('AccessBoard · reminding a member from their row', () => {
   };
   const remindLabel = ro.organization.access.actions.remind;
 
-  it('offers it on a colleague’s row, and nowhere else', () => {
+  it('offers it on a colleague’s row, and nowhere else', async () => {
+    const user = userEvent.setup();
     render(board([...rows(), ivan]));
 
     // One: Ivan's. Ana is the reader, and the two invitations hold no account to deliver to.
-    const offered = screen.getAllByRole('button', { name: remindLabel });
-    expect(offered).toHaveLength(1);
-    expect(offered[0]?.closest('tr')).toHaveTextContent('ivan@example.md');
+    const offeredOn: string[] = [];
+    for (const email of ['ana@example.md', 'bogdan@example.md', 'corina@example.md', 'ivan@example.md']) {
+      const items = await openMenu(user, email);
+      if (items.some((item) => item.textContent === remindLabel)) offeredOn.push(email);
+      await user.keyboard('{Escape}');
+    }
+    expect(offeredOn).toEqual(['ivan@example.md']);
   });
 
   it('opens the reminder with them chosen', async () => {
+    const user = userEvent.setup();
     const push = vi.spyOn(window.history, 'pushState');
     window.history.replaceState(null, '', '/organization/users?role=editor');
     render(board([...rows(), ivan]));
 
-    await userEvent.click(screen.getByRole('button', { name: remindLabel }));
+    await user.click(itemIn(await openMenu(user, 'ivan@example.md'), remindLabel));
 
     expect(push).toHaveBeenCalledWith(null, '', '/organization/users?role=editor&panel=remind&person=m-2');
     push.mockRestore();

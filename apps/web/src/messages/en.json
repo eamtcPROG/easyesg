@@ -963,9 +963,8 @@
       },
       "rowActions": {
         "edit": "Edit",
-        "editNamed": "Edit the {year} period",
         "view": "View",
-        "viewNamed": "View the {year} period"
+        "menu": "More actions for the {year} period"
       },
       "standing": {
         "open": "Open",
@@ -1104,8 +1103,7 @@
       "filed": {
         "chip": "Filed on {date}",
         "files": "{count, plural, one {# export} other {# exports}}",
-        "download": "Download",
-        "downloadLabel": "Download the latest file exported for {entity}’s {year} report"
+        "downloadLatest": "Download the latest exported file"
       },
       "filter": {
         "entity": "Entity",
@@ -1190,9 +1188,9 @@
       },
       "loading": "Loading the reports…",
       "searchLabel": "Search by entity or fiscal year",
+      "menu": "More actions for the {entity} report for {year}",
       "open": "Open the report",
       "deletion": {
-        "menu": "More actions for the {entity} report for {year}",
         "item": "Delete this report…",
         "unavailable": {
           "archived": "Delete this report — kept, its entity was archived",
@@ -1327,11 +1325,13 @@
       },
       "actions": {
         "changeRole": "Role for {email}",
-        "remind": "Remind",
-        "remove": "Withdraw access",
+        "remind": "Remind…",
+        "remove": "Withdraw access…",
         "resend": "Send the invitation again",
-        "revoke": "Withdraw the invitation",
-        "lastAdministrator": "This is the organisation's only administrator."
+        "revoke": "Withdraw the invitation…",
+        "lastAdministrator": "This is the organisation's only administrator.",
+        "menu": "More actions for {email}",
+        "removeLast": "Withdraw access — the only administrator"
       },
       "remove": {
         "title": "Withdraw this person's access?",

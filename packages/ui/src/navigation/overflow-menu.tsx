@@ -2,6 +2,7 @@
 
 import { Ellipsis } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
+import { useRef, type RefObject } from 'react';
 import styles from './overflow-menu.module.css';
 
 /**
@@ -24,6 +25,12 @@ import styles from './overflow-menu.module.css';
  * **Named for its row.** Every row's trigger is the same glyph, so a screen reader moving down a
  * column would hear *More actions* ten times; the caller passes a label that names the row.
  *
+ * **Choosing an item hands focus to the trigger before the item runs** (19 Oct 2026). Radix returns focus to a
+ * non-modal menu's trigger as it closes only where nothing outside was touched, and S-16's *Remind…*, which opens its
+ * dialogue by changing the address, re-rendered the screen as the menu closed — focus fell to `body`, and the dialogue,
+ * opening a render later, had no opener to hand focus back to (UX-113). With the trigger focused first, whatever an
+ * item opens, now or a render later, finds the trigger as its opener (`useReturnFocus`).
+ *
  * States (§8.1, the applicable subset): rest · hover · focus · open · item highlighted · item
  * disabled. **Empty renders nothing** — a trigger that opens an empty list is a control with no use.
  */
@@ -45,6 +52,7 @@ export interface OverflowMenuProps {
 }
 
 export function OverflowMenu({ label, items }: OverflowMenuProps) {
+  const trigger = useRef<HTMLButtonElement>(null);
   if (items.length === 0) return null;
 
   const ordinary = items.filter((item) => item.destructive !== true);
@@ -52,19 +60,19 @@ export function OverflowMenu({ label, items }: OverflowMenuProps) {
 
   return (
     <DropdownMenu.Root modal={false}>
-      <DropdownMenu.Trigger className={styles.trigger} aria-label={label}>
+      <DropdownMenu.Trigger ref={trigger} className={styles.trigger} aria-label={label}>
         <Ellipsis aria-hidden="true" />
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content className={styles.menu} align="end" sideOffset={4}>
           {ordinary.map((item) => (
-            <MenuItem key={item.key} item={item} />
+            <MenuItem key={item.key} item={item} trigger={trigger} />
           ))}
           {ordinary.length > 0 && destructive.length > 0 ? (
             <DropdownMenu.Separator className={styles.separator} />
           ) : null}
           {destructive.map((item) => (
-            <MenuItem key={item.key} item={item} />
+            <MenuItem key={item.key} item={item} trigger={trigger} />
           ))}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
@@ -72,12 +80,21 @@ export function OverflowMenu({ label, items }: OverflowMenuProps) {
   );
 }
 
-function MenuItem({ item }: { readonly item: OverflowMenuItem }) {
+function MenuItem({
+  item,
+  trigger,
+}: {
+  readonly item: OverflowMenuItem;
+  readonly trigger: RefObject<HTMLButtonElement | null>;
+}) {
   return (
     <DropdownMenu.Item
       className={item.destructive === true ? `${styles.item} ${styles.destructive}` : styles.item}
       disabled={item.disabled}
-      onSelect={item.onSelect}
+      onSelect={() => {
+        trigger.current?.focus();
+        item.onSelect();
+      }}
     >
       {item.label}
     </DropdownMenu.Item>

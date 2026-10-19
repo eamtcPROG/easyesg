@@ -123,7 +123,8 @@ test('each entity leads to its reporting periods, from the list and from its rec
   await page.getByLabel('Filtrați după stare').click();
   await page.getByRole('option', { name: 'Doar deschise' }).click();
   await page.waitForURL(/[?&]from=entities/);
-  await page.getByRole('link', { name: 'Editați perioada 2026', exact: true }).click();
+  await page.getByRole('button', { name: 'Mai multe acțiuni pentru perioada 2026', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Editați', exact: true }).click();
   await page.waitForURL(`**/entities/${entityId}/periods/${periodId}?from=entities`);
   await page.getByRole('link', { name: 'Înapoi la perioadele de raportare' }).click();
   await page.waitForURL(`**/entities/${entityId}/periods?from=entities`);
@@ -186,10 +187,16 @@ test('S-14 carries S-13’s way back — a trail, an arrow up, the action in the
   expect(openBox && facetBox && Math.abs(openBox.y + openBox.height - (facetBox.y + facetBox.height))).toBeLessThanOrEqual(1);
   expect(openBox && facetBox && openBox.x > facetBox.x + facetBox.width).toBe(true);
 
-  // Each row ends in a labelled action, as S-13's do — *edit* for an open period, named for its row.
-  const edit = page.getByRole('link', { name: `Editați perioada ${thisYear}`, exact: true });
-  await expect(edit).toHaveText('Editați');
-  await expect(edit).toHaveAttribute('href', new RegExp(`/entities/${entityId}/periods/${periodId}$`));
+  // Each row ends in its action, as S-13's do — *edit* for an open period, in the ⋯ named for its row (19 Oct 2026).
+  const actions = page.getByRole('button', { name: `Mai multe acțiuni pentru perioada ${thisYear}`, exact: true });
+  await actions.click();
+  await expect(page.getByRole('menuitem', { name: 'Editați', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  // The year is the row's link to the same record.
+  await expect(page.getByRole('link', { name: String(thisYear), exact: true })).toHaveAttribute(
+    'href',
+    new RegExp(`/entities/${entityId}/periods/${periodId}$`),
+  );
 
   // The arrow leads up to the entity, the trail's last step.
   await page.getByRole('link', { name: `Înapoi la ${name}` }).click();
@@ -298,7 +305,7 @@ test('an archived entity is offered no new period, and S-14 says why — on its 
   await expect(notice).toHaveCount(1);
   await expect(page.getByRole('link', { name: 'Deschideți o perioadă' })).toHaveCount(0);
   // Its period stays listed and opens, as FR-20 keeps everything an archived entity held.
-  await expect(page.getByRole('link', { name: `Editați perioada ${thisYear}`, exact: true })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: `Mai multe acțiuni pentru perioada ${thisYear}`, exact: true })).toHaveCount(1);
 
   await page.goto(`/entities/${entityId}/periods/new`);
   await expect(notice).toHaveCount(1);

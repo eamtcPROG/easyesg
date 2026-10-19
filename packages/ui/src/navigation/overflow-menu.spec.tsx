@@ -49,4 +49,21 @@ describe('OverflowMenu', () => {
     await userEvent.click(screen.getByRole('menuitem', { name: 'Enable' }));
     expect(onEnable).toHaveBeenCalledOnce();
   });
+
+  it('hands focus to its trigger before an item runs, so what the item opens returns focus there', async () => {
+    // S-16's *Remind…* opens its dialogue by changing the address, a render after the menu has closed: with focus left
+    // on `body` as the menu went, the dialogue had no opener to hand focus back to (19 Oct 2026).
+    let focusedWhenRun: Element | null = null;
+    render(
+      <OverflowMenu
+        label="More actions for ana@easyesg.md"
+        items={[{ key: 'remind', label: 'Remind…', onSelect: () => (focusedWhenRun = document.activeElement) }]}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'More actions for ana@easyesg.md' });
+    await userEvent.click(trigger);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Remind…' }));
+    expect(focusedWhenRun).toBe(trigger);
+  });
 });

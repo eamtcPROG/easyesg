@@ -288,20 +288,24 @@ test('an invitation can be withdrawn, and the confirmation names the person', as
   await sendInvitation(page, invited, 'Editare');
   await expect(personCell(page, invited)).toBeVisible();
 
-  const withdraw = page.getByRole('button', { name: 'Anulați invitația' });
-  await withdraw.click();
+  // The row's ⋯, named for its address (19 Oct 2026); withdrawing is its destructive item.
+  const actions = page.getByRole('button', { name: `Mai multe acțiuni pentru ${invited}`, exact: true });
+  await actions.click();
+  await page.getByRole('menuitem', { name: 'Anulați invitația…' }).click();
 
   // UX-70: the specific object, by name, and the specific consequence.
   const dialogue = page.getByRole('alertdialog');
   await expect(dialogue).toContainText(invited);
   await expect(dialogue).toContainText('nu mai funcționează');
 
-  // UX-113 (task 207): declined, the question hands focus back to the control that raised it.
+  // UX-113 (task 207): declined, the question hands focus back to the control that raised it — the menu's trigger,
+  // an item in the menu having raised it (`dialogueOrigin`).
   await dialogue.getByRole('button', { name: 'Păstrați invitația' }).click();
   await expect(dialogue).toHaveCount(0);
-  await expect(withdraw).toBeFocused();
+  await expect(actions).toBeFocused();
 
-  await withdraw.click();
+  await actions.click();
+  await page.getByRole('menuitem', { name: 'Anulați invitația…' }).click();
   await dialogue.getByRole('button', { name: 'Anulați invitația' }).click();
 
   await expect(personCell(page, invited)).toHaveCount(0);
@@ -310,12 +314,17 @@ test('an invitation can be withdrawn, and the confirmation names the person', as
 test('the sole administrator cannot be demoted or removed, and the screen says why', async ({
   page,
 }) => {
-  await administratorOf(page, 'lockout');
+  const email = await administratorOf(page, 'lockout');
   await openAccessScreen(page);
 
   // FR-60 on the screen's side: the action is not offered, and the reason is stated rather than
-  // left to a disabled control the reader has to guess at.
-  await expect(page.getByRole('button', { name: 'Retrageți accesul' })).toBeDisabled();
+  // left to a disabled control the reader has to guess at — in the row's ⋯ too, beside the item.
+  await page.getByRole('button', { name: `Mai multe acțiuni pentru ${email}`, exact: true }).click();
+  await expect(page.getByRole('menuitem', { name: 'Retrageți accesul — este singurul administrator' })).toHaveAttribute(
+    'aria-disabled',
+    'true',
+  );
+  await page.keyboard.press('Escape');
   await expect(page.getByText('Este singurul administrator al organizației.')).toBeVisible();
 });
 
@@ -360,9 +369,13 @@ test('the administrator reminds a colleague about an open report, and the remind
   const reportId = await seedReport({ organizationId, name: 'Brutăria Lina', fiscalYear: 2026 });
   await openAccessScreen(page);
 
-  // Every active member but the sender carries *remind*: the colleague's row does, the administrator's own does not.
-  await expect(memberRow(page, administrator).getByRole('button', { name: 'Amintiți-i' })).toHaveCount(0);
-  await memberRow(page, colleague).getByRole('button', { name: 'Amintiți-i' }).click();
+  // Every active member but the sender carries *remind*: the colleague's row does, the administrator's own does not —
+  // each in the row's ⋯ (19 Oct 2026).
+  await page.getByRole('button', { name: `Mai multe acțiuni pentru ${administrator}`, exact: true }).click();
+  await expect(page.getByRole('menuitem', { name: 'Amintiți-i…' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: `Mai multe acțiuni pentru ${colleague}`, exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Amintiți-i…' }).click();
 
   // The row's action opens the reminder with them chosen, and the address says so, as a link would reopen it.
   await expect(page).toHaveURL(/[?&]panel=remind&person=/);

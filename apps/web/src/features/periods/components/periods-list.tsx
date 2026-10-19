@@ -20,7 +20,6 @@ import { entityPeriodsRoute, newPeriodRoute, periodRoute, withQuery } from '@/li
 import {
   PERIOD_FILTER_ANY,
   PERIOD_SORT,
-  PERIOD_STANDING,
   PERIOD_STANDING_TONE,
   periodViewQuery,
   type PeriodPage,
@@ -29,6 +28,7 @@ import {
   type PeriodView,
 } from '../tools/periods';
 import { PERIODS_MESSAGES } from './periods-messages';
+import { PeriodRowMenu } from './period-row-menu';
 import { PeriodsToolbar } from './periods-toolbar';
 
 /**
@@ -127,28 +127,13 @@ export function PeriodsList({ entityId, page, view, canOpen }: PeriodsListProps)
         ),
       },
       {
-        // 30 Sep 2026, project owner: each row ends in a labelled action, as S-13's rows do — *edit* for an open period
-        // and *view* for a locked one, whose record is read-only (FR-22). The year stays a link to the same record.
+        // 30 Sep 2026, project owner: each row ends in its action — *edit* for an open period and *view* for a locked one,
+        // whose record is read-only (FR-22) — and since 19 Oct 2026 in one ⋯, as S-13's rows do (`PeriodRowMenu`).
         key: PERIOD_COLUMN.ACTIONS,
         header: t('columns.actions'),
         align: COLUMN_ALIGN.END,
         size: COLUMN_SIZE.FIT,
-        cell: (row) => {
-          const edits = row.standing === PERIOD_STANDING.OPEN;
-          // A year as a string, never a number ICU would group ("2 026").
-          const year = String(row.fiscalYear);
-          return (
-            <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
-              <Link
-                href={periodRoute({ entityId, periodId: row.id, from: view.from })}
-                // The visible word, and a name that begins with it (WCAG 2.5.3) and ends with the row.
-                aria-label={edits ? t('rowActions.editNamed', { year }) : t('rowActions.viewNamed', { year })}
-              >
-                {edits ? t('rowActions.edit') : t('rowActions.view')}
-              </Link>
-            </Button>
-          );
-        },
+        cell: (row) => <PeriodRowMenu entityId={entityId} row={row} from={view.from} />,
       },
     ],
     [entityId, t, view.from],

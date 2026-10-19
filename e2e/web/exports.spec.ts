@@ -141,11 +141,14 @@ test('exports with the findings acknowledged, watches the file until it is ready
   const row = page.getByRole('row').filter({ hasText: `${RUN_PREFIX}-editor SRL` });
   await expect(row.getByText(/^Depus la \d{1,2} \p{L}+ \d{4}$/u)).toBeVisible();
   await expect(row.getByText('1 export', { exact: true })).toBeVisible();
-  const latest = row.getByRole('link', { name: `Descărcați ultimul fișier exportat al raportului ${RUN_PREFIX}-editor SRL pe 2026` });
-  await expect(latest).toHaveAttribute('href', fileAddress ?? '');
+  // From the row's ⋯ since 19 Oct 2026, saved as its link was: the browser downloads, nothing reads the file.
+  await row.getByRole('button', { name: `Mai multe acțiuni pentru raportul ${RUN_PREFIX}-editor SRL pentru 2026` }).click();
   const fromList = page.waitForEvent('download');
-  await latest.click();
-  expect((await fromList).suggestedFilename()).toMatch(/\.pdf$/u);
+  await page.getByRole('menuitem', { name: 'Descărcați ultimul fișier exportat' }).click();
+  const saved = await fromList;
+  // The one file the history serves, through the same pass-through address.
+  expect(new URL(saved.url()).pathname).toBe(fileAddress);
+  expect(saved.suggestedFilename()).toMatch(/\.pdf$/u);
 });
 
 test('tells a view-only member why there is no export, and leads back to the report', async ({ page }) => {

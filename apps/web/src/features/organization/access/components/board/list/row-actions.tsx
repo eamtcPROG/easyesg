@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, BUTTON_VARIANT } from '@easyesg/ui';
+import { OverflowMenu } from '@easyesg/ui';
 import { ACCESS_MESSAGES } from '../../shared/access-messages';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
@@ -9,13 +9,15 @@ import { CONFIRMATION } from '../../../tools/access-state';
 import { resendInvitationAction } from '../../../actions/actions';
 import { ACCESS_ROW_KIND, isLastAdministrator, type AccessRow } from '../../../tools/access';
 import { isRemindable } from '../../../tools/reminder';
-import styles from '../../styles/access.module.css';
 
 /**
  * What can be done to this row — different verbs on different objects, chosen by the union's own
  * discriminator rather than by a flag. A single actions menu parameterised by booleans is the shape
  * UX-89 warns about, and would have had to decide what "change role" means for someone who has not
- * accepted.
+ * accepted. **Since 19 Oct 2026 (project owner) the verbs are the items of one ⋯** named for the row's
+ * address, as every tenant table's row actions are; the menu is still built per kind, so each kind
+ * still says only its own verbs. Withdrawing is set apart below the rule as the destructive item, and
+ * an item that opens a dialogue ends in an ellipsis.
  *
  * **A member may be reminded from their row** (28 Sep 2026, project owner): *remind* opens the
  * reminder's dialogue with them chosen. It is on every row `isRemindable` admits — an active member who
@@ -46,33 +48,37 @@ export function RowActions({ row }: { readonly row: AccessRow }) {
     [ask, row],
   );
 
+  const label = t('menu', { email: row.email });
+
   if (row.kind === ACCESS_ROW_KIND.INVITATION) {
     return (
-      <div className={styles.rowActions}>
-        <Button variant={BUTTON_VARIANT.SUBTLE} disabled={busy} onClick={resend}>
-          {t('resend')}
-        </Button>
-        <Button variant={BUTTON_VARIANT.SUBTLE} disabled={busy} onClick={confirmRevoke}>
-          {t('revoke')}
-        </Button>
-      </div>
+      <OverflowMenu
+        label={label}
+        items={[
+          { key: 'resend', label: t('resend'), onSelect: resend, disabled: busy },
+          { key: 'revoke', label: t('revoke'), onSelect: confirmRevoke, disabled: busy, destructive: true },
+        ]}
+      />
     );
   }
 
+  // The last administrator cannot be removed; the item stays, disabled and saying why, rather than vanishing.
+  const last = isLastAdministrator({ administrators: page.administrators, row });
   return (
-    <div className={styles.rowActions}>
-      {isRemindable({ row, selfAccountId }) ? (
-        <Button variant={BUTTON_VARIANT.SUBTLE} disabled={busy} onClick={() => openReminder(row.id)}>
-          {t('remind')}
-        </Button>
-      ) : null}
-      <Button
-        variant={BUTTON_VARIANT.DESTRUCTIVE}
-        disabled={busy || isLastAdministrator({ administrators: page.administrators, row })}
-        onClick={confirmRemove}
-      >
-        {t('remove')}
-      </Button>
-    </div>
+    <OverflowMenu
+      label={label}
+      items={[
+        ...(isRemindable({ row, selfAccountId })
+          ? [{ key: 'remind', label: t('remind'), onSelect: () => openReminder(row.id), disabled: busy }]
+          : []),
+        {
+          key: 'remove',
+          label: last ? t('removeLast') : t('remove'),
+          onSelect: confirmRemove,
+          disabled: busy || last,
+          destructive: true,
+        },
+      ]}
+    />
   );
 }

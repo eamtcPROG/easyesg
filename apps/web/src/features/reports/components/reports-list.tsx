@@ -28,7 +28,7 @@ import {
   type ReportView,
 } from '../tools/reports';
 import { REPORTS_MESSAGES } from './reports-messages';
-import { ReportRowActions } from './report-row-actions';
+import { ReportRowMenu } from './report-row-menu';
 import { ReportState } from './report-state';
 import { ReportsToolbar } from './reports-toolbar';
 import styles from './reports.module.css';
@@ -168,15 +168,15 @@ export function ReportsList({ page, view, options, canCreate, canDelete, canDown
           </span>
         ),
       },
-      // A filed row's *Download* (task 216) and the administrator's ⋯ (task 192): a column only where a row may have
-      // something to offer in it.
+      // The row's ⋯ (task 192; since 19 Oct 2026 holding a filed row's *Download* too, task 216): a column only where a
+      // row may have something to offer in it.
       ...(canDelete || canDownload
         ? [
             {
               key: REPORT_COLUMN.ACTIONS,
               header: t('columns.actions'),
               size: COLUMN_SIZE.FIT,
-              cell: (row: ReportRow) => <ReportRowActions row={row} canDownload={canDownload} canDelete={canDelete} />,
+              cell: (row: ReportRow) => <ReportRowMenu row={row} canDownload={canDownload} canDelete={canDelete} />,
             },
           ]
         : []),

@@ -963,9 +963,8 @@
       },
       "rowActions": {
         "edit": "Editați",
-        "editNamed": "Editați perioada {year}",
         "view": "Vedeți",
-        "viewNamed": "Vedeți perioada {year}"
+        "menu": "Mai multe acțiuni pentru perioada {year}"
       },
       "standing": {
         "open": "Deschisă",
@@ -1104,8 +1103,7 @@
       "filed": {
         "chip": "Depus la {date}",
         "files": "{count, plural, one {# export} few {# exporturi} other {# de exporturi}}",
-        "download": "Descărcați",
-        "downloadLabel": "Descărcați ultimul fișier exportat al raportului {entity} pe {year}"
+        "downloadLatest": "Descărcați ultimul fișier exportat"
       },
       "filter": {
         "entity": "Entitatea",
@@ -1190,9 +1188,9 @@
       },
       "loading": "Se încarcă lista rapoartelor…",
       "searchLabel": "Căutați după entitate sau an fiscal",
+      "menu": "Mai multe acțiuni pentru raportul {entity} pentru {year}",
       "open": "Deschideți raportul",
       "deletion": {
-        "menu": "Mai multe acțiuni pentru raportul {entity} pentru {year}",
         "item": "Ștergeți acest raport…",
         "unavailable": {
           "archived": "Ștergeți acest raport — se păstrează, entitatea lui a fost arhivată",
@@ -1327,11 +1325,13 @@
       },
       "actions": {
         "changeRole": "Rolul lui {email}",
-        "remind": "Amintiți-i",
-        "remove": "Retrageți accesul",
+        "remind": "Amintiți-i…",
+        "remove": "Retrageți accesul…",
         "resend": "Retrimiteți invitația",
-        "revoke": "Anulați invitația",
-        "lastAdministrator": "Este singurul administrator al organizației."
+        "revoke": "Anulați invitația…",
+        "lastAdministrator": "Este singurul administrator al organizației.",
+        "menu": "Mai multe acțiuni pentru {email}",
+        "removeLast": "Retrageți accesul — este singurul administrator"
       },
       "remove": {
         "title": "Retrageți accesul acestei persoane?",
