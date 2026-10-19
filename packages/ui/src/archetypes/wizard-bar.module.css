@@ -53,6 +53,14 @@
   gap: var(--space-5);
 }
 
+/* The ⋯ beside *Export* and *Review the report* takes their box — `Button`'s 40px and a secondary button's edge — so
+   the three read as one row of controls, here and where the ⋯ stands alone below the bar's width. */
+.actions,
+.overflow {
+  --overflow-trigger-size: 40px;
+  --overflow-trigger-border: var(--border-strong);
+}
+
 .actions {
   display: flex;
   align-items: center;
