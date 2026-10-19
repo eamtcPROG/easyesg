@@ -360,12 +360,17 @@ test('S-07’s bar deletes the report it is in, and lands on the list (task 192)
   expect(gone?.status()).toBe(404);
 });
 
-test('an editor is offered no ⋯, on the list or in the bar (task 192)', async ({ page }) => {
+test('an editor is offered no deletion, on the list or in the bar (task 192)', async ({ page }) => {
   const organizationId = await signedIn(page, 'delete-editor', 'editor');
   const reportId = await seedReport({ organizationId, name: `${RUN_PREFIX}-Neatinsă` });
   await page.goto('/reports');
   await expect(page.getByRole('table').getByRole('row')).toHaveCount(2);
-  await expect(page.getByRole('button', { name: /^Mai multe acțiuni pentru raportul/u })).toHaveCount(0);
+  // Since 19 Oct 2026 the row's ⋯ is an editor's too — it opens the report, and saves a filed row's latest file — but
+  // deleting stays the Organization Administrator's alone.
+  await page.getByRole('button', { name: /^Mai multe acțiuni pentru raportul/u }).click();
+  await expect(page.getByRole('menuitem', { name: 'Deschideți raportul', exact: true })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: /^Ștergeți acest raport/u })).toHaveCount(0);
+  await page.keyboard.press('Escape');
   await page.goto(`/reports/${reportId}/B1`);
   await expect(page.getByRole('link', { name: 'Exportați', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Mai multe acțiuni pentru acest raport' })).toHaveCount(0);
