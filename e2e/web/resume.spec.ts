@@ -142,8 +142,8 @@ test('a draft answered on one device is what a second device sees, at the step w
   await other.goto(`/reports/${reportId}`);
   // Position: B3, not B1.
   await other.waitForURL(`**/reports/${reportId}/B3`);
-  // Values: the server's, with nothing carried over from the first device.
-  await expect(input(other, B3_ENERGY.label)).toHaveValue('1240');
+  // Values: the server's, with nothing carried over from the first device — in the reader's format (task 220).
+  await expect(input(other, B3_ENERGY.label)).toHaveValue('1.240');
   await other.context().close();
 });
 

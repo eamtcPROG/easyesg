@@ -16,7 +16,8 @@ import {
   type FieldTone,
   type SaveState,
 } from '@easyesg/ui';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
+import { decimalForReading } from '@/lib/decimal-input';
 import { syncStateOf, writeKey } from '../../../tools/autosave-state';
 import { fieldAnchor } from '../../../tools/field-anchor';
 import { priorDraftOf, type PriorValue } from '../../../tools/comparatives';
@@ -24,12 +25,14 @@ import { unitWords } from '../../../tools/unit-words';
 import { markerFor } from '../../../tools/field-marker';
 import { TONE_OF_STATE } from '../../../tools/field-tone';
 import {
+  COLUMN_OF_KIND,
   confirmedWrite,
   notAvailableWrite,
   resumeWrite,
   storedDraftOf,
   unitOf,
   withCommitted,
+  VALUE_COLUMN,
   writeFor,
 } from '../../../tools/values';
 import { HISTORY_SUBJECT } from '@/client/history/history-subject';
@@ -81,6 +84,7 @@ export function StepField({
 }) {
   const t = useTranslations(`${FIELD_MESSAGES}.sync`);
   const tField = useTranslations(FIELD_MESSAGES);
+  const format = useFormatter();
   const tUnit = useTranslations(`${FIELD_MESSAGES}.units`);
   const tMarker = useTranslations(`${FIELD_MESSAGES}.markers`);
   // §6.4's word per state — read here since task 158, where the step's section built the same record on
@@ -144,6 +148,8 @@ export function StepField({
     ) : null;
   // Last year's answer in this field's own value column, or '' where it holds none there.
   const priorDraft = prior === null ? '' : priorDraftOf({ field, prior });
+  // Shown as the reader reads a number, as the field beside it is (task 220; UX-96); carried as the stored decimal.
+  const priorWords = COLUMN_OF_KIND[field.kind] === VALUE_COLUMN.NUMERIC ? decimalForReading({ value: priorDraft, format }) : priorDraft;
   const labelId = fieldAnchor(key);
   const label = named === undefined ? (field.label ?? tField('unnamed')) : (named ?? tField('unnamed'));
 
@@ -204,7 +210,7 @@ export function StepField({
        * column: a field answered *not available* last year has a state and a reason and no value,
        * and *"Prior period:"* followed by nothing is worse than no row (task 36.14).
        */
-      priorPeriod={priorDraft === '' ? undefined : tField('prior', { value: priorDraft })}
+      priorPeriod={priorDraft === '' ? undefined : tField('prior', { value: priorWords })}
       /*
        * FR-47 and UX-32's **per-field** action. The module-level bulk action that rule calls
        * *optional* is not built here and is named in `architecture.md` §12.5.6 — one action that

@@ -17,7 +17,6 @@ import { useAutosaveContext } from '@/features/wizard/components/providers/autos
 import { syncStateOf, writeKey } from '@/features/wizard/tools/autosave-state';
 import type { Computation } from '../../tools/computation';
 import { formatFigure } from '@/lib/figure-format';
-import { readFigure } from '../../tools/figure-input';
 import { FIGURE_UNIT } from '../../tools/figure-unit';
 import { LINE_DISPLAY, lineDisplay } from '../../tools/line-display';
 import { LINE_ENTRY, storedEntry, type LineEntry } from '../../tools/line-entry';
@@ -89,12 +88,12 @@ export function LineRow({
     return null;
   };
 
-  const onQuantity = (draft: string): string | null => {
-    const read = readFigure(draft);
-    if ('invalid' in read) return t('line.invalidNumber');
-    if (read.value === null) return t('line.required');
+  // A figure arrives read (`NumberField`, task 220) on every leave, changed or not, so an unchanged one writes nothing.
+  const onQuantity = (value: string | null): string | null => {
+    if ((value ?? '') === (line.quantity ?? '')) return null;
+    if (value === null) return t('line.required');
     if (unit === null) return t('add.unitRequired');
-    return save({ ...fields, quantity: read.value, unitCode: unit, notAvailableReason: null, monthlyQuantities: null });
+    return save({ ...fields, quantity: value, unitCode: unit, notAvailableReason: null, monthlyQuantities: null });
   };
 
   const onUnit = (code: string): void => {
@@ -107,11 +106,10 @@ export function LineRow({
     }
   };
 
-  const onMonth = ({ index, draft }: { readonly index: number; readonly draft: string }): string | null => {
-    const read = readFigure(draft);
-    if ('invalid' in read) return t('line.invalidNumber');
+  const onMonth = ({ index, value }: { readonly index: number; readonly value: string | null }): string | null => {
+    if ((value ?? '') === (line.monthlyQuantities?.[index] ?? '')) return null;
     if (unit === null) return t('add.unitRequired');
-    const next = withMonth({ months: line.monthlyQuantities, index, value: read.value, length: months?.length ?? 0 });
+    const next = withMonth({ months: line.monthlyQuantities, index, value, length: months?.length ?? 0 });
     const request = writeOf({ ...fields, unitCode: unit, notAvailableReason: null, monthlyQuantities: next });
     if (request === null) return t('months.noTotal');
     change({ lineId: line.id, line: request });

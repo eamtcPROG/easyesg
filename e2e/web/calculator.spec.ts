@@ -115,7 +115,8 @@ test('a bill is entered by source and site, in the unit printed on it, and stays
   // Stays after a calculation's worth of time and a reload — the record UX-41 keeps on screen.
   await page.reload();
   await expect(site(page, 'Brutăria').getByText('Gaze naturale', { exact: true })).toBeVisible();
-  await expect(site(page, 'Brutăria').getByRole('textbox', { name: 'Cifra de pe factură' })).toHaveValue('1700.5');
+  // In the reader's format, as every stored number is shown (task 220; UX-96).
+  await expect(site(page, 'Brutăria').getByRole('textbox', { name: 'Cifra de pe factură' })).toHaveValue('1.700,5');
 });
 
 test('a line with several units asks which one the bill reads in, and none is assumed', async ({ page }) => {

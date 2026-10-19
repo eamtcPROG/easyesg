@@ -2,7 +2,7 @@
 
 import type { CalcFactorSource, CalcSite } from '@easyesg/contracts';
 import { Button, BUTTON_VARIANT } from '@easyesg/ui';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import type { Dispatch } from 'react';
 import { IMPORT_FIELD } from '../../../tools/import-columns';
 import { IMPORT_PLAN } from '../../../tools/import-plan';
@@ -47,6 +47,7 @@ export function ImportMapping({
   readonly onCancel: () => void;
 }) {
   const t = useTranslations(IMPORT_MESSAGES);
+  const format = useFormatter();
   const tSites = useTranslations(`${CALCULATOR_MESSAGES}.sites`);
   const { sourceName, unitName } = useCalculatorWords();
 
@@ -71,6 +72,7 @@ export function ImportMapping({
     options,
     sources,
     sites,
+    format,
   });
   const lines = view.plan.kind === IMPORT_PLAN.READY ? view.plan.lines : [];
 

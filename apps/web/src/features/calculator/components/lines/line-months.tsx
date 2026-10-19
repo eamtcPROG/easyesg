@@ -3,10 +3,11 @@
 import { Fieldset } from '@easyesg/ui';
 import { useFormatter, useTranslations } from 'next-intl';
 import { formatFigure } from '@/lib/figure-format';
+import { NumberField } from '@/shared/number-field';
+import { readFigure } from '../../tools/figure-input';
 import { missingMonths, monthTotal } from '../../tools/month-total';
 import { CALCULATOR_MESSAGES } from '../shared/calculator-messages';
 import styles from '../styles/calculator.module.css';
-import { CommitField } from './commit-field';
 
 /**
  * The monthly form (task 39.1; §12.5.6's task-39 row (1)): twelve rows, each labelled with the calendar month it stands
@@ -32,9 +33,11 @@ export function LineMonths({
   readonly values: readonly (string | null)[] | null;
   readonly unit: string | null;
   readonly readOnly: boolean;
-  readonly onMonth: (input: { readonly index: number; readonly draft: string }) => string | null;
+  /** A month's figure read (`NumberField`), or `null` emptied. Answers the refusal's words, or `null`. */
+  readonly onMonth: (input: { readonly index: number; readonly value: string | null }) => string | null;
 }) {
   const t = useTranslations(`${CALCULATOR_MESSAGES}.months`);
+  const tLine = useTranslations(`${CALCULATOR_MESSAGES}.line`);
   const format = useFormatter();
   const entered = values ?? months.map(() => null);
   const monthName = (month: string): string =>
@@ -54,12 +57,13 @@ export function LineMonths({
               <span>{monthName(month)}</span> <span>{entered[index] == null ? '—' : figure(entered[index])}</span>
             </p>
           ) : (
-            <CommitField
-              key={`${month} ${entered[index] ?? ''}`}
+            <NumberField
+              key={month}
               label={t('month', { month: monthName(month) })}
-              inputMode="decimal"
               value={entered[index] ?? ''}
-              onCommit={(draft) => onMonth({ index, draft })}
+              invalidWords={tLine('invalidNumber')}
+              read={(raw) => readFigure({ raw, format })}
+              onCommit={(value) => onMonth({ index, value })}
             />
           ),
         )}

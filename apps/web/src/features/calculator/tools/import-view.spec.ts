@@ -1,5 +1,7 @@
 import { GHG_SCOPE, type CalcFactorSource } from '@easyesg/contracts';
+import { createFormatter } from 'next-intl';
 import { describe, expect, it } from 'vitest';
+import { formats } from '@/i18n/formats';
 import { IMPORT_PLAN, IMPORT_PROBLEM } from './import-plan';
 import { wordsOf } from './import-text';
 import { importView } from './import-view';
@@ -45,8 +47,10 @@ const ROWS = [
   ['Curent', '1700', 'kWh', 'Magazinul'],
 ];
 
+const ROMANIAN = createFormatter({ locale: 'ro', formats, timeZone: 'UTC' });
+
 const view = (chosen: Parameters<typeof importView>[0]['chosen'] = { columns: {}, values: {} }) =>
-  importView({ rows: ROWS, chosen, words: WORDS, options: OPTIONS, sources: SOURCES, sites: SITES });
+  importView({ rows: ROWS, chosen, words: WORDS, options: OPTIONS, sources: SOURCES, sites: SITES, format: ROMANIAN });
 
 describe('importView', () => {
   it('proposes the columns and the values it can, and plans from them, leaving the rest undecided', () => {
@@ -60,7 +64,7 @@ describe('importView', () => {
     expect(result.plan).toEqual({
       kind: IMPORT_PLAN.READY,
       lines: [{ siteOrdinal: 0, sourceKey: 'natural_gas', description: null, quantity: '500', unitCode: 'm3' }],
-      unreadable: [{ number: 3, problem: IMPORT_PROBLEM.SOURCE_UNMATCHED, value: 'Curent' }],
+      unreadable: [{ number: 3, problem: IMPORT_PROBLEM.SOURCE_UNMATCHED, value: 'Curent', readings: null }],
     });
   });
 
@@ -81,13 +85,13 @@ describe('importView', () => {
   it('lists no value for a column the import does not read, nor a site’s for a report holding one', () => {
     expect(view({ columns: { unit: null }, values: {} }).matches.unit).toEqual([]);
     expect(
-      importView({ rows: ROWS, chosen: { columns: {}, values: {} }, words: WORDS, options: OPTIONS, sources: SOURCES, sites: [SITES[0]] })
+      importView({ rows: ROWS, chosen: { columns: {}, values: {} }, words: WORDS, options: OPTIONS, sources: SOURCES, sites: [SITES[0]], format: ROMANIAN })
         .matches.site,
     ).toEqual([]);
   });
 
   it('plans nothing from a sheet holding nothing', () => {
-    const empty = importView({ rows: [], chosen: { columns: {}, values: {} }, words: WORDS, options: OPTIONS, sources: SOURCES, sites: SITES });
+    const empty = importView({ rows: [], chosen: { columns: {}, values: {} }, words: WORDS, options: OPTIONS, sources: SOURCES, sites: SITES, format: ROMANIAN });
 
     expect(empty.table).toBeNull();
     expect(empty.plan).toEqual({ kind: IMPORT_PLAN.REFUSED, refusal: 'no_rows' });

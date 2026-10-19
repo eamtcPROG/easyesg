@@ -1,9 +1,10 @@
 'use client';
 
 import type { CalcFactorSource, CalcSite } from '@easyesg/contracts';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { memo, useCallback, useEffect, useId, useReducer } from 'react';
 import { loadSpreadsheetReaders, readSpreadsheet, SPREADSHEET_OUTCOME } from '@/client/spreadsheet/read-spreadsheet';
+import { decimalForEditing } from '@/lib/decimal-input';
 import { IMPORT_LIMITS } from '../../../tools/import-plan';
 import { IMPORT_EVENT, IMPORT_STAGE, importReducer, INITIAL_IMPORT_STATE } from '../../../tools/import-state';
 import styles from '../../styles/calculator.module.css';
@@ -38,6 +39,7 @@ function ImportPanelSection({
   readonly onCancel: () => void;
 }) {
   const t = useTranslations(IMPORT_MESSAGES);
+  const format = useFormatter();
   const headingId = useId();
   const [state, dispatch] = useReducer(importReducer, INITIAL_IMPORT_STATE);
 
@@ -47,17 +49,22 @@ function ImportPanelSection({
     void loadSpreadsheetReaders();
   }, []);
 
-  // `dispatch` is stable, so this needs no dependency; the file input observes its identity through `FileUpload`.
+  // `dispatch` is stable, so this depends on the formatter alone, which the locale fixes; the file input observes its
+  // identity through `FileUpload`.
   const choose = useCallback((file: File) => {
     dispatch({ type: IMPORT_EVENT.FILE_CHOSEN, fileName: file.name });
-    void readSpreadsheet({ file, maxBytes: IMPORT_LIMITS.MAX_BYTES }).then((read) =>
+    void readSpreadsheet({
+      file,
+      maxBytes: IMPORT_LIMITS.MAX_BYTES,
+      writeNumber: (value) => decimalForEditing({ value, format }),
+    }).then((read) =>
       dispatch(
         read.kind === SPREADSHEET_OUTCOME.READ
           ? { type: IMPORT_EVENT.FILE_READ, sheets: read.sheets }
           : { type: IMPORT_EVENT.FILE_REFUSED, refusal: read.refusal },
       ),
     );
-  }, []);
+  }, [format]);
 
   return (
     <section className={styles.adding} aria-labelledby={headingId}>

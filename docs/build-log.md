@@ -32463,3 +32463,92 @@ so it never met this.
 - `pnpm lint`; `typecheck` in `api`; `pnpm --filter @easyesg/api test`, 2,395 tests; `pnpm e2e`, 1,833; `pnpm e2e:worker`,
   16 of 16, the boot of the entrypoint whose sweep logged the line. **Skipped**: `openapi:check`, since no controller or DTO changed, and the
   browser suite, since no screen changed. No review agents: this closes a task, not Stage 3.
+
+## Task 220 — a typed number read by the reader's language · 2026-10-19
+
+Found reviewing how a number field reads, after a session that squared S-07's unit box with its field. The one
+reading of a typed figure (`lib/decimal-input.ts`) took a space as the only thousands mark and a dot or a comma as the
+decimal, in every language, while Romanian groups thousands with a dot — Chromium writes `1.234.567,5` in `ro`. So a
+Romanian `1.240` was stored as 1,24, a thousandfold error said nowhere, and `1.240,50` was refused as not a number. And
+a stored number came back into its field as the wire's `1240.5` in all three languages, beside computed figures laid out
+`1.240,5` on the same screen — UX-96's *"never in two formats on one screen"*.
+
+### Decided (project owner, one batch of three)
+
+`architecture.md` §12.5.6's new task-220 row (1)–(3); `design_spec.md` UX-96 amended to bind what a reader types.
+
+- **(1) Every number input asks and is formatted**: S-07's numeric fields and derivation inputs, S-09's figure, months,
+  add-source and override forms. *Declined:* S-07 only, the rest refusing an ambiguous number meanwhile.
+- **(2) Ambiguous is one mark that is not the language's decimal, one to three digits before it (not led by a zero) and
+  exactly three after.** Everything else is settled by rule. *Declined:* the language's own thousands mark always
+  grouping, which leaves a habitual dot-as-decimal in Romanian silently thousandfold.
+- **(3) The import reports a text cell that reads two ways** as a row it cannot read, with both readings. *Declined:*
+  reading it by the language unasked.
+
+### Settled in the task
+
+- **The reading's marks are the formatter's, never a table.** `apps/web` forbids `new Intl.*Format` outside
+  `lib/legal-date.ts` (NFR-26's lint), so the first draft, which built one, was rewritten to take next-intl's
+  formatter as `figure-format.ts` does: the decimal mark is what `format.number(1.5)` leaves without its digits, and a
+  stored decimal is laid out through the named `integer` format over a `BigInt` with its fraction appended as stored —
+  no float, so no digit past a double's fifteenth is invented and a typed `1240,50` reads `1.240,50`.
+- **The decimal reading drops its trailing zeros** — row (a), amended in the task. `NumberField`'s spec showed the
+  two answers to `1.240` as *1.240* and *1,240*, differing only by the mark in question; they are now *1.240* and *1,24*.
+- **One field, one reducer.** `shared/number-field.tsx` composes `TextField`, `lib/number-entry.ts`'s reducer (the
+  text while edited, the value it handed on, the problem) and `shared/number-choice.tsx`'s two buttons. **The question
+  is the field's error**, so a react-hook-form summary lists it like any refusal; S-09's two forms use
+  `tools/figure-rule.ts` for the refusal and `components/shared/figure-choice.tsx` to offer the readings, writing the
+  chosen one back as the field's text. **`onCommit` is called on every leave that read a number**, because S-07's
+  pre-filled value is accepted by leaving it untouched (FR-27) and only the caller knows what it last stored — so
+  S-09's line row now skips an unchanged figure or month itself, which `useCommitDraft` used to do by comparing text.
+- **A number cell is written as the reader edits a number** (`sheet-cells.ts`'s `writeNumber`), so it can never read
+  two ways; only a text cell can. Writing it canonical would have made an `.xlsx` cell holding 1.234 ambiguous in
+  Romanian. The cell model still does not say which kind a cell was, as `sheet-cells.ts` intends.
+- **Also in the reader's format now**: S-07's read-only typed figure, the prior-period comparative beside a field
+  (which a carry-forward fills, so the two would otherwise disagree), the published offer shown as a derivation
+  input's placeholder (*2.000*), and an override already standing when its form opens.
+- **The disclosure field's entry row is top-aligned** (`packages/ui`): with the question beneath the input, the
+  bottom-aligned row dropped the unit beside the answer buttons — measured in a screenshot of the new journey. Every
+  control in that slot hides its own label, so the top is the box's edge.
+- **Copy**: `forms.number.{ambiguous, choose}` and the import's `figure_reads_two_ways`, written separately in each
+  catalogue, Romanian first.
+
+### Searched for the shape
+
+Every caller of `parseDecimalInput` and `readFigure` (six inputs, the import plan), every `inputMode="decimal"`
+(`CommitField` lost the prop, now carrying only a line's description), and every place a stored numeric value is
+drawn as text on S-07 and S-09: the calculator's read-only figures and months already went through `formatFigure`.
+**Not reached**: a boolean prior-period comparative still words `true`/`false` raw (`priorDraftOf`), a different
+defect from this one and left as found.
+
+### Conventions read against the diff
+
+`one-idea-per-file`: the reducer and the problem's wording left the component for `lib/number-entry.ts` with a spec
+(`pure-logic-leaves-the-component`); the figure rule is its own file. `one-kind-per-folder`: `shared/` and `lib/` stay
+files-only, `figure-choice.tsx` sits in `components/shared/` because two regions draw it, and each `shared/` file names
+its readers. `vercel-react-best-practices`: every changed component is a Client Component; state is derived during
+render, the reducer's `VALUE_ARRIVED` included; the inline `read` closures go into no memoized child or dependency
+list. *Declined:* `js-cache-function-results` for the decimal mark — one `format.number` per call.
+
+### The close ran
+
+The change reaches `apps/web` and `packages/ui`, so every dependent's row ran:
+
+- `pnpm lint`; `pnpm --filter @easyesg/web typecheck`; `pnpm docs:check`, 48 of 48 after the three counts this task
+  moves (the plan's task total, the archive's numbers and rows, and `apps/web`'s client modules); `pnpm routes:check`.
+- Unit suites: `ui`, 490; `web`, 2,052 before `NumberField`'s spec was added and 2,058 with it, the reading's,
+  the reducer's, the figure rule's and the import plan's cases new; `admin`, 315. **The new specs bite**: with the
+  ambiguity check switched off, five of them failed across the reading, the field and the calculator's tools, and the
+  file was put back.
+- `pnpm e2e:web`, all three projects: **370 of 370**. A first run of `identity` and `expansion` failed one journey,
+  and the failure was this task's own: B9's derivation input asserted the offered hours as `2000`, which now reads
+  *2.000*; the assertion moved with a comment. The new journey types `1.240` on B3, meets the question, chooses
+  *1.240*, finds 1240 stored and the field reading *1.240* at rest and `1240` while edited, then stores `1.240,50`
+  unasked. The server's log held only the abandoned-stream line this app's `CLAUDE.md` records (digest
+  `2667547900`), 25 times.
+- **A run that lied, worth knowing**: a `pnpm --filter @easyesg/web build` between suites rebuilt `.next` without
+  reassembling the standalone bundle the suite serves, so the next targeted run met an unhydrated page — the register
+  button disabled — and failed in sign-up. `pnpm e2e:web`'s pre-hook is what assembles it; the full run above went
+  through it.
+- **Skipped**: `pnpm e2e` and `e2e:worker`, since nothing in `apps/api` changed and the wire is unchanged. No review
+  agents: this closes a task, not Stage 3, which still holds task 48.

@@ -1215,6 +1215,47 @@ test('B6 applies once B1 says the undertaking manufactures, and asks in m³ (UC-
     .toMatchObject({ valueNumeric: '1450', unitCode: 'm3', state: 'ok' });
 });
 
+test('a figure that reads two ways is asked about, and a stored one reads in the reader’s format (UX-96, task 220)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'two-ways');
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/B3`);
+
+  const energy = page.getByRole('group', { name: 'Consumul total de energie' });
+  const figure = energy.getByRole('textbox');
+  await expect(figure).toHaveCount(1);
+
+  // **In Romanian a dot groups thousands, and a reader may still type it as a decimal.** `1.240` was stored as 1,24
+  // until this task, a thousandfold error said nowhere; now the field asks, beneath itself, and offers both readings.
+  await figure.fill('1.240');
+  await figure.blur();
+  await expect(energy.getByText('se poate citi în două feluri', { exact: false })).toBeVisible();
+  await expect(figure).toHaveAttribute('aria-invalid', 'true');
+  const meant = energy.getByRole('group', { name: 'Valoarea pe care ați vrut să o scrieți' });
+  await expect(meant.getByRole('button')).toHaveText(['1.240', '1,24']);
+
+  await meant.getByRole('button', { name: '1.240', exact: true }).click();
+  await expect
+    .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: 'TotalEnergyConsumption' }), { timeout: 15_000 })
+    .toMatchObject({ valueNumeric: '1240' });
+  await expect(meant).toHaveCount(0);
+
+  // **Stored, it reads as the reader reads a number, and is edited plainly**, so what is edited holds no mark to read
+  // again.
+  await expect(figure).toHaveValue('1.240');
+  await figure.focus();
+  await expect(figure).toHaveValue('1240');
+
+  // Both marks settle it without a question: the last is the decimal.
+  await figure.fill('1.240,5');
+  await figure.blur();
+  await expect
+    .poll(() => disclosureValueOf({ organizationId, reportId, elementKey: 'TotalEnergyConsumption' }), { timeout: 15_000 })
+    .toMatchObject({ valueNumeric: '1240.5' });
+  await expect(figure).toHaveValue('1.240,5');
+});
+
 test('a module waiting on B1 says so on the rail rather than counting to zero (FR-28, UX-9)', async ({
   page,
 }) => {
@@ -1266,12 +1307,13 @@ test('B9 computes the accident rate from fields the reporter can see (UC-27)', a
 
   // **The hours field, offering EFRAG's 2 000 without filling it in.** The placeholder is the offer;
   // an empty box is a reporter who has not looked, and that is deliberately not the same thing as
-  // one who typed 2000 — the api computes with the offer either way.
+  // one who typed 2000 — the api computes with the offer either way. Laid out as the reader reads a number, as
+  // every stored one is (task 220; UX-96).
   const hours = page.getByRole('textbox', {
     name: 'Ore lucrate de un angajat cu normă întreagă în perioadă',
   });
   await expect(hours).toHaveValue('');
-  await expect(hours).toHaveAttribute('placeholder', '2000');
+  await expect(hours).toHaveAttribute('placeholder', '2.000');
 
   // **The rate has no input at all.** FR-29's "derived rather than typed", as a screen fact rather
   // than as a refusal the reporter meets after typing.
@@ -1663,8 +1705,8 @@ test('last year’s value shows beside this year’s, and carries forward marked
   await page.goto(`/reports/${reportId}/B3`);
   const energy = page.getByRole('group', { name: 'Consumul total de energie' });
 
-  // **UX-31: adjacent to the input, not in a separate comparison view.**
-  await expect(energy).toContainText('1240');
+  // **UX-31: adjacent to the input, not in a separate comparison view** — in the reader's format (task 220).
+  await expect(energy).toContainText('1.240');
 
   // **UC-46 in one action.** The field is empty, so carrying forward is offered.
   await energy.getByRole('button', { name: 'Preluați valoarea' }).click();

@@ -134,6 +134,10 @@
         "confirm": "Leave without saving",
         "cancel": "Stay on the page"
       }
+    },
+    "number": {
+      "ambiguous": "The number “{typed}” can be read two ways, and the two values differ a thousandfold, so it was not saved. Choose the value you meant below.",
+      "choose": "The value you meant"
     }
   },
   "identity": {
@@ -1906,6 +1910,7 @@
             "site_unmatched": "the site “{value}” is not matched to one of the report’s sites — match it above",
             "no_figure": "has no figure — fill it in in the file, and if the bill has none, add the line and say why",
             "not_a_figure": "“{value}” is not a figure from a bill — leave only the number in the cell, with no text and no minus",
+            "figure_reads_two_ways": "the figure “{value}” could be {thousands} or {decimal}, a thousandfold apart — write it in the file without a thousands separator, with a point for decimals",
             "unit_missing": "does not say the unit, and this source is billed in more than one — fill it in in the file",
             "unit_unmatched": "the unit “{value}” is not matched to a unit — match it above",
             "unit_not_admitted": "this source is not billed in “{value}” — correct the unit or the source in the file",

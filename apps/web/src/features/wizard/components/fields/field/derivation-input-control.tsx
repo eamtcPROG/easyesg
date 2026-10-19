@@ -1,10 +1,10 @@
 'use client';
 
 import type { DerivationInput, DerivationInputWrite } from '@easyesg/contracts';
-import { TextField } from '@easyesg/ui';
-import { useState } from 'react';
-import { parseDecimalInput } from '@/lib/decimal-input';
+import { useTranslations } from 'next-intl';
+import { NumberField } from '@/shared/number-field';
 import { useAutosaveContext } from '../../providers/autosave-context';
+import { FIELD_MESSAGES } from '../shared/step-messages';
 
 /**
  * One value a derived figure is computed from (task 36.10; UC-26, UC-27).
@@ -21,6 +21,9 @@ import { useAutosaveContext } from '../../providers/autosave-context';
  * never looked at indistinguishable from a figure they chose — and the api computes with the offer
  * either way, so nothing is lost by leaving the box empty. That is the same distinction
  * `DisclosureField`'s own `defaultValue` draws for an entity-record answer (task 91.2).
+ *
+ * **`NumberField` since task 220**, as every typed number is: read by the language's own marks, asked about where it
+ * reads two ways, shown in the reader's format, and an unreadable draft now says so rather than staying silently unsent.
  */
 export function DerivationInputControl({
   input,
@@ -33,31 +36,27 @@ export function DerivationInputControl({
   readonly label: string;
   readonly help: string;
 }) {
+  const t = useTranslations(FIELD_MESSAGES);
   const { change } = useAutosaveContext();
-  const [draft, setDraft] = useState(input.value ?? '');
 
   return (
-    <TextField
+    <NumberField
       label={label}
       help={help}
-      inputMode="decimal"
-      value={draft}
+      value={input.value ?? ''}
       // The published offer, shown as what the field will mean if left empty — never written. EFRAG
       // prints 2 000 hours and permits changing it, so filling the box with 2 000 would make an
       // offer nobody looked at indistinguishable from a figure someone chose. The api computes with
       // the offer regardless, so the empty box costs nothing and says something true.
       placeholder={input.offered ?? undefined}
       readOnly={readOnly}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={() => {
-        const parsed = parseDecimalInput(draft);
-        // An unparseable draft stays on screen and is not written, exactly as a disclosure's own
-        // numeric control does — the reporter keeps what they typed so they can correct it.
-        if ('invalid' in parsed) return;
+      invalidWords={t('invalidNumber')}
+      onCommit={(value) => {
         // Annotated rather than inferred: the queue takes a union, and an inline literal lets
         // TypeScript match it against the disclosure arm first and report a confusing mismatch.
-        const write: DerivationInputWrite = { inputKey: input.key, valueNumeric: parsed.value };
+        const write: DerivationInputWrite = { inputKey: input.key, valueNumeric: value };
         change(write);
+        return null;
       }}
     />
   );

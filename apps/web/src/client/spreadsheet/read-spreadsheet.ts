@@ -1,4 +1,4 @@
-import { cellOfText, cellOfWorkbook, type NumberText, type Sheet } from './sheet-cells';
+import { cellOfText, cellOfWorkbook, type NumberText, type Sheet, type WorkbookValue } from './sheet-cells';
 
 /**
  * A spreadsheet the reader chose, read in the browser (task 204.2; FR-211; `architecture.md` §12.5.6's task-204 row
@@ -60,8 +60,6 @@ export function formatOf(fileName: string): SpreadsheetFormat | null {
   return Object.values(SPREADSHEET_FORMAT).find((format) => format === extension) ?? null;
 }
 
-type WorkbookCell = Parameters<typeof cellOfWorkbook>[0];
-
 const workbookReader = () => import('read-excel-file/browser');
 const csvReader = () => import('papaparse');
 
@@ -69,14 +67,14 @@ const csvReader = () => import('papaparse');
 export const loadSpreadsheetReaders = (): Promise<unknown> =>
   Promise.all([workbookReader(), csvReader()]).catch(() => undefined);
 
-async function readWorkbook(file: File): Promise<readonly Sheet[]> {
+async function readWorkbook(input: { readonly file: File; readonly writeNumber: (decimal: string) => string }): Promise<readonly Sheet[]> {
   const { default: readXlsxFile } = await workbookReader();
-  const sheets = await readXlsxFile<NumberText>(file, { parseNumber: (numberText) => ({ numberText }) });
+  const sheets = await readXlsxFile<NumberText>(input.file, { parseNumber: (numberText) => ({ numberText }) });
   return sheets.map((sheet) => ({
     name: sheet.sheet,
     // The one cast here, and it corrects the library's declaration rather than trusting data: 9.3.10's `CellValue`
     // says a date cell is `typeof Date`, the constructor, where `parseExcelDate` hands over `new Date(…)`.
-    rows: sheet.data.map((row) => row.map((value) => cellOfWorkbook(value as WorkbookCell))),
+    rows: sheet.data.map((row) => row.map((value) => cellOfWorkbook({ value: value as WorkbookValue, writeNumber: input.writeNumber }))),
   }));
 }
 
@@ -93,7 +91,12 @@ async function readCsv(file: File): Promise<readonly Sheet[] | null> {
   return [{ name: null, rows: parsed.data.map((row) => row.map(cellOfText)) }];
 }
 
-export async function readSpreadsheet(input: { readonly file: File; readonly maxBytes: number }): Promise<SpreadsheetRead> {
+export async function readSpreadsheet(input: {
+  readonly file: File;
+  readonly maxBytes: number;
+  /** A number cell's canonical decimal as the reader edits one (`sheet-cells.ts`; task 220). */
+  readonly writeNumber: (decimal: string) => string;
+}): Promise<SpreadsheetRead> {
   const format = formatOf(input.file.name);
   if (format === null) return refused(SPREADSHEET_REFUSAL.FORMAT);
   if (input.file.size > input.maxBytes) return refused(SPREADSHEET_REFUSAL.SIZE);
@@ -103,7 +106,7 @@ export async function readSpreadsheet(input: { readonly file: File; readonly max
     return refused(SPREADSHEET_REFUSAL.READER);
   }
   try {
-    const sheets = format === SPREADSHEET_FORMAT.XLSX ? await readWorkbook(input.file) : await readCsv(input.file);
+    const sheets = format === SPREADSHEET_FORMAT.XLSX ? await readWorkbook(input) : await readCsv(input.file);
     return sheets === null ? refused(SPREADSHEET_REFUSAL.UNREADABLE) : { kind: SPREADSHEET_OUTCOME.READ, sheets };
   } catch {
     // The reader's own errors — not a zip, not a workbook, a sheet it cannot parse — all say the same thing here.

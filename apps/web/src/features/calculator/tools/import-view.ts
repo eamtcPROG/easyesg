@@ -35,6 +35,8 @@ export function importView(input: {
   readonly options: Readonly<Record<MatchedField, readonly ImportOption[]>>;
   readonly sources: readonly CalcFactorSource[];
   readonly sites: readonly CalcSite[];
+  /** The reader's number format, which the plan reads a figure's text by. */
+  readonly format: Parameters<typeof planImport>[0]['format'];
 }): ImportView {
   const table = tableOf(input.rows);
   const proposed = proposeColumns({ headers: table?.headers ?? [], words: input.words, sites: input.sites.length });
@@ -72,6 +74,7 @@ export function importView(input: {
       matched: ({ field, value }) => lookup.get(field)?.get(value) ?? null,
       sources: input.sources,
       sites: input.sites,
+      format: input.format,
     }),
   };
 }

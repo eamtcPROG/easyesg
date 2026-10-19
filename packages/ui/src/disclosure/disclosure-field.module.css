@@ -68,9 +68,11 @@
   max-width: var(--measure-text);
 }
 
+/* Top-aligned, so the unit stays beside the value's box when a message grows beneath it (task 220): every control in
+   this slot is named by the question above, its own label hidden, so the box starts at the top of its column. */
 .entry {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: var(--space-4);
   flex-wrap: wrap;
 }

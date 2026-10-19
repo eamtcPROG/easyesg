@@ -2,10 +2,13 @@
 
 import { Button, BUTTON_VARIANT } from '@easyesg/ui';
 import { FormSummary, FormTextArea, FormTextField } from '@easyesg/ui/forms';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
+import { decimalForEditing } from '@/lib/decimal-input';
 import { readFigure } from '../../tools/figure-input';
+import { figureRule } from '../../tools/figure-rule';
 import { CALCULATOR_MESSAGES } from './calculator-messages';
+import { FigureChoice } from './figure-choice';
 import styles from '../styles/calculator.module.css';
 
 /**
@@ -15,6 +18,9 @@ import styles from '../styles/calculator.module.css';
  * `required: true` out of the type precisely because a message-less rule renders no inline text, no `aria-invalid` and
  * no summary entry, so the form would refuse in silence. UX-43: an unexplained substituted figure is never presentable,
  * and this is the point of substitution, where the reader can still be asked. The api refuses the same blank reason.
+ *
+ * **A substitute already standing opens in the reader's format, and a figure that reads two ways is asked about**
+ * (task 220): `figureRule` refuses it with the question and `FigureChoice` offers the two readings.
  *
  * **In `shared/` because two regions draw it** — B3's scope control (`figure/`) and an invoice line (`lines/`); what
  * it hands back is each caller's to write, a direct request for the one and the queue for the other.
@@ -42,12 +48,17 @@ export function FigureOverrideForm({
   const t = useTranslations(`${CALCULATOR_MESSAGES}.override`);
   const tLine = useTranslations(`${CALCULATOR_MESSAGES}.line`);
   const tForms = useTranslations('forms');
-  const { control, handleSubmit } = useForm<OverrideFields>({
-    defaultValues: { tonnes: initial?.tonnes ?? '', reason: initial?.reason ?? '' },
+  const tNumber = useTranslations('forms.number');
+  const format = useFormatter();
+  const { control, handleSubmit, setValue } = useForm<OverrideFields>({
+    defaultValues: {
+      tonnes: initial === null ? '' : decimalForEditing({ value: initial.tonnes, format }),
+      reason: initial?.reason ?? '',
+    },
   });
 
   const submit = handleSubmit((fields) => {
-    const figure = readFigure(fields.tonnes);
+    const figure = readFigure({ raw: fields.tonnes, format });
     if (!('value' in figure) || figure.value === null) return;
     onSubmit({ tonnesCo2e: figure.value, explanation: fields.reason.trim() });
   });
@@ -62,12 +73,14 @@ export function FigureOverrideForm({
         inputMode="decimal"
         rules={{
           required: t('tonnesRequired'),
-          validate: (value) => {
-            const figure = readFigure(value);
-            return ('value' in figure && figure.value !== null) || tLine('invalidNumber');
-          },
+          validate: figureRule({
+            format,
+            invalidWords: tLine('invalidNumber'),
+            ambiguousWords: (typed) => tNumber('ambiguous', { typed }),
+          }),
         }}
       />
+      <FigureChoice control={control} name="tonnes" onChoose={(text) => setValue('tonnes', text, { shouldValidate: true })} />
       <FormTextArea
         control={control}
         name="reason"

@@ -8,7 +8,8 @@ import {
 import { DateField, RadioGroup, Select, TextArea, TextField } from '@easyesg/ui';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useState, type FocusEvent } from 'react';
-import { parseDecimalInput } from '@/lib/decimal-input';
+import { decimalForReading } from '@/lib/decimal-input';
+import { NumberField } from '@/shared/number-field';
 import {
   BOOLEAN_CHOICE,
   COLUMN_OF_KIND,
@@ -57,6 +58,10 @@ import styles from '../styles/step.module.css';
  * **A number that is not a number is refused at the field and never sent.** The column is
  * `numeric`; the database would refuse it with a message no reader can act on. The refusal here is
  * NFR-79's three parts, inline, and the draft is kept so nothing typed is lost.
+ *
+ * **A number is `NumberField`'s since task 220** — read by the language's own marks, asked about where it reads two
+ * ways, and shown in the reader's format at rest — so the draft a numeric field holds is the canonical decimal, and
+ * this control's own text handling serves the other columns alone.
  */
 export function DisclosureControl({
   field,
@@ -82,7 +87,6 @@ export function DisclosureControl({
     committed: storedDraftOf(field),
     server: draftOf(field),
   }));
-  const [invalid, setInvalid] = useState(false);
   // **Never the element key.** `EnergyConsumptionFromFuels` is the example the root file's
   // user-facing-text rule uses by name; a catalogue this locale lacks is a content gap, and the
   // reader gets a neutral word rather than the taxonomy's.
@@ -119,8 +123,9 @@ export function DisclosureControl({
     }
     // **A computed or derived figure is shown rounded** — once, half-up, to the places the step read serves its field,
     // its unit's or its element's, and a share as a percentage (tasks 39.3, 211; §12.5.6's task-211 row): the rule S-09,
-    // the PDF and the Excel export round by. A figure the reporter typed is shown as typed: it is an answer, not a
-    // computation (`computedFigureOf` answers `null` for it).
+    // the PDF and the Excel export round by. A figure the reporter typed keeps every digit it was typed with: it is an
+    // answer, not a computation (`computedFigureOf` answers `null` for it) — laid out in the reader's format since task
+    // 220 (UX-96).
     const figure = computedFigureOf(field, draft);
     const shown =
       field.kind === DISCLOSURE_KIND.ENUMERATION
@@ -129,7 +134,9 @@ export function DisclosureControl({
           ? booleanLabel(draft, { yes: t('yes'), no: t('no') })
           : figure !== null
             ? computedFigureWords({ figure, format })
-            : draft;
+            : column === VALUE_COLUMN.NUMERIC
+              ? decimalForReading({ value: draft, format })
+              : draft;
     return shown === '' ? (
       <p className={styles.readOnlyEmpty}>{t('unanswered')}</p>
     ) : (
@@ -147,17 +154,7 @@ export function DisclosureControl({
 
   const onTextBlur = (event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const raw = event.currentTarget.value;
-    if (column !== VALUE_COLUMN.NUMERIC) {
-      commit(raw.trim() === '' ? '' : raw);
-      return;
-    }
-    const parsed = parseDecimalInput(raw);
-    if ('invalid' in parsed) {
-      setInvalid(true);
-      return;
-    }
-    setInvalid(false);
-    commit(parsed.value ?? '');
+    commit(raw.trim() === '' ? '' : raw);
   };
 
   if (field.kind === DISCLOSURE_KIND.ENUMERATION_SET) {
@@ -215,15 +212,16 @@ export function DisclosureControl({
       );
     case VALUE_COLUMN.NUMERIC:
       return (
-        <TextField
+        <NumberField
           label={label}
           labelHidden
-          aria-labelledby={labelledBy}
-          inputMode="decimal"
+          labelledBy={labelledBy}
           value={draft}
-          onChange={(event) => setDraft(event.currentTarget.value)}
-          onBlur={onTextBlur}
-          error={invalid ? t('invalidNumber') : undefined}
+          invalidWords={t('invalidNumber')}
+          onCommit={(value) => {
+            commit(value ?? '');
+            return null;
+          }}
         />
       );
     default:

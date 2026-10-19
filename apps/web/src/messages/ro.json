@@ -134,6 +134,10 @@
         "confirm": "Plecați fără să salvați",
         "cancel": "Rămâneți pe pagină"
       }
+    },
+    "number": {
+      "ambiguous": "Numărul „{typed}” se poate citi în două feluri, iar cele două valori diferă de o mie de ori, așa că nu a fost salvat. Alegeți mai jos valoarea pe care ați vrut să o scrieți.",
+      "choose": "Valoarea pe care ați vrut să o scrieți"
     }
   },
   "identity": {
@@ -1906,6 +1910,7 @@
             "site_unmatched": "locația „{value}” nu este potrivită cu o locație a raportului — potriviți-o mai sus",
             "no_figure": "nu are cifră — completați-o în fișier, iar dacă factura nu are una, adăugați linia și spuneți de ce",
             "not_a_figure": "„{value}” nu este o cifră de factură — lăsați în celulă doar numărul, fără text și fără minus",
+            "figure_reads_two_ways": "cifra „{value}” se poate citi ca {thousands} sau ca {decimal}, iar cele două diferă de o mie de ori — scrieți-o în fișier fără punct între mii și cu virgulă pentru zecimale",
             "unit_missing": "nu spune unitatea, iar această sursă se facturează în mai multe — completați-o în fișier",
             "unit_unmatched": "unitatea „{value}” nu este potrivită cu o unitate — potriviți-o mai sus",
             "unit_not_admitted": "această sursă nu se facturează în „{value}” — corectați unitatea sau sursa în fișier",

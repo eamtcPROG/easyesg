@@ -1,7 +1,8 @@
 'use client';
 
 import { Callout, CALLOUT_INTENT } from '@easyesg/ui';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
+import { decimalForReading } from '@/lib/decimal-input';
 import { IMPORT_PLAN, type ImportPlan } from '../../../tools/import-plan';
 import styles from '../../styles/calculator.module.css';
 import { IMPORT_MESSAGES } from '../shared/import-messages';
@@ -19,6 +20,9 @@ import { IMPORT_MESSAGES } from '../shared/import-messages';
  */
 export function ImportReport({ plan }: { readonly plan: ImportPlan }) {
   const t = useTranslations(IMPORT_MESSAGES);
+  const format = useFormatter();
+  // A figure that reads two ways is reported with both readings, each as the reader reads a number (task 220).
+  const reading = (value: string | undefined) => (value === undefined ? '' : decimalForReading({ value, format }));
   switch (plan.kind) {
     case IMPORT_PLAN.REFUSED:
       return (
@@ -49,7 +53,11 @@ export function ImportReport({ plan }: { readonly plan: ImportPlan }) {
                 {plan.unreadable.map((row) => (
                   <li key={row.number}>
                     <span className={styles.importingRowNumber}>{t('unreadable.row', { number: row.number })}</span>{' '}
-                    {t(`unreadable.problems.${row.problem}`, { value: row.value ?? '' })}
+                    {t(`unreadable.problems.${row.problem}`, {
+                      value: row.value ?? '',
+                      thousands: reading(row.readings?.thousands),
+                      decimal: reading(row.readings?.decimal),
+                    })}
                   </li>
                 ))}
               </ul>

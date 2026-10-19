@@ -1,7 +1,10 @@
 'use client';
 
+import { useFormatter, useTranslations } from 'next-intl';
+import { NumberField } from '@/shared/number-field';
+import { readFigure } from '../../tools/figure-input';
+import { CALCULATOR_MESSAGES } from '../shared/calculator-messages';
 import styles from '../styles/calculator.module.css';
-import { CommitField } from './commit-field';
 import { LineUnit } from './line-unit';
 
 /**
@@ -21,12 +24,22 @@ export function LineFigure({
   readonly quantity: string | null;
   readonly units: readonly string[];
   readonly unit: string | null;
-  readonly onQuantity: (draft: string) => string | null;
+  /** The figure read (`NumberField`), or `null` emptied. Answers the refusal's words, or `null`. */
+  readonly onQuantity: (value: string | null) => string | null;
   readonly onUnit: (code: string) => void;
 }) {
+  const t = useTranslations(CALCULATOR_MESSAGES);
+  const format = useFormatter();
   return (
     <div className={styles.figure}>
-      <CommitField key={quantity ?? ''} label={label} labelHidden inputMode="decimal" value={quantity ?? ''} onCommit={onQuantity} />
+      <NumberField
+        label={label}
+        labelHidden
+        value={quantity ?? ''}
+        invalidWords={t('line.invalidNumber')}
+        read={(raw) => readFigure({ raw, format })}
+        onCommit={onQuantity}
+      />
       <LineUnit units={units} unit={unit} onUnit={onUnit} />
     </div>
   );

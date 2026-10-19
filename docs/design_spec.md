@@ -2270,6 +2270,8 @@ Plain, specific, unhurried, second person. The reader is a competent business ow
 
 **UX-96** Numbers, dates, currency and units shall be formatted per locale, and the same value shall never appear in two formats on one screen.
 
+**Amended 19 Oct 2026 (project owner, task 220; `architecture.md` §12.5.6's task-220 row): it binds what a reader types, too.** A typed number is read by the interface language's own marks — in Romanian a dot groups thousands and a comma is the decimal — and a stored one is shown in the reader's format, grouped while the field is not being edited and plain while it is. Where the text reads two ways — one dot or comma that is not the language's decimal mark, with three digits after it, as `1.240` — the field asks which was meant, in NFR-79's three parts beneath it, its two answers the two readings; nothing is stored until one is chosen. A spreadsheet's text cell that reads two ways is reported as a row the import cannot read (FR-211).
+
 ---
 
 ## 10. Accessibility requirements

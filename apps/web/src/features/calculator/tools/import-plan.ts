@@ -1,4 +1,5 @@
 import type { CalcFactorSource, CalcSite, WriteCalcLineRequest } from '@easyesg/contracts';
+import type { NumberReadings } from '@/lib/number-entry';
 import { readFigure } from './figure-input';
 import { cellIn, IMPORT_FIELD, requiredFields, type ColumnChoice, type ImportField, type ImportTable } from './import-columns';
 import type { MatchedField } from './import-values';
@@ -17,6 +18,10 @@ import type { MatchedField } from './import-values';
  * **One problem per row, the first met**, in the order a reader fixes them: what the bill is for, where, the figure,
  * its unit, the description. A row with no figure is reported, not added as an explained line — why a figure is
  * missing is a person's to write (row (3)).
+ *
+ * **A figure cell whose text reads two ways is a row this reports** (task 220; §12.5.6's task-220 row (3)) — `1.240`
+ * typed into a text cell in Romanian — naming both readings, and never a line: nobody is there to ask which was meant.
+ * A number cell never reads two ways, since the reader writes it as the reader edits a number (`sheet-cells.ts`).
  *
  * **The row limit is asked of the sheet chosen**, not of the file, so a workbook whose other sheet is too long can
  * still be imported from this one. Pure, and recomputed from what was read and what was chosen, never stored.
@@ -39,6 +44,7 @@ export const IMPORT_PROBLEM = {
   SITE_UNMATCHED: 'site_unmatched',
   NO_FIGURE: 'no_figure',
   NOT_A_FIGURE: 'not_a_figure',
+  FIGURE_READS_TWO_WAYS: 'figure_reads_two_ways',
   UNIT_MISSING: 'unit_missing',
   UNIT_UNMATCHED: 'unit_unmatched',
   UNIT_NOT_ADMITTED: 'unit_not_admitted',
@@ -58,6 +64,8 @@ export interface UnreadableRow {
   readonly problem: ImportProblem;
   /** The cell the problem is about, where there is one to quote. */
   readonly value: string | null;
+  /** A figure's two readings, canonical, where its text reads two ways. */
+  readonly readings: NumberReadings | null;
 }
 
 export type ImportPlan =
@@ -78,8 +86,10 @@ export function planImport(input: {
   readonly matched: (choice: { readonly field: MatchedField; readonly value: string }) => string | null;
   readonly sources: readonly CalcFactorSource[];
   readonly sites: readonly CalcSite[];
+  /** The reader's number format, whose marks a figure's text is read by. */
+  readonly format: Parameters<typeof readFigure>[0]['format'];
 }): ImportPlan {
-  const { table, columns, matched, sources, sites } = input;
+  const { table, columns, matched, sources, sites, format } = input;
   if (table === null || table.rows.length === 0) return { kind: IMPORT_PLAN.REFUSED, refusal: SHEET_REFUSAL.NO_ROWS };
   if (table.rows.length > IMPORT_LIMITS.MAX_ROWS) {
     return { kind: IMPORT_PLAN.REFUSED, refusal: SHEET_REFUSAL.TOO_MANY_ROWS };
@@ -89,8 +99,12 @@ export function planImport(input: {
 
   const readings: RowReading[] = table.rows.map((row) => {
     const cell = (field: ImportField) => cellIn({ row, column: columns[field] });
-    const refuse = (problem: ImportProblem, value: string | null = null): RowReading => ({
-      unreadable: { number: row.number, problem, value },
+    const refuse = (
+      problem: ImportProblem,
+      value: string | null = null,
+      readings: NumberReadings | null = null,
+    ): RowReading => ({
+      unreadable: { number: row.number, problem, value, readings },
     });
 
     const sourceText = cell(IMPORT_FIELD.SOURCE);
@@ -108,7 +122,8 @@ export function planImport(input: {
 
     const figureText = cell(IMPORT_FIELD.FIGURE);
     if (figureText === null) return refuse(IMPORT_PROBLEM.NO_FIGURE);
-    const figure = readFigure(figureText);
+    const figure = readFigure({ raw: figureText, format });
+    if ('ambiguous' in figure) return refuse(IMPORT_PROBLEM.FIGURE_READS_TWO_WAYS, figureText, figure.ambiguous);
     if (!('value' in figure) || figure.value === null || figure.value.length > IMPORT_LIMITS.FIGURE_TEXT) {
       return refuse(IMPORT_PROBLEM.NOT_A_FIGURE, figureText);
     }

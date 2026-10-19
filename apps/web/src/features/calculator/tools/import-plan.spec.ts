@@ -1,5 +1,7 @@
 import { GHG_SCOPE, type CalcFactorSource } from '@easyesg/contracts';
+import { createFormatter } from 'next-intl';
 import { describe, expect, it } from 'vitest';
+import { formats } from '@/i18n/formats';
 import type { ColumnChoice, ImportTable } from './import-columns';
 import { IMPORT_LIMITS, IMPORT_PLAN, IMPORT_PROBLEM, planImport, SHEET_REFUSAL } from './import-plan';
 import type { MatchedField } from './import-values';
@@ -36,8 +38,10 @@ const tableWith = (...rows: (string | null)[][]): ImportTable => ({
   rows: rows.map((cells, index) => ({ number: index + 2, cells })),
 });
 
+const ROMANIAN = createFormatter({ locale: 'ro', formats, timeZone: 'UTC' });
+
 const plan = (table: ImportTable | null, overrides: Partial<Parameters<typeof planImport>[0]> = {}) =>
-  planImport({ table, columns: COLUMNS, matched, sources: SOURCES, sites: TWO_SITES, ...overrides });
+  planImport({ table, columns: COLUMNS, matched, sources: SOURCES, sites: TWO_SITES, format: ROMANIAN, ...overrides });
 
 describe('planImport', () => {
   it('makes one line of one figure for the period from each readable row, in the sheet’s unit, at its site', () => {
@@ -85,18 +89,35 @@ describe('planImport', () => {
       kind: IMPORT_PLAN.READY,
       lines: [],
       unreadable: [
-        { number: 2, problem: IMPORT_PROBLEM.SOURCE_MISSING, value: null },
-        { number: 3, problem: IMPORT_PROBLEM.SOURCE_UNMATCHED, value: 'Abur' },
-        { number: 4, problem: IMPORT_PROBLEM.SITE_MISSING, value: null },
-        { number: 5, problem: IMPORT_PROBLEM.SITE_UNMATCHED, value: 'Depozitul' },
-        { number: 6, problem: IMPORT_PROBLEM.NO_FIGURE, value: null },
-        { number: 7, problem: IMPORT_PROBLEM.NOT_A_FIGURE, value: 'circa 500' },
-        { number: 8, problem: IMPORT_PROBLEM.NOT_A_FIGURE, value: '-5' },
-        { number: 9, problem: IMPORT_PROBLEM.UNIT_MISSING, value: null },
-        { number: 10, problem: IMPORT_PROBLEM.UNIT_UNMATCHED, value: 'kilowați' },
-        { number: 11, problem: IMPORT_PROBLEM.UNIT_NOT_ADMITTED, value: 'kWh' },
-        { number: 12, problem: IMPORT_PROBLEM.DESCRIPTION_TOO_LONG, value: null },
-        { number: 13, problem: IMPORT_PROBLEM.SOURCE_UNMATCHED, value: 'Abur' },
+        { number: 2, problem: IMPORT_PROBLEM.SOURCE_MISSING, value: null , readings: null },
+        { number: 3, problem: IMPORT_PROBLEM.SOURCE_UNMATCHED, value: 'Abur' , readings: null },
+        { number: 4, problem: IMPORT_PROBLEM.SITE_MISSING, value: null , readings: null },
+        { number: 5, problem: IMPORT_PROBLEM.SITE_UNMATCHED, value: 'Depozitul' , readings: null },
+        { number: 6, problem: IMPORT_PROBLEM.NO_FIGURE, value: null , readings: null },
+        { number: 7, problem: IMPORT_PROBLEM.NOT_A_FIGURE, value: 'circa 500' , readings: null },
+        { number: 8, problem: IMPORT_PROBLEM.NOT_A_FIGURE, value: '-5' , readings: null },
+        { number: 9, problem: IMPORT_PROBLEM.UNIT_MISSING, value: null , readings: null },
+        { number: 10, problem: IMPORT_PROBLEM.UNIT_UNMATCHED, value: 'kilowați' , readings: null },
+        { number: 11, problem: IMPORT_PROBLEM.UNIT_NOT_ADMITTED, value: 'kWh' , readings: null },
+        { number: 12, problem: IMPORT_PROBLEM.DESCRIPTION_TOO_LONG, value: null , readings: null },
+        { number: 13, problem: IMPORT_PROBLEM.SOURCE_UNMATCHED, value: 'Abur' , readings: null },
+      ],
+    });
+  });
+
+  it('reports a figure cell that reads two ways with both readings, and reads one the language settles (task 220)', () => {
+    expect(
+      plan(tableWith(['Gaz', 'Brutăria', '1.700', 'mc', null], ['Gaz', 'Brutăria', '1.700,5', 'mc', null])),
+    ).toEqual({
+      kind: IMPORT_PLAN.READY,
+      lines: [{ siteOrdinal: 0, sourceKey: 'natural_gas', description: null, quantity: '1700.5', unitCode: 'm3' }],
+      unreadable: [
+        {
+          number: 2,
+          problem: IMPORT_PROBLEM.FIGURE_READS_TWO_WAYS,
+          value: '1.700',
+          readings: { thousands: '1700', decimal: '1.7' },
+        },
       ],
     });
   });

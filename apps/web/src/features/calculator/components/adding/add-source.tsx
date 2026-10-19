@@ -3,11 +3,13 @@
 import type { CalcFactorSource, CalcSite } from '@easyesg/contracts';
 import { Button, BUTTON_VARIANT } from '@easyesg/ui';
 import { FormCheckbox, FormSelect, FormSummary, FormTextArea, FormTextField } from '@easyesg/ui/forms';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useId } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import type { CalcLineWrite } from '@/features/wizard/tools/autosave-state';
 import { readFigure } from '../../tools/figure-input';
+import { figureRule } from '../../tools/figure-rule';
+import { FigureChoice } from '../shared/figure-choice';
 import { sourceGroups } from '../../tools/source-groups';
 import { CALCULATOR_MESSAGES } from '../shared/calculator-messages';
 import { useCalculatorWords } from '../shared/use-calculator-words';
@@ -26,7 +28,9 @@ import styles from '../styles/calculator.module.css';
  * each counts toward — and each option says which.
  *
  * The rules are the form's own (root `CLAUDE.md`): required, *must read as a figure*. Whether the source, unit and
- * site are ones the report admits is the api's to say when the line arrives, and it says it through the queue.
+ * site are ones the report admits is the api's to say when the line arrives, and it says it through the queue. **A figure
+ * that reads two ways is asked about** (task 220): `figureRule` refuses it with the question, and `FigureChoice` offers
+ * the two readings beneath the figure.
  */
 interface AddSourceFields {
   sourceKey: string;
@@ -55,10 +59,12 @@ export function AddSource({
   const tSites = useTranslations(`${CALCULATOR_MESSAGES}.sites`);
   const tLine = useTranslations(`${CALCULATOR_MESSAGES}.line`);
   const tForms = useTranslations('forms');
+  const tNumber = useTranslations('forms.number');
+  const format = useFormatter();
   const { sourceName, unitName, groupName } = useCalculatorWords();
   const formId = useId();
   const only = sites.length === 1 ? sites[0].ordinal : null;
-  const { control, handleSubmit } = useForm<AddSourceFields>({
+  const { control, handleSubmit, setValue } = useForm<AddSourceFields>({
     defaultValues: {
       sourceKey: '',
       siteOrdinal: String(site ?? only ?? ''),
@@ -74,7 +80,7 @@ export function AddSource({
 
   const submit = handleSubmit((fields) => {
     const base = { siteOrdinal: Number(fields.siteOrdinal), sourceKey: fields.sourceKey, description: null };
-    const figure = readFigure(fields.quantity);
+    const figure = readFigure({ raw: fields.quantity, format });
     const unitCode = units.length === 1 ? units[0] : (fields.units[fields.sourceKey] ?? '');
     onAdd({
       lineId: crypto.randomUUID(),
@@ -130,19 +136,27 @@ export function AddSource({
           />
         ) : (
           <div className={styles.addingFigure}>
-            <FormTextField
-              control={control}
-              name="quantity"
-              label={t('quantity')}
-              inputMode="decimal"
-              rules={{
-                required: t('quantityRequired'),
-                validate: (value) => {
-                  const figure = readFigure(value);
-                  return ('value' in figure && figure.value !== null) || tLine('invalidNumber');
-                },
-              }}
-            />
+            <div>
+              <FormTextField
+                control={control}
+                name="quantity"
+                label={t('quantity')}
+                inputMode="decimal"
+                rules={{
+                  required: t('quantityRequired'),
+                  validate: figureRule({
+                    format,
+                    invalidWords: tLine('invalidNumber'),
+                    ambiguousWords: (typed) => tNumber('ambiguous', { typed }),
+                  }),
+                }}
+              />
+              <FigureChoice
+                control={control}
+                name="quantity"
+                onChoose={(text) => setValue('quantity', text, { shouldValidate: true })}
+              />
+            </div>
             {units.length > 1 ? (
               <FormSelect
                 key={sourceKey}

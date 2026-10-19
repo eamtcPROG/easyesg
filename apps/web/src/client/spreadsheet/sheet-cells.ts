@@ -7,8 +7,10 @@ import { decimalOfNumberText } from './number-text';
  *
  * **Text, because everything the import does with a cell is read it as text**: match it to a source, a unit or a
  * site, or read it as a figure the way a typed one is read. A number cell becomes the decimal its stored text spells
- * (`number-text.ts`), so `1700.5` in a workbook and `1700,5` in a semicolon `.csv` arrive as figures the same reader
- * takes. A date or a true/false cell becomes text no figure reader accepts, which is the answer for a figure column
+ * (`number-text.ts`), **written as the reader edits a number** — the language's decimal mark and no thousands mark
+ * (task 220; `writeNumber`) — so `1700.5` in a workbook and `1700,5` in a semicolon `.csv` arrive as figures the same
+ * reader takes, and **a number cell never reads two ways**, which only a text cell may (`architecture.md` §12.5.6's
+ * task-220 row (3)). A date or a true/false cell becomes text no figure reader accepts, which is the answer for a figure column
  * holding one. A cell holding only spaces is empty — `read-excel-file` trims, and a `.csv` is trimmed here to match.
  */
 export type SheetCell = string | null;
@@ -34,12 +36,20 @@ const textCell = (text: string): SheetCell => {
 /** A `.csv` field: always text. */
 export const cellOfText = (field: string): SheetCell => textCell(field);
 
+export type WorkbookValue = string | boolean | Date | NumberText | null;
+
 /** An `.xlsx` cell, in each of the shapes the reader answers. */
-export function cellOfWorkbook(value: string | boolean | Date | NumberText | null): SheetCell {
+export function cellOfWorkbook(input: {
+  readonly value: WorkbookValue;
+  /** A canonical decimal as the reader edits one. */
+  readonly writeNumber: (decimal: string) => string;
+}): SheetCell {
+  const { value } = input;
   if (value === null) return null;
   if (typeof value === 'string') return textCell(value);
   if (typeof value === 'boolean') return String(value);
   // The calendar day the cell shows; the reader builds it at midnight UTC.
   if (value instanceof Date) return value.toISOString().slice(0, 10);
-  return decimalOfNumberText(value.numberText) ?? value.numberText;
+  const decimal = decimalOfNumberText(value.numberText);
+  return decimal === null ? value.numberText : input.writeNumber(decimal);
 }
