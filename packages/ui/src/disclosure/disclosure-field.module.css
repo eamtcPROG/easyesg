@@ -80,11 +80,32 @@
   min-width: 0;
 }
 
+/* The unit is drawn as a field beside the field: the box the value's control draws (`--field-block-size`), its edge
+   and its type, on the unit's own surface. A fixed unit is that box; a chosen one is a `Select`, which already draws it, so the slot
+   steps aside rather than framing a field in a second, larger box, and hands the trigger its surface. Told apart by
+   what the slot holds — Radix's trigger is a `combobox` — as `:where(fieldset)` tells a row from a card, without a prop. */
 .unit {
   flex: none;
-  background: var(--field-unit-surface);
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-block-size: var(--field-block-size);
+  padding-inline: var(--space-4);
+  border: 1px solid var(--field-border-rest);
   border-radius: var(--radius-1);
-  padding: var(--space-2) var(--space-4);
+  background: var(--field-unit-surface);
+  font: 400 15px/24px var(--font-text);
+}
+
+.unit:has([role='combobox']) {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.unit [role='combobox'] {
+  background: var(--field-unit-surface);
 }
 
 .prior {
