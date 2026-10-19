@@ -85,4 +85,30 @@ describe('WizardShell', () => {
     // The way on is the step's, inside the landmark a reader skips to.
     expect(within(main).getByRole('link', { name: 'Next: B3' })).toBeInTheDocument();
   });
+
+  it('takes a navigation as its position — S-09\'s crumb — without putting it inside a paragraph', () => {
+    // A `<nav>` inside a `<p>` is not HTML: the browser's parser closes the paragraph before it, so the server's markup
+    // and React's tree disagree and hydration fails (found on S-09, which passes its crumb here).
+    const { container } = render(
+      <WizardShell
+        bar={null}
+        modules={<ol aria-label="Basic Module" />}
+        modulesLabel="Report sections"
+        title="Carbon calculator"
+        position={
+          <nav aria-label="Where you are">
+            <ol>
+              <li>B3 — Energy and emissions</li>
+              <li aria-current="page">Carbon calculator</li>
+            </ol>
+          </nav>
+        }
+      >
+        <p>step content</p>
+      </WizardShell>,
+    );
+
+    expect(screen.getByRole('navigation', { name: 'Where you are' })).toBeInTheDocument();
+    expect(container.querySelector('p nav, p ol')).toBeNull();
+  });
 });

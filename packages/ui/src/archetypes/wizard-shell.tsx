@@ -38,7 +38,10 @@ export interface WizardShellProps {
   compactModules?: ReactNode;
   /** The step header's own heading — the module in plain language beside its reference (UX-11). */
   title: ReactNode;
-  /** Where the step stands in the report — *Module 1 of 11* — above the heading (task 179.3). */
+  /**
+   * Where the step stands in the report — *Module 1 of 11* — above the heading (task 179.3), or a way back to where the
+   * step was entered from — S-09's crumb, a `nav` — which is why it is drawn in a `div` rather than a paragraph.
+   */
   position?: ReactNode;
   /** What the module covers, one sentence under the heading (task 179.3). */
   summary?: ReactNode;
@@ -96,7 +99,9 @@ export function WizardShell({
                 side, the state on the other — beside them while they fit, beneath them when they do not. */}
             <header className={styles.header}>
               <div className={styles.heading}>
-                {position ? <p className={styles.position}>{position}</p> : null}
+                {/* A `div`, not a `p`: S-09 passes its crumb here, a `nav` and a list, which a paragraph may not hold — the
+                    browser's parser closes the paragraph before it and hydration fails. A sentence reads the same. */}
+                {position ? <div className={styles.position}>{position}</div> : null}
                 <h1 className={styles.title}>{title}</h1>
                 {summary ? <p className={styles.summary}>{summary}</p> : null}
               </div>
