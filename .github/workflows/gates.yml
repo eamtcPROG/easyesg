@@ -126,7 +126,11 @@ jobs:
   database:
     name: Gates that need the stack
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Measured 23 Oct 2026 (run 39977831688): about 5 minutes to the stack, 3m40 for `pnpm e2e` with the export suites,
+    # and the browser suite at 213 of 397 cases after 6m44 — some 25 minutes whole. The 15 this held was set for a
+    # smaller suite and went unnoticed because the export suites failed the job before it reached the browser run; it
+    # then cancelled a green run at its last step. Forty leaves room for a slow runner without hiding a hang for long.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
       - uses: ./infra/ci/setup
