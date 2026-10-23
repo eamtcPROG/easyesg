@@ -4,7 +4,7 @@ import { Callout, CALLOUT_INTENT } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
 import { SETUP_MESSAGES } from '../shared/setup-messages';
-import { SignOut } from '../shared/sign-out';
+import { SignOut } from '../../../shared/components/sign-out';
 
 /**
  * S-36's **error** state for the read itself (task 155) — the screen could not learn which step the

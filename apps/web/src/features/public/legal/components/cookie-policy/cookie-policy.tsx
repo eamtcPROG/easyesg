@@ -1,6 +1,6 @@
 import { ContentContents, ContentSection, ContentShell, ContentWide } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
-import { LEGAL_DOCUMENT } from '../../tools/legal-documents';
+import { LEGAL_DOCUMENT } from '@easyesg/i18n';
 import { LegalPeers } from '../shared/legal-peers';
 import { LegalProvisional } from '../shared/legal-provisional';
 import { LEGAL_RICH_TAGS } from '../shared/legal-rich-tags';

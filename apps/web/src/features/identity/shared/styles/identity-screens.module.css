@@ -16,6 +16,9 @@
 .subtitle {
   margin: 0 0 var(--space-6);
   color: var(--text-body);
+  /* A word too long for the column breaks rather than pushing it sideways — an address, or the +40% harness's run of
+     padding (task 195, S-43's expansion check). A word that fits is untouched. */
+  overflow-wrap: break-word;
 }
 
 .formPanel {
@@ -33,13 +36,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-}
-
-/* S-01's acceptance sentence (FR-205 AC-7, AC-8): read before the button, quieter than the fields above it. */
-.legalNotice {
-  margin: 0;
-  font: 400 13px/19px var(--font-text);
-  color: var(--text-muted);
 }
 
 .altAction {
@@ -62,6 +58,8 @@
 .bodyText {
   margin: 0 0 var(--space-5);
   color: var(--text-body);
+  /* `.subtitle`'s reason: S-43 states the account's address and a long sentence in this class. */
+  overflow-wrap: break-word;
 }
 
 .cooldown {
@@ -174,4 +172,38 @@
 
 .labelLink:hover {
   text-decoration: underline;
+}
+
+/*
+ * S-43's documents owed (task 195) — each a link to its page with its standing beneath, in `.summary`'s sunken
+ * surface, since it is the same thing: the facts shown before anything is accepted. A list, because the reader may owe
+ * one document or two and assistive technology should say which.
+ */
+.documents {
+  list-style: none;
+  overflow-wrap: break-word;
+  display: grid;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-2);
+}
+
+.documents li {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.documentFacts,
+.documentStanding {
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+}
+
+/* S-30's standing line, in this list: the version and the day it applies from, wrapping as one unit each. */
+.documentStanding {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
 }

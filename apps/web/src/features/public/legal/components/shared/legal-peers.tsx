@@ -1,7 +1,8 @@
 import { ContentPeers } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { LEGAL_DOCUMENT, legalDocumentHref, type LegalDocument } from '../../tools/legal-documents';
+import { LEGAL_DOCUMENT, type LegalDocument } from '@easyesg/i18n';
+import { legalDocumentHref } from '../../tools/legal-documents';
 
 /**
  * The legal set's peer strip (FR-205 AC-3; UC-178: a reader at any of the three can reach the other two) — the three

@@ -13,11 +13,13 @@ import {
   type MembershipRole,
 } from '@api/modules/identity/membership/models/membership.model';
 import { CORE_DATA_SOURCE } from '../data-source';
+import { acceptedLegalVersionsColumn, toAcceptedLegalVersions } from './legal-acceptance.queries';
 
 interface SessionRow {
   account_id: string;
   account_status: string;
   setup_expires_at: Date | null;
+  accepted_legal_versions: Record<string, unknown> | null;
   session_created_at: Date;
   session_remembered: boolean;
   token_issued_at: Date | null;
@@ -47,7 +49,9 @@ interface MembershipRow {
  *
  * **The account's status and setup deadline are joined into the first statement** (task 155), since
  * `identity.account` carries no row security either and the guard needs both on every request. A
- * session always has its account — the foreign key cascades — so the join is inner.
+ * session always has its account — the foreign key cascades — so the join is inner. **So is the
+ * latest version of each legal document it accepted** (task 195), a correlated subquery over
+ * `legal_acceptance_latest_idx`, by the one spelling S-43's store reads too.
  *
  * **`app.current_org` is deliberately left unset for the whole transaction.**
  * `organization_directory_select` is conditioned on exactly that (task 25.3), so binding a tenant
@@ -93,6 +97,7 @@ export class RequestIdentityStoreRepository implements RequestIdentityStore {
           status: session.account_status as Account['status'],
           setupExpiresAt: session.setup_expires_at,
         },
+        acceptedLegalVersions: toAcceptedLegalVersions(session.accepted_legal_versions),
         anchors: {
           sessionCreatedAt: session.session_created_at,
           // §12.5.6's two pairs: the guard must judge this session against the one it was granted
@@ -125,6 +130,7 @@ export class RequestIdentityStoreRepository implements RequestIdentityStore {
       `SELECT s.account_id,
               a.status                 AS account_status,
               a.setup_expires_at,
+              ${acceptedLegalVersionsColumn('s.account_id')} AS accepted_legal_versions,
               s.created_at             AS session_created_at,
               s.remembered             AS session_remembered,
               s.revoked_at,

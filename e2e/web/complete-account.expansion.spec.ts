@@ -35,6 +35,7 @@ async function registered(page: Page, email: string): Promise<void> {
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel(exactlyPadded('Parolă')).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
 }

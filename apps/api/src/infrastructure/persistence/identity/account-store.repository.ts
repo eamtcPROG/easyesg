@@ -28,6 +28,7 @@ import {
   type RecoveryCodeOutcome,
   type TotpEnrolment,
 } from '@api/modules/identity/account/models/totp.model';
+import type { NewLegalAcceptance } from '@api/modules/identity/account/models/legal-acceptance.model';
 import { SESSION_REVOKED_REASON } from '@api/modules/identity/session/models/session.model';
 import { writeOutboxEvent } from '@api/infrastructure/outbox/outbox-writer';
 import { CORE_DATA_SOURCE } from '../data-source';
@@ -35,6 +36,7 @@ import { returnedRows } from '../returned-rows';
 import { violatesUniqueIndex } from '../sql-state';
 import { ACCOUNT_COLUMNS, toAccount, type AccountRow } from './account-row';
 import { countRecentAuthAttempts, recordAuthAttempt } from './auth-attempt.queries';
+import { insertLegalAcceptance } from './legal-acceptance.queries';
 
 /**
  * The `AccountStore` adapter — §6.7 puts repositories in `infrastructure/persistence/`.
@@ -135,6 +137,10 @@ class AccountTransactionAdapter implements AccountTransaction {
       if (violatesUniqueIndex({ error, index: ACCOUNT_EMAIL_UNIQUE_INDEX })) throw new EmailAlreadyRegisteredError();
       throw error;
     }
+  }
+
+  recordLegalAcceptance(acceptance: NewLegalAcceptance): Promise<void> {
+    return insertLegalAcceptance(this.queryRunner, acceptance);
   }
 
   async findAccountByEmail(email: string): Promise<Account | null> {

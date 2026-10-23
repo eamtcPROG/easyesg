@@ -68,6 +68,7 @@ async function registerOwner(tenant: Page): Promise<void> {
   await tenant.getByLabel('Nume de familie').fill('Popescu');
   await tenant.getByLabel('E-mail de serviciu').fill(OWNER);
   await tenant.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await tenant.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await tenant.getByRole('button', { name: 'Creați contul' }).click();
   await tenant.waitForURL('**/verify');
   const token = await verificationTokenFor(OWNER);

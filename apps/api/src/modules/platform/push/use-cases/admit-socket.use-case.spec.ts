@@ -30,6 +30,7 @@ describe('IssueSocketTicket and AdmitSocket (task 147)', () => {
   const identity = (overrides: Partial<ResolvedRequestIdentity> = {}): ResolvedRequestIdentity => ({
     accountId: 'account-ana',
     account: { status: 'active', setupExpiresAt: null },
+    acceptedLegalVersions: {},
     anchors: { sessionCreatedAt: NOW, tokenIssuedAt: NOW, remembered: true },
     revokedAt: null,
     preferredOrganizationId: null,

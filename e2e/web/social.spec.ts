@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { Client } from 'pg';
 import { OidcProviderStub } from '../../apps/api/test/support/oidc-provider-stub';
+import { LEGAL_VERSIONS_IN_FORCE } from '../../packages/i18n/src/legal-standing';
 import { STACK_ORIGIN } from '../stack';
 import {
   cleanupAccounts,
@@ -132,8 +133,22 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
     await page.getByLabel('Nume de familie').fill('Popescu');
     await page.getByRole('button', { name: 'Salvați și continuați' }).click();
 
-    // Active now. `/home` is not a deep link §4.3 honours for a member of nothing, so the branch
-    // lands on S-04 exactly as a password sign-in would.
+    // Active now — and owing the terms (task 195): a provider registration presents no form to accept them on, so
+    // the branch sends it to S-43, carrying the deep link. Nothing else is reachable until it accepts.
+    await expect(page).toHaveURL(/\/accept-terms\?return=%2Fhome$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Acceptați termenii' })).toBeVisible();
+    await expect(page.getByText('Nu ați acceptat încă acest document.')).toHaveCount(2);
+    await page.goto('/home');
+    await expect(page).toHaveURL(/\/accept-terms\?return=%2Fhome$/);
+
+    // Continuing without the box ticked says why, beside it, and sends nothing.
+    await page.getByRole('button', { name: 'Continuați', exact: true }).click();
+    await expect(page.getByRole('checkbox', { name: /Am citit și accept/ })).toHaveAttribute('aria-invalid', 'true');
+    await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
+    await page.getByRole('button', { name: 'Continuați', exact: true }).click();
+
+    // `/home` is not a deep link §4.3 honours for a member of nothing, so the branch lands on S-04 exactly as a
+    // password sign-in would.
     await expect(page).toHaveURL(/\/create-organization$/);
     await expect(accountTrigger(page, { email })).toBeVisible();
   });
@@ -169,7 +184,14 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
     // failure of the thing under test. A setup call that can fail silently makes every assertion
     // after it untrustworthy.
     const seeded = await request.post(`${API_URL}/api/v1/auth/register`, {
-      data: { email, password: 'Parola123!', givenName: 'Ana', familyName: 'Popescu' },
+      // Task 195: a registration carries the versions of the terms and the notice it accepts.
+      data: {
+        email,
+        password: 'Parola123!',
+        givenName: 'Ana',
+        familyName: 'Popescu',
+        legalVersions: LEGAL_VERSIONS_IN_FORCE,
+      },
     });
     expect(seeded.status(), 'seeding the colliding account failed').toBe(201);
     stub.nextClaims = {
@@ -231,6 +253,11 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
     await page.getByLabel('Nume de familie').fill('Rusu');
     await page.getByRole('button', { name: 'Salvați și continuați' }).click();
 
+    // S-43, for the first journey's reason (task 195).
+    await expect(page).toHaveURL(/\/accept-terms$/);
+    await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
+    await page.getByRole('button', { name: 'Continuați', exact: true }).click();
+
     await expect(page).toHaveURL(/\/create-organization$/);
     await expect(accountTrigger(page, { email, displayName: 'Ion Rusu' })).toBeVisible();
   });
@@ -252,6 +279,7 @@ test.describe('social sign-in (UC-02, UC-05; task 24)', () => {
     await page.getByLabel('Nume de familie').fill('Popescu');
     await page.getByLabel('E-mail de serviciu').fill(email);
     await page.getByLabel('Parolă', { exact: true }).fill(NEW_PASSWORD);
+    await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
     await page.getByRole('button', { name: 'Creați contul' }).click();
     await page.waitForURL('**/verify');
     await page.goto(`/verify?token=${await verificationTokenFor(email)}`);

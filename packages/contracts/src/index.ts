@@ -56,6 +56,12 @@ export type SetFirstPasswordByGrantRequest =
   components['schemas']['SetFirstPasswordByGrantRequestDto'];
 export type SaveSetupProfileRequest = components['schemas']['SaveSetupProfileRequestDto'];
 
+// identity — an account's acceptance of the terms and the privacy notice (FR-205; task 195, S-01, S-43)
+export type LegalVersionsRequest = components['schemas']['LegalVersionsDto'];
+export type AcceptLegalDocumentsRequest = components['schemas']['AcceptLegalDocumentsRequestDto'];
+export type LegalAcceptance = components['schemas']['LegalAcceptanceResponseDto'];
+export type OwedLegalDocument = components['schemas']['OwedLegalDocumentDto'];
+
 // identity — sessions and password reset (FR-4, FR-5, FR-6; task 21)
 export type SignInRequest = components['schemas']['SignInRequestDto'];
 export type RefreshSessionRequest = components['schemas']['RefreshSessionRequestDto'];

@@ -11,7 +11,7 @@ import { ProfileStep } from './profile-step';
  * refuses it inline is `namePartIsPresent`, the verdict the api's setup save judges by — and nothing leaves.
  */
 vi.mock('../../actions/actions', () => ({ saveSetupProfileAction: vi.fn() }));
-vi.mock('../shared/sign-out', () => ({ SignOut: () => null }));
+vi.mock('../../../shared/components/sign-out', () => ({ SignOut: () => null }));
 
 const save = vi.mocked(saveSetupProfileAction);
 

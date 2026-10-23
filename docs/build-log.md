@@ -32755,3 +32755,119 @@ The change reaches `apps/web` (and `eslint.config.mjs`'s message, the docs), so 
   process stopped and the extension then turned off.
 - **Skipped**: the `admin` project and the api's rows, which nothing here reaches. No review agents: this closes a task,
   not Stage 6, which still holds tasks 76, 77 and 222.
+
+## Task 195 — acceptance of the terms and the privacy notice, recorded · 2026-10-23
+
+FR-205 behaviour 8: registration records which versions of the terms and the privacy notice it accepted, an account
+owing an acceptance is sent to a new screen, S-43, and reaches nothing else until it gives one. **Built ahead of the
+pilot** (task 48) at the owner's request, so the pilot runs on recorded acceptance rather than 182/115's implied one.
+Stage 6 is not closing: it still holds tasks 76, 77 and 222.
+
+### Decided (project owner, two batches of five questions, four the recommended option)
+
+`architecture.md` §12.5.6's task-195 row (1) … (5); `design_spec.md` S-01, S-43 (new), OQ-24, §4.3's flow; FR-205
+behaviour 8, AC-8 (amended), AC-9, AC-15 and AC-16 (new); UC-01 and UC-02 amended.
+
+- **(1) The versions are `@easyesg/i18n`'s**, moved from `apps/web`, and the api refuses one not in force with 409
+  `legal-version-changed`. *Declined:* the api owning the registry and serving it publicly (the standing apart from the
+  text); the client asserting a version the api never checks (no server gate possible).
+- **(2) An account owes an acceptance whenever its latest of either document is absent or another version**, and meets
+  a new screen, S-43, reached as S-36 is. *Declined:* a further step of S-36; asking only accounts with none.
+- **(3) Declining leaves signing out and nothing else.** *Declined:* read-only access; a reminder that can be dismissed.
+- **(4) A required checkbox on S-01**, the artboard's — **the one answer that was not my recommendation**, which was to
+  keep S-01's sentence and record the press. S-43 asks the same way.
+- **(5) One row per document accepted**, never updated. *Declined:* columns on the account, overwritten.
+
+### What the building decided within them
+
+- **The web learns that an acceptance is owed from the api's refusal, not from the sealed session** — a departure from
+  the mechanism the question described (*"reached the way S-36 is"*), recorded in the row. S-36's status rides the
+  cookie; a version moves with a release while sessions are held, so a flag sealed at sign-in would be stale exactly
+  when it matters. The api client answers `legal-acceptance-required` with S-43 and `?return=`, as task 161 made it
+  answer an ended session with sign-in, and §4.3's branch reads the same refusal off the memberships read it already
+  makes. No cookie, codec or proxy change.
+- **The guard reads the acceptance in its one statement**: a correlated subquery for the latest row per document,
+  `legal_acceptance_latest_idx` serving both the filter and the order — `EXPLAIN` under `enable_seqscan = off` shows an
+  index scan and no sort. One spelling of "the latest per document" (`legal-acceptance.queries.ts`) serves the guard,
+  S-43's store and registration's transaction, so the gate and the screen cannot disagree about what is owed.
+- **An account in setup completes setup first**: the acceptance gate skips an `awaiting_setup` account, whose setup
+  routes stay open, and the branch sends it to S-36 before S-43.
+- **S-43's acceptance records only the documents owed**, at the version presented; a document already accepted at the
+  version in force gets no second row, since a row means *accepted this version at this time*.
+- **The checkbox is one component S-01 and S-43 share** (`identity/shared/components/legal-acceptance-checkbox.tsx`),
+  naming only the documents it accepts; S-36's sign-out button moved up to `identity/shared/components/` when S-43
+  became its second reader.
+- **The checkbox's links open in a new tab** — the owner's answer after the build (§12.5.6's task-195 row (4)), to the
+  point this entry first left open: a reader following one from a half-filled S-01 lost what they typed. The
+  `target`/`rel` pair is `recovered-stage.tsx`'s, the app's one precedent; its *(opens in a new tab)* is said once, as
+  the sentence's own clause, rather than inside each link, which would say it twice in one line. **S-43's list of the
+  documents owed takes it too**, the rule applied where it holds: two links to one document on one screen, behaving
+  differently, above the box a reader would lose.
+
+### What the run found
+
+- **The route matrix read the new refusal as admission.** `classifyOutcome` maps a type outside `REFUSALS` to
+  `admitted`, so on the first run every request the guard refused the new owing actor was classified as let through —
+  92 red cases saying the gate did not exist. The refusal is now on the list, and the list's docblock says that a
+  refusal missing from it reads as admission. Before this task, nothing would have noticed a sixth refusal added without
+  it.
+- **Two account-setup cases expected full access straight after setup**, which a provider registration no longer has.
+  They now assert `legal-acceptance-required`, accept on S-43's route, and then reach the memberships — the setup-first
+  order, proven over HTTP.
+- **Every suite that registers carries the versions**: `LEGAL_ACCEPTANCE` from `test/support/signed-in-account.ts`, which
+  `registerFreshAccount` sends, and in the six suites that post to `/auth/register` directly. `recordLegalAcceptance`
+  exists for an account made by SQL or a provider flow that then touches a gated route; no suite needed it this run.
+- **The browser suite fills S-01 by hand in sixty places**, and each now ticks the box before *Creați contul*. The two provider
+  journeys in `social.spec.ts` pass through S-43 after S-36 — refusing an unticked box, then accepting — which makes them
+  S-43's journey through the real flow; `accessibility.spec.ts` scans it at rest and refused, and
+  `accept-terms.expansion.spec.ts` holds it at +40% in the three frames.
+
+- **The browser run found three more, all mine.** `social.spec.ts` seeds its colliding account by posting to
+  `/auth/register`, which now answered 400 for want of the versions — the call task 139's comment there warns about,
+  missed by the search for direct registrations, which read `apps/api/test` and the support folder; it reads the
+  versions from `packages/i18n/src/legal-standing.ts` by relative path, as the suite already reaches the api's test
+  support. **The tick was inserted by a pattern on the button's name, *Creați contul***, which reached `e2e/admin/`
+  only on the second pass — and there matched A-20's operator invitation too, whose form has no checkbox; that one was
+  taken out again. And **S-43 scrolled 57px sideways at +40%**: the harness appends its padding as one unbroken run,
+  which after the account's address or the decline sentence is a word no 390 column holds. `.subtitle`, `.bodyText` and
+  the documents list take `overflow-wrap: break-word`, task 74's answer for the same harness, which leaves any word
+  that fits alone.
+
+### Proven to bite
+
+- The guard's refusal replaced with a no-op: `route-matrix.e2e-spec.ts` and `legal-acceptance.e2e-spec.ts` went **94
+  red** together; restored.
+
+### Conventions read against the diff
+
+`nestjs-best-practices`: the store behind a token, the use cases framework-free by `useFactory`, nested request DTOs
+validated (`@ValidateNested`); *declined* `error-throw-http-exceptions`, by this codebase's rule. `one-idea-per-file`:
+the route a shell, the section reads and the parts render; the checkbox's choice of sentence was a selector inside a
+component and moved to `identity/shared/tools/legal-acceptance-label.ts` with a spec. `one-kind-per-folder`:
+`features/identity/acceptance/` holds `actions/` and `components/`, `components/` one folder per kind of part; S-43's
+namespace was written in six files and is now `ACCEPTANCE_MESSAGES` in `components/shared/`. `vercel-react-best-practices`:
+the section's four reads and the actions' two run in parallel; *declined* `bundle-barrel-imports` for `@easyesg/i18n`,
+a small isomorphic package client modules already import.
+
+### The close ran
+
+The change reaches `apps/api` (a migration, controllers and DTOs), `apps/web`, and `packages/i18n` and
+`packages/contracts`, whose dependents are all three apps, so their rows ran:
+
+- `pnpm lint`; `pnpm --filter <ws> typecheck` for api, web, admin and i18n; `pnpm docs:check`, 48 of 48 after the counts
+  this task moves — the contract's paths (132), `apps/web`'s pages (48) and Client Components (243), the forms import
+  sites (47), the plan's and the archive's totals; `pnpm boundaries`, clean.
+- `pnpm --filter @easyesg/i18n test`, 170; `pnpm --filter @easyesg/api test`, **2,416**; `pnpm --filter @easyesg/web
+  test`, **2,120**; `pnpm --filter @easyesg/admin test`, 315; `pnpm routes:check`.
+- `pnpm openapi:check`, with the regenerated contract staged; `pnpm migrations:check` — apply, revert, apply and the 64
+  invariants on the test stack, then apply on the dev stack.
+- `pnpm e2e`: the first run **1,872 of 1,966**, the 94 failures the two findings above; after them the two files,
+  **796 of 796**.
+- `pnpm e2e:web --project identity --project expansion --project admin`: the first run **390 of 394**, the three
+  findings above and `accelerated-surfaces.spec.ts`'s connected-socket case, the run's first test, which passed in the
+  re-run beside its siblings; after the fixes and the owner's new-tab change, the ten files they reach, **64 of 65**,
+  the one failure the A-20 tick, then that file **2 of 2**. The server's log held only the abandoned-stream line
+  (digest `2667547900`).
+- `pnpm e2e:worker` **skipped**: nothing here is a consumer or a scheduled job. The browser suite's pre-hook stopped
+  this repository's dev servers, another session's among them.
+- **No review agents**: this closes a task, not Stage 6, which still holds tasks 76, 77 and 222.

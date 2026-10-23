@@ -13,7 +13,7 @@ every screen. Cite them; do not re-derive them.
 Identity, organization, periods, reports, entities, the wizard with its validation, the calculator, the notification centre and
 the profile are live, and preview and export since tasks 43 and 47, and S-12's change history since task 84, and S-29 the marketing home since task 74; checkout and billing and the help centre are the
 twelve addresses `AddressNotice` answers for (thirteen until task 74.3 built the home at `/`, fourteen until task 75 gave the terms and the privacy notice their
-text, fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across seven route groups,
+text, fifteen until task 52.3 built S-27 at `/account`). What exists: 48 page routes across seven route groups,
 8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 17 feature folders (14 built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
 fonts in `globals.css`, and `e2e/web/` at the repo root driving every journey in a real
@@ -38,7 +38,8 @@ non-modal panel at the window's end, every entry worded by the api, opened from 
 and S-15's attribution line for an editor or the administrator (`features/history/`'s `HistoryScope` decides) — S-27 profile,
 languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
 layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
-complete your account, S-37 choose organization, S-38 unsubscribe from an email; S-29 the marketing home since task 74.3 — eight bands over the `--content-max` measure, the hero's and the answering band's pictures drawn by the wizard's own inventory components, read-only and `inert`, the eleven Basic sections named as the exported report names them (`reportModules`), and no pricing section until task 222 — **the one page the build prerenders**, per locale, revalidated hourly (task 74.4), its canonical beside its alternates in the `Link` header (task 74.5); S-30 the legal set since task 75 — the cookie policy, and the terms and the
+complete your account, S-37 choose organization, S-38 unsubscribe from an email, S-43 accept the terms since task 195 —
+the documents owed with their standing and the acceptance S-01's register step carries too, a required checkbox; S-29 the marketing home since task 74.3 — eight bands over the `--content-max` measure, the hero's and the answering band's pictures drawn by the wizard's own inventory components, read-only and `inert`, the eleven Basic sections named as the exported report names them (`reportModules`), and no pricing section until task 222 — **the one page the build prerenders**, per locale, revalidated hourly (task 74.4), its canonical beside its alternates in the `Link` header (task 74.5); S-30 the legal set since task 75 — the cookie policy, and the terms and the
 privacy notice naming the platform operator A-21 keeps, each with its standing and, until counsel approves it, marked
 provisional; §4.2's global tier with, since task
 83.2, the organization switcher, and the workspace tier with its drawer, and since task 67.9 UX-124's support-access
@@ -200,6 +201,16 @@ challenge's shape), because that account has no session until the password is se
 already holds a session. It was `/verify/password` until task 155's second review found a signed-in
 reader could replace their session there; `route-access.spec.ts` compares that group's first segments
 with `SESSION_ISSUING_SEGMENTS`, which is why the step lives under `register` rather than a new one.
+
+**An account owing an acceptance of the terms** (task 195; §12.5.6's task-195 row (2)). **The web learns it from the
+api's refusal and from nowhere else** — `legal-acceptance-required`, read by `lib/legal-acceptance-standing.ts` — and the
+sealed session carries no such flag, unlike S-36's status: a release moves a version while sessions are held, so a flag
+would be stale exactly when it matters. Two places answer it. **The api client sends the reader to S-43**
+(`/accept-terms`, with `?return=`) from any request that carried the bearer, as it sends an ended session to sign in
+(`server/session/legal-acceptance-redirect.ts`); and **§4.3's branch** reads it from the memberships read it already
+makes, through `observingApi`, after setup and before every membership arm. S-43's two reads are the api's exceptions,
+so it cannot loop, and `acceptTermsRoute` never wraps S-43 in itself. **The versions sent are the bundle's**
+(`@easyesg/i18n`'s `LEGAL_VERSIONS_IN_FORCE`), on S-01 and S-43 alike — what the page displayed is what is recorded.
 
 **Re-authentication over the preserved wizard** (task 92; `architecture.md` §12.5.6's task-92 row). A
 session that ends under an open S-07 is re-established in a dialogue over the step, never by a redirect
@@ -489,7 +500,7 @@ issues a session and is never gated:
 | Group | Layout it establishes | Screens |
 | --- | --- | --- |
 | `(public)` | The public band and, since task 74.1's other half, the footer, in a column the height of the window — no `<main>`, which a page or `ContentShell` brings. **The only zone the framework may cache** (§14.2, amended 23 Oct 2026) — by static rendering, never `"use cache"`, which stays banned here too; the layout forces nothing and the marketing home is its one prerendered page | Marketing, legal, help |
-| `(identity)` | Focus archetype — one task, no navigation | S-01, S-02, S-03, S-36, S-38 |
+| `(identity)` | Focus archetype — one task, no navigation | S-01, S-02, S-03, S-36, S-38, S-43 |
 | `(identity)/(session-issuing)` | None of its own. **UX-136's gate, once for the group** (task 112) — membership of the directory *is* what makes a screen refuse a caller who already holds a session | S-01 sign in and its factor step, S-01 register |
 | `(app)` | Global tier | S-04, S-35 and S-37 — the three authenticated screens in no inner group |
 | `(app)/(workspace)` | Global tier + workspace tier | S-05, S-06, S-13…S-26 |
@@ -1050,7 +1061,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **239 files here are Client Components** (23 Oct 2026: three more since task 74.4 — `shared/locale-choice-menu.tsx` and `shared/public-drawer-menu.tsx`, split from the two that read the query string so a prerendered page can render them as its `<Suspense>` fallback, and `shared/probed-return-link.tsx`, the 404's way back asked of the session probe in the browser; 19 Oct 2026: two more since the row actions became one ⋯ menu — S-13's
+  **243 files here are Client Components** (23 Oct 2026: four more since task 195 — the acceptance checkbox S-01 and S-43 share under `identity/shared/components/`, and S-43's form and its two states under `identity/acceptance/components/`; three more since task 74.4 — `shared/locale-choice-menu.tsx` and `shared/public-drawer-menu.tsx`, split from the two that read the query string so a prerendered page can render them as its `<Suspense>` fallback, and `shared/probed-return-link.tsx`, the 404's way back asked of the session probe in the browser; 19 Oct 2026: two more since the row actions became one ⋯ menu — S-13's
   `entity-row-menu.tsx` and S-14's `period-row-menu.tsx`, each routing from its item, so each holds the router; one more since task 220 — `shared/number-field.tsx`, the number input S-07's fields and S-09's figures share, which holds the text being edited; its question's two answers and S-09's form choice beside it carry no directive; 16 Oct 2026: two more since task 218 — the set-aside banner and its row under `features/wizard/components/banner/`, beside the unsynced banner `autosave-banner.tsx` became when it gained a sibling; 12 Oct 2026: eleven more since task 84 — S-12's provider, panel, entries' section, list, entry, three states and the way in under `features/history/components/`, the entries' paged query in `client/history/`, and S-13's *Change history* side panel; the scope that mounts the provider is a Server Component; three more since task 192 — the report's deletion in `shared/`,
   which S-06's rows and S-07's bar both read, S-06's row ⋯ and S-07's ⋯ from `medium` up; nine more since task 47 built S-11 — the dialogue, its pending
   card, the history, its columns, its filters and the status cell that watches a row still being made, the filed mark

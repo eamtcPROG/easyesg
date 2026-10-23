@@ -1,7 +1,7 @@
 import type { LegalControllerResponse } from '@easyesg/contracts';
 import { ContentContents, ContentSection, ContentShell } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
-import { LEGAL_DOCUMENT } from '../../tools/legal-documents';
+import { LEGAL_DOCUMENT } from '@easyesg/i18n';
 import { LegalControllerFacts } from '../shared/legal-controller-facts';
 import { LegalPeers } from '../shared/legal-peers';
 import { LegalProvisional } from '../shared/legal-provisional';

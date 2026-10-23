@@ -13,6 +13,7 @@ import {
 import { PasswordResetEmailHandler } from '../src/modules/identity/account/consumers/password-reset-email.handler';
 import { hashPasswordResetToken } from '../src/modules/identity/account/domain/password-reset-token';
 import { OCCURRED_MICROS, asJob, deleteNoticesAbout, linkNoticeDelivery } from './support/notification-store';
+import { LEGAL_ACCEPTANCE } from './support/signed-in-account';
 
 /**
  * Password reset, end to end (FR-6, UC-08, UC-09 — assigned to task 21 by OQ-56).
@@ -101,7 +102,7 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
   const http = () => request(app.getHttpServer());
 
   const createActiveAccount = async (email: string): Promise<void> => {
-    await http().post('/api/v1/auth/register').send({ email, password: PASSWORD, givenName: 'Ana', familyName: 'Popescu' }).expect(201);
+    await http().post('/api/v1/auth/register').send({ email, password: PASSWORD, givenName: 'Ana', familyName: 'Popescu', ...LEGAL_ACCEPTANCE }).expect(201);
     const rows = await worker.query<{ payload: { token: string } }[]>(
       `SELECT payload FROM audit.outbox_event
         WHERE event_type = $1 AND payload->>'email' = $2
@@ -241,7 +242,7 @@ describe('password reset (UC-08, UC-09, FR-6)', () => {
 
     it('issues nothing for an unverified account — verification is the only activation path', async () => {
       const email = addressFor('unverified');
-      await http().post('/api/v1/auth/register').send({ email, password: PASSWORD, givenName: 'Ana', familyName: 'Popescu' }).expect(201);
+      await http().post('/api/v1/auth/register').send({ email, password: PASSWORD, givenName: 'Ana', familyName: 'Popescu', ...LEGAL_ACCEPTANCE }).expect(201);
 
       await requestReset(email).expect(202);
 

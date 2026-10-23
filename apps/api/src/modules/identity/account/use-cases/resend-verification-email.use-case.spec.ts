@@ -1,3 +1,4 @@
+import { LEGAL_VERSIONS_IN_FORCE } from '@easyesg/i18n';
 import type { EmailVerificationRequested } from '../constants/account.constants';
 import { UNVERIFIED_ACCOUNT_TTL_MS } from '../domain/account-expiry';
 import { hashVerificationToken } from '../domain/verification-token';
@@ -28,6 +29,7 @@ describe('ResendVerificationEmail (FR-3, OQ-55)', () => {
       givenName: 'Ana',
       familyName: 'Popescu',
       locale: 'ro',
+      legalVersions: LEGAL_VERSIONS_IN_FORCE,
     });
 
   beforeEach(() => {

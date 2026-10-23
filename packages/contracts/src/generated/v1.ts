@@ -272,6 +272,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/legal-acceptance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read what the signed-in person owes an acceptance of
+         * @description The terms of service and the privacy notice each appear when the person has not accepted the version in force — never, or an earlier one — with that version and the one last accepted. Empty once nothing is owed; until then every other signed-in request is refused.
+         */
+        get: operations["LegalAcceptanceController_read"];
+        put?: never;
+        /**
+         * Accept the terms of service and the privacy notice in force
+         * @description Records the acceptance of each document owed, at the version the page displayed, with the time. A document already accepted at the version in force records nothing, so pressing twice is harmless.
+         */
+        post: operations["LegalAcceptanceController_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/session": {
         parameters: {
             query?: never;
@@ -2742,6 +2766,18 @@ export interface components {
             /** @example Ana Popescu */
             displayName: string;
         };
+        LegalVersionsDto: {
+            /**
+             * @description The version of the terms of service displayed.
+             * @example 1.0
+             */
+            terms: string;
+            /**
+             * @description The version of the privacy notice displayed.
+             * @example 1.0
+             */
+            privacy: string;
+        };
         RegisterAccountRequestDto: {
             /**
              * Format: email
@@ -2758,6 +2794,8 @@ export interface components {
             givenName: string;
             /** @example Popescu */
             familyName: string;
+            /** @description The versions of the terms of service and the privacy notice the registrant accepted. Refused unless both are the versions in force; recorded with the account and the time. */
+            legalVersions: components["schemas"]["LegalVersionsDto"];
             /** @description An organization invitation being acted on. When it is still usable and was sent to this same address, the account is created already confirmed and no confirmation email is sent — the invitation link is itself proof the address was reached. Anything else is ignored and registration proceeds normally. */
             invitationToken?: string;
         };
@@ -2937,6 +2975,27 @@ export interface components {
              * @enum {string}
              */
             exportLocale: "ro" | "en" | "ru";
+        };
+        OwedLegalDocumentDto: {
+            /** @enum {string} */
+            document: "terms" | "privacy";
+            /**
+             * @description The version in force, the one to accept.
+             * @example 1.0
+             */
+            version: string;
+            /**
+             * @description The version this account last accepted, or null where it has accepted none.
+             * @example null
+             */
+            acceptedVersion: string | null;
+        };
+        LegalAcceptanceResponseDto: {
+            owed: components["schemas"]["OwedLegalDocumentDto"][];
+        };
+        AcceptLegalDocumentsRequestDto: {
+            /** @description The versions the page displayed. Refused unless both are the versions in force — a page read before a release replaced either text is reloaded rather than recorded. */
+            legalVersions: components["schemas"]["LegalVersionsDto"];
         };
         SessionAccountDto: {
             /** Format: uuid */
@@ -5749,7 +5808,7 @@ export interface operations {
                     "application/problem+json": unknown;
                 };
             };
-            /** @description The address already holds an account. */
+            /** @description The address already holds an account; or a version of the terms or the privacy notice presented is not the one in force (problem type legal-version-changed) — the page was read before the text was replaced, and nothing was created. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6232,6 +6291,59 @@ export interface operations {
             };
             /** @description A name part is missing, or the phone number is not in international form (problem type validation-failed). Nothing was saved. */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    LegalAcceptanceController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What is owed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["LegalAcceptanceResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    LegalAcceptanceController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptLegalDocumentsRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Accepted; nothing more is owed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A version presented is not the one in force — the page was read before the text was replaced (problem type legal-version-changed). Nothing was recorded; reload to read the versions in force. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

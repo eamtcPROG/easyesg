@@ -1,3 +1,4 @@
+import { LEGAL_VERSIONS_IN_FORCE } from '@easyesg/i18n';
 import request from 'supertest';
 import type { DataSource } from 'typeorm';
 import { EMAIL_VERIFICATION_REQUESTED } from '@api/modules/identity/account/constants/account.constants';
@@ -27,6 +28,13 @@ import { EMAIL_VERIFICATION_REQUESTED } from '@api/modules/identity/account/cons
  * irrelevant to every assertion that uses them, and a suite asserting ON a name says so locally.
  */
 export const REGISTERED_NAME = { givenName: 'Ana', familyName: 'Popescu' } as const;
+
+/**
+ * The acceptance every registration carries since task 195 — the versions in force, as S-01 sends the ones it displayed.
+ * Exported for `REGISTERED_NAME`'s reason: a suite posting to `/auth/register` directly spreads it, and one asserting on
+ * a stale version says so locally.
+ */
+export const LEGAL_ACCEPTANCE = { legalVersions: LEGAL_VERSIONS_IN_FORCE } as const;
 
 export const PASSWORD = 'Str0ng-Passphrase!';
 
@@ -69,7 +77,7 @@ export const registerFreshAccount = async (input: {
   if (input.acceptLanguage !== undefined) call.set('Accept-Language', input.acceptLanguage);
 
   const created = await call
-    .send({ email: input.email, password: PASSWORD, ...REGISTERED_NAME })
+    .send({ email: input.email, password: PASSWORD, ...REGISTERED_NAME, ...LEGAL_ACCEPTANCE })
     .expect(201);
   registered.add(input.email);
   return { accountId: (created.body as { object: { id: string } }).object.id };
@@ -157,3 +165,22 @@ export const cleanupSignedInAccounts = async (input: {
   registered.clear();
 };
 
+
+/**
+ * Records the acceptance of the versions in force for an account created outside registration — inserted by SQL, or
+ * registered through a provider's flow, which presents no form (task 195). **Without it, every session-bearing route
+ * but S-43's refuses such an account `legal-acceptance-required`**, which is the product working: a suite whose subject
+ * is something else gives its account the acceptance a person would have given on S-43. A suite whose subject is the
+ * acceptance (`legal-acceptance.e2e-spec.ts`) uses the routes instead.
+ */
+export const recordLegalAcceptance = async (input: {
+  readonly connection: DataSource;
+  readonly accountId: string;
+}): Promise<void> => {
+  await input.connection.query(
+    `INSERT INTO identity.legal_acceptance (account_id, document, version)
+     SELECT $1, accepted.document, accepted.version
+       FROM unnest($2::text[], $3::text[]) AS accepted(document, version)`,
+    [input.accountId, Object.keys(LEGAL_VERSIONS_IN_FORCE), Object.values(LEGAL_VERSIONS_IN_FORCE)],
+  );
+};

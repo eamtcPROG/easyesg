@@ -177,8 +177,7 @@
       "alreadyHave": "Already have an account?",
       "signIn": "Sign in",
       "problemTitle": "The request could not be processed",
-      "problemBody": "The account was not created because the request could not be processed.",
-      "legalNotice": "By creating an account you accept the <terms>Terms of service</terms> and the <privacy>Privacy notice</privacy>."
+      "problemBody": "The account was not created because the request could not be processed."
     },
     "verify": {
       "title": "Confirm your email address",
@@ -346,6 +345,35 @@
       "continue": "Continue",
       "unavailableTitle": "The remaining steps could not be loaded",
       "unavailableBody": "We could not find out what is left to complete for the account, so the steps cannot be shown. Sign out and sign in again."
+    },
+    "acceptance": {
+      "title": "Accept the terms",
+      "subtitle": "Before you continue, read and accept the documents below, in the versions now in force.",
+      "account": "For the account {email}.",
+      "loading": "Checking which documents need accepting…",
+      "documentNew": "You have not accepted this document yet.",
+      "documentUpdated": "Updated since version {accepted}, which you accepted.",
+      "newTab": {
+        "terms": "(opens in a new tab)",
+        "privacy": "(opens in a new tab)"
+      },
+      "continue": "Continue",
+      "decline": "If you do not accept, the account stays as it is but cannot be used. You can sign out; to close it, write to the data-protection contact named in the Privacy notice.",
+      "signOutAgain": "Sign out and sign in again",
+      "problemTitle": "The acceptance could not be saved",
+      "problemBody": "Nothing was saved because of an error while processing the request.",
+      "unavailableTitle": "The documents to accept could not be loaded",
+      "unavailableBody": "We could not find out which documents need accepting, so they cannot be shown. Sign out and sign in again.",
+      "settledTitle": "Nothing is left to accept",
+      "settledBody": "You have already accepted the documents in force, so the account can be used. Continue to the application."
+    },
+    "legalAcceptance": {
+      "label": {
+        "both": "I have read and accept the <terms>Terms of service</terms> and the <privacy>Privacy notice</privacy> (each opens in a new tab).",
+        "terms": "I have read and accept the <terms>Terms of service</terms> (opens in a new tab).",
+        "privacy": "I have read and accept the <privacy>Privacy notice</privacy> (opens in a new tab)."
+      },
+      "missing": "The box is not ticked, so we cannot continue: without accepting these documents the account cannot be used. Read them and tick the box."
     },
     "social": {
       "divider": "or",

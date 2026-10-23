@@ -58,6 +58,8 @@ export const ROUTES = {
    *  confirmation's grant is held, inside the session-issuing group UX-136 gates, as S-01's factor step
    *  is served at `/sign-in/factor` (task 155, `design_spec.md` S-36). */
   REGISTER_PASSWORD: '/register/password',
+  /** S-43 — an account owing an acceptance of the terms or the privacy notice in force (task 195). */
+  ACCEPT_TERMS: '/accept-terms',
 
   /** S-04 — a verified account that belongs to nothing (UC-49). Task 30.2 builds it. */
   CREATE_ORGANIZATION: '/create-organization',
@@ -193,6 +195,19 @@ export const completeAccountRoute = (returnTo?: string | null): string =>
 
 const isCompleteAccountAddress = (path: string): boolean =>
   path === ROUTES.COMPLETE_ACCOUNT || path.startsWith(`${ROUTES.COMPLETE_ACCOUNT}?`);
+
+/**
+ * S-43 carrying the address to go on to once the terms are accepted (task 195) — the one the api client was asked for
+ * when the api refused it, or the deep link sign-in was asked for. **Never wrapped in itself**, for
+ * `completeAccountRoute`'s reason: a refusal met on S-43's own address would otherwise bury the way on one query deeper.
+ */
+export const acceptTermsRoute = (returnTo?: string | null): string =>
+  returnTo && isAcceptTermsAddress(returnTo)
+    ? returnTo
+    : withQuery(ROUTES.ACCEPT_TERMS, returnTo ? `return=${encodeURIComponent(returnTo)}` : '');
+
+const isAcceptTermsAddress = (path: string): boolean =>
+  path === ROUTES.ACCEPT_TERMS || path.startsWith(`${ROUTES.ACCEPT_TERMS}?`);
 
 /**
  * S-37 carrying the address to go on to once an organization is chosen (task 83.3) — the deep link

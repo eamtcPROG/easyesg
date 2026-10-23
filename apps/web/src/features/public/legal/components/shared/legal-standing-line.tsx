@@ -1,7 +1,6 @@
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { calendarDay } from '@/lib/legal-date';
-import type { LegalDocument } from '../../tools/legal-documents';
-import { LEGAL_STANDING } from '../../tools/legal-standing';
+import { LEGAL_STANDING, type LegalDocument } from '@easyesg/i18n';
 import styles from '../styles/legal.module.css';
 
 /**

@@ -34,6 +34,12 @@
     "account-setup-proof-stale": {
       "title": "Confirmați din nou că sunteți dumneavoastră"
     },
+    "legal-acceptance-required": {
+      "title": "Acceptați termenii pentru a continua"
+    },
+    "legal-version-changed": {
+      "title": "Documentele s-au actualizat"
+    },
     "rate-limited": {
       "title": "Prea multe încercări"
     },
@@ -306,6 +312,10 @@
       "not_pending": "Contul este deja configurat, deci nu mai este nimic de finalizat. Continuați în aplicație.",
       "password_already_set": "Contul are deja o parolă, așa că nu a fost setată una nouă. Continuați cu pasul următor.",
       "names_required": "Sunt necesare atât prenumele, cât și numele de familie, așa că nu s-a salvat nimic. Completați ambele câmpuri și salvați din nou."
+    },
+    "legal": {
+      "required": "Nu ați acceptat încă versiunile în vigoare ale Termenilor și condițiilor și ale Politicii de confidențialitate, așa că pagina nu poate fi deschisă. Citiți-le și acceptați-le pentru a continua.",
+      "version_changed": "Termenii și condițiile sau Politica de confidențialitate s-au actualizat cât timp pagina era deschisă, așa că nu s-a salvat nimic. Reîncărcați pagina, citiți versiunile în vigoare și acceptați-le din nou."
     },
     "profile": {
       "names_required": "Numele și prenumele sunt obligatorii, așa că profilul nu a fost salvat. Completați ambele câmpuri și salvați din nou.",

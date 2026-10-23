@@ -45,7 +45,7 @@
             }
           },
           "409": {
-            "description": "The address already holds an account.",
+            "description": "The address already holds an account; or a version of the terms or the privacy notice presented is not the one in force (problem type legal-version-changed) — the page was read before the text was replaced, and nothing was created.",
             "content": {
               "application/problem+json": {}
             }
@@ -636,6 +636,70 @@
           }
         },
         "summary": "Save the signed-in person’s profile",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/v1/account/legal-acceptance": {
+      "get": {
+        "description": "The terms of service and the privacy notice each appear when the person has not accepted the version in force — never, or an earlier one — with that version and the one last accepted. Empty once nothing is owed; until then every other signed-in request is refused.",
+        "operationId": "LegalAcceptanceController_read",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "What is owed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/LegalAcceptanceResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Read what the signed-in person owes an acceptance of",
+        "tags": [
+          "identity"
+        ]
+      },
+      "post": {
+        "description": "Records the acceptance of each document owed, at the version the page displayed, with the time. A document already accepted at the version in force records nothing, so pressing twice is harmless.",
+        "operationId": "LegalAcceptanceController_accept",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptLegalDocumentsRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Accepted; nothing more is owed."
+          },
+          "409": {
+            "description": "A version presented is not the one in force — the page was read before the text was replaced (problem type legal-version-changed). Nothing was recorded; reload to read the versions in force.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Accept the terms of service and the privacy notice in force",
         "tags": [
           "identity"
         ]
@@ -8225,6 +8289,29 @@
           "displayName"
         ]
       },
+      "LegalVersionsDto": {
+        "type": "object",
+        "properties": {
+          "terms": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "1.0",
+            "description": "The version of the terms of service displayed."
+          },
+          "privacy": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "1.0",
+            "description": "The version of the privacy notice displayed."
+          }
+        },
+        "required": [
+          "terms",
+          "privacy"
+        ]
+      },
       "RegisterAccountRequestDto": {
         "type": "object",
         "properties": {
@@ -8251,6 +8338,14 @@
             "minLength": 1,
             "maxLength": 100
           },
+          "legalVersions": {
+            "description": "The versions of the terms of service and the privacy notice the registrant accepted. Refused unless both are the versions in force; recorded with the account and the time.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalVersionsDto"
+              }
+            ]
+          },
           "invitationToken": {
             "type": "string",
             "minLength": 43,
@@ -8262,7 +8357,8 @@
           "email",
           "password",
           "givenName",
-          "familyName"
+          "familyName",
+          "legalVersions"
         ]
       },
       "EmailVerifiedResponseDto": {
@@ -8650,6 +8746,64 @@
           "locale",
           "emailLocale",
           "exportLocale"
+        ]
+      },
+      "OwedLegalDocumentDto": {
+        "type": "object",
+        "properties": {
+          "document": {
+            "type": "string",
+            "enum": [
+              "terms",
+              "privacy"
+            ]
+          },
+          "version": {
+            "type": "string",
+            "example": "1.0",
+            "description": "The version in force, the one to accept."
+          },
+          "acceptedVersion": {
+            "type": "string",
+            "nullable": true,
+            "example": null,
+            "description": "The version this account last accepted, or null where it has accepted none."
+          }
+        },
+        "required": [
+          "document",
+          "version",
+          "acceptedVersion"
+        ]
+      },
+      "LegalAcceptanceResponseDto": {
+        "type": "object",
+        "properties": {
+          "owed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OwedLegalDocumentDto"
+            }
+          }
+        },
+        "required": [
+          "owed"
+        ]
+      },
+      "AcceptLegalDocumentsRequestDto": {
+        "type": "object",
+        "properties": {
+          "legalVersions": {
+            "description": "The versions the page displayed. Refused unless both are the versions in force — a page read before a release replaced either text is reloaded rather than recorded.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalVersionsDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "legalVersions"
         ]
       },
       "SessionAccountDto": {

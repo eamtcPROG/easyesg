@@ -18,6 +18,7 @@ import {
   type PasswordState,
 } from '../models/account.model';
 import { EmailAlreadyRegisteredError } from '../errors/account.errors';
+import type { NewLegalAcceptance } from '../models/legal-acceptance.model';
 import { emailIdentityKey } from '../domain/email-address';
 import {
   RECOVERY_CODE_OUTCOME,
@@ -77,6 +78,7 @@ interface Snapshot {
   sessions: FakeSession[];
   attempts: { key: string; at: Date }[];
   effects: AccountEffect[];
+  legalAcceptances: NewLegalAcceptance[];
 }
 
 export class FakeAccountStore implements AccountStore {
@@ -93,6 +95,8 @@ export class FakeAccountStore implements AccountStore {
   sessions: FakeSession[] = [];
   attempts: { key: string; at: Date }[] = [];
   effects: AccountEffect[] = [];
+  /** Each acceptance recorded, as handed over (task 195) — inside the snapshot, since registration writes it. */
+  legalAcceptances: NewLegalAcceptance[] = [];
 
   /**
    * Invitations a spec has put in front of registration, keyed by the raw token (task 26.2).
@@ -143,6 +147,7 @@ export class FakeAccountStore implements AccountStore {
       sessions: this.sessions.map((session) => ({ ...session })),
       attempts: this.attempts.map((attempt) => ({ ...attempt })),
       effects: [...this.effects],
+      legalAcceptances: [...this.legalAcceptances],
     };
   }
 
@@ -158,6 +163,7 @@ export class FakeAccountStore implements AccountStore {
     this.sessions = snapshot.sessions;
     this.attempts = snapshot.attempts;
     this.effects = snapshot.effects;
+    this.legalAcceptances = snapshot.legalAcceptances;
   }
 
   private transaction(): AccountTransaction {
@@ -283,6 +289,11 @@ export class FakeAccountStore implements AccountStore {
         // The column's default, which registration's insert relies on.
         store.passwordChangedAt.set(created.id, now);
         return Promise.resolve(created);
+      },
+
+      recordLegalAcceptance(acceptance: NewLegalAcceptance): Promise<void> {
+        store.legalAcceptances.push(acceptance);
+        return Promise.resolve();
       },
 
       findAccountByEmail(email: string): Promise<Account | null> {

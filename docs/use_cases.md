@@ -394,11 +394,11 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
 - **Preconditions:** None. No organization exists yet.
 - **Trigger:** A prospective user chooses to create an account with an email address and password.
 - **Main success scenario:**
-  1. The user supplies an email address and a password.
-  2. The system creates an unverified account record.
+  1. The user supplies an email address and a password, and accepts the terms of service and the privacy notice in force (FR-205; added 23 Oct 2026, task 195).
+  2. The system creates an unverified account record, and records the version of each document accepted and the time.
   3. The system issues a verification challenge.
-- **Alternate flows:** Registration through a social identity provider (UC-02) is the alternative path and produces the same account record.
-- **Postconditions:** An unverified account record exists. No application data is reachable until verification completes (UC-03).
+- **Alternate flows:** Registration through a social identity provider (UC-02) is the alternative path and produces the same account record. 1a. The documents were replaced by a newer release while the user read them: the system refuses the registration, creates nothing, and the user accepts the versions in force.
+- **Postconditions:** An unverified account record exists, with its acceptance of the documents in force recorded. No application data is reachable until verification completes (UC-03).
 - **Business rules:** The founding user of a new organization is auto-granted the Organization Administrator role (D-1), which applies when the account proceeds to UC-49.
 - **Related FRs:** FR-1
 - **Related UCs:** UC-02, UC-03, UC-49
@@ -417,10 +417,11 @@ Specified in the brief-to-casual form the sources support. Fields absent from th
   4. Where the provider asserts the email is verified, UC-03 is satisfied without a separate verification email.
   5. **The user sets a password meeting the password policy — within 15 minutes of the provider sign-in, or of confirming the address where the provider did not assert it.**
   6. **The user confirms their given name, family name and interface language, both names required; the account becomes active, and the user continues to §4.3's branch — or back to the invitation they registered from (UC-15).**
+  7. **The user accepts the terms of service and the privacy notice in force on S-43, which the provider path presents no form for, and the system records the version of each and the time** (added 23 Oct 2026, project owner, task 195; FR-205).
 
   *Steps 3, 5 and 6 amended 14 Sep 2026 (project owner; built by task 155): the account previously held no password at all, which left it stranded whenever its provider was disabled (UC-70).*
 - **Alternate flows:** Where an account already exists for the asserted address, no duplicate is created; the user is routed through identity linking (UC-11) after proving control of the existing account. **An account abandoned in setup is deleted seven days after registration — except an account moved into setup from active, which may hold organizations and is never deleted by that rule**; a session older than 15 minutes signs in at the provider again before setting the password (amended 14 Sep 2026, task 155).
-- **Postconditions:** An account exists with a provider identity credential and a password, and both name parts set. *(Amended 14 Sep 2026; previously "and no password".)*
+- **Postconditions:** An account exists with a provider identity credential and a password, both name parts set, and its acceptance of the documents in force recorded. *(Amended 14 Sep 2026; previously "and no password". Acceptance added 23 Oct 2026, task 195.)*
 - **Business rules:** Social sign-in is in MVP scope; enterprise SSO is not (D-6). A provider assertion alone is never sufficient to attach to an existing account.
 - **Related FRs:** FR-2
 - **Related UCs:** UC-01, UC-03, UC-05, UC-11, UC-70

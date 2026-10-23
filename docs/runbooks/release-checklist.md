@@ -50,8 +50,10 @@ and the operator named is the seed's temporary *EasyESG SRL*.
    by row (6). Counsel has also said whether Law No. 195/2024 requires a data protection officer for this processing; if
    it does, the contact A-21 holds is theirs.
 2. **The approved text is in the catalogues** (`apps/web/src/messages/{ro,en,ru}.json`, namespace `legal`), and
-   `apps/web/src/features/public/legal/tools/legal-standing.ts` gives each document its version, its effective date as a
-   calendar day in Chișinău, and `provisional: false` — so no page shows *Versiune provizorie* any more.
+   `packages/i18n/src/legal-standing.ts` gives each document its version, its effective date as a calendar day in
+   Chișinău, and `provisional: false` — so no page shows *Versiune provizorie* any more. **A version moved here sends
+   every account that accepted the earlier one to S-43 to accept again** (task 195), and a registration open across the
+   release is refused and reloaded — which is what a changed text calls for, and nothing a release should do by accident.
 3. **A-21 holds the operating company** — its registered name, IDNO, registered address and data-protection contact,
    not the seed's *EasyESG SRL* and IDNO `1099600012345` — and its change attribution names the operator who saved it.
    The terms and the privacy notice, read with no session, show the same four facts.

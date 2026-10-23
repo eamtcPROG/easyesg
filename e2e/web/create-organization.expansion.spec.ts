@@ -48,6 +48,7 @@ async function arriveAtCreateOrganization(page: Page, label: string): Promise<vo
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel(exactlyPadded('Parolă')).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);

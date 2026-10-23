@@ -95,6 +95,13 @@ export const PROBLEM_TYPE = {
   /** The proof a first password needs has lapsed — the provider sign-in or the confirmation link is older than a
    *  quarter-hour (task 155). S-36 offers signing in with the provider again rather than a retry. */
   AccountSetupProofStale: 'https://easyesg.md/problems/account-setup-proof-stale',
+  /** An account owing an acceptance of the terms or the privacy notice in force reached a route other than S-43's
+   *  (task 195). The web's api client answers it with S-43 and `?return=`, as it answers an ended session with
+   *  sign-in — the sealed session carries no such flag, since a release moves a version while sessions are held. */
+  LegalAcceptanceRequired: 'https://easyesg.md/problems/legal-acceptance-required',
+  /** A registration or an acceptance presented a version of the terms or the privacy notice a release has since
+   *  replaced (task 195): nothing was created or recorded, and reloading shows the versions in force. */
+  LegalVersionChanged: 'https://easyesg.md/problems/legal-version-changed',
   /** Another period of the same entity already covers part of these dates (UC-56; the database's exclusion constraint,
    *  30 Sep 2026 for its first reader). S-14's form marks the two dates as the fields to change, beside the api's own
    *  sentence, so the refusal says which fields were wrong. */

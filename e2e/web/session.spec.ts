@@ -39,6 +39,7 @@ async function registerAndVerify(page: Page, email: string): Promise<void> {
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   const token = await verificationTokenFor(email);
@@ -142,6 +143,7 @@ test('a correct password on an unverified account names verification as the bloc
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
 
@@ -368,6 +370,7 @@ test('a confirmation reached while signed in as another account offers to switch
   await page.getByLabel('Nume de familie').fill('Rusu');
   await page.getByLabel('E-mail de serviciu').fill(confirmed);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   const holder = await aSignedInMember(page, 'confirm-holder');

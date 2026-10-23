@@ -36,6 +36,8 @@ test('a user registers and verifies from the browser (UC-01, UC-03)', async ({ p
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
   await expect(page.getByText('— îndeplinit').first()).toBeAttached();
 
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
+
   await page.getByRole('button', { name: 'Creați contul' }).click();
 
   // S-01 exits to the S-02 challenge, which states the address the link went to.
@@ -67,6 +69,7 @@ test('a spent link explains itself and offers the resend route (S-02 error state
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
 
@@ -92,6 +95,7 @@ test('a duplicate registration surfaces the 409 with sign-in as the way out (OQ-
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
 
@@ -100,6 +104,7 @@ test('a duplicate registration surfaces the 409 with sign-in as the way out (OQ-
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
 
   // The api's resolved wording, rendered as received — never re-derived from the slug.

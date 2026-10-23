@@ -1,4 +1,5 @@
 import type { Account } from '@api/modules/identity/account/models/account.model';
+import type { AcceptedLegalVersions } from '@api/modules/identity/account/models/legal-acceptance.model';
 import type { AccountMembership } from '@api/modules/identity/membership/models/membership.model';
 import type { SessionLifetimeAnchors } from '../domain/session-expiry';
 
@@ -20,6 +21,11 @@ export interface ResolvedRequestIdentity {
    * account in setup, and treats one past its deadline as no account, without a second read.
    */
   readonly account: Pick<Account, 'status' | 'setupExpiresAt'>;
+  /**
+   * The latest version of each legal document the account accepted, read with the session (task 195) — so the guard
+   * refuses an account owing an acceptance without a second read, by the rule S-43 reads it by.
+   */
+  readonly acceptedLegalVersions: AcceptedLegalVersions;
   /** The two instants `sessionHasExpired` needs — sign-in, and the current refresh token's issuance. */
   readonly anchors: SessionLifetimeAnchors;
   /** Non-null once the session has been ended: sign-out, reuse detection, or a password reset. */

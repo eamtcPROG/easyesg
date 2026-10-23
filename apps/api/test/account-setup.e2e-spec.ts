@@ -27,6 +27,7 @@ import {
 } from '../src/modules/identity/provider/interfaces/account-setup-store.interface';
 import { connectAs } from './support/database';
 import { OidcProviderStub } from './support/oidc-provider-stub';
+import { LEGAL_ACCEPTANCE } from './support/signed-in-account';
 import { restoreSlot, snapshotSlot, type SlotSnapshot } from './support/configuration-slot';
 
 /**
@@ -232,7 +233,11 @@ describe('an account completes its setup (task 155; FR-2, FR-3, UC-02, UC-03)', 
       passwordSet: true,
     });
 
-    // The same token, the next request: the guard reads the status per request.
+    // The same token, the next request: the guard reads the status per request — and finds the terms owed, since a
+    // provider registration presents no form to accept them on (task 195). Setup first, then S-43, then everything.
+    const owed = await http().get('/api/v1/memberships').set(auth).expect(403);
+    expect((owed.body as { type: string }).type).toBe('https://easyesg.md/problems/legal-acceptance-required');
+    await http().post('/api/v1/account/legal-acceptance').set(auth).send(LEGAL_ACCEPTANCE).expect(204);
     await http().get('/api/v1/memberships').set(auth).expect(200);
     const [row] = await owner.query<{ status: string; setup_expires_at: Date | null }[]>(
       `SELECT status, setup_expires_at FROM identity.account WHERE email = $1`,
@@ -354,6 +359,8 @@ describe('an account completes its setup (task 155; FR-2, FR-3, UC-02, UC-03)', 
       .set(auth)
       .send({ givenName: 'Ion', familyName: 'Rusu', locale: 'ro' })
       .expect(200);
+    // Then the terms (task 195), which this registration presented no form for.
+    await http().post('/api/v1/account/legal-acceptance').set(auth).send(LEGAL_ACCEPTANCE).expect(204);
     await http().get('/api/v1/memberships').set(auth).expect(200);
 
     // The grant works once.

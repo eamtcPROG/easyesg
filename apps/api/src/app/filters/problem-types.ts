@@ -35,6 +35,12 @@ export const ProblemType = {
   /** Task 155: the proof a first password needs — a provider sign-in, or a confirmation link, no older than fifteen
    *  minutes — has lapsed. Disclosed only to a caller holding that account's session or its grant. */
   AccountSetupProofStale: 'account-setup-proof-stale',
+  /** Task 195: an account owing an acceptance of the terms or the privacy notice in force reached a route other than
+   *  S-43's. Its own slug for `account-setup-required`'s reason: the way out is a different screen. */
+  LegalAcceptanceRequired: 'legal-acceptance-required',
+  /** Task 195: a registration or an acceptance presented a version of the terms or the privacy notice that a release
+   *  has since replaced — the page was read before it. Nothing was created or recorded. */
+  LegalVersionChanged: 'legal-version-changed',
   /** FR-82: the provider is not registered or is disabled — refused for sign-in and registration
    *  alike, which is the "stops new registrations" half; existing accounts keep their OTHER
    *  credentials, which is why this never says anything about the account. */

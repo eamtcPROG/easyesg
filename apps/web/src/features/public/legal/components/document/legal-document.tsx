@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { readLegalController } from '@/server/data/legal-controller';
 import { NotYetAvailable } from '@/shared/not-yet-available';
 import { LEGAL_CONTROLLER_READ, readLegalControllerOutcome } from '../../tools/legal-controller-read';
-import { LEGAL_DOCUMENT, isLegalDocument } from '../../tools/legal-documents';
+import { LEGAL_DOCUMENT, isLegalDocument } from '@easyesg/i18n';
 import { CookiePolicy } from '../cookie-policy/cookie-policy';
 import { PrivacyNotice } from '../privacy/privacy-notice';
 import { LegalUnavailable } from '../shared/legal-unavailable';

@@ -14,7 +14,7 @@ import { INVITED_ROLE } from '../src/modules/identity/invitation/models/invitati
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { EMAIL_VERIFICATION_REQUESTED } from '../src/modules/identity/account/constants/account.constants';
 import { asOrganization, connectAs, deleteHintsOf } from './support/database';
-import { PASSWORD, cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
+import { LEGAL_ACCEPTANCE, PASSWORD, cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 
 /**
  * UC-15 end to end (FR-11) — against real sessions, the real bearer policy and the real outbox.
@@ -473,7 +473,7 @@ describe('invitation acceptance (UC-15)', () => {
 
     await http()
       .post('/api/v1/auth/register')
-      .send({ givenName: 'Ana', familyName: 'Popescu', email: NEWCOMER, password: PASSWORD, invitationToken: token })
+      .send({ givenName: 'Ana', familyName: 'Popescu', email: NEWCOMER, password: PASSWORD, invitationToken: token, ...LEGAL_ACCEPTANCE })
       .expect(201);
 
     // The observable half: no verification challenge was queued at all.
@@ -500,7 +500,7 @@ describe('invitation acceptance (UC-15)', () => {
 
     await http()
       .post('/api/v1/auth/register')
-      .send({ givenName: 'Ana', familyName: 'Popescu', email: NEWCOMER, password: PASSWORD, invitationToken: token })
+      .send({ givenName: 'Ana', familyName: 'Popescu', email: NEWCOMER, password: PASSWORD, invitationToken: token, ...LEGAL_ACCEPTANCE })
       .expect(201);
 
     // The ordinary challenge was issued, so the registration is unaffected rather than refused —
@@ -519,7 +519,7 @@ describe('invitation acceptance (UC-15)', () => {
 
     await http()
       .post('/api/v1/auth/register')
-      .send({ givenName: 'Ana', familyName: 'Popescu', email: NEWCOMER, password: PASSWORD, invitationToken: token })
+      .send({ givenName: 'Ana', familyName: 'Popescu', email: NEWCOMER, password: PASSWORD, invitationToken: token, ...LEGAL_ACCEPTANCE })
       .expect(201);
 
     expect(await verificationEmailCount(NEWCOMER)).toBe(1);

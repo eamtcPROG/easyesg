@@ -13,6 +13,7 @@ import type {
   PasswordState,
 } from '../models/account.model';
 import type { InvitationStatus } from '@api/modules/identity/invitation/models/invitation.model';
+import type { NewLegalAcceptance } from '../models/legal-acceptance.model';
 
 /**
  * The `identity/account` store, and the transaction it runs in.
@@ -38,6 +39,12 @@ export interface AccountTransaction {
    * check and one of them is wrong, whereas the index is decided by PostgreSQL exactly once.
    */
   insertUnverifiedAccount(account: NewAccount): Promise<Account>;
+
+  /**
+   * The acceptance registration records with the account (task 195; §12.5.6's task-195 row (5)) — in the same
+   * transaction, so an account never exists without the versions it accepted, and a refused registration records none.
+   */
+  recordLegalAcceptance(acceptance: NewLegalAcceptance): Promise<void>;
 
   /** By `lower(email)`, matching `account_email_key`. Null when nothing holds the address. */
   findAccountByEmail(email: string): Promise<Account | null>;

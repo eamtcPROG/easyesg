@@ -12,8 +12,10 @@ import { buildListQuery, type ListQuery } from '@/lib/pagination';
 import { REFRESH_COOKIE } from '@/lib/session-cookie';
 import { env } from '@/lib/env';
 import { outcomeEndsSession } from '@/lib/session-standing';
+import { outcomeOwesLegalAcceptance } from '@/lib/legal-acceptance-standing';
 import { unsealLiveSession } from '../session/session-codec';
 import { redirectToSignIn } from '../session/sign-in-redirect';
+import { redirectToLegalAcceptance } from '../session/legal-acceptance-redirect';
 
 /**
  * The typed client for the public API. **The only place that knows the wire conventions — and
@@ -107,7 +109,8 @@ const REQUEST_CONTEXT = {
   Ambient: 'ambient',
   /**
    * Ambient context, and **an ended session handed back as the outcome** rather than answered with a
-   * redirect (task 161). For §4.3's branch alone — `observingApi` below says why.
+   * redirect (task 161) — and since task 195 an acceptance owed, handed back the same way. For §4.3's
+   * branch alone — `observingApi` below says why.
    */
   Observed: 'observed',
   Detached: 'detached',
@@ -225,6 +228,11 @@ async function send(
     // reads cannot send it to itself.
     if (context === REQUEST_CONTEXT.Ambient && 'authorization' in authorization && outcomeEndsSession(failure)) {
       return redirectToSignIn();
+    }
+    // Task 195, the same shape: the account owes an acceptance of the terms in force, which only the api knows — a
+    // release moves a version while sessions are held — so the first request it refuses sends the reader to S-43.
+    if (context === REQUEST_CONTEXT.Ambient && 'authorization' in authorization && outcomeOwesLegalAcceptance(failure)) {
+      return redirectToLegalAcceptance();
     }
     return failure;
   }

@@ -1,6 +1,5 @@
-import type { Locale } from '@easyesg/i18n';
+import { isLegalDocument, type Locale } from '@easyesg/i18n';
 import { getTranslations } from 'next-intl/server';
-import { isLegalDocument } from '../../tools/legal-documents';
 
 /**
  * Each legal document's tab title — its own name (WCAG 2.4.2), read with the locale the address carries, since

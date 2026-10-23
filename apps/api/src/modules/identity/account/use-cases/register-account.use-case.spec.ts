@@ -1,8 +1,10 @@
+import { LEGAL_VERSIONS_IN_FORCE } from '@easyesg/i18n';
 import { EMAIL_VERIFICATION_REQUESTED, type EmailVerificationRequested } from '../constants/account.constants';
 import { UNVERIFIED_ACCOUNT_TTL_MS } from '../domain/account-expiry';
 import { hashVerificationToken } from '../domain/verification-token';
 import {
   EmailAlreadyRegisteredError,
+  LegalVersionChangedError,
   PasswordPolicyViolationError,
   RegistrationNamesRequiredError,
 } from '../errors/account.errors';
@@ -27,7 +29,13 @@ describe('RegisterAccount (UC-01, FR-1)', () => {
   });
 
   const register = (
-    overrides: Partial<{ email: string; password: string; givenName: string; familyName: string }> = {},
+    overrides: Partial<{
+      email: string;
+      password: string;
+      givenName: string;
+      familyName: string;
+      legalVersions: { terms: string; privacy: string };
+    }> = {},
   ) =>
     registerAccount.execute({
       email: 'Ana.Popescu@example.md',
@@ -35,6 +43,7 @@ describe('RegisterAccount (UC-01, FR-1)', () => {
       givenName: 'Ana',
       familyName: 'Popescu',
       locale: 'ro',
+      legalVersions: LEGAL_VERSIONS_IN_FORCE,
       ...overrides,
     });
 
@@ -62,6 +71,7 @@ describe('RegisterAccount (UC-01, FR-1)', () => {
         givenName: 'Ana',
         familyName: 'Popescu',
         locale: 'ru',
+        legalVersions: LEGAL_VERSIONS_IN_FORCE,
       });
       expect(account.locale).toBe('ru');
     });
@@ -141,6 +151,7 @@ describe('RegisterAccount (UC-01, FR-1)', () => {
         givenName: 'Ana',
         familyName: 'Popescu',
         locale: 'ro',
+        legalVersions: LEGAL_VERSIONS_IN_FORCE,
       });
 
       const fresh = await register();
@@ -189,6 +200,41 @@ describe('RegisterAccount (UC-01, FR-1)', () => {
       expect(store.rollbacks).toBe(0);
       expect(store.accounts).toEqual([]);
       expect(store.effects).toEqual([]);
+    });
+  });
+
+  describe('the acceptance of the terms and the privacy notice (task 195, FR-205 AC-9, AC-15)', () => {
+    it('records the version of each the page displayed, with the account and at the moment it was created', async () => {
+      const account = await register();
+      expect(store.legalAcceptances).toEqual([
+        {
+          accountId: account.id,
+          accepted: [
+            { document: 'terms', version: LEGAL_VERSIONS_IN_FORCE.terms },
+            { document: 'privacy', version: LEGAL_VERSIONS_IN_FORCE.privacy },
+          ],
+          at: NOW,
+        },
+      ]);
+    });
+
+    // A page read before a release replaced either text: recording it would say the person accepted words they were
+    // never shown, so nothing is created — and like the policy, the refusal costs no hash and no transaction.
+    it.each([
+      ['terms', { terms: '0.9', privacy: LEGAL_VERSIONS_IN_FORCE.privacy }],
+      ['privacy notice', { terms: LEGAL_VERSIONS_IN_FORCE.terms, privacy: '0.9' }],
+    ])('refuses a %s version no longer in force, creating and recording nothing', async (_document, legalVersions) => {
+      await expect(register({ legalVersions })).rejects.toBeInstanceOf(LegalVersionChangedError);
+      expect(hasher.hashed).toEqual([]);
+      expect(store.rollbacks).toBe(0);
+      expect(store.accounts).toEqual([]);
+      expect(store.legalAcceptances).toEqual([]);
+    });
+
+    it('records nothing when the account itself is refused', async () => {
+      await register();
+      await expect(register()).rejects.toBeInstanceOf(EmailAlreadyRegisteredError);
+      expect(store.legalAcceptances).toHaveLength(1);
     });
   });
 });

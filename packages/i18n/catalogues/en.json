@@ -34,6 +34,12 @@
     "account-setup-proof-stale": {
       "title": "Confirm it is you again"
     },
+    "legal-acceptance-required": {
+      "title": "Accept the terms to continue"
+    },
+    "legal-version-changed": {
+      "title": "The documents were updated"
+    },
     "rate-limited": {
       "title": "Too many attempts"
     },
@@ -306,6 +312,10 @@
       "not_pending": "This account is already set up, so there is nothing left to complete. Continue to the application.",
       "password_already_set": "This account already has a password, so a first one was not set. Continue with the next step.",
       "names_required": "Both your given name and your family name are needed, so nothing was saved. Fill in both and save again."
+    },
+    "legal": {
+      "required": "You have not yet accepted the Terms of service and the Privacy notice in force, so this could not be opened. Read them and accept them to continue.",
+      "version_changed": "The Terms of service or the Privacy notice were updated while the page was open, so nothing was saved. Reload the page, read the versions in force and accept them again."
     },
     "profile": {
       "names_required": "Both your given name and your family name are required, so the profile was not saved. Fill in both and save again.",

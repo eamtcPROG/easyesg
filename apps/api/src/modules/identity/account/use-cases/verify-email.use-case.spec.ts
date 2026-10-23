@@ -1,3 +1,4 @@
+import { LEGAL_VERSIONS_IN_FORCE } from '@easyesg/i18n';
 import type { EmailVerificationRequested } from '../constants/account.constants';
 import { UNVERIFIED_ACCOUNT_TTL_MS } from '../domain/account-expiry';
 import { ACCOUNT_SETUP_PROOF_WINDOW_MS } from '../domain/account-setup';
@@ -28,6 +29,7 @@ describe('VerifyEmail (UC-03, FR-3)', () => {
       givenName: 'Ana',
       familyName: 'Popescu',
       locale: 'ro',
+      legalVersions: LEGAL_VERSIONS_IN_FORCE,
     });
     token = (store.effects[0].payload as unknown as EmailVerificationRequested).token;
   });

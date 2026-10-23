@@ -44,6 +44,8 @@ const SEGMENT = {
   UNSUBSCRIBE: 'unsubscribe',
   // (identity), behind a session — task 155
   COMPLETE_ACCOUNT: 'complete-account',
+  // (identity), behind a session — task 195
+  ACCEPT_TERMS: 'accept-terms',
   // (app), and in no organization's scope — task 83.3
   ACCOUNT: 'account',
   CHOOSE_ORGANIZATION: 'choose-organization',
@@ -107,6 +109,14 @@ export function requiresSession(pathname: string): boolean {
   const segment = routeSegment(pathname);
   if (!segment) return false; // the marketing home, at `/` or `/{locale}`
   return !UNAUTHENTICATED_SEGMENTS.has(segment);
+}
+
+/**
+ * Is this S-43 — the address an account owing an acceptance of the terms is sent to (task 195)? Behind a session like
+ * S-36, for its reason: the screen reads what the account owes through the session.
+ */
+export function acceptsTerms(pathname: string): boolean {
+  return routeSegment(pathname) === SEGMENT.ACCEPT_TERMS;
 }
 
 /**

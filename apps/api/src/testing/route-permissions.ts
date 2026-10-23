@@ -9,6 +9,7 @@ import {
 } from '@api/modules/identity/membership/constants/membership.constants';
 import { IS_PUBLIC } from '@api/app/decorators/public.decorator';
 import { ADMITS_ACCOUNT_IN_SETUP } from '@api/modules/identity/session/constants/account-setup-gate.constants';
+import { ADMITS_PENDING_LEGAL_ACCEPTANCE } from '@api/modules/identity/session/constants/legal-acceptance-gate.constants';
 import {
   AUDIT_ACTION_METADATA,
   type AuditDeclaration,
@@ -96,6 +97,12 @@ export const PERMISSION = {
    * admit different people, so a table that spelled them alike would say something false.
    */
   SETUP: 'setup',
+  /**
+   * An authenticated account, **including one owing an acceptance of the terms or the privacy notice in force** (task
+   * 195) — `@AdmitsPendingLegalAcceptance`, which composes `@RequiresAccount`. Its own kind for `setup`'s reason:
+   * `AuthGuard` refuses such an account every `account` and `role` route, so the two admit different people.
+   */
+  LEGAL_ACCEPTANCE: 'legal-acceptance',
 } as const;
 
 type PermissionKind = (typeof PERMISSION)[keyof typeof PERMISSION];
@@ -105,6 +112,7 @@ type Permission =
   | typeof PERMISSION.PUBLIC
   | typeof PERMISSION.ACCOUNT
   | typeof PERMISSION.SETUP
+  | typeof PERMISSION.LEGAL_ACCEPTANCE
   | `${typeof PERMISSION.ROLE}:${string}`
   | `${typeof PERMISSION.ADMIN}:${string}`;
 
@@ -288,6 +296,12 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   'GET /account/setup': PERMISSION.SETUP,
   'POST /account/setup/password': PERMISSION.SETUP,
   'POST /account/setup/profile': PERMISSION.SETUP,
+
+  // ── An account's acceptance of the terms and the privacy notice (task 195; S-43). The only session-bearing routes an
+  // account owing one reaches, and open to every other signed-in account besides — one owing nothing reads an empty
+  // list, and its acceptance records nothing.
+  'GET /account/legal-acceptance': PERMISSION.LEGAL_ACCEPTANCE,
+  'POST /account/legal-acceptance': PERMISSION.LEGAL_ACCEPTANCE,
 
   // ── Memberships: which organizations this account belongs to (UC-16). `account`, not `role` —
   // its caller is by definition someone who may belong to nothing, and `@RequiresRole` would
@@ -514,8 +528,9 @@ function permissionOf(controller: Constructor, handler: object): Permission | nu
   const roles = read<string[]>(REQUIRED_ROLES);
   if (roles !== undefined && roles.length > 0) return `${PERMISSION.ROLE}:${[...roles].sort().join('+')}`;
 
-  // Before `REQUIRES_ACCOUNT`, which the setup marker composes and therefore always carries.
+  // Before `REQUIRES_ACCOUNT`, which the setup and acceptance markers compose and therefore always carry.
   if (read<boolean>(ADMITS_ACCOUNT_IN_SETUP) === true) return PERMISSION.SETUP;
+  if (read<boolean>(ADMITS_PENDING_LEGAL_ACCEPTANCE) === true) return PERMISSION.LEGAL_ACCEPTANCE;
   if (read<boolean>(REQUIRES_ACCOUNT) === true) return PERMISSION.ACCOUNT;
   return null;
 }

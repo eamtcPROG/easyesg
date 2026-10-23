@@ -177,8 +177,7 @@
       "alreadyHave": "Aveți deja un cont?",
       "signIn": "Autentificați-vă",
       "problemTitle": "Cererea nu a putut fi procesată",
-      "problemBody": "Contul nu a fost creat din cauza unei erori la procesarea cererii.",
-      "legalNotice": "Creând un cont, acceptați <terms>Termenii și condițiile</terms> și <privacy>Politica de confidențialitate</privacy>."
+      "problemBody": "Contul nu a fost creat din cauza unei erori la procesarea cererii."
     },
     "verify": {
       "title": "Confirmați-vă adresa de e-mail",
@@ -346,6 +345,35 @@
       "continue": "Continuați",
       "unavailableTitle": "Pașii rămași nu au putut fi încărcați",
       "unavailableBody": "Nu am putut afla ce mai trebuie completat pentru cont, deci pașii nu pot fi afișați. Ieșiți din cont și autentificați-vă din nou."
+    },
+    "acceptance": {
+      "title": "Acceptați termenii",
+      "subtitle": "Înainte de a continua, citiți și acceptați documentele de mai jos, în versiunile lor în vigoare.",
+      "account": "Pentru contul {email}.",
+      "loading": "Verificăm ce documente trebuie acceptate…",
+      "documentNew": "Nu ați acceptat încă acest document.",
+      "documentUpdated": "Actualizat de la versiunea {accepted}, pe care ați acceptat-o.",
+      "newTab": {
+        "terms": "(se deschid într-o filă nouă)",
+        "privacy": "(se deschide într-o filă nouă)"
+      },
+      "continue": "Continuați",
+      "decline": "Dacă nu acceptați, contul rămâne așa cum este, dar nu poate fi folosit. Puteți ieși din cont; pentru a-l închide, scrieți persoanei de contact pentru protecția datelor numite în Politica de confidențialitate.",
+      "signOutAgain": "Ieșiți și autentificați-vă din nou",
+      "problemTitle": "Acceptarea nu a putut fi salvată",
+      "problemBody": "Nu s-a salvat nimic din cauza unei erori la procesarea cererii.",
+      "unavailableTitle": "Documentele de acceptat nu au putut fi încărcate",
+      "unavailableBody": "Nu am putut afla ce documente trebuie acceptate, deci ele nu pot fi afișate. Ieșiți din cont și autentificați-vă din nou.",
+      "settledTitle": "Nu mai aveți nimic de acceptat",
+      "settledBody": "Ați acceptat deja versiunile în vigoare ale documentelor, deci contul poate fi folosit. Continuați în aplicație."
+    },
+    "legalAcceptance": {
+      "label": {
+        "both": "Am citit și accept <terms>Termenii și condițiile</terms> și <privacy>Politica de confidențialitate</privacy> (se deschid într-o filă nouă).",
+        "terms": "Am citit și accept <terms>Termenii și condițiile</terms> (se deschid într-o filă nouă).",
+        "privacy": "Am citit și accept <privacy>Politica de confidențialitate</privacy> (se deschide într-o filă nouă)."
+      },
+      "missing": "Caseta nu este bifată, așa că nu putem continua: fără acceptarea acestor documente contul nu poate fi folosit. Citiți-le și bifați caseta."
     },
     "social": {
       "divider": "sau",

@@ -66,6 +66,7 @@ test('every cookie a signed-in browser holds is on the policy', async ({ page, c
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
@@ -146,15 +147,22 @@ test('a document outside the set does not exist', async ({ page }) => {
   expect(outside?.status()).toBe(404);
 });
 
-test('registration links the terms and the notice, and says continuing accepts them', async ({ page }) => {
+test('registration asks for the terms and the notice to be accepted, each a link to its page (task 195)', async ({ page }) => {
   await page.goto('/register');
-  const sentence = page.getByText(/Creând un cont, acceptați/u);
-  await expect(sentence).toBeVisible();
-  await expect(sentence.getByRole('link', { name: 'Termenii și condițiile' })).toHaveAttribute('href', '/legal/terms');
-  await expect(sentence.getByRole('link', { name: 'Politica de confidențialitate' })).toHaveAttribute(
+  const acceptance = page.getByRole('checkbox', { name: /Am citit și accept/u });
+  await expect(acceptance).not.toBeChecked();
+  const label = page.locator('label').filter({ has: acceptance });
+  await expect(label.getByRole('link', { name: 'Termenii și condițiile' })).toHaveAttribute('href', '/legal/terms');
+  await expect(label.getByRole('link', { name: 'Politica de confidențialitate' })).toHaveAttribute(
     'href',
     '/legal/privacy',
   );
+  // In a new tab (owner, 23 Oct 2026), so the form keeps what was typed — and the sentence says so.
+  await expect(label.getByRole('link')).toHaveCount(2);
+  for (const link of await label.getByRole('link').all()) await expect(link).toHaveAttribute('target', '_blank');
+  await expect(label).toContainText('(se deschid într-o filă nouă)');
+  // The sentence that said continuing was acceptance is gone with the pilot's implied acceptance (182/115).
+  await expect(page.getByText(/Creând un cont, acceptați/u)).toHaveCount(0);
 });
 
 test('the policy is live in all three locales', async ({ page }) => {

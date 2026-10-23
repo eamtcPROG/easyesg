@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsEmail, IsObject, IsOptional, IsString, MaxLength, MinLength, ValidateNested } from 'class-validator';
+import { LegalVersionsDto } from './legal-acceptance.dto';
 
 /**
  * `POST /api/v1/auth/register` (FR-1, UC-01).
@@ -62,6 +64,23 @@ export class RegisterAccountRequestDto {
   @MinLength(1)
   @MaxLength(100)
   familyName!: string;
+
+  /**
+   * The versions of the terms of service and the privacy notice the page displayed beside the checkbox the registrant
+   * ticked (task 195; §12.5.6's task-195 row (1), (4)). **Required**: S-01 creates no account without an acceptance, so
+   * the api does not either. Judged in the use case against the versions in force — a version is a short string here,
+   * as the column bounds it — and recorded with the account.
+   */
+  @ApiProperty({
+    type: LegalVersionsDto,
+    description:
+      'The versions of the terms of service and the privacy notice the registrant accepted. Refused unless both are ' +
+      'the versions in force; recorded with the account and the time.',
+  })
+  @IsObject()
+  @ValidateNested()
+  @Type(() => LegalVersionsDto)
+  legalVersions!: LegalVersionsDto;
 
   /**
    * S-03's "create an account by password" path (UC-15 step 2), and optional everywhere else.

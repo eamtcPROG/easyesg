@@ -2,7 +2,7 @@ import type { AccountMembership } from '@easyesg/contracts';
 import type { LocalizedPath } from '@/lib/locale-path';
 import { isReturnableAfterSignIn, needsOrganization, requiresSession } from '@/lib/route-access';
 import type { Locale } from '@easyesg/i18n';
-import { ROUTES, chooseOrganizationRoute, completeAccountRoute } from '@/lib/routes';
+import { ROUTES, acceptTermsRoute, chooseOrganizationRoute, completeAccountRoute } from '@/lib/routes';
 
 /**
  * **In `identity/shared/tools/` on one test — read by more than one journey: `sign-in/`, `invitation/` and `social/`, and by two `server/session/` seams.**
@@ -67,6 +67,8 @@ export const POST_SIGN_IN = {
   ORGANIZATION_UNAVAILABLE: ROUTES.ORGANIZATION_UNAVAILABLE,
   /** S-36 — the account is still completing its setup, so no other arm applies yet (task 155). */
   COMPLETE_ACCOUNT: ROUTES.COMPLETE_ACCOUNT,
+  /** S-43 — the account owes an acceptance of the terms or the privacy notice in force (task 195). */
+  ACCEPT_TERMS: ROUTES.ACCEPT_TERMS,
   /**
    * S-01 — the api has ended the session this browser still carries a cookie for (task 160): a reset, a
    * sign-out elsewhere, *sign out other devices*. **The one destination outside `(app)`**, and UX-136's
@@ -152,6 +154,12 @@ export const postSignInTarget = (input: {
    * not read memberships at all when it is true: the API refuses such an account that read.
    */
   readonly awaitingSetup: boolean;
+  /**
+   * The api refused the read this branch rests on because the account owes an acceptance of the terms or the privacy
+   * notice in force (task 195; §12.5.6's task-195 row (2)). After setup, which an account completes first, and before
+   * every membership arm: the api refuses such an account its memberships, so `memberships` is `null` beside it.
+   */
+  readonly owesLegalAcceptance: boolean;
   readonly memberships: readonly AccountMembership[] | null;
   readonly returnTo: LocalizedPath | null;
 }): PostSignInTarget => {
@@ -164,6 +172,14 @@ export const postSignInTarget = (input: {
     return input.returnTo
       ? { href: completeAccountRoute(input.returnTo.href), locale: input.returnTo.locale }
       : { href: POST_SIGN_IN.COMPLETE_ACCOUNT };
+  }
+
+  // Task 195: S-43 and nothing else until the terms in force are accepted. The deep link rides along unjudged, as it
+  // does through S-36, and S-43 asks this function again once nothing is owed.
+  if (input.owesLegalAcceptance) {
+    return input.returnTo
+      ? { href: acceptTermsRoute(input.returnTo.href), locale: input.returnTo.locale }
+      : { href: POST_SIGN_IN.ACCEPT_TERMS };
   }
 
   if (input.memberships === null) return { href: POST_SIGN_IN.ORGANIZATION_UNAVAILABLE };

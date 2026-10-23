@@ -1,5 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { LEGAL_VERSIONS_IN_FORCE } from '@easyesg/i18n';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ro from '@/messages/ro.json';
@@ -41,6 +42,9 @@ const renderForm = () =>
       <RegisterForm />
     </NextIntlClientProvider>,
   );
+
+/** The acceptance's accessible name — the label, its two links' text included (task 195). */
+const ACCEPTANCE = /Am citit și accept Termenii și condițiile și Politica de confidențialitate/;
 
 const VALID_EMAIL = 'ana.rusu@brutaria-lina.md';
 const VALID_PASSWORD = 'Parola123!';
@@ -98,6 +102,7 @@ describe('S-01 · register form', () => {
     await user.type(screen.getByLabelText(filled), 'Ana');
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
+    await user.click(screen.getByRole('checkbox', { name: ACCEPTANCE }));
     await user.click(screen.getByRole('button', { name: 'Creați contul' }));
 
     expect(action).not.toHaveBeenCalled();
@@ -120,6 +125,7 @@ describe('S-01 · register form', () => {
     await user.type(screen.getByLabelText('Nume de familie'), 'Popescu');
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
+    await user.click(screen.getByRole('checkbox', { name: ACCEPTANCE }));
     await user.click(screen.getByRole('button', { name: 'Creați contul' }));
 
     await waitFor(() =>
@@ -128,6 +134,9 @@ describe('S-01 · register form', () => {
         familyName: 'Popescu',
         email: VALID_EMAIL,
         password: VALID_PASSWORD,
+        // The versions this page displayed — the release's — and not the checkbox's flag (task 195).
+        legalVersions: LEGAL_VERSIONS_IN_FORCE,
+        invitationToken: undefined,
       }),
     );
     await waitFor(() => expect(push).toHaveBeenCalledWith('/verify'));
@@ -154,6 +163,7 @@ describe('S-01 · register form', () => {
     await user.type(screen.getByLabelText('Nume de familie'), 'Popescu');
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
+    await user.click(screen.getByRole('checkbox', { name: ACCEPTANCE }));
     await user.click(screen.getByRole('button', { name: 'Creați contul' }));
 
     const callout = await screen.findByRole('alert');
@@ -178,10 +188,45 @@ describe('S-01 · register form', () => {
     await user.type(screen.getByLabelText('Nume de familie'), 'Popescu');
     await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
     await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
+    await user.click(screen.getByRole('checkbox', { name: ACCEPTANCE }));
     await user.click(screen.getByRole('button', { name: 'Creați contul' }));
 
     const callout = await screen.findByRole('alert');
     expect(callout).toHaveTextContent('Serverul nu poate fi contactat');
     expect(callout).toHaveTextContent('Verificați-vă conexiunea la internet');
+  });
+
+  // Task 195 (FR-205 AC-8): the account is created only once the box is ticked — refused inline and in the summary,
+  // as a missing name is, and never as a silent refusal to submit.
+  it('sends nothing until the acceptance is ticked, and says so beside the box and in the summary', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText('Prenume'), 'Ana');
+    await user.type(screen.getByLabelText('Nume de familie'), 'Popescu');
+    await user.type(screen.getByLabelText('E-mail de serviciu'), VALID_EMAIL);
+    await user.type(screen.getByLabelText('Parolă'), VALID_PASSWORD);
+    await user.click(screen.getByRole('button', { name: 'Creați contul' }));
+
+    expect(action).not.toHaveBeenCalled();
+    const summary = await screen.findByRole('alert');
+    expect(within(summary).getAllByText(ro.identity.legalAcceptance.missing)).toHaveLength(1);
+    expect(screen.getByRole('checkbox', { name: ACCEPTANCE })).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  // Owner, 23 Oct 2026: a reader who stops to read a document keeps what they typed here — and the sentence says so.
+  it('names each document it accepts as a link to that document, opening in a new tab', () => {
+    renderForm();
+    const label = screen.getByRole('checkbox', { name: ACCEPTANCE }).closest('label');
+    expect(label).not.toBeNull();
+    const terms = within(label as HTMLElement).getByRole('link', { name: 'Termenii și condițiile' });
+    const privacy = within(label as HTMLElement).getByRole('link', { name: 'Politica de confidențialitate' });
+    expect(terms).toHaveAttribute('href', '/legal/terms');
+    expect(privacy).toHaveAttribute('href', '/legal/privacy');
+    for (const link of [terms, privacy]) {
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener');
+    }
+    expect(label).toHaveTextContent('(se deschid într-o filă nouă)');
   });
 });

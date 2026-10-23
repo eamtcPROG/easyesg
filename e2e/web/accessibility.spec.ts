@@ -11,6 +11,7 @@ import {
   seedOpenPeriod,
   seedReport,
   verificationTokenFor,
+  withdrawLegalAcceptance,
 } from './support/db';
 import { settleAnimations } from './support/animations';
 import { enrolFactor, offerEnrolment, presentPassword } from './support/second-factor';
@@ -147,6 +148,7 @@ test('axe finds no violations on the users and access screen', async ({ page }) 
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
@@ -204,6 +206,7 @@ test('axe finds no violations on both steps of the complete-your-account screen'
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
@@ -227,6 +230,41 @@ test('axe finds no violations on both steps of the complete-your-account screen'
 });
 
 /**
+ * S-43 (task 195) — at rest and with the acceptance refused for an unticked box, since the second draws the summary and
+ * the field's error. The acceptance is taken away after signing in rather than driven through the provider stub, since
+ * what is under the scan is the screen and not the way to it (`social.spec.ts` drives that).
+ */
+test('axe finds no violations on the accept-the-terms screen', async ({ page }) => {
+  const email = `${RUN_PREFIX}-terms@example.md`;
+
+  await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/create-organization');
+
+  await withdrawLegalAcceptance({ email });
+  await page.goto('/accept-terms');
+  await expect(page.getByRole('heading', { level: 1, name: 'Acceptați termenii' })).toBeVisible();
+  await scan(page);
+
+  await page.getByRole('button', { name: 'Continuați', exact: true }).click();
+  await expect(page.getByRole('checkbox', { name: /Am citit și accept/ })).toHaveAttribute('aria-invalid', 'true');
+  await scan(page);
+});
+
+/**
  * S-36's password step on S-02's path (task 155) — its own opening sentence and the *keep me signed in*
  * checkbox the session arm does not carry, so it is a different form under the scan. Reached the way a
  * provider registration that did not assert the address reaches it, minus the provider: a registration
@@ -240,6 +278,7 @@ test('axe finds no violations on the password step a confirmation link opens', a
   await page.getByLabel('Nume de familie').fill('Rusu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
 
@@ -265,6 +304,7 @@ test('axe finds no violations on the choose-organization screen', async ({ page 
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
@@ -314,6 +354,7 @@ test('axe finds no violations on the create-organization screen', async ({ page 
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
@@ -347,6 +388,7 @@ test('axe finds no violations on the organization profile screen', async ({ page
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
@@ -384,6 +426,7 @@ test('axe finds no violations on the entity record', async ({ page }) => {
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
@@ -427,6 +470,7 @@ test('axe finds no violations on the notification centre', async ({ page }) => {
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
@@ -484,6 +528,7 @@ test('axe finds no violations on the home screen', async ({ page }) => {
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
@@ -528,6 +573,7 @@ test('axe finds no violations on the credentials screen', async ({ page }) => {
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
@@ -574,6 +620,7 @@ test('axe finds no violations on the second-factor step', async ({ page }) => {
   await page.getByLabel('Nume de familie').fill('Popescu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);

@@ -1,10 +1,12 @@
-import type { Locale } from '@easyesg/i18n';
+import { LEGAL_VERSIONS_IN_FORCE, type LegalVersions, type Locale } from '@easyesg/i18n';
 import { accountHasLapsed } from '../domain/account-expiry';
+import { acceptanceOfEvery, presentsVersionsInForce } from '../domain/legal-acceptance';
 import { presentNamePart } from '../domain/display-name';
 import { emailIdentityKey, normaliseEmail } from '../domain/email-address';
 import { passwordMeetsPolicy } from '../domain/password-policy';
 import {
   EmailAlreadyRegisteredError,
+  LegalVersionChangedError,
   PasswordPolicyViolationError,
   RegistrationNamesRequiredError,
 } from '../errors/account.errors';
@@ -25,6 +27,12 @@ export interface RegisterAccountCommand {
    */
   readonly givenName: string;
   readonly familyName: string;
+  /**
+   * The version of the terms and of the privacy notice the page displayed when the registrant ticked that they accept
+   * them (task 195; §12.5.6's task-195 row (1), (4)). Refused unless both are the versions in force, and recorded with
+   * the account.
+   */
+  readonly legalVersions: LegalVersions;
   /** Negotiated from `Accept-Language` for this request; seeds FR-10's persisted preference. */
   readonly locale: Locale;
   /**
@@ -47,9 +55,10 @@ export interface RegisterAccountCommand {
  * `account.module.ts` constructs it with `useFactory`, which is what that constraint costs and is
  * the point of paying it — every branch below is reachable in a unit test with three closures.
  *
- * It reads as UC-01's main success scenario: supply an address and a password, create an unverified
- * record, issue a verification challenge. The challenge is issued as an **outbox row**, not as a
- * send, and that is P-8 rather than a preference — sending inside the transaction is the dual write
+ * It reads as UC-01's main success scenario: supply an address and a password and accept the documents in
+ * force, create an unverified record with what it accepted, issue a verification challenge. The challenge
+ * is issued as an **outbox row**, not as a send, and that is P-8 rather than a preference — sending
+ * inside the transaction is the dual write
  * AD-6 exists to remove, and its failure is concrete: roll back after the send and someone holds a
  * working verification link for an account that does not exist.
  *
@@ -75,6 +84,12 @@ export class RegisterAccount {
     if (givenName === null || familyName === null) throw new RegistrationNamesRequiredError();
 
     if (!passwordMeetsPolicy(command.password)) throw new PasswordPolicyViolationError();
+
+    // Task 195: a page read before a release replaced the terms or the notice. Refused before anything is written, so
+    // nobody holds an account recorded as accepting words they were never shown.
+    if (!presentsVersionsInForce({ presented: command.legalVersions, inForce: LEGAL_VERSIONS_IN_FORCE })) {
+      throw new LegalVersionChangedError();
+    }
 
     // Hashed BEFORE the transaction opens, deliberately. Argon2id at §9.1's parameters is tens of
     // milliseconds of CPU by design, and `poolSize` is 10 (§12.5) — holding a pooled connection
@@ -103,6 +118,13 @@ export class RegisterAccount {
         passwordHash,
         givenName,
         familyName,
+      });
+
+      // With the account, in its transaction (task 195): what it accepted is part of what it is.
+      await tx.recordLegalAcceptance({
+        accountId: account.id,
+        accepted: acceptanceOfEvery(command.legalVersions),
+        at: now,
       });
 
       // FR-3's third route to a verified account, added 25 Aug 2026 (§12.5.6's task-26.2 row).

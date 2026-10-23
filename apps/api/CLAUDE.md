@@ -71,6 +71,9 @@ traps each one left — grouped by area rather than by the task that built it.
   the factor step's answer saying which kind of code earned the session, and S-05's *not now* on the prompt to enrol
   (`POST /account/totp/prompt-dismissal`, `identity.account.enrolment_prompt_dismissed_at`, cleared by turning the
   factor off) (190);
+  the acceptance of the terms and the privacy notice — recorded by registration with the versions it presented, read and
+  given on S-43 (`GET`/`POST /account/legal-acceptance`), `identity.legal_acceptance` one row per document accepted
+  (195);
   AD-15's socket ticket (`POST /session/socket-ticket`, 147);
   opt-in TOTP and password change (27); the profile (`GET/PUT /account/profile`, 52.3); memberships and roles (`GET/PATCH/DELETE /members`,
   `GET /memberships`), and choosing among them (`PUT /session/organization`, 83.1); invitations and acceptance (`GET/POST /invitations`,
@@ -285,6 +288,16 @@ traps each one left — grouped by area rather than by the task that built it.
   `infrastructure/persistence/identity/account-row.ts`, shared by the four identity adapters that map the whole
   row — a column those adapters read goes there once, not into four copies. The guard's identity join is the
   exception by design: it reads the two columns it judges, beside the session, and never maps an account.
+- **An account owing an acceptance of the terms reaches only what `@AdmitsPendingLegalAcceptance` marks** (task 195;
+  §12.5.6's task-195 row). `AuthGuard` reads the latest acceptance per document in the session's own statement
+  (`legal-acceptance.queries.ts`, the one spelling S-43's store reads too) and refuses an account whose version of the
+  terms or the privacy notice is absent or not `@easyesg/i18n`'s `LEGAL_VERSIONS_IN_FORCE` with
+  `legal-acceptance-required` — after the setup refusal, never for an account in setup — so **a route added later is
+  closed to it by default**, and the route matrix's owing actor proves it per row. **Moving a version in
+  `@easyesg/i18n` sends every account to S-43**, which is the decision, not a side effect. **A suite whose account is
+  made outside registration** — by SQL, or through a provider's flow — and then touches a gated route gives it the
+  acceptance with `recordLegalAcceptance` (`test/support/signed-in-account.ts`); registration carries
+  `LEGAL_ACCEPTANCE`, which `registerFreshAccount` sends.
 - **Social sign-in matches on `(provider, subject)`, never email** (task 24; §9.1 calls the
   email-match variant an account-takeover path). `openid-client` 6.8.7 is a plain static import —
   ESM-only, and on `module: nodenext`/Node 26 `require(esm)` loads it, the OQ-48 revisit, proven for

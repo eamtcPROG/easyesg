@@ -22,6 +22,20 @@ import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../domain/password-pol
  * uniform ones:** enumeration here is bounded by rate alone (§12.5.6, 60 req/min per IP), which is
  * task 71's to configure and must not be treated as ordinary unauthenticated traffic.
  */
+/**
+ * Task 195 (§12.5.6's task-195 row (1)): a registration or an acceptance presented a version of the terms or the privacy
+ * notice other than the one in force — read before a release replaced the text. `409`: the request was well formed and
+ * conflicts with the state of the release, and repeating it changes nothing until the page is reloaded.
+ */
+export class LegalVersionChangedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.LegalVersionChanged;
+  readonly status = 409;
+
+  constructor() {
+    super('identity.legal.version_changed');
+  }
+}
+
 export class EmailAlreadyRegisteredError extends DomainError {
   readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
   readonly status = 409;

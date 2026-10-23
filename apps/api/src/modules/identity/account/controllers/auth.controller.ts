@@ -60,7 +60,10 @@ export class AuthController {
   })
   @ApiResponse({
     status: 409,
-    description: 'The address already holds an account.',
+    description:
+      'The address already holds an account; or a version of the terms or the privacy notice presented is not the ' +
+      'one in force (problem type legal-version-changed) — the page was read before the text was replaced, and ' +
+      'nothing was created.',
     content: { 'application/problem+json': {} },
   })
   async register(@Body() body: RegisterAccountRequestDto): Promise<AccountResponseDto> {

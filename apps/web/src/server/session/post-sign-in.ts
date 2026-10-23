@@ -3,6 +3,7 @@ import { ACCOUNT_STATUS, type AccountMembership, type AccountSetup } from '@easy
 import { API_OUTCOME, type ApiOutcome, type ListResult } from '@/lib/api-outcome';
 import { sanitizeReturnPath } from '@/lib/locale-path';
 import { outcomeEndsSession } from '@/lib/session-standing';
+import { outcomeOwesLegalAcceptance } from '@/lib/legal-acceptance-standing';
 import { postSignInTarget, type PostSignInTarget } from '@/features/identity/shared/tools/post-sign-in';
 import { observingApi } from '../api/api-client';
 import { readAccountSetup } from '../data/account-setup';
@@ -28,6 +29,10 @@ import { readSession } from './session';
  * otherwise land it on S-35 as *organization unavailable* — a wrong screen stated as a fact. The
  * status comes from the sealed cookie, which for `resolvePostSignIn` is the one its caller has just
  * written and which a refresh keeps current for the other.
+ *
+ * **An account owing an acceptance of the terms is read from the same memberships read** (task 195): the api refuses
+ * it that read with `legal-acceptance-required`, which `observingApi` hands back for the branch to answer with S-43,
+ * and which the ordinary client answers with S-43 itself, before the branch sees it.
  *
  * **A session the api has ended is the branch's own answer here, or no answer at all** (tasks 160, 161;
  * §12.5.6's task-161 row). The api client sends every caller whose session has ended to sign in, from
@@ -76,6 +81,7 @@ export const resolvePostSignIn = async (returnTo?: string): Promise<PostSignInTa
     return postSignInTarget({
       sessionEnded: false,
       awaitingSetup: true,
+      owesLegalAcceptance: false,
       memberships: null,
       returnTo: returnPath,
     });
@@ -85,6 +91,7 @@ export const resolvePostSignIn = async (returnTo?: string): Promise<PostSignInTa
   return postSignInTarget({
     sessionEnded: outcomeEndsSession(outcome),
     awaitingSetup: false,
+    owesLegalAcceptance: outcomeOwesLegalAcceptance(outcome),
     memberships: outcome.status === API_OUTCOME.Ok ? outcome.value.items : null,
     returnTo: returnPath,
   });
@@ -112,6 +119,7 @@ const heldSessionTarget = async (reads: HeldSessionReads): Promise<PostSignInTar
     return postSignInTarget({
       sessionEnded: outcomeEndsSession(setup),
       awaitingSetup: true,
+      owesLegalAcceptance: false,
       memberships: null,
       returnTo: null,
     });
@@ -121,6 +129,7 @@ const heldSessionTarget = async (reads: HeldSessionReads): Promise<PostSignInTar
   return postSignInTarget({
     sessionEnded: outcomeEndsSession(outcome),
     awaitingSetup: false,
+    owesLegalAcceptance: outcomeOwesLegalAcceptance(outcome),
     memberships: outcome.status === API_OUTCOME.Ok ? outcome.value.items : null,
     returnTo: null,
   });

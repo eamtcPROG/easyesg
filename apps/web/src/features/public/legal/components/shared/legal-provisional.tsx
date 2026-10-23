@@ -1,7 +1,6 @@
 import { CALLOUT_INTENT, Callout } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
-import type { LegalDocument } from '../../tools/legal-documents';
-import { LEGAL_STANDING } from '../../tools/legal-standing';
+import { LEGAL_STANDING, type LegalDocument } from '@easyesg/i18n';
 
 /**
  * A document published before counsel has approved it says so, above its summary (FR-205 behaviour 10, AC-14;

@@ -5,17 +5,24 @@ import { IS_ADMIN_REALM } from '@api/app/decorators/admin-realm.marker';
 import { IS_PUBLIC } from '@api/app/decorators/public.decorator';
 import { setupHasLapsed } from '@api/modules/identity/account/domain/account-expiry';
 import { ACCOUNT_STATUS } from '@api/modules/identity/account/models/account.model';
+import { owesLegalAcceptance } from '@api/modules/identity/account/domain/legal-acceptance';
+import { LEGAL_VERSIONS_IN_FORCE } from '@easyesg/i18n';
 import { selectActiveMembership } from '@api/modules/identity/membership/domain/select-active-membership';
 import { AuthenticationRequiredError } from '@api/modules/identity/membership/errors/membership.errors';
 import { requestContext } from '@api/infrastructure/persistence/request-context';
 import type { Clock } from '@api/contracts/clock.port';
 import { ADMITS_ACCOUNT_IN_SETUP } from '../constants/account-setup-gate.constants';
+import { ADMITS_PENDING_LEGAL_ACCEPTANCE } from '../constants/legal-acceptance-gate.constants';
 import type { AccessTokenVerifier } from '../interfaces/access-token-signer.interface';
 import type { RequestIdentityStore } from '../interfaces/request-identity-store.interface';
 import type { MemberActivityStore } from '../interfaces/member-activity-store.interface';
 import { activityRecordedSince } from '../domain/member-activity';
 import { sessionHasExpired } from '../domain/session-expiry';
-import { AccountSetupRequiredError, SessionExpiredError } from '../errors/session.errors';
+import {
+  AccountSetupRequiredError,
+  LegalAcceptanceRequiredError,
+  SessionExpiredError,
+} from '../errors/session.errors';
 
 const BEARER = /^Bearer (.+)$/;
 
@@ -42,14 +49,15 @@ const BEARER = /^Bearer (.+)$/;
  * later, which §12.5.6 recorded as a deferral against exactly this task. FR-58's "next request, not
  * next login" is the same property seen from the role's side.
  *
- * **Three refusals, and the distinctions are for the client rather than the user.**
+ * **Four refusals, and the distinctions are for the client rather than the user.**
  * `authentication-required` means there is nothing to work with — no token, a token this API did
  * not issue, a session that does not exist, or an account abandoned in setup past its deadline.
  * `session-expired` means the token was genuinely ours and the session behind it is over, which is
  * the signal to refresh or to re-authenticate in place with work preserved (UC-07, UX-38).
  * `account-setup-required` (task 155) means the session is sound and its account has a password or a
  * name still to give, which is the signal to send it to S-36. Collapsing any two would make the web
- * tier guess.
+ * tier guess. `legal-acceptance-required` (task 195) is the fourth, sent to S-43 the same way: the
+ * session is sound and its account owes an acceptance of the terms or the privacy notice in force.
  *
  * **The setup refusal lives here rather than in the two account guards** because this is the one
  * place every session-bearing route passes through, and a route marked `@AdmitsAccountInSetup` is
@@ -118,6 +126,17 @@ export class AuthGuard implements CanActivate {
       !marked(ADMITS_ACCOUNT_IN_SETUP)
     ) {
       throw new AccountSetupRequiredError();
+    }
+
+    // Task 195: an account owing an acceptance of the terms or the privacy notice in force reaches S-43's routes and
+    // nothing else (§12.5.6's task-195 row (2), (3)). After the setup refusal, and never for an account in setup, which
+    // completes its setup first — its setup routes stay open to it, and S-43 follows.
+    if (
+      identity.account.status !== ACCOUNT_STATUS.AWAITING_SETUP &&
+      owesLegalAcceptance({ accepted: identity.acceptedLegalVersions, inForce: LEGAL_VERSIONS_IN_FORCE }) &&
+      !marked(ADMITS_PENDING_LEGAL_ACCEPTANCE)
+    ) {
+      throw new LegalAcceptanceRequiredError();
     }
 
     const active = selectActiveMembership({

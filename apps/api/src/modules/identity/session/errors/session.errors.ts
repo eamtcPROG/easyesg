@@ -120,3 +120,17 @@ export class AccountSetupRequiredError extends DomainError {
     super('identity.setup.required');
   }
 }
+
+/**
+ * Task 195 (§12.5.6's task-195 row (2), (3)): the session is sound and its account owes an acceptance of the terms or
+ * the privacy notice in force, so every route but S-43's refuses it. `403` for the setup refusal's reason — signing in
+ * again changes nothing; the way on is S-43, where the web's api client sends this refusal.
+ */
+export class LegalAcceptanceRequiredError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.LegalAcceptanceRequired;
+  readonly status = 403;
+
+  constructor() {
+    super('identity.legal.required');
+  }
+}

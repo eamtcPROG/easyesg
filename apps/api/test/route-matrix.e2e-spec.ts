@@ -54,6 +54,8 @@ const EMAILS = {
   stranger: 'stranger@matrix.test',
   /** Signed in and still completing its setup — the state `account-setup-required` exists for (task 155). */
   inSetup: 'setup@matrix.test',
+  /** Signed in and owing an acceptance of the terms in force — the state `legal-acceptance-required` exists for (task 195). */
+  owesAcceptance: 'terms@matrix.test',
 };
 
 /**
@@ -71,6 +73,8 @@ const ACTOR = {
   ADMINISTRATOR: 'administrator',
   /** CA before setup is complete (task 155) — refused everything but its setup routes. */
   IN_SETUP: 'in-setup',
+  /** CA owing an acceptance of the terms or the privacy notice in force (task 195) — refused everything but S-43's. */
+  OWES_ACCEPTANCE: 'owes-acceptance',
 } as const;
 
 type ActorName = (typeof ACTOR)[keyof typeof ACTOR];
@@ -106,12 +110,18 @@ function expectedFor(permission: Permission, actor: ActorName): string {
   if (permission === PERMISSION.PUBLIC) return ADMITTED;
 
   if (actor === ACTOR.ANONYMOUS) return ProblemType.AuthenticationRequired;
+
+  // Task 195: an account owing an acceptance reaches S-43's routes and is refused every other one — a setup route
+  // included, since it is not in setup — before any membership question, because the guard answers it first.
+  if (actor === ACTOR.OWES_ACCEPTANCE) {
+    return permission === PERMISSION.LEGAL_ACCEPTANCE ? ADMITTED : ProblemType.LegalAcceptanceRequired;
+  }
   if (permission === PERMISSION.SETUP) return ADMITTED;
 
   // Task 155: an account still in setup reaches its setup routes and is refused every other one —
-  // before any membership question, because the guard answers it first.
+  // before any membership question, because the guard answers it first. S-43's routes among them: setup comes first.
   if (actor === ACTOR.IN_SETUP) return ProblemType.AccountSetupRequired;
-  if (permission === PERMISSION.ACCOUNT) return ADMITTED;
+  if (permission === PERMISSION.ACCOUNT || permission === PERMISSION.LEGAL_ACCEPTANCE) return ADMITTED;
 
   // `role:a+b+c` — the roles the declaration actually names, not the ones this file assumes.
   const admitted = permission.slice(`${PERMISSION.ROLE}:`.length).split('+');
@@ -142,12 +152,17 @@ const TENANT_ROUTES = Object.entries(SURFACE).filter(
     !route.includes('/auth/admin') && !permission.startsWith(`${PERMISSION.ADMIN}:`),
 );
 
-/** The four ways the guard chain refuses on the tenant surface — the fourth since task 155. */
+/**
+ * The five ways the guard chain refuses on the tenant surface — the fourth since task 155, the fifth since task 195.
+ * **A refusal missing here reads as admission**, which is how task 195's first run met it: every request the guard
+ * refused its owing actor was classified `admitted`, so a new refusal must be added in the change that adds it.
+ */
 const REFUSALS = [
   ProblemType.AuthenticationRequired,
   ProblemType.MembershipRequired,
   ProblemType.InsufficientRole,
   ProblemType.AccountSetupRequired,
+  ProblemType.LegalAcceptanceRequired,
 ] as const;
 
 /**
@@ -288,6 +303,11 @@ describe('the permission matrix reaches every route (task 28.2, actors.md §5)',
       accounts.inSetup.accountId,
     ]);
     tokens.set(ACTOR.IN_SETUP, accounts.inSetup.accessToken);
+
+    // **An account owing an acceptance, made by taking a signed-in one's away** — the state of every account created
+    // before task 195, and of one a release has moved a version under. The guard reads the record per request.
+    await owner.query(`DELETE FROM identity.legal_acceptance WHERE account_id = $1`, [accounts.owesAcceptance.accountId]);
+    tokens.set(ACTOR.OWES_ACCEPTANCE, accounts.owesAcceptance.accessToken);
   }, 120_000);
 
   afterAll(async () => {

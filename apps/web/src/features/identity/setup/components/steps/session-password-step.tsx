@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { setFirstPasswordAction } from '../../actions/actions';
 import styles from '../../../shared/styles/identity-screens.module.css';
 import { SETUP_MESSAGES } from '../shared/setup-messages';
-import { SignOut } from '../shared/sign-out';
+import { SignOut } from '../../../shared/components/sign-out';
 import { PasswordForm } from './password-form';
 
 /**

@@ -6,11 +6,13 @@ import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { ACCOUNT_STATUS } from '@easyesg/contracts';
+import { ACCEPTED_LEGAL_DOCUMENTS, LEGAL_VERSIONS_IN_FORCE } from '@easyesg/i18n';
 import { namePartIsPresent } from '@easyesg/validation';
 import { API_OUTCOME, type ApiFailure } from '@/lib/api-outcome';
 import { Link, useRouter } from '@/i18n/navigation';
 import { registerAction } from '../actions/actions';
 import { PolicyPasswordField } from '../../shared/components/policy-password-field';
+import { LegalAcceptanceCheckbox } from '../../shared/components/legal-acceptance-checkbox';
 import { rememberPendingVerification } from '../../shared/store/pending-verification-store';
 import styles from '../../shared/styles/identity-screens.module.css';
 import { ROUTES } from '@/lib/routes';
@@ -19,9 +21,10 @@ import { ScriptingRequired } from '@/shared/scripting-required';
 import { EMAIL_SHAPE } from '@/lib/email-shape';
 
 /**
- * S-01 · Register (UC-01) — email + password per the S-01 content list and the task-19 API.
- * The prototype's extra captures (full name, consent) are design_spec OQ-16, deliberately not
- * closed here.
+ * S-01 · Register (UC-01) — the two name parts, the address and the password, and the acceptance of
+ * the terms and the privacy notice: a required checkbox since task 195 (`design_spec.md` OQ-24, S-01's
+ * content list), which sends the versions this page displayed — the release's, `@easyesg/i18n`'s — for
+ * the api to record with the account, or to refuse where a release has since replaced them.
  *
  * States (§8.1 subset for this surface): rest · submitting (busy button, pending-async) ·
  * invalid (inline errors + UX-111 summary) · error — recoverable (problem+json rendered as
@@ -38,6 +41,8 @@ interface RegisterInput {
   familyName: string;
   email: string;
   password: string;
+  /** The checkbox (task 195) — the form's alone: what reaches the api is the versions it accepted, not a flag. */
+  acceptLegal: boolean;
 }
 
 export interface RegisterFormProps {
@@ -65,12 +70,22 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
   // object and shows again.
   const [shownFailure, dismissFailure] = useDismissible(failure);
 
-  const { control, handleSubmit } = useForm<RegisterInput>({ mode: 'onTouched' });
+  const { control, handleSubmit } = useForm<RegisterInput>({
+    mode: 'onTouched',
+    defaultValues: { acceptLegal: false },
+  });
 
   const submit = handleSubmit((input) => {
     setFailure(null);
     startTransition(async () => {
-      const result = await registerAction({ ...input, invitationToken });
+      const result = await registerAction({
+        givenName: input.givenName,
+        familyName: input.familyName,
+        email: input.email,
+        password: input.password,
+        legalVersions: LEGAL_VERSIONS_IN_FORCE,
+        invitationToken,
+      });
       if (result.status === API_OUTCOME.Ok) {
         // **Branch on what came back, not on whether a token was sent.** A stale or misaddressed
         // invitation is ignored by the API and yields an ordinary unverified account (task 26.2's
@@ -185,22 +200,9 @@ export function RegisterForm({ invitationToken, returnTo }: RegisterFormProps) {
 
           <PolicyPasswordField control={control} name="password" label={t('passwordLabel')} />
 
-          {/* FR-205 AC-7, AC-8 (182/115): continuing is acceptance of the terms and the notice, said where personal data
-              is collected, before the button — and nothing records it until task 195. */}
-          <p className={styles.legalNotice}>
-            {t.rich('legalNotice', {
-              terms: (chunks) => (
-                <TextLink asChild>
-                  <Link href={ROUTES.LEGAL_TERMS}>{chunks}</Link>
-                </TextLink>
-              ),
-              privacy: (chunks) => (
-                <TextLink asChild>
-                  <Link href={ROUTES.LEGAL_PRIVACY}>{chunks}</Link>
-                </TextLink>
-              ),
-            })}
-          </p>
+          {/* FR-205 AC-7, AC-8 (task 195): the acceptance, required, where personal data is collected and before the
+              button — each document a link to its page, and the versions this page displayed recorded with the account. */}
+          <LegalAcceptanceCheckbox control={control} name="acceptLegal" documents={ACCEPTED_LEGAL_DOCUMENTS} />
 
           <CredentialSubmit busy={pending}>
             {t('submit')}

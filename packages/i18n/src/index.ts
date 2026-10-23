@@ -33,4 +33,18 @@ export {
 } from './expansion-harness.js';
 export { findInternalIdentifiers } from './internal-identifiers.js';
 export { roundHalfUp } from './figures.js';
+export {
+  LEGAL_DOCUMENT,
+  ACCEPTED_LEGAL_DOCUMENTS,
+  LEGAL_STANDING,
+  LEGAL_VERSIONS_IN_FORCE,
+  isLegalDocument,
+  isAcceptedLegalDocument,
+} from './legal-standing.js';
+export type {
+  LegalDocument,
+  AcceptedLegalDocument,
+  LegalStanding,
+  LegalVersions,
+} from './legal-standing.js';
 export type { IdentifierFinding } from './internal-identifiers.js';

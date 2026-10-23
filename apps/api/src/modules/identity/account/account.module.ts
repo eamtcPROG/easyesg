@@ -35,6 +35,12 @@ import { ManageTotp } from './use-cases/manage-totp.use-case';
 import { DismissEnrolmentPrompt } from './use-cases/dismiss-enrolment-prompt.use-case';
 import { SECOND_FACTOR } from './interfaces/second-factor.interface';
 import { VerifyEmail } from './use-cases/verify-email.use-case';
+import { LegalAcceptanceController } from './controllers/legal-acceptance.controller';
+import { LegalAcceptanceService } from './services/legal-acceptance.service';
+import { LEGAL_ACCEPTANCE_STORE, type LegalAcceptanceStore } from './interfaces/legal-acceptance-store.interface';
+import { LegalAcceptanceStoreRepository } from '@api/infrastructure/persistence/identity/legal-acceptance-store.repository';
+import { ReadLegalAcceptance } from './use-cases/read-legal-acceptance.use-case';
+import { AcceptLegalDocuments } from './use-cases/accept-legal-documents.use-case';
 
 /**
  * `identity/account` — FR-1 … FR-12, FR-56 … FR-60
@@ -88,6 +94,14 @@ const httpProviders: Provider[] = [
     inject: [ACCOUNT_PROFILE_STORE],
     useFactory: (store: AccountProfileStore) => new SaveAccountProfile(store),
   },
+  // S-43's acceptance of the terms and the privacy notice (task 195): its own narrow store, as the profile's is.
+  LegalAcceptanceService,
+  { provide: LEGAL_ACCEPTANCE_STORE, useClass: LegalAcceptanceStoreRepository },
+  {
+    provide: ReadLegalAcceptance,
+    inject: [LEGAL_ACCEPTANCE_STORE],
+    useFactory: (store: LegalAcceptanceStore) => new ReadLegalAcceptance(store),
+  },
   {
     /**
      * The store seals `identity.totp_credential.secret` (task 27.1's `SecretCipher`), so the
@@ -132,6 +146,11 @@ const httpProviders: Provider[] = [
     inject: [ACCOUNT_STORE, PASSWORD_HASHER, CLOCK],
     useFactory: (store: AccountStore, hasher: PasswordHasher, now: Clock) =>
       new ManageTotp(store, hasher, now),
+  },
+  {
+    provide: AcceptLegalDocuments,
+    inject: [LEGAL_ACCEPTANCE_STORE, CLOCK],
+    useFactory: (store: LegalAcceptanceStore, now: Clock) => new AcceptLegalDocuments(store, now),
   },
   {
     provide: DismissEnrolmentPrompt,
@@ -208,7 +227,10 @@ const workerProviders: Provider[] = [VerificationEmailHandler, PasswordResetEmai
   // (ISP). Nothing else here is exported, so `ManageTotp`'s password-gated methods stay
   // unreachable from an unauthenticated route.
   exports: mode === APP_MODE.WORKER ? [] : [SECOND_FACTOR],
-  controllers: mode === APP_MODE.WORKER ? [] : [AuthController, TotpController, PasswordController, ProfileController],
+  controllers:
+    mode === APP_MODE.WORKER
+      ? []
+      : [AuthController, TotpController, PasswordController, ProfileController, LegalAcceptanceController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
 })
 export class AccountModule {}

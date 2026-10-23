@@ -10,6 +10,7 @@ import { EMAIL_VERIFICATION_REQUESTED } from '../src/modules/identity/account/co
 import { VerificationEmailHandler } from '../src/modules/identity/account/consumers/verification-email.handler';
 import { hashVerificationToken } from '../src/modules/identity/account/domain/verification-token';
 import { OCCURRED_MICROS, asJob, deleteNoticesAbout, linkNoticeDelivery } from './support/notification-store';
+import { LEGAL_ACCEPTANCE } from './support/signed-in-account';
 
 /**
  * Signup → verify, end to end at the API (task 19's stated deliverable).
@@ -134,7 +135,7 @@ describe('registration and verification (UC-01, UC-03, FR-1, FR-3)', () => {
   });
 
   const register = (email: string, password = PASSWORD) =>
-    request(app.getHttpServer()).post('/api/v1/auth/register').send({ email, password, givenName: 'Ana', familyName: 'Popescu' });
+    request(app.getHttpServer()).post('/api/v1/auth/register').send({ email, password, givenName: 'Ana', familyName: 'Popescu', ...LEGAL_ACCEPTANCE });
 
   /** The outbox row for an address, read as the only role permitted to read one. */
   const queuedVerification = async (email: string) => {
@@ -298,7 +299,7 @@ describe('registration and verification (UC-01, UC-03, FR-1, FR-3)', () => {
       const email = addressFor(`blank-${part}`);
       const response = await request(app.getHttpServer())
         .post('/api/v1/auth/register')
-        .send({ email, password: PASSWORD, ...names })
+        .send({ email, password: PASSWORD, ...names, ...LEGAL_ACCEPTANCE })
         .expect(400);
 
       expect(response.headers['content-type']).toContain('application/problem+json');
@@ -317,7 +318,7 @@ describe('registration and verification (UC-01, UC-03, FR-1, FR-3)', () => {
       const email = addressFor('trimmed');
       await request(app.getHttpServer())
         .post('/api/v1/auth/register')
-        .send({ email, password: PASSWORD, givenName: '  Ana ', familyName: ' Popescu  ' })
+        .send({ email, password: PASSWORD, givenName: '  Ana ', familyName: ' Popescu  ', ...LEGAL_ACCEPTANCE })
         .expect(201);
 
       const rows = await owner.query<{ given_name: string; family_name: string }[]>(

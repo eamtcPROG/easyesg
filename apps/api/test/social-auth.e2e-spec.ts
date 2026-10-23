@@ -12,6 +12,7 @@ import { configureHttpApp } from '../src/main.http';
 import { IDENTITY_PROVIDER_CONFIG_KIND } from '../src/modules/identity/provider/constants/provider.constants';
 import { OidcProviderStub } from './support/oidc-provider-stub';
 import { restoreSlot, snapshotSlot, type SlotSnapshot } from './support/configuration-slot';
+import { LEGAL_ACCEPTANCE } from './support/signed-in-account';
 
 /**
  * Task 24's stated deliverable at the API: the provider flow end to end — challenge, a REAL
@@ -245,7 +246,7 @@ describe('social sign-in (UC-02, UC-05; FR-2, FR-4, FR-82)', () => {
 
   it('refuses registration against an already-registered address (UC-02 alternate, BR-ID-3)', async () => {
     const email = addressFor('collision');
-    await http().post('/api/v1/auth/register').send({ email, password: PASSWORD, givenName: 'Ana', familyName: 'Popescu' }).expect(201);
+    await http().post('/api/v1/auth/register').send({ email, password: PASSWORD, givenName: 'Ana', familyName: 'Popescu', ...LEGAL_ACCEPTANCE }).expect(201);
 
     stub.nextClaims = { sub: subjectFor('collision'), email, email_verified: true, name: 'A' };
     const response = await completeFlow('register', 409);

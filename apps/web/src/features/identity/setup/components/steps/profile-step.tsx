@@ -13,7 +13,7 @@ import { saveSetupProfileAction } from '../../actions/actions';
 import { SETUP_STEP, SETUP_STEP_COUNT, SETUP_STEP_POSITION } from '../../tools/setup-step';
 import styles from '../../../shared/styles/identity-screens.module.css';
 import { SETUP_MESSAGES } from '../shared/setup-messages';
-import { SignOut } from '../shared/sign-out';
+import { SignOut } from '../../../shared/components/sign-out';
 
 /**
  * S-36's second step — both name parts and the interface language (task 155; FR-9, FR-10). The two

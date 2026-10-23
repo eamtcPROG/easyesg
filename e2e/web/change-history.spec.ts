@@ -40,6 +40,7 @@ async function registered(page: Page, label: string): Promise<string> {
   await page.getByLabel('Nume de familie').fill('Rusu');
   await page.getByLabel('E-mail de serviciu').fill(email);
   await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
   await page.getByRole('button', { name: 'Creați contul' }).click();
   await page.waitForURL('**/verify');
   await page.goto(`/verify?token=${await verificationTokenFor(email)}`);

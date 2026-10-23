@@ -1200,3 +1200,23 @@ export async function seedCalcRun(input: {
     await client.end();
   }
 }
+
+/**
+ * Takes away the acceptance the account at `email` gave at registration (task 195), so S-43 can be reached by a scan
+ * without driving a provider registration through the stub — the state of every account created before acceptance was
+ * recorded. S-43 reads what is owed from the api, and the api client sends any other signed-in address there, so the
+ * session needs nothing re-issued.
+ */
+export async function withdrawLegalAcceptance(input: { readonly email: string }): Promise<void> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query(
+      `DELETE FROM identity.legal_acceptance l USING identity.account a
+        WHERE l.account_id = a.id AND lower(a.email) = lower($1)`,
+      [input.email],
+    );
+  } finally {
+    await client.end();
+  }
+}

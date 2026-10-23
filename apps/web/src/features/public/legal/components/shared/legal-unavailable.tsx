@@ -1,6 +1,6 @@
 import { CALLOUT_INTENT, Callout, ContentShell } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
-import type { LegalDocument } from '../../tools/legal-documents';
+import type { LegalDocument } from '@easyesg/i18n';
 import { LegalPeers } from './legal-peers';
 
 /**
