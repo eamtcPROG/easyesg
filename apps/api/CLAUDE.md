@@ -181,8 +181,8 @@ traps each one left — grouped by area rather than by the task that built it.
   language (`providers/change-words.factory.ts`): a disclosure answer through the export's own `documentWords`, so it
   reads as the document prints it; a closed vocabulary from the shared catalogue's `vocabulary` namespace, which
   `apps/web` reads too; an activity code with the classifier's label (§12.5.6's task-84 row).
-- **Not live**: billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18, A-19 and A-21 (67 … 70), edge and deploy
-  (71 … 73), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
+- **Not live**: billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18, A-19 and A-21 (67 … 70), the production edge and
+  deploy (71 … 73, staging's three sub-steps aside — architecture.md §10.5), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
   (116 … 121).
 
 ### Traps and load-bearing facts, by area

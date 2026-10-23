@@ -25,7 +25,7 @@ and since task 46 the Excel export's job beside the PDF's — a report written i
 template version, its marks as footnotes, opened in LibreOffice Calc as its gate — with a golden-report corpus holding
 both files to one expectation; and since task 47 an export asked for, watched and re-downloaded on S-11, and a report
 marked filed there, its latest file downloaded from S-06's list since task 216; and since task 84 the change trail read back on S-12, from a field, an entity's record and the
-organization's profile; and since task 74 the marketing home, the one page the build prerenders, beside task 75's legal set; and since task 223 the cookie banner and its settings, each answer recorded and purged after twelve months; billing is structure without behaviour.** `apps/api`, `apps/web`,
+organization's profile; and since task 74 the marketing home, the one page the build prerenders, beside task 75's legal set; and since task 223 the cookie banner and its settings, each answer recorded and purged after twelve months; and since tasks 71.3, 72.2 and 72.3 a staging environment at `staging.easyesg.md`, on the shared host magnamed runs on, deployed by hand from the images CI publishes; billing is structure without behaviour.** `apps/api`, `apps/web`,
 `apps/admin`, `apps/renderer` and `packages/ui` each keep their shipped state
 in their own `CLAUDE.md`'s "Current state", which loads when you work there; the rows below are the packages with no
 `CLAUDE.md` of their own. `docs/task.md` is what is left, in Stage order, `docs/archived_tasks.md` is what has closed,
@@ -57,7 +57,10 @@ them — the PDF's words and the Excel's cells as Calc shows them — which `pnp
 `.github/workflows/gates.yml` runs four jobs on every
 push to `dev`/`main` (docs-only pushes skipped) and every PR — three gate jobs in parallel
 (`hermetic`, `database`, `BILLING_ENABLED=false`), then images behind all three, buildx-cached so
-only the image whose inputs changed pays a real build. `apps/{api,web,admin,renderer}`
+only the image whose inputs changed pays a real build — and since task 72.3, on a push to `dev` or `main`, pushes the
+four images it started and exercised to GHCR by commit sha. `.github/workflows/deploy-staging.yml` puts one on staging
+when a person runs it, through a key the host pins to `infra/staging/deploy.sh`, beside the stack's own file
+`infra/compose/docker-compose.staging.yml` (architecture.md §10.5). `apps/{api,web,admin,renderer}`
 each carry a Dockerfile, built with the repository root as context. Not started:
 `infra/{caddy,ansible,tofu}` — `packages/vsme` and `config/efrag/` have shipped since, with
 task 34.2's typed facade, the `renderer` image with task 44, `packages/xlsx-patch` with task 45, and `docs/runbooks/`

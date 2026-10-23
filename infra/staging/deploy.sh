@@ -79,9 +79,11 @@ applied_migrations() {
   compose exec -T postgres psql -U postgres -d esg -tAc 'SELECT count(*) FROM migration.migrations' 2>/dev/null | tr -d '[:space:]' || true
 }
 
+# Quiet on purpose: a service still starting refuses the probe, and that is the loop's ordinary state, not an error to
+# print — the first deploy's log read "Connection reset by peer" one line above "healthy".
 healthy() {
-  curl -fsS --max-time 3 -o /dev/null "http://127.0.0.1:$(port API_PORT 18101)/health" &&
-    curl -fsS --max-time 3 -o /dev/null "http://127.0.0.1:$(port WEB_PORT 18102)/health"
+  curl -fs --max-time 3 -o /dev/null "http://127.0.0.1:$(port API_PORT 18101)/health" &&
+    curl -fs --max-time 3 -o /dev/null "http://127.0.0.1:$(port WEB_PORT 18102)/health"
 }
 
 port() {

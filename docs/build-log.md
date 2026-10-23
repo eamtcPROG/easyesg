@@ -32988,3 +32988,111 @@ dependent's row) — and nothing else:
 
 Skipped, as the close procedure allows within a Stage: `gates:clean`, `image:check`, `facade:check`, `events:check`,
 the two `*:prove` gates and the review agents, which the Stage's end runs.
+
+## Tasks 71.3, 72.2, 72.3 — staging on the shared host, deployed by hand from the images CI publishes · 2026-10-23
+
+The platform running at `staging.easyesg.md`, `api-staging.easyesg.md` and `admin-staging.easyesg.md`, on the host
+magnamed already runs on, from images the Gates workflow tested and published — so it can be tested and shown. **Three
+sub-steps close and their tasks stay open**: 71.1's Caddy edge with its limits, 71.2's EU/EEA topology, 72.1's
+OpenTofu and 72.4/72.5's backup and rehearsed restore are production's, and Stage 9 holds them.
+
+### Decided (project owner, one batch of four, two answered with the recommended option)
+
+`architecture.md` §10.5 (the environment), §12.5.6's staging row (how it was decided), with pointers from §10.1, §10.4,
+§10.7, §12.5.1, §12.5.3 and §12.5.5.
+
+- **(1) The documented staging environment is this host** — *not my recommendation*, which was a separate demonstration
+  environment beside a production-shaped staging still to be built. The owner took the amendment knowingly: the host
+  is in Moldova, so NFR-27's residency claim no longer reaches staging, and §10.5 says that is acceptable only while
+  NFR-32 keeps production data out of it.
+- **(2) The names are under `easyesg.md`** — *not my recommendation*, which was subdomains of the domain magnamed uses.
+  The owner named the api and console hosts; `staging.easyesg.md` for the tenant application was my proposal, approved
+  with the design.
+- **(3) Mail through Gmail's relay**, OQ-17's pre-production exception, starting on `log` until the owner puts the app
+  password in the host's `.env` — the credentials never pass through a session.
+- **(4) A deploy is a person's act**: every green push to `dev` publishes, and *Deploy staging* is run by hand.
+- **With the design, approved as one**: billing off; social sign-in unavailable (no client secrets); the console without
+  an IP allowlist; Swagger reachable; no backup; the first operator provisioned by the owner, since the TOTP enrolment
+  has to reach their authenticator.
+
+### What the building decided within them
+
+- **The host's nginx is the edge, and it was already reachable through Cloudflare.** Every `easyesg.md` name resolves to
+  Cloudflare's proxy, which forwards to this host; a probe file under the ACME webroot answered over plain HTTP for all
+  three names before anything was configured, so the certificate was issued with certbot's webroot and no DNS change.
+  §12.5.1's *no CDN* is recorded as production's rather than broken.
+- **Ports on `127.0.0.1`, not the Docker bridge magnamed binds.** magnamed chose the bridge so the host's microk8s ingress
+  could reach it; nothing here needs that, and loopback is the narrower surface.
+- **The seed ships in the api image** (`config/seed` beside `config/efrag`), run as the compiled
+  `seed-configuration.main.js` — a route `config:seed` had never taken, since it runs from source under ts-node. Run
+  against a migrated store from `dist/` before the push, and made a step of the image job beside its migration, so the
+  image is proven to seed before anything is published for one.
+- **Publish by retagging what was tested, after it was exercised.** The image job builds with `load: true`, starts each
+  image and asks it for something; only then does it tag and push those same four images. A second build to push would
+  have been a different artefact from the one the gates passed.
+- **The admin build refuses to run without its api origin.** Vite inlines it, and a bundle that fell back to
+  `localhost` would build, pass the job's deep-link check and reach nothing once deployed — magnamed's DEBT-05 trap, made
+  a build failure.
+- **`deploy.sh` is magnamed's, with four differences**: `migrate` and `seed` are one-shot services the entrypoints wait on;
+  the migration ledger is counted before and after, so a failed release says whether it changed the schema (a restore,
+  not a rollback); a rollback moves the tree back with the images, since the compose file travels with the code; and a
+  lock on the host serialises a run by hand with the workflow's.
+- **The worker connects as `DB_USER=esg_worker`**, the production form the api's configuration names, not the
+  `DB_WORKER_*` pair that exists so one local `.env` serves both entrypoints.
+- **No Redis password**: the api reads none, and the internal network is what keeps another tenant's containers out.
+
+### Found on the way: CI had been red since the export suites reached it
+
+The first Gates run of this work failed in `pdf-export`, `xlsx-export` and `golden-reports`, and so had both runs before
+it — the only green run on `dev`, 8 Oct, predates the export suites, which first reached CI on 22 Oct. Not a runner
+change, which the run's own banner suggested: **ownership**. Docker Desktop's file sharing hides it, the runner's Linux
+Docker does not. veraPDF runs as a `verapdf` user and, in the `0700` directory `mkdtemp` makes, reported the file absent
+and printed no JSON — `Unexpected end of JSON input`; Calc runs as root and left `out/` the runner's user could not
+remove — `EACCES`. **Both reproduced on the staging host's Linux Docker first**, then fixed in their own commit: the PDF
+helper opens its directory to every reader, and the Calc gate writes under `umask 000`. Searched for every other bind
+mount the suites and tools make; these two are all of them.
+
+**And the stack job's fifteen minutes no longer fitted it.** With the export suites green, the next run reached the
+browser suite for the first time since it grew, and the job's timeout cancelled it at case 213 of 397 — after an Azure
+apt mirror had stalled the Chromium install for eight minutes on the attempt before, which was the flake. Measured on
+that run: some 5 minutes to the stack, 3m40 for `pnpm e2e`, 6m44 for 213 browser cases — about 25 minutes whole.
+Raised to forty, with the measurement beside it, in a commit of its own.
+
+### Not done, and where it stands
+
+- **§12.5.6's edge rate limits are not on staging** until task 71.1; the application's own throttles are what hold.
+- **`trust proxy` is still unset**, so the api's per-(IP, account) throttle reads the proxy's address and degrades to
+  per-account — the state `apps/api/CLAUDE.md` already records, unchanged by this.
+- **Mail is on `log`** until the owner adds the Gmail credentials and sets `EMAIL_PROVIDER=smtp`.
+- **The *Deploy staging* button needs the workflow on `main`.** GitHub dispatches a workflow only from a file on the
+  default branch, and `deploy-staging.yml` is on `dev`; until it reaches `main` a deploy runs on the host itself, through
+  the same pinned key — `ssh -i ~/.ssh/easyesg_staging_deploy localhost <sha>` — which is how the first one ran.
+- **No operator exists yet.** The first is the owner's to provision, since the TOTP enrolment link it prints is for their
+  authenticator: `compose run --rm --no-deps api node dist/infrastructure/provisioning/provision-admin.main.js --email
+  … --password …` from `~/easyesg-deploy`, which reads the api service's own environment.
+
+### Verified
+
+- **Locally**: the compose file resolves with a filled template (`docker compose config`), both workflows parse,
+  `deploy.sh` passes `sh -n`, `pnpm image:check` (the api image's four workspace dependencies), `pnpm docs:check` 48/48,
+  `pnpm lint`, the api's `typecheck` over `test/`; and the compiled seeder run from `apps/api/dist` against a migrated
+  store.
+- **The forced command bites**: the deploy key asked for `whoami` answered *expected a 40-character commit sha*, never a
+  shell.
+- **CI, run 39982544028 on `6108dfb6`**: all four jobs green — the first green Gates run on `dev` since 8 Oct — the image
+  job seeding from the api image and publishing the four images, each pullable from the host with no registry login.
+- **The first deploy**, through the pinned key: migrations from none to 78, 37 artefacts published by the seed, every
+  service up and the api, web, renderer, Redis, PostgreSQL and the store healthy, and nothing at warn or error in any
+  service's log but Caddy's two notes that HTTP/2 needs TLS on a plain listener.
+- **From outside, through Cloudflare and nginx**: the home, `/health` and `/en/register` on `staging.easyesg.md`,
+  `/health` and `/docs` on the api host, and the console's root and `/sign-in` each answer 200; the socket, upgraded
+  without a ticket, is refused with 401 by the api rather than 502 by the proxy; the console's bundle names
+  `https://api-staging.easyesg.md/api/v1` and nowhere `localhost`.
+- **In a browser**: the home renders with no console message; the console's sign-in renders and its one console line is
+  the anonymous session probe's 401 — a credentialed cross-origin answer, not a CORS refusal.
+- **The worker works, not only runs**: its two daily jobs opened, went through the outbox and the queue, and the purge's
+  handler ran.
+- **magnamed unaffected**: it answered 200 after each nginx reload.
+
+Skipped, as the close procedure allows within a Stage: `gates:clean` and the review agents, which Stage 9's end runs;
+`pnpm e2e:web` locally, since nothing a browser journey reaches changed and CI ran all 397 cases on the commit deployed.
