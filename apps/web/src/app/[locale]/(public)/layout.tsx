@@ -1,16 +1,20 @@
 import type { ReactNode } from 'react';
 import { PublicFooter } from '@/shared/public-footer';
 import { PublicHeader } from '@/shared/public-header';
+import { activateRequestLocale, type LocaleParams } from '@/i18n/page';
 import styles from './layout.module.css';
 
 /**
  * The public surface — marketing, legal, help centre (IMPLEMENTATION_PLAN Phase 10).
  *
- * This is the **only** part of the application where `"use cache"` is legitimate. §14.2 names
- * the exception precisely: "fully static, tenant-independent content: the marketing shell, the
- * legal pages, the locale bundles". Everywhere else the directive is prohibited and a lint rule
- * enforces it, because a cache key the compiler generated without knowing about organization_id
- * would leak a rendered page across tenants ABOVE the RLS boundary of AD-2.
+ * This is the **only** part of the application the framework may cache. §14.2 names the exception
+ * precisely: "fully static, tenant-independent content". Everywhere else a cache key that knows
+ * nothing of organization_id would leak a rendered page across tenants ABOVE the RLS boundary of
+ * AD-2. **The caching is static rendering, not `"use cache"`** (task 74.4; §14.2 amended
+ * 23 Oct 2026): the directive needs the application-wide Cache Components flag and stays banned
+ * here too. So this layout forces nothing — every other group forces `force-dynamic` itself — the
+ * marketing home is prerendered and revalidated, and the legal document page opts back out because
+ * it reads A-21's operator per request. `e2e/web/static-rendering.spec.ts` is the gate.
  *
  * Phase 10 depends on nothing from phases 4-9, and nothing later depends on it. The
  * `web-public-is-a-leaf` boundary rule keeps that true.
@@ -24,7 +28,19 @@ import styles from './layout.module.css';
  * held back on 4 Sep because its three legal links returned `null`; since task 103 they answered a designed *not yet
  * available* with a way back, and since task 75 all three open their document.
  */
-export default function PublicLayout({ children }: { children: ReactNode }) {
+export default async function PublicLayout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: LocaleParams;
+}) {
+  // **The locale pinned here too, or nothing in the zone is static** (task 74.4). Next renders a layout beside its page
+  // rather than before it, so the root layout's pin does not reach this one, and the header's `getTranslations` would
+  // otherwise resolve the locale from the request's headers — which makes every page beneath dynamic, the home
+  // included, with no error and no warning. Found by reading the build's route table, which drew `/[locale]` as `ƒ`.
+  await activateRequestLocale(params);
+
   return (
     <div className={styles.frame}>
       <PublicHeader />

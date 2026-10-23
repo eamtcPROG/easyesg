@@ -20,6 +20,13 @@ import { localizedPageTitle } from '@/i18n/page';
  */
 export const generateMetadata = localizedPageTitle('chrome.notFound');
 
+/**
+ * **Rendered per request, as the root layout used to force for it (task 74.4).** It sits outside every route group, so
+ * no group's `force-dynamic` reaches it, and §14.2 caches the public zone alone — an unmatched address answered from a
+ * cache entry keyed by the path would be a cache this rule never named.
+ */
+export const dynamic = 'force-dynamic';
+
 export default function CatchAllPage() {
   notFound();
 }

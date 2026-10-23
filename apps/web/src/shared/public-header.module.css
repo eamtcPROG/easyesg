@@ -35,9 +35,8 @@
    **Superseded below 40rem by task 109.** The paragraph above described this region wrapping to two
    rows at 390, and the prototype does not: `EasyESG Public Home.dc.html`'s compact frame is brand
    and a hamburger, with *Start your report* and *Sign in* carried by the hero as content. So the
-   three collapse into `PublicDrawer` there and this region is `display: none`. What stays task
-   74.3's is the **section nav** the menu exists to hold — the marketing page's own headings, which
-   do not exist while `/` is unbuilt. */
+   three collapse into `PublicDrawer` there and this region is `display: none`. The **section nav**
+   the menu was left to hold was considered at task 74.3 and not built (`public-drawer-menu.tsx`). */
 .actions {
   display: flex;
   flex-wrap: wrap;

@@ -1,7 +1,4 @@
 import type { ReactNode } from 'react';
-import { TextLink } from '@easyesg/ui';
-import { Link } from '@/i18n/navigation';
-import { RETURN_DESTINATION, returnDestination } from './return-destination';
 import styles from './address-notice.module.css';
 
 /**
@@ -27,29 +24,28 @@ import styles from './address-notice.module.css';
  * §8.2's three parts are the heading, the body and the link — not a `Callout`. The vehicle in
  * §11.5 is for a message *inside* a screen that has its own title; these two ARE the screen, and
  * borrowing the inline vehicle would leave the page with no `h1` at all.
+ *
+ * **The way back is a slot since task 74.4, and the two states fill it differently.** *Not yet available* asks the
+ * session on the server (`ReturnLink`), as both did from task 103. *Not found* asks it in the browser
+ * (`ProbedReturnLink`): `[locale]/not-found.tsx` is handed to its layout as an element, which a Server Component
+ * renders eagerly on every page beneath it, so a cookie read there made every page under `[locale]` dynamic and the
+ * marketing home could not be prerendered (`architecture.md` §12.5.6's task-74 row (4)).
  */
-export async function AddressNotice({
+export function AddressNotice({
   title,
   body,
-  actionHome,
-  actionSignIn,
+  action,
 }: {
   readonly title: string;
   readonly body: string;
-  readonly actionHome: string;
-  readonly actionSignIn: string;
-}): Promise<ReactNode> {
-  const destination = await returnDestination();
-
+  /** The way back — `ReturnLink` or `ProbedReturnLink`. */
+  readonly action: ReactNode;
+}) {
   return (
     <div className={styles.stack}>
       <h1 className="t-heading-1">{title}</h1>
       <p className={`t-body ${styles.body}`}>{body}</p>
-      <TextLink asChild>
-        <Link href={destination.href}>
-          {destination.kind === RETURN_DESTINATION.HOME ? actionHome : actionSignIn}
-        </Link>
-      </TextLink>
+      {action}
     </div>
   );
 }

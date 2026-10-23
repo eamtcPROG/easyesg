@@ -240,7 +240,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-204 — The marketing home
 
-**Status.** Partial — delivered 74.1 (the public band and footer), 74.2 (the Content archetype) · remaining 74.3, 74.4, 74.5, 74.6 (the pricing section, which waits for 53.3 and 76)
+**Status.** Partial — delivered 74.1 (the public band and footer), 74.2 (the Content archetype), 74.3 (the home), 74.4 (its static rendering), 74.5 (its canonical and alternates), 74.6 (the home shipped without its pricing section) · remaining 222 (the pricing section, which waits for 53.3 and 76)
 
 **Obligation.** The system shall let a visitor with no account and no session read, in the language they choose, what the platform produces and for whom, what it costs and what is asked of them before they sign up, and then proceed to registration or sign-in, while storing nothing against the visitor.
 
@@ -259,8 +259,8 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 4. Its controls are register, sign in, language choice, and routes to the help centre and the legal set.
 5. If the content read path is unavailable, the page degrades to itself without its pricing section and does not become an error page (S-29, error — system).
 6. Nothing is stored against the visitor, and personal data stays out of any analytics that records the visit (UC-177; NFR-30).
-7. It is the one screen the framework may cache. `"use cache"` is legal in the public zone and prohibited everywhere a tenant is in scope, and a gate proves the absence (`architecture.md` §14.2; task 74.4 row).
-8. It is served in Romanian, English and Russian at the three frames of UX-73, each locale separately authored. Each locale's page declares a canonical address that points at itself, and `hreflang` alternates for all three locales with Romanian as `x-default`. The alternates already ride the `Link` response header and the rule is written in `architecture.md` §10.8; it does not depend on which host serves the page (OQ-31) (§12.5.6 task-182 public tier row, 182/119).
+7. It is the one screen the framework may cache, and the caching is static rendering: the home is prerendered in each locale and revalidated, no page outside the public zone is prerendered, and a gate proves both from the built application. `"use cache"` is prohibited everywhere, the public zone included, because it needs the application-wide Cache Components flag (`architecture.md` §14.2, amended 23 Oct 2026; §12.5.6's task-74 row (3)).
+8. It is served in Romanian, English and Russian at the three frames of UX-73, each locale separately authored. Each locale's page declares a canonical address that points at itself, and `hreflang` alternates for all three locales with Romanian as `x-default`. The alternates and the canonical both ride the `Link` response header, the canonical taken from the alternate for the page's own locale, and the rule is written in `architecture.md` §10.8; it does not depend on which host serves the page (OQ-31) (§12.5.6 task-182 public tier row, 182/119; task 74.5).
 9. It is the same page for every visitor, a signed-in member included: no redirect is applied on a session, because a page that varies by session cannot be cached (`architecture.md` §14.2), and the way into the workspace is the header's, which is chrome and not content (§12.5.6 task-182 public tier row, 182/120).
 
 **Refusals.** None. The address is public. The one failure state is the degraded pricing section above.
@@ -272,11 +272,11 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - **AC-2** Given the home, then it offers register, sign in, a language choice, and routes to the help centre and the legal set. *(source: `design_spec.md` S-29)*
 - **AC-3** Given the content read path is unavailable, when the home is opened, then it renders without its pricing section and does not show an error page. *(source: `design_spec.md` S-29)*
 - **AC-4** Given a visit, then nothing is stored against the visitor and the page reads no active organization. *(source: UC-177 postconditions; `design_spec.md` §5.1b)*
-- **AC-5** Given the application, then `"use cache"` appears in the public route group and provably nowhere else. *(source: `architecture.md` §14.2; task 74.4 row)*
+- **AC-5** Given the built application, then the home is prerendered in each locale and no page outside the public route group is, and `"use cache"` appears nowhere. *(source: `architecture.md` §14.2; §12.5.6's task-74 row (3); task 74.4 row)*
 - **AC-6** Given each of the three locales and each of the frames 1440, 834 and 390, then the home renders, the +40% expansion harness passes and the accessibility scan passes. *(source: task 74 row)*
 - **AC-7** Given a route added to the public zone, then it is on the unauthenticated list, and a route not on it is refused to a visitor. *(source: task 74.1 row)*
-- **AC-8** Given each of the three locales, then the home declares a canonical address pointing at itself and alternates for all three locales with Romanian as `x-default`. *(source: §12.5.6 task-182 public tier row, 182/119)* Unmet until 74.5.
-- **AC-9** Given a signed-in member, when the public address is opened, then the same page is served and no redirect is applied. *(source: §12.5.6 task-182 public tier row, 182/120)* Unmet until 74.3.
+- **AC-8** Given each of the three locales, then the home declares a canonical address pointing at itself and alternates for all three locales with Romanian as `x-default`. *(source: §12.5.6 task-182 public tier row, 182/119)*
+- **AC-9** Given a signed-in member, when the public address is opened, then the same page is served and no redirect is applied. *(source: §12.5.6 task-182 public tier row, 182/120)*
 - **AC-10** Given the plan copy and the content read path do not yet exist, then the home ships without its pricing section and carries no price written into the page. *(source: §12.5.6 task-182 public tier row, 182/118; task-74.6 row)*
 
 **History.**
@@ -284,6 +284,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - 5 Oct 2026 · project owner · the pricing section waits for the plan catalogue and the content read path, and no price is hardcoded · §12.5.6 task-182 public tier row (182/118)
 - 5 Oct 2026 · project owner · a canonical per locale, `hreflang` for all three with Romanian as `x-default`, written into §10.8 · §12.5.6 task-182 public tier row (182/119)
 - 5 Oct 2026 · project owner · the home is the same page for a signed-in member · §12.5.6 task-182 public tier row (182/120)
+- 23 Oct 2026 · project owner · the home is cached by static rendering, not by `"use cache"`, which needs Cache Components · §12.5.6's task-74 row (3)
 
 ### FR-205 — The legal documents
 

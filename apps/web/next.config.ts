@@ -13,11 +13,12 @@ const nextConfig: NextConfig = {
   // Docker build (root CLAUDE.md) — Next traces real paths, pnpm ships links.
   output: 'standalone',
 
-  // A SECURITY setting, not a performance one (architecture.md §14.2, AD-9). Every page here
-  // is tenant-scoped. A cache key the compiler generated without knowing about organization_id
-  // would leak a rendered page across tenants ABOVE the RLS boundary of AD-2, where none of its
-  // probes would see it. The lint rule banning `"use cache"` is the other half; this is the
-  // half that means the directive would do nothing even if one slipped through.
+  // A SECURITY setting, not a performance one (architecture.md §14.2, AD-9). A cache key the
+  // compiler generated without knowing about organization_id would leak a rendered page across
+  // tenants ABOVE the RLS boundary of AD-2, where none of its probes would see it. The lint rule
+  // banning `"use cache"` is the other half; with this off the compiler refuses the directive
+  // outright, even if one slipped past the lint. The flag is application-wide, which is why the
+  // public zone is cached by static rendering instead (task 74.4; §14.2 amended 23 Oct 2026).
   cacheComponents: false,
 
   // AD-9: stays off until the wizard's render profile is measured. Turning it on before there

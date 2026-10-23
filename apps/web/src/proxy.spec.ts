@@ -312,8 +312,34 @@ describe('proxy · the address asked for', () => {
   });
 });
 
+/**
+ * Task 74.5: every page the proxy lets through carries its own address as `rel="canonical"` beside next-intl's
+ * alternates — the Romanian unprefixed, the other two prefixed — and a redirect carries none, there being no page.
+ */
+describe('proxy · the canonical beside the alternates', () => {
+  const canonicalOf = (response: Response): string | undefined =>
+    /<([^>]+)>; rel="canonical"/.exec(response.headers.get('link') ?? '')?.[1];
+
+  it('names each locale’s own address, the source locale unprefixed', async () => {
+    expect(canonicalOf(await proxy(requestFor('/', null)))).toBe('http://web.test/');
+    expect(canonicalOf(await proxy(requestFor('/en', null)))).toBe('http://web.test/en');
+    expect(canonicalOf(await proxy(requestFor('/ru/legal/terms', null)))).toBe('http://web.test/ru/legal/terms');
+  });
+
+  it('drops the query, as the alternates do', async () => {
+    expect(canonicalOf(await proxy(requestFor('/en/register?from=home', null)))).toBe('http://web.test/en/register');
+  });
+
+  it('writes none on next-intl’s own redirect', async () => {
+    const response = await proxy(requestFor('/ro/register', null));
+
+    expect(response.headers.get('location')).not.toBeNull();
+    expect(canonicalOf(response)).toBeUndefined();
+  });
+});
+
 describe('proxy · an account completing its setup', () => {
-  const inSetup = (overrides: Partial<SessionPayload> = {}): SessionPayload =>
+  const inSetup =(overrides: Partial<SessionPayload> = {}): SessionPayload =>
     sessionWith({ ...overrides, account: { ...sessionWith().account, status: 'awaiting_setup' } });
 
   it('sends it to S-36 from an address that needs a session, carrying where it was headed', async () => {

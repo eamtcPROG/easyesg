@@ -15,6 +15,13 @@ type Props = {
 
 export const generateMetadata = generateLegalDocumentMetadata;
 
+/**
+ * **Rendered per request, though it sits in the one zone §14.2 lets the framework cache (task 74.4).** The terms and the
+ * privacy notice name the operator A-21 keeps, read when the page is, and a change there is published within seconds
+ * (§12.5.6's task-75 row (7)); a prerendered copy would name yesterday's operator until the next build.
+ */
+export const dynamic = 'force-dynamic';
+
 export default async function LegalDocumentPage({ params }: Props) {
   const { document } = await params;
   await activateRequestLocale(params as unknown as LocaleParams);

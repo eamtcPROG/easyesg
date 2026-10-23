@@ -124,8 +124,9 @@ const restrictedSyntaxCacheComponents = [
     selector: 'ExpressionStatement > Literal[value="use cache"]',
     message:
       'Cache Components are disabled as a security rule (architecture.md §14.2, AD-9). ' +
-      'Every page here is tenant-scoped; a compiler-generated cache key does not know ' +
-      'about organization_id and would leak across tenants above the RLS boundary.',
+      'A compiler-generated cache key does not know about organization_id and would leak ' +
+      'across tenants above the RLS boundary. The public zone is cached by static rendering ' +
+      'instead (task 74.4), never by this directive.',
   },
 ];
 

@@ -138,7 +138,8 @@ test.describe('the public footer', () => {
 
   test('sits at the foot of the window on a page shorter than it', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto('/');
+    // `/help` rather than `/` since task 74.3 built the home, which is longer than any window.
+    await page.goto('/help');
     const box = await page.getByRole('contentinfo').boundingBox();
     expect(box).not.toBeNull();
     // The column fills the window and the footer takes the space left over above it, so its edge is the window's.

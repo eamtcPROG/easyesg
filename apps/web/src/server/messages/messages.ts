@@ -48,11 +48,31 @@ import sharedRu from '@easyesg/i18n/catalogues/ru.json';
  * stores — legal forms, countries, consolidation bases, an entity's standing — which S-12's change history words on the
  * api as well. They moved out of this app's `organization` namespace rather than being copied into the api's, for the
  * same reason.
+ *
+ * **And a third, `reportModules`** (task 74.3): the names of the modules a report holds, as the exported report prints
+ * them — the shared catalogue's `core.export.document.modules`, under a name of its own because `core` is the api's
+ * namespace and most of it is nothing this app reads. S-29 names the eleven Basic sections to a visitor; a second
+ * wording here would let the home promise a section the report then calls something else.
  */
 const CATALOGUES: Readonly<Record<Locale, MessageCatalogue>> = {
-  ro: { ...ro, validation: sharedRo.validation, vocabulary: sharedRo.vocabulary },
-  en: { ...en, validation: sharedEn.validation, vocabulary: sharedEn.vocabulary },
-  ru: { ...ru, validation: sharedRu.validation, vocabulary: sharedRu.vocabulary },
+  ro: {
+    ...ro,
+    validation: sharedRo.validation,
+    vocabulary: sharedRo.vocabulary,
+    reportModules: sharedRo.core.export.document.modules,
+  },
+  en: {
+    ...en,
+    validation: sharedEn.validation,
+    vocabulary: sharedEn.vocabulary,
+    reportModules: sharedEn.core.export.document.modules,
+  },
+  ru: {
+    ...ru,
+    validation: sharedRu.validation,
+    vocabulary: sharedRu.vocabulary,
+    reportModules: sharedRu.core.export.document.modules,
+  },
 };
 
 /**

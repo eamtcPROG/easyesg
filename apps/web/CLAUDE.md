@@ -11,8 +11,8 @@ every screen. Cite them; do not re-derive them.
 ## Current state
 
 Identity, organization, periods, reports, entities, the wizard with its validation, the calculator, the notification centre and
-the profile are live, and preview and export since tasks 43 and 47, and S-12's change history since task 84; checkout and billing and the public tier are the
-thirteen addresses `AddressNotice` answers for (fourteen until task 75 gave the terms and the privacy notice their
+the profile are live, and preview and export since tasks 43 and 47, and S-12's change history since task 84, and S-29 the marketing home since task 74; checkout and billing and the help centre are the
+twelve addresses `AddressNotice` answers for (thirteen until task 74.3 built the home at `/`, fourteen until task 75 gave the terms and the privacy notice their
 text, fifteen until task 52.3 built S-27 at `/account`). What exists: 47 page routes across seven route groups,
 8 layouts, a not-found boundary, 8 route handlers, the next-intl wiring, 17 feature folders (14 built),
 5 boundary rules with fixtures, `features/identity/` on `@easyesg/ui`'s FocusShell with self-hosted
@@ -38,13 +38,13 @@ non-modal panel at the window's end, every entry worded by the api, opened from 
 and S-15's attribution line for an editor or the administrator (`features/history/`'s `HistoryScope` decides) — S-27 profile,
 languages and notification preferences, S-28 credentials — both since 24 Sep 2026 under the account
 layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
-complete your account, S-37 choose organization, S-38 unsubscribe from an email; S-30 the legal set since task 75 — the cookie policy, and the terms and the
+complete your account, S-37 choose organization, S-38 unsubscribe from an email; S-29 the marketing home since task 74.3 — eight bands over the `--content-max` measure, the hero's and the answering band's pictures drawn by the wizard's own inventory components, read-only and `inert`, the eleven Basic sections named as the exported report names them (`reportModules`), and no pricing section until task 222 — **the one page the build prerenders**, per locale, revalidated hourly (task 74.4), its canonical beside its alternates in the `Link` header (task 74.5); S-30 the legal set since task 75 — the cookie policy, and the terms and the
 privacy notice naming the platform operator A-21 keeps, each with its standing and, until counsel approves it, marked
 provisional; §4.2's global tier with, since task
 83.2, the organization switcher, and the workspace tier with its drawer, and since task 67.9 UX-124's support-access
 banner across every signed-in screen, and since task 50.2.1 the band's notification bell with the unread count, polled
 every minute, and its row in the compact drawer, the bell opening the panel of the latest notices since 50.2.2. **Not
-live** beyond those thirteen addresses: nothing — S-11, the last wizard screen that returned `null`, is built since
+live** beyond those twelve addresses: nothing — S-11, the last wizard screen that returned `null`, is built since
 task 47.
 
 `docs/archived_tasks.md` says what each closed task shipped and `docs/task.md` what each remaining one must. What follows is what a reader needs in hand for each live slice, grouped by
@@ -488,7 +488,7 @@ issues a session and is never gated:
 
 | Group | Layout it establishes | Screens |
 | --- | --- | --- |
-| `(public)` | The public band and, since task 74.1's other half, the footer, in a column the height of the window — no `<main>`, which a page or `ContentShell` brings. **The only zone where `"use cache"` is legal** (§14.2) | Marketing, legal, help |
+| `(public)` | The public band and, since task 74.1's other half, the footer, in a column the height of the window — no `<main>`, which a page or `ContentShell` brings. **The only zone the framework may cache** (§14.2, amended 23 Oct 2026) — by static rendering, never `"use cache"`, which stays banned here too; the layout forces nothing and the marketing home is its one prerendered page | Marketing, legal, help |
 | `(identity)` | Focus archetype — one task, no navigation | S-01, S-02, S-03, S-36, S-38 |
 | `(identity)/(session-issuing)` | None of its own. **UX-136's gate, once for the group** (task 112) — membership of the directory *is* what makes a screen refuse a caller who already holds a session | S-01 sign in and its factor step, S-01 register |
 | `(app)` | Global tier | S-04, S-35 and S-37 — the three authenticated screens in no inner group |
@@ -514,6 +514,27 @@ conditional render, which is how it ends up half-suppressed on one screen.
   whose subject formats a date, a number or a list. The three identity specs omit both and are fine
   **today** only because none of their components calls a formatter — which is a latent version of
   the same trap, not an exemption from it.
+
+- **A not-found boundary renders on every page beneath it, so it may read nothing per request** (task 74.4, found
+  building the static home). Next hands `not-found.tsx` to its layout as an element, and a Server Component renders an
+  element in props eagerly — on every request, 404 or not. `[locale]/not-found.tsx`'s way back read the session cookie,
+  which made every page under `[locale]` dynamic with no error and no warning; the build's route table drew the home as
+  `ƒ` until it stopped. Its way back is now asked in the browser (`shared/probed-return-link.tsx`). The same goes for
+  `error.tsx` and `loading.tsx`: anything a boundary renders is paid for by every page under it.
+
+- **A layout must pin the locale itself, or nothing beneath it is static** (task 74.4). Next renders a layout beside its
+  page, not before it, so the root layout's `setRequestLocale` does not reach a group's layout, and a `getTranslations`
+  there falls back to reading the request's headers — dynamic again, silently. `(public)/layout.tsx` calls
+  `activateRequestLocale(params)` for exactly this; a new layout in the public zone owes the same line. And a Client
+  Component reading `useSearchParams()` on a prerendered page must sit under `<Suspense>`, or the build refuses the page —
+  `PublicHeader` wraps `LocaleChoice` and `PublicDrawer` with their query-less menus as the fallbacks.
+
+- **A `Link` to a static page prefetches it in segments, and Next 16.3's router can leave requests open** (task 74.4).
+  The landing became static and every brand link began prefetching it — some 200 KB, its layout segment carrying the
+  message catalogue — and on S-36 the router fetched each segment twice and never read the second body, so the page
+  never went network-idle and two axe scans timed out. Both brand links say `prefetch={false}`. A link in chrome to a
+  static page nobody is heading for should do the same; a link to a dynamic page is unaffected, its prefetch aborting
+  cleanly.
 
 - **`proxy.ts` has two jobs and only one file.** Next accepts one proxy module; AD-9 needs the
   session tier there and next-intl needs locale negotiation there. They compose in one exported
@@ -1029,7 +1050,7 @@ conditional render, which is how it ends up half-suppressed on one screen.
   - `useCallback` for a handler whose identity a child or an effect actually observes. A handler
     passed to a plain DOM element observes nothing, and wrapping it is noise.
 
-  **236 files here are Client Components** (19 Oct 2026: two more since the row actions became one ⋯ menu — S-13's
+  **239 files here are Client Components** (23 Oct 2026: three more since task 74.4 — `shared/locale-choice-menu.tsx` and `shared/public-drawer-menu.tsx`, split from the two that read the query string so a prerendered page can render them as its `<Suspense>` fallback, and `shared/probed-return-link.tsx`, the 404's way back asked of the session probe in the browser; 19 Oct 2026: two more since the row actions became one ⋯ menu — S-13's
   `entity-row-menu.tsx` and S-14's `period-row-menu.tsx`, each routing from its item, so each holds the router; one more since task 220 — `shared/number-field.tsx`, the number input S-07's fields and S-09's figures share, which holds the text being edited; its question's two answers and S-09's form choice beside it carry no directive; 16 Oct 2026: two more since task 218 — the set-aside banner and its row under `features/wizard/components/banner/`, beside the unsynced banner `autosave-banner.tsx` became when it gained a sibling; 12 Oct 2026: eleven more since task 84 — S-12's provider, panel, entries' section, list, entry, three states and the way in under `features/history/components/`, the entries' paged query in `client/history/`, and S-13's *Change history* side panel; the scope that mounts the provider is a Server Component; three more since task 192 — the report's deletion in `shared/`,
   which S-06's rows and S-07's bar both read, S-06's row ⋯ and S-07's ⋯ from `medium` up; nine more since task 47 built S-11 — the dialogue, its pending
   card, the history, its columns, its filters and the status cell that watches a row still being made, the filed mark

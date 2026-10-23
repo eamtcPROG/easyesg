@@ -18,13 +18,24 @@ import { Link } from '@/i18n/navigation';
  * keep the B1–B11 label set out of the bundle, which OQ-58 has served through the API since
  * 1 Sep 2026. What is left is 14.4 KB gzipped, provided once at the root.
  */
+/**
+ * **Never prerendered — moved here from the root layout by task 74.4** (`architecture.md` §12.5.6's task-74 row (3)).
+ * The root forces nothing since the marketing home became the one static page, so a group outside the public zone says
+ * so itself, as `(app)` always has. These screens hold no tenant data, but §14.2 permits the framework's cache to the
+ * public zone alone, and a screen here that reads nothing would otherwise be prerendered silently.
+ */
+export const dynamic = 'force-dynamic';
+
 export default async function IdentityLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations('chrome');
 
   return (
     <FocusShell
       brand={
-        <Link href="/" aria-label={t('brandHome')}>
+        // **Not prefetched** (task 74.4), for `public-header.tsx`'s reason: the landing is static since that task, and
+        // the router prefetches a static page in segments it partly leaves unread, holding requests open for the life of
+        // the page — found as `networkidle` never arriving on S-36.
+        <Link href="/" prefetch={false} aria-label={t('brandHome')}>
           <BrandMark />
         </Link>
       }

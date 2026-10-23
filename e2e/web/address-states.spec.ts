@@ -22,7 +22,7 @@ const NOT_FOUND = 'Această adresă nu există';
 
 /** Reachable with no session — `(public)`, per `lib/route-access.ts`'s unauthenticated segments. */
 const PUBLIC_ADDRESSES = [
-  '/',
+  // `/` left this list with task 74.3, which built S-29 there.
   '/help',
   '/help/contact',
   '/help/oarecare-articol',
@@ -126,5 +126,9 @@ test.describe('error — not found', () => {
 
     expect(response?.status()).toBe(404);
     await expect(page.getByRole('heading', { name: NOT_FOUND })).toBeVisible();
+    // The way back is the workspace for a member (task 103), decided in the browser since task 74.4: the boundary is
+    // rendered on every page, so the server writes the signed-out link and the session probe turns it.
+    await expect(page.getByRole('link', { name: 'Înapoi la pagina principală' })).toHaveAttribute('href', '/home');
+    await expect(page.getByRole('link', { name: 'Mergeți la autentificare' })).toHaveCount(0);
   });
 });

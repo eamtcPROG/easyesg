@@ -1,0 +1,68 @@
+/* The hero's fragment (task 74.3): a framed piece of the wizard, raised into the band above by the band's own inset. */
+.figure {
+  max-width: var(--content-max);
+  margin: calc(-1 * var(--space-9) - var(--space-6)) auto 0;
+}
+
+@media (min-width: 40rem) {
+  .figure {
+    margin-block-start: calc(-1 * var(--space-9) - var(--space-8));
+  }
+}
+
+.frame {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-3);
+  background: var(--surface-sunken);
+  box-shadow: var(--elevation-2);
+  text-align: start;
+}
+
+/* The step list only where it fits beside the question, as the 390 artboard draws the question alone. Its height is
+   the question's: `contain: size` takes it out of the row's sizing, so the eleven steps are cut at the question's foot
+   rather than stretching the picture. */
+.rail {
+  display: none;
+}
+
+@media (min-width: 40rem) {
+  .frame {
+    grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  }
+
+  .rail {
+    display: block;
+    contain: size;
+    overflow: hidden;
+    padding: var(--space-5);
+    background: var(--surface-default);
+    border-inline-end: 1px solid var(--border-default);
+  }
+}
+
+.question {
+  padding: var(--space-5);
+}
+
+@media (min-width: 40rem) {
+  .question {
+    padding: var(--space-7);
+  }
+}
+
+/* The read-only value, as the wizard's own read-only arm draws it (`step.module.css`'s `.readOnlyValue`). */
+.value {
+  margin: 0;
+  padding: 10px 0;
+  color: var(--text-default);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.caption {
+  margin-block-start: var(--space-4);
+  color: var(--text-muted);
+  text-align: center;
+}

@@ -32642,3 +32642,116 @@ The change reaches `packages/ui` and `apps/web`, so every dependent's row ran:
   `2667547900`).
 - **Skipped**: `pnpm e2e` and `e2e:worker`, since nothing in `apps/api` changed. No review agents: this closes a task,
   not Stage 3, which still holds task 48.
+
+## Task 74.3 … 74.6 — the marketing home, prerendered, with its canonical and without its prices · 2026-10-23
+
+Stage 6's share of task 74: S-29 built, the public zone cached, each locale's page named canonical, and the pricing
+section deferred to a row of its own. 74.1 and 74.2 closed on 9 Oct; with these four the task closes.
+
+### Decided (project owner, two questions, each the recommended option)
+
+`architecture.md` §12.5.6's task-74 row (3) and (4); §14.2 amended; the 74.4 row and FR-204's behaviour 7 and AC-5
+restated to match.
+
+- **(3) The public zone is cached by static rendering, not by `"use cache"`.** The row asked for the directive in
+  `(public)`. In Next 16.3 the compiler refuses it unless `cacheComponents` is on — the SWC binary carries *"please
+  enable the feature flag `cacheComponents`"* — and that flag is application-wide, the thing §14.2 and `next.config.ts`
+  keep off as a security setting. *Declined:* Cache Components on, with every other route opted out; leaving 74.4 open.
+- **(4) The 404's way back is decided in the browser.** Found while building (below). *Declined:* one way back, the
+  marketing home, for everyone; the 404 pushed down into each route group.
+
+### What the building found
+
+- **`force-dynamic` on the root layout was not the only thing keeping the home dynamic, and the build's route table was
+  the only thing that said so.** With it moved to `(identity)`'s layout, the catch-all and the legal document page, the
+  home still drew `ƒ`. Under `dynamic = 'error'` Next named `cookies()`, with an empty page and with the header and
+  footer removed, so the read was in no band and no chrome. **It was the 404.** `[locale]/not-found.tsx` is handed to
+  its layout as an element, a Server Component renders such an element eagerly on every page beneath it, and task 103's
+  way back read the session there. Stubbing the read drew the home as `● /ro /en /ru`. Now the 404 writes the signed-out
+  link and `ProbedReturnLink` asks task 92's probe in the browser; *not yet available* keeps its server read through
+  `ReturnLink`, its pages being dynamic anyway. `AddressNotice` takes the way back as a slot.
+- **Two more silent opt-outs**, each a build error or an `ƒ` with nothing else said: the `(public)` layout did not pin
+  the locale, so the header's `getTranslations` read the request's headers (Next renders a layout beside its page, so
+  the root's pin does not reach it); and `LocaleChoice` and `PublicDrawer` read `useSearchParams()`, which a static page
+  refuses outside `<Suspense>`. Each was split into the read and a menu taking the query, so the header renders the
+  query-less menu as the fallback and the prerendered markup carries both controls. All three are now traps in
+  `apps/web/CLAUDE.md`.
+- **The browser run found four more, none visible to any other gate.** (a) `--text-muted` on the accent-tint band is
+  4.49:1, `tokens.css`'s own warning, on the band's eyebrow and a caption; both take `--text-body` there. (b) The hero's
+  title overflowed 390 by 95px, padded or not: a centred flex item is capped by its own `max-width` — 20ch at the display
+  size is some 520px — never by the column; and auto margins switch a stretched item back to its content's width, so each
+  measure is now `min(…, 100%)`. Then the harness's own padding: it appends 40% of a message as one run of `·`, which on
+  the longest paragraphs here is an 80-character word no phone can hold, so every band sets `overflow-wrap: break-word`
+  once, inherited — a word that fits is untouched. `hyphens: auto` on the display titles was tried and dropped: balancing
+  the lines, the browser hyphenated Russian words that fitted. Below `medium` the hero's two assurances stack, their dot
+  having begun the wrapped line. (c) The padded catalogue is a runtime switch on the expansion server and the home is prerendered at
+  build time, so that server served it unpadded; its spec asks the same bundle for a per-request render through Next's
+  draft mode (`__prerender_bypass` valued at the bundle's preview id) — no second build, no code in the app — and the
+  padded heading proves the render was fresh. (d) **`networkidle` never came on S-36's password step or the factor
+  step**, deterministically. Traced request by request: the brand link's prefetch of the now-static landing ran in
+  segments (`/_tree`, the locale layout, the page), the router fetched each a second time and left those bodies unread —
+  open for the life of the page — while the server answered every one in under 20ms. Both brand links to the landing
+  now say `prefetch={false}`: no identity or legal screen leads there, the prefetch cost some 200 KB, the layout segment
+  carrying the message catalogue, and the dangling requests are Next's to fix, not this app's to wait out.
+- **One test was wrong, not the product**: the canonical case asked `/register` after `/ru` in one request context, and
+  next-intl's remembered locale rightly sent it to `/ru/register`, whose canonical is its own. Each address now gets a
+  fresh context.
+- **The canonical rides the `Link` header (74.5; §10.8)**, appended by the proxy from next-intl's alternate for the
+  page's own locale. Not a `<link>` in the markup: the prerendered home cannot know its host at build time, and the
+  build takes no environment.
+- **The home is eight bands** on the band the header stands on, the default, sunken and accent-tint surfaces — no new
+  token. Its two pictures are the wizard's own `WizardModuleGroup`, `WizardModuleItem` and `DisclosureField`, read-only
+  and `inert`, with a caption, speaking the wizard catalogue's words for its states. The eleven sections are named as the
+  export prints them, through a third shared namespace, `reportModules`. The hero's title takes `t-display`; the 68px
+  the artboard draws is not a role.
+- **The copy is the artboard's English corrected against the product**, then authored in Romanian and Russian. Out:
+  *"Free until you export"* and *"before anyone asks you to pay"*, statements about what a plan grants, which 182/118
+  keeps off the page until task 222 reads the published plan copy (and D-E makes the first false); *"most companies
+  answer seven or eight"*, which nothing measures; the year in *"Open your 2025 report"*. Each statement in *Your data*
+  has a requirement behind it (NFR-13, NFR-27, NFR-61, FR-78, FR-79, NFR-29), named in the band's docblock.
+- **Not built, and why**: the section nav the header and drawer docblocks had left to 74.3. S-29's controls and §4.7's
+  row name none, the prototype governs values not scope (OQ-10), and on the help and legal pages it would lead off the
+  page. The header's help entry waits for the help centre (task 77); the home's route to it is the *Before you sign up*
+  band's link, FR-204's AC-2.
+- **The pricing section has an owner**: task 222, appended to Stage 6 after task 76, with two unknowns for its batch —
+  whether a published change of plan copy must reach the home sooner than its hourly revalidation, and what the section
+  shows for a plan whose copy is missing in one locale.
+
+### Proven to bite
+
+- The canonical: the proxy's line writing the header removed, `proxy.spec.ts` went 2 red; restored.
+- The 404's swap: the probe's answer ignored, `probed-return-link.spec.tsx` went 1 red; restored.
+- The static gate: the builds before the 404's fix drew no `/ro`, `/en` or `/ru` in their route table — the shape
+  `static-rendering.spec.ts`'s second case fails on. The spec itself ran only against the fixed build.
+
+### Conventions read against the diff
+
+`one-kind-per-folder`: `features/public/marketing/` holds `components/` and `tools/`; `components/` is one folder per
+child of the page's `return`, plus `shared/` (the band, its anchors, the namespace) and `metadata/`. `one-idea-per-file`:
+the route is a shell; each band, each picture and each menu split from its read is a file. `vercel-react-best-practices`:
+the bands' reads run in parallel, the client leaves take strings, the one effect fetches; *declined* `bundle-barrel-
+imports`, `@easyesg/ui` being imported through its barrel by the package's own rule. UX-89's third move for the band:
+the Content archetype's shell is the legal set's reading column, an anatomy the home does not have, and no second
+screen draws bands.
+
+### The close ran
+
+The change reaches `apps/web` (and `eslint.config.mjs`'s message, the docs), so its row of the table ran:
+
+- `pnpm lint`; `pnpm eslint:prove`, the directive rule's message having changed and not its selector; `pnpm --filter @easyesg/web typecheck`; `pnpm docs:check`, 48 of 48 after the counts this task moves — the
+  plan's task total, the archive's numbers and rows, and `apps/web`'s Client Components, three more; `pnpm boundaries`,
+  clean, `web-public-is-a-leaf` among them.
+- `pnpm --filter @easyesg/web test`: 230 files, **2,101** cases — `canonical-link`, `basic-modules`, `hero-sample` and
+  `probed-return-link` new, and `proxy.spec.ts`'s three canonical cases.
+- `pnpm e2e:web --project identity --project expansion`: the first full run, **346 of 364**, the eighteen failures above;
+  after their fixes the affected files, 57 of 60; after the prefetch and the overflow fixes the full projects again,
+  **363 of 364**, the one failure the padded run's overflow; after its fix every file that reads the home, **78 of 78**,
+  and after the last two style changes the home's and the header's, **30 of 30**. The server's log held only the
+  abandoned-stream line (digest `2667547900`).
+- In the browser, the dev server at 1440 in the light scheme and at 390 in the dark one, in Russian: every band drawn,
+  the page exactly the window's width, no console error.
+- `apps/web`'s production build: the route table draws `/[locale]` as `● /ro /en /ru`, every other page `ƒ`.
+- To run the browser suites, ports 3000 and 3001 were freed from a VS Code extension host, the owner's approval for the
+  process stopped and the extension then turned off.
+- **Skipped**: the `admin` project and the api's rows, which nothing here reaches. No review agents: this closes a task,
+  not Stage 6, which still holds tasks 76, 77 and 222.

@@ -4,10 +4,11 @@ import { readSession } from '@/server/session/session';
 /**
  * Where a reader who has arrived at no screen is sent back to.
  *
- * Shared by the two §8.1 address states — `error — not found` and `error — not yet available`
- * (design_spec.md §4.5, task 103) — because both ask the same question and neither owns the
- * answer. Both surfaces render outside any route group's layout or inside `(public)`'s, so
- * neither can assume a session: `/legal/terms` is reachable signed out and `/billing` is not.
+ * Written for the two §8.1 address states — `error — not found` and `error — not yet available`
+ * (design_spec.md §4.5, task 103) — and read on the server by the second alone since task 74.4,
+ * through `ReturnLink`. The 404 asks the same question in the browser (`probed-return-link.tsx`
+ * says why). Neither surface can assume a session: `/legal/terms` is reachable signed out and
+ * `/billing` is not.
  *
  * **It reads the session rather than taking the destination as a prop**, and that is the whole
  * reason it exists. The alternative is every stub page passing the right route, each one a chance

@@ -1,0 +1,82 @@
+/* What answering looks like (task 74.3): the points beside the three questions at `wide`, above them below it. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-7);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: var(--space-9);
+  }
+}
+
+.points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.point {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  color: var(--text-default);
+}
+
+/* The tick, drawn rather than an icon — this app takes icons through `packages/ui`'s components, and a list marker is
+   decoration: two borders of a box turned 45°, set on the first line of a point that wraps. */
+.point::before {
+  content: '';
+  flex: none;
+  inline-size: 6px;
+  block-size: 11px;
+  margin: 5px 5px 0 4px;
+  border: solid var(--accent-hover);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.figure {
+  margin: 0;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* The wizard's read-only arms (`step.module.css`): a value, and the word for none. */
+.value {
+  margin: 0;
+  padding: 10px 0;
+  color: var(--text-default);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.empty {
+  margin: 0;
+  padding: 10px 0;
+  color: var(--text-muted);
+}
+
+/* The wizard's line over a recorded reason — it is not a note to self; a reader of the export sees it. */
+.recorded {
+  display: block;
+  margin-block-end: var(--space-2);
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* `--text-body`, not `--text-muted`: the caption stands on the band's accent tint, where muted text is 4.49:1. */
+.caption {
+  margin-block-start: var(--space-4);
+  color: var(--text-body);
+}

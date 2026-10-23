@@ -2608,5 +2608,169 @@
       "action": "Încercați din nou"
     },
     "note": "Nimic din această listă nu se modifică și nu se șterge. Cine a pierdut accesul la organizație își păstrează intrările, marcate ca atare."
+  },
+  "marketing": {
+    "title": "easyESG — raportul de durabilitate al companiei dumneavoastră, după standardul VSME",
+    "description": "Întocmiți raportul de durabilitate al companiei după standardul VSME, răspunzând la întrebări formulate simplu, verificați-l înainte de export și trimiteți băncii sau clientului un PDF și un fișier Excel pe care le pot citi. În română, rusă și engleză.",
+    "hero": {
+      "eyebrow": "O bancă, un client sau o licitație v-a cerut date ESG",
+      "title": "Raportul de durabilitate îl puteți întocmi chiar dumneavoastră.",
+      "lede": "Vă punem unsprezece seturi de întrebări simple. Răspundeți la ceea ce se aplică companiei dumneavoastră. Acolo unde nu aveți o cifră, spuneți de ce. Apoi exportați un raport pe care banca sau clientul dumneavoastră îl poate citi.",
+      "start": "Începeți raportul",
+      "questions": "Vedeți întâi întrebările",
+      "assurances": "Pe ce vă puteți baza",
+      "languages": "În română, rusă și engleză",
+      "nothingFiled": "Nu depunem nimic nicăieri în numele dumneavoastră",
+      "figure": {
+        "caption": "Asistentul de raport, așa cum arată: lista secțiunilor, câte o întrebare pe rând și o constatare lângă câmpul la care se referă.",
+        "module": "Modulul de bază",
+        "count": "{done} din {total}",
+        "step": "{code} — {name}",
+        "field": {
+          "label": "Consumul total de energie",
+          "help": "Din facturile de energie electrică și de combustibil pentru anul raportat.",
+          "unit": "MWh",
+          "message": "Totalul depășește cu 53 MWh cifra din calculator. Diferența poate fi reală. Deschideți calculatorul sau confirmați cifra și lăsați o notă pentru cititor.",
+          "prior": "{value, number} MWh"
+        }
+      }
+    },
+    "reasons": {
+      "bank": {
+        "title": "V-a cerut-o banca",
+        "body": "Sau un client mare, sau o licitație. Chestionarul a ajuns pe biroul dumneavoastră, iar în companie nu se ocupă nimeni de așa ceva."
+      },
+      "standard": {
+        "title": "Standardul e greu de citit",
+        "body": "VSME a fost scris pentru contabili. Reformulăm fiecare întrebare într-o limbă simplă, cu o propoziție care spune ce se ia în calcul."
+      },
+      "numbers": {
+        "title": "Nu veți avea toate cifrele",
+        "body": "Nimeni nu le are în primul an. Spuneți ce nu aveți și de ce, într-o propoziție pe care cititorul o va vedea. Este o informație declarată, nu un eșec."
+      }
+    },
+    "steps": {
+      "eyebrow": "Cum funcționează",
+      "title": "Patru pași. Vă puteți opri după oricare.",
+      "lede": "Răspunsurile se salvează pe măsură ce scrieți, așa că puteți lucra la raport în sesiuni scurte, timp de câteva săptămâni. Nimic nu părăsește platforma până nu îl exportați chiar dumneavoastră.",
+      "company": {
+        "title": "Spuneți-ne despre companie",
+        "body": "Denumirea, IDNO și anul pentru care raportați. Anul stabilește ce versiune a standardului se aplică, așa că aceasta nu se schimbă pe parcurs."
+      },
+      "answer": {
+        "title": "Răspundeți la secțiuni",
+        "body": "Primele răspunsuri decid ce vi se cere mai departe. Unei brutării cu zece angajați nu i se arată niciodată întrebările scrise pentru o fabrică."
+      },
+      "check": {
+        "title": "Verificați ce ați scris",
+        "body": "Verificați raportul ori de câte ori doriți. Fiecare constatare spune ce nu este în regulă, de ce contează și ce ar rezolva-o, apoi vă duce la câmpul respectiv."
+      },
+      "export": {
+        "title": "Exportați-l și trimiteți-l",
+        "body": "Un PDF de citit și un fișier Excel în șablonul oficial, pentru cine vrea cifrele. Le trimiteți dumneavoastră; noi nu depunem nimic în numele dumneavoastră."
+      }
+    },
+    "sections": {
+      "eyebrow": "Întrebările",
+      "title": "Unsprezece secțiuni. Acestea sunt toate.",
+      "lede": "Modulul de bază al standardului VSME, în ordinea în care îl veți parcurge, fiecare secțiune cu ce anume întreabă.",
+      "about": {
+        "B1": "Cine sunteți, câți oameni angajați și dacă raportați pentru o singură companie sau pentru un grup.",
+        "B2": "Ce faceți deja pentru durabilitate, cu propriile cuvinte.",
+        "B3": "Energia electrică, combustibilul și emisiile care decurg din ele. Calculatorul face conversia.",
+        "B4": "Doar dacă legea vă obligă deja să măsurați ce emiteți.",
+        "B5": "Terenul pe care îl folosiți și dacă vreo parte a lui se află lângă o zonă protejată.",
+        "B6": "Apa pe care o captați și apa pe care o consumați.",
+        "B7": "Ce iese din companie ca deșeu și cât din acesta este recuperat.",
+        "B8": "Numărul de angajați, tipurile de contracte, câți oameni au venit și câți au plecat.",
+        "B9": "Accidentele și zilele de muncă pierdute. Zero este și el un răspuns.",
+        "B10": "Cel mai mic salariu pe care îl plătiți, contractele colective și orele de formare.",
+        "B11": "Condamnările și amenzile pentru corupție, de regulă niciuna."
+      },
+      "notMaterial": "O secțiune care nu se aplică companiei dumneavoastră se declară nesemnificativă, cu un motiv, în loc să rămână goală."
+    },
+    "answering": {
+      "eyebrow": "Cum arată un răspuns",
+      "title": "Câte o întrebare pe rând și niciodată o căsuță goală",
+      "lede": "Fiecare întrebare vine cu unitatea deja stabilită, cu o propoziție care spune ce se ia în calcul, cu cifra de anul trecut acolo unde o aveți și cu o cale de ieșire atunci când cifra pur și simplu nu există în compania dumneavoastră.",
+      "points": {
+        "label": "Ce găsiți la fiecare întrebare",
+        "units": "Unitățile vin din standard, nu le tastați la noroc",
+        "prior": "Cifra de anul trecut stă lângă cea de anul acesta, gata de preluat",
+        "zero": "Zero contează ca răspuns, iar pagina o spune",
+        "attributed": "Fiecare modificare poartă un nume și o oră"
+      },
+      "figure": {
+        "caption": "Trei întrebări, așa cum arată: una încă fără răspuns, una declarată indisponibilă, cu motivul ei, și una la care s-a răspuns cu zero.",
+        "leavers": {
+          "label": "Angajați care au plecat",
+          "help": "Toți cei care au ieșit din statul de plată în cursul anului, din orice motiv.",
+          "prior": "{count, plural, one {# persoană} few {# persoane} other {# de persoane}}"
+        },
+        "water": {
+          "label": "Captarea de apă",
+          "help": "Volumul contorizat, captat în cursul anului.",
+          "reason": "Proprietarul contorizează apa pentru întreaga clădire, așa că partea noastră nu poate fi separată."
+        },
+        "accidents": {
+          "label": "Accidente de muncă",
+          "help": "Accidentele de muncă înregistrate în cursul anului.",
+          "zero": "Niciunul în cursul anului — înregistrat ca zero declarat, nu lăsat necompletat."
+        }
+      }
+    },
+    "faq": {
+      "eyebrow": "Întrebări puse cel mai des",
+      "title": "Înainte să vă înregistrați",
+      "lede": "Dacă ceva nu este încă limpede, <help>centrul de ajutor</help> are explicația pe larg.",
+      "accountant": {
+        "question": "Am nevoie de un contabil sau de un consultant?",
+        "answer": "Nu. Dacă găsiți facturile de energie electrică de anul trecut și numărul de angajați din statul de plată, puteți finaliza un raport. Vă puteți invita contabilul să verifice cifrele, dacă vreți o a doua părere."
+      },
+      "time": {
+        "question": "Cât durează?",
+        "answer": "Un prim raport cere de obicei câteva sesiuni, nu una singură, pentru că veți căuta două sau trei cifre. Totul se salvează pe măsură ce scrieți, așa că o pauză nu vă costă nimic."
+      },
+      "missing": {
+        "question": "Ce fac dacă nu am o cifră?",
+        "answer": "O declarați indisponibilă și scrieți o propoziție care spune de ce. Propoziția apare în raport. Cititorii acceptă un motiv declarat; nu acceptă un spațiu gol."
+      },
+      "filed": {
+        "question": "Raportul se depune la vreo autoritate?",
+        "answer": "Nu. VSME este un standard voluntar. Exportați raportul și îl trimiteți celui care l-a cerut — o bancă, un client, o comisie de licitație. Noi nu depunem nimic în numele dumneavoastră."
+      },
+      "nextYear": {
+        "question": "Ce se întâmplă anul viitor?",
+        "answer": "Răspunsurile de anul acesta stau lângă câmpurile anului următor, iar tot ce nu s-a schimbat se preia printr-un clic."
+      },
+      "colleagues": {
+        "question": "Poate răspunde altcineva la o parte din întrebări?",
+        "answer": "Da. Invitați un coleg sau contabilul să vadă raportul sau să-l completeze. Fiecare răspuns rămâne atribuit persoanei care l-a introdus."
+      }
+    },
+    "data": {
+      "eyebrow": "Datele dumneavoastră",
+      "title": "Unde stau răspunsurile și cine le poate vedea",
+      "eu": {
+        "title": "Găzduite în Uniunea Europeană",
+        "body": "Raportul și istoricul lui rămân pe o infrastructură din Uniunea Europeană sau din Spațiul Economic European, criptate la transfer și la stocare."
+      },
+      "published": {
+        "title": "Nimic nu se publică",
+        "body": "Cifrele dumneavoastră sunt vizibile pentru persoanele pe care le invitați și pentru nimeni altcineva. Nu există un registru public al rapoartelor."
+      },
+      "support": {
+        "title": "Asistența nu vede nimic fără invitație",
+        "body": "Dacă cereți ajutor, acordați acces pentru un timp limitat, iar fiecare vizită este înregistrată."
+      },
+      "export": {
+        "title": "Le puteți lua cu dumneavoastră",
+        "body": "Exportați raportul în PDF și Excel oricând doriți, cât timp există contul dumneavoastră."
+      }
+    },
+    "closing": {
+      "title": "Deschideți-vă raportul astăzi",
+      "lede": "Pentru a începe ajunge o adresă de e-mail, iar fiecare întrebare o vedeți înainte de a răspunde la prima."
+    }
   }
 }

@@ -2608,5 +2608,169 @@
       "action": "Try again"
     },
     "note": "Nothing in this list is ever changed or removed. Someone who has lost access to the organisation keeps their entries, marked as such."
+  },
+  "marketing": {
+    "title": "easyESG — your company’s sustainability report on the VSME standard",
+    "description": "Write your company’s sustainability report on the VSME standard in plain questions, check it before you export it, and send your bank or your buyer a PDF and an Excel file they can read. In Romanian, Russian and English.",
+    "hero": {
+      "eyebrow": "A bank, a buyer or a tender asked you for ESG data",
+      "title": "You can write your own sustainability report.",
+      "lede": "We ask eleven sets of plain questions. You answer what applies to your company. Where you don’t have a number, you say why. Then you export a report your bank or your buyer can read.",
+      "start": "Start your report",
+      "questions": "See the questions first",
+      "assurances": "What you can count on",
+      "languages": "Romanian, Russian and English",
+      "nothingFiled": "Nothing is filed anywhere on your behalf",
+      "figure": {
+        "caption": "The report wizard as it appears: the list of sections, one question at a time, and a finding beside the field it concerns.",
+        "module": "Basic Module",
+        "count": "{done} of {total}",
+        "step": "{code} — {name}",
+        "field": {
+          "label": "Total energy consumed",
+          "help": "From your electricity and fuel bills for the year.",
+          "unit": "MWh",
+          "message": "This total is 53 MWh above the calculator’s. The difference may be real. Open the calculator, or confirm the figure and leave a note for the reader.",
+          "prior": "{value, number} MWh"
+        }
+      }
+    },
+    "reasons": {
+      "bank": {
+        "title": "Your bank asked for it",
+        "body": "Or a large customer, or a tender. The questionnaire landed on your desk, and nobody in the company has this as their job."
+      },
+      "standard": {
+        "title": "The standard is hard to read",
+        "body": "VSME was written for accountants. We restate every question in plain language, with a sentence saying what counts."
+      },
+      "numbers": {
+        "title": "You won’t have every number",
+        "body": "Nobody does in the first year. Say what you don’t have and why, in a sentence your reader will see. That is a disclosure, not a failure."
+      }
+    },
+    "steps": {
+      "eyebrow": "How it works",
+      "title": "Four steps. Stop after any of them.",
+      "lede": "Your answers save as you type, so you can build the report in short sessions over several weeks. Nothing leaves the platform until you export it yourself.",
+      "company": {
+        "title": "Tell us about the company",
+        "body": "Its name, its IDNO and the year you are reporting on. The year fixes which version of the standard applies, so it cannot change under you."
+      },
+      "answer": {
+        "title": "Answer the sections",
+        "body": "Your first answers decide what you are asked afterwards. A ten-person bakery is never shown the questions written for a factory."
+      },
+      "check": {
+        "title": "Check your work",
+        "body": "Check the report whenever you like. Each finding says what is wrong, why it matters and what would settle it, and takes you to the field."
+      },
+      "export": {
+        "title": "Export and send it",
+        "body": "A PDF to read and an Excel file in the official template for anyone who wants the figures. You send them; we file nothing on your behalf."
+      }
+    },
+    "sections": {
+      "eyebrow": "The questions",
+      "title": "Eleven sections. This is all of them.",
+      "lede": "The VSME Basic Module, in the order you will meet it, each section with what it asks about.",
+      "about": {
+        "B1": "Who you are, how many people you employ, and whether you report for one company or a group.",
+        "B2": "What you already do about sustainability, in your own words.",
+        "B3": "Electricity, fuel and the emissions that follow from them. The calculator does the conversion.",
+        "B4": "Only if the law already requires you to measure what you release.",
+        "B5": "The land you use, and whether any of it lies near a protected area.",
+        "B6": "The water you draw and the water you consume.",
+        "B7": "What leaves the company as waste, and how much of it is recovered.",
+        "B8": "Headcount, contract types, and how many people joined and left.",
+        "B9": "Accidents and working days lost. Zero is an answer here too.",
+        "B10": "The lowest wage you pay, collective agreements and hours of training.",
+        "B11": "Convictions and fines for corruption, usually none."
+      },
+      "notMaterial": "A section that does not apply to your company is declared not material, with a reason, rather than left empty."
+    },
+    "answering": {
+      "eyebrow": "What answering looks like",
+      "title": "One question at a time, and never a blank box",
+      "lede": "Every question arrives with its unit already set, a sentence saying what counts, last year’s figure where you have one, and a way out when the number does not exist in your company.",
+      "points": {
+        "label": "What every question comes with",
+        "units": "Units come from the standard, so you never type one in and hope",
+        "prior": "Last year’s figure sits beside this year’s, ready to carry over",
+        "zero": "Zero counts as an answer, and the page says so",
+        "attributed": "Every change carries a name and a time"
+      },
+      "figure": {
+        "caption": "Three questions as they appear: one still to answer, one declared not available with its reason, and one answered with zero.",
+        "leavers": {
+          "label": "Employees who left",
+          "help": "Everyone who left your payroll during the year, for any reason.",
+          "prior": "{count, plural, one {# person} other {# people}}"
+        },
+        "water": {
+          "label": "Water withdrawal",
+          "help": "The metered volume drawn during the year.",
+          "reason": "The landlord meters water for the whole building, so our share cannot be separated."
+        },
+        "accidents": {
+          "label": "Work-related accidents",
+          "help": "Accidents at work recorded during the year.",
+          "zero": "None during the year — recorded as a declared zero, not left empty."
+        }
+      }
+    },
+    "faq": {
+      "eyebrow": "Questions people ask first",
+      "title": "Before you sign up",
+      "lede": "If something here is still unclear, the <help>help centre</help> has the long version.",
+      "accountant": {
+        "question": "Do I need an accountant or a consultant?",
+        "answer": "No. If you can find last year’s electricity bills and your payroll headcount, you can finish a report. You can invite your accountant to check the figures if you want a second pair of eyes."
+      },
+      "time": {
+        "question": "How long does it take?",
+        "answer": "A first report usually takes a few sessions rather than one sitting, because you will go looking for two or three numbers. Everything saves as you type, so stopping costs you nothing."
+      },
+      "missing": {
+        "question": "What if I don’t have a number?",
+        "answer": "Declare it not available and write one sentence saying why. The sentence appears in the report. Readers accept a stated reason; they do not accept a blank."
+      },
+      "filed": {
+        "question": "Is the report filed with an authority?",
+        "answer": "No. VSME is a voluntary standard. You export the report and send it to whoever asked for it — a bank, a customer, a tender committee. We never submit anything on your behalf."
+      },
+      "nextYear": {
+        "question": "What happens next year?",
+        "answer": "This year’s answers sit beside next year’s fields, and anything that has not changed carries over in one click."
+      },
+      "colleagues": {
+        "question": "Can someone else answer parts of it?",
+        "answer": "Yes. Invite a colleague or your bookkeeper to view the report or to edit it. Every answer stays attributed to the person who entered it."
+      }
+    },
+    "data": {
+      "eyebrow": "Your data",
+      "title": "Where your answers sit, and who can see them",
+      "eu": {
+        "title": "Hosted in the European Union",
+        "body": "Your report and its history stay on infrastructure in the European Union or the European Economic Area, encrypted in transit and at rest."
+      },
+      "published": {
+        "title": "Nothing is published",
+        "body": "Your figures are visible to the people you invite and to nobody else. There is no public directory of reports."
+      },
+      "support": {
+        "title": "Support cannot look in uninvited",
+        "body": "If you ask for help, you grant access for a limited time, and every visit is recorded."
+      },
+      "export": {
+        "title": "You can take it with you",
+        "body": "Export the report in PDF and Excel whenever you like, for as long as your account exists."
+      }
+    },
+    "closing": {
+      "title": "Open your report today",
+      "lede": "An email address is enough to start, and you will see every question before you answer the first."
+    }
   }
 }

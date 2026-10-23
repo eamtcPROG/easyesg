@@ -69,6 +69,29 @@ test.describe('the source locale is served unprefixed (SEO)', () => {
     }
   });
 
+  test('each locale’s page names itself as canonical, beside its alternates (task 74.5)', async ({
+    playwright,
+    baseURL,
+  }) => {
+    // 182/119, §10.8: a self-referencing canonical per locale. It rides the same `Link` header as the alternates —
+    // the prerendered home cannot know its host at build time — so this reads the header, as the test above does.
+    // **A fresh context per address**: next-intl remembers a visited locale in `NEXT_LOCALE`, so `/register` asked
+    // after `/ru` is rightly redirected to `/ru/register` — whose canonical is its own, and not the address asked for.
+    for (const pathname of ['/', '/en', '/ru', '/register', '/en/legal/privacy']) {
+      const request = await playwright.request.newContext({ baseURL });
+      const response = await request.get(pathname, { maxRedirects: 0 });
+      expect(response.status(), pathname).toBe(200);
+      const links = response
+        .headersArray()
+        .filter((header) => header.name.toLowerCase() === 'link')
+        .map((header) => header.value)
+        .join(', ');
+      const canonicals = [...links.matchAll(/<([^>]+)>; rel="canonical"/g)].map((match) => new URL(match[1]).pathname);
+      expect(canonicals, `${pathname}'s canonical`).toEqual([pathname]);
+      await request.dispose();
+    }
+  });
+
   test('the unprefixed page still declares its language to assistive tech and crawlers', async ({
     page,
   }) => {

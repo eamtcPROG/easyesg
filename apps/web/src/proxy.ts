@@ -5,6 +5,7 @@ import { toLocale, type Locale } from '@easyesg/i18n';
 import { routing } from '@/i18n/routing';
 import { REFRESH_COOKIE } from '@/lib/session-cookie';
 import { REQUESTED_PATH_HEADER } from '@/lib/requested-path';
+import { withCanonical } from '@/lib/canonical-link';
 import { completesAccountSetup, issuesSession, requiresSession } from '@/lib/route-access';
 import {
   accessTokenIsStale,
@@ -138,6 +139,12 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
 
   // A redirect from locale negotiation is terminal — the request will arrive again, resolved.
   if (response.headers.has('location')) return response;
+
+  // **Task 74.5: the page's canonical beside its alternates** (§10.8, 182/119). Here and not in a page's metadata
+  // because the prerendered home cannot know its host at build time; `withCanonical` says why it reuses
+  // next-intl's own alternate rather than building an address.
+  const link = withCanonical({ link: response.headers.get('link'), locale: localeOf(pathname) });
+  if (link) response.headers.set('link', link);
 
   // After rotation, so it reads the successor — a status the rotation just learned included.
   const held = liveSession(request.cookies.get(REFRESH_COOKIE)?.value);

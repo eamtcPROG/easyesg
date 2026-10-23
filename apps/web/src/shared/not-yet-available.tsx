@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { AddressNotice } from './address-notice';
+import { ReturnLink } from './return-link';
 
 /** `error — not yet available` — a real route whose screen has not shipped. */
 export async function NotYetAvailable() {
@@ -8,8 +9,7 @@ export async function NotYetAvailable() {
     <AddressNotice
       title={t('title')}
       body={t('body')}
-      actionHome={t('actionHome')}
-      actionSignIn={t('actionSignIn')}
+      action={<ReturnLink actionHome={t('actionHome')} actionSignIn={t('actionSignIn')} />}
     />
   );
 }

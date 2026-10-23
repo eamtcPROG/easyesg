@@ -2,8 +2,11 @@ import { BUTTON_TONE, BrandMark, Button, GlobalBar } from '@easyesg/ui';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ROUTES } from '@/lib/routes';
+import { Suspense } from 'react';
 import { LocaleChoice } from './locale-choice';
+import { LocaleChoiceMenu } from './locale-choice-menu';
 import { PublicDrawer } from './public-drawer';
+import { PublicDrawerMenu } from './public-drawer-menu';
 import styles from './public-header.module.css';
 
 /**
@@ -15,8 +18,13 @@ import styles from './public-header.module.css';
  * exactly this rendering. UX-89's test for "nothing fits" is a difference in **anatomy**, and
  * there is none here: brand at one end, actions at the other, one row. A `PublicHeader` component
  * beside it would be a second name for one anatomy, invented against a divergence that has not
- * happened yet — the section nav the prototype draws, which arrives with the sections it points at
- * (task 74.3).
+ * happened — the section nav the prototype draws was considered with the sections it points at
+ * (task 74.3) and not built, since S-29's controls name none (`public-drawer-menu.tsx` says why).
+ *
+ * **The two Client Components that read the query string sit under `<Suspense>`** (task 74.4). The
+ * marketing home beneath this band is prerendered, and a static page refuses `useSearchParams`
+ * outside a boundary; the fallback is each menu with no query, which is the address the page was
+ * built for, so the prerendered markup carries the switcher and the drawer rather than a gap.
  *
  * **A Server Component, and unlike `GlobalTier` it reads nothing.** §5.1b: these screens carry no
  * session, and *"nothing on them may read or imply an active organization"* — which is what keeps
@@ -46,14 +54,20 @@ export async function PublicHeader() {
     <GlobalBar
       label={t('publicHeader.label')}
       brand={
-        <Link href={ROUTES.LANDING} aria-label={t('brandHome')}>
+        // **Not prefetched** (task 74.4). The landing is the one prerendered page, and Next 16 prefetches a static page
+        // in segments — some 200 KB here, its layout's segment carrying the message catalogue — of which the router left
+        // the repeat requests unread, open for the life of the page. Measured from S-36, where `networkidle` then never
+        // came. A reader on a help or legal page is not on their way to the landing, and it is a static page to fetch.
+        <Link href={ROUTES.LANDING} prefetch={false} aria-label={t('brandHome')}>
           <BrandMark />
         </Link>
       }
       actions={
         <>
           <div className={styles.actions}>
-            <LocaleChoice />
+            <Suspense fallback={<LocaleChoiceMenu query="" />}>
+              <LocaleChoice />
+            </Suspense>
             <Link className={styles.link} href={ROUTES.SIGN_IN}>
               {t('publicHeader.signIn')}
             </Link>
@@ -67,7 +81,9 @@ export async function PublicHeader() {
           {/* The 390 frame's own band: brand and a hamburger, the three above collapsed into it
               (task 109). One of the two regions is always `display: none`, so neither offers the
               same destination twice. */}
-          <PublicDrawer />
+          <Suspense fallback={<PublicDrawerMenu query="" />}>
+            <PublicDrawer />
+          </Suspense>
         </>
       }
     />

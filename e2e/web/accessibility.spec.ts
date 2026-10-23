@@ -24,10 +24,9 @@ import { accountTrigger } from './support/session';
  * All three locales on the register screen: the axe pass is mostly locale-independent, but
  * `lang` correctness and accessible names are precisely what varies.
  */
-// `/` is the `(public)` chrome (task 74.1) — worth the three locales for the same reason the
-// register screen gets them: `lang` correctness and accessible names are exactly what varies. It
-// **has** a `<main>` since task 103, which gave the address §8.1's `error — not yet available`
-// state in a `FocusColumn` rather than the blank page it used to return.
+// `/` is S-29, the marketing home, since task 74.3 — worth the three locales for the same reason the
+// register screen gets them: `lang` correctness and accessible names are exactly what varies. Its
+// three frames are `marketing-home.spec.ts`'s scan; this is the default window.
 // The cookie policy since task 75.3: the Content archetype's first instance, in the three locales its `lang` varies by.
 const SCREENS = [
   '/',

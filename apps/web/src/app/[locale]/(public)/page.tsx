@@ -1,50 +1,53 @@
-import { FocusColumn } from '@easyesg/ui';
-import { NotYetAvailable } from '@/shared/not-yet-available';
-import type { Metadata } from 'next';
+import { MAIN_CONTENT_ID } from '@easyesg/ui';
+import { MarketingAnswering } from '@/features/public/marketing/components/answering/marketing-answering';
+import { MarketingClosing } from '@/features/public/marketing/components/closing/marketing-closing';
+import { MarketingData } from '@/features/public/marketing/components/data/marketing-data';
+import { MarketingFaq } from '@/features/public/marketing/components/faq/marketing-faq';
+import { MarketingHero } from '@/features/public/marketing/components/hero/marketing-hero';
+import { generateMarketingMetadata } from '@/features/public/marketing/components/metadata/marketing-metadata';
+import { MarketingReasons } from '@/features/public/marketing/components/reasons/marketing-reasons';
+import { MarketingSections } from '@/features/public/marketing/components/sections/marketing-sections';
+import { MarketingSteps } from '@/features/public/marketing/components/steps/marketing-steps';
+import { activateRequestLocale, type LocaleParams } from '@/i18n/page';
 
 /**
- * Marketing home · unauthenticated
+ * S-29 — Marketing home · VI · UC-177 · Content (§4.6) — task 74.3.
  *
- * No S-nn id: design_spec.md §4.4's inventory covers S-01…S-28 and stops at the authenticated
- * boundary, yet this surface ships from apps/web (IMPLEMENTATION_PLAN Phase 10). Logged as an
- * open question — UX-7's coverage contract does not reach it.
+ * **This file is a shell** (`shell-composes-only`): it pins the locale, emits the page's one `<main>` — the `(public)`
+ * layout renders none — and composes the bands in the order the page reads. Each band reads its own words.
  *
- * Reference: `design/screens/EasyESG Public Home.dc.html`.
+ * **Prerendered once per locale and revalidated hourly** (task 74.4; `architecture.md` §14.2, amended 23 Oct 2026). The
+ * page reads nothing per request — no session, no organization, no store — so it is the one page §14.2 lets the
+ * framework cache, and `e2e/web/static-rendering.spec.ts` proves it is and that nothing outside `(public)` is. The hour
+ * is the footer's: its copyright year is read from the clock, and a page cached for good would carry last year's after
+ * 1 January. Its words change with a release, which rebuilds it.
  *
- * Not built — but the address answers. It renders §8.1's `error — not yet available` state
- * (task 103) in place of the blank page it used to return; `design_spec.md` §4.5 records why
- * that state is a pattern rather than an `S-nn` row. `design_spec.md` §5 owns this screen's
- * content, controls and states; `design/IMPLEMENTATION_PLAN.md` owns when it lands.
- * Prototypes in `design/screens/` are the rendered reference — read them for values, never
- * copy their markup (OQ-10).
+ * **The same page for everyone, a signed-in member included** (182/120): no redirect on a session, since a page that
+ * varied by session could not be cached, and the way into the workspace is the header's.
  *
- * **The body is still `null`; only the title is here (task 74.1).** The `(public)` chrome made this
- * address something a person lands on, and an untitled document is a WCAG 2.4.2 (Page Titled)
- * failure at Level A — `e2e/web/accessibility.spec.ts` found it the moment `/` entered the scan.
+ * **No pricing section** (task 74.6; 182/118): it waits for the plan catalogue's presentation copy (53.3) and the
+ * content read path that serves it (task 76), and reads that copy when both exist. Until then no price and no plan
+ * term is written into the page. Its states follow: S-29's one failure, *error — system*, is that read path being
+ * unavailable, which degrades to this page without the section — the page as it is today.
  */
+export const revalidate = 3600;
 
-/**
- * **The product's own name, and deliberately nothing more.**
- *
- * It is written here rather than through `localizedPageTitle` because that helper resolves a
- * catalogue `title` leaf, and this string is not catalogue text: the wordmark is *identity, not
- * copy*, identical in every locale, and `BrandMark` already records that no catalogue owns it.
- * `localizedPageTitle`'s own docblock names writing your own `generateMetadata` as the escape for
- * a title the helper cannot express.
- *
- * A fuller title — the tagline, the `hreflang` and canonical pair that should sit beside it — is
- * **task 74.5's**, which is an explicit unknown: `localePrefix: 'as-needed'` serves Romanian
- * unprefixed and no NFR governs how three locales are addressed to a search engine, and its row
- * requires the decision written into the artefact that owns it *before* any `<head>` is authored.
- * Authoring one here would close that in passing. This discharges the Level A failure and reaches
- * for nothing 74.3 or 74.5 owns.
- */
-export const metadata: Metadata = { title: 'easyESG' };
+export const generateMetadata = generateMarketingMetadata;
 
-export default function MarketingHomePage() {
+export default async function MarketingHomePage({ params }: { params: LocaleParams }) {
+  await activateRequestLocale(params);
+
   return (
-    <FocusColumn>
-      <NotYetAvailable />
-    </FocusColumn>
+    // The skip link's target (task 203.3): `tabIndex={-1}` is what lets it take focus.
+    <main id={MAIN_CONTENT_ID} tabIndex={-1}>
+      <MarketingHero />
+      <MarketingReasons />
+      <MarketingSteps />
+      <MarketingSections />
+      <MarketingAnswering />
+      <MarketingFaq />
+      <MarketingData />
+      <MarketingClosing />
+    </main>
   );
 }
