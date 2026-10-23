@@ -33117,3 +33117,13 @@ after its Gates run went green. Verified: every store bind-mounted from `/opt/ea
 on Gmail, no warning or error in the api, worker or web logs, and every host answering 200. **The old volumes are left
 in place** — the three named ones and the orphan — for the owner to remove once satisfied, since removing them is the
 one step here that cannot be undone.
+
+### Afterwards: Google sign-in turned on (project owner, same day)
+
+Reversing the design's *no social sign-in on staging* (§10.5 now says so). The compose file passes
+`AUTH_SOCIAL_GOOGLE_CLIENT_SECRET` to the api alone — the worker never talks to Google — as an optional value: empty,
+the provider is unavailable, which is the api's own answer to a missing secret, and it logs nothing while the provider is
+disabled (`social-provider-catalog.service.ts` reads `enabled && !clientSecret`; A-18's standing reads an empty value as
+not held). The secret is the owner's to put in the host's `.env`; the client id, the enabled state and the staging
+callback in the redirect allowlist are published from A-18, which needs the first operator. Microsoft was left as it was:
+there is no client for it, and wiring a variable nobody fills would be a setting that answers nothing.

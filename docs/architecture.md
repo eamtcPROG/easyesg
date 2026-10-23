@@ -1677,6 +1677,12 @@ production design in its own section unchanged:
   archive, so Object Lock has nothing to protect.
 - **Mail** is Gmail's SMTP relay, `non_functional_requirements.md` OQ-17's pre-production exception — or the `log`
   provider until its credentials are in the host's `.env`.
+- **Google sign-in is on** (project owner, 23 Oct 2026, reversing the design's *no social sign-in on staging*). The
+  OAuth client's authorised redirect URI is `https://staging.easyesg.md/auth/social/google/callback`; its secret is
+  `AUTH_SOCIAL_GOOGLE_CLIENT_SECRET` in the host's `.env`, passed to the api alone, and its client id, enabled state and
+  redirect allowlist are configuration published from A-18 (§12.5.6's task-24 row), so the seed's disabled, localhost-only
+  entry is never what staging serves once an operator has published over it (task 172). Microsoft stays unavailable:
+  no client exists for it.
 - **Billing is off** (`BILLING_ENABLED=false`) while the billing context is structure without behaviour, so the
   commerce routes render their unavailable state (DR-1).
 - **The admin bundle is built for staging's API origin.** Vite inlines `VITE_API_BASE_URL` at build time and the image

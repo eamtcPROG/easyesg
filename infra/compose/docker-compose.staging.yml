@@ -178,6 +178,11 @@ services:
       OBJECT_STORAGE_ENDPOINT: http://storage:7070
       OBJECT_STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY}
       OBJECT_STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_KEY}
+      # Google sign-in (§10.5): the client secret is the environment's half; the client id, the enabled state and the
+      # redirect allowlist are configuration, set on the console's identity-providers screen. Optional: left empty, the
+      # provider is unavailable, which is what the api does with a missing secret — never a refusal to start. The
+      # HTTP tier's alone; the worker never talks to Google.
+      AUTH_SOCIAL_GOOGLE_CLIENT_SECRET: ${AUTH_SOCIAL_GOOGLE_CLIENT_SECRET:-}
     ports:
       - "127.0.0.1:${API_PORT:-18101}:3000"
     healthcheck:
