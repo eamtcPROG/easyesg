@@ -29,6 +29,12 @@ RUN pnpm install --frozen-lockfile --filter @easyesg/admin...
 COPY tsconfig.base.json ./
 COPY packages packages
 COPY apps/admin apps/admin
+
+# The api origin the bundle calls, inlined by Vite at build time — so an image serves the one environment it was built
+# for (architecture.md §10.5; how production's gets its own is §18.1's second OQ-43). Declared without a default and
+# refused when absent: a bundle that fell back to `localhost` would build cleanly and reach nothing once deployed.
+ARG VITE_API_BASE_URL
+RUN test -n "$VITE_API_BASE_URL" || { echo 'build with --build-arg VITE_API_BASE_URL=https://<api host>/api/v1' >&2; exit 1; }
 RUN pnpm --filter @easyesg/admin... build
 
 FROM caddy:2.11.4-alpine AS runtime

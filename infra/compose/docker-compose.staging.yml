@@ -1,0 +1,272 @@
+# The staging stack (architecture.md §10.5; tasks 71.3, 72.2): the platform on the shared host `zeus`, where it is
+# tested and shown. §10.3's build-and-pilot shape on one host — PostgreSQL in the stack — run from the images CI
+# published for one commit, never built here. `infra/staging/deploy.sh` is what runs it:
+#
+#   docker compose -f infra/compose/docker-compose.staging.yml --env-file infra/compose/.env.staging up -d
+#
+# **No `edge` service** (§10.4). The host is shared with other tenants and its nginx owns 80 and 443, so the three
+# services it proxies publish on 127.0.0.1 alone — `infra/staging/nginx/easyesg-staging.conf` is the other half of that
+# contract, and the ports here must match its upstreams. Docker's published ports sit ahead of ufw, so a bare
+# `18101:3000` would put the api on the internet whatever the firewall says.
+#
+# **Two networks.** `backend` is internal — no route out — and holds what nothing outside the stack may reach:
+# PostgreSQL, Redis, the export store and the renderer. `public` carries the three published services and the worker's
+# route out to the mail relay. The api is on both, and so is the worker; web reaches the api by name over `public`.
+#
+# **One tag for all four images**, the commit sha the image job published. The migration runner and the seeder run the
+# api image at that same tag, because a runner one build ahead of the application it migrates for is a schema mismatch
+# no `service_completed_successfully` can catch.
+#
+# A project name of its own, so its volumes can never be the development stack's (`easyesg`) — compose namespaces
+# volumes by project, and a `down -v` on one would otherwise take the other's database.
+name: easyesg-staging
+
+x-api-image: &api-image ghcr.io/eamtcprog/easyesg-api:${IMAGE_TAG:?set IMAGE_TAG in infra/compose/.env.staging}
+
+services:
+  postgres:
+    image: postgres:18.4
+    restart: unless-stopped
+    # The development stack's reason (§12.5.10): an orphaned probe child reparented to the postmaster would crash it.
+    init: true
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/compose/.env.staging}
+      POSTGRES_DB: esg
+      # Read by init/init.sh, which creates §7.6's four roles on a fresh volume.
+      ESG_APP_PASSWORD: ${ESG_APP_PASSWORD:?set ESG_APP_PASSWORD in infra/compose/.env.staging}
+      ESG_WORKER_PASSWORD: ${ESG_WORKER_PASSWORD:?set ESG_WORKER_PASSWORD in infra/compose/.env.staging}
+      ESG_ADMIN_RO_PASSWORD: ${ESG_ADMIN_RO_PASSWORD:?set ESG_ADMIN_RO_PASSWORD in infra/compose/.env.staging}
+      ESG_MIGRATOR_PASSWORD: ${ESG_MIGRATOR_PASSWORD:?set ESG_MIGRATOR_PASSWORD in infra/compose/.env.staging}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks: [backend]
+
+  redis:
+    image: redis:8.10.0
+    restart: unless-stopped
+    # The development stack's flags (§12.5.8): noeviction, because BullMQ's jobs are not a cache. No password: the api
+    # reads none, and the internal network is what keeps another tenant's containers from reaching it.
+    command:
+      - redis-server
+      - --save
+      - "3600"
+      - "1"
+      - "300"
+      - "100"
+      - "60"
+      - "10000"
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - 2gb
+      - --maxmemory-policy
+      - noeviction
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks: [backend]
+
+  # The export store: the development stack's S3 gateway, not Scaleway (§10.5) — staging holds no fiscal archive.
+  storage:
+    image: versity/versitygw:v1.8.0
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c", "mkdir -p /data/esg-exports && exec /usr/local/bin/versitygw posix /data"]
+    environment:
+      VGW_REGION: fr-par
+      ROOT_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY:?set STORAGE_ACCESS_KEY in infra/compose/.env.staging}
+      ROOT_SECRET_ACCESS_KEY: ${STORAGE_SECRET_KEY:?set STORAGE_SECRET_KEY in infra/compose/.env.staging}
+    volumes:
+      - storagedata:/data
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "7070"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks: [backend]
+
+  # The development stack's limits (task 44): one render peaks near 500 MB, and Chromium gets shared memory of its own.
+  renderer:
+    image: ghcr.io/eamtcprog/easyesg-renderer:${IMAGE_TAG}
+    restart: unless-stopped
+    init: true
+    mem_limit: 512m
+    shm_size: 256m
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks: [backend]
+
+  # One-shot, as the migration owner (§7.6). Only this service holds the owner's credentials; a runtime service holding
+  # them could disable the append-only triggers (§7.7).
+  migrate:
+    image: *api-image
+    restart: "no"
+    command: ["node", "./node_modules/typeorm/cli.js", "migration:run", "-d", "dist/infrastructure/persistence/migration.data-source.js"]
+    environment:
+      DB_HOST: postgres
+      DB_NAME: esg
+      DB_MIGRATOR_USER: esg_migrator
+      DB_MIGRATOR_PASSWORD: ${ESG_MIGRATOR_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+
+  # One-shot, as the application (`config:seed`'s own role): the configuration store from the `config/seed` the image
+  # carries. Idempotent, and it never overwrites an operator's publication (task 172), so it runs on every deploy.
+  seed:
+    image: *api-image
+    restart: "no"
+    command: ["node", "dist/infrastructure/configuration/seed-configuration.main.js"]
+    environment:
+      DB_HOST: postgres
+      DB_NAME: esg
+      DB_USER: esg_app
+      DB_PASSWORD: ${ESG_APP_PASSWORD}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [backend]
+
+  api:
+    image: *api-image
+    restart: unless-stopped
+    environment:
+      MODE: http
+      PORT: "3000"
+      BILLING_ENABLED: "false"
+      DB_HOST: postgres
+      DB_NAME: esg
+      DB_USER: esg_app
+      DB_PASSWORD: ${ESG_APP_PASSWORD}
+      DB_ADMIN_RO_USER: esg_admin_ro
+      DB_ADMIN_RO_PASSWORD: ${ESG_ADMIN_RO_PASSWORD}
+      REDIS_HOST: redis
+      AUTH_PASSWORD_PEPPER: ${AUTH_PASSWORD_PEPPER:?set AUTH_PASSWORD_PEPPER in infra/compose/.env.staging}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?set AUTH_JWT_SECRET in infra/compose/.env.staging}
+      AUTH_ADMIN_SECRET: ${AUTH_ADMIN_SECRET:?set AUTH_ADMIN_SECRET in infra/compose/.env.staging}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?set SECRET_ENCRYPTION_KEY in infra/compose/.env.staging}
+      UNSUBSCRIBE_SIGNING_KEY: ${UNSUBSCRIBE_SIGNING_KEY:?set UNSUBSCRIBE_SIGNING_KEY in infra/compose/.env.staging}
+      # The console's exact origin, for CORS and the Origin proof on the admin realm's writes.
+      ADMIN_ORIGIN: https://${ADMIN_HOST:?set ADMIN_HOST in infra/compose/.env.staging}
+      # The tenant application's origin: the socket's allowed Origin and the base of every link a message carries.
+      PUBLIC_WEB_URL: https://${WEB_HOST:?set WEB_HOST in infra/compose/.env.staging}
+      OBJECT_STORAGE_ENDPOINT: http://storage:7070
+      OBJECT_STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY}
+      OBJECT_STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_KEY}
+    ports:
+      - "127.0.0.1:${API_PORT:-18101}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    depends_on:
+      redis:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    networks: [backend, public]
+
+  # The same image as `worker` mode (AD-1), with its own role and none of the HTTP tier's secrets — the pepper and the
+  # two signing secrets stay out of this environment, as task 19 split them.
+  worker:
+    image: *api-image
+    restart: unless-stopped
+    init: true
+    environment:
+      MODE: worker
+      BILLING_ENABLED: "false"
+      DB_HOST: postgres
+      DB_NAME: esg
+      DB_USER: esg_worker
+      DB_PASSWORD: ${ESG_WORKER_PASSWORD}
+      REDIS_HOST: redis
+      # `log` until the relay's credentials are in .env.staging, then `smtp` (§10.5).
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:?set EMAIL_PROVIDER in infra/compose/.env.staging}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY}
+      UNSUBSCRIBE_SIGNING_KEY: ${UNSUBSCRIBE_SIGNING_KEY}
+      ADMIN_ORIGIN: https://${ADMIN_HOST}
+      PUBLIC_WEB_URL: https://${WEB_HOST}
+      RENDERER_URL: http://renderer:3000
+      OBJECT_STORAGE_ENDPOINT: http://storage:7070
+      OBJECT_STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY}
+      OBJECT_STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_KEY}
+    depends_on:
+      redis:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+      renderer:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    networks: [backend, public]
+
+  web:
+    image: ghcr.io/eamtcprog/easyesg-web:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      # Server-side only, over the stack's own network (AD-9).
+      API_BASE_URL: http://api:3000/api/v1
+      BILLING_ENABLED: "false"
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in infra/compose/.env.staging}
+      PUBLIC_WEB_URL: https://${WEB_HOST}
+      # Where a browser opens AD-15's socket — through nginx, never the internal address.
+      PUBLIC_API_URL: https://${API_HOST:?set API_HOST in infra/compose/.env.staging}
+    ports:
+      - "127.0.0.1:${WEB_PORT:-18102}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [public]
+
+  # A static bundle built for staging's API origin by the image job (§10.5) — this image serves staging alone.
+  admin:
+    image: ghcr.io/eamtcprog/easyesg-admin:${IMAGE_TAG}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${ADMIN_PORT:-18103}:8080"
+    networks: [public]
+
+volumes:
+  pgdata:
+  redisdata:
+  storagedata:
+
+networks:
+  backend:
+    internal: true
+  public:

@@ -119,6 +119,12 @@ COPY --from=build --chown=node:node /repo/apps/api ./apps/api
 # `.dockerignore` keeps the 1.3.0 Sample out, a test fixture no registration names.
 COPY --chown=node:node config/efrag ./config/efrag
 
+# The configuration store's starting state (DR-3), which a deploy seeds from this image with
+# `node dist/infrastructure/configuration/seed-configuration.main.js` — `../../config/seed` from the working directory
+# below (architecture.md §10.5; tasks 71.3, 72.2). Shipped in the image rather than read from the host's checkout, so the
+# seed a release applies is the one its own build was tested with.
+COPY --chown=node:node config/seed ./config/seed
+
 # Never root. The image runs an HTTP tier reachable through the edge, and node's own image already
 # ships an unprivileged user for the purpose.
 USER node

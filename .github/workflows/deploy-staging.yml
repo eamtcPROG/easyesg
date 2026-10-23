@@ -1,0 +1,119 @@
+# Deploy a published commit to staging (architecture.md §10.5; tasks 71.3, 72.2). Run by hand: Actions → Deploy staging.
+#
+# **Delivery, not deployment, on purpose** (project owner, 23 Oct 2026). The Gates workflow publishes images on every
+# green push to `dev`; this puts a chosen one on the host when a person asks, so a build never lands in the middle of a
+# presentation. Leave the sha blank to deploy the head of `dev`, or paste one to redeploy or roll back — the run log then
+# answers "what is on staging?" months later without logging in.
+#
+# **What the key can do is bounded on the host, not here.** The host is shared with other tenants and the deploy account
+# is in the `docker` group, which is root-equivalent, so its `authorized_keys` pins this key to
+# `command="…/infra/staging/deploy.sh",restrict`: a leaked secret can deploy a published commit of this repository and
+# nothing else — no shell, no forwarding. Do not "simplify" this into `docker compose` over SSH; that hands back
+# everything the forced command withholds. infra/staging/deploy.sh's header is the one-time setup.
+
+name: Deploy staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit sha to deploy (40 characters). Blank deploys the head of dev.'
+        required: false
+        type: string
+
+# One deploy at a time, and never one cancelled in flight: interrupting between `pull` and `up` leaves the stack half
+# changed. deploy.sh also takes a lock on the host, which a run by hand respects too.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: deploy to staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The secret and the three variables below are this environment's. Required reviewers can be added to it in the
+    # repository's settings; nothing here depends on them.
+    environment:
+      name: staging
+      url: https://staging.easyesg.md
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      # An explicit sha wins; otherwise the head of dev. Echoed, because which build went out should be answerable from
+      # the run log alone. The input reaches the script through `env:`, never interpolated into its text.
+      - name: Resolve the commit
+        id: resolve
+        env:
+          REQUESTED: ${{ inputs.sha }}
+        run: |
+          SHA="${REQUESTED:-$(git rev-parse HEAD)}"
+          if ! printf '%s' "$SHA" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::'$SHA' is not a 40-character commit sha"
+            exit 1
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "deploying $SHA"
+
+      # Fail naming what is missing rather than with ssh's usage text: unset values interpolate to empty, and ssh reports
+      # a connection to `@` as a syntax error naming nothing.
+      - name: Check the deploy configuration
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_HOST_KEY: ${{ vars.DEPLOY_HOST_KEY }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          missing=""
+          [ -n "$DEPLOY_HOST" ]     || missing="$missing\n  - variable DEPLOY_HOST"
+          [ -n "$DEPLOY_USER" ]     || missing="$missing\n  - variable DEPLOY_USER"
+          [ -n "$DEPLOY_HOST_KEY" ] || missing="$missing\n  - variable DEPLOY_HOST_KEY"
+          [ -n "$DEPLOY_SSH_KEY" ]  || missing="$missing\n  - secret DEPLOY_SSH_KEY"
+          if [ -n "$missing" ]; then
+            printf 'The staging environment is not configured. Missing:%b\n\nSee infra/staging/deploy.sh.\n' "$missing"
+            echo "::error::Deploy is not configured — the log names what is missing"
+            exit 1
+          fi
+
+      # Pinned to the host's key rather than trusting whatever answers: a rebuilt host is then a visible change to a
+      # variable, never a silent one.
+      - name: Configure ssh
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST_KEY: ${{ vars.DEPLOY_HOST_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_HOST_KEY" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      # The sha is the whole command line. The forced command reads it as an argument, so it cannot ask the host for
+      # anything else.
+      - name: Deploy
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          SHA: ${{ steps.resolve.outputs.sha }}
+        run: ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 "${DEPLOY_USER}@${DEPLOY_HOST}" "$SHA"
+
+      # Only after a deploy that succeeded: a check that also ran after a failure would pass on the previous release and
+      # report a deploy that did nothing as healthy. A rollback is deploy.sh's to report.
+      - name: Answers from outside
+        run: |
+          for url in https://api-staging.easyesg.md/health https://staging.easyesg.md/health; do
+            ok=""
+            for _ in $(seq 1 10); do
+              if curl -fsS -o /dev/null --max-time 5 "$url"; then ok=1; break; fi
+              sleep 3
+            done
+            [ -n "$ok" ] || { echo "::error::$url did not answer 200 after the deploy"; exit 1; }
+            echo "$url answers"
+          done
