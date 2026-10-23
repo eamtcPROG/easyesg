@@ -768,7 +768,8 @@
       }
     },
     "legal": {
-      "controller_unavailable": "The platform operator’s details cannot be read right now, so the terms of service and the privacy notice are not shown. Come back a little later."
+      "controller_unavailable": "The platform operator’s details cannot be read right now, so the terms of service and the privacy notice are not shown. Come back a little later.",
+      "cookie_policy_changed": "The cookie policy was updated while the page was open, so your answer was not saved. Reload the page and read the policy in force."
     }
   },
   "vocabulary": {

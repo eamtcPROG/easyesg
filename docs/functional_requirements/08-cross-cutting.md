@@ -342,45 +342,46 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-206 — The cookie choice
 
-**Status.** Built — delivered 75.1, 75.2 (the inventory and its gate), 75.5 (the disclosure in the cookie policy)
+**Status.** Built — delivered 75.1, 75.2 (the inventory and its gate), 75.5 (the disclosure in the cookie policy), 223 (the banner, the settings and the record)
 
-**Obligation.** The system shall tell a visitor, before anything is set, every cookie the site sets by purpose, what it does not set, and any browser storage that is not a cookie, while setting no non-essential storage; it shall therefore record no consent and offer no accept or decline. Adding any non-essential storage re-opens this requirement, and the consent mechanism ships in the same change.
+**Obligation.** The system shall tell a reader every cookie the site sets by purpose, what it does not set, and any browser storage that is not a cookie; shall show a banner offering cookie settings on the first visit to the tenant site and after the cookie policy changes; and shall record each answer. It sets no non-essential storage, so the banner and the settings inform and offer no decline. Adding any non-essential storage re-opens this requirement, and a real choice ships in the same change.
 
 | | |
 |---|---|
-| **Actors** | VI reads. |
-| **Traces** | UC-179 · UC-178 · `design_spec.md` OQ-23 (closed 10 Sep 2026) · NFR-5 · NFR-30 · FR-205 |
-| **Surfaces** | The cookie policy of S-30, reached from the footer. S-31 folds into it and is not a first-arrival overlay (§12.5.6 task-182 public tier row, 182/117) |
+| **Actors** | VI reads and answers; so does any reader of the tenant site, signed in or not. |
+| **Traces** | UC-179 · UC-178 · `design_spec.md` OQ-23 (closed 10 Sep 2026) · `design_spec.md` OQ-27 (closed 23 Oct 2026) · NFR-5 · NFR-30 · FR-205 |
+| **Surfaces** | S-31: a banner on the first visit to the tenant site, and its settings panel, reached afterwards from every footer and from the cookie policy of S-30 (§12.5.6's task-223 row). The operator console shows none |
 
 **Behaviour.**
-1. The visitor is shown what the site sets and what it does not. There are no non-essential categories to accept or decline (UC-179 steps; OQ-23).
-2. No consent record is written and no client-side preference is stored, because every cookie the platform sets is strictly necessary, and strictly necessary cookies require information rather than consent (OQ-23, resting on Law No. 195/2024's alignment with the ePrivacy standard).
-3. The disclosure is **a factual claim about the shipped build**, so it is verified against the code and not authored as copy (UC-179 rule; `design_spec.md` S-31). Task 75.2 produces the enumerated, verified inventory. OQ-23 recorded seven cookies on 10 Sep 2026; task 155 added an eighth, `easyesg_setup_grant`, on 14 Sep 2026; and the application also keeps two session-storage stores and the autosave queue in IndexedDB, which are not cookies. **The inventory task 75.2 enumerates is the single source**, and a test fails when a cookie is added that it does not list. There is no analytics, advertising or third-party code, and the fonts are self-hosted. Every one of the eight is treated as strictly necessary: that is the owner's assumption and not a verified fact (§12.5.6 task-182 public tier row, 182/122).
-4. Because the disclosure is a section of the cookie policy and not an overlay, it obscures nothing, and the privacy notice that explains it is one move away within the set (UC-178; §12.5.6 task-182 public tier row, 182/117).
-5. There is nothing to dismiss. S-31 is folded into the cookie policy of S-30, reached from the footer, with no first-arrival overlay: remembering a dismissal would mean storing something, against UC-179's postcondition, and an overlay that returns on every visit tells the reader nothing new (§12.5.6 task-182 public tier row, 182/117).
-6. **This re-opens the moment any non-essential storage is added** (analytics, an advertising pixel, an embedded third-party player, a font service). It re-opens as a new question, and the consent mechanism ships in the same change, because the policy may not be false for even one release (OQ-23; UC-179 rule).
+1. The reader is shown what the site sets and what it does not. There are no non-essential categories: the settings show one, *Necessary*, always on (UC-179 steps; OQ-23; OQ-27).
+2. **A banner is shown on the first visit to any screen of the tenant site, and on the first visit after the cookie policy changes**, until it is answered — though every cookie is strictly necessary, by the owner's reading of the law (OQ-27, reversing OQ-23's conclusion and 182/117). It blocks nothing: it sits at the foot of the viewport and the page reserves its height.
+3. **The banner and the settings inform; they offer no decline.** *I understand*, and *Save* in the settings, record the same answer, since a decline would set exactly what an acceptance sets (OQ-27).
+4. **Each answer is recorded** in a cookie of its own — strictly necessary, and on the policy — and in a server row holding the cookie policy version the reader was shown and the moment, naming the account when the reader is signed in and holding no address or browser string. A row is deleted after 12 months, as long as the cookie it proves (§12.5.6's task-223 row (2) … (4)). An answer naming a version no longer in force is refused and recorded nowhere.
+5. The disclosure is **a factual claim about the shipped build**, so it is verified against the code and not authored as copy (UC-179 rule; `design_spec.md` S-31). Task 75.2 produces the enumerated, verified inventory; **it is the single source**, and a test fails when a cookie is added that it does not list. OQ-23 recorded seven cookies on 10 Sep 2026; task 155 added `easyesg_setup_grant` on 14 Sep 2026 and task 223 `easyesg_cookie_choice` on 23 Oct 2026, nine in all; the application also keeps three session-storage stores and the autosave queue in IndexedDB, which are not cookies. There is no analytics, advertising or third-party code, and the fonts are self-hosted. Every one of the nine is treated as strictly necessary: that is the owner's assumption and not a verified fact (§12.5.6 task-182 public tier row, 182/122).
+6. *Cookie settings* is in every footer of the tenant site, and the cookie policy states the current answer with its date and opens the same settings (OQ-27).
+7. **This re-opens the moment any non-essential storage is added** (analytics, an advertising pixel, an embedded third-party player, a font service). It re-opens as a new question, and a real choice ships in the same change, because the policy may not be false for even one release (OQ-23; UC-179 rule).
 
-**Refusals.** None.
+**Refusals.** An answer naming a cookie policy version that is not in force — 409 `legal-version-changed`, nothing recorded (task 195's refusal).
 
 **Boundaries.** The cookie policy as a document is FR-205's. Personal data in analytics is excluded by NFR-30.
 
 **Acceptance criteria.**
-- **AC-1** Given a visitor, when the disclosure is shown, then it lists every cookie the site sets by purpose, what it does not set, and the browser storage that is not a cookie. *(source: `design_spec.md` S-31)*
-- **AC-2** Given the disclosure, then it carries no accept or decline control. *(source: OQ-23; `design_spec.md` S-31)*
-- **AC-3** Given a visit, then no consent record is written and no client-side preference is stored by the disclosure. *(source: UC-179 postconditions)*
+- **AC-1** Given a reader, when the disclosure is shown, then it lists every cookie the site sets by purpose, what it does not set, and the browser storage that is not a cookie. *(source: `design_spec.md` S-31)*
+- **AC-2** Given the banner or the settings, then they offer no decline, and the settings show one category, *Necessary*, always on. *(source: OQ-27; `design_spec.md` S-31)*
+- **AC-3** Given a reader who has not answered, then nothing records an answer; given an answer, then a cookie and a server row record it, with the cookie policy version and the moment. *(source: OQ-27; UC-179 postconditions)*
 - **AC-4** Given the build, then what the disclosure states is true of what the application sets, checked against an enumerated inventory. *(source: UC-179 rule; task 75.2 row)*
-- **AC-5** Given a reader who has not read it, then the privacy notice remains reachable from the disclosure. *(source: `design_spec.md` S-31 layout)*
-- **AC-6** Given a change that adds non-essential storage, then it includes the consent mechanism, and the disclosure is true of the build at that release. *(source: OQ-23; UC-179 rule)*
-- **AC-7** Given each of the three locales, then the disclosure is live. *(source: task 75.5 row)*
-- **AC-8** Given a first visit to any public screen, then no overlay is shown and nothing is stored to record that one was. *(source: §12.5.6 task-182 public tier row, 182/117; UC-179 postconditions)*
+- **AC-5** Given a reader who has not answered, then the privacy notice and the cookie policy remain reachable, and the banner obscures nothing. *(source: `design_spec.md` S-31 layout)*
+- **AC-6** Given a change that adds non-essential storage, then it includes a real choice, and the disclosure is true of the build at that release. *(source: OQ-23; UC-179 rule)*
+- **AC-7** Given each of the three locales, then the disclosure, the banner and the settings are live. *(source: task 75.5 row; task 223 row)*
+- **AC-8** Given a first visit to any screen of the tenant site, then the banner is shown; given an answer to the cookie policy in force, then it is not shown again until that policy changes. *(source: OQ-27; §12.5.6's task-223 row (2))*
 - **AC-9** Given a cookie added to the application that the enumerated inventory does not list, then a test fails. *(source: §12.5.6 task-182 public tier row, 182/122; task 75.2 row)*
+- **AC-10** Given an answer from a signed-in reader, then its row names their account; given a row older than 12 months, then the daily purge deletes it. *(source: §12.5.6's task-223 row (3), (4))*
+- **AC-11** Given an answer naming a cookie policy version that is not in force, then it is refused and nothing is recorded. *(source: §12.5.6's task-223 row (6))*
 
 **History.**
 - 5 Oct 2026 · project owner · written to close G-9 for UC-179, from UC-179 and S-31 as OQ-23 settled them · index §9.4 G-9
 - 5 Oct 2026 · project owner · S-31 folds into the cookie policy, with no first-arrival overlay · §12.5.6 task-182 public tier row (182/117)
-- 5 Oct 2026 · project owner · the inventory of task 75.2 is the single source of the claim, checked by a test; eight cookies since task 155 · §12.5.6 task-182 public tier row (182/122)
-
-## 3. Data-subject requests (index §3.34, new)
+- 23 Oct 2026 · project owner · a banner and cookie settings on the tenant site, each answer recorded, though nothing optional is set; 182/117 reversed · `design_spec.md` OQ-27; §12.5.6's task-223 row
 
 ### FR-207 — Data-subject requests: access, rectification, erasure and portability
 

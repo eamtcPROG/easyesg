@@ -74,6 +74,7 @@ import { ReportFiling1793059200000 } from './1793059200000-report-filing';
 import { ReportDeletion1793145600000 } from './1793145600000-report-deletion';
 import { ArchivedEntityReport1793232000000 } from './1793232000000-archived-entity-report';
 import { LegalAcceptance1793318400000 } from './1793318400000-legal-acceptance';
+import { CookieChoice1793404800000 } from './1793404800000-cookie-choice';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -168,4 +169,5 @@ export const migrations = [
   ReportDeletion1793145600000,
   ArchivedEntityReport1793232000000,
   LegalAcceptance1793318400000,
+  CookieChoice1793404800000,
 ];

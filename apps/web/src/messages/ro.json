@@ -2417,11 +2417,11 @@
         },
         "collect": {
           "heading": "Ce date păstrăm",
-          "body": "<ul><li><strong>Contul:</strong> numele, adresa de e-mail, limba aleasă și parola, păstrată doar ca amprentă criptografică, pe care nu o putem citi.</li><li><strong>Conectarea:</strong> dacă vă conectați prin Google sau Microsoft, identificatorul contului dumneavoastră la acel furnizor; dacă activați autentificarea în doi pași, secretul acesteia, păstrat criptat.</li><li><strong>Organizațiile:</strong> din ce organizații faceți parte și cu ce rol.</li><li><strong>Activitatea:</strong> când v-ați conectat, încercările de conectare eșuate și adresa de internet de la care au venit, ca să protejăm conturile; și cine a modificat fiecare valoare dintr-un raport și când.</li><li><strong>Notificările:</strong> ce mesaje v-am trimis, pe ce canal și dacă au ajuns.</li></ul>"
+          "body": "<ul><li><strong>Contul:</strong> numele, adresa de e-mail, limba aleasă și parola, păstrată doar ca amprentă criptografică, pe care nu o putem citi.</li><li><strong>Conectarea:</strong> dacă vă conectați prin Google sau Microsoft, identificatorul contului dumneavoastră la acel furnizor; dacă activați autentificarea în doi pași, secretul acesteia, păstrat criptat.</li><li><strong>Organizațiile:</strong> din ce organizații faceți parte și cu ce rol.</li><li><strong>Activitatea:</strong> când v-ați conectat, încercările de conectare eșuate și adresa de internet de la care au venit, ca să protejăm conturile; și cine a modificat fiecare valoare dintr-un raport și când.</li><li><strong>Notificările:</strong> ce mesaje v-am trimis, pe ce canal și dacă au ajuns.</li><li><strong>Răspunsul la anunțul despre cookie-uri:</strong> ce versiune a politicii de cookie-uri v-a fost afișată și când, precum și contul dumneavoastră, dacă erați conectat.</li></ul>"
         },
         "purposes": {
           "heading": "De ce le folosim și pe ce temei",
-          "body": "<ul><li>Ca să vă oferim contul și serviciul pe care l-ați cerut — temeiul este contractul cu dumneavoastră, adică termenii și condițiile.</li><li>Ca să păstrăm conturile în siguranță și să oprim încercările repetate de a ghici o parolă — temeiul este interesul nostru legitim de a proteja serviciul.</li><li>Ca un raport să poată fi verificat: cine a schimbat o valoare și când — temeiul este interesul nostru legitim ca raportul să poată fi verificat.</li><li>Ca să vă trimitem mesaje despre cont și despre rapoarte. Pe cele care nu sunt indispensabile le puteți opri din preferințele de notificare.</li></ul><p>Nu luăm decizii automate cu efecte juridice asupra dumneavoastră și nu vă creăm un profil.</p>"
+          "body": "<ul><li>Ca să vă oferim contul și serviciul pe care l-ați cerut — temeiul este contractul cu dumneavoastră, adică termenii și condițiile.</li><li>Ca să păstrăm conturile în siguranță și să oprim încercările repetate de a ghici o parolă — temeiul este interesul nostru legitim de a proteja serviciul.</li><li>Ca un raport să poată fi verificat: cine a schimbat o valoare și când — temeiul este interesul nostru legitim ca raportul să poată fi verificat.</li><li>Ca să vă trimitem mesaje despre cont și despre rapoarte. Pe cele care nu sunt indispensabile le puteți opri din preferințele de notificare.</li><li>Ca să putem arăta că v-am informat ce cookie-uri setează site-ul — temeiul este obligația noastră legală de a vă informa.</li></ul><p>Nu luăm decizii automate cu efecte juridice asupra dumneavoastră și nu vă creăm un profil.</p>"
         },
         "recipients": {
           "heading": "Cine are acces la date",
@@ -2433,7 +2433,7 @@
         },
         "retention": {
           "heading": "Cât timp le păstrăm",
-          "body": "<ul><li>Contul — cât timp există. Dacă ne cereți ștergerea lui, ștergem imediat profilul, apartenența la organizații, sesiunile, preferințele și evidența mesajelor trimise dumneavoastră.</li><li>Conținutul rapoartelor, exporturile generate și istoricul modificărilor — cât timp există organizația și încă un an după aceea.</li><li>Datele introduse în calculatorul de emisii — fără limită de timp, pentru ca o cifră raportată să poată fi refăcută oricând.</li><li>Notificările — cât timp există organizația și încă un an; un anunț al platformei, un an de la trimitere.</li><li>Jurnalul de audit al sistemului — 24 de luni.</li><li>Facturile și evidența contabilă — 6 ani, cât cere legea.</li></ul>"
+          "body": "<ul><li>Contul — cât timp există. Dacă ne cereți ștergerea lui, ștergem imediat profilul, apartenența la organizații, sesiunile, preferințele și evidența mesajelor trimise dumneavoastră.</li><li>Conținutul rapoartelor, exporturile generate și istoricul modificărilor — cât timp există organizația și încă un an după aceea.</li><li>Datele introduse în calculatorul de emisii — fără limită de timp, pentru ca o cifră raportată să poată fi refăcută oricând.</li><li>Notificările — cât timp există organizația și încă un an; un anunț al platformei, un an de la trimitere.</li><li>Jurnalul de audit al sistemului — 24 de luni.</li><li>Facturile și evidența contabilă — 6 ani, cât cere legea.</li><li>Răspunsul la anunțul despre cookie-uri — 12 luni.</li></ul>"
         },
         "security": {
           "heading": "Cum le protejăm",
@@ -2468,7 +2468,7 @@
       "cookies": "Politica de cookie-uri"
     },
     "cookies": {
-      "lede": "Ce păstrează acest site în browserul dumneavoastră, la ce folosește și cât timp. Tot ce este enumerat aici este necesar pentru ca site-ul să funcționeze, așa că nu aveți nimic de acceptat sau de refuzat.",
+      "lede": "Ce păstrează acest site în browserul dumneavoastră, la ce folosește și cât timp. Tot ce este enumerat aici este necesar pentru ca site-ul să funcționeze, așa că nu există nimic opțional de activat sau de dezactivat — doar atât vă spune anunțul de la prima vizită.",
       "sections": {
         "set": {
           "heading": "Fiecare cookie pe care îl setăm",
@@ -2485,7 +2485,11 @@
         },
         "browser": {
           "heading": "Dacă ștergeți cookie-urile",
-          "body": "Le puteți șterge oricând din setările browserului. Veți fi deconectat, iar site-ul va uita limba pe care ați ales-o. Nu există nimic de acceptat sau de refuzat aici, pentru că nu setăm nimic opțional."
+          "body": "Le puteți șterge oricând din setările browserului. Veți fi deconectat, site-ul va uita limba pe care ați ales-o și vă va afișa din nou anunțul despre cookie-uri. Nu există nimic opțional de activat sau de dezactivat aici, pentru că nu setăm nimic opțional."
+        },
+        "answer": {
+          "heading": "Răspunsul dumneavoastră la anunțul despre cookie-uri",
+          "body": "Când răspundeți la anunțul despre cookie-uri, păstrăm evidența răspunsului timp de 12 luni: ce versiune a acestei politici v-a fost afișată, când și contul dumneavoastră, dacă erați conectat. Astfel putem arăta că v-am informat. Puteți redeschide oricând setările cookie-urilor, de aici sau din partea de jos a oricărei pagini."
         }
       },
       "columns": {
@@ -2505,6 +2509,7 @@
         "factorChallenge": "Vă ține între parolă și codul din aplicația de autentificare.",
         "pendingLink": "Păstrează legarea unui cont Google până o confirmați cu parola.",
         "setupGrant": "Păstrează deschis pasul de setare a parolei din linkul primit pe e-mail.",
+        "cookieChoice": "Reține că ați citit anunțul despre cookie-uri, ca să nu vi-l mai afișăm până când această politică se schimbă.",
         "adminSession": "Păstrează autentificat în consolă un membru al echipei EasyESG.",
         "adminChallenge": "Ține un membru al echipei EasyESG între parolă și cod, la autentificarea în consolă."
       },
@@ -2512,7 +2517,8 @@
         "whileSignedIn": "Cât sunteți autentificat — până vă deconectați sau, dacă nu ați ales să rămâneți autentificat, până închideți browserul.",
         "minutes": "{minutes, plural, one {# minut} few {# minute} other {# de minute}}",
         "sessionThenYear": "Până închideți browserul; {years, plural, one {un an} few {# ani} other {# de ani}} după ce vă autentificați, cu limba din profil.",
-        "untilStepEnds": "Cât durează pasul — câteva minute."
+        "untilStepEnds": "Cât durează pasul — câteva minute.",
+        "months": "{months, plural, one {# lună} few {# luni} other {# de luni}}"
       },
       "storageKind": {
         "sessionStorage": "Cât e deschisă fila",
@@ -2524,7 +2530,7 @@
         "dismissedNotes": "Notele din raport pe care le-ați ascuns, ca să nu reapară cât lucrați.",
         "autosave": "Răspunsurile din raport încă netrimise, ca să nu se piardă dacă rămâneți fără conexiune."
       },
-      "summary": "<ul><li>Site-ul păstrează în browserul dumneavoastră doar ce îi trebuie ca să funcționeze: conectarea, limba aleasă și pașii unei autentificări în curs.</li><li>Nu folosim cookie-uri de statistică, de publicitate sau ale unor terți.</li><li>Nu aveți nimic de acceptat sau de refuzat; dacă le ștergeți, veți fi deconectat.</li></ul>"
+      "summary": "<ul><li>Site-ul păstrează în browserul dumneavoastră doar ce îi trebuie ca să funcționeze: conectarea, limba aleasă și pașii unei autentificări în curs.</li><li>Nu folosim cookie-uri de statistică, de publicitate sau ale unor terți.</li><li>Nu există nimic opțional de activat sau de dezactivat; păstrăm timp de 12 luni evidența faptului că v-am informat. Dacă le ștergeți, veți fi deconectat.</li></ul>"
     },
     "standing": {
       "version": "Versiunea {version}",
@@ -2599,6 +2605,37 @@
           "heading": "Legea aplicabilă și litigiile",
           "body": "<p>Acestor termeni li se aplică legea Republicii Moldova.</p><p>Dacă apare o neînțelegere, scrieți-ne mai întâi la {email}, iar noi vom încerca să o rezolvăm împreună cu dumneavoastră, în scris. Dacă nu reușim, litigiul este soluționat de instanțele competente din municipiul Chișinău.</p>"
         }
+      }
+    },
+    "cookieChoice": {
+      "banner": {
+        "title": "Cookie-uri pe acest site",
+        "body": "Acest site setează doar cookie-urile de care are nevoie ca să funcționeze: ca să rămâneți conectat, ca să vă rețină limba aleasă și ca să păstreze pașii unei autentificări în curs. Nu există nimic opțional de activat sau de dezactivat. <policy>Citiți politica de cookie-uri</policy>",
+        "understood": "Am înțeles",
+        "settings": "Setări cookie-uri"
+      },
+      "settings": {
+        "title": "Setări cookie-uri",
+        "description": "Un singur fel de cookie-uri, mereu active. Acesta este tot setul.",
+        "close": "Închideți setările cookie-urilor",
+        "cancel": "Anulați",
+        "save": "Salvați",
+        "necessary": {
+          "title": "Necesare",
+          "body": "Vă mențin conectat, rețin limba aleasă și păstrează pașii unei autentificări în curs. Site-ul nu poate funcționa fără ele.",
+          "names": "Cookie-urile necesare",
+          "always": "Mereu active"
+        },
+        "nothingElse": "Nu setăm cookie-uri de statistică, de publicitate sau ale unor terți. <policy>Politica de cookie-uri</policy> spune ce face fiecare și cât durează."
+      },
+      "failed": {
+        "title": "Răspunsul dumneavoastră nu a fost salvat",
+        "body": "A apărut o problemă la salvare, așa că acest anunț va apărea din nou. Încercați din nou peste câteva momente."
+      },
+      "settingsButton": "Setări cookie-uri",
+      "standing": {
+        "answered": "Ați răspuns la anunțul despre cookie-uri pe {date}.",
+        "unanswered": "Nu ați răspuns încă la anunțul despre cookie-uri."
       }
     }
   },

@@ -2,7 +2,8 @@
  * Every cookie the tenant application sets — its name and, where this tier decides it, how long it lasts. Deliberately
  * not in `src/server/` and deliberately carrying no `server-only` marker: `proxy.ts` needs the names and is neither a
  * Server Component nor a client bundle, and the cookie policy's inventory reads all of it (task 75.2,
- * `features/public/legal/tools/cookie-inventory.ts`). Names are not secrets; the values never leave the server.
+ * `lib/cookie-inventory.ts`). Names are not secrets; the values never leave the server — but for the cookie banner's
+ * answer, which the page's own script reads (task 223).
  *
  * **Declared here rather than beside each writer** since task 75.2 (182/122): the disclosure must be true of what the
  * application sets, and one module holding the facts it states is what lets the inventory import them rather than
@@ -72,3 +73,12 @@ export const PENDING_LINK_TTL_SECONDS = 5 * 60;
  */
 export const SETUP_GRANT_COOKIE = 'easyesg_setup_grant';
 
+/**
+ * The answer to the cookie banner (task 223; `architecture.md` §12.5.6's task-223 row (2), (8)): the server record's id,
+ * the cookie policy version answered and the moment, written by S-31's codec
+ * (`features/public/cookie-choice/tools/cookie-choice-cookie.ts`). **The one cookie here that is neither sealed nor
+ * `httpOnly`**: the banner decides after hydration whether to show itself, so that the prerendered home stays
+ * prerendered, and the value is no secret — only a pointer to what the browser was told. It lasts
+ * `COOKIE_CHOICE_KEPT_MONTHS` from the answer, the months the server keeps the record.
+ */
+export const COOKIE_CHOICE_COOKIE = 'easyesg_cookie_choice';

@@ -354,7 +354,7 @@ Added 24 Aug 2026 with the Visitor actor, closing `design_spec.md` OQ-12. These 
 |---|---|---|
 | Public tier | UC-177 … UC-182 | VI |
 
-Two of them carry an open question rather than a settled mechanism, stated in their §5 entries rather than resolved here: **UC-179**'s cookie question is settled — `design_spec.md` **OQ-23**, closed 10 Sep 2026: no non-essential storage is set, so no consent is required, and **UC-182** does not decide by what channel support is reached (`task.md` task 77). Both are registered because the goal is real and the screen exists; neither is specified past what the sources support. *(Amended 5 Oct 2026, task 182: UC-177, UC-178 and UC-179 now have requirements, FR-204 … FR-206; UC-182 still has none.)*
+Two of them carry an open question rather than a settled mechanism, stated in their §5 entries rather than resolved here: **UC-179**'s cookie question is settled — `design_spec.md` **OQ-23**, closed 10 Sep 2026: no non-essential storage is set, so no consent is required; **OQ-27** (23 Oct 2026, project owner) shows a banner and settings and records each answer regardless — and **UC-182** does not decide by what channel support is reached (`task.md` task 77). Both are registered because the goal is real and the screen exists; neither is specified past what the sources support. *(Amended 5 Oct 2026, task 182: UC-177, UC-178 and UC-179 now have requirements, FR-204 … FR-206; UC-182 still has none.)*
 
 
 ### 4.5 Comprehensive Module (UC-183 … UC-192)
@@ -2963,14 +2963,15 @@ their numbers put them.
 
 - **Primary actor:** VI (Visitor)
 - **Module:** Public tier
-- **Stakeholders and interests:** Reader — wants to know what is set before it is set, and to change their mind later; platform — must not set non-essential storage it has not disclosed.
+- **Stakeholders and interests:** Reader — wants to know what is set before it is set, and to change their mind later; platform — must not set non-essential storage it has not disclosed, and must be able to show that the reader was told.
 - **Preconditions:** None.
-- **Trigger:** The reader opens the cookie policy. **Amended 5 Oct 2026** (project owner, task 182, 182/117): the disclosure is a section of it and no longer a first-arrival overlay, and there is no previous answer to change.
+- **Trigger:** The reader's first visit to the tenant site, or the first after the cookie policy changes; or the reader opens *Cookie settings* from a footer or from the cookie policy. **Amended 23 Oct 2026** (project owner, task 223, `design_spec.md` OQ-27), reversing 5 Oct 2026's 182/117, which had made the disclosure a section of the cookie policy with no first-arrival overlay.
 - **Main success scenario:**
-  1. The visitor is shown what the site sets and what it does not.
-  2. There are no non-essential categories to accept or decline (OQ-23).
-  3. The visitor continues, or opens the cookie policy for the detail.
-- **Postconditions:** **Settled — `design_spec.md` OQ-23**, closed 10 Sep 2026. No consent record is written and no client-side preference is stored, because the platform sets no non-essential storage: every one of its eight cookies is strictly necessary (seven when this was settled; task 155 added `easyesg_setup_grant` on 14 Sep 2026), and so is the browser storage that is not a cookie — session storage in two stores and the autosave queue in IndexedDB — and strictly necessary storage requires information rather than consent. The postcondition is that the reader has been *told*. This re-opens as a new question the moment any non-essential storage is added, and the consent mechanism must ship in the same change as the storage
+  1. The visitor is shown, in a banner that blocks nothing, that the site sets only the cookies it needs.
+  2. There are no non-essential categories to accept or decline: the settings show one, *Necessary*, always on (OQ-23, OQ-27).
+  3. The visitor answers — *I understand*, or *Save* in the settings — or opens the cookie policy for the detail.
+  4. The answer is recorded, and the banner is not shown again until the cookie policy changes.
+- **Postconditions:** **Amended 23 Oct 2026 — `design_spec.md` OQ-27** (project owner, task 223): the answer is recorded, in a cookie and in a server row holding the cookie policy version and the moment, naming the account when the reader is signed in, and kept 12 months; nothing optional is set, so the answer is that the reader was told, not a consent. *What follows is the postcondition as OQ-23 settled it on 10 Sep 2026, kept for the finding that still stands — every cookie is strictly necessary:* no consent record is written and no client-side preference is stored, because the platform sets no non-essential storage: every one of its eight cookies is strictly necessary (seven when this was settled; task 155 added `easyesg_setup_grant` on 14 Sep 2026), and so is the browser storage that is not a cookie — session storage in two stores and the autosave queue in IndexedDB — and strictly necessary storage requires information rather than consent. The postcondition is that the reader has been *told*. This re-opens as a new question the moment any non-essential storage is added, and the consent mechanism must ship in the same change as the storage
 - **Business rules:** What the application actually sets is a factual claim the screen makes about shipped code, not a template sentence; the prototype's "What we do not set" section has to be true of the build.
 - **Related FRs:** FR-206
 - **Related UCs:** UC-178

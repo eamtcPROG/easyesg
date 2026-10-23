@@ -2417,11 +2417,11 @@
         },
         "collect": {
           "heading": "What we keep",
-          "body": "<ul><li><strong>Your account:</strong> your name, your email address, the language you chose, and your password, kept only as a cryptographic fingerprint we cannot read back.</li><li><strong>How you sign in:</strong> if you sign in with Google or Microsoft, your account’s identifier with that provider; if you turn on two-step sign-in, its secret, kept encrypted.</li><li><strong>Your organisations:</strong> which organisations you belong to, and in what role.</li><li><strong>Activity:</strong> when you signed in, failed sign-in attempts and the internet address they came from, to protect accounts; and who changed each value in a report, and when.</li><li><strong>Notifications:</strong> which messages we sent you, on which channel, and whether they arrived.</li></ul>"
+          "body": "<ul><li><strong>Your account:</strong> your name, your email address, the language you chose, and your password, kept only as a cryptographic fingerprint we cannot read back.</li><li><strong>How you sign in:</strong> if you sign in with Google or Microsoft, your account’s identifier with that provider; if you turn on two-step sign-in, its secret, kept encrypted.</li><li><strong>Your organisations:</strong> which organisations you belong to, and in what role.</li><li><strong>Activity:</strong> when you signed in, failed sign-in attempts and the internet address they came from, to protect accounts; and who changed each value in a report, and when.</li><li><strong>Notifications:</strong> which messages we sent you, on which channel, and whether they arrived.</li><li><strong>Your answer to the cookie notice:</strong> which version of the cookie policy you were shown and when, and your account if you were signed in.</li></ul>"
         },
         "purposes": {
           "heading": "Why we use it, and on what basis",
-          "body": "<ul><li>To give you the account and the service you asked for — the basis is our contract with you, the terms of service.</li><li>To keep accounts safe and stop repeated attempts to guess a password — the basis is our legitimate interest in protecting the service.</li><li>So that a report can be checked — who changed a value, and when — the basis is our legitimate interest in a report that can be verified.</li><li>To send you messages about your account and your reports. Those that are not essential you can turn off in your notification preferences.</li></ul><p>We take no automated decisions with legal effects on you, and we do not build a profile of you.</p>"
+          "body": "<ul><li>To give you the account and the service you asked for — the basis is our contract with you, the terms of service.</li><li>To keep accounts safe and stop repeated attempts to guess a password — the basis is our legitimate interest in protecting the service.</li><li>So that a report can be checked — who changed a value, and when — the basis is our legitimate interest in a report that can be verified.</li><li>To send you messages about your account and your reports. Those that are not essential you can turn off in your notification preferences.</li><li>To be able to show that we told you which cookies the site sets — the basis is our legal obligation to inform you.</li></ul><p>We take no automated decisions with legal effects on you, and we do not build a profile of you.</p>"
         },
         "recipients": {
           "heading": "Who can see it",
@@ -2433,7 +2433,7 @@
         },
         "retention": {
           "heading": "How long we keep it",
-          "body": "<ul><li>Your account — for as long as it exists. If you ask us to erase it, we delete your profile, your memberships, your sessions, your preferences and the record of messages sent to you straight away.</li><li>Report content, generated exports and the history of changes — for the life of the organisation and one year after.</li><li>Figures entered in the emissions calculator — without a time limit, so that a reported figure can always be reproduced.</li><li>Notifications — for the life of the organisation and one year after; a platform announcement, one year from sending.</li><li>The system audit log — 24 months.</li><li>Invoices and accounting records — 6 years, as the law requires.</li></ul>"
+          "body": "<ul><li>Your account — for as long as it exists. If you ask us to erase it, we delete your profile, your memberships, your sessions, your preferences and the record of messages sent to you straight away.</li><li>Report content, generated exports and the history of changes — for the life of the organisation and one year after.</li><li>Figures entered in the emissions calculator — without a time limit, so that a reported figure can always be reproduced.</li><li>Notifications — for the life of the organisation and one year after; a platform announcement, one year from sending.</li><li>The system audit log — 24 months.</li><li>Invoices and accounting records — 6 years, as the law requires.</li><li>Your answer to the cookie notice — 12 months.</li></ul>"
         },
         "security": {
           "heading": "How we protect it",
@@ -2468,7 +2468,7 @@
       "cookies": "Cookie policy"
     },
     "cookies": {
-      "lede": "What this site keeps in your browser, what for and for how long. Everything listed here is needed for the site to work, so there is nothing for you to accept or decline.",
+      "lede": "What this site keeps in your browser, what for and for how long. Everything listed here is needed for the site to work, so there is nothing optional to turn on or off — which is all the notice on your first visit tells you.",
       "sections": {
         "set": {
           "heading": "Every cookie we set",
@@ -2485,7 +2485,11 @@
         },
         "browser": {
           "heading": "If you delete the cookies",
-          "body": "You can delete them at any time in your browser’s settings. You will be signed out, and the site will forget the language you chose. There is nothing to accept or decline here, because we set nothing optional."
+          "body": "You can delete them at any time in your browser’s settings. You will be signed out, the site will forget the language you chose, and it will show you its notice about cookies again. There is nothing optional to turn on or off here, because we set nothing optional."
+        },
+        "answer": {
+          "heading": "Your answer to the cookie notice",
+          "body": "When you answer the notice about cookies, we keep a record of it for 12 months: which version of this policy you were shown, when, and your account if you were signed in. It is how we can show that we told you. You can open the cookie settings again at any time, here or from the foot of any page."
         }
       },
       "columns": {
@@ -2505,6 +2509,7 @@
         "factorChallenge": "Holds your place between your password and the code from your authenticator app.",
         "pendingLink": "Keeps the link to a Google account until you confirm it with your password.",
         "setupGrant": "Keeps open the step that sets your password from the link you received by email.",
+        "cookieChoice": "Remembers that you have read the notice about cookies, so that it is not shown again until this policy changes.",
         "adminSession": "Keeps a member of the EasyESG team signed in to the console.",
         "adminChallenge": "Holds a member of the EasyESG team between password and code when signing in to the console."
       },
@@ -2512,7 +2517,8 @@
         "whileSignedIn": "While you are signed in — until you sign out or, unless you chose to stay signed in, until you close your browser.",
         "minutes": "{minutes, plural, one {# minute} other {# minutes}}",
         "sessionThenYear": "Until you close your browser; {years, plural, one {one year} other {# years}} once you sign in, with your profile’s language.",
-        "untilStepEnds": "As long as the step lasts — a few minutes."
+        "untilStepEnds": "As long as the step lasts — a few minutes.",
+        "months": "{months, plural, one {# month} other {# months}}"
       },
       "storageKind": {
         "sessionStorage": "While the tab is open",
@@ -2524,7 +2530,7 @@
         "dismissedNotes": "The notes in your report you have hidden, so that they do not come back while you work.",
         "autosave": "Report answers not yet sent, so that they are not lost if you lose your connection."
       },
-      "summary": "<ul><li>The site keeps only what it needs to work in your browser: your sign-in, the language you chose and the steps of a sign-in in progress.</li><li>We use no statistics, advertising or third-party cookies.</li><li>There is nothing for you to accept or decline; if you delete them, you are signed out.</li></ul>"
+      "summary": "<ul><li>The site keeps only what it needs to work in your browser: your sign-in, the language you chose and the steps of a sign-in in progress.</li><li>We use no statistics, advertising or third-party cookies.</li><li>There is nothing optional to turn on or off; we keep a record that we told you, for 12 months. If you delete them, you are signed out.</li></ul>"
     },
     "standing": {
       "version": "Version {version}",
@@ -2599,6 +2605,37 @@
           "heading": "Governing law and disputes",
           "body": "<p>These terms are governed by the law of the Republic of Moldova.</p><p>If a disagreement arises, write to us first at {email} and we will try to settle it with you in writing. If that fails, the dispute is decided by the competent courts of the municipality of Chișinău.</p>"
         }
+      }
+    },
+    "cookieChoice": {
+      "banner": {
+        "title": "Cookies on this site",
+        "body": "This site sets only the cookies it needs to work: to keep you signed in, to remember your language and to hold the steps of a sign-in in progress. There is nothing optional to turn on or off. <policy>Read the cookie policy</policy>",
+        "understood": "I understand",
+        "settings": "Cookie settings"
+      },
+      "settings": {
+        "title": "Cookie settings",
+        "description": "One kind of cookie, and it is always on. That is the whole set.",
+        "close": "Close the cookie settings",
+        "cancel": "Cancel",
+        "save": "Save",
+        "necessary": {
+          "title": "Necessary",
+          "body": "They keep you signed in, remember your language and hold the steps of a sign-in in progress. The site cannot work without them.",
+          "names": "The necessary cookies",
+          "always": "Always on"
+        },
+        "nothingElse": "We set no statistics, advertising or third-party cookies. The <policy>cookie policy</policy> says what each one does and how long it lasts."
+      },
+      "failed": {
+        "title": "Your answer was not saved",
+        "body": "Something went wrong while saving it, so this notice will appear again. Try again in a moment."
+      },
+      "settingsButton": "Cookie settings",
+      "standing": {
+        "answered": "You answered the notice about cookies on {date}.",
+        "unanswered": "You have not yet answered the notice about cookies."
       }
     }
   },

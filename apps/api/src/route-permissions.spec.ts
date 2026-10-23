@@ -59,9 +59,10 @@ describe('every route states its permission (task 28.2, actors.md §5)', () => {
    * about. Three until task 67.3, whose `admin` kind is the realm's — `AdminRealmGuard`, reached
    * through `@RequiresAdminRole` — and which this assertion is now what makes deliberate. Five since
    * task 155, whose `setup` kind is `AuthGuard`'s exception for an account still completing its setup. Six since task
-   * 195, whose `legal-acceptance` kind is its exception for an account owing an acceptance of the terms.
+   * 195, whose `legal-acceptance` kind is its exception for an account owing an acceptance of the terms. Seven since task
+   * 223, whose `visitor` kind admits no session and any session — the cookie banner's answer.
    */
-  it('uses only the six declarations the guards implement', () => {
+  it('uses only the seven declarations the guards implement', () => {
     const kinds = new Set(
       Object.values(actual).map((permission) => permission?.split(':')[0] as PermissionKind),
     );
@@ -72,6 +73,7 @@ describe('every route states its permission (task 28.2, actors.md §5)', () => {
       PERMISSION.PUBLIC,
       PERMISSION.ROLE,
       PERMISSION.SETUP,
+      PERMISSION.VISITOR,
     ]);
   });
 });

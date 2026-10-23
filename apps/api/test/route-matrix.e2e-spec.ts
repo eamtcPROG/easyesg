@@ -107,7 +107,8 @@ const ROLE_OF: Partial<Record<ActorName, string>> = {
 };
 
 function expectedFor(permission: Permission, actor: ActorName): string {
-  if (permission === PERMISSION.PUBLIC) return ADMITTED;
+  // Task 223: a visitor's route admits everyone — no bearer, or any that resolves, in setup or owing an acceptance.
+  if (permission === PERMISSION.PUBLIC || permission === PERMISSION.VISITOR) return ADMITTED;
 
   if (actor === ACTOR.ANONYMOUS) return ProblemType.AuthenticationRequired;
 

@@ -768,7 +768,8 @@
       }
     },
     "legal": {
-      "controller_unavailable": "Datele operatorului platformei nu pot fi citite acum, așa că termenii și condițiile și politica de confidențialitate nu sunt afișate. Reveniți puțin mai târziu."
+      "controller_unavailable": "Datele operatorului platformei nu pot fi citite acum, așa că termenii și condițiile și politica de confidențialitate nu sunt afișate. Reveniți puțin mai târziu.",
+      "cookie_policy_changed": "Politica de cookie-uri a fost actualizată cât timp pagina era deschisă, așa că răspunsul dumneavoastră nu a fost salvat. Reîncărcați pagina și citiți politica în vigoare."
     }
   },
   "vocabulary": {

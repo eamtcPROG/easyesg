@@ -3,7 +3,7 @@ import {
   COOKIE_INVENTORY,
   COOKIE_LIFETIME,
   type CookieLifetime,
-} from '../../tools/cookie-inventory';
+} from '@/lib/cookie-inventory';
 import styles from '../styles/legal.module.css';
 import { TableScroll } from './table-scroll';
 
@@ -32,6 +32,8 @@ export async function CookieTable() {
         return t('lifetime.sessionThenYear', { years: value.years });
       case COOKIE_LIFETIME.UNTIL_STEP_ENDS:
         return t('lifetime.untilStepEnds');
+      case COOKIE_LIFETIME.MONTHS:
+        return t('lifetime.months', { months: value.months });
     }
   };
 

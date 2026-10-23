@@ -32871,3 +32871,120 @@ The change reaches `apps/api` (a migration, controllers and DTOs), `apps/web`, a
 - `pnpm e2e:worker` **skipped**: nothing here is a consumer or a scheduled job. The browser suite's pre-hook stopped
   this repository's dev servers, another session's among them.
 - **No review agents**: this closes a task, not Stage 6, which still holds tasks 76, 77 and 222.
+
+## Task 223 — the cookie banner and the cookie settings, each answer recorded · 2026-10-23
+
+FR-206 as amended: a banner on a first visit to the tenant site, cookie settings behind it and in every footer, and each
+answer recorded in the browser and on the server, though every cookie the platform sets is strictly necessary.
+**Appended and built in one change** at the owner's word — *the law requires the banner anyway, and the settings should
+exist* — which reverses `design_spec.md` OQ-23's conclusion and 182/117. Stage 6 is not closing: it still holds tasks
+76, 77 and 222.
+
+### Decided (project owner, two batches, three of five answered with the recommended option)
+
+`design_spec.md` OQ-27 (new), OQ-23 (superseded note), S-31 (rewritten), S-30's controls; FR-206 (obligation,
+behaviour, AC-2 … AC-11); UC-179; `architecture.md` §12.5.6's task-223 row (1) … (9), 182/117 marked reversed.
+
+- **The reading of the law is the owner's**, and it overrides OQ-23's: that strictly necessary cookies need information
+  and no consent. Recorded as the owner's decision in OQ-27, with OQ-23's *finding* — every cookie is strictly
+  necessary — left standing.
+- **(1) The banner informs; the settings show one category, *Necessary*, always on.** *Declined:* the artboard's
+  accept/reject pair, where a reject would set exactly what an accept sets; a statistics category, which would be
+  analytics this task did not set out to build.
+- **(2) Each answer recorded in a cookie and a server row** — *not my recommendation*, which was the cookie alone.
+- **(3) The row names the account when the reader is signed in** — *not my recommendation*, which was id, version and
+  moment only. *Declined also:* the address and the browser string.
+- **(4) Kept twelve months, then purged by the worker.** *Declined:* six years beside the audit log; a deferral.
+- **(5) The tenant site only.** *Declined:* the console too — *not my recommendation*, which was both front ends.
+
+### What the building decided within them
+
+- **`@AdmitsVisitor`, the route-permission table's seventh kind** (row (6)): one route, `POST /legal/cookie-choices`,
+  that `AuthGuard` admits with no bearer as nobody's and resolves when a bearer comes — refusing one it cannot resolve,
+  so an ended session goes to sign-in rather than being recorded as a visitor — and that admits an account in setup or
+  owing an acceptance, since the banner shows on S-36 and S-43. Not `@Public()`, which never reads a bearer, so it
+  could not say whose answer it was; not a public route and an account route side by side, two paths for one act.
+- **No throttle in the api; a recorded gap until task 71** (row (7)). The web calls the api from its own server, so
+  every visitor arrives from one address, and `identity.auth_attempt`'s per-address window would have refused the whole
+  site after five answers. What holds meanwhile is a row of four small columns, purged within a year.
+- **The row has no answer column.** There is one answer; a column would hold one value forever.
+- **The twelve months are `@easyesg/i18n`'s `COOKIE_CHOICE_KEPT_MONTHS`**, which the cookie's expiry and the purge both
+  read; the purge counts calendar months in PostgreSQL (`make_interval`), and the cookie's expiry clamps the day to the
+  month as PostgreSQL does, so 29 February 2028 lapses on 28 February 2029 on both sides — the codec's spec pins it.
+- **The api's refusal is task 195's type, `legal-version-changed`, with wording of its own**
+  (`platform.legal.cookie_policy_changed`): the terms' wording says the terms changed.
+- **The cookie is neither sealed nor `httpOnly`, and the banner reads it after hydration** (row (8)), so the marketing
+  home stays the page the build prerenders. On the server and through hydration the island knows nothing and shows no
+  banner; the browser's own read follows.
+- **Fixed at the foot of the viewport, its measured height reserved** — not sticky at the end of `body`, because the
+  signed-in layout is a column exactly the viewport's height with its own scroll region, below which a sticky banner
+  would never be seen. The banner publishes its `ResizeObserver` height as `--cookie-banner-block-size`; `body` pads by
+  it and the signed-in column subtracts it, so nothing sits beneath the banner at any width, locale or text size. No
+  `z-index`: a dialogue or a menu comes later in the document and paints above it.
+- **No switch in the settings**, where the artboard draws one per category: the one category cannot move, and a switch
+  that cannot move is one a reader tries anyway. *Always on* says it.
+- **The island sits beside the page, never around it** — the defect the browser run found, below — and the footer's
+  *Cookie settings* and the policy's standing line ask it to open the settings through a small module-level signal
+  (`components/shared/cookie-settings-request.ts`) rather than a context.
+- **The cookie inventory moved from `features/public/legal/tools/` to `lib/`**: the locale layout became its second
+  reader, for the names the settings list. Its spec's path to the repository root moved with it.
+- **The legal set's text was edited in place, at version 1.0** (row (9)): the cookie policy (lede, the browser section,
+  the summary, a fifth section, *Your answer*, and the ninth cookie) and the privacy notice (what is kept, why, and
+  for how long). *Assumption, stated:* nothing has gone live, so moving a version would send every account to S-43
+  for a text nobody was yet bound by.
+
+### What the run found
+
+- **The page on screen twice, transiently, in twenty-two browser journeys** — the finding worth this entry. The island
+  first wrapped the page as a provider, and its value changed as hydration ended (`known` flips once the browser's
+  cookie is read). On a page whose content streams — a `loading.tsx`, so the content arrives as a hidden segment before
+  it is swapped in — that change reached a Suspense boundary still dehydrated, and React, unable to know whether
+  anything inside read the context, abandoned the boundary's server HTML and rendered it on the client. For a moment
+  both copies existed: the client's, with client ids (`fr0-name`), inside `#main-content`, and the server's, with
+  server ids (`fR1b5…-name`), still in the stream's hidden segment — and every locator that expected one element found
+  two. A direct load sampled after three seconds showed one copy and no console error; sampled every 250 ms from the
+  load, the first sample found the content still in `div#S:0[hidden]`. **Nothing logged it** — React recovers from
+  this without an error a page would show — so only a suite asserting exact counts could see it. Moving the island
+  beside the page removed every case. The rule it leaves, worth knowing before the next root-level provider: **a
+  client provider around `{children}` in the root layout must not change its value as hydration ends**, or every
+  streaming page beneath it renders twice.
+- **The route-permission spec's list of kinds refused the seventh** until it was named, which is that list doing its
+  job; the route matrix admits `visitor` for every actor.
+- **`openapi:check` diffs against git's index**, so the regenerated contract had to be staged before the check could
+  pass on an uncommitted tree.
+- **The PDF export suite timed out at the renderer** (504, the 60-second deadline) inside the full `pnpm e2e` run, eleven
+  cases, and passed 11/11 alone. The renderer prints markup the api composes (`page.setContent`), never a page of the
+  web app, so the banner cannot reach it; the same suite is what the last red CI run on `dev` failed in.
+- **Prettier was run once and reverted**: it is not this repository's formatter (there is no configuration), and it
+  rewrote some sixty files to eighty columns, every one restored before anything else ran.
+- **Two existing browser cases counted the cookie policy's contents at five**; the policy now has six.
+- **S-28's rail is measured to the banner's top while it shows**: the credentials case asserted that the rail and the
+  footer reach the window's foot, which the signed-in column now stops short of by the banner's height — the reserve
+  doing its job. It was hidden behind the duplication in the first run and surfaced in the second.
+
+### What was searched
+
+Every statement the decision falsified — *nothing to accept or decline*, *no first-arrival overlay*, *stores nothing*,
+*asks nothing* — across the web catalogues, the web source, the browser suite, `design_spec.md`, the requirements,
+the use cases, `architecture.md` and the CLAUDE.md files. What remains is history: OQ-23's row, 182/117 marked
+reversed, FR-206's history line.
+
+### Verified
+
+The gates the change reaches — `apps/api`, `apps/web`, `apps/admin` and `packages/i18n` (a shared package, so every
+dependent's row) — and nothing else:
+
+- **Unit:** api 2,423 (306 suites), web 2,145, admin 315, i18n 172.
+- **`pnpm migrations:check`:** the migration applied, reverted and re-applied on the test stack and applied on the dev
+  stack; 64 schema invariants hold.
+- **`pnpm e2e`:** 1,969 of 1,980 in the full run — the cookie-choice suite and the route matrix among them — with the
+  PDF export suite's 11 timing out at the renderer, then 11/11 alone. **`pnpm e2e:worker`:** 17/17, the purge's
+  schedule and routing among them.
+- **`pnpm openapi:check`** (133 paths), **`pnpm lint`**, **`pnpm boundaries`** (3,226 modules, no violation),
+  **`pnpm routes:check`**, **`pnpm docs:check`** 48/48.
+- **`pnpm e2e:web`, all three projects:** 396 of 397 on the run after the island moved, the one being the credentials
+  case above, then 8/8 for its file. The server output held only the two lines earlier runs carry — the benign
+  *destination stream closed early* digest and the deliberate unpublished factor-set revision.
+
+Skipped, as the close procedure allows within a Stage: `gates:clean`, `image:check`, `facade:check`, `events:check`,
+the two `*:prove` gates and the review agents, which the Stage's end runs.

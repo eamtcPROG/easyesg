@@ -27,4 +27,7 @@
 body {
   color: var(--text-default);
   background: var(--surface-default);
+  /* S-31's banner, fixed at the foot of the viewport, publishes its height while it shows (task 223); the document
+     reserves it, so the last of any page can scroll clear of the banner. Nothing while it is not shown. */
+  padding-block-end: var(--cookie-banner-block-size, 0px);
 }

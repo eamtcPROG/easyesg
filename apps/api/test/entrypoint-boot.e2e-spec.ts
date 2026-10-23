@@ -14,6 +14,7 @@ import { ScheduleTicker } from '../src/infrastructure/schedule/schedule-ticker.s
 import { FACTOR_SET_REPLACED } from '../src/modules/core/calculator/constants/calculator.constants';
 import { EXPORT_PDF_REQUESTED, EXPORT_XLSX_REQUESTED } from '../src/modules/core/export/constants/export.constants';
 import { REPORT_NOTICE_CHECK, REPORT_NOTICE_SWEEP } from '../src/modules/core/validation/constants/validation.constants';
+import { COOKIE_CHOICE_PURGE } from '../src/modules/platform/legal/constants/cookie-choice.constants';
 import { EMAIL_VERIFICATION_REQUESTED, PASSWORD_RESET_REQUESTED } from '../src/modules/identity/account/constants/account.constants';
 import { INVITATION_ISSUED } from '../src/modules/identity/invitation/constants/invitation.constants';
 import { AuthGuard } from '../src/modules/identity/session/guards/auth.guard';
@@ -59,8 +60,9 @@ const workerMode = process.env.MODE === APP_MODE.WORKER;
 
 describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
   let app: INestApplicationContext;
-  // The worker's boot schedules the day's sweep once its slot has passed (task 51.2), and closes before draining it — so
-  // the suite removes the row it caused, from its own start, or the next `pnpm e2e` names it a stray (task 42.1).
+  // The worker's boot schedules the day's sweep once its slot has passed (task 51.2), and since task 223 the night's purge,
+  // and closes before draining either — so the suite removes the rows it caused, from its own start, or the next
+  // `pnpm e2e` names them strays (task 42.1).
   let owner: DataSource | undefined;
   let since: Date | undefined;
 
@@ -79,6 +81,7 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
     await app?.close();
     if (owner !== undefined && since !== undefined) {
       await deleteScheduledRuns({ owner, eventType: REPORT_NOTICE_SWEEP, since });
+      await deleteScheduledRuns({ owner, eventType: COOKIE_CHOICE_PURGE, since });
       await owner.destroy();
     }
   });
@@ -121,6 +124,8 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
       // Task 51.2: the day's sweep, and one period's check.
       REPORT_NOTICE_SWEEP,
       REPORT_NOTICE_CHECK,
+      // Task 223: the night's purge of the cookie banner's answers.
+      COOKIE_CHOICE_PURGE,
     ])('routes %s to its handler', async (name) => {
       const job = { id: 'boot-probe', name, data: {}, attemptsMade: 0, opts: {} } as unknown as Job<
         Record<string, unknown>
@@ -157,8 +162,13 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
      * **Every daily job is scheduled** (task 51.2): the routing probe above proves a job reaches its handler once its
      * row exists, and this proves the row is written — a `@RunsDaily` line deleted resolves everything and starts nothing.
      */
-    it('schedules the notices’ sweep daily at 07:00 in Chișinău', () => {
-      expect(app.get(ScheduleTicker, { strict: false }).scheduled()).toEqual([
+    it('schedules the notices’ sweep at 07:00 and the cookie answers’ purge at 03:00, daily in Chișinău', () => {
+      // Sorted by name, since discovery order is the module graph's and says nothing about the schedule.
+      const scheduled = [...app.get(ScheduleTicker, { strict: false }).scheduled()].sort((a, b) =>
+        a.jobName.localeCompare(b.jobName),
+      );
+      expect(scheduled).toEqual([
+        { jobName: COOKIE_CHOICE_PURGE, slot: { at: '03:00', timezone: 'Europe/Chisinau' } },
         { jobName: REPORT_NOTICE_SWEEP, slot: { at: '07:00', timezone: 'Europe/Chisinau' } },
       ]);
     });

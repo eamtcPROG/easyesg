@@ -1,4 +1,6 @@
+import { COOKIE_CHOICE_KEPT_MONTHS } from '@easyesg/i18n';
 import {
+  COOKIE_CHOICE_COOKIE,
   FACTOR_CHALLENGE_COOKIE,
   FACTOR_CHALLENGE_TTL_SECONDS,
   LOCALE_COOKIE,
@@ -17,13 +19,14 @@ import {
  * lists is read from here and nowhere else, and `cookie-inventory.spec.ts` fails when the repository declares a cookie,
  * or a module keeps browser storage, this does not list.
  *
- * **The site's six cookies are imported from where the application declares them** (`lib/session-cookie.ts`), names
+ * **The site's seven cookies are imported from where the application declares them** (`lib/session-cookie.ts`), names
  * and the lifetimes this tier decides, so the policy cannot drift from them. **The operator console's two are set by
  * `apps/api`**, on the console's own origin, which `apps/web` may not import; their names are restated here and the spec
  * holds them to the api's source.
  *
- * **Every one is strictly necessary** — the owner's assumption, OQ-23 and 182/122: the platform informs and does not
- * ask, and a cookie that is not strictly necessary brings the consent mechanism in the same change.
+ * **Every one is strictly necessary** — the owner's assumption, OQ-23 and 182/122: the platform informs, and since task
+ * 223 records that it did (OQ-27), but offers nothing to decline; a cookie that is not strictly necessary brings a real
+ * choice in the same change.
  */
 export const COOKIE_SURFACE = {
   /** This site — `easyesg.md` and its locales. */
@@ -42,6 +45,8 @@ export const COOKIE_PURPOSE = {
   FACTOR_CHALLENGE: 'factorChallenge',
   PENDING_LINK: 'pendingLink',
   SETUP_GRANT: 'setupGrant',
+  /** Task 223: the answer to the cookie banner. */
+  COOKIE_CHOICE: 'cookieChoice',
   ADMIN_SESSION: 'adminSession',
   ADMIN_CHALLENGE: 'adminChallenge',
 } as const;
@@ -58,13 +63,16 @@ export const COOKIE_LIFETIME = {
   SESSION_THEN_YEAR: 'sessionThenYear',
   /** As long as the step it belongs to — an expiry the api sets, a few minutes. */
   UNTIL_STEP_ENDS: 'untilStepEnds',
+  /** A fixed number of calendar months from when it was set — the cookie banner's answer (task 223). */
+  MONTHS: 'months',
 } as const;
 
 export type CookieLifetime =
   | { readonly kind: typeof COOKIE_LIFETIME.WHILE_SIGNED_IN }
   | { readonly kind: typeof COOKIE_LIFETIME.MINUTES; readonly minutes: number }
   | { readonly kind: typeof COOKIE_LIFETIME.SESSION_THEN_YEAR; readonly years: number }
-  | { readonly kind: typeof COOKIE_LIFETIME.UNTIL_STEP_ENDS };
+  | { readonly kind: typeof COOKIE_LIFETIME.UNTIL_STEP_ENDS }
+  | { readonly kind: typeof COOKIE_LIFETIME.MONTHS; readonly months: number };
 
 export interface InventoriedCookie {
   readonly name: string;
@@ -115,6 +123,12 @@ export const COOKIE_INVENTORY: readonly InventoriedCookie[] = [
     lifetime: { kind: COOKIE_LIFETIME.UNTIL_STEP_ENDS },
   },
   {
+    name: COOKIE_CHOICE_COOKIE,
+    surface: COOKIE_SURFACE.SITE,
+    purpose: COOKIE_PURPOSE.COOKIE_CHOICE,
+    lifetime: { kind: COOKIE_LIFETIME.MONTHS, months: COOKIE_CHOICE_KEPT_MONTHS },
+  },
+  {
     name: 'easyesg_admin_session',
     surface: COOKIE_SURFACE.CONSOLE,
     purpose: COOKIE_PURPOSE.ADMIN_SESSION,
@@ -127,6 +141,11 @@ export const COOKIE_INVENTORY: readonly InventoriedCookie[] = [
     lifetime: { kind: COOKIE_LIFETIME.UNTIL_STEP_ENDS },
   },
 ];
+
+/** The cookies this site sets, by name — what S-31's settings say *Necessary* holds (task 223). */
+export const SITE_COOKIE_NAMES: readonly string[] = COOKIE_INVENTORY.filter(
+  (cookie) => cookie.surface === COOKIE_SURFACE.SITE,
+).map((cookie) => cookie.name);
 
 /** The two kinds of browser storage the site keeps that are not cookies — a key of `legal.cookies.storageKind`. */
 export const STORAGE_KIND = {

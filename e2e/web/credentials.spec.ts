@@ -83,11 +83,15 @@ test('the screen rests as a row per way in, dated from the api, closing on the l
   const railBox = page.getByRole('navigation', { name: 'Contul dumneavoastră' }).locator('..');
   const rail = await railBox.boundingBox();
   const foot = await footer.boundingBox();
-  const viewport = page.viewportSize();
-  expect(rail && viewport && Math.abs(rail.y + rail.height - viewport.height)).toBeLessThanOrEqual(1);
+  // The window's foot is the cookie banner's top while it shows (task 223): the signed-in column is the viewport less
+  // the banner, so nothing of the page sits beneath it. Unanswered here, so it shows.
+  const banner = await page.getByRole('region', { name: 'Cookie-uri pe acest site' }).boundingBox();
+  const windowFoot = banner?.y;
+  expect(windowFoot).toBeDefined();
+  expect(rail && windowFoot && Math.abs(rail.y + rail.height - windowFoot)).toBeLessThanOrEqual(1);
   expect(rail && foot && Math.abs(rail.x + rail.width - foot.x)).toBeLessThanOrEqual(1);
   // And the footer at the foot of the window, which is what makes the case above a short record's.
-  expect(foot && viewport && Math.abs(foot.y + foot.height - viewport.height)).toBeLessThanOrEqual(1);
+  expect(foot && windowFoot && Math.abs(foot.y + foot.height - windowFoot)).toBeLessThanOrEqual(1);
 
   // In a window the record overflows, the record scrolls and the rail does not: the wheel over the record brings the
   // footer into view while the rail's top stays where it was.

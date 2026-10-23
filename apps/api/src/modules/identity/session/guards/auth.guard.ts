@@ -13,6 +13,7 @@ import { requestContext } from '@api/infrastructure/persistence/request-context'
 import type { Clock } from '@api/contracts/clock.port';
 import { ADMITS_ACCOUNT_IN_SETUP } from '../constants/account-setup-gate.constants';
 import { ADMITS_PENDING_LEGAL_ACCEPTANCE } from '../constants/legal-acceptance-gate.constants';
+import { ADMITS_VISITOR } from '../constants/visitor-gate.constants';
 import type { AccessTokenVerifier } from '../interfaces/access-token-signer.interface';
 import type { RequestIdentityStore } from '../interfaces/request-identity-store.interface';
 import type { MemberActivityStore } from '../interfaces/member-activity-store.interface';
@@ -59,6 +60,11 @@ const BEARER = /^Bearer (.+)$/;
  * tier guess. `legal-acceptance-required` (task 195) is the fourth, sent to S-43 the same way: the
  * session is sound and its account owes an acceptance of the terms or the privacy notice in force.
  *
+ * **A route marked `@AdmitsVisitor` is the one that admits no bearer and reads one when it comes** (task 223): the cookie
+ * banner's answer, which a visitor gives with no session and a member with theirs. With no bearer it passes with no
+ * identity; with one it resolves the identity as everywhere else and refuses what it cannot resolve, but neither the
+ * setup refusal nor the acceptance refusal applies — answering the banner is neither.
+ *
  * **The setup refusal lives here rather than in the two account guards** because this is the one
  * place every session-bearing route passes through, and a route marked `@AdmitsAccountInSetup` is
  * the only exception — so a route added later is closed to an account in setup by omission, the same
@@ -99,7 +105,11 @@ export class AuthGuard implements CanActivate {
     const presented = BEARER.exec(
       context.switchToHttp().getRequest<Request>().header('authorization') ?? '',
     );
-    if (presented === null) throw new AuthenticationRequiredError();
+    if (presented === null) {
+      // Task 223: nobody's request, admitted as nobody's — the context keeps no actor, so the route records none.
+      if (marked(ADMITS_VISITOR)) return true;
+      throw new AuthenticationRequiredError();
+    }
 
     const sessionId = await this.verifier.verify(presented[1]);
     if (sessionId === null) throw new AuthenticationRequiredError();
@@ -123,7 +133,8 @@ export class AuthGuard implements CanActivate {
     // task-155 row). Before membership resolution, because what it may reach does not depend on it.
     if (
       identity.account.status === ACCOUNT_STATUS.AWAITING_SETUP &&
-      !marked(ADMITS_ACCOUNT_IN_SETUP)
+      !marked(ADMITS_ACCOUNT_IN_SETUP) &&
+      !marked(ADMITS_VISITOR)
     ) {
       throw new AccountSetupRequiredError();
     }
@@ -134,7 +145,8 @@ export class AuthGuard implements CanActivate {
     if (
       identity.account.status !== ACCOUNT_STATUS.AWAITING_SETUP &&
       owesLegalAcceptance({ accepted: identity.acceptedLegalVersions, inForce: LEGAL_VERSIONS_IN_FORCE }) &&
-      !marked(ADMITS_PENDING_LEGAL_ACCEPTANCE)
+      !marked(ADMITS_PENDING_LEGAL_ACCEPTANCE) &&
+      !marked(ADMITS_VISITOR)
     ) {
       throw new LegalAcceptanceRequiredError();
     }

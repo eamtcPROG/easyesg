@@ -2723,6 +2723,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/legal/cookie-choices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record an answer to the cookie banner
+         * @description UC-179. The reader was told what the site sets, under this version of the cookie policy — by the signed-in account when a session is presented, by nobody when none is. Every cookie the site sets is strictly necessary, so there is one answer and the body carries no choice. The record is kept twelve months.
+         */
+        post: operations["CookieChoicesController_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5765,6 +5785,30 @@ export interface components {
              * @description Where questions about personal data are sent.
              */
             dataProtectionEmail: string;
+        };
+        CookieChoiceResponseDto: {
+            /**
+             * Format: uuid
+             * @description The record’s id, which the browser keeps in its cookie.
+             */
+            id: string;
+            /**
+             * @description The cookie policy version answered.
+             * @example 1.0
+             */
+            policyVersion: string;
+            /**
+             * @description Unix epoch milliseconds, UTC.
+             * @example 1792742400000
+             */
+            chosenAt: number;
+        };
+        RecordCookieChoiceRequestDto: {
+            /**
+             * @description The version of the cookie policy the banner was shown under. Refused unless it is the version in force — a banner read before a release replaced the policy is shown again rather than recorded.
+             * @example 1.0
+             */
+            policyVersion: string;
         };
     };
     responses: never;
@@ -12087,6 +12131,41 @@ export interface operations {
             };
             /** @description No readable operator is in force (problem type legal-controller-unavailable). */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    CookieChoicesController_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordCookieChoiceRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The answer as recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["CookieChoiceResponseDto"];
+                    };
+                };
+            };
+            /** @description The version is not the cookie policy in force (problem type legal-version-changed); nothing was recorded. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

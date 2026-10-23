@@ -1,10 +1,12 @@
 import { getFormatter, getTranslations } from 'next-intl/server';
+import { CookieSettingsButton } from '@/features/public/cookie-choice/components/settings-button/cookie-settings-button';
 import { Link } from '@/i18n/navigation';
 import styles from './site-footer.module.css';
 import { ROUTES } from '@/lib/routes';
 
 /**
- * The legal footer — the copyright note and the three legal documents.
+ * The legal footer — the copyright note, the three legal documents and, since task 223, *Cookie settings*, which opens
+ * S-31's settings over the page (`design_spec.md` S-31's entry points).
  *
  * Shared rather than per-screen: the identity screens carry it today, the public and help
  * surfaces carry the same one in Phase 10, and UX-89's rule is that a need met twice is an
@@ -41,6 +43,7 @@ export async function SiteFooter() {
         <Link href={ROUTES.LEGAL_TERMS}>{t('terms')}</Link>
         <Link href={ROUTES.LEGAL_PRIVACY}>{t('privacy')}</Link>
         <Link href={ROUTES.LEGAL_COOKIES}>{t('cookies')}</Link>
+        <CookieSettingsButton className={styles.action} />
       </nav>
     </>
   );

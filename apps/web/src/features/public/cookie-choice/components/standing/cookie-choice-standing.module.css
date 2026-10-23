@@ -1,0 +1,7 @@
+/* The cookie policy's answer line (task 223): the sentence, then the button, as a section's last lines read. */
+.standing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}

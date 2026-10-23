@@ -150,6 +150,10 @@ export type SocialProvidersResponse = components['schemas']['SocialProvidersResp
 /** The operator the legal documents name, as the public read answers it (FR-205; task 75). */
 export type LegalControllerResponse = components['schemas']['LegalControllerResponseDto'];
 
+// platform — the cookie banner's answer (FR-206; task 223, S-31)
+export type RecordCookieChoiceRequest = components['schemas']['RecordCookieChoiceRequestDto'];
+export type CookieChoice = components['schemas']['CookieChoiceResponseDto'];
+
 // core — the organization (FR-13 … FR-16; task 29). `Organization` is the whole profile; S-04
 // creates it with four of those fields and S-15 fills in the rest, so the create request is its
 // own shape rather than a `Partial<Organization>` — the fields a founding screen may set are a

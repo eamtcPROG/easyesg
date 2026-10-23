@@ -19,7 +19,7 @@ const RUN_PREFIX = `e2e-web-legal-${process.pid}-${Date.now()}`;
 const PASSWORD = 'Parola123!';
 const organizations: string[] = [];
 
-/** The eight cookies OQ-23 and 182/122 enumerate, as wire values — a rename must break here. */
+/** The nine cookies OQ-23, 182/122 and task 223 enumerate, as wire values — a rename must break here. */
 const COOKIES = [
   'easyesg_session',
   'NEXT_LOCALE',
@@ -27,6 +27,7 @@ const COOKIES = [
   'easyesg_factor_challenge',
   'easyesg_pending_link',
   'easyesg_setup_grant',
+  'easyesg_cookie_choice',
   'easyesg_admin_session',
   'easyesg_admin_challenge',
 ];
@@ -38,7 +39,7 @@ test.afterAll(async () => {
 
 const cookieTable = (page: Page) => page.getByRole('table', { name: 'Cookie-urile setate de platformă' });
 
-test('the cookie policy names every cookie the platform sets, within the set, and asks nothing', async ({ page }) => {
+test('the cookie policy names every cookie the platform sets, within the set, and offers nothing to decline', async ({ page }) => {
   await page.goto('/legal/cookies');
 
   await expect(page.getByRole('heading', { level: 1, name: 'Politica de cookie-uri' })).toBeVisible();
@@ -55,8 +56,8 @@ test('the cookie policy names every cookie the platform sets, within the set, an
   await expect(page.getByRole('heading', { level: 2, name: 'Ce nu setăm' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: 'Ce păstrăm în browser în afara cookie-urilor' })).toBeVisible();
 
-  // Nothing to accept or decline (FR-206 AC-2): no control of any kind on the disclosure.
-  await expect(page.getByRole('main').getByRole('button')).toHaveCount(0);
+  // Nothing to decline (FR-206 AC-2): the disclosure's one control opens S-31's settings (task 223).
+  await expect(page.getByRole('main').getByRole('button')).toHaveText(['Setări cookie-uri']);
 });
 
 test('every cookie a signed-in browser holds is on the policy', async ({ page, context }) => {
@@ -87,11 +88,13 @@ test('every cookie a signed-in browser holds is on the policy', async ({ page, c
   expect(held.filter((name) => !listed.includes(name))).toEqual([]);
 });
 
-test('reading the policy stores nothing and raises nothing over the page', async ({ page, context }) => {
+test('reading the policy stores nothing until it is answered, and raises no dialogue over the page', async ({ page, context }) => {
   await page.goto('/legal/cookies');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-  // FR-206 AC-3, AC-8: no consent record, no remembered dismissal, no overlay.
+  // FR-206 AC-3, AC-5: nothing recorded before an answer, and the banner (task 223) is a region at the foot that blocks
+  // nothing — not a dialogue.
+  await expect(page.getByRole('region', { name: 'Cookie-uri pe acest site' })).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(await page.evaluate(() => [sessionStorage.length, localStorage.length])).toEqual([0, 0]);
   // Whatever the visit set is one of the cookies the policy lists.
@@ -195,8 +198,8 @@ test.describe('the Content archetype at its frames', () => {
     const docked = page.getByRole('navigation', { name: 'Pe această pagină' });
     // Exactly one is exposed: the disclosure's copy is not displayed at this width.
     await expect(docked).toHaveCount(1);
-    // The summary and the four sections (task 75.4 put the summary above the formal text).
-    await expect(docked.getByRole('link')).toHaveCount(5);
+    // The summary and the five sections (task 75.4 put the summary above the formal text; task 223 added the answer).
+    await expect(docked.getByRole('link')).toHaveCount(6);
     await expect(page.locator('summary', { hasText: 'Pe această pagină' })).toBeHidden();
   });
 
@@ -210,7 +213,7 @@ test.describe('the Content archetype at its frames', () => {
     await expect(summary).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Pe această pagină' })).toHaveCount(0);
     await summary.click();
-    await expect(page.getByRole('navigation', { name: 'Pe această pagină' }).getByRole('link')).toHaveCount(5);
+    await expect(page.getByRole('navigation', { name: 'Pe această pagină' }).getByRole('link')).toHaveCount(6);
 
     // The last of the three is the one being read; the strip shows it whole. Read inside the strip: the footer carries a
     // link of the same name.

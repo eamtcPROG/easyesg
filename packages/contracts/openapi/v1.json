@@ -8178,6 +8178,56 @@
           "platform"
         ]
       }
+    },
+    "/api/v1/legal/cookie-choices": {
+      "post": {
+        "description": "UC-179. The reader was told what the site sets, under this version of the cookie policy — by the signed-in account when a session is presented, by nobody when none is. Every cookie the site sets is strictly necessary, so there is one answer and the body carries no choice. The record is kept twelve months.",
+        "operationId": "CookieChoicesController_record",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordCookieChoiceRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The answer as recorded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/CookieChoiceResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The version is not the cookie policy in force (problem type legal-version-changed); nothing was recorded.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Record an answer to the cookie banner",
+        "tags": [
+          "platform"
+        ]
+      }
     }
   },
   "info": {
@@ -15453,6 +15503,46 @@
           "idno",
           "registeredAddress",
           "dataProtectionEmail"
+        ]
+      },
+      "CookieChoiceResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The record’s id, which the browser keeps in its cookie."
+          },
+          "policyVersion": {
+            "type": "string",
+            "example": "1.0",
+            "description": "The cookie policy version answered."
+          },
+          "chosenAt": {
+            "type": "integer",
+            "description": "Unix epoch milliseconds, UTC.",
+            "example": 1792742400000
+          }
+        },
+        "required": [
+          "id",
+          "policyVersion",
+          "chosenAt"
+        ]
+      },
+      "RecordCookieChoiceRequestDto": {
+        "type": "object",
+        "properties": {
+          "policyVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "example": "1.0",
+            "description": "The version of the cookie policy the banner was shown under. Refused unless it is the version in force — a banner read before a release replaced the policy is shown again rather than recorded."
+          }
+        },
+        "required": [
+          "policyVersion"
         ]
       }
     }

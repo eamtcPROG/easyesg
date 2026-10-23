@@ -10,6 +10,7 @@ import {
 import { IS_PUBLIC } from '@api/app/decorators/public.decorator';
 import { ADMITS_ACCOUNT_IN_SETUP } from '@api/modules/identity/session/constants/account-setup-gate.constants';
 import { ADMITS_PENDING_LEGAL_ACCEPTANCE } from '@api/modules/identity/session/constants/legal-acceptance-gate.constants';
+import { ADMITS_VISITOR } from '@api/modules/identity/session/constants/visitor-gate.constants';
 import {
   AUDIT_ACTION_METADATA,
   type AuditDeclaration,
@@ -103,6 +104,12 @@ export const PERMISSION = {
    * `AuthGuard` refuses such an account every `account` and `role` route, so the two admit different people.
    */
   LEGAL_ACCEPTANCE: 'legal-acceptance',
+  /**
+   * No session, **or any session** (task 223) — `@AdmitsVisitor`. Not `public`, which never reads a bearer: this one
+   * admits a request with none and resolves one that comes, admitting an account in setup or owing an acceptance — so
+   * it admits everyone, and says whose answer it was when it can.
+   */
+  VISITOR: 'visitor',
 } as const;
 
 type PermissionKind = (typeof PERMISSION)[keyof typeof PERMISSION];
@@ -113,6 +120,7 @@ type Permission =
   | typeof PERMISSION.ACCOUNT
   | typeof PERMISSION.SETUP
   | typeof PERMISSION.LEGAL_ACCEPTANCE
+  | typeof PERMISSION.VISITOR
   | `${typeof PERMISSION.ROLE}:${string}`
   | `${typeof PERMISSION.ADMIN}:${string}`;
 
@@ -182,6 +190,8 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // The operator the legal documents name (task 75; FR-205): read before anyone has an account, because the documents
   // are a precondition of registering — `public.decorator.ts`'s fourth kind.
   'GET /legal/controller': PERMISSION.PUBLIC,
+  // Task 223: the cookie banner's answer — a visitor's with no session, a member's with theirs.
+  'POST /legal/cookie-choices': PERMISSION.VISITOR,
   'POST /auth/social/:provider/challenge': PERMISSION.PUBLIC,
   'POST /auth/social/:provider/session': PERMISSION.PUBLIC,
   // The confirmation link's first password (task 155). Public for the funnel's reason: the account
@@ -521,6 +531,7 @@ function permissionOf(controller: Constructor, handler: object): Permission | nu
     (Reflect.getMetadata(key, controller) as T | undefined);
 
   if (read<boolean>(IS_PUBLIC) === true) return PERMISSION.PUBLIC;
+  if (read<boolean>(ADMITS_VISITOR) === true) return PERMISSION.VISITOR;
 
   const adminRoles = read<string[]>(REQUIRED_ADMIN_ROLES);
   if (adminRoles !== undefined) return `${PERMISSION.ADMIN}:${[...adminRoles].sort().join('+')}`;

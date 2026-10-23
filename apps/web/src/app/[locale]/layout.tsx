@@ -5,6 +5,8 @@ import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
+import { CookieChoice } from '@/features/public/cookie-choice/components/island/cookie-choice';
+import { SITE_COOKIE_NAMES } from '@/lib/cookie-inventory';
 import { RESTATED_TOKEN } from '@/lib/restated-tokens';
 import { PageSkipLink } from '@/shared/page-skip-link';
 
@@ -143,7 +145,13 @@ export default async function LocaleLayout({ children, params }: Props) {
           `architecture.md` §12.5.6 carries the decision and what it cost to reach.
         */}
         <PageSkipLink locale={locale} />
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          {children}
+          {/* S-31 beside every page, never around it (task 223): the banner until it is answered, and the settings every
+              footer opens. It changes as hydration ends, and around the page that change would reach a Suspense
+              boundary still streaming and have React render it twice. */}
+          <CookieChoice necessaryCookies={SITE_COOKIE_NAMES} />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

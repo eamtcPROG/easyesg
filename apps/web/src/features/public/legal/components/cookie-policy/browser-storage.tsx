@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { BROWSER_STORAGE } from '../../tools/cookie-inventory';
+import { BROWSER_STORAGE } from '@/lib/cookie-inventory';
 import styles from '../styles/legal.module.css';
 
 /**

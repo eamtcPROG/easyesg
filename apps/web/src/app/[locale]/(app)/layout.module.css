@@ -7,7 +7,9 @@
 .app {
   display: flex;
   flex-direction: column;
-  block-size: 100dvh;
+  /* Less S-31's banner while it shows (task 223), which the body reserves beneath this column — so the column and the
+     banner together are the viewport, and the region below the tier scrolls clear of it. */
+  block-size: calc(100dvh - var(--cookie-banner-block-size, 0px));
 }
 
 /* The scroll region every screen renders into. The wizard and the three organization-free screens scroll here

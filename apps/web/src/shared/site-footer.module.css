@@ -14,12 +14,23 @@
   font: 400 13.5px/18px var(--font-text);
 }
 
-.links a {
+.links a,
+.action {
   color: var(--text-body);
   text-decoration: none;
   border-radius: var(--radius-1);
 }
 
-.links a:hover {
+.links a:hover,
+.action:hover {
   text-decoration: underline;
+}
+
+/* *Cookie settings* (task 223): a button that opens S-31's settings, drawn as the links beside it are. */
+.action {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
 }

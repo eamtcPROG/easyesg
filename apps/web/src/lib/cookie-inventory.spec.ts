@@ -11,7 +11,7 @@ import { BROWSER_STORAGE, COOKIE_INVENTORY, COOKIE_SURFACE } from './cookie-inve
  * `apps/web` may not import (`web-not-to-api-src`), and a cookie is added by declaring its name — every one in the
  * repository is a constant whose name ends in `COOKIE`, which is the shape this reads.
  */
-const ROOT = join(import.meta.dirname, '../../../../../../..');
+const ROOT = join(import.meta.dirname, '../../../..');
 
 const sourceFiles = (dir: string): string[] =>
   readdirSync(dir).flatMap((entry) => {

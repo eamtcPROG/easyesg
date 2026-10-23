@@ -1220,3 +1220,37 @@ export async function withdrawLegalAcceptance(input: { readonly email: string })
     await client.end();
   }
 }
+
+/**
+ * The cookie banner's recorded answer behind a browser's cookie (task 223) — the row its id names, read as the owner, so
+ * a journey can say what the server kept and whose it is. Null where there is none.
+ */
+export async function cookieChoiceRecord(
+  id: string,
+): Promise<{ readonly policyVersion: string; readonly email: string | null } | null> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    const { rows } = await client.query<{ policy_version: string; email: string | null }>(
+      `SELECT c.policy_version, a.email
+         FROM identity.cookie_choice c LEFT JOIN identity.account a ON a.id = c.account_id
+        WHERE c.id = $1`,
+      [id],
+    );
+    return rows[0] ? { policyVersion: rows[0].policy_version, email: rows[0].email } : null;
+  } finally {
+    await client.end();
+  }
+}
+
+/** Removes the answers a journey caused, by the ids its browsers held (task 223). */
+export async function cleanupCookieChoices(ids: readonly string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query(`DELETE FROM identity.cookie_choice WHERE id = ANY($1::uuid[])`, [ids]);
+  } finally {
+    await client.end();
+  }
+}

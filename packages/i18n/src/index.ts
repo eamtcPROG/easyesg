@@ -47,4 +47,5 @@ export type {
   LegalStanding,
   LegalVersions,
 } from './legal-standing.js';
+export { COOKIE_POLICY_VERSION_IN_FORCE, COOKIE_CHOICE_KEPT_MONTHS } from './cookie-choice.js';
 export type { IdentifierFinding } from './internal-identifiers.js';
