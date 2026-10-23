@@ -12,6 +12,11 @@
 # the outputs' presence is what is checked.
 set -eu
 
+# **What it writes, the host's user can remove.** The container runs as root and /data is the suite's own temporary
+# directory, so root-owned `out/` would outlive the suite's cleanup with EACCES on a Linux host — Docker Desktop's file
+# sharing hides ownership, so only CI's runner ever saw it.
+umask 000
+
 in="$1"
 name=$(basename "$in" .xlsx)
 out=/data/out

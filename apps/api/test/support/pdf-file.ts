@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
@@ -24,11 +24,18 @@ const compose = (args: readonly string[]) =>
     { maxBuffer: 64 * 1024 * 1024 },
   );
 
-/** A file written where a container can mount it, and removed afterwards. */
+/**
+ * A file written where a container can mount it, and removed afterwards.
+ *
+ * **Readable by every user**, because veraPDF's image runs as its own `verapdf` user: in the `0700` directory `mkdtemp`
+ * makes, it reports the file as absent and prints no report at all. Docker Desktop's file sharing hides ownership, so
+ * only a Linux host — CI's runner — ever saw it, as `Unexpected end of JSON input`.
+ */
 async function withFile<T>(pdf: Buffer, work: (directory: string) => Promise<T>): Promise<T> {
   const directory = await mkdtemp(join(tmpdir(), 'easyesg-pdf-'));
   try {
-    await writeFile(join(directory, 'document.pdf'), pdf);
+    await chmod(directory, 0o755);
+    await writeFile(join(directory, 'document.pdf'), pdf, { mode: 0o644 });
     return await work(directory);
   } finally {
     await rm(directory, { recursive: true, force: true });
