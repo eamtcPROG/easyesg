@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { STACK_ORIGIN } from '../stack';
+import { settleAnimations } from '../web/support/animations';
 import { restoreSlot, snapshotLegalController, type SlotSnapshot } from '../web/support/provider-config';
 import { OPERATOR_ROLE, cleanupOperators, provisionOperator } from './support/provision';
 import { currentTotpCode } from './support/totp';
@@ -83,6 +84,7 @@ test('an operator corrects the platform operator, and the terms of service name 
   // The attribution names the operator who saved, beside the time.
   await expect(page.getByText(`${OPERATOR},`)).toBeVisible();
 
+  await settleAnimations(page);
   const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
   expect(results.violations).toEqual([]);
 

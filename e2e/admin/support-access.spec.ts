@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { STACK_ORIGIN } from '../stack';
+import { settleAnimations } from '../web/support/animations';
 import {
   cleanupAccounts,
   cleanupOrganizations as cleanupTenantOrganizations,
@@ -161,6 +162,7 @@ test('a request raised from the register is granted by the organization, read un
   await expect(grant.getByRole('heading', { name: 'Valorile modulului B1' })).toBeVisible();
 
   await page.waitForLoadState('networkidle');
+  await settleAnimations(page);
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();

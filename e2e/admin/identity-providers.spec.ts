@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { STACK_API_BASE, STACK_ORIGIN } from '../stack';
+import { settleAnimations } from '../web/support/animations';
 import { restoreSlot, snapshotIdentityProvider, type SlotSnapshot } from '../web/support/provider-config';
 import { OPERATOR_ROLE, cleanupOperators, provisionOperator } from './support/provision';
 import { currentTotpCode } from './support/totp';
@@ -54,7 +55,9 @@ async function signIn(page: Page): Promise<void> {
   await page.waitForURL('**/organizations');
 }
 
+// A-18's record is a dialogue that fades in, and axe measures colour as painted — so it is scanned at rest.
 const expectNoAxeViolations = async (page: Page) => {
+  await settleAnimations(page);
   const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
   expect(results.violations).toEqual([]);
 };

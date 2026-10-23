@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleAnimations } from './support/animations';
 import { cleanupAccounts, cleanupOrganizations, grantMembership, verificationTokenFor } from './support/db';
 import { PASSWORD } from './support/second-factor';
 import { accountTrigger } from './support/session';
@@ -71,6 +72,7 @@ test('the account menu leads to S-27, which shows the record and passes axe', as
   await expect(reset.getByText(/Nu poate fi dezactivată/)).toBeVisible();
   await expect(reset.getByRole('checkbox')).toHaveCount(0);
 
+  await settleAnimations(page);
   const scan = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   expect(scan.violations).toEqual([]);
 });

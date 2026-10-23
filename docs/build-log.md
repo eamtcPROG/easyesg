@@ -33127,3 +33127,66 @@ disabled (`social-provider-catalog.service.ts` reads `enabled && !clientSecret`;
 not held). The secret is the owner's to put in the host's `.env`; the client id, the enabled state and the staging
 callback in the redirect allowlist are published from A-18, which needs the first operator. Microsoft was left as it was:
 there is no client for it, and wiring a variable nobody fills would be a setting that answers nothing.
+
+## Every axe scan waits for the page to stop moving · 2026-10-23
+
+Gates run 39992893760 on `dev` (`29a77d52`, first attempt) failed on one case of 397: `notification-categories.spec.ts`'s
+cadence journey, its axe scan at line 174 with A-17's record open. `color-contrast` on seven nodes, all of them muted
+text in the record (the five `dt` labels, the settings section's caption, the interval's help), each `#757f87` on
+`#ededed`, 3.48:1. Runs 39982544028 and 39988271032 had passed the same console code. Re-run, not fixed, at the time.
+
+**Measured rather than reasoned**, against the test stack with a throwaway spec. **Neither colour is a token**:
+`--text-muted` resolves to `#65717c` and the dialogue's surface, `--surface-raised`, to `#ffffff`, with nothing between
+them — the `dt`, its `dl` and the dialogue's body are transparent. At rest all five labels read **4.99:1** and the full
+WCAG scan is clean. So the settled record has no contrast defect, and `tokens.css` is not this change's to touch.
+
+**The scan lands inside the fade.** `Dialog` and its overlay fade in from opacity 0 over `--motion-panel`, 240 ms. The
+journey's three assertions on the record had passed 317 ms after the click, with the fade **33 ms in, at opacity 0.18**:
+Playwright counts an element at any opacity as visible, so nothing on the way to the scan waits for it. Frozen at 20 ms
+steps, every muted label fails up to 160 ms (at 120 ms, `#747d86` on `#eeeeee`, 3.6:1, which is where CI's reading sits)
+and passes from 180 ms on. Whether the case passes is whether axe's colour pass reaches the dialogue after about 170 ms
+of the fade, which is why it passed twice and then did not. **Made deterministic** with CDP's
+`Animation.setPlaybackRate` at 0.1: the journey fails at its scan every time without a settle, and passes with one.
+
+**The fix is the rule already written** in `e2e/web/support/animations.ts` (28 Sep 2026): *every finite animation on
+the page settles before a check that measures what is painted*. `settleAnimations` now runs before every axe scan that
+measures colour. The helper's docblock gains the trap above, an assertion on the dialogue's content not waiting for it.
+**Settling hides nothing a scan should see**: `Dialog` has no exit animation, and `ExpiringCallout`'s `leave` starts only
+when its dwell runs out or it is closed, so a settle never waits out a dwell or takes away a callout at rest.
+
+**Searched for the shape**: every `new AxeBuilder` under `e2e/`, 24 calls in 16 specs, and every finite animation in the
+cascade and both apps' CSS. The only ones are `Dialog`'s fade, `ExpiringCallout`'s leave and the 80 ms transitions on
+controls. **A scan over a fading `Dialog`, unsettled:** `notification-categories` (both of its scans) and
+`identity-providers` (A-18's record, under the disable disclosure) — the case that failed, and the same case waiting to.
+**Unsettled, with nothing fading at the scan today:** `session`, `credentials` and `support-access` in the console and
+`unsubscribe` and `profile` in the tenant app — with the two above, the seven the 8 Oct 2026 entry listed and left —
+and the six written since,
+`legal-controller`, `change-history`, `exports`, `legal`, `marketing-home` and `preview`. The rule is every scan's,
+and a settle where nothing moves resolves at once, so they settle too. **Left alone:** the landmark-only scans in
+`session` and `accessibility`, which measure no colour, and S-12's history panel, a Radix dialogue on its own CSS with
+no animation. What the rule still lacks is a failing state: a new spec can scan without settling and nothing goes red.
+One scanning helper, and `no-restricted-syntax` on `new AxeBuilder` outside it, would be that gate.
+
+**Found on the way, and not fixed here: A-17's result revert can blame a colleague who does not exist.** The repeated
+run below failed once elsewhere, in the reminder journey, on its revert: *"Alt administrator a publicat setări pentru
+Mementouri după ce ați deschis fișa"*, with the operator's own publication the one in force. `categories-board.tsx`
+dispatches the result notice as the write answers and invalidates the read without waiting for it, and the notice's
+revert is built from the categories as last read. A revert clicked before the re-read lands carries the revision before
+the operator's own publication, and the api refuses it as *changed*, correctly by its rule. **Reproduced**: holding that
+re-read 2 s fails the journey 2 of 2 with this notice. A product defect in the console's own code, not the scan's, so it
+is its own change.
+
+### Verification
+
+- The cadence journey with the fade slowed tenfold: passes with the settle, fails at its scan with the settle line
+  removed.
+- `notification-categories.spec.ts --repeat-each=5`: the cadence journey 5 of 5, and the reminder journey's scan 5 of
+  5. The reminder journey failed once of five, on the revert race above, after its scan had passed.
+- The `admin` project whole, with six of its specs changed: 28 of 28.
+- The seven tenant specs changed, in the `identity` project: 49 of 49. The web server logged `The destination stream
+  closed early` twice, each as a file's last case closed its context: the 13 Sep 2026 entry's stream the browser
+  abandoned, and nothing new.
+- `pnpm lint`: clean. The e2e tree has no typecheck of its own; type-aware lint reads it through `e2e/tsconfig.json`,
+  and Playwright compiles it on every run.
+- **Skipped**: the rest of the `identity` project and the `expansion` project. The change reaches specs, which nothing
+  imports, and one docblock in the support file they share; CI runs both on the next push.

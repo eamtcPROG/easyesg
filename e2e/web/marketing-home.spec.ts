@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleAnimations } from './support/animations';
 import { cleanupAccounts, cleanupOrganizations, grantMembership, verificationTokenFor } from './support/db';
 
 /**
@@ -148,6 +149,7 @@ for (const frame of FRAMES) {
       await page.setViewportSize(frame);
       await page.goto(home.path);
       await page.waitForLoadState('networkidle');
+      await settleAnimations(page);
       const results = await new AxeBuilder({ page }).withTags(WCAG).analyze();
       expect(results.violations).toEqual([]);
     });

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleAnimations } from './support/animations';
 import {
   addMember,
   cleanupAccounts,
@@ -107,6 +108,7 @@ test('a field’s footer counts its changes and opens its history beside the ste
 
   // Non-modal: the step beside it is still the reader's.
   await expect(employees).toBeEditable();
+  await settleAnimations(page);
   const scan = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   expect(scan.violations).toEqual([]);
 

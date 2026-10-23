@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleAnimations } from '../web/support/animations';
 import {
   restoreNotificationCategorySeed,
   restoreSlot,
@@ -58,7 +59,11 @@ async function signIn(page: Page, operator = OPERATOR): Promise<void> {
   await page.waitForURL('**/organizations');
 }
 
+// A-17's record is a dialogue that fades in, and axe measures colour as painted — so every scan here waits for the
+// page's animations to finish. Without it the record's muted labels read 3.48:1 through the fade (Gates run
+// 39992893760, 23 Oct 2026); at rest they read 4.99:1.
 const expectNoAxeViolations = async (page: Page) => {
+  await settleAnimations(page);
   const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
   expect(results.violations).toEqual([]);
 };
