@@ -33127,3 +33127,8 @@ disabled (`social-provider-catalog.service.ts` reads `enabled && !clientSecret`;
 not held). The secret is the owner's to put in the host's `.env`; the client id, the enabled state and the staging
 callback in the redirect allowlist are published from A-18, which needs the first operator. Microsoft was left as it was:
 there is no client for it, and wiring a variable nobody fills would be a setting that answers nothing.
+
+Deployed as `29a77d52` after a re-run of its Gates run, whose stack job had failed once on an intermittent axe scan in
+A-17's dialog that passed in the runs either side (proposed as its own task, not fixed here). Verified: the api holds
+the secret, the worker's environment has no such variable, the accounts on staging survived, no warning or error in the
+api, worker or web logs, and Google's entry in force is still the seed's disabled one until an operator publishes it.
