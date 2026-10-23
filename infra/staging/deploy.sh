@@ -15,14 +15,15 @@
 # Setup, once (each step is the host's, so none of it is automated here — §12.5.5):
 #   1. git clone https://github.com/eamtcPROG/easyesg.git ~/easyesg-deploy
 #   2. cp infra/compose/.env.staging.example infra/compose/.env.staging; chmod 600 it; generate every secret
-#   3. the bootstrap vhost, the certificate, then the full vhost (infra/staging/nginx/*.conf say how)
-#   4. a key for the workflow, pinned here:
+#   3. the data directory DATA_DIR names: sudo install -d -o "$USER" -g "$USER" -m 750 /opt/easyesg /opt/easyesg/staging
+#   4. the bootstrap vhost, the certificate, then the full vhost (infra/staging/nginx/*.conf say how)
+#   5. a key for the workflow, pinned here:
 #        ssh-keygen -t ed25519 -N "" -C easyesg-staging-deploy -f ~/.ssh/easyesg_staging_deploy
 #        printf 'command="%s/easyesg-deploy/infra/staging/deploy.sh",restrict %s\n' \
 #          "$HOME" "$(cat ~/.ssh/easyesg_staging_deploy.pub)" >> ~/.ssh/authorized_keys
 #      and prove it gives no shell — this must answer with the sha complaint, never a prompt:
 #        ssh -i ~/.ssh/easyesg_staging_deploy -o IdentitiesOnly=yes localhost whoami
-#   5. the private half as the DEPLOY_SSH_KEY secret of the `staging` environment, beside DEPLOY_HOST, DEPLOY_USER and
+#   6. the private half as the DEPLOY_SSH_KEY secret of the `staging` environment, beside DEPLOY_HOST, DEPLOY_USER and
 #      DEPLOY_HOST_KEY (ssh-keyscan -t ed25519 <host>) — .github/workflows/deploy-staging.yml names them
 set -eu
 

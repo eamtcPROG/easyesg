@@ -17,8 +17,11 @@
 # api image at that same tag, because a runner one build ahead of the application it migrates for is a schema mismatch
 # no `service_completed_successfully` can catch.
 #
-# A project name of its own, so its volumes can never be the development stack's (`easyesg`) — compose namespaces
-# volumes by project, and a `down -v` on one would otherwise take the other's database.
+# **Its data lives under one directory, `DATA_DIR`** — `/opt/easyesg/staging` on the host, beside the other tenants'
+# `/opt/<project>/<environment>` — one folder per store, bind-mounted rather than left in Docker's own volume area, so
+# the project's state is found, sized, copied and removed as one tree. Nothing else this stack writes outlives it.
+#
+# A project name of its own, so nothing it creates can be confused with the development stack's (`easyesg`).
 name: easyesg-staging
 
 x-api-image: &api-image ghcr.io/eamtcprog/easyesg-api:${IMAGE_TAG:?set IMAGE_TAG in infra/compose/.env.staging}
@@ -38,9 +41,12 @@ services:
       ESG_WORKER_PASSWORD: ${ESG_WORKER_PASSWORD:?set ESG_WORKER_PASSWORD in infra/compose/.env.staging}
       ESG_ADMIN_RO_PASSWORD: ${ESG_ADMIN_RO_PASSWORD:?set ESG_ADMIN_RO_PASSWORD in infra/compose/.env.staging}
       ESG_MIGRATOR_PASSWORD: ${ESG_MIGRATOR_PASSWORD:?set ESG_MIGRATOR_PASSWORD in infra/compose/.env.staging}
-      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # At `/var/lib/postgresql`, the directory PostgreSQL 18's image declares as its volume, with the image's own
+      # PGDATA beneath it (`18/docker`). Mounted one level lower, as the development stack does, Docker adds an unnamed
+      # volume for the parent on every recreate — the orphan the first deploy left. The major version in the path is
+      # what lets a later `pg_upgrade --link` keep both clusters side by side.
+      - ${DATA_DIR:?set DATA_DIR in infra/compose/.env.staging}/postgres:/var/lib/postgresql
       - ../postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
@@ -71,7 +77,7 @@ services:
       - --maxmemory-policy
       - noeviction
     volumes:
-      - redisdata:/data
+      - ${DATA_DIR}/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -90,7 +96,7 @@ services:
       ROOT_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY:?set STORAGE_ACCESS_KEY in infra/compose/.env.staging}
       ROOT_SECRET_ACCESS_KEY: ${STORAGE_SECRET_KEY:?set STORAGE_SECRET_KEY in infra/compose/.env.staging}
     volumes:
-      - storagedata:/data
+      - ${DATA_DIR}/storage:/data
     healthcheck:
       test: ["CMD", "nc", "-z", "127.0.0.1", "7070"]
       interval: 10s
@@ -260,11 +266,6 @@ services:
     ports:
       - "127.0.0.1:${ADMIN_PORT:-18103}:8080"
     networks: [public]
-
-volumes:
-  pgdata:
-  redisdata:
-  storagedata:
 
 networks:
   backend:

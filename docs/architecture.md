@@ -1656,6 +1656,10 @@ production design in its own section unchanged:
 - **Ports and networks.** The three services nginx proxies publish on `127.0.0.1` only (18101 api, 18102 web, 18103
   admin); PostgreSQL, Redis, the export store and the renderer sit on an internal network with no route out and publish
   nothing.
+- **Its data is grouped under the project** (project owner, 23 Oct 2026): `/opt/easyesg/staging`, the host's
+  `/opt/<project>/<environment>` convention, holds `postgres/`, `redis/` and `storage/`, each bind-mounted into its
+  service, rather than Docker named volumes in Docker's own area. PostgreSQL's is mounted at `/var/lib/postgresql`, the
+  directory its 18 image declares, so no unnamed volume is left behind on a recreate.
 - **Images come from CI, by commit.** The Gates workflow's image job, having started and exercised each image, pushes
   the four images it tested to `ghcr.io/eamtcprog/easyesg-{api,web,admin,renderer}:<sha>` on a green push to `dev` or
   `main`; the host pulls and never builds. **A deploy is a person's act, not a push's**: the *Deploy staging* workflow

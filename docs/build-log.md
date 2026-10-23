@@ -33096,3 +33096,14 @@ Raised to forty, with the measurement beside it, in a commit of its own.
 
 Skipped, as the close procedure allows within a Stage: `gates:clean` and the review agents, which Stage 9's end runs;
 `pnpm e2e:web` locally, since nothing a browser journey reaches changed and CI ran all 397 cases on the commit deployed.
+
+### Afterwards: the data grouped under the project (project owner, same day)
+
+The owner asked for the volumes to be grouped by project. They were Docker named volumes —
+`easyesg-staging_{pgdata,redisdata,storagedata}` in `/var/lib/docker/volumes`, grouped by a name prefix and nothing
+else — and they are now bind mounts under `DATA_DIR`, `/opt/easyesg/staging/{postgres,redis,storage}`, the host's own
+`/opt/<project>/<environment>` convention (§10.5). **Looking found a second defect**: PostgreSQL 18's image declares
+`/var/lib/postgresql` as its volume, and the stack mounted its data one level down as the development stack does, so
+every recreate left an unnamed volume for the parent — one was already there after the first deploy. Mounted at
+`/var/lib/postgresql` with the image's own `PGDATA` (`18/docker`), there is nothing for Docker to add. **The development
+and test stacks have the same mount** and were left alone — a developer's data is not this change's to move.
