@@ -33063,7 +33063,9 @@ Raised to forty, with the measurement beside it, in a commit of its own.
 - **§12.5.6's edge rate limits are not on staging** until task 71.1; the application's own throttles are what hold.
 - **`trust proxy` is still unset**, so the api's per-(IP, account) throttle reads the proxy's address and degrades to
   per-account — the state `apps/api/CLAUDE.md` already records, unchanged by this.
-- **Mail is on `log`** until the owner adds the Gmail credentials and sets `EMAIL_PROVIDER=smtp`.
+- **Mail went live the same day**: the owner put the Gmail credentials in the host's `.env` and restarted the worker,
+  which sent its first verification email through `smtp.gmail.com` within two minutes, under the NFR-27 exception line
+  it logs on every start.
 - **The *Deploy staging* button needs the workflow on `main`.** GitHub dispatches a workflow only from a file on the
   default branch, and `deploy-staging.yml` is on `dev`; until it reaches `main` a deploy runs on the host itself, through
   the same pinned key — `ssh -i ~/.ssh/easyesg_staging_deploy localhost <sha>` — which is how the first one ran.
@@ -33107,3 +33109,11 @@ else — and they are now bind mounts under `DATA_DIR`, `/opt/easyesg/staging/{p
 every recreate left an unnamed volume for the parent — one was already there after the first deploy. Mounted at
 `/var/lib/postgresql` with the image's own `PGDATA` (`18/docker`), there is nothing for Docker to add. **The development
 and test stacks have the same mount** and were left alone — a developer's data is not this change's to move.
+
+**Moved, not recreated**, because by then the owner had registered on staging: the stack stopped, each store copied
+with `cp -a` into its folder (the cluster into `postgres/18/docker`), and `e5cf5cbe` deployed through the pinned key
+after its Gates run went green. Verified: every store bind-mounted from `/opt/easyesg/staging`, PostgreSQL serving
+`/var/lib/postgresql/18/docker` with the owner's account in it, no unnamed volume on the new container, the worker still
+on Gmail, no warning or error in the api, worker or web logs, and every host answering 200. **The old volumes are left
+in place** — the three named ones and the orphan — for the owner to remove once satisfied, since removing them is the
+one step here that cannot be undone.
