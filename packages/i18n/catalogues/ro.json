@@ -602,35 +602,124 @@
     "identity": {
       "email_verification": {
         "name": "Confirmarea adresei de e-mail",
-        "subject": "Confirmați-vă adresa de e-mail",
-        "body": "Bună ziua,\n\nCineva a creat un cont easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a confirma adresa și a activa contul:\n\n{link}\n\nLinkul este valabil 24 de ore și poate fi folosit o singură dată.\n\nDacă nu dumneavoastră ați creat contul, ignorați acest mesaj: fără confirmare contul nu poate fi folosit și se șterge automat după 7 zile."
+        "email": {
+          "subject": "Confirmați-vă adresa de e-mail",
+          "preheader": "Deschideți linkul pentru a activa contul. Este valabil 24 de ore și poate fi folosit o singură dată.",
+          "heading": "Confirmați-vă adresa de e-mail",
+          "intro": "Cineva a creat un cont easyesg cu această adresă de e-mail. Confirmați adresa pentru a activa contul.",
+          "action": "Confirmați adresa",
+          "facts": {
+            "validity": "Valabil 24 de ore",
+            "use": "Poate fi folosit o singură dată"
+          },
+          "note": {
+            "lead": "Nu dumneavoastră ați creat contul?",
+            "body": "Ignorați acest mesaj: fără confirmare contul nu poate fi folosit și se șterge automat după 7 zile."
+          },
+          "reason": "Primiți acest mesaj pentru că această adresă a fost folosită la crearea unui cont easyesg."
+        }
       },
       "password_reset": {
         "name": "Resetarea parolei",
-        "subject": "Resetați-vă parola",
-        "body": "Bună ziua,\n\nAm primit o cerere de resetare a parolei pentru contul easyesg cu această adresă de e-mail. Deschideți linkul de mai jos pentru a alege o parolă nouă:\n\n{link}\n\nLinkul este valabil 60 de minute și poate fi folosit o singură dată. După schimbarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.\n\nDacă nu dumneavoastră ați cerut resetarea, ignorați acest mesaj: parola actuală rămâne neschimbată."
+        "email": {
+          "subject": "Resetați-vă parola",
+          "preheader": "Alegeți o parolă nouă. Linkul este valabil 60 de minute și poate fi folosit o singură dată.",
+          "heading": "Resetați-vă parola",
+          "intro": "Am primit o cerere de resetare a parolei pentru contul easyesg cu această adresă de e-mail.",
+          "outro": "După schimbarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.",
+          "action": "Alegeți o parolă nouă",
+          "facts": {
+            "validity": "Valabil 60 de minute",
+            "use": "Poate fi folosit o singură dată"
+          },
+          "note": {
+            "lead": "Nu dumneavoastră ați cerut resetarea?",
+            "body": "Ignorați acest mesaj: parola actuală rămâne neschimbată."
+          },
+          "reason": "Primiți acest mesaj pentru că s-a cerut resetarea parolei pentru această adresă."
+        }
       },
       "password_setup": {
-        "subject": "Setați o parolă pentru contul dumneavoastră",
-        "body": "Bună ziua,\n\nAm primit o cerere de setare a unei parole pentru contul easyesg cu această adresă de e-mail. Contul se autentifică prin furnizor și nu are încă o parolă. Deschideți linkul de mai jos pentru a alege una:\n\n{link}\n\nLinkul este valabil 60 de minute și poate fi folosit o singură dată. După setarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.\n\nDacă nu dumneavoastră ați cerut acest lucru, ignorați mesajul: contul rămâne fără parolă și continuați să vă autentificați prin furnizor."
+        "email": {
+          "subject": "Setați o parolă pentru contul dumneavoastră",
+          "preheader": "Alegeți o parolă pentru cont. Linkul este valabil 60 de minute și poate fi folosit o singură dată.",
+          "heading": "Setați o parolă pentru contul dumneavoastră",
+          "intro": "Am primit o cerere de setare a unei parole pentru contul easyesg cu această adresă de e-mail. Contul se autentifică prin furnizor și nu are încă o parolă.",
+          "outro": "După setarea parolei, toate sesiunile existente vor fi închise și va trebui să vă autentificați din nou.",
+          "action": "Alegeți o parolă",
+          "facts": {
+            "validity": "Valabil 60 de minute",
+            "use": "Poate fi folosit o singură dată"
+          },
+          "note": {
+            "lead": "Nu dumneavoastră ați cerut acest lucru?",
+            "body": "Ignorați mesajul: contul rămâne fără parolă și continuați să vă autentificați prin furnizor."
+          },
+          "reason": "Primiți acest mesaj pentru că s-a cerut setarea unei parole pentru această adresă."
+        }
       },
       "invitation": {
         "name": "Invitații în organizații",
-        "subject": "Ați fost invitat în organizația {organizationName}",
-        "body": "Bună ziua,\n\nAți fost invitat să vă alăturați organizației {organizationName} pe easyesg, platforma de raportare privind durabilitatea. Deschideți linkul de mai jos pentru a accepta invitația:\n\n{link}\n\nLinkul este valabil 7 zile, poate fi folosit o singură dată și funcționează numai pentru această adresă de e-mail.\n\nDacă nu așteptați această invitație, ignorați acest mesaj: fără acceptare nu se creează niciun acces."
+        "email": {
+          "subject": "Ați fost invitat în organizația {organizationName}",
+          "preheader": "Acceptați pentru a vă alătura organizației {organizationName} pe easyesg. Invitația este valabilă 7 zile.",
+          "heading": "Ați fost invitat în organizația {organizationName}",
+          "card": {
+            "title": "{organizationName}",
+            "caption": "vă invită să vă alăturați pe easyesg"
+          },
+          "intro": "Ați fost invitat să vă alăturați organizației {organizationName} pe easyesg, platforma de raportare privind durabilitatea. Deschideți invitația pentru a o vedea și a o accepta.",
+          "action": "Vedeți și acceptați",
+          "facts": {
+            "validity": "Valabil 7 zile",
+            "use": "Poate fi folosit o singură dată",
+            "address": "Numai pentru această adresă de e-mail"
+          },
+          "note": {
+            "lead": "Nu așteptați această invitație?",
+            "body": "Ignorați acest mesaj: fără acceptare nu se creează niciun acces."
+          },
+          "reason": "Primiți acest mesaj pentru că un administrator al organizației {organizationName} a invitat această adresă."
+        }
       }
     },
     "platform": {
       "admin_invitation": {
-        "subject": "Invitație în consola de administrare easyesg",
-        "body": "Bună ziua,\n\nAți fost invitat să deveniți operator în consola de administrare easyesg. Deschideți linkul de mai jos pentru a vă alege parola și a configura al doilea factor de autentificare:\n\n{link}\n\nLinkul este valabil 24 de ore și poate fi folosit o singură dată. Contul este creat abia după ce confirmați al doilea factor.\n\nDacă nu așteptați această invitație, ignorați acest mesaj: fără acceptare nu se creează niciun cont."
+        "email": {
+          "subject": "Invitație în consola de administrare easyesg",
+          "preheader": "Alegeți parola și configurați al doilea factor de autentificare. Linkul este valabil 24 de ore.",
+          "heading": "Ați fost invitat în consola de administrare",
+          "intro": "Ați fost invitat să deveniți operator în consola de administrare easyesg. Pentru a accepta, alegeți-vă parola și configurați al doilea factor de autentificare.",
+          "outro": "Contul este creat abia după ce confirmați al doilea factor.",
+          "action": "Acceptați invitația",
+          "facts": {
+            "validity": "Valabil 24 de ore",
+            "use": "Poate fi folosit o singură dată"
+          },
+          "note": {
+            "lead": "Nu așteptați această invitație?",
+            "body": "Ignorați acest mesaj: fără acceptare nu se creează niciun cont."
+          },
+          "reason": "Primiți acest mesaj pentru că un operator a invitat această adresă în consola de administrare."
+        }
       }
     },
     "reporting": {
       "manual_reminder": {
         "name": "Mementouri",
-        "subject": "{senderName} vă reamintește de raportul {entityName} pentru {fiscalYear}",
-        "body": "Bună ziua,\n\n{senderName} vă reamintește de raportul de durabilitate al {entityName} pentru {fiscalYear}.{noteGiven, select, given {\n\nMesajul său:\n„{note}”} other {}}\n\nDeschideți raportul de aici:\n\n{link}\n\nPrimiți acest mesaj pentru că un administrator al organizației v-a trimis un memento.",
+        "email": {
+          "subject": "{senderName} vă reamintește de raportul {entityName} pentru {fiscalYear}",
+          "preheader": "{senderName} vă reamintește de raportul de durabilitate al {entityName} pentru {fiscalYear}.",
+          "heading": "Un memento despre raportul {entityName}",
+          "card": {
+            "title": "{entityName}",
+            "caption": "Raport de durabilitate · {fiscalYear}"
+          },
+          "intro": "{senderName} vă reamintește de raportul de durabilitate al {entityName} pentru {fiscalYear}.",
+          "outro": "{noteGiven, select, given {Mesajul său: „{note}”} other {}}",
+          "action": "Deschideți raportul",
+          "reason": "Primiți acest mesaj pentru că un administrator al organizației v-a trimis un memento."
+        },
         "in_app": {
           "title": "{senderName} vă reamintește de raportul {entityName} pentru {fiscalYear}",
           "body": "{noteGiven, select, given {„{note}”} other {Deschideți raportul pentru a vedea ce a mai rămas de completat.}}",
@@ -639,8 +728,19 @@
       },
       "report_update": {
         "name": "Actualizări ale rapoartelor",
-        "subject": "{reach, select, one {Recalculați emisiile raportului {entityName} pentru {fiscalYear}} other {Recalculați emisiile rapoartelor deschise}}",
-        "body": "Bună ziua,\n\nFactorii de emisie {setLabel}, cu care {reach, select, one {a fost calculat raportul {entityName} pentru {fiscalYear}} other {au fost calculate unele dintre rapoartele deschise ale organizației}}, au fost înlocuiți. Setul în vigoare acum este {newSetLabel}.\n\nCifrele deja calculate nu se schimbă de la sine: {reach, select, one {recalculați emisiile raportului} other {recalculați emisiile fiecărui raport}} pentru ca ele să folosească factorii în vigoare.\n\n{reach, select, one {Deschideți calculatorul raportului de aici:} other {Deschideți rapoartele de aici:}}\n\n{link}\n\nPrimiți acest mesaj pentru că puteți edita rapoartele organizației.",
+        "email": {
+          "subject": "{reach, select, one {Recalculați emisiile raportului {entityName} pentru {fiscalYear}} other {Recalculați emisiile rapoartelor deschise}}",
+          "preheader": "Factorii de emisie {setLabel} au fost înlocuiți. Setul în vigoare acum este {newSetLabel}.",
+          "heading": "{reach, select, one {Recalculați emisiile raportului} other {Recalculați emisiile rapoartelor deschise}}",
+          "card": {
+            "title": "{reach, select, one {{entityName}} other {}}",
+            "caption": "{reach, select, one {Raport de durabilitate · {fiscalYear}} other {}}"
+          },
+          "intro": "Factorii de emisie {setLabel}, cu care {reach, select, one {a fost calculat raportul {entityName} pentru {fiscalYear}} other {au fost calculate unele dintre rapoartele deschise ale organizației}}, au fost înlocuiți. Setul în vigoare acum este {newSetLabel}.",
+          "outro": "Cifrele deja calculate nu se schimbă de la sine: {reach, select, one {recalculați emisiile raportului} other {recalculați emisiile fiecărui raport}} pentru ca ele să folosească factorii în vigoare.",
+          "action": "{reach, select, one {Deschideți calculatorul raportului} other {Deschideți rapoartele}}",
+          "reason": "Primiți acest mesaj pentru că puteți edita rapoartele organizației."
+        },
         "in_app": {
           "title": "{reach, select, one {Factorii de emisie ai raportului {entityName} pentru {fiscalYear} au fost înlocuiți} other {Factorii de emisie ai unor rapoarte deschise au fost înlocuiți}}",
           "body": "Setul {setLabel} a fost înlocuit de {newSetLabel}. Recalculați emisiile pentru ca cifrele să folosească factorii în vigoare.",
@@ -649,8 +749,23 @@
       },
       "outstanding_report": {
         "name": "Câmpuri de completat",
-        "subject": "Raportul {entityName} pentru {fiscalYear} are {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat",
-        "body": "Bună ziua,\n\nRaportul de durabilitate al {entityName} pentru {fiscalYear} are încă {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat sau de corectat:\n\n{fields}\n\nCât timp rămân deschise, raportul nu este gata de depus. Deschideți-l de aici:\n\n{link}\n\nDacă mai rămâne ceva de completat, vă vom aminti din nou peste {intervalDays, plural, one {o zi} few {# zile} other {# de zile}}. Primiți acest mesaj pentru că puteți edita rapoartele organizației.",
+        "email": {
+          "subject": "Raportul {entityName} pentru {fiscalYear} are {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat",
+          "preheader": "Raportul nu este gata de depus: {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat sau de corectat.",
+          "heading": "{count, plural, one {Un câmp de completat} few {# câmpuri de completat} other {# de câmpuri de completat}}",
+          "card": {
+            "title": "{entityName}",
+            "caption": "Raport de durabilitate · {fiscalYear}",
+            "status": "Nu este gata de depus"
+          },
+          "intro": "Raportul de durabilitate al {entityName} pentru {fiscalYear} are încă {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat sau de corectat:",
+          "outro": "Cât timp rămân deschise, raportul nu este gata de depus.",
+          "action": "Deschideți raportul",
+          "note": {
+            "body": "Dacă mai rămâne ceva de completat, vă vom aminti din nou peste {intervalDays, plural, one {o zi} few {# zile} other {# de zile}}."
+          },
+          "reason": "Primiți acest mesaj pentru că puteți edita rapoartele organizației."
+        },
         "in_app": {
           "title": "Raportul {entityName} pentru {fiscalYear} are {count, plural, one {un câmp} few {# câmpuri} other {# de câmpuri}} de completat",
           "body": "De completat sau de corectat: {fields}.",
@@ -659,8 +774,20 @@
       },
       "report_deadline": {
         "name": "Termene de depunere",
-        "subject": "{daysRemaining, plural, one {Mai este o zi} few {Mai sunt # zile} other {Mai sunt # de zile}} până la termenul raportului {entityName} pentru {fiscalYear}",
-        "body": "Bună ziua,\n\nRaportul de durabilitate al {entityName} pentru {fiscalYear} trebuie depus până la {dueDate} — {daysRemaining, plural, one {mai este o zi} few {mai sunt # zile} other {mai sunt # de zile}}.\n\n{started, select, no {Raportul nu a fost început încă.} other {Mai {outstanding, plural, one {este un câmp} few {sunt # câmpuri} other {sunt # de câmpuri}} de completat sau de corectat.}}\n\nDeschideți raportul de aici:\n\n{link}\n\nPrimiți acest mesaj pentru că puteți edita rapoartele organizației.",
+        "email": {
+          "subject": "{daysRemaining, plural, one {Mai este o zi} few {Mai sunt # zile} other {Mai sunt # de zile}} până la termenul raportului {entityName} pentru {fiscalYear}",
+          "preheader": "Raportul {entityName} pentru {fiscalYear} trebuie depus până la {dueDate}.",
+          "heading": "{daysRemaining, plural, one {Mai este o zi până la termen} few {Mai sunt # zile până la termen} other {Mai sunt # de zile până la termen}}",
+          "card": {
+            "title": "{entityName}",
+            "caption": "Raport de durabilitate · {fiscalYear}",
+            "status": "Termen: {dueDate}"
+          },
+          "intro": "Raportul de durabilitate al {entityName} pentru {fiscalYear} trebuie depus până la {dueDate} — {daysRemaining, plural, one {mai este o zi} few {mai sunt # zile} other {mai sunt # de zile}}.",
+          "outro": "{started, select, no {Raportul nu a fost început încă.} other {Mai {outstanding, plural, one {este un câmp} few {sunt # câmpuri} other {sunt # de câmpuri}} de completat sau de corectat.}}",
+          "action": "Deschideți raportul",
+          "reason": "Primiți acest mesaj pentru că puteți edita rapoartele organizației."
+        },
         "in_app": {
           "title": "{daysRemaining, plural, one {Mai este o zi} few {Mai sunt # zile} other {Mai sunt # de zile}} până la termenul raportului {entityName} pentru {fiscalYear}",
           "body": "Termenul este {dueDate}. {started, select, no {Raportul nu a fost început încă.} other {Mai {outstanding, plural, one {este un câmp} few {sunt # câmpuri} other {sunt # de câmpuri}} de completat sau de corectat.}}",
@@ -669,8 +796,20 @@
       },
       "export_finished": {
         "name": "Exporturi încheiate",
-        "subject": "{outcome, select, failed {Exportul {format, select, xlsx {Excel} other {PDF}} al raportului {entityName} pentru {fiscalYear} nu a putut fi generat} other {Exportul {format, select, xlsx {Excel} other {PDF}} al raportului {entityName} pentru {fiscalYear} este gata}}",
-        "body": "Bună ziua,\n\n{outcome, select, failed {Fișierul {format, select, xlsx {Excel} other {PDF}} cerut pentru raportul de durabilitate al {entityName} pentru {fiscalYear} nu a putut fi generat, după mai multe încercări. Nimic nu s-a pierdut din raport: îl puteți exporta din nou.} other {Fișierul {format, select, xlsx {Excel} other {PDF}} cerut pentru raportul de durabilitate al {entityName} pentru {fiscalYear} este gata și rămâne în istoricul exporturilor raportului.}}\n\nDeschideți exporturile raportului de aici:\n\n{link}\n\nPrimiți acest mesaj pentru că ați cerut acest export, iar generarea a durat mai mult de o jumătate de minut.",
+        "email": {
+          "subject": "{outcome, select, failed {Exportul {format, select, xlsx {Excel} other {PDF}} al raportului {entityName} pentru {fiscalYear} nu a putut fi generat} other {Exportul {format, select, xlsx {Excel} other {PDF}} al raportului {entityName} pentru {fiscalYear} este gata}}",
+          "preheader": "{outcome, select, failed {Nimic nu s-a pierdut din raport: îl puteți exporta din nou.} other {Fișierul rămâne în istoricul exporturilor raportului.}}",
+          "heading": "{outcome, select, failed {Exportul {format, select, xlsx {Excel} other {PDF}} nu a putut fi generat} other {Exportul {format, select, xlsx {Excel} other {PDF}} este gata}}",
+          "card": {
+            "title": "{entityName} — raport de durabilitate, {fiscalYear}",
+            "caption": "Fișier {format, select, xlsx {Excel} other {PDF}} · {outcome, select, failed {negenerat} other {în istoricul exporturilor}}",
+            "badge": "{format, select, xlsx {XLSX} other {PDF}}",
+            "status": "{outcome, select, failed {Nu a putut fi generat} other {Gata}}"
+          },
+          "intro": "{outcome, select, failed {Fișierul {format, select, xlsx {Excel} other {PDF}} cerut pentru raportul de durabilitate al {entityName} pentru {fiscalYear} nu a putut fi generat, după mai multe încercări. Nimic nu s-a pierdut din raport: îl puteți exporta din nou.} other {Fișierul {format, select, xlsx {Excel} other {PDF}} cerut pentru raportul de durabilitate al {entityName} pentru {fiscalYear} este gata și rămâne în istoricul exporturilor raportului.}}",
+          "action": "Deschideți exporturile raportului",
+          "reason": "Primiți acest mesaj pentru că ați cerut acest export, iar generarea a durat mai mult de o jumătate de minut."
+        },
         "in_app": {
           "title": "{outcome, select, failed {Exportul {format, select, xlsx {Excel} other {PDF}} nu a putut fi generat} other {Exportul {format, select, xlsx {Excel} other {PDF}} este gata}}",
           "body": "{outcome, select, failed {Raportul {entityName} pentru {fiscalYear} nu s-a schimbat; îl puteți exporta din nou.} other {Raportul {entityName} pentru {fiscalYear} — fișierul vă așteaptă în istoricul exporturilor.}}",
@@ -680,6 +819,13 @@
     },
     "unsubscribe": {
       "footer": "Pentru a nu mai primi astfel de mesaje prin e-mail, deschideți acest link:\n\n{link}"
+    },
+    "email": {
+      "greeting": "Bună ziua,",
+      "fallback": "Dacă butonul nu funcționează, copiați această adresă în browser:",
+      "unsubscribe": "Opriți astfel de mesaje",
+      "product": "easyesg, platforma de raportare privind durabilitatea",
+      "operator": "{name} · {address}"
     }
   },
   "platform": {

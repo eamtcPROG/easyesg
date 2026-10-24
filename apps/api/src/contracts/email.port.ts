@@ -41,11 +41,23 @@ export interface EmailMessage {
   readonly idempotencyKey: string;
   /**
    * FR-169's one-click unsubscribe, present on every email of a category a person may switch off and on no other
-   * (task 52.2.2; §12.5.6's task-52.2 row) — **the one addition to §12.5.2's vocabulary**, and a provider-neutral one:
+   * (task 52.2.2; §12.5.6's task-52.2 row) — **the first addition to §12.5.2's vocabulary**, and a provider-neutral one:
    * RFC 8058's two headers are the internet's, not a vendor's. The adapter renders `link` as the footer the renderer
    * appends, and sends `oneClickUrl` as `List-Unsubscribe` with `List-Unsubscribe-Post`.
    */
   readonly unsubscribe?: EmailUnsubscribe;
+  /**
+   * The operator the footer names, as A-21 publishes it (task 225; §12.5.6's task-225 row (7)) — the second addition,
+   * provider-neutral like the first: a company's name and address are nobody's vendor type. **Absent where it could not
+   * be read**, and the message goes without the line: the footer is not what a recipient acts on.
+   */
+  readonly operator?: EmailOperator;
+}
+
+/** Who sends the platform's mail, as registered — one value each, not per locale (the task-75 row (7)). */
+export interface EmailOperator {
+  readonly name: string;
+  readonly address: string;
 }
 
 /** The two addresses a switchable category's email carries (task 52.2.2). */

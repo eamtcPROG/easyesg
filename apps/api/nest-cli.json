@@ -8,6 +8,10 @@
       {
         "include": "**/*.css",
         "watchAssets": true
+      },
+      {
+        "include": "**/*.png",
+        "watchAssets": true
       }
     ]
   }

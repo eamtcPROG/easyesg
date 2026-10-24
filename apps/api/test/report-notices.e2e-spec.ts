@@ -39,6 +39,7 @@ import { asOrganization, connectAs } from './support/database';
 import {
   asJob,
   deleteNotificationsOf,
+  NO_OPERATOR,
   notificationStore,
   OCCURRED_MICROS,
   optOuts,
@@ -150,6 +151,7 @@ describe('the outstanding-report and deadline notices (task 51.2)', () => {
           { send: () => Promise.resolve({}) },
           suppressionStore(worker),
           new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()),
+          NO_OPERATOR,
         ),
         new CategoryChannels(new NotificationCategoryCatalog(categories)),
         notificationStore(worker),

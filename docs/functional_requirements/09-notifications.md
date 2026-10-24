@@ -344,7 +344,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 ### FR-173 — Category behaviour as configuration; the manual reminder
 
-**Status.** Built — delivered 49.1, 49.3, 50.3, 51.2 (lead times and the repeat interval, edited on A-17), 51.3, 52.2.2, 67.10
+**Status.** Built — delivered 49.1, 49.3, 50.3, 51.2 (lead times and the repeat interval, edited on A-17), 51.3, 52.2.2, 67.10, 225
 
 **Obligation.** The system shall hold the notification category catalogue's behaviour — default channels, transactional-or-optional classification, deadline lead times, repeat interval — as publishable configuration, so that tuning a notice needs no release, with its per-locale subject and body wording shipped in the release that raises it. The classification of a **mandatory system category** — security, account, invoice delivery, payment failure, service restriction, the advisor access notices (FR-203), and the identity notices registered under them — is declared in code, so no artefact can make one optional and an unreadable one still sends by email. An optional category's classification stays configuration.
 
@@ -366,7 +366,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 5. A publication reaches a replica on its next poll, with no redeploy (task 49.1).
 
 *Wording*
-6. **Wording ships in the release**, as committed catalogues in all three locales, never machine-translated: `notification.<category>.name`, `…in_app.title`, `…in_app.body`, `…in_app.action` for the centre, and `subject` and `body` for email, which is plain text (OQ-43; UX-66). **Every category in the seed must carry the wording its published channels need**, and every template key code names must resolve, which a spec holds (task 51.3).
+6. **Wording ships in the release**, as committed catalogues in all three locales, never machine-translated: `notification.<category>.name`, `…in_app.title`, `…in_app.body`, `…in_app.action` for the centre, and for email the parts `…email.subject`, `…email.preheader`, `…email.heading`, `…email.intro`, `…email.action` and `…email.reason`, with `…email.facts.*`, `…email.outro` and `…email.note.*` where a message has them — one set of parts both the HTML part and the plain-text part are composed from (FR-169 behaviour 4; OQ-43; UX-66; amended 24 Oct 2026, task 225, from `subject` and `body`). **Every category in the seed must carry the wording its published channels need**, and every template key code names must resolve, which a spec holds (task 51.3).
 
 *A-17*
 7. The console lists every category with its behaviour in force, whether code declares it mandatory, and how many people switched it off per channel. Each category's wording is shown rendered with a specimen, read-only (task 67.10 row (1)).
@@ -413,6 +413,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 - 23 Sep 2026 · project owner · task 67.10 · A-17: the rules enforced on publish and revert, the consequence disclosure, the revision carried · §12.5.6 task-67.10 row
 - 28 Sep 2026 · project owner · the reminder is a dialogue over S-16's list · §12.5.6 task-50.3 row (5) as amended; `design_spec.md` S-16
 - 8 Oct 2026 · project owner · task 51.2 · cadence published on A-17, its presence held to the category by code; a moved cadence disclosed as changing when recipients hear · §12.5.6's task-51.2 row (5)
+- 24 Oct 2026 · project owner · task 225 · email wording becomes parts both the HTML and the plain-text part are composed from; behaviour 6 amended · §12.5.6 task-225 row (2); FR-169 behaviour 4
 
 ## 2. Notification delivery (index §3.31)
 
@@ -446,7 +447,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 
 ### FR-169 — Email through the provider adapter, in the recipient's language, with a one-click unsubscribe
 
-**Status.** Built — delivered 49.2, 50.1.4, 51.1, 51.3, 52.2.2, 52.3
+**Status.** Built — delivered 49.2, 50.1.4, 51.1, 51.3, 52.2.2, 52.3, 225
 
 **Obligation.** The system shall deliver by email through a provider reached behind the standard provider adapter, resolving language per recipient rather than per notification — the recipient's **email language**, a setting of its own chosen on S-27 apart from the interface language and starting as it — and including a working one-click unsubscribe in every optional-category message.
 
@@ -462,7 +463,7 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 1. **One mail port, one caller.** The notification module is the only caller of the provider port `EmailPort`, and a boundary rule refuses any other module that imports it (task-49.2 row (4)).
 2. **Language is the recipient's email language.** The invited address's account email language where one exists, the inviting administrator's negotiated locale otherwise, resolved once at issue and stored on the invitation (`architecture.md` §12.5.6's task-26.1 row; task-52.3 row (3)). A new account's email language starts as its interface language.
 3. **The provider is an environment value** (`EMAIL_PROVIDER=smtp`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`) and changing it changes only the environment. The host is checked at boot against a permitted set, and a host outside it fails the boot (task-51.1 row; `architecture.md` §12.5.6's task-51.1 rows).
-4. **Email is plain text.** Every message is wording from the catalogue (`subject` and `body`) with the link appended, and carries no images or external styling (UX-66).
+4. **Email is a designed message beside its plain text** (amended 24 Oct 2026, task 225; until then *email is plain text*). Every message is `multipart/alternative`: an HTML part — the brand band over a white card, one full-width button, the link written out beneath it, the footer naming the operator as A-21 publishes it — and a plain-text part, **both composed from one set of catalogue parts** (FR-173 behaviour 6), so the plain part says everything the HTML part does, leaving out only the card and the lines that restate it. The HTML uses inline styles and table layout only, no external stylesheet or font, and one image, the ring mark, embedded and decorative, so it is comprehensible with images off (UX-66; `architecture.md` §12.5.6's task-225 row).
 5. **Every optional-category email carries the unsubscribe**: a footer link, one wording `notification.unsubscribe.footer` appended by the renderer, and RFC 8058's `List-Unsubscribe` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers (task-52.2 rows (2), (3)). A mandatory category's email carries none (UX-66).
 6. **The link is a page, and opening it changes nothing.** S-38 names the category and the recipient's masked address and offers one button; a mail client's own control posts to the same switch with no page. This keeps a scanner that prefetches links from unsubscribing anyone (task-52.2 rows (2), (6)).
 7. **The token is signed, not stored**: an HMAC over the account, category and channel under `UNSUBSCRIBE_SIGNING_KEY` (the worker signs, the api verifies), carrying no expiry and no table. Its one effect is switching one optional email off, which the person reverses on S-27 (task-52.2 row (4)).
@@ -485,12 +486,16 @@ Business rules held here: BR-NOT-1 … BR-NOT-8 (§3). Entities held here: §4.
 - **AC-7** Given the configured provider changes, then only the environment changes, and a host outside the permitted set fails the boot. *(source: §12.5.6 task-51.1 rows)*
 - **AC-8** Given an invitation to an address with an account, then it is sent in that account's email language; given an address with none, in the inviting administrator's. *(source: §12.5.6 task-26.1 row)*
 - **AC-9** Given the one-click headers, then they are covered by the message's DKIM signature. *(source: RFC 8058, as recorded in §12.5.6 task-52.2 row (6))* Recorded, not yet verified: the first real message's headers are the proof.
+- **AC-10** Given any email, then it carries a plain-text part and an HTML part composed from the same parts, the plain part holding the heading, the wording, the link, its terms, the reason and the footer — everything but the card and the lines that restate it; the HTML part names no external stylesheet, font or image, and carries the ring mark as an inline attachment. *(source: §12.5.6 task-225 rows (1), (3), (5); UX-66)*
+- **AC-11** Given a param a person typed — a reminder's note — holding markup, then the HTML part shows it as text. *(source: §12.5.6 task-225 row (3))*
+- **AC-12** Given A-21's operator cannot be read, then the email is sent without the operator line. *(source: §12.5.6 task-225 row (7))*
 
 **History.**
 - 12 Sep 2026 · project owner · task 51.1 · the provider is an environment value bounded by a permitted set; Gmail is a knowing NFR-27 exception for the pre-production period · `non_functional_requirements.md` OQ-17; §12.5.6 task-51.1 rows
 - 21 Sep 2026 · project owner · task 49.2 · the notification module is the one caller of the provider port · §12.5.6 task-49.2 row
 - 23 Sep 2026 · project owner · task 52.2 · the unsubscribe is a page plus RFC 8058 headers, on a signed token with no expiry · §12.5.6 task-52.2 rows (2) … (6)
 - 23 Sep 2026 · project owner · task 52.3 · the email language is a setting of its own, starting as the interface language · §12.5.6 task-52.3 row (3); FR-169 and UC-173 amended
+- 24 Oct 2026 · project owner · task 225 · email becomes an HTML part in the brand-band design beside its plain text, both from one set of catalogue parts; behaviour 4 amended · §12.5.6 task-225 row; FR-173 behaviour 6 amended
 
 ### FR-170 — A delivery record per notification, recipient and channel
 

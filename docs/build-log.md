@@ -33323,3 +33323,97 @@ default ceiling is higher. So `tools/lint.mjs`'s split, measured at Stage 2's cl
 been outgrown by the pass that holds `apps/admin` and the packages, and on this host the gate fails cold — which is what
 `gates:clean` runs at a Stage's end. Not fixed here: it is the gate's own task, and a heap flag would hide the growth
 the split exists to keep visible.
+
+## Task 225 — email as a designed message beside its plain text · 2026-10-24
+
+Asked by the owner: every email was plain text. A mockup came first, on a design canvas — the verification email drawn
+two ways, then the invitation, the outstanding-fields notice and the export notice — and the owner chose **direction B,
+the brand band**, and asked on the canvas for a full-width button. One batch of four questions settled the build;
+`architecture.md` §12.5.6's task-225 row holds the decisions, FR-169 behaviour 4 and FR-173 behaviour 6 are amended by
+it, and `design_spec.md` UX-66 says where the anatomy lives. Built ahead of the pilot at the owner's word (*do it now*),
+so the row sits in Stage 3.
+
+### Decided (project owner)
+
+- **The wording as parts, one source for both parts** — over keeping `body` for the plain part and adding HTML keys
+  beside it, which writes every message twice per locale with nothing holding the copies together.
+- **The ring mark embedded** (`cid:`) — over a hosted image, hidden until a reader admits remote images and fetched on
+  every open, and over no mark.
+- **The footer names the operator A-21 publishes**, left out when it cannot be read — over links alone.
+- **Built now**, ahead of task 48.
+
+### What the building decided within that
+
+- **The renderer is the api's own React**, as the report document is; react-email was declined as a pinned dependency
+  published for ESM into a CommonJS app, MJML as a compiler whose escaping would be ours. React's escaping is the point:
+  a reminder's note is typed by a person, and a spec plants markup in one.
+- **React 19 hoists `<link rel="preload" as="image">` into the head for every `<img>` in a whole document.** Found by
+  the renderer spec's external-resource case on its first run — every one of the 30 renders carried a link element the
+  spec forbids. `fetchPriority="low"` is React's own opt-out (read in `react-dom-server-legacy`'s `img` case, which skips
+  the preload for `loading="lazy"` or a low priority); lazy was declined because a webmail rendering in a browser might
+  honour it.
+- **The plain part does not carry "every word".** The design said so and the first composition proved it false: the
+  card, the category's name and the line explaining the written-out link restate or explain what the plain part already
+  says. The plain part gained the heading as its first line, and FR-169 behaviour 4, its AC-10 and the §12.5.6 row were
+  corrected to say what is left out rather than claim nothing is.
+- **The mark's alternative text is empty**, not the wordmark the row first said: the wordmark beside it is text, and a
+  reader would hear the name twice. Row (5) corrected.
+- **The field list travels as lines to an email and as one sentence to the centre** (`FIELD_LIST_FORM`), since the
+  centre's in-app body places it inside a sentence and the email draws rows.
+- **The wording gate writes the required parts out** rather than importing them: `email-port-behind-notification`
+  refused `app/messages/notification-wording.spec.ts` reaching the email adapter — found by `pnpm boundaries`, which
+  is a Stage-end gate under the 6 Oct rule and was run here because the change added two import edges. The renderer
+  spec pins `EMAIL_REQUIRED_PARTS` to the same literals, so a part added to one is a change to both.
+- **The six e2e suites that build `EmailChannelService` by hand** take `NO_OPERATOR` from `test/support/notification-store.ts`
+  — they test delivery, not the footer, and the channel's own spec tests both arms of AC-12.
+- **The mark is drawn, not exported**: `tools/draw-email-mark.mjs` computes the 266° arc, the well and the dot from the
+  logo's numbers at twice the drawn size, sixteen samples a pixel. A first run threw on a bitwise OR going signed.
+- **Not built**: Help-centre and privacy links in the footer, which the canvas drew and which would need the tenant
+  origin in the renderer; the six templates the canvas did not draw take the same anatomy with no new card kind.
+
+### Skills read against the diff
+
+`one-idea-per-file`: `file-one-behaviour-api` — one behaviour per file (reading the parts, composing the text,
+rendering the HTML, the layout, the mark, each template part); the two vocabularies in `email-vocabulary.ts` stay
+whole. `pure-logic-leaves-the-component` — the monogram is a function with its spec, the text composition is
+`email-text.ts`. `reason-docblock-carries-the-why` — every new file says why it is cut where it is. `nestjs-best-practices`:
+`arch-avoid-circular-deps` (`LegalModule` imports nothing; the notification module importing it on the worker closes
+no cycle), `arch-module-sharing` (`LegalControllerService` is provided once, in `LegalModule`, which exports only
+`LEGAL_OPERATOR`), `di-use-interfaces-tokens` (the port and its token in `contracts/`), `security-sanitize-output`
+(React's escaping, AC-11's spec). `error-throw-http-exceptions` declined by name: nothing here answers HTTP, and the
+renderer throws a plain `Error` into the queue's failed set, as it did before.
+
+### Verified, and what is not
+
+- **The renderer**: every template × locale renders a subject, a plain part and an HTML part carrying the link; the
+  plain part and the HTML both say every part but the card's (30 cases each); the HTML names no stylesheet, script,
+  link or remote image and carries one image, the mark by `cid:`; a note holding `<script>` reaches the HTML escaped; a
+  report update for several reports draws no card; the field list one row and one line per module; a failed export in
+  the error hue; the operator in both parts when given and absent when not; the unsubscribe in both parts only when
+  the message carries one. The SMTP adapter sends `text`, `html` and the PNG inline under the id the HTML names.
+- **Seen, not only asserted**: specimens rendered from the built `dist` — the outstanding-fields notice in English, the
+  invitation in Russian, the failed Excel export and the reminder in Romanian — opened in the browser pane at desktop
+  width and at 375 px, against the canvas. The plain parts read in order with RFC 3676's signature delimiter.
+- **The close's run** (a change reaching `packages/i18n`, so every dependent's row): `pnpm --filter @easyesg/i18n test`
+  172; `pnpm --filter @easyesg/api test` 2,498, three of them red on the first run — `password-reset-email.handler.spec.ts`
+  read the catalogue's `subject` and `body` as JSON, a reader no search for `renderEmail` could find; re-pointed at the
+  parts and 9 of 9 — `pnpm --filter @easyesg/web test` 2,145; `pnpm --filter @easyesg/admin test` 319; `typecheck` in
+  api, web and admin; `pnpm lint`; `pnpm boundaries` (one finding, above); `pnpm docs:check` 48 of 48; `pnpm routes:check`;
+  `pnpm openapi:check`, the contract unchanged; `pnpm e2e` 77 suites, 1,980 tests, no unhandled rejection or resolution
+  warning in its output; `pnpm e2e:worker` 17 of 17 — the worker boots with the notification module importing
+  `LegalModule`.
+- **`pnpm e2e:web --project identity --project expansion --project admin`, green test by test but not in one run.**
+  The first attempt never started: VS Code's extension host held ports 3000 and 3001, and `stop-dev-servers` refused,
+  as it should, to end a process not this repository's; the owner freed them. The full run then took 38.8 minutes and
+  failed 13 of 397 — twelve 30-second timeouts on navigation in the wizard, S-08, the 404 surface and two expansion
+  screens, and two console results late past five seconds, A-17's revert and A-18's enablement — while the run's own
+  output showed the api timing out on `GET /memberships`, `GET /periods` and `POST /auth/register` on this 8 GB host.
+  `--last-failed` passed 11 of the 13, A-17's among them; the two left failed at steps other than the first run's
+  (sign-in's field not yet editable as the first test of the run; A-18 past its enable and disable, out of its 30-second
+  budget at the record's close); alone, both passed. **Nothing in this change reaches A-18 or the 404 surface.**
+- **A-17's read drew 27 HTML emails and threw them away.** Not the cause of the run above — A-18's identical failure
+  reads no email — but found while asking whether it was: `CategoryWordingService` called `renderEmail` for every
+  category in every locale to show the plain part alone. It calls `renderEmailText` now, the same reading without the
+  HTML, and a renderer case holds the two to one plain part for every template and locale.
+- **Not verified by any suite: how a mail client draws the HTML** — Outlook's engine, Gmail's clipping, a client's dark
+  mode. The release-checklist item the §12.5.6 row names: a person reads the specimens in each.

@@ -5,6 +5,7 @@ import {
   type EmailMessage,
   type EmailPort,
 } from '@api/contracts/email.port';
+import type { LegalOperator, OperatorIdentity } from '@api/contracts/legal-operator.port';
 import { NOTIFICATION_CATEGORY } from '@api/contracts/notification.port';
 import { FakeSuppressionStore } from '@api/testing/fake-suppression-store';
 import { DELIVERY_OUTCOME } from '../models/notification-record.model';
@@ -41,13 +42,29 @@ describe('EmailChannelService (task 49.3)', () => {
   const base = { to: 'ana@example.md', locale: 'ro', params: { link: 'x' }, idempotencyKey: 'k' } as const;
 
   const suppression = () => new FakeSuppressionStore();
-  const channel = (port: EmailPort, store = suppression()) => new EmailChannelService(port, store, new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()));
+  /** A-21's operator, or none published — the port answers `null` rather than refusing (task 225). */
+  const operatorOf = (identity: OperatorIdentity | null): LegalOperator => ({ inForce: () => identity });
+  const channel = (port: EmailPort, store = suppression(), operator = operatorOf(null)) =>
+    new EmailChannelService(port, store, new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()), operator);
 
   it("hands the provider the category's key as the wording, and everything else unchanged", async () => {
     const provider = new RecordingEmailPort();
     await channel(provider).send({ ...base, categoryKey: NOTIFICATION_CATEGORY.INVITATION });
 
     expect(provider.sent).toEqual([{ ...base, templateKey: 'identity.invitation' }]);
+  });
+
+  // FR-169 AC-12 (task 225): the footer's operator travels where A-21's is readable, and the message goes without it where not.
+  it('hands the provider the operator A-21 publishes, and nothing in its place when none can be read', async () => {
+    const named = new RecordingEmailPort();
+    const operator = operatorOf({ registeredName: 'Servicii Complete SRL', registeredAddress: 'str. Exemplu 1, Chișinău' });
+    await channel(named, suppression(), operator).send({ ...base, categoryKey: NOTIFICATION_CATEGORY.INVITATION });
+    const unnamed = new RecordingEmailPort();
+    await channel(unnamed).send({ ...base, categoryKey: NOTIFICATION_CATEGORY.INVITATION });
+
+    expect(named.sent[0].operator).toEqual({ name: 'Servicii Complete SRL', address: 'str. Exemplu 1, Chișinău' });
+    expect(unnamed.sent).toHaveLength(1);
+    expect(unnamed.sent[0]).not.toHaveProperty('operator');
   });
 
   it('hands it the second wording a category names instead', async () => {

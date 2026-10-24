@@ -78,6 +78,23 @@ describe('SmtpEmailAdapter', () => {
     expect(String(sent.text)).toContain(String(MESSAGE.params.link));
   });
 
+  // FR-169 AC-10: both parts, and the one image the HTML names attached under the same content id, inline.
+  it('sends the plain part and the HTML part, with the mark attached inline under the id the HTML names', async () => {
+    await new SmtpEmailAdapter(SETTINGS).send(MESSAGE);
+
+    const [sent] = sendMail.mock.calls[0] as [
+      { text: string; html: string; attachments: { cid: string; content: Buffer; contentDisposition: string }[] },
+    ];
+    expect(sent.text).not.toContain('<');
+    expect(sent.html).toContain(`href="${String(MESSAGE.params.link)}"`);
+    expect(sent.attachments).toHaveLength(1);
+    const [mark] = sent.attachments;
+    expect(sent.html).toContain(`src="cid:${mark.cid}"`);
+    expect(mark.contentDisposition).toBe('inline');
+    // A PNG's signature: the committed file is there and was read, which `nest-cli.json`'s assets carry into the build.
+    expect(mark.content.subarray(0, 8)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  });
+
   /** §8.4: the key travels so a provider-side duplicate is traceable to the outbox row. */
   it('carries the idempotency key to the provider', async () => {
     await new SmtpEmailAdapter(SETTINGS).send(MESSAGE);

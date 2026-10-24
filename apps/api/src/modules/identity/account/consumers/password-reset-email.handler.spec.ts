@@ -93,13 +93,21 @@ describe('PasswordResetEmailHandler (tasks 155, 50.1.4)', () => {
     ).rejects.toThrow('payload');
   });
 
-  it.each([...LOCALES])('finds both wordings, each carrying the link, in the %s catalogue', (locale) => {
+  // The link is the renderer's to place since task 225 — beneath the button and written out — so what each wording owes
+  // the link is the button that opens it, beside a subject and a heading of its own.
+  it.each([...LOCALES])('finds both wordings, each with a subject, a heading and a button, in the %s catalogue', (locale) => {
     const catalogue = JSON.parse(readFileSync(join(CATALOGUES, `${locale}.json`), 'utf8')) as {
-      notification: { identity: Record<string, { subject?: string; body?: string } | undefined> };
+      notification: {
+        identity: Record<string, { email?: { subject?: string; heading?: string; action?: string } } | undefined>;
+      };
     };
-    for (const template of ['password_reset', 'password_setup']) {
-      expect(catalogue.notification.identity[template]?.subject).toEqual(expect.any(String));
-      expect(catalogue.notification.identity[template]?.body).toContain('{link}');
+    const wordings = ['password_reset', 'password_setup'].map((template) => catalogue.notification.identity[template]?.email);
+    for (const email of wordings) {
+      expect(email?.subject).toEqual(expect.any(String));
+      expect(email?.heading).toEqual(expect.any(String));
+      expect(email?.action).toEqual(expect.any(String));
     }
+    // Two wordings, not one read twice: the first-password email says something the reset does not.
+    expect(wordings[0]?.heading).not.toBe(wordings[1]?.heading);
   });
 });

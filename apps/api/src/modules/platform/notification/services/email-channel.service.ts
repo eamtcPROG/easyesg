@@ -1,5 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EMAIL_FAILURE, EMAIL_PORT, EmailSendFailed, type EmailPort } from '@api/contracts/email.port';
+import { LEGAL_OPERATOR, type LegalOperator } from '@api/contracts/legal-operator.port';
+import { FIELD_LIST_FORM } from '../domain/notice-params';
 import { suppressionKey } from '../domain/suppression-key';
 import type { EmailChannel, EmailChannelResult, NotificationEmail } from '../interfaces/email-channel.interface';
 import {
@@ -41,6 +43,7 @@ export class EmailChannelService implements EmailChannel {
     @Inject(EMAIL_PORT) private readonly email: EmailPort,
     @Inject(SUPPRESSION_STORE) private readonly suppression: SuppressionStore,
     private readonly params: NoticeParamsService,
+    @Inject(LEGAL_OPERATOR) private readonly operator: LegalOperator,
   ) {}
 
   async send(email: NotificationEmail): Promise<EmailChannelResult> {
@@ -51,15 +54,21 @@ export class EmailChannelService implements EmailChannel {
       return { outcome: DELIVERY_OUTCOME.SUPPRESSED };
     }
 
+    // The footer's operator, as A-21 publishes it — read at the send, and left out where it cannot be (task 225).
+    const operator = this.operator.inForce();
     try {
       await this.email.send({
         to: email.to,
         locale: email.locale,
         templateKey: email.templateKey ?? email.categoryKey,
-        // A field list named and a date written in the recipient's language (task 51.2), before the adapter's ICU.
-        params: this.params.forLocale({ params: email.params, locale: email.locale }),
+        // A field list named and a date written in the recipient's language (task 51.2), before the adapter's ICU —
+        // the list one module a line, which the email draws as rows (task 225).
+        params: this.params.forLocale({ params: email.params, locale: email.locale, fieldList: FIELD_LIST_FORM.LINES }),
         idempotencyKey: email.idempotencyKey,
         unsubscribe: email.unsubscribe,
+        ...(operator === null
+          ? {}
+          : { operator: { name: operator.registeredName, address: operator.registeredAddress } }),
       });
       return { outcome: DELIVERY_OUTCOME.ACCEPTED };
     } catch (cause) {

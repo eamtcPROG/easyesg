@@ -21,7 +21,7 @@ import { EmailChannelService } from '../src/modules/platform/notification/servic
 import { NotificationCategoryCatalog } from '../src/modules/platform/notification/services/notification-category-catalog.service';
 import { DeliverNotification } from '../src/modules/platform/notification/use-cases/deliver-notification.use-case';
 import { asOrganization, connectAs } from './support/database';
-import { asJob, deleteNotificationsOf, notificationStore, optOuts, unsubscribeTokens, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
+import { asJob, deleteNotificationsOf, notificationStore, optOuts, unsubscribeTokens, suppressionStore, NO_OPERATOR, OCCURRED_MICROS } from './support/notification-store';
 import { cleanupSignedInAccounts, signInFreshAccount, type SignedInAccount } from './support/signed-in-account';
 import { DisclosureLabelService } from '../src/modules/platform/localization/services/disclosure-label.service';
 import { EntityFieldNamesService } from '../src/modules/platform/localization/services/entity-field-names.service';
@@ -122,6 +122,7 @@ describe('the manual reminder (UC-175, task 50.3)', () => {
           email,
           suppressionStore(worker),
           new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()),
+          NO_OPERATOR,
         ),
         new CategoryChannels(new NotificationCategoryCatalog(store)),
         notificationStore(worker),

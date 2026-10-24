@@ -17,8 +17,9 @@ import { LOCALES } from '@easyesg/i18n';
  * **What a category needs follows from the channels it publishes**, which is why this reads the
  * artefact rather than a list kept here:
  *
- * - `email` → `subject` and `body`, since `EmailChannelService` sends `templateKey ?? categoryKey`
- *   and `renderEmail` takes both members or throws.
+ * - `email` → the parts `renderEmail` refuses to send without — `email.subject`, `…preheader`, `…heading`, `…intro`,
+ *   `…action`, `…reason` — and the words every email shares, since `EmailChannelService` sends
+ *   `templateKey ?? categoryKey` (task 225; until then `subject` and `body`).
  * - `in_app` → `name`, `in_app.title` and `in_app.body`, which `NotificationCentreService` resolves.
  *   **`in_app.action` is deliberately not required**: the centre omits an absent member, so a notice
  *   with no next step is a notice with no action rather than a broken one.
@@ -31,9 +32,8 @@ import { LOCALES } from '@easyesg/i18n';
  * turns that from a silent miss into a failure.
  *
  * **What this does NOT cover, because something else does.** Wording authored ahead of the channel that
- * will publish it — `reporting.manual_reminder`'s `subject` and `body`, waiting for task 52.2 — is not
- * required by any channel here, and its three locales are held together by `packages/i18n`'s parity
- * suite instead. Consistency is that gate's property; coverage of what the code asks for is this one's.
+ * will publish it is not required by any channel here, and its three locales are held together by
+ * `packages/i18n`'s parity suite instead. Consistency is that gate's property; coverage of what the code asks for is this one's.
  */
 const SEED_ROOT = join(__dirname, '../../../../../config/seed');
 const MODULES_ROOT = join(__dirname, '../../modules');
@@ -51,8 +51,24 @@ interface CategoryArtefact {
 
 /** Literal on purpose, as the channels above are: the seed's own spelling, which this file reads. */
 const OPTIONAL = 'optional';
-/** FR-169's footer (task 52.2.2), which the renderer appends to every email a person may switch off. */
+/** FR-169's footer (task 52.2.2), which the plain part carries on every email a person may switch off. */
 const UNSUBSCRIBE_FOOTER = 'notification.unsubscribe.footer';
+/** The HTML part's words for the same link (task 225). */
+const UNSUBSCRIBE_LABEL = 'notification.email.unsubscribe';
+/** The words every email shares, which the renderer refuses to send without (task 225). */
+const SHARED_EMAIL_KEYS = ['greeting', 'fallback', 'product'].map((part) => `notification.email.${part}`);
+/**
+ * The parts `renderEmail` refuses to send without (task 225) — written out here rather than imported, because
+ * `email-port-behind-notification` keeps the email adapter out of everything but the notification module, this spec
+ * included. `email-template.renderer.spec.ts` holds the renderer's `EMAIL_REQUIRED_PARTS` to this same list.
+ */
+const EMAIL_REQUIRED_PARTS = ['subject', 'preheader', 'heading', 'intro', 'action', 'reason'];
+
+/** What an email template owes: its required parts and the words every email shares. */
+const emailKeys = (template: string): string[] => [
+  ...EMAIL_REQUIRED_PARTS.map((part) => `notification.${template}.email.${part}`),
+  ...SHARED_EMAIL_KEYS,
+];
 
 /** Every registered category and the channels it publishes, read from the seed the store is filled from. */
 const registeredCategories = (): { key: string; channels: readonly string[]; classification: string }[] =>
@@ -91,10 +107,10 @@ const resolves = (messages: Record<string, unknown>, key: string): boolean => {
  * consulted: every mandatory category is classified `transactional` in its seed, or the catalogue refuses it.
  */
 const requiredKeys = (key: string, channels: readonly string[], classification: string): string[] => [
-  ...(channels.includes(NOTIFICATION_CHANNEL.EMAIL)
-    ? [`notification.${key}.subject`, `notification.${key}.body`]
+  ...(channels.includes(NOTIFICATION_CHANNEL.EMAIL) ? emailKeys(key) : []),
+  ...(channels.includes(NOTIFICATION_CHANNEL.EMAIL) && classification === OPTIONAL
+    ? [UNSUBSCRIBE_FOOTER, UNSUBSCRIBE_LABEL]
     : []),
-  ...(channels.includes(NOTIFICATION_CHANNEL.EMAIL) && classification === OPTIONAL ? [UNSUBSCRIBE_FOOTER] : []),
   ...(channels.includes(NOTIFICATION_CHANNEL.IN_APP)
     ? [`notification.${key}.name`, `notification.${key}.in_app.title`, `notification.${key}.in_app.body`]
     : []),
@@ -132,11 +148,7 @@ describe('every notification category and template is worded in every locale (ta
 
   it.each(LOCALES)('every template a category overrides with is worded in %s', (locale) => {
     const messages = catalogue(locale);
-    const missing = templates.flatMap((template) =>
-      [`notification.${template}.subject`, `notification.${template}.body`].filter(
-        (required) => !resolves(messages, required),
-      ),
-    );
+    const missing = templates.flatMap((template) => emailKeys(template).filter((required) => !resolves(messages, required)));
 
     expect(missing).toEqual([]);
   });

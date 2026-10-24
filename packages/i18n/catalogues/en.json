@@ -602,35 +602,124 @@
     "identity": {
       "email_verification": {
         "name": "Email address confirmation",
-        "subject": "Confirm your email address",
-        "body": "Hello,\n\nSomeone created an easyesg account with this email address. Open the link below to confirm the address and activate the account:\n\n{link}\n\nThe link is valid for 24 hours and works only once.\n\nIf you did not create the account, ignore this message: without confirmation the account cannot be used, and it is deleted automatically after 7 days."
+        "email": {
+          "subject": "Confirm your email address",
+          "preheader": "Open the link to activate your account. It is valid for 24 hours and works once.",
+          "heading": "Confirm your email address",
+          "intro": "Someone created an easyesg account with this email address. Confirm the address to activate the account.",
+          "action": "Confirm email address",
+          "facts": {
+            "validity": "Valid for 24 hours",
+            "use": "Works only once"
+          },
+          "note": {
+            "lead": "Did not create this account?",
+            "body": "Ignore this message: without confirmation the account cannot be used, and it is deleted automatically after 7 days."
+          },
+          "reason": "You are receiving this because this address was used to create an easyesg account."
+        }
       },
       "password_reset": {
         "name": "Password reset",
-        "subject": "Reset your password",
-        "body": "Hello,\n\nWe received a request to reset the password for the easyesg account with this email address. Open the link below to choose a new password:\n\n{link}\n\nThe link is valid for 60 minutes and works only once. After the password changes, every existing session is signed out and you will need to sign in again.\n\nIf you did not ask for a reset, ignore this message: your current password stays unchanged."
+        "email": {
+          "subject": "Reset your password",
+          "preheader": "Choose a new password. The link is valid for 60 minutes and works once.",
+          "heading": "Reset your password",
+          "intro": "We received a request to reset the password for the easyesg account with this email address.",
+          "outro": "After the password changes, every existing session is signed out and you will need to sign in again.",
+          "action": "Choose a new password",
+          "facts": {
+            "validity": "Valid for 60 minutes",
+            "use": "Works only once"
+          },
+          "note": {
+            "lead": "Did not ask for a reset?",
+            "body": "Ignore this message: your current password stays unchanged."
+          },
+          "reason": "You are receiving this because a password reset was requested for this address."
+        }
       },
       "password_setup": {
-        "subject": "Set a password for your account",
-        "body": "Hello,\n\nWe received a request to set a password for the easyesg account with this email address. The account signs in through a provider and has no password yet. Open the link below to choose one:\n\n{link}\n\nThe link is valid for 60 minutes and works only once. After the password is set, every existing session is signed out and you will need to sign in again.\n\nIf you did not ask for this, ignore this message: the account stays without a password, and you keep signing in through your provider."
+        "email": {
+          "subject": "Set a password for your account",
+          "preheader": "Choose a password for your account. The link is valid for 60 minutes and works once.",
+          "heading": "Set a password for your account",
+          "intro": "We received a request to set a password for the easyesg account with this email address. The account signs in through a provider and has no password yet.",
+          "outro": "After the password is set, every existing session is signed out and you will need to sign in again.",
+          "action": "Choose a password",
+          "facts": {
+            "validity": "Valid for 60 minutes",
+            "use": "Works only once"
+          },
+          "note": {
+            "lead": "Did not ask for this?",
+            "body": "Ignore this message: the account stays without a password, and you keep signing in through your provider."
+          },
+          "reason": "You are receiving this because setting a password was requested for this address."
+        }
       },
       "invitation": {
         "name": "Invitations to organizations",
-        "subject": "You have been invited to {organizationName}",
-        "body": "Hello,\n\nYou have been invited to join {organizationName} on easyesg, the sustainability reporting platform. Open the link below to accept the invitation:\n\n{link}\n\nThe link is valid for 7 days, works only once, and works only for this email address.\n\nIf you were not expecting this invitation, ignore this message: no access is created unless you accept it."
+        "email": {
+          "subject": "You have been invited to {organizationName}",
+          "preheader": "Accept to join {organizationName} on easyesg. The invitation is valid for 7 days.",
+          "heading": "You have been invited to {organizationName}",
+          "card": {
+            "title": "{organizationName}",
+            "caption": "invites you to join it on easyesg"
+          },
+          "intro": "You have been invited to join {organizationName} on easyesg, the sustainability reporting platform. Open the invitation to see it and accept.",
+          "action": "Review and accept",
+          "facts": {
+            "validity": "Valid for 7 days",
+            "use": "Works only once",
+            "address": "Only for this email address"
+          },
+          "note": {
+            "lead": "Not expecting this invitation?",
+            "body": "Ignore this message: no access is created unless you accept it."
+          },
+          "reason": "You are receiving this because an administrator of {organizationName} invited this address."
+        }
       }
     },
     "platform": {
       "admin_invitation": {
-        "subject": "Invitation to the easyesg administration console",
-        "body": "Hello,\n\nYou have been invited to become an operator in the easyesg administration console. Open the link below to choose your password and set up your second sign-in factor:\n\n{link}\n\nThe link is valid for 24 hours and can be used once. The account is created only after you confirm the second factor.\n\nIf you were not expecting this invitation, ignore this message: without acceptance, no account is created."
+        "email": {
+          "subject": "Invitation to the easyesg administration console",
+          "preheader": "Choose your password and set up your second sign-in factor. The link is valid for 24 hours.",
+          "heading": "You have been invited to the administration console",
+          "intro": "You have been invited to become an operator in the easyesg administration console. Choose your password and set up your second sign-in factor to accept.",
+          "outro": "The account is created only after you confirm the second factor.",
+          "action": "Accept the invitation",
+          "facts": {
+            "validity": "Valid for 24 hours",
+            "use": "Works only once"
+          },
+          "note": {
+            "lead": "Not expecting this invitation?",
+            "body": "Ignore this message: without acceptance, no account is created."
+          },
+          "reason": "You are receiving this because an operator invited this address to the administration console."
+        }
       }
     },
     "reporting": {
       "manual_reminder": {
         "name": "Reminders",
-        "subject": "{senderName} is reminding you about the {entityName} report for {fiscalYear}",
-        "body": "Hello,\n\n{senderName} is reminding you about the sustainability report for {entityName} for {fiscalYear}.{noteGiven, select, given {\n\nTheir message:\n“{note}”} other {}}\n\nOpen the report here:\n\n{link}\n\nYou are receiving this because an administrator of your organization sent you a reminder.",
+        "email": {
+          "subject": "{senderName} is reminding you about the {entityName} report for {fiscalYear}",
+          "preheader": "{senderName} is reminding you about the sustainability report for {entityName} for {fiscalYear}.",
+          "heading": "A reminder about the {entityName} report",
+          "card": {
+            "title": "{entityName}",
+            "caption": "Sustainability report · {fiscalYear}"
+          },
+          "intro": "{senderName} is reminding you about the sustainability report for {entityName} for {fiscalYear}.",
+          "outro": "{noteGiven, select, given {Their message: “{note}”} other {}}",
+          "action": "Open the report",
+          "reason": "You are receiving this because an administrator of your organization sent you a reminder."
+        },
         "in_app": {
           "title": "{senderName} is reminding you about the {entityName} report for {fiscalYear}",
           "body": "{noteGiven, select, given {“{note}”} other {Open the report to see what is still waiting to be filled in.}}",
@@ -639,8 +728,19 @@
       },
       "report_update": {
         "name": "Report updates",
-        "subject": "{reach, select, one {Recalculate the emissions of the {entityName} report for {fiscalYear}} other {Recalculate the emissions of your open reports}}",
-        "body": "Hello,\n\nThe emission factors {setLabel}, which {reach, select, one {the {entityName} report for {fiscalYear} was calculated with} other {some of your organization’s open reports were calculated with}}, have been replaced. The set now in force is {newSetLabel}.\n\nFigures already calculated do not change on their own: {reach, select, one {recalculate the report’s emissions} other {recalculate each report’s emissions}} so that they use the factors in force.\n\n{reach, select, one {Open the report’s calculator here:} other {Open your reports here:}}\n\n{link}\n\nYou are receiving this because you can edit your organization’s reports.",
+        "email": {
+          "subject": "{reach, select, one {Recalculate the emissions of the {entityName} report for {fiscalYear}} other {Recalculate the emissions of your open reports}}",
+          "preheader": "The emission factors {setLabel} have been replaced. The set now in force is {newSetLabel}.",
+          "heading": "{reach, select, one {Recalculate the report’s emissions} other {Recalculate your open reports’ emissions}}",
+          "card": {
+            "title": "{reach, select, one {{entityName}} other {}}",
+            "caption": "{reach, select, one {Sustainability report · {fiscalYear}} other {}}"
+          },
+          "intro": "The emission factors {setLabel}, which {reach, select, one {the {entityName} report for {fiscalYear} was calculated with} other {some of your organization’s open reports were calculated with}}, have been replaced. The set now in force is {newSetLabel}.",
+          "outro": "Figures already calculated do not change on their own: {reach, select, one {recalculate the report’s emissions} other {recalculate each report’s emissions}} so that they use the factors in force.",
+          "action": "{reach, select, one {Open the report’s calculator} other {Open your reports}}",
+          "reason": "You are receiving this because you can edit your organization’s reports."
+        },
         "in_app": {
           "title": "{reach, select, one {The emission factors of the {entityName} report for {fiscalYear} have been replaced} other {The emission factors of some open reports have been replaced}}",
           "body": "The set {setLabel} has been replaced by {newSetLabel}. Recalculate the emissions so that the figures use the factors in force.",
@@ -649,8 +749,23 @@
       },
       "outstanding_report": {
         "name": "Fields still to complete",
-        "subject": "The {entityName} report for {fiscalYear} has {count, plural, one {# field} other {# fields}} still to complete",
-        "body": "Hello,\n\nThe sustainability report of {entityName} for {fiscalYear} still has {count, plural, one {# field} other {# fields}} to complete or correct:\n\n{fields}\n\nWhile they stay open, the report is not ready to file. Open it here:\n\n{link}\n\nIf anything is still left, we will remind you again in {intervalDays, plural, one {# day} other {# days}}. You are receiving this because you can edit your organization’s reports.",
+        "email": {
+          "subject": "The {entityName} report for {fiscalYear} has {count, plural, one {# field} other {# fields}} still to complete",
+          "preheader": "{count, plural, one {# field is} other {# fields are}} still to complete or correct before the report is ready to file.",
+          "heading": "{count, plural, one {# field still to complete} other {# fields still to complete}}",
+          "card": {
+            "title": "{entityName}",
+            "caption": "Sustainability report · {fiscalYear}",
+            "status": "Not ready to file"
+          },
+          "intro": "The sustainability report of {entityName} for {fiscalYear} still has {count, plural, one {# field} other {# fields}} to complete or correct:",
+          "outro": "While they stay open, the report is not ready to file.",
+          "action": "Open the report",
+          "note": {
+            "body": "If anything is still left, we will remind you again in {intervalDays, plural, one {# day} other {# days}}."
+          },
+          "reason": "You are receiving this because you can edit your organization’s reports."
+        },
         "in_app": {
           "title": "The {entityName} report for {fiscalYear} has {count, plural, one {# field} other {# fields}} still to complete",
           "body": "To complete or correct: {fields}.",
@@ -659,8 +774,20 @@
       },
       "report_deadline": {
         "name": "Filing deadlines",
-        "subject": "{daysRemaining, plural, one {# day} other {# days}} left to file the {entityName} report for {fiscalYear}",
-        "body": "Hello,\n\nThe sustainability report of {entityName} for {fiscalYear} is due on {dueDate} — {daysRemaining, plural, one {# day} other {# days}} from today.\n\n{started, select, no {The report has not been started yet.} other {{outstanding, plural, one {# field is} other {# fields are}} still to complete or correct.}}\n\nOpen the report here:\n\n{link}\n\nYou are receiving this because you can edit your organization’s reports.",
+        "email": {
+          "subject": "{daysRemaining, plural, one {# day} other {# days}} left to file the {entityName} report for {fiscalYear}",
+          "preheader": "The {entityName} report for {fiscalYear} is due on {dueDate}.",
+          "heading": "{daysRemaining, plural, one {# day} other {# days}} left to file",
+          "card": {
+            "title": "{entityName}",
+            "caption": "Sustainability report · {fiscalYear}",
+            "status": "Due on {dueDate}"
+          },
+          "intro": "The sustainability report of {entityName} for {fiscalYear} is due on {dueDate} — {daysRemaining, plural, one {# day} other {# days}} from today.",
+          "outro": "{started, select, no {The report has not been started yet.} other {{outstanding, plural, one {# field is} other {# fields are}} still to complete or correct.}}",
+          "action": "Open the report",
+          "reason": "You are receiving this because you can edit your organization’s reports."
+        },
         "in_app": {
           "title": "{daysRemaining, plural, one {# day} other {# days}} left to file the {entityName} report for {fiscalYear}",
           "body": "It is due on {dueDate}. {started, select, no {The report has not been started yet.} other {{outstanding, plural, one {# field is} other {# fields are}} still to complete or correct.}}",
@@ -669,8 +796,20 @@
       },
       "export_finished": {
         "name": "Finished exports",
-        "subject": "{outcome, select, failed {The {format, select, xlsx {Excel} other {PDF}} export of the {entityName} report for {fiscalYear} could not be produced} other {The {format, select, xlsx {Excel} other {PDF}} export of the {entityName} report for {fiscalYear} is ready}}",
-        "body": "Hello,\n\n{outcome, select, failed {The {format, select, xlsx {Excel} other {PDF}} file you asked for, of the sustainability report for {entityName} for {fiscalYear}, could not be produced after several attempts. Nothing in the report was lost: you can export it again.} other {The {format, select, xlsx {Excel} other {PDF}} file you asked for, of the sustainability report for {entityName} for {fiscalYear}, is ready, and stays in the report’s export history.}}\n\nOpen the report’s exports here:\n\n{link}\n\nYou are receiving this because you asked for this export and producing it took longer than half a minute.",
+        "email": {
+          "subject": "{outcome, select, failed {The {format, select, xlsx {Excel} other {PDF}} export of the {entityName} report for {fiscalYear} could not be produced} other {The {format, select, xlsx {Excel} other {PDF}} export of the {entityName} report for {fiscalYear} is ready}}",
+          "preheader": "{outcome, select, failed {Nothing in the report was lost: you can export it again.} other {The file stays in the report’s export history.}}",
+          "heading": "{outcome, select, failed {Your {format, select, xlsx {Excel} other {PDF}} export could not be produced} other {Your {format, select, xlsx {Excel} other {PDF}} export is ready}}",
+          "card": {
+            "title": "{entityName} — sustainability report, {fiscalYear}",
+            "caption": "{format, select, xlsx {Excel} other {PDF}} file · {outcome, select, failed {not produced} other {in the export history}}",
+            "badge": "{format, select, xlsx {XLSX} other {PDF}}",
+            "status": "{outcome, select, failed {Could not be produced} other {Ready}}"
+          },
+          "intro": "{outcome, select, failed {The {format, select, xlsx {Excel} other {PDF}} file you asked for, of the sustainability report for {entityName} for {fiscalYear}, could not be produced after several attempts. Nothing in the report was lost: you can export it again.} other {The {format, select, xlsx {Excel} other {PDF}} file you asked for, of the sustainability report for {entityName} for {fiscalYear}, is ready, and stays in the report’s export history.}}",
+          "action": "Open the report’s exports",
+          "reason": "You are receiving this because you asked for this export and producing it took longer than half a minute."
+        },
         "in_app": {
           "title": "{outcome, select, failed {The {format, select, xlsx {Excel} other {PDF}} export could not be produced} other {The {format, select, xlsx {Excel} other {PDF}} export is ready}}",
           "body": "{outcome, select, failed {The {entityName} report for {fiscalYear} has not changed; you can export it again.} other {The {entityName} report for {fiscalYear} — the file is waiting in its export history.}}",
@@ -680,6 +819,13 @@
     },
     "unsubscribe": {
       "footer": "To stop receiving emails like this one, open this link:\n\n{link}"
+    },
+    "email": {
+      "greeting": "Hello,",
+      "fallback": "If the button does not work, paste this address into your browser:",
+      "unsubscribe": "Stop emails like this",
+      "product": "easyesg, the sustainability reporting platform",
+      "operator": "{name} · {address}"
     }
   },
   "platform": {

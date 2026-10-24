@@ -7,6 +7,7 @@ import {
   type EmailMessage,
   type EmailPort,
 } from '@api/contracts/email.port';
+import { EMAIL_MARK, emailMarkBytes } from './email-mark';
 import { renderEmail } from './email-template.renderer';
 
 /**
@@ -72,13 +73,25 @@ export class SmtpEmailAdapter implements EmailPort {
   async send(message: EmailMessage): Promise<EmailDispatched> {
     // Rendered before the transport is touched, so a missing catalogue key fails as a template
     // error rather than as a provider error — the logging adapter's order, for the same reason.
-    const { subject, body } = renderEmail(message);
+    const { subject, text, html } = renderEmail(message);
 
     const sent = await this.sendOrClassify({
       from: this.settings.from,
       to: message.to,
       subject,
-      text: body,
+      // `multipart/alternative`, and the mark the HTML names by its content id attached inline beside it (task 225;
+      // §12.5.6's task-225 rows (1), (5)) — so a client shows it without fetching anything.
+      text,
+      html,
+      attachments: [
+        {
+          filename: EMAIL_MARK.filename,
+          content: emailMarkBytes(),
+          contentType: EMAIL_MARK.contentType,
+          cid: EMAIL_MARK.contentId,
+          contentDisposition: 'inline',
+        },
+      ],
       // The idempotency key travels as the message id's local part so a provider-side duplicate is
       // traceable to the outbox row that caused it (§8.4). It is not a deduplication mechanism —
       // the outbox's `jobId` already is one; this is what makes a redelivery diagnosable.

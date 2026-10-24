@@ -32,13 +32,15 @@ export class LoggingEmailAdapter implements EmailPort {
   send(message: EmailMessage): Promise<EmailDispatched> {
     // Rendered before anything is claimed to have been sent, so a missing or malformed template
     // fails here — in development, on the first send — rather than at task 51 against a provider.
-    const { subject, body } = renderEmail(message);
+    // Both parts are rendered, so a template whose HTML cannot be drawn fails here too; the plain part is the one logged,
+    // being every word the HTML part says (task 225).
+    const { subject, text } = renderEmail(message);
 
     this.logger.log(
       `${message.templateKey} → ${this.pseudonym(message.to)} [${message.locale}] ` +
         `idempotency=${message.idempotencyKey}`,
     );
-    this.logger.debug(`To: ${message.to}\nSubject: ${subject}\n\n${body}`);
+    this.logger.debug(`To: ${message.to}\nSubject: ${subject}\n\n${text}`);
 
     // No provider handle: nothing was dispatched to a provider. Returning a fabricated id would
     // make task 51's bounce matching (NFR-107) look wired when it is not.

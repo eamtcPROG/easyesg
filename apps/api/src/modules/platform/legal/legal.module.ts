@@ -1,5 +1,6 @@
 import { Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
+import { LEGAL_OPERATOR } from '@api/contracts/legal-operator.port';
 import { CookieChoiceStoreRepository } from '@api/infrastructure/persistence/platform/cookie-choice-store.repository';
 import { CookieChoicePurgeHandler } from './consumers/cookie-choice-purge.handler';
 import { CookieChoicesController } from './controllers/cookie-choices.controller';
@@ -7,6 +8,7 @@ import { LegalDocumentsController } from './controllers/legal.controller';
 import { COOKIE_CHOICE_STORE, type CookieChoiceStore } from './interfaces/cookie-choice-store.interface';
 import { CookieChoiceService } from './services/cookie-choice.service';
 import { LegalControllerService } from './services/legal-controller.service';
+import { LegalOperatorService } from './services/legal-operator.service';
 import { PurgeCookieChoices } from './use-cases/purge-cookie-choices.use-case';
 import { RecordCookieChoice } from './use-cases/record-cookie-choice.use-case';
 
@@ -17,15 +19,23 @@ import { RecordCookieChoice } from './use-cases/record-cookie-choice.use-case';
  * committed to the release (182/116).
  *
  * **And since task 223 the cookie banner's answers** (FR-206; §12.5.6's task-223 row): recorded on the request tier, and
- * purged nightly on the worker — the module's first worker half. Nothing on the worker reads the controller, and
- * nothing on the request tier deletes an answer.
+ * purged nightly on the worker — the module's first worker half. Nothing on the request tier deletes an answer.
+ *
+ * **And since task 225 the operator an email's footer names** (§12.5.6's task-225 row (7)): `LEGAL_OPERATOR`, provided
+ * and exported in both modes, read on the worker by the notification module — the controller's one reader there.
  */
 const { mode } = configuration();
 
 const store: Provider = { provide: COOKIE_CHOICE_STORE, useClass: CookieChoiceStoreRepository };
 
-const httpProviders: Provider[] = [
+const operator: Provider[] = [
   LegalControllerService,
+  LegalOperatorService,
+  { provide: LEGAL_OPERATOR, useExisting: LegalOperatorService },
+];
+
+const httpProviders: Provider[] = [
+  ...operator,
   CookieChoiceService,
   store,
   {
@@ -36,6 +46,7 @@ const httpProviders: Provider[] = [
 ];
 
 const workerProviders: Provider[] = [
+  ...operator,
   CookieChoicePurgeHandler,
   store,
   {
@@ -48,5 +59,6 @@ const workerProviders: Provider[] = [
 @Module({
   controllers: mode === APP_MODE.WORKER ? [] : [LegalDocumentsController, CookieChoicesController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
+  exports: [LEGAL_OPERATOR],
 })
 export class LegalModule {}

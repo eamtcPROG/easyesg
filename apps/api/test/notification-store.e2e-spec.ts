@@ -25,7 +25,7 @@ import { CancelNotification } from '../src/modules/platform/notification/use-cas
 import { NOTIFICATION_CHANNEL } from '../src/modules/platform/notification/models/notification-category.model';
 import { DeliverNotification } from '../src/modules/platform/notification/use-cases/deliver-notification.use-case';
 import { asOrganization, connectAs } from './support/database';
-import { asJob, clearSuppressedAddresses, deleteNotificationsOf, notificationStore, optOuts, unsubscribeTokens, suppressionStore, OCCURRED_MICROS } from './support/notification-store';
+import { asJob, clearSuppressedAddresses, deleteNotificationsOf, notificationStore, optOuts, unsubscribeTokens, suppressionStore, NO_OPERATOR, OCCURRED_MICROS } from './support/notification-store';
 import { DisclosureLabelService } from '../src/modules/platform/localization/services/disclosure-label.service';
 import { EntityFieldNamesService } from '../src/modules/platform/localization/services/entity-field-names.service';
 import { NoticeParamsService } from '../src/modules/platform/notification/services/notice-params.service';
@@ -110,6 +110,7 @@ describe('the notification store (tasks 50.1.1, 50.1.3)', () => {
           emailPort,
           suppressionStore(worker),
           new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()),
+          NO_OPERATOR,
         ),
         { channelsFor: () => [NOTIFICATION_CHANNEL.IN_APP, NOTIFICATION_CHANNEL.EMAIL] },
         notificationStore(worker),

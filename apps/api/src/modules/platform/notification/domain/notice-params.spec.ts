@@ -1,4 +1,4 @@
-import { paramsForLocale } from './notice-params';
+import { FIELD_LIST_FORM, paramsForLocale } from './notice-params';
 
 const LABELS: Record<string, Record<string, string>> = {
   ro: { Turnover: 'Cifra de afaceri', Assets: 'Active', TotalEnergyConsumption: 'Consumul total de energie' },
@@ -26,6 +26,16 @@ describe('paramsForLocale (task 51.2)', () => {
     expect(paramsForLocale({ params: { fields: FIELDS }, locale: 'ro', labelOf: labelOf('ro') })).toEqual({
       fields: 'B1: Cifra de afaceri și Active; B3: Consumul total de energie',
     });
+  });
+
+  // Task 225: the email draws the list one module a row, where the centre's wording places it inside a sentence.
+  it('gives an email the same modules one a line, and the centre one sentence by default', () => {
+    expect(
+      paramsForLocale({ params: { fields: FIELDS }, locale: 'en', labelOf: labelOf('en'), fieldList: FIELD_LIST_FORM.LINES }),
+    ).toEqual({ fields: ['B1: Turnover and Assets', 'B3: Total energy consumption'] });
+    expect(
+      paramsForLocale({ params: { fields: FIELDS }, locale: 'en', labelOf: labelOf('en'), fieldList: FIELD_LIST_FORM.SENTENCE }),
+    ).toEqual(paramsForLocale({ params: { fields: FIELDS }, locale: 'en', labelOf: labelOf('en') }));
   });
 
   it('leaves out a field with no label rather than printing its key, and keeps the module', () => {

@@ -5,6 +5,7 @@ import { Module, type Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import configuration, { APP_MODE, type AppConfig } from '@api/config/configuration';
 import { NOTIFICATION_CADENCES } from '@api/contracts/notification-cadence.port';
+import { LegalModule } from '@api/modules/platform/legal/legal.module';
 import { LocalizationModule } from '@api/modules/platform/localization/localization.module';
 import { NOTIFICATION_PORT } from '@api/contracts/notification.port';
 import { NOTICE_APPLICATION, NOTIFICATION_DELIVERY } from '@api/contracts/notification-delivery.port';
@@ -319,8 +320,8 @@ const httpProviders: Provider[] = [
  */
 @Module({
   // `LocalizationModule` for the disclosure labels a field list is named by (task 51.2), in both modes: the centre
-  // renders at read, the email at send.
-  imports: mode === APP_MODE.WORKER ? [EmailModule, LocalizationModule] : [LocalizationModule],
+  // renders at read, the email at send. `LegalModule` on the worker for the operator an email's footer names (task 225).
+  imports: mode === APP_MODE.WORKER ? [EmailModule, LocalizationModule, LegalModule] : [LocalizationModule],
   controllers:
     mode === APP_MODE.WORKER
       ? []

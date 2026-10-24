@@ -3,7 +3,7 @@ import type { Locale } from '@easyesg/i18n';
 import { isEntityField } from '@easyesg/validation';
 import { DISCLOSURE_LABELS, type DisclosureLabelResolver } from '@api/contracts/disclosure-label.port';
 import { ENTITY_FIELD_NAMES, type EntityFieldNames } from '@api/contracts/entity-field-names.port';
-import { paramsForLocale } from '../domain/notice-params';
+import { paramsForLocale, type FieldListForm } from '../domain/notice-params';
 
 /**
  * A notice's params in one reader's language (task 51.2) — `paramsForLocale` over the disclosure labels, so a field list
@@ -24,11 +24,17 @@ export class NoticeParamsService {
     @Inject(ENTITY_FIELD_NAMES) private readonly entityFields: EntityFieldNames,
   ) {}
 
-  forLocale(input: { readonly params: Readonly<Record<string, unknown>>; readonly locale: Locale }): Record<string, unknown> {
+  forLocale(input: {
+    readonly params: Readonly<Record<string, unknown>>;
+    readonly locale: Locale;
+    /** An email's field list is one line per module (task 225); the centre's is one sentence. */
+    readonly fieldList?: FieldListForm;
+  }): Record<string, unknown> {
     const entityFieldNames = this.entityFields.namesIn({ locale: input.locale });
     return paramsForLocale({
       params: input.params,
       locale: input.locale,
+      ...(input.fieldList === undefined ? {} : { fieldList: input.fieldList }),
       labelOf: ({ version, key }) =>
         isEntityField(key)
           ? (entityFieldNames[key] ?? null)

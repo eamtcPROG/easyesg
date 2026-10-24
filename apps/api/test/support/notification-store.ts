@@ -1,5 +1,6 @@
 import type { DataSource } from 'typeorm';
 import type { EmailPort } from '@api/contracts/email.port';
+import type { LegalOperator } from '@api/contracts/legal-operator.port';
 import { AesGcmSecretCipher } from '@api/infrastructure/adapters/secret-cipher/aes-gcm-secret.cipher';
 import { HmacUnsubscribeTokens } from '@api/infrastructure/adapters/unsubscribe-token/hmac-unsubscribe-tokens';
 import { NotificationRecipientsRepository } from '@api/infrastructure/persistence/identity/notification-recipients.repository';
@@ -25,6 +26,12 @@ export const notificationStore = (worker: DataSource): NotificationStoreReposito
 /** `SUPPRESSION_STORE` over the same connection (task 51.4). It binds no tenant: the table carries none. */
 export const suppressionStore = (worker: DataSource): SuppressionStoreRepository =>
   new SuppressionStoreRepository(worker);
+
+/**
+ * `LEGAL_OPERATOR` with no operator published (task 225): a suite's emails go without the footer's operator line, as
+ * they would were A-21's artefact unreadable — which these suites do not test, and the channel's own spec does.
+ */
+export const NO_OPERATOR: LegalOperator = { inForce: () => null };
 
 /**
  * `NOTIFICATION_OPT_OUTS` over the same connection (task 52.2.1): who switched a category off, read as `esg_worker`,
@@ -60,6 +67,7 @@ export const linkNoticeDelivery = (input: {
         input.provider,
         suppressionStore(input.worker),
         new NoticeParamsService(new DisclosureLabelService(), new EntityFieldNamesService()),
+        NO_OPERATOR,
       ),
       { channelsFor: () => [NOTIFICATION_CHANNEL.EMAIL] },
       notificationStore(input.worker),

@@ -850,8 +850,9 @@ under `@RequiresAccount()`, and work with no organization bound. What to know:
   /account/notification-preferences/unsubscribe/preview` reads and `…/unsubscribe` switches one pair, idempotently;
   both take a token `HmacUnsubscribeTokens` signed on the worker, and `@Public()` is safe because the token names one
   account, category and channel and nothing else. `DeliverNotification` signs one into every email of a category
-  `mayBeSwitchedOff` allows, and `renderEmail` appends `notification.unsubscribe.footer` to it — or throws, since an
-  optional email without its unsubscribe is the FR-169 breach. **The token is dotless on purpose** (`~`-separated):
+  `mayBeSwitchedOff` allows, and `renderEmail` carries it in both parts — `notification.unsubscribe.footer` in the
+  plain part, `notification.email.unsubscribe` as the HTML part's link (task 225) — or throws, since an optional
+  email without its unsubscribe is the FR-169 breach. **The token is dotless on purpose** (`~`-separated):
   it is a path segment of S-38's address, and `apps/web`'s proxy reads a dotted path as a file.
 
 **The profile's two new languages are the database's to default** (task 52.3; §12.5.6's task-52.3 row).
@@ -911,6 +912,22 @@ link's path and hands the notice to `NOTIFICATION_DELIVERY` (`DeliverLinkNotice`
   account names each delivery; an in-app delivery is always an account's. **They go by email only** (row (20)):
   `DeliverLinkNotice` ignores an in-app channel on their category and skips, with a warning, one naming no email — a
   centre could show a notice whose token it cannot act on, and A-17 refusing in-app for them is task 67.10's.
+
+**An email is two parts from one reading of the catalogue** (task 225; §12.5.6's task-225 row; FR-169 behaviour 4).
+`readEmailParts` (`infrastructure/adapters/email/`) resolves every word once, and `composeEmailText` and
+`renderEmailHtml` — React rendered to static markup, `templates/` — lay the same words out, so the plain part and the
+HTML part cannot disagree. Three things to know:
+
+- **A category's blocks are code's** — `EMAIL_LAYOUT`, a `Record` over the category vocabulary, so a category added
+  without one does not compile; its words are `notification.<key>.email.*`. A template no category names takes the
+  plain anatomy.
+- **React 19 hoists a `<link rel="preload">` into the head for every `<img>` in a whole document**, which is a link
+  element in a message UX-66 forbids. The ring mark carries `fetchPriority="low"`, React's own opt-out, and the
+  renderer spec fails on any `<link>` — remove the attribute and it goes red.
+- **The palette is copied from `tokens.css`** and held equal by `email-palette.spec.ts`; the mark is drawn by
+  `tools/draw-email-mark.mjs` and reaches `dist` through `nest-cli.json`'s `**/*.png` asset, which the SMTP adapter's
+  spec reads the bytes of. The footer's operator comes from `LEGAL_OPERATOR`, which `platform/legal` provides in both
+  modes and which answers `null`, not an error, when A-21's artefact cannot be read.
 
 ### Withholding a column from the application
 
@@ -1859,10 +1876,11 @@ every context depends on, so anything it reaches for becomes a transitive depend
   `warn` on boot; a padded process must never be mistaken for the real one while reading a log.
 
 - **Every category's wording is a gate, not a habit** (task 51.3). `app/messages/notification-wording.spec.ts`
-  holds every category registered in `config/seed` to what its published channels need — `subject`/`body`
-  for `email`, `name` and `in_app.{title,body}` for `in_app`, `action` optional because the centre omits
-  an absent member — and every `*_TEMPLATE` constant under `modules/` to a subject and a body, in all
-  three locales. A category is configuration and needs no deploy (AD-4), so one can arrive with no
+  holds every category registered in `config/seed` to what its published channels need — for `email` the
+  parts `renderEmail` refuses to send without (`email.{subject,preheader,heading,intro,action,reason}`,
+  task 225) and the words every email shares, `name` and `in_app.{title,body}` for `in_app`, `action`
+  optional because the centre omits an absent member — and every `*_TEMPLATE` constant under `modules/` to
+  the same email parts, in all three locales. A category is configuration and needs no deploy (AD-4), so one can arrive with no
   catalogue edit: `renderEmail` throws, but only on the worker, only when a notice is sent, and only for
   that recipient's locale. **A template is not always a category** — `PASSWORD_SETUP_TEMPLATE` has no
   artefact — which is why the constant is read as well as the seed.
