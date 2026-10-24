@@ -33132,3 +33132,86 @@ Deployed as `29a77d52` after a re-run of its Gates run, whose stack job had fail
 A-17's dialog that passed in the runs either side (proposed as its own task, not fixed here). Verified: the api holds
 the secret, the worker's environment has no such variable, the accounts on staging survived, no warning or error in the
 api, worker or web logs, and Google's entry in force is still the seed's disabled one until an operator publishes it.
+
+## Task 224 — CI skips the api's stack suites on a push confined to the two applications · 2026-10-24
+
+Asked by the owner after reading how far an `apps/admin` change reaches: rerunning the api's suites proves nothing when
+nothing they exercise changed. `tools/ci-scope.sh` answers which pushes those are, and the two stack jobs read its
+answer. The rule and what would make it wrong are `architecture.md` §12.5.4's amended paragraph; this records how it
+was reached.
+
+### Decided (project owner)
+
+- **Scope only the leaves.** No workspace depends on `apps/web` or `apps/admin` (checked: no `package.json` but their
+  own names either), so that is where skipping can be argued from the graph rather than from "which app did I edit" —
+  the shape `gates-scoped.sh`'s header warns against. Never `packages/*`.
+- **What counts as staying in the two apps** (one question, answered with the recommended option): each app with its
+  own `e2e/` folder, and the docs as neutral. Read literally — *anything outside the two apps runs everything* — the
+  rule would never have fired on a task's commit, since every close edits `docs/build-log.md` and a console task
+  usually edits `e2e/admin`.
+
+### What the building decided within that
+
+- **The base is the branch's last green push run, not the previous push.** Two reasons, both about `dev`'s
+  `cancel-in-progress`: a cancelled run's changes would vanish from the next push's diff, and a red api run followed by
+  a console-only fix would be scoped confined and go green over an api nothing had proven. Against the last green run,
+  every green run certifies the api of some full run before it.
+- **Trees, with rename detection off — measured, not assumed.** In a sandbox commit moving
+  `packages/ui/src/archetypes/content-contents.spec.tsx` into `apps/admin/src/`, `git diff --name-only` listed only the
+  arrival under `apps/admin`, which would have been scoped confined; `--no-renames` lists the deletion in
+  `packages/ui` too. Comparing trees also makes a force push need no case of its own.
+- **Neutral is the push trigger's own `paths-ignore`, less two files.** A search for code reading markdown found
+  `packages/ui/src/styles/tokens.spec.ts` reading `contrast-record.md`, and `config/seed/README.md` sitting in the folder
+  the seed reader lists and shipping in the api image — so markdown under `packages/` and `config/` runs everything. The
+  rest of the hits were Moldova's `.md` domain in fixtures.
+- **A correction to what I told the owner beforehand**: that the console's browser project did not need the tenant
+  application. Three console specs open it (`legal-controller`, `identity-providers`, `support-access`) and six import
+  `e2e/web/support`, which is why a tenant-side change runs the console's project as well, and why the trim I offered
+  for the local `--project admin` run was withdrawn.
+- **What a confined push still runs whole, and why.** The job that needs no database, which is not the one a push
+  waits on and carries every gate the 6 Oct close rule defers to CI; the billing-off job's `pnpm test`, because
+  `apps/web` reads `BILLING_ENABLED` at runtime (`src/lib/env.ts`) and the job finishes early anyway; the images job.
+- **Each job asks for the scope itself** rather than a scope job passing it on, which would have held both stack jobs
+  until a third had started. Any green run is a sound base, so the two need not read the same one to be right.
+- **Fail toward running.** Every skipped step reads `!= 'confined'`, so an answer that never arrived runs the step; the
+  script answers *the whole set* for a pull request, a manual run, a branch with no green run, a base it cannot fetch,
+  and an empty diff — a re-run of a green commit asks for everything again, not for nothing. The token needs
+  `actions: read` to list runs, added at the workflow level beside `contents: read`.
+
+### Verified, and what is not yet
+
+- **The classifier against history**: each of the last 250 non-merge commits against its parent, 74 confined and 176
+  the whole set; spot-checked `c091bf1b` (S-13's menu: web, `e2e/web`, docs), `b3e9153e` (web, docs) and `90a06ae6`
+  (admin alone, `--project admin`).
+- **Ten constructed commits in a throwaway worktree**: the move out of `packages/ui` (whole set); console plus the
+  build log, and a console spec alone (confined, `--project admin`); an `e2e/web/support` helper, and web with the
+  console (confined, all projects); `contrast-record.md`, the seed's README, `e2e/playwright.config.ts`, and the console
+  with the lockfile (whole set); root `CLAUDE.md` with `design/` (confined).
+- **CI's own conditions**: a one-commit-deep clone fetched a full-sha base and compared it; the four fallbacks answered
+  the whole set; the workflow parses, and the steps carry the conditions intended.
+- **Not verified: the workflow on GitHub**, which no local run can stand in for — the commit is not pushed. The first
+  confined push is the proof, and its timings belong in this entry. Expected, from run 39988271032's steps: the stack
+  job sheds about six minutes (`pnpm e2e` 5.3, the worker boot, `migrations:check`, the seed), more when only the
+  console changed and the browser suite runs one project of three; the job that needs no database, 12.7 minutes, then
+  becomes the run's longest.
+
+### What the close ran
+
+No workspace's code changed, so the close table's only row is *anything*: `pnpm lint` and `pnpm docs:check`, the second
+because the plan counts in the root `CLAUDE.md` and `archived_tasks.md` moved with this row. No e2e suite: nothing they
+boot changed. Searched for other statements that CI runs everything on every push: the root `CLAUDE.md`'s two and the
+`closing-a-task` skill's one are amended; `gates.yml`'s header and its `paths-ignore` comment now point at the script;
+§12.5.6's task-90 row is history and stays; *"Within a Stage, CI is what sees them"* still holds, since every defect it
+lists either falls outside the two applications or is caught by the job that needs no database.
+
+### Found on the way: `pnpm lint`'s third pass no longer fits this host
+
+`docs:check` passed first time once `task.md`'s archive count moved too. `pnpm lint` did not: its last pass, *the rest
+of the repository*, died cold at 2,031 MB of heap — `Ineffective mark-compacts near heap limit`, Node's default ceiling on
+this 8 GB host — after `apps/api` and `apps/web` had passed. Not this change's doing: none of its files is one ESLint
+lints. Run alone with `--max-old-space-size=3584` it found nothing, at 2.66 GB resident and 17 minutes, most of it
+swapping; `pnpm lint` itself then passed on the warm cache in 48 seconds. CI's lint stays green because a hosted runner's
+default ceiling is higher. So `tools/lint.mjs`'s split, measured at Stage 2's close with its largest pass at 1.39 GB, has
+been outgrown by the pass that holds `apps/admin` and the packages, and on this host the gate fails cold — which is what
+`gates:clean` runs at a Stage's end. Not fixed here: it is the gate's own task, and a heap flag would hide the growth
+the split exists to keep visible.

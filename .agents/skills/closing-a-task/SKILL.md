@@ -27,7 +27,8 @@ judgement and an omission.
 the two `*:prove` gates and the cross-workspace half of `typecheck` now run once per **Stage**, at its end, rather
 than at any task's close (owner, 6 Oct 2026; once per parent from 8 Sep 2026 until then). Two things cover it:
 **CI runs the full set on every push to `dev`**, so a close pushed alone is still checked — a couple of minutes later,
-and not by this machine; and the Stage's end runs the full set cold — and `gates:clean` is the only run that
+and not by this machine (a push confined to `apps/web` and `apps/admin` skips only the api's stack suites since task
+224, and every gate this paragraph names still runs on it, in the job that needs no database); and the Stage's end runs the full set cold — and `gates:clean` is the only run that
 sees stale build state at all. What is
 assumed meanwhile is that a defect CI finds shortly after a push costs less than the local minutes
 spent finding it first. What falsifies it is a close's break surviving to the Stage's end and

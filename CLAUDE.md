@@ -88,6 +88,12 @@ all, so a stale generated facade could only be caught locally. The list above is
 own order, and the `hermetic` and `database` jobs concatenate to exactly it — which is the form that makes the
 claim checkable by reading rather than by trusting.
 
+**Every line runs on every push but one kind** (project owner, 24 Oct 2026, task 224): a push whose every change since
+the branch's last green run sits in `apps/web`, `apps/admin`, their `e2e/` folders or the docs skips the api's stack
+suites — `migrations:check`, `pnpm e2e` and `pnpm e2e:worker` — because nothing depends on those two apps. Which push
+that is, is `tools/ci-scope.sh`'s to say, never the workflow's; `architecture.md` §12.5.4 carries the rule and what
+would make it wrong.
+
 `pnpm gates` runs all seventeen — fourteen root scripts, then the three e2e suites (`pnpm e2e`,
 `pnpm e2e:worker`, then `pnpm e2e:web` — the
 Playwright browser run, three projects since task 23: the tenant journeys with their axe scan,
@@ -119,8 +125,9 @@ agents, once per Stage — when the Stage ends.** Standing decision by the owner
 8 Sep 2026 rule (*"a sub-step closes on the gates its own change reaches; the parent closes on the full set"*) and the
 12 Sep 2026 judgement of when that parent run had to be `gates:clean`. The reason is the one both of those gave —
 machine time on this host — taken one step further: a parent close still paid the full set and three `opus` reviews, a
-task at a time, while CI runs the full set on every push to `dev` anyway. So what runs is keyed to **what is
-closing**:
+task at a time, while CI runs the full set on every push to `dev` anyway — except, since task 224, the api's stack
+suites on a push confined to `apps/web` and `apps/admin`, which no change there can reach (§12.5.4). So what runs is
+keyed to **what is closing**:
 
 | Closing | Run |
 | --- | --- |
@@ -282,8 +289,8 @@ what is wrong.
 
 | File | Owns | Use it |
 | --- | --- | --- |
-| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, emptied on 1 Oct 2026, took two rows back on 5 Oct when task 182's restatement found registration accepting a blank name part (185) and two second-factor prompts unbuilt (190), and **closed on 6 Oct 2026** with both; its test — accounts, authentication, authorisation, admin user management and security *fully functional* — is met, and the five identity rows that wait on infrastructure or billing are named there with the Stage each sits in. Stage 2, Calculator and validation, **closed on 9 Oct 2026** with task 189. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026), which is what let Stage 1 empty while `51`, `67` and `133` kept later tails; **223 tasks across the two plan files**, of which 46 tasks are here and 177 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
-| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 177 numbers, 290 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
+| [task.md](docs/task.md) | **What is left**, in the Stage order authored 12 Sep 2026 — nine Stages, independent of the task numbers and of §15.4, which is unamended. Stage 1, Identity, emptied on 1 Oct 2026, took two rows back on 5 Oct when task 182's restatement found registration accepting a blank name part (185) and two second-factor prompts unbuilt (190), and **closed on 6 Oct 2026** with both; its test — accounts, authentication, authorisation, admin user management and security *fully functional* — is met, and the five identity rows that wait on infrastructure or billing are named there with the Stage each sits in. Stage 2, Calculator and validation, **closed on 9 Oct 2026** with task 189. A group sits in the Stage of its earliest **open** sub-step (amended 1 Oct 2026), which is what let Stage 1 empty while `51`, `67` and `133` kept later tails; **224 tasks across the two plan files**, of which 46 tasks are here and 178 have closed | Read before starting work to find the next task. **Numbers are appended, never inserted** — they are cited in `architecture.md`, migrations and source comments. **A Stage is an ordering, never an identifier**: cite a task number, never a Stage |
+| [archived_tasks.md](docs/archived_tasks.md) | **What has closed** — 178 numbers, 291 rows, under the §15.4 phase headings they were sliced under, which is where the historical build order is preserved. Tasks 74–77 are §15.4 #9, the public tier, appended 24 Aug 2026 with the step itself; 78–84 are Phase 10, the Comprehensive Module, and **116–121 are Phase 11**, the Advisor domain, appended 11 Sep 2026 when UC-196 … UC-211 were promoted out of `use_cases.md` §7.1 into MVP scope. **85 onward are not a phase** — they sit under *Appended — work found outside the plan*, because appending puts unplanned work after the last phase and filing it under Phase 10 made the Comprehensive Module read 27% done while none of it had started | **Move a row here when it goes `DONE`**, with its group. This is what a task number cited in a commit, a migration docblock or §12.5.6 resolves against |
 | [build-log.md](docs/build-log.md) | What a finished task actually cost: decisions taken, deviations, how it was verified | **Write an entry when a task closes**, while the reasons are still in hand. Not a changelog — `git log` already exists; record only what a diff cannot show |
 
 **Closing a task is a three-part edit: set the Status, move the row into `archived_tasks.md`, write the

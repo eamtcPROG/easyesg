@@ -27,6 +27,12 @@
 # whose gates are red, so the image job takes `needs: [hermetic, database, billing-off]` — all
 # three gate jobs, because billing-off is a gate like the others. That is where an artefact
 # depends on the gates, rather than one gate depending on another.
+#
+# ONE KIND OF PUSH RUNS LESS (§12.5.4, task 224). When every path that differs from the branch's last
+# green run is in the tenant application, the console or the docs, the two stack jobs skip the
+# api's suites — nothing depends on those two apps, so there is nothing for the suites to find.
+# `tools/ci-scope.sh` decides and prints why; this file only reads its answer, and every step it
+# skips is written `!= 'confined'`, so a scope that never answered runs the step.
 name: Gates
 
 on:
@@ -36,7 +42,8 @@ on:
     # instruction files cannot break a gate. `paths-ignore` is on `push` only and deliberately
     # not on `pull_request`: a skipped PR check never reports, and a required check that never
     # reports blocks the PR forever. design/ qualifies because the token cascade moved out of it
-    # in Phase 0 — nothing builds from that directory any more.
+    # in Phase 0 — nothing builds from that directory any more. `tools/ci-scope.sh` counts these
+    # same four as neutral (task 224), so a change to this list is a change to that one.
     paths-ignore:
       - 'docs/**'
       - 'design/**'
@@ -56,6 +63,8 @@ concurrency:
 
 permissions:
   contents: read
+  # Task 224: `tools/ci-scope.sh` asks for the branch's last green run, which is an Actions read.
+  actions: read
 
 jobs:
   hermetic:
@@ -133,6 +142,13 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
+      # Task 224: whether this push is confined to the two applications, and so which suites below it needs.
+      - name: Scope
+        id: scope
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: ./tools/ci-scope.sh >> "$GITHUB_OUTPUT"
       - uses: ./infra/ci/setup
 
       # The same Compose stack a developer runs, not a reimplementation of it. That matters most
@@ -177,7 +193,11 @@ jobs:
       # volume cannot: the stack is created for this run and destroyed with the runner. Applies
       # every migration from nothing, reverts the newest, re-applies it, then asserts §7's
       # structural invariants — each of which proves its own rule bites.
-      - run: pnpm migrations:check
+      #
+      # This step and the three after it are the api's, and a push confined to the two applications skips them; the
+      # browser suite below brings up, migrates and seeds its own stack from its pre-hook, so it needs none of them.
+      - if: steps.scope.outputs.scope != 'confined'
+        run: pnpm migrations:check
 
       # Before the e2e suite, so the first run publishes against an empty store and the second is
       # the no-op. Idempotence matters because a redeploy must not register as a configuration
@@ -187,6 +207,7 @@ jobs:
       # script an operator actually runs, which is the part with its own connection and environment
       # handling.
       - name: Seed configuration, twice
+        if: steps.scope.outputs.scope != 'confined'
         run: |
           pnpm --filter @easyesg/api config:seed
           pnpm --filter @easyesg/api config:seed
@@ -198,7 +219,8 @@ jobs:
       # what it expanded to until task 90. The two are the same command, and that is the problem:
       # the `billing-off` job below already said `pnpm e2e`, so one gate had two spellings and the
       # claim that CI runs the root scripts could not be checked by reading.
-      - run: pnpm e2e
+      - if: steps.scope.outputs.scope != 'confined'
+        run: pnpm e2e
 
       # AD-1's second entrypoint, booted (26 Aug 2026). `MODE` is read at module-definition time,
       # so one process cannot exercise both branches — the run above is the HTTP half and this is
@@ -206,7 +228,8 @@ jobs:
       # `AuthGuard` as an APP_GUARD unconditionally while `SessionModule` provides it on the HTTP
       # side only, and the worker container refused to start: caught by the Images job, which boots
       # the container a deploy would use, and by nothing before it.
-      - run: pnpm e2e:worker
+      - if: steps.scope.outputs.scope != 'confined'
+        run: pnpm e2e:worker
 
       # The browser e2e (task 20): register → verify through the shipped screens against this
       # same stack, plus the axe scan (NFR-75's automated half) and the +40% expansion check
@@ -222,7 +245,11 @@ jobs:
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
       - name: Install Chromium at the pinned Playwright version
         run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm e2e:web
+      # `--project admin` when the console alone changed (task 224), otherwise nothing and all three projects. Unquoted on
+      # purpose, since the flag and its value are two words; the value is one of the script's two literals.
+      - run: pnpm e2e:web $E2E_WEB_ARGS
+        env:
+          E2E_WEB_ARGS: ${{ steps.scope.outputs.e2e-web-args }}
 
       - name: Playwright traces
         if: failure()
@@ -253,6 +280,14 @@ jobs:
       BILLING_ENABLED: 'false'
     steps:
       - uses: actions/checkout@v7
+      # Task 224: the stack job's scope, asked again rather than passed between jobs, which would make this one wait for
+      # that one to start. Any green run is a sound base, so the two need not read the same one to be right.
+      - name: Scope
+        id: scope
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: ./tools/ci-scope.sh >> "$GITHUB_OUTPUT"
       - uses: ./infra/ci/setup
       - name: Provide the local environment files
         run: |
@@ -287,8 +322,12 @@ jobs:
 
       - run: pnpm dev:up
       - run: pnpm --filter @easyesg/api db:migrate
+      # Whole on every push: `apps/web` reads BILLING_ENABLED at runtime, so its unit tests with the context off belong
+      # to a confined push too, and the job is not the one a push waits on.
       - run: pnpm test
-      - run: pnpm e2e
+      # The api with billing switched off, which a push confined to the two applications cannot reach (task 224).
+      - if: steps.scope.outputs.scope != 'confined'
+        run: pnpm e2e
       # Both stacks since task 174: the suites run against the test stack, which each stack gate's pre-hook
       # brings up beside the dev one (`pnpm test:stack`).
       - name: Stack logs
