@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { settleAnimations } from './support/animations';
 import { cleanupRecipients, seedRecipient, switchedOffFor, unsubscribeTokenFor } from './support/unsubscribe';
 
 /**
@@ -35,6 +36,7 @@ test('a signed-out reader unsubscribes from an email in one press, and the link 
   ).toBeVisible();
   // Opening the page changed nothing: a scanner that prefetches the link stops here.
   expect(await switchedOffFor(accountId)).toEqual([]);
+  await settleAnimations(page);
   const ready = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   expect(ready.violations).toEqual([]);
 

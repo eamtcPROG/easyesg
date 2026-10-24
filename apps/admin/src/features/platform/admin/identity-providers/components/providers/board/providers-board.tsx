@@ -24,7 +24,9 @@ import { ProviderRecord } from '../record/provider-record';
  *
  * **Every answer invalidates the providers**, the refusals included: a save refused because a colleague saved
  * first must redraw the record with the values now in force, which is what the conflict notice tells the operator
- * they are looking at.
+ * they are looking at. **And the answer is drawn once that read has landed**, the write still in progress until then:
+ * the record's controls are keyed by the revision it read, and released earlier they carry the revision before the
+ * write just made, which the api refuses as a colleague's (A-17's case, 23 Oct 2026).
  *
  * **One notice, drawn where the operator is looking**: inside the record's dialogue while it is open, since the page
  * behind a modal dialogue is hidden from assistive technology, and on the board otherwise — after a row's menu acted,
@@ -54,12 +56,13 @@ export function ProvidersBoard({
       dispatch({ type: PROVIDER_ACTION_EVENT.STARTED, action });
       run(action, {
         onSuccess: (outcome) => {
-          dispatch(
-            outcome.status === API_OUTCOME.Ok
-              ? { type: PROVIDER_ACTION_EVENT.SUCCEEDED }
-              : { type: PROVIDER_ACTION_EVENT.REFUSED, failure: outcome },
+          void queryClient.invalidateQueries({ queryKey: IDENTITY_PROVIDERS_QUERY_KEY }).then(() =>
+            dispatch(
+              outcome.status === API_OUTCOME.Ok
+                ? { type: PROVIDER_ACTION_EVENT.SUCCEEDED }
+                : { type: PROVIDER_ACTION_EVENT.REFUSED, failure: outcome },
+            ),
           );
-          void queryClient.invalidateQueries({ queryKey: IDENTITY_PROVIDERS_QUERY_KEY });
         },
       });
     },

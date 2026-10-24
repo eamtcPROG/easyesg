@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { STACK_API_BASE } from '../stack';
+import { settleAnimations } from './support/animations';
 import { cleanupAccounts, cleanupOrganizations, grantMembership, verificationTokenFor } from './support/db';
 
 /**
@@ -261,6 +262,7 @@ test.describe('the Content archetype at its frames', () => {
     // The arm is reached: without hyphenation the columns cannot fit.
     expect(widths.card).toBeGreaterThan(0);
     expect(widths.page).toBe(0);
+    await settleAnimations(page);
     expect((await new AxeBuilder({ page }).withTags(WCAG).analyze()).violations).toEqual([]);
   });
 });

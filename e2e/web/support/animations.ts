@@ -7,6 +7,9 @@ import type { Page } from '@playwright/test';
  * 3.94:1 against the 5.1:1 it rests at, and passed or failed with how long the scan took to reach it. `Dialog` fades
  * in both applications, so both suites read this.
  *
+ * **An assertion on what the dialogue holds does not wait for it** (23 Oct 2026): Playwright counts an element at any
+ * opacity as visible, so A-17's three assertions on its record had passed 33 ms into the 240 ms fade, at opacity 0.18.
+ *
  * An infinite animation, a skeleton's shimmer, would never settle and is left running; one cancelled meanwhile
  * resolves rather than failing the check.
  */

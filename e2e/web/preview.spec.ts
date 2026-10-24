@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleAnimations } from './support/animations';
 import {
   cleanupAccounts,
   cleanupOrganizations,
@@ -113,11 +114,13 @@ test('passes the accessibility scan, and so does the document it frames', async 
   const { reportId } = await signedInWithReport(page, { label: 'scan' });
   await page.goto(`/reports/${reportId}/preview?language=en`);
   await framedDocument(page);
+  await settleAnimations(page);
   // axe cannot run inside a frame that admits no script, so the screen is scanned without it and the document alone,
   // at its own address — the same markup, held to the same rules.
   const screen = await new AxeBuilder({ page }).withTags(WCAG).exclude('iframe[name="report-document"]').analyze();
   expect(screen.violations).toEqual([]);
   await page.goto(`/api/v1/reports/${reportId}/preview?locale=en`);
+  await settleAnimations(page);
   const document = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   expect(document.violations).toEqual([]);
 });

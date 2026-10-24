@@ -30,7 +30,10 @@ import { CategoryRecord } from '../record/category-record';
  * **Every step goes through the api**: a proposal is previewed there, which refuses what code forbids before anything
  * is asked of the operator, and only a confirmed disclosure is written. **Every write's answer invalidates the
  * categories**, the refusals included: a publication refused because a colleague published first must redraw the
- * record with what is now in force, which is what the conflict notice says the operator is looking at.
+ * record with what is now in force, which is what the conflict notice says the operator is looking at. **And the
+ * answer is drawn once that read has landed**, the write still in progress until then: the result's revert is keyed by
+ * the revision the record read, and drawn before the read it carried the revision before this very publication, which
+ * the api refused as a colleague's (23 Oct 2026, met by the browser journey unprompted).
  *
  * **One notice, drawn where the operator is looking**: inside the record's dialogue while it is open, since the page
  * behind a modal dialogue is hidden from assistive technology, and on the board otherwise — after a row's revert, or
@@ -77,12 +80,13 @@ export function CategoriesBoard({
     dispatch({ type: CATEGORY_ACTION_EVENT.STARTED });
     run(action, {
       onSuccess: (outcome) => {
-        dispatch(
-          outcome.status === API_OUTCOME.Ok
-            ? { type: CATEGORY_ACTION_EVENT.SUCCEEDED }
-            : { type: CATEGORY_ACTION_EVENT.REFUSED, failure: outcome },
+        void queryClient.invalidateQueries({ queryKey: NOTIFICATION_CATEGORIES_QUERY_KEY }).then(() =>
+          dispatch(
+            outcome.status === API_OUTCOME.Ok
+              ? { type: CATEGORY_ACTION_EVENT.SUCCEEDED }
+              : { type: CATEGORY_ACTION_EVENT.REFUSED, failure: outcome },
+          ),
         );
-        void queryClient.invalidateQueries({ queryKey: NOTIFICATION_CATEGORIES_QUERY_KEY });
       },
     });
   };
@@ -99,7 +103,7 @@ export function CategoriesBoard({
       notice={state.notice}
       onDismiss={() => dispatch({ type: CATEGORY_ACTION_EVENT.NOTICE_DISMISSED })}
       onRevert={(done) => {
-        // The category as now read — the publication just made is the revision a revert is made against.
+        // The category as now read, which holds the publication just made: the result is drawn only after that read.
         const category = categoryNamed({ categories, categoryKey: done.action.categoryKey });
         const revert = category === null ? null : revertActionOf(category);
         if (revert !== null) propose(revert);

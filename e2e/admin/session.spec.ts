@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleAnimations } from '../web/support/animations';
 import { OPERATOR_ROLE, cleanupOperators, provisionOperator, type OperatorRole } from './support/provision';
 import { currentTotpCode } from './support/totp';
 
@@ -205,6 +206,7 @@ test('axe finds no violations on the console chrome', async ({ page }) => {
   await page.waitForURL('**/organizations');
   await expect(consoleBar(page)).toBeVisible();
   await page.waitForLoadState('networkidle');
+  await settleAnimations(page);
 
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
@@ -224,6 +226,7 @@ test('axe finds no violations on the console chrome', async ({ page }) => {
 test('axe finds no violations on A-01', async ({ page }) => {
   await page.goto('/sign-in');
   await page.waitForLoadState('networkidle');
+  await settleAnimations(page);
 
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])

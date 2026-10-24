@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleAnimations } from '../web/support/animations';
 import {
   OPERATOR_ROLE,
   cleanupOperators,
@@ -252,12 +253,14 @@ test('axe finds no violations on A-19 with a re-enrolment open, nor on A-01’s 
   await expect(
     section(page, 'Coduri de recuperare').getByText('Nu ați emis încă niciun set de coduri de recuperare'),
   ).toBeVisible();
+  await settleAnimations(page);
   expect((await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze()).violations).toEqual([]);
 
   await signOut(page, email);
   await submitCredential(page, email);
   await page.getByRole('button', { name: 'Folosiți un cod de recuperare' }).click();
   await expect(page.getByRole('heading', { name: 'Intrați cu un cod de recuperare' })).toBeVisible();
+  await settleAnimations(page);
   expect((await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze()).violations).toEqual([]);
 });
 

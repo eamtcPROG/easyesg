@@ -33133,6 +33133,114 @@ A-17's dialog that passed in the runs either side (proposed as its own task, not
 the secret, the worker's environment has no such variable, the accounts on staging survived, no warning or error in the
 api, worker or web logs, and Google's entry in force is still the seed's disabled one until an operator publishes it.
 
+## Every axe scan waits for the page to stop moving · 2026-10-23
+
+Gates run 39992893760 on `dev` (`29a77d52`, first attempt) failed on one case of 397: `notification-categories.spec.ts`'s
+cadence journey, its axe scan at line 174 with A-17's record open. `color-contrast` on seven nodes, all of them muted
+text in the record (the five `dt` labels, the settings section's caption, the interval's help), each `#757f87` on
+`#ededed`, 3.48:1. Runs 39982544028 and 39988271032 had passed the same console code. Re-run, not fixed, at the time.
+
+**Measured rather than reasoned**, against the test stack with a throwaway spec. **Neither colour is a token**:
+`--text-muted` resolves to `#65717c` and the dialogue's surface, `--surface-raised`, to `#ffffff`, with nothing between
+them — the `dt`, its `dl` and the dialogue's body are transparent. At rest all five labels read **4.99:1** and the full
+WCAG scan is clean. So the settled record has no contrast defect, and `tokens.css` is not this change's to touch.
+
+**The scan lands inside the fade.** `Dialog` and its overlay fade in from opacity 0 over `--motion-panel`, 240 ms. The
+journey's three assertions on the record had passed 317 ms after the click, with the fade **33 ms in, at opacity 0.18**:
+Playwright counts an element at any opacity as visible, so nothing on the way to the scan waits for it. Frozen at 20 ms
+steps, every muted label fails up to 160 ms (at 120 ms, `#747d86` on `#eeeeee`, 3.6:1, which is where CI's reading sits)
+and passes from 180 ms on. Whether the case passes is whether axe's colour pass reaches the dialogue after about 170 ms
+of the fade, which is why it passed twice and then did not. **Made deterministic** with CDP's
+`Animation.setPlaybackRate` at 0.1: the journey fails at its scan every time without a settle, and passes with one.
+
+**The fix is the rule already written** in `e2e/web/support/animations.ts` (28 Sep 2026): *every finite animation on
+the page settles before a check that measures what is painted*. `settleAnimations` now runs before every axe scan that
+measures colour. The helper's docblock gains the trap above, an assertion on the dialogue's content not waiting for it.
+**Settling hides nothing a scan should see**: `Dialog` has no exit animation, and `ExpiringCallout`'s `leave` starts only
+when its dwell runs out or it is closed, so a settle never waits out a dwell or takes away a callout at rest.
+
+**Searched for the shape**: every `new AxeBuilder` under `e2e/`, 24 calls in 16 specs, and every finite animation in the
+cascade and both apps' CSS. The only ones are `Dialog`'s fade, `ExpiringCallout`'s leave and the 80 ms transitions on
+controls. **A scan over a fading `Dialog`, unsettled:** `notification-categories` (both of its scans) and
+`identity-providers` (A-18's record, under the disable disclosure) — the case that failed, and the same case waiting to.
+**Unsettled, with nothing fading at the scan today:** `session`, `credentials` and `support-access` in the console and
+`unsubscribe` and `profile` in the tenant app — with the two above, the seven the 8 Oct 2026 entry listed and left —
+and the six written since,
+`legal-controller`, `change-history`, `exports`, `legal`, `marketing-home` and `preview`. The rule is every scan's,
+and a settle where nothing moves resolves at once, so they settle too. **Left alone:** the landmark-only scans in
+`session` and `accessibility`, which measure no colour, and S-12's history panel, a Radix dialogue on its own CSS with
+no animation. What the rule still lacks is a failing state: a new spec can scan without settling and nothing goes red.
+One scanning helper, and `no-restricted-syntax` on `new AxeBuilder` outside it, would be that gate.
+
+**Found on the way, and not fixed here: A-17's result revert can blame a colleague who does not exist.** The repeated
+run below failed once elsewhere, in the reminder journey, on its revert: *"Alt administrator a publicat setări pentru
+Mementouri după ce ați deschis fișa"*, with the operator's own publication the one in force. `categories-board.tsx`
+dispatches the result notice as the write answers and invalidates the read without waiting for it, and the notice's
+revert is built from the categories as last read. A revert clicked before the re-read lands carries the revision before
+the operator's own publication, and the api refuses it as *changed*, correctly by its rule. **Reproduced**: holding that
+re-read 2 s fails the journey 2 of 2 with this notice. A product defect in the console's own code, not the scan's, so it
+is its own change.
+
+### Verification
+
+- The cadence journey with the fade slowed tenfold: passes with the settle, fails at its scan with the settle line
+  removed.
+- `notification-categories.spec.ts --repeat-each=5`: the cadence journey 5 of 5, and the reminder journey's scan 5 of
+  5. The reminder journey failed once of five, on the revert race above, after its scan had passed.
+- The `admin` project whole, with six of its specs changed: 28 of 28.
+- The seven tenant specs changed, in the `identity` project: 49 of 49. The web server logged `The destination stream
+  closed early` twice, each as a file's last case closed its context: the 13 Sep 2026 entry's stream the browser
+  abandoned, and nothing new.
+- `pnpm lint`: clean. The e2e tree has no typecheck of its own; type-aware lint reads it through `e2e/tsconfig.json`,
+  and Playwright compiles it on every run.
+- **Skipped**: the rest of the `identity` project and the `expansion` project. The change reaches specs, which nothing
+  imports, and one docblock in the support file they share; CI runs both on the next push.
+
+## A-17's result revert waits for the read it is keyed by · 2026-10-24
+
+The previous entry records A-17's result revert refused as a colleague's change, once in five runs of the reminder
+journey, and leaves it to a change of its own. This is that change.
+
+**The order was the defect.** `categories-board.tsx` dispatched a write's answer, which draws the notice and releases
+every control, and only then started the read the write had invalidated, without waiting for it. Between the two the
+screen was keyed to the revision before the write: the result's revert, the record's and the row's menu each build
+their action from the read, and the api refuses a write against a revision no longer in force. That refusal is drawn
+as *another administrator published*, so a quick revert blamed a colleague who does not exist. The conflict notice
+had the same flaw, since it says the record now shows what is in force, which was true only once the read landed.
+
+**The answer is now drawn once the read has landed.** `onSuccess` chains the dispatch onto `invalidateQueries`, which
+at the pinned 5.101.4 resolves when every active query it matched has fetched again and swallows a failed fetch (read
+in `query-core`'s source; Context7 was not authenticated in this session). The write stays in progress until then, so
+every control stays held. A read that fails comes back as an outcome rather than a throw, and the section then draws
+its retry state in place of the board, so no stale board survives to act on. `revertActionOf` stays the one builder
+for all three controls and now reads a current read. Written first as `async`/`await`, which `no-misused-promises`
+refused, rightly: a per-call `onSuccess` is typed to return nothing, and the chain says what the callback does.
+
+**Searched for the shape**: every `invalidateQueries` in `apps/admin/src`, seven sites. **A-18's providers board and
+A-21's board had the same order and the same consequence** — A-18's state control and A-21's form are keyed by the
+revision they read, and each conflict notice says the screen shows what is in force — and take the same fix. A-08's
+roster board also dispatches before its read, but its controls are keyed by account rather than revision, so a write
+in the window cannot be refused as a colleague's; left alone. A-07's request and its end of access key no revision,
+and A-19's recovery codes return the invalidation from the hook's `onSettled`, which the mutation waits for. **Not
+searched**: `apps/web`, whose writes are Server Actions and whose read after them is the server's.
+
+**Tests first.** One component spec per board, beside its section, each rendering the section through its real query
+with the wire module mocked and the read after the write **held**: while it is held, nothing on the screen offers to
+act on the old revision, and once it lands the next write is made against the revision just made. A-17's also holds
+a conflict, whose notice waits for the colleague's values. All four cases failed on the old order, each at the hold,
+and pass on the new.
+
+### Verification
+
+- The three specs: four cases, failing on the old order at the hold, passing on the new.
+- `pnpm --filter @easyesg/admin test`: 319 of 319 in 43 files. `pnpm --filter @easyesg/admin typecheck`, `pnpm
+  routes:check` (the route tree unchanged) and `pnpm lint`: clean.
+- `pnpm e2e:web --project admin`: 28 of 28, on bundles it built, with nothing in the log beyond migration text.
+- The reminder journey in the browser with the read after the publication held 2 s, in a throwaway spec: 2 of 2
+  failed on the old order, with the false conflict notice; 2 of 2 pass on the new.
+- `notification-categories.spec.ts --repeat-each=5`: 10 of 10.
+- **Skipped**: the `identity` and `expansion` projects. The change reaches `apps/admin` alone, which neither drives.
+
 ## Task 224 — CI skips the api's stack suites on a push confined to the two applications · 2026-10-24
 
 Asked by the owner after reading how far an `apps/admin` change reaches: rerunning the api's suites proves nothing when

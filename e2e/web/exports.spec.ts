@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { settleAnimations } from './support/animations';
 import {
   cleanupAccounts,
   cleanupNotifications,
@@ -166,6 +167,7 @@ test('passes the accessibility scan at first use', async ({ page }) => {
   const { reportId } = await signedInWithReport(page, { label: 'scan' });
   await page.goto(`/reports/${reportId}/export`);
   await expect(page.getByRole('heading', { level: 1, name: 'Exportați raportul' })).toBeVisible();
+  await settleAnimations(page);
   const scan = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   expect(scan.violations).toEqual([]);
 });
