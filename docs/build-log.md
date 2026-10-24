@@ -33190,3 +33190,48 @@ is its own change.
   and Playwright compiles it on every run.
 - **Skipped**: the rest of the `identity` project and the `expansion` project. The change reaches specs, which nothing
   imports, and one docblock in the support file they share; CI runs both on the next push.
+
+## A-17's result revert waits for the read it is keyed by · 2026-10-24
+
+The previous entry records A-17's result revert refused as a colleague's change, once in five runs of the reminder
+journey, and leaves it to a change of its own. This is that change.
+
+**The order was the defect.** `categories-board.tsx` dispatched a write's answer, which draws the notice and releases
+every control, and only then started the read the write had invalidated, without waiting for it. Between the two the
+screen was keyed to the revision before the write: the result's revert, the record's and the row's menu each build
+their action from the read, and the api refuses a write against a revision no longer in force. That refusal is drawn
+as *another administrator published*, so a quick revert blamed a colleague who does not exist. The conflict notice
+had the same flaw, since it says the record now shows what is in force, which was true only once the read landed.
+
+**The answer is now drawn once the read has landed.** `onSuccess` chains the dispatch onto `invalidateQueries`, which
+at the pinned 5.101.4 resolves when every active query it matched has fetched again and swallows a failed fetch (read
+in `query-core`'s source; Context7 was not authenticated in this session). The write stays in progress until then, so
+every control stays held. A read that fails comes back as an outcome rather than a throw, and the section then draws
+its retry state in place of the board, so no stale board survives to act on. `revertActionOf` stays the one builder
+for all three controls and now reads a current read. Written first as `async`/`await`, which `no-misused-promises`
+refused, rightly: a per-call `onSuccess` is typed to return nothing, and the chain says what the callback does.
+
+**Searched for the shape**: every `invalidateQueries` in `apps/admin/src`, seven sites. **A-18's providers board and
+A-21's board had the same order and the same consequence** — A-18's state control and A-21's form are keyed by the
+revision they read, and each conflict notice says the screen shows what is in force — and take the same fix. A-08's
+roster board also dispatches before its read, but its controls are keyed by account rather than revision, so a write
+in the window cannot be refused as a colleague's; left alone. A-07's request and its end of access key no revision,
+and A-19's recovery codes return the invalidation from the hook's `onSettled`, which the mutation waits for. **Not
+searched**: `apps/web`, whose writes are Server Actions and whose read after them is the server's.
+
+**Tests first.** One component spec per board, beside its section, each rendering the section through its real query
+with the wire module mocked and the read after the write **held**: while it is held, nothing on the screen offers to
+act on the old revision, and once it lands the next write is made against the revision just made. A-17's also holds
+a conflict, whose notice waits for the colleague's values. All four cases failed on the old order, each at the hold,
+and pass on the new.
+
+### Verification
+
+- The three specs: four cases, failing on the old order at the hold, passing on the new.
+- `pnpm --filter @easyesg/admin test`: 319 of 319 in 43 files. `pnpm --filter @easyesg/admin typecheck`, `pnpm
+  routes:check` (the route tree unchanged) and `pnpm lint`: clean.
+- `pnpm e2e:web --project admin`: 28 of 28, on bundles it built, with nothing in the log beyond migration text.
+- The reminder journey in the browser with the read after the publication held 2 s, in a throwaway spec: 2 of 2
+  failed on the old order, with the false conflict notice; 2 of 2 pass on the new.
+- `notification-categories.spec.ts --repeat-each=5`: 10 of 10.
+- **Skipped**: the `identity` and `expansion` projects. The change reaches `apps/admin` alone, which neither drives.

@@ -19,6 +19,9 @@ import { LegalControllerForm } from './legal-controller-form';
  * **Every answer invalidates the record**, the refusals included: a save refused because a colleague saved first must
  * redraw the form with the values now in force, which is what the conflict notice tells the operator they are looking
  * at. **The form is keyed by the revision it opened on**, so a save — or a colleague's — remounts it with those values.
+ * **And the answer is drawn once that read has landed**, the save still in progress until then: released earlier, the
+ * form would save again against the revision before the one just made, which the api refuses as a colleague's (A-17's
+ * case, 23 Oct 2026).
  *
  * **`save` is memoised** because the form is its reader; `mutate` and `queryClient` are stable, and `dispatch` is
  * React's own, so it never changes (`reactCompiler` is off, AD-9).
@@ -35,12 +38,13 @@ export function LegalControllerBoard({ record }: { readonly record: LegalControl
       dispatch({ type: LEGAL_CONTROLLER_SAVE_EVENT.STARTED });
       publish(request, {
         onSuccess: (outcome) => {
-          dispatch(
-            outcome.status === API_OUTCOME.Ok
-              ? { type: LEGAL_CONTROLLER_SAVE_EVENT.SUCCEEDED }
-              : { type: LEGAL_CONTROLLER_SAVE_EVENT.REFUSED, failure: outcome },
+          void queryClient.invalidateQueries({ queryKey: LEGAL_CONTROLLER_QUERY_KEY }).then(() =>
+            dispatch(
+              outcome.status === API_OUTCOME.Ok
+                ? { type: LEGAL_CONTROLLER_SAVE_EVENT.SUCCEEDED }
+                : { type: LEGAL_CONTROLLER_SAVE_EVENT.REFUSED, failure: outcome },
+            ),
           );
-          void queryClient.invalidateQueries({ queryKey: LEGAL_CONTROLLER_QUERY_KEY });
         },
       });
     },
