@@ -28,7 +28,7 @@ import { useDwell } from './use-dwell';
  * in both apps passes through *no notice* on a new submit, which is also what keeps a stale answer from sitting above
  * a request still in flight.
  *
- * **The close control is outside the status region**, laid over the Callout's corner, so a screen reader announcing
+ * **The close control is outside the status region**, laid over the Callout's end, so a screen reader announcing
  * the message reads its three parts and not the button's name as a fourth.
  *
  * **Leaving collapses rather than vanishing.** The notice sits in the flow above a form, and taking a hundred pixels

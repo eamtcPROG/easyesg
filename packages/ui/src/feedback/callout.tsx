@@ -75,9 +75,12 @@ export function Callout({ intent, title, children, action }: CalloutProps) {
     >
       <Icon aria-hidden="true" className={styles.icon} />
       <div className={styles.content}>
-        <p className={styles.title}>{title}</p>
-        <div className={styles.body}>{children}</div>
-        <div className={styles.action}>{action}</div>
+        <div className={styles.message}>
+          <p className={styles.title}>{title}</p>
+          <div className={styles.body}>{children}</div>
+        </div>
+        {/* No slot for `null`: an empty one still took 8px under the message (24 Oct 2026). */}
+        {action === null ? null : <div className={styles.action}>{action}</div>}
       </div>
     </div>
   );

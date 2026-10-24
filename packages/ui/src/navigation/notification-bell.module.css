@@ -7,9 +7,10 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  /* The artboard's 32px — above WCAG 2.2's 24px minimum, and not a first-use control (§11.5's rule). */
-  inline-size: 32px;
-  block-size: 32px;
+  /* `Button`'s 40px since 24 Oct 2026 (project owner), so it stands as tall as the band's other controls; the
+     artboard drew 32px. */
+  inline-size: 40px;
+  block-size: 40px;
   padding: 0;
   border: 0;
   border-radius: var(--radius-1);
@@ -24,9 +25,11 @@
   background: var(--globalbar-control-surface-hover);
 }
 
+/* Grown with the box: the artboard's 20 in 32 is 25 in 40, held at Lucide's own 24px grid so its stroke lands on
+   whole pixels. */
 .glyph {
-  inline-size: 20px;
-  block-size: 20px;
+  inline-size: 24px;
+  block-size: 24px;
 }
 
 /* At the corner, as drawn: over the control's edge rather than inside it. */

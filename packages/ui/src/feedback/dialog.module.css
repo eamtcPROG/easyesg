@@ -56,15 +56,16 @@
   overflow-wrap: anywhere;
 }
 
-/* 32px, the dense console's target (§12.1), above WCAG 2.2's 24px minimum. */
+/* `Button`'s 40px square (project owner, 24 Oct 2026; it was 32px, the dense console's target), centred on the
+   title's line — `t-heading-3`'s 22px — and pulled into the head's end padding as before. */
 .close {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  inline-size: 32px;
-  block-size: 32px;
-  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-3)) 0 0;
+  inline-size: 40px;
+  block-size: 40px;
+  margin: calc((22px - 40px) / 2) calc(-1 * var(--space-3)) 0 0;
   border: 0;
   border-radius: var(--radius-1);
   background: none;
@@ -78,8 +79,8 @@
 }
 
 .close svg {
-  inline-size: 18px;
-  block-size: 18px;
+  inline-size: 20px;
+  block-size: 20px;
 }
 
 .description {

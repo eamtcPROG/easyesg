@@ -211,11 +211,13 @@
      number's value is set a step heavier than prose, its numerals equal-width and lining so figures line up. */
   --field-unit-border: var(--field-border-rest);
   --field-number-weight: 500;
-  /* The box every one-line field draws — `TextField`'s control and `Select`'s trigger alike (task 170).
+  /* The box every one-line field draws — `TextField`'s control, `Select`'s trigger and `Combobox`'s box alike (task 170).
      It was two numbers until then, 46px by construction on the text field and 40px on the select, so a
      filter row of both was ragged; one token is what makes their parity a fact rather than a comment.
+     **40px since 24 Oct 2026** (project owner): `Button`'s height, so a field and the button beside it stand as one
+     row — task 170 had settled on the text field's 46px, which left every filter row's button 6px short.
      Not a density step, and not in the compact block: a density moves the space scale and nothing else. */
-  --field-block-size: 46px;
+  --field-block-size: 40px;
   /* §11.5's File upload (task 204.2), the Components sheet's `dropzone.border.rest`: a dashed field boundary on the
      page ground, enterable-looking at rest as any field is, and on the accent's tint with the focus colour while a
      file is held over it. All tier 2, so the dark scheme moves them with nothing here. */

@@ -112,8 +112,16 @@ export function Button(props: ButtonProps) {
   // `asChild={false}` and a spread carrying `asChild: undefined` both took the Slot branch, where
   // Radix's `React.Children.only` throws on a string child and takes the screen with it. A union
   // discriminated by value cannot be entered by a key that happens to exist.
+  // `data-variant` says "a Button is here" to a container laying out what it holds — the Callout stands a Button at
+  // the end of its line and a link under its message — on the slotted anchor as on the element.
+  const variantAttribute = props.variant ?? BUTTON_VARIANT.PRIMARY;
+
   if (props.asChild === true) {
-    return <Slot.Root className={classes}>{props.children}</Slot.Root>;
+    return (
+      <Slot.Root className={classes} data-variant={variantAttribute}>
+        {props.children}
+      </Slot.Root>
+    );
   }
 
   // `asChild` and `busy` are this component's own vocabulary and must not reach the DOM — React
@@ -138,6 +146,7 @@ export function Button(props: ButtonProps) {
       disabled={disabled || busy}
       aria-busy={busy || undefined}
       className={classes}
+      data-variant={variantAttribute}
     >
       {busy ? <Spinner /> : null}
       {children}

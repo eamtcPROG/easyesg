@@ -6,8 +6,8 @@ import styles from './notification-bell.module.css';
 
 /**
  * The global bar's notification entry — §4.2's *notification centre* in the band, with the unread count visible
- * from any screen (tasks 50.2.1, 50.2.2; UX-62, FR-161). Drawn from the commerce artboard's global tier: a 32px control
- * on the band's own light surface, the bell, and the count at its corner.
+ * from any screen (tasks 50.2.1, 50.2.2; UX-62, FR-161). Drawn from the commerce artboard's global tier: a 40px control
+ * (the artboard's 32px until 24 Oct 2026) on the band's own light surface, the bell, and the count at its corner.
  *
  * **Here rather than in the tenant app because the glyph is here.** `lucide-react` is this package's dependency and
  * no application's (`architecture.md` §12.1), and the band is `GlobalBar`'s — so the entry is a part of the band

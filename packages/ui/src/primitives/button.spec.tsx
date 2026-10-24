@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Button } from './button';
-import { BUTTON_TONE } from './button-vocabulary';
+import { BUTTON_TONE, BUTTON_VARIANT } from './button-vocabulary';
 import styles from './button.module.css';
 
 /**
@@ -42,6 +42,23 @@ describe('Button (§11.5)', () => {
     const link = screen.getByRole('link', { name: 'Continue' });
     expect(link).toBeInTheDocument();
     expect(link.className).not.toBe('');
+  });
+
+  /**
+   * The Callout stands a Button at the end of its line by this attribute (24 Oct 2026), so a Button that stopped
+   * rendering it would drop every callout's button under its message with nothing failing — on either branch.
+   */
+  it('says it is a Button, with its variant, on the element and on a slotted anchor', () => {
+    render(
+      <>
+        <Button>Save</Button>
+        <Button asChild variant={BUTTON_VARIANT.SECONDARY}>
+          <a href="/somewhere">Continue</a>
+        </Button>
+      </>,
+    );
+    expect(screen.getByRole('button', { name: 'Save' })).toHaveAttribute('data-variant', 'primary');
+    expect(screen.getByRole('link', { name: 'Continue' })).toHaveAttribute('data-variant', 'secondary');
   });
 
   /**

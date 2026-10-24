@@ -1,5 +1,7 @@
+/* The icon is centred on everything beside it, not set on the title's line (project owner, 24 Oct 2026). */
 .callout {
   display: flex;
+  align-items: center;
   gap: var(--space-4);
   border: 1px solid;
   border-radius: var(--radius-2);
@@ -7,16 +9,25 @@
 }
 
 .icon {
+  flex-shrink: 0;
   inline-size: 20px;
   block-size: 20px;
-  flex-shrink: 0;
-  margin-block-start: 1px;
 }
 
+/* The message and its action, on lines that wrap: 8px between them when the action stands underneath, 16px when it
+   stands beside. */
 .content {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+}
+
+/* Never narrower than 16rem beside an action — a button that would leave it less wraps under it instead. */
+.message {
+  flex: 1 1 16rem;
   min-width: 0;
 }
 
@@ -26,13 +37,27 @@
   color: var(--text-default);
 }
 
+/* 4px under the title, as the Banner's body is (24 Oct 2026; it was 8px). */
 .body {
+  margin-block-start: var(--space-2);
   font: 400 14px/21px var(--font-text);
   color: var(--text-body);
 }
 
+/* A line of its own under the message: a link or a sentence is the message's third line, and reads as one. */
 .action {
+  flex: 1 0 100%;
   font: 400 14px/21px var(--font-text);
+}
+
+/* A Button — however the caller wraps it — stands at the end of the line, centred on the message, the Banner's place
+   for it, so a callout with a button is no taller than one without (project owner, 24 Oct 2026). Where that would leave
+   the message under 16rem — a narrow column, or a label carrying an address — it wraps under the message instead, by
+   the callout's own width rather than the screen's: the first draft placed it in a grid column, and a long label took
+   the whole row. `data-variant` is what every `Button` renders and no `TextLink` does, including one drawn on a
+   `<button>` — which is why this does not ask for `button`. */
+.action:has([data-variant]) {
+  flex: none;
 }
 
 .info {

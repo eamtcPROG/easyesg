@@ -4,7 +4,7 @@ import styles from './back-arrow.module.css';
 
 /**
  * The square arrow that leads a screen's reader back — §11.5's Back-to-context, drawn as S-13's record artboard and
- * the wizard's bar both draw it: a bordered 36px square with the arrow in it, named by a visually hidden sentence.
+ * the wizard's bar both draw it: a bordered 40px square with the arrow in it, named by a visually hidden sentence.
  *
  * **Its own part since 30 Sep 2026 (task 179.1)**, when the wizard's bar became its second reader: it was
  * `PageHeading`'s markup until then, and a copy in the bar would be the one-off UX-89 names.

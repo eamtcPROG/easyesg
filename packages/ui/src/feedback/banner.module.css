@@ -1,9 +1,10 @@
 /* Banner — §8.3's persistent, page-level vehicle. Tier 3 only (UX-78): every colour is a `--state-*`
    role, so task 82's dark scheme reaches it without this file being reopened. */
 
+/* The icon centred on the message, as the Callout's is (project owner, 24 Oct 2026; it sat on the title's line). */
 .banner {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-4);
   border-block: 1px solid;
   padding: var(--space-4) var(--space-5);
@@ -14,7 +15,6 @@
   inline-size: 20px;
   block-size: 20px;
   flex-shrink: 0;
-  margin-block-start: 1px;
 }
 
 .content {

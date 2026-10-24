@@ -30,8 +30,9 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  /* 40px, the target size everything a first-time user must hit carries (NFR-75). */
-  min-block-size: 40px;
+  /* The field box `TextField` and `Select` draw — 40px, the target size everything a first-time user must hit
+     carries (NFR-75). The token rather than its value, so a filter row of all three cannot drift apart again. */
+  min-block-size: var(--field-block-size);
   inline-size: 100%;
   padding-inline: var(--space-4);
   /* A field must look enterable — §11.5's second recorded addition, and the one token this

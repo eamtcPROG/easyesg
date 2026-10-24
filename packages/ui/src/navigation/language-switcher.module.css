@@ -2,7 +2,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: 38px;
+  /* `Button`'s 40px (project owner, 24 Oct 2026), so it stands as tall as the band's other controls; it was 38px. */
+  min-height: 40px;
   padding: 0 var(--space-4);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-1);

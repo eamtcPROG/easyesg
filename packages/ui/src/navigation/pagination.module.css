@@ -32,8 +32,8 @@
 }
 
 /* Wide enough for "100" and the chevron, and no wider: a number, not a sentence. **At the pager's
-   height, not a field's** (task 170): `Select` draws `--field-block-size`, the 46px box that lines it up
-   with a text field in a form; here it stands beside 40px buttons, so the token is re-scoped to this one
+   height, not a field's** (task 170): `Select` draws `--field-block-size`, the box that lines it up
+   with a text field in a form; here it stands beside the pager's buttons, so the token is re-scoped to this one
    field rather than giving `Select` a size prop only the pager would pass. */
 .sizeSelect {
   --field-block-size: var(--pager-control-size);

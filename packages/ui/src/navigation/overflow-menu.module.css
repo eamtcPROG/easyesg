@@ -1,17 +1,17 @@
 /* The Components sheet's overflow menu (task 170). Tier 2/3 tokens only; the menu surface is the one
    every Radix menu here already draws (`select.module.css`, `account-menu.module.css`). */
 
-/* The sheet's 28px trigger, raised to 32px — the dense console's target (§12.1), and the height a
-   row's labelled button sits beside without the row growing. **A container whose buttons stand taller sets
-   `--overflow-trigger-size` and `--overflow-trigger-border`** (the wizard bar, beside *Export*), inherited, so the
-   trigger matches the buttons it sits among and a row keeps its 32px without a prop saying which it is. */
+/* A 40px square — `Button`'s height, so the ⋯ beside a row's labelled button stands as tall as it (project owner,
+   24 Oct 2026; the sheet's 28px, raised to 32px by task 170, had it 8px short of *View* on every list row).
+   **A container whose buttons draw a stronger edge sets `--overflow-trigger-border`** (the wizard bar, beside
+   *Export*), inherited, so the trigger's edge matches the buttons it sits among without a prop saying which it is. */
 .trigger {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  inline-size: var(--overflow-trigger-size, 32px);
-  block-size: var(--overflow-trigger-size, 32px);
+  inline-size: 40px;
+  block-size: 40px;
   border: 1px solid var(--overflow-trigger-border, var(--border-default));
   border-radius: var(--radius-1);
   background: var(--surface-default);
@@ -25,9 +25,10 @@
   color: var(--text-default);
 }
 
+/* Grown with the box (24 Oct 2026): the sheet's 16 in 32 is 20 in 40. */
 .trigger svg {
-  inline-size: 16px;
-  block-size: 16px;
+  inline-size: 20px;
+  block-size: 20px;
 }
 
 .menu {

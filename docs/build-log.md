@@ -33417,3 +33417,61 @@ renderer throws a plain `Error` into the queue's failed set, as it did before.
   HTML, and a renderer case holds the two to one plain part for every template and locale.
 - **Not verified by any suite: how a mail client draws the HTML** — Outlook's engine, Gmail's clipping, a client's dark
   mode. The release-checklist item the §12.5.6 row names: a person reads the specimens in each.
+
+## Controls stand 40px beside a Button, and the Feedback components centre on their message · 2026-10-24
+
+Not a task row: the owner reviewed `packages/ui` on a design canvas that rendered every exported component with its
+own CSS and labelled each with its measured box, then marked what to change, one comment at a time. The decisions are
+`design_spec.md` §11.5's two entries dated 24 Oct 2026 — *the overflow menu's trigger, the Back-to-context arrow and
+the notification bell are 40 × 40…* and *the Callout, the Banner and the close controls* — and are not restated here.
+
+**What the canvas measured, and what it changed.** The row in the owner's screenshot was a secondary `Button`, 40px,
+beside an `OverflowMenu` trigger at 32px, under sort headers at 44. Beside the 40px `Button`: the trigger 32, `BackArrow`
+36, `NotificationBell` 32, `LanguageSwitcher` 38, every one-line field 46 and `Combobox` 40. All are 40 now. The fields
+moved through their one token, `--field-block-size`, so the apps' buttons sized from it beside a filter row
+(`access`, `periods`, `entities`, `reports`, `list-search`, the console's `filter-bar`) moved with them, and
+`Combobox`, which had its own literal 40, reads the token now. The wizard bar's `--overflow-trigger-size` override is
+gone with the variable, its border override kept. The three squares' glyphs grew with them, each keeping its drawn
+share of the box; the bell's 25 is held at 24, Lucide's own grid.
+
+**The Feedback changes were drawn first as a mock-up**, the components as they stood beside the same components with
+the proposed CSS laid over them, and applied once the owner had seen it. One was a defect rather than a choice: the
+Callout always drew its action slot, and for `action={null}` — 34 callers — the empty slot still took the content's
+8px gap, so every such callout sat 24px under its text against 16px above. Measured at 93px where the padding and the
+text add to 85; `callout.spec.tsx` now fails if the slot comes back.
+
+**The owner chose which actions move** (asked before the code changed, because the mock-up only drew buttons): a
+`Button` stands at the end of the line; a link or a sentence — the shape most callers pass — stays under the message as
+its third line. **How the Callout tells them apart is `data-variant`, which `Button` now renders on both branches.**
+`:has(button)` was the obvious selector and is wrong twice: `enrolment-prompt-callout.tsx` draws a `TextLink` on a
+`<button>`, which would have moved, and `Button asChild` renders an anchor, which would not — `calculator-entry.tsx`
+passes one. `button.spec.tsx` holds the attribute on both branches.
+
+**Deviation: the first layout failed in the browser.** It placed the button in a third grid column from 48rem, the
+boundary the Banner's action drops on. `pnpm e2e:web` failed `invitation.spec.ts:203`: on S-03's other-address state the
+action is *Ieșiți și autentificați-vă ca* plus the invited address, its `auto` column took the row, and the title
+rendered at zero width — Playwright's *hidden*. Every other case passed, and the canvas had not drawn a long label. The
+Callout now wraps instead: the message's basis is 16rem, a button that would leave it less stands under it, and the
+measure is the callout's own width rather than the screen's, so a callout in a narrow column on a wide screen behaves
+too. The spec entry was amended to say so.
+
+**Searched for the shape**: every literal 32, 36, 38 and 46px in `packages/ui` and both apps' CSS, and every reader of
+`--field-block-size` and `--overflow-trigger-size`. **Left at 32**, none of them marked: `ConsoleDrawer`'s trigger and
+close (drawn only below `wide`, so not on the canvas), `ConsoleNav`'s rows (a row height, not a control), the account
+menu's monogram (inside its 40px trigger), and the console band's 46px (a band, not a field). **Asked on the canvas
+and unanswered**, so unchanged: whether the ⋯ in a list row takes the secondary button's stronger edge, as it already
+does in the wizard bar; and whether `CodeField`, 46px from its digit cells' 44px line height, comes down to 40. **Not
+done**: the Banner's own `margin-block-end`, the only Feedback component that spaces itself from what follows, and the
+five intent palettes written twice, in `callout.module.css` and `banner.module.css`.
+
+### Verification
+
+- `pnpm --filter @easyesg/ui test` 504 of 504, `web` 2,145 of 2,145, `admin` 319 of 319.
+- `pnpm lint`, `typecheck` in `ui`, `web` and `admin`, `pnpm docs:check` (two counts in `packages/ui/CLAUDE.md` moved:
+  `tokens.css` at 503 lines, 61 spec files) and `pnpm routes:check`: clean.
+- `pnpm e2e:web`, all three projects: 396 of 397 on the first layout, the failure above; 397 of 397 on the second. The
+  web server logged `The destination stream closed early` 21 times, the 13 Sep 2026 entry's stream the browser
+  abandoned.
+- **Skipped**: the api's suites — nothing here reaches `apps/api` — and the Stage-end gates, which CI runs on the push.
+  **Not checked by eye**: the dark scheme, though no colour changed, and any width but 1440 on the canvas; the
+  `expansion` project's +40% text is what covered the narrow cases.
