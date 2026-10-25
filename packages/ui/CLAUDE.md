@@ -13,7 +13,7 @@ restating it here would create the second copy that drifts. This file carries wh
 
 ## Current state
 
-91 components in nine folders, 61 spec files, `src/styles/tokens.css` at 503 lines — **light and
+91 components in nine folders, 61 spec files, `src/styles/tokens.css` at 506 lines — **light and
 dark since task 82**, with `styles/tokens.spec.ts` measuring every semantic pairing in both
 schemes against UX-101 and writing `styles/contrast-record.md` as it goes. That spec is a
 `.spec.ts` rather than a `.spec.tsx` and so is *not* in the 29: it renders nothing, it parses the
@@ -27,7 +27,7 @@ is not itself a gap.
 | `form/` | 15 | The presentational controls — `value`/`onChange`/`ref`, no form library — and since task 179.2 the Radio group, drawn as the B1 artboard's option cards, and since task 204.2 the File upload, the Components sheet's dropzone, first read by S-09's spreadsheet import, and since task 221 §11.5's Number-with-unit — a figure's value and its unit's box, with `UnitLabel` for a unit the taxonomy or the filing fixes |
 | `forms/` | 8 | The react-hook-form binding. **A separate entry point** — see the traps |
 | `feedback/` | 6 | Banner, Callout, EmptyState, ConsequenceDialogue, task 170's Dialog — a record or a form over a list — and the Expiring callout (28 Sep 2026), a submit's message that leaves after its dwell, with `useDismissible` beside it |
-| `navigation/` | 16 | GlobalBar — the console's band too, through a tone — task 50.2.1's NotificationBell, the band's notification entry and since 50.2.2 its panel's trigger, here because the icon set is — AccountMenu, WorkspaceNav, task 67.1's ConsoleNav, ChromeDrawer, LanguageSwitcher, Pagination, task 83.2's OrganizationSwitcher, task 170's ConsoleDrawer — the console navigation below `wide` — OverflowMenu, task 173's LockedNavEntry — a section the reader's role may not open, drawn by the band, the drawer and `apps/web`'s account rail — and the Breadcrumb (28 Sep 2026), a record's way back to the section it lies beneath, and since task 179.1 the BackArrow — the square way back `PageHeading` drew and the wizard's bar now draws too — with `console-nav-sections.tsx`, the sections the column and the drawer both draw and a part rather than an inventory entry, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
+| `navigation/` | 16 | GlobalBar — the console's band too, through a tone — task 50.2.1's NotificationBell, the band's notification entry and since 50.2.2 its panel's trigger, here because the icon set is — AccountMenu, WorkspaceNav, task 67.1's ConsoleNav — a collapsible sidebar since 25 Oct 2026, its icon strip from `medium` — ChromeDrawer, LanguageSwitcher, Pagination, task 83.2's OrganizationSwitcher, task 170's ConsoleDrawer — the console navigation below `medium` — OverflowMenu, task 173's LockedNavEntry — a section the reader's role may not open, drawn by the band, the drawer and `apps/web`'s account rail — and the Breadcrumb (28 Sep 2026), a record's way back to the section it lies beneath, and since task 179.1 the BackArrow — the square way back `PageHeading` drew and the wizard's bar now draws too — with `console-nav-sections.tsx`, the sections the column and the drawer both draw and a part rather than an inventory entry, and `nav-link.tsx` — the injected-router seam, a fallback anchor and a type rather than an inventory entry, so §11.5 gains no row for it |
 | `data-display/` | 4 | DataTable — whose columns may fill, fit and centre since 29 Sep 2026 — StatusChip, and task 143's EnrolmentCode with its loading arm |
 | `disclosure/` | 1 | DisclosureField — the anatomy every B1–B11 module reuses (task 36.1) |
 | `domain/` | 11 | ReportingPeriodPicker, SaveStateIndicator, VersionPinIndicator, and §6.10's two from task 142 — UsageCounter beside an action, EntitlementGate after a refused one — and since task 42.2 S-08's parts and §11.5's completeness meter: `CompletenessMeter`, the panel's frame `ValidationPanel`, a module's `ValidationGroup`, a `ValidationFinding`, `ValidationDock` where the panel is docked, and `ValidationCountBar`, its seat below `wide` |
@@ -128,7 +128,7 @@ src/
   Server Component as `undefined`, a button in the wrong colours, every gate green). When you add a
   vocabulary, add the sibling module — not an `as const` at the top of the component.
 
-- **38 of the 91 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
+- **39 of the 91 modules carry `'use client'`, and each one needs a reason.** A hook, a browser API
   or a handler of its own. `Button` carried it from task 20 without needing it, and the day it
   gained `asChild` that directive took two screens down with a 500 — see the root file's *"A
   component that slots may not be a client boundary"*. `TextLink` is the control: same seam, never

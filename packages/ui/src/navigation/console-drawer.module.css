@@ -1,15 +1,16 @@
-/* The console navigation below `wide` (task 170). Tier-3 `--consolebar-*` and `--consolenav-*` only,
+/* The console navigation below `medium` (task 170; below `wide` until 25 Oct 2026). Tier-3 `--consolebar-*` and `--consolenav-*` only,
    the pairings `tokens.spec.ts` already measures; the sections' own rules are `console-nav.module.css`'s. */
 
-/* In the console's bar, and only where the column is not drawn — the same 64rem boundary, and
-   `display: none` above it so a screen reader is not offered the destinations twice. */
+/* In the console's bar, and only where the sidebar is not drawn — below `medium`, 40rem, and `display: none` above it
+   so a screen reader is not offered the destinations twice. */
+/* `Button`'s 40px square (project owner, 25 Oct 2026; it was 32px), as the close control's. */
 .trigger {
   display: none;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  inline-size: 32px;
-  block-size: 32px;
+  inline-size: 40px;
+  block-size: 40px;
   margin-inline-start: calc(-1 * var(--space-2));
   border: 0;
   border-radius: var(--radius-1);
@@ -28,7 +29,7 @@
   block-size: 20px;
 }
 
-@media (max-width: 63.9375rem) {
+@media (max-width: 39.9375rem) {
   .trigger {
     display: inline-flex;
   }
@@ -40,36 +41,55 @@
   background: var(--scrim);
 }
 
-/* From the inline-start edge, where the column stands at `wide`, and as wide as its longest line
-   needs; the whole frame at `compact`, where a strip of dimmed page beside it is of no use
-   (`ChromeDrawer`'s recorded reasoning). */
+/* From the inline-start edge, where the sidebar stands from `medium`, and across the whole frame: it is drawn only
+   below `medium`, where a strip of dimmed page beside it is of no use (`ChromeDrawer`'s recorded reasoning). */
 .panel {
   position: fixed;
   inset-block: 0;
   inset-inline-start: 0;
   display: flex;
   flex-direction: column;
-  inline-size: min(18rem, 100%);
+  inline-size: 100%;
   /* The panel never scrolls as a whole: its head stays where the bar was, and only the sections below
      it scroll, on their own (the owner's review of task 170). */
   overflow: hidden;
   background: var(--consolenav-surface);
 }
 
-@media (max-width: 39.9375rem) {
-  .panel {
-    inline-size: 100%;
+/* In from the edge the sidebar stands on, the scrim fading under it (project owner, 25 Oct 2026). On opening
+   only, as the Dialogue's fade is, and not at all under reduced motion — `tokens.css` would cut it to a millisecond
+   anyway, and a panel that is simply there is the reduced reading. */
+@media (prefers-reduced-motion: no-preference) {
+  .panel[data-state='open'] {
+    animation: panel-in var(--motion-panel) var(--motion-ease);
+  }
+
+  .overlay[data-state='open'] {
+    animation: overlay-in var(--motion-panel) var(--motion-ease);
   }
 }
 
-/* The bar continuing, as the tenant drawer's head is the tenant band continuing. */
+@keyframes panel-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The bar continuing, as the tenant drawer's head is the tenant band continuing: the brand, and the close control at
+   its far end (the owner's call on the sidebar's mock-up, 25 Oct 2026). */
 .head {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  min-block-size: 46px;
+  min-block-size: var(--consolebar-block-size);
   padding: 0 var(--space-5);
   background: var(--consolebar-surface);
   color: var(--consolebar-text);
@@ -80,8 +100,8 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  inline-size: 32px;
-  block-size: 32px;
+  inline-size: 40px;
+  block-size: 40px;
   margin-inline-end: calc(-1 * var(--space-2));
   border: 0;
   border-radius: var(--radius-1);
@@ -94,9 +114,24 @@
   background: var(--consolebar-hover);
 }
 
+/* The operator's realm on a line of its own, where the head had it as a second line beside the close control at
+   tablet widths (project owner, 25 Oct 2026). */
+.realm {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  padding: var(--space-4) var(--space-5);
+  border-block-end: 1px solid var(--consolebar-divider);
+  font: 400 13px/18px var(--font-text);
+  color: var(--consolebar-text-muted);
+}
+
 /* The panel's one scrolling region. `min-block-size: 0` lets it shrink below its content inside the
    column, and `overscroll-behavior: contain` keeps a scroll that reaches its end from passing to the page
-   the drawer covers. */
+   the drawer covers. **It sets the sections' size for a finger** (25 Oct 2026): 44px rows in the tenant drawer's
+   15px type, read by `console-nav.module.css`, whose sidebar keeps 40px and 14px. */
 .sections {
   display: flex;
   flex: 1;
@@ -105,7 +140,10 @@
   min-block-size: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: var(--space-4) 0;
+  padding: var(--space-4) var(--space-3);
+  --consolenav-row-block-size: 44px;
+  --consolenav-row-font-size: 15px;
+  --consolenav-row-line-height: 24px;
 }
 
 /* Visually hidden but present: Radix requires a Title, and the brand already names the panel. */

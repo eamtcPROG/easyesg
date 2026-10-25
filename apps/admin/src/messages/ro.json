@@ -91,6 +91,8 @@
       "home": "Ecranul principal al consolei",
       "menuOpen": "Deschideți meniul consolei",
       "menuClose": "Închideți meniul consolei",
+      "menuCollapse": "Restrângeți meniul",
+      "menuExpand": "Extindeți meniul",
       "realm": {
         "platform_administrator": "Administrator de platformă",
         "billing_operator": "Operator de facturare"

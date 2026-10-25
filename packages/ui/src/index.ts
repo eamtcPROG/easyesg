@@ -166,10 +166,12 @@ export { Breadcrumb, type BreadcrumbProps, type BreadcrumbStep } from './navigat
 // Task 67.1: the console's side navigation, and the Global bar's tone that draws the console's band.
 export { ConsoleNav } from './navigation/console-nav';
 export {
+  type ConsoleNavIcon,
   type ConsoleNavItem,
   type ConsoleNavItemState,
   type ConsoleNavProps,
   type ConsoleNavSection,
+  type ConsoleSidebarProps,
 } from './navigation/console-nav-types';
 // Task 170: the console navigation below `wide`, and a row's own actions behind ⋯.
 export { ConsoleDrawer, type ConsoleDrawerProps } from './navigation/console-drawer';

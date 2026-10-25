@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ADMIN_ROLE } from '@easyesg/contracts';
+import { Bell, Building2, KeyRound, Landmark, LifeBuoy, UserCog } from 'lucide-react';
 import { CONSOLE_DESTINATIONS, consoleSectionsFor, type ConsoleDestinations } from './console-sections';
 
 /**
@@ -12,8 +13,8 @@ import { CONSOLE_DESTINATIONS, consoleSectionsFor, type ConsoleDestinations } fr
  * are the catalogue's `sections.*` keys, and a renamed value must fail here.
  */
 const DESTINATIONS: ConsoleDestinations = {
-  platform: [{ href: '/organizations', label: 'destinations.organizations' }],
-  billing: [{ href: '/billing/reconciliation', label: 'destinations.reconciliation' as never }],
+  platform: [{ href: '/organizations', label: 'destinations.organizations', icon: Building2 }],
+  billing: [{ href: '/billing/reconciliation', label: 'destinations.reconciliation' as never, icon: Landmark }],
 };
 
 describe('consoleSectionsFor (§5.2)', () => {
@@ -51,12 +52,12 @@ describe('consoleSectionsFor (§5.2)', () => {
       {
         key: 'platform',
         items: [
-          { href: '/organizations', label: 'destinations.organizations' },
-          { href: '/accounts', label: 'destinations.accounts' },
-          { href: '/support-access', label: 'destinations.supportAccess' },
-          { href: '/identity-providers', label: 'destinations.identityProviders' },
-          { href: '/notification-templates', label: 'destinations.notificationCategories' },
-          { href: '/legal-controller', label: 'destinations.legalController' },
+          { href: '/organizations', label: 'destinations.organizations', icon: Building2 },
+          { href: '/accounts', label: 'destinations.accounts', icon: UserCog },
+          { href: '/support-access', label: 'destinations.supportAccess', icon: LifeBuoy },
+          { href: '/identity-providers', label: 'destinations.identityProviders', icon: KeyRound },
+          { href: '/notification-templates', label: 'destinations.notificationCategories', icon: Bell },
+          { href: '/legal-controller', label: 'destinations.legalController', icon: Landmark },
         ],
       },
     ]);

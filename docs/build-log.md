@@ -33475,3 +33475,57 @@ five intent palettes written twice, in `callout.module.css` and `banner.module.c
 - **Skipped**: the api's suites — nothing here reaches `apps/api` — and the Stage-end gates, which CI runs on the push.
   **Not checked by eye**: the dark scheme, though no colour changed, and any width but 1440 on the canvas; the
   `expansion` project's +40% text is what covered the narrow cases.
+
+## The console's navigation is a collapsible sidebar · 2026-10-25
+
+Not a task row: the owner asked for *a proper admin console drawer*, saw one round applied — touch-sized rows, 40px
+controls, the realm on its own line, a slide-in — and rejected it as still not a side menu. Four answers then set the
+redesign: a collapsible sidebar, an icon per destination, a control that folds it, the dark surface. A mock-up at
+real frame sizes came next, approved with one change: on a phone the close control stands at the head's far end. The
+decision is `design_spec.md` §11.5's 25 Oct 2026 entry and UX-77's amendment of the same day.
+
+**What the first round taught, and why it is not in this commit as it was.** It moved the drawer's close control to the
+head's start, where the menu control stood, so opening and closing were one place under the pointer. The owner's
+call on the mock-up reversed that for the one frame the drawer still serves. The realm line and the 44px rows survived
+into the phone's drawer; the rest of the round was the drawer's, and the drawer now serves phones alone.
+
+**One component, two controls.** The sidebar's foot means two things across `wide`: at `wide` it folds the sidebar to
+its strip and reports the choice; from `medium` to `wide`, where the strip is the resting state, it lays the full
+sidebar over the page. CSS draws both states, but which control to render needs the frame in script, so
+`use-below-wide.ts` reads `matchMedia` through `useSyncExternalStore` — the first JavaScript media query in either
+app. A frame without `matchMedia` reads as `wide`, which is what keeps the jsdom suites on the folding control unless a
+case stubs it.
+
+**The strip's labels are the links' own text.** In the strip each label becomes the note beside its icon on hover and
+keyboard focus, so the accessible name and the visible note are one span. That means nothing in the strip may clip:
+its sections scroll as the full sidebar's do, and the strip turns that off — six destinations fit any frame the strip
+is drawn in. A console with many more destinations would need the note portalled instead; that is the condition that
+would make this wrong.
+
+**The band's height became a token**, `--consolebar-block-size`, because the tablet's overlay opens beneath the band
+and was about to be the third copy of 46px, after the band and the drawer's head. **The remembered choice is
+`localStorage`**, through `sidebar-preference.ts`'s two values and a hook that keeps the choice for the page when the
+browser refuses its storage; the values are asserted as literals, since a rename would unfold every operator's sidebar.
+**The icons are the console's data**, in `console-sections.ts` beside each destination's route and label, so the app
+gained `lucide-react` from the catalog (1.32.0, the pin `packages/ui` already reads).
+
+**Searched for the shape**: every reader of `ConsoleNav`, `ConsoleDrawer` and `ConsoleNavItem` — the console chrome and
+this package's specs, nothing in `apps/web` but a comment in `account-rail.tsx` — and every literal 46px that meant the
+console's band (the band, the drawer's head). The tenant app's `ChromeDrawer` still opens instantly and its controls
+are as they were: the redesign was the console's, and nothing here asked for the tenant chrome to follow.
+
+### Verification
+
+- `pnpm --filter @easyesg/ui test` 510 of 510 — five new cases: the icon before the label, folding at `wide` and
+  reporting rather than keeping the choice, every destination named in the strip, the overlay below `wide` folding back
+  on a choice, and the drawer's close after its brand.
+- `pnpm --filter @easyesg/admin test` 322 of 322, with the preference's spec.
+- `pnpm lint`, `typecheck` in `ui`, `admin` and `web`, `pnpm docs:check` (`tokens.css` at 506 lines, 39 modules
+  carrying `'use client'`), `pnpm routes:check` and `pnpm boundaries`: clean.
+- `pnpm e2e:web --project admin`: 28 of 28, nothing printed. Every journey drives the sidebar at `wide`.
+- **The strip below `wide`, the overlay and the phone's drawer are not in the browser suite**: the console's journeys
+  all run at `wide`. They are the unit cases above, and photographs of the real components at 1280, 900 and 390px,
+  which measured the full sidebar at 240px, the strip at 64px, 40px rows, the overlay at 240px under the band, and the
+  phone's rows at 44px with the close control at the far end.
+- **Skipped**: the tenant app's suites — nothing it renders reads these components — and the Stage-end gates, which CI
+  runs on the push.

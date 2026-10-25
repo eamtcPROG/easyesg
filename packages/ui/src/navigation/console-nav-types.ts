@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { NavLinkComponent } from './nav-link';
 import type { AriaCurrent } from './nav-link-vocabulary';
 
@@ -15,12 +15,20 @@ import type { AriaCurrent } from './nav-link-vocabulary';
  * Types only and directive-free, so no reader's `'use client'` can turn anything here into a client
  * reference.
  */
+/**
+ * A destination's glyph — a component, so the navigation sets its size and hides it from assistive technology itself;
+ * the label names the destination, in the icon strip as everywhere else (25 Oct 2026).
+ */
+export type ConsoleNavIcon = ComponentType<{ readonly className?: string; readonly 'aria-hidden'?: boolean }>;
+
 export interface ConsoleNavItem {
   /** Stable across renders — the route, not the label. */
   readonly key: string;
   readonly href: string;
   /** Localized by the caller: this package owns no text (UX-79). */
   readonly label: string;
+  /** Before the label, and alone in the icon strip. */
+  readonly icon: ConsoleNavIcon;
 }
 
 export interface ConsoleNavSection<TItem extends ConsoleNavItem = ConsoleNavItem> {
@@ -47,4 +55,17 @@ export interface ConsoleNavProps<TItem extends ConsoleNavItem = ConsoleNavItem> 
   readonly renderItem?: (item: TItem, state: ConsoleNavItemState) => ReactNode;
   /** The app's own link. Optional: a consumer with no router gets a plain anchor. */
   readonly linkComponent?: NavLinkComponent;
+}
+
+/** The sidebar's own props beside the shared ones: the operator's choice at `wide`, and the words of its control. */
+export interface ConsoleSidebarProps<TItem extends ConsoleNavItem = ConsoleNavItem> extends ConsoleNavProps<TItem> {
+  /**
+   * At `wide`, whether the operator folded the sidebar to its icon strip — the consumer keeps it, so it can outlive a
+   * page. Below `wide` the strip is the resting state whatever this says.
+   */
+  readonly collapsed: boolean;
+  readonly onCollapsedChange: (collapsed: boolean) => void;
+  /** The control's words, localized by the caller: folding to the strip, and opening the full sidebar from it. */
+  readonly collapseLabel: string;
+  readonly expandLabel: string;
 }

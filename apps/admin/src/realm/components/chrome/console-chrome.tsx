@@ -7,6 +7,7 @@ import { CONSOLE_DESTINATIONS, consoleSectionsFor } from '../../tools/console-se
 import { RealmChip } from '../shared/realm-chip';
 import { ConsoleAccount } from './console-account';
 import { ConsoleLink } from './console-link';
+import { useSidebarCollapsed } from './use-sidebar-collapsed';
 
 /**
  * The console chrome (task 67.1; `design_spec.md` §5.2), as `EasyESG Admin Console Screens.dc.html`
@@ -28,11 +29,13 @@ import { ConsoleLink } from './console-link';
  *
  * **No organization selector, and there must never be one** (D-5, `apps/admin/CLAUDE.md`).
  *
- * **Below `wide` the navigation is a drawer** (task 170; UX-77 as amended): `ConsoleNav` is not drawn
- * there and `ConsoleDrawer`'s menu control leads the bar, opening the same sections. At `compact` the bar
- * keeps the wordmark and the account corner, and the realm's name moves into the drawer's head — so it
- * is one tap away rather than squeezed out of a 390px band, which is UX-76's rule for anything a narrow
- * frame cannot hold.
+ * **The navigation is a collapsible sidebar** (project owner, 25 Oct 2026; UX-77 as amended that day): at `wide` the
+ * full sidebar, which the operator may fold to its icon strip — the choice kept in this browser by
+ * `useSidebarCollapsed` — and from `medium` to `wide` the strip, which lays the full sidebar over the page. Below
+ * `medium` it is not drawn and `ConsoleDrawer`'s menu control leads the bar, opening the same sections. There the bar
+ * keeps the wordmark and the account corner, and the realm — its chip and its name — moves onto the drawer's line under
+ * its head, so it is one tap away rather than squeezed out of a 390px band, which is UX-76's rule for anything a narrow
+ * frame cannot hold. The account stays in the bar.
  *
  * **The frame does not scroll; the screen does** (the owner's review of task 170: *the header is not
  * scrollable, the interaction area is*). The chrome is the viewport's height, the bar keeps its place, the
@@ -50,12 +53,13 @@ export function ConsoleChrome({
 }) {
   const t = useTranslations('realm.chrome');
   const pathname = useLocation({ select: (location) => location.pathname });
+  const [collapsed, setCollapsed] = useSidebarCollapsed();
 
   const sections = consoleSectionsFor({ role: account.role, destinations: CONSOLE_DESTINATIONS }).map(
     (section) => ({
       key: section.key,
       heading: t(`sections.${section.key}`),
-      items: section.items.map((item) => ({ key: item.href, href: item.href, label: t(item.label) })),
+      items: section.items.map((item) => ({ key: item.href, href: item.href, label: t(item.label), icon: item.icon })),
     }),
   );
   // A sub-screen marks its parent — the artboard's *Validation rules* lights *Factor sets & rules* — so
@@ -75,11 +79,12 @@ export function ConsoleChrome({
               label={t('nav')}
               openLabel={t('menuOpen')}
               closeLabel={t('menuClose')}
-              brand={
-                <span className="flex min-w-0 items-center gap-[var(--space-4)]">
-                  <BrandMark />
-                  <span className="t-caption truncate text-[var(--consolebar-text-muted)]">{realm}</span>
-                </span>
+              brand={<BrandMark />}
+              realm={
+                <>
+                  <RealmChip className="border-[var(--consolebar-divider)] text-[var(--consolebar-text-muted)]" />
+                  <span className="truncate">{realm}</span>
+                </>
               }
               sections={sections}
               isActive={isActive}
@@ -98,7 +103,16 @@ export function ConsoleChrome({
         actions={<ConsoleAccount account={account} />}
       />
       <div className="flex min-h-0 flex-1">
-        <ConsoleNav label={t('nav')} sections={sections} isActive={isActive} linkComponent={ConsoleLink} />
+        <ConsoleNav
+          label={t('nav')}
+          sections={sections}
+          isActive={isActive}
+          linkComponent={ConsoleLink}
+          collapsed={collapsed}
+          onCollapsedChange={setCollapsed}
+          collapseLabel={t('menuCollapse')}
+          expandLabel={t('menuExpand')}
+        />
         <main id={MAIN_CONTENT_ID} tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto overscroll-contain">
           {children}
         </main>

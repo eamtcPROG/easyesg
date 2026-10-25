@@ -47,7 +47,9 @@ export function ConsoleNavSections<TItem extends ConsoleNavItem>({
                     renderItem(item, state)
                   ) : (
                     <Link href={item.href} {...state.linkProps}>
-                      {item.label}
+                      <item.icon aria-hidden className={styles.icon} />
+                      {/* The link's name in every state: beside the icon, and beside the strip on hover or focus. */}
+                      <span className={styles.label}>{item.label}</span>
                     </Link>
                   )}
                 </li>

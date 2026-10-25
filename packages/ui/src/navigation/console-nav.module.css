@@ -1,30 +1,64 @@
-/* The console's side navigation (task 67.1) — `EasyESG Admin Console Screens.dc.html`'s dark column.
-   Tier-3 `--consolenav-*` only; the pairings are measured in `tokens.spec.ts`. Below `wide` the column
-   is not drawn and `console-drawer.module.css` holds the same sections (UX-77 as amended, task 170);
-   the section, heading and item rules below are shared by both. */
+/* The console's sidebar (task 67.1; a collapsible sidebar since 25 Oct 2026, from the owner's mock-up). Tier-3
+   `--consolenav-*` and `--consolebar-*` only; the pairings are measured in `tokens.spec.ts`. The section, heading and
+   item rules are shared with `console-drawer.module.css`'s panel, which re-sets the row's size for a finger. */
 
+/* Not drawn below `medium`, where the band's drawer carries the sections — `display: none` rather than clipping, so a
+   screen reader is not offered the destinations twice. 240px: the longest destination, *Conturi de administrator*,
+   on one line beside its icon. */
 .nav {
-  display: flex;
+  display: none;
   flex-direction: column;
   flex-shrink: 0;
-  gap: var(--space-5);
-  /* 214px, from the artboard: the width at which the longest destination it draws —
-     *Notification templates* — sits on one line with a count beside it. */
-  inline-size: 214px;
-  padding: var(--space-4) 0;
+  inline-size: 240px;
   background: var(--consolenav-surface);
-  /* Its own scroll (task 170's review): inside a frame of viewport height the column is as tall as the
-     frame, and scrolls itself when its destinations are taller — never taking the page with it. */
+}
+
+@media (min-width: 40rem) {
+  .nav {
+    display: flex;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .nav {
+    transition: inline-size var(--motion-panel) var(--motion-ease);
+  }
+}
+
+/* The icon strip: a 40px square per row with 12px either side. */
+.nav[data-strip='true'] {
+  inline-size: 64px;
+}
+
+/* Its own scroll: inside a frame of viewport height the sidebar is as tall as the frame, and scrolls itself when its
+   destinations are taller — never taking the page with it (task 170's review). */
+.sections {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-block-size: 0;
+  padding: var(--space-5) var(--space-3);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-/* `display: none` rather than clipping, so a screen reader is not offered the destinations twice:
-   below `wide` the drawer carries them. 64rem is §3.3's one stated threshold, `wide`'s 1024px. */
-@media (max-width: 63.9375rem) {
-  .nav {
-    display: none;
-  }
+/* In the strip each label stands beside it on hover and focus, so nothing may clip it — and the console's six
+   destinations fit any frame the strip is drawn in. */
+.nav[data-strip='true'] .sections {
+  padding-inline: var(--space-4);
+  overflow: visible;
+}
+
+/* The control that folds and opens it, under the destinations. */
+.foot {
+  flex-shrink: 0;
+  padding: var(--space-3);
+  border-block-start: 1px solid var(--consolebar-divider);
+}
+
+.nav[data-strip='true'] .foot {
+  padding-inline: var(--space-4);
 }
 
 .section {
@@ -32,48 +66,190 @@
   flex-direction: column;
 }
 
+/* 11px, and the drawer's panel keeps it: the column's 10px was the dense artboard's. */
 .heading {
   margin: 0;
-  padding: 0 var(--space-5) var(--space-2);
-  font: 500 10px/1.4 var(--font-mono);
+  padding: 0 var(--space-3) var(--space-3);
+  font: 500 var(--consolenav-heading-font-size, 11px) / 1.4 var(--font-mono);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--consolenav-heading);
 }
 
+/* In the strip the heading still names its list to a screen reader, and a short rule stands for it on screen. */
+.nav[data-strip='true'] .heading {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.nav[data-strip='true'] .section::before {
+  content: '';
+  align-self: center;
+  inline-size: 24px;
+  block-size: 1px;
+  margin-block-end: var(--space-4);
+  background: var(--consolebar-divider);
+}
+
 .list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.item :is(a),
-.current :is(a) {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  /* 32px: above WCAG 2.2's 24px minimum target, and the row height the artboard draws for a dense,
-     keyboard-first surface (§12.1) rather than the 40px a first-time user's controls carry. */
-  min-block-size: 32px;
-  padding: var(--space-2) var(--space-5);
-  font: 400 13px/18px var(--font-text);
-  color: var(--consolenav-text);
-  text-decoration: none;
+.item,
+.current {
+  position: relative;
 }
 
-.item :is(a):hover {
+/* A row — the icon, then the label — at `Button`'s 40px (project owner, 25 Oct 2026; the dense artboard's 32px until
+   then), 44px in the drawer's panel. The sizes are variables so the panel re-sets them by inheritance rather than a
+   prop saying which frame this is. */
+.item :is(a),
+.current :is(a),
+.toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  inline-size: 100%;
+  min-block-size: var(--consolenav-row-block-size, 40px);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-1);
+  background: none;
+  font: 400 var(--consolenav-row-font-size, 14px) / var(--consolenav-row-line-height, 20px) var(--font-text);
+  color: var(--consolenav-text);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.item :is(a):hover,
+.toggle:hover {
   background: var(--consolenav-hover);
   color: var(--consolenav-text-strong);
 }
 
-/* The current destination is a rule, a surface AND a weight — colour is never the sole carrier
-   (UX-102), and `aria-current` on the anchor carries it to assistive technology besides. The rule
-   takes its 3px out of the inset, so a label does not move when its item becomes current. */
+/* The current destination is a surface, a weight AND the accent rule — colour is never the sole carrier (UX-102), and
+   `aria-current` on the anchor carries it to assistive technology besides. */
 .current :is(a) {
-  padding-inline-start: calc(var(--space-5) - 3px);
-  border-inline-start: 3px solid var(--consolenav-current-rule);
   background: var(--consolenav-current-surface);
   color: var(--consolenav-text-strong);
   font-weight: 600;
+}
+
+.current :is(a)::before {
+  content: '';
+  position: absolute;
+  inset-block: var(--space-3);
+  inset-inline-start: 0;
+  inline-size: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--consolenav-current-rule);
+}
+
+.toggle {
+  color: var(--consolenav-heading);
+}
+
+.icon {
+  flex-shrink: 0;
+  inline-size: 20px;
+  block-size: 20px;
+}
+
+.label {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The strip's rows are the square alone. */
+.nav[data-strip='true'] :is(.item, .current) :is(a),
+.nav[data-strip='true'] .toggle {
+  justify-content: center;
+  inline-size: 40px;
+  padding: 0;
+}
+
+/* …and the label is the note beside it, shown on hover and on keyboard focus. */
+.nav[data-strip='true'] .label {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: calc(100% + var(--space-4));
+  z-index: 10;
+  padding: 6px 10px;
+  overflow: visible;
+  border-radius: var(--radius-1);
+  background: var(--consolebar-surface);
+  box-shadow: var(--elevation-1);
+  font: 500 13px/18px var(--font-text);
+  color: var(--consolebar-text);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.nav[data-strip='true'] :is(a, .toggle):is(:hover, :focus-visible) .label {
+  opacity: 1;
+}
+
+/* From `medium` to `wide`: the full sidebar over the page, under the band, the scrim on the page beside it. */
+.scrim {
+  position: fixed;
+  inset: var(--consolebar-block-size) 0 0;
+  background: var(--scrim);
+}
+
+.over {
+  position: fixed;
+  inset-block: var(--consolebar-block-size) 0;
+  inset-inline-start: 0;
+  display: flex;
+  box-shadow: var(--elevation-2);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .over[data-state='open'] {
+    animation: over-in var(--motion-panel) var(--motion-ease);
+  }
+
+  .scrim[data-state='open'] {
+    animation: scrim-in var(--motion-panel) var(--motion-ease);
+  }
+}
+
+@keyframes over-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Visually hidden but present: Radix requires a Title, and the navigation inside names the panel. */
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

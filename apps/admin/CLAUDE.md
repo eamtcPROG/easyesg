@@ -209,8 +209,9 @@ src/
   address names it; the row's last column is `shared/row-actions.tsx`; a filter is
   `shared/filter-bar.tsx`; and `IndexView` requires `onPageSizeChange`, so a paged list cannot ship
   without the size choice. **Below `wide` the console adapts** (UX-77 as amended): the navigation is
-  `ConsoleDrawer` in the bar, and a screen reflows with Tailwind's `sm:`/`lg:` prefixes rather than
-  hiding anything. **Padding on `Panel` does nothing** — its module CSS is unlayered and beats every
+  `ConsoleNav`'s icon strip down to `medium` and `ConsoleDrawer` in the bar below it (25 Oct 2026), and a screen
+  reflows with Tailwind's `sm:`/`lg:` prefixes rather than hiding anything. At `wide` the operator may fold the
+  sidebar to its strip, and the console remembers it in that browser (`use-sidebar-collapsed.ts`). **Padding on `Panel` does nothing** — its module CSS is unlayered and beats every
   Tailwind utility — so a panel takes its own padding or none; the dead classes were removed.
 
 - **This chrome has no organization selector, and must not grow one.** D-5 gives a Platform

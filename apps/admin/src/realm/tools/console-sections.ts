@@ -1,4 +1,6 @@
 import { ADMIN_ROLE, type AdminRole } from '@easyesg/contracts';
+import type { ConsoleNavIcon } from '@easyesg/ui';
+import { Bell, Building2, KeyRound, Landmark, LifeBuoy, UserCog } from 'lucide-react';
 import type ro from '~/messages/ro.json';
 
 /**
@@ -30,6 +32,8 @@ export interface ConsoleDestination {
   readonly href: string;
   /** A key under `realm.chrome`, resolved by the chrome. */
   readonly label: DestinationLabel;
+  /** Its glyph, before its label and alone in the sidebar's icon strip (project owner, 25 Oct 2026). */
+  readonly icon: ConsoleNavIcon;
 }
 
 export type ConsoleDestinations = Readonly<Record<ConsoleSection, readonly ConsoleDestination[]>>;
@@ -46,17 +50,17 @@ export const SECTION_OF_ROLE = {
  */
 export const CONSOLE_DESTINATIONS: ConsoleDestinations = {
   [CONSOLE_SECTION.PLATFORM]: [
-    { href: '/organizations', label: 'destinations.organizations' },
+    { href: '/organizations', label: 'destinations.organizations', icon: Building2 },
     // A-08, since task 67.4.
-    { href: '/accounts', label: 'destinations.accounts' },
+    { href: '/accounts', label: 'destinations.accounts', icon: UserCog },
     // A-07, since task 67.9.
-    { href: '/support-access', label: 'destinations.supportAccess' },
+    { href: '/support-access', label: 'destinations.supportAccess', icon: LifeBuoy },
     // A-18, since task 67.11.
-    { href: '/identity-providers', label: 'destinations.identityProviders' },
+    { href: '/identity-providers', label: 'destinations.identityProviders', icon: KeyRound },
     // A-17, since task 67.10 — last of the artboard's destinations, as its navigation draws it.
-    { href: '/notification-templates', label: 'destinations.notificationCategories' },
+    { href: '/notification-templates', label: 'destinations.notificationCategories', icon: Bell },
     // A-21, since task 75 — after them, since the artboard has no A-21 to place it (`design_spec.md` §4.7).
-    { href: '/legal-controller', label: 'destinations.legalController' },
+    { href: '/legal-controller', label: 'destinations.legalController', icon: Landmark },
   ],
   [CONSOLE_SECTION.BILLING]: [],
 };
