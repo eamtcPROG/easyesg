@@ -33529,3 +33529,51 @@ are as they were: the redesign was the console's, and nothing here asked for the
   phone's rows at 44px with the close control at the far end.
 - **Skipped**: the tenant app's suites — nothing it renders reads these components — and the Stage-end gates, which CI
   runs on the push.
+
+## The console's remembered sidebar is on the cookie policy · 2026-10-26
+
+Not a task row: the push carrying the sidebar went red in CI, in both jobs that run the unit suites, on one case —
+`apps/web/src/lib/cookie-inventory.spec.ts`, *"names every module that keeps browser storage that is not a cookie, and
+none uses localStorage"*. `use-sidebar-collapsed.ts` keeps the fold in `localStorage`, and the case failed on both of its
+halves: the inventory did not list the module, and the spec refused `localStorage` outright, on OQ-23's finding that no
+browser store holds a preference beyond the tab.
+
+**Not a slip in the code: two recorded decisions disagreed.** §11.5's 25 Oct 2026 entry says *the console remembers the
+choice in that browser*; OQ-23's finding, kept standing by OQ-27, says nothing outlives the tab, and Stage 2's close
+had already moved the applicability notes' dismissals from `localStorage` to session storage to keep it true. Listing
+the module alone could not have turned the job green, and making the spec quiet another way would have made the cookie
+policy — a factual claim about the build, UC-179 — false for a release. Put to the owner as one question with three
+answers — keep it and disclose it, keep it for the tab only, or remember nothing — and the first was taken.
+`design_spec.md` OQ-27 carries it, amended 26 Oct 2026, with a pointer on OQ-23's storage line and on §11.5's entry.
+
+**What changed.** The inventory gained a third kind, `localStorage` — *in your browser, until you delete the site's
+data* — and a fifth store, the console's sidebar, worded in its purpose as the console's, since the storage list has no
+surface column the way the cookie table does. The storage section's intro said the site keeps only what stops you
+losing your work, which the fold is not, so it names the console's layout too, in all three catalogues. The spec now
+holds `localStorage` to the modules the inventory lists with that kind, so a listed store moved to it fails as well as
+an unlisted one — proven by listing the console's store as `sessionStorage`, which failed on the module, then restored.
+No version of the cookie policy moved: the legal set is still provisional and edited in place (`architecture.md`
+§12.5.6's task-223 row (9)).
+
+**Why the close did not see it.** The sidebar closed on `apps/admin`'s row of the lookup table and skipped the tenant
+app's suites because *nothing it renders reads these components*. True of rendering, and beside the point: the cookie
+inventory's spec lives in `apps/web` and reads `apps/admin`, `apps/api` and `packages/ui` as **text**, because
+`web-not-to-api-src` forbids importing them. No row of the table points a change in another workspace at it, so a close
+anywhere but `apps/web` that adds a cookie constant or a browser store reaches it only through CI, a push later — which
+is the arrangement the 6 Oct 2026 rule chose and the cost it named. `apps/admin/CLAUDE.md` now says so beside the hook.
+**Searched for the shape**: every spec under either app and `e2e/` naming another app's path — three, and the other
+two (`e2e/admin/icons.spec.ts`, `apps/admin/src/test/folder-shape.spec.ts`) name it in a docblock and read nothing; this
+spec is the one that reads another workspace's source.
+
+### Verification
+
+- CI's failure reproduced locally first: `vitest run src/lib/cookie-inventory.spec.ts`, the same one case, the same diff.
+- `pnpm --filter @easyesg/web test` 2,145 of 2,145, the catalogues' parity among them.
+- `pnpm lint`, `pnpm --filter @easyesg/web typecheck` and `pnpm docs:check`: clean.
+- `pnpm e2e:web --project identity --project expansion`: 368 of 369. The one failure was S-13's archiving journey
+  (`entities.spec.ts:430`), whose record page was still drawing *Se încarcă entitatea…* when the 5-second wait for its
+  archive notice ran out, fourteen minutes into the run; nothing in this diff is on that path, CI's stack job passed it
+  on the pushed commit, and `entities.spec.ts` run alone passed 14 of 14. Printed: 38 *destination stream closed early*,
+  every one digest `2667547900`, the abandoned prefetches `apps/web/CLAUDE.md` describes, and nothing else.
+- **Skipped**: `apps/admin`'s suites — its source is unchanged, only its `CLAUDE.md` — and the Stage-end gates, which
+  CI runs on the push.

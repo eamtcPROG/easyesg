@@ -147,12 +147,17 @@ export const SITE_COOKIE_NAMES: readonly string[] = COOKIE_INVENTORY.filter(
   (cookie) => cookie.surface === COOKIE_SURFACE.SITE,
 ).map((cookie) => cookie.name);
 
-/** The two kinds of browser storage the site keeps that are not cookies — a key of `legal.cookies.storageKind`. */
+/** The kinds of browser storage the platform keeps that are not cookies — a key of `legal.cookies.storageKind`. */
 export const STORAGE_KIND = {
   /** Kept for the tab's session and gone when it closes. */
   SESSION_STORAGE: 'sessionStorage',
   /** Kept in the browser's database until the work it holds is sent. */
   INDEXED_DB: 'indexedDb',
+  /**
+   * Kept in the browser until its site data is deleted — the one store that outlives the tab, a layout the reader chose
+   * (`design_spec.md` OQ-27, amended 26 Oct 2026). The spec admits `localStorage` only in a module listed as this.
+   */
+  LOCAL_STORAGE: 'localStorage',
 } as const;
 
 export type StorageKind = (typeof STORAGE_KIND)[keyof typeof STORAGE_KIND];
@@ -163,6 +168,8 @@ export const STORAGE_PURPOSE = {
   RESET_ADDRESS: 'resetAddress',
   DISMISSED_NOTES: 'dismissedNotes',
   AUTOSAVE: 'autosave',
+  /** The operator console's sidebar, folded or full, as its operator left it — on the console's own origin. */
+  CONSOLE_SIDEBAR: 'consoleSidebar',
 } as const;
 
 export type StoragePurpose = (typeof STORAGE_PURPOSE)[keyof typeof STORAGE_PURPOSE];
@@ -194,5 +201,10 @@ export const BROWSER_STORAGE: readonly InventoriedStore[] = [
     kind: STORAGE_KIND.INDEXED_DB,
     purpose: STORAGE_PURPOSE.AUTOSAVE,
     module: 'apps/web/src/client/autosave/pending-store.ts',
+  },
+  {
+    kind: STORAGE_KIND.LOCAL_STORAGE,
+    purpose: STORAGE_PURPOSE.CONSOLE_SIDEBAR,
+    module: 'apps/admin/src/realm/components/chrome/use-sidebar-collapsed.ts',
   },
 ];

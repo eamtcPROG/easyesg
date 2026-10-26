@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BROWSER_STORAGE, COOKIE_INVENTORY, COOKIE_SURFACE } from './cookie-inventory';
+import { BROWSER_STORAGE, COOKIE_INVENTORY, COOKIE_SURFACE, STORAGE_KIND } from './cookie-inventory';
 
 /**
  * Task 75.2's gate (182/122; FR-206 AC-4, AC-9): the cookie policy states what the build sets, so a cookie or a browser
@@ -59,9 +59,20 @@ describe('the cookie inventory', () => {
     ).toEqual(['easyesg_admin_session', 'easyesg_admin_challenge']);
   });
 
-  /** OQ-23's basis: no browser storage holds a preference beyond the tab's session — so none persists by `localStorage`. */
-  it('names every module that keeps browser storage that is not a cookie, and none uses localStorage', () => {
+  /**
+   * OQ-23's basis, as OQ-27 amended it on 26 Oct 2026: a store that outlives the tab is one the policy names as such — so
+   * `localStorage` is used only by a module the inventory lists with that kind, and a listed store moved to it fails here.
+   */
+  it('names every module that keeps browser storage that is not a cookie, and localStorage only where it says so', () => {
     expect(BROWSER_STORAGE.map((store) => store.module).toSorted()).toEqual(storageModules());
-    expect(SOURCES.filter((file) => /\blocalStorage\./u.test(readFileSync(file, 'utf8')))).toEqual([]);
+    expect(
+      SOURCES.filter((file) => /\blocalStorage\./u.test(readFileSync(file, 'utf8')))
+        .map((file) => relative(ROOT, file))
+        .toSorted(),
+    ).toEqual(
+      BROWSER_STORAGE.filter((store) => store.kind === STORAGE_KIND.LOCAL_STORAGE)
+        .map((store) => store.module)
+        .toSorted(),
+    );
   });
 });

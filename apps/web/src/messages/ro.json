@@ -2481,7 +2481,7 @@
         },
         "storage": {
           "heading": "Ce păstrăm în browser în afara cookie-urilor",
-          "intro": "Pe lângă cookie-uri, site-ul păstrează în browser doar atât cât îi trebuie pentru a nu vă pierde munca:"
+          "intro": "Pe lângă cookie-uri, site-ul păstrează în browser doar atât cât îi trebuie pentru a nu vă pierde munca, iar consola echipei EasyESG, felul în care i-ați lăsat navigarea:"
         },
         "browser": {
           "heading": "Dacă ștergeți cookie-urile",
@@ -2522,13 +2522,15 @@
       },
       "storageKind": {
         "sessionStorage": "Cât e deschisă fila",
-        "indexedDb": "În browser, până se trimite"
+        "indexedDb": "În browser, până se trimite",
+        "localStorage": "În browser, până ștergeți datele site-ului"
       },
       "storagePurpose": {
         "pendingVerification": "Adresa de e-mail care așteaptă confirmarea, ca să vi-o putem retrimite.",
         "resetAddress": "Adresa pentru care ați cerut resetarea parolei, ca să nu o scrieți din nou.",
         "dismissedNotes": "Notele din raport pe care le-ați ascuns, ca să nu reapară cât lucrați.",
-        "autosave": "Răspunsurile din raport încă netrimise, ca să nu se piardă dacă rămâneți fără conexiune."
+        "autosave": "Răspunsurile din raport încă netrimise, ca să nu se piardă dacă rămâneți fără conexiune.",
+        "consoleSidebar": "Pe consola echipei EasyESG: dacă ați restrâns navigarea laterală, ca să o regăsiți cum ați lăsat-o."
       },
       "summary": "<ul><li>Site-ul păstrează în browserul dumneavoastră doar ce îi trebuie ca să funcționeze: conectarea, limba aleasă și pașii unei autentificări în curs.</li><li>Nu folosim cookie-uri de statistică, de publicitate sau ale unor terți.</li><li>Nu există nimic opțional de activat sau de dezactivat; păstrăm timp de 12 luni evidența faptului că v-am informat. Dacă le ștergeți, veți fi deconectat.</li></ul>"
     },

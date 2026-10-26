@@ -2481,7 +2481,7 @@
         },
         "storage": {
           "heading": "What we keep in your browser that is not a cookie",
-          "intro": "Besides cookies, the site keeps in your browser only what it needs so that you do not lose your work:"
+          "intro": "Besides cookies, the site keeps in your browser only what it needs so that you do not lose your work, and the EasyESG team console how you left its navigation:"
         },
         "browser": {
           "heading": "If you delete the cookies",
@@ -2522,13 +2522,15 @@
       },
       "storageKind": {
         "sessionStorage": "While the tab is open",
-        "indexedDb": "In your browser, until it is sent"
+        "indexedDb": "In your browser, until it is sent",
+        "localStorage": "In your browser, until you delete the site’s data"
       },
       "storagePurpose": {
         "pendingVerification": "The email address awaiting confirmation, so that we can send the link again.",
         "resetAddress": "The address you asked to reset a password for, so that you do not type it again.",
         "dismissedNotes": "The notes in your report you have hidden, so that they do not come back while you work.",
-        "autosave": "Report answers not yet sent, so that they are not lost if you lose your connection."
+        "autosave": "Report answers not yet sent, so that they are not lost if you lose your connection.",
+        "consoleSidebar": "On the EasyESG team console: whether you folded the side navigation, so that you find it as you left it."
       },
       "summary": "<ul><li>The site keeps only what it needs to work in your browser: your sign-in, the language you chose and the steps of a sign-in in progress.</li><li>We use no statistics, advertising or third-party cookies.</li><li>There is nothing optional to turn on or off; we keep a record that we told you, for 12 months. If you delete them, you are signed out.</li></ul>"
     },

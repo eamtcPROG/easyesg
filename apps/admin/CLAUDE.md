@@ -211,7 +211,10 @@ src/
   without the size choice. **Below `wide` the console adapts** (UX-77 as amended): the navigation is
   `ConsoleNav`'s icon strip down to `medium` and `ConsoleDrawer` in the bar below it (25 Oct 2026), and a screen
   reflows with Tailwind's `sm:`/`lg:` prefixes rather than hiding anything. At `wide` the operator may fold the
-  sidebar to its strip, and the console remembers it in that browser (`use-sidebar-collapsed.ts`). **Padding on `Panel` does nothing** — its module CSS is unlayered and beats every
+  sidebar to its strip, and the console remembers it in that browser (`use-sidebar-collapsed.ts`) — in `localStorage`,
+  which the tenant site's cookie policy lists, so **a browser store added or moved here is a change to that policy**:
+  `apps/web/src/lib/cookie-inventory.spec.ts` reads this app's source and fails until the inventory says so (OQ-27,
+  amended 26 Oct 2026). **Padding on `Panel` does nothing** — its module CSS is unlayered and beats every
   Tailwind utility — so a panel takes its own padding or none; the dead classes were removed.
 
 - **This chrome has no organization selector, and must not grow one.** D-5 gives a Platform
