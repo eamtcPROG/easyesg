@@ -20,6 +20,24 @@
       "port": 3200
     },
     {
+      "name": "api:prod",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@easyesg/api", "start:prod"],
+      "port": 3000
+    },
+    {
+      "name": "web:prod",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["NODE_ENV=production", "PORT=3100", "HOSTNAME=0.0.0.0", "PUBLIC_WEB_URL=http://localhost:3100", "PUBLIC_API_URL=http://localhost:3000", "node", "--env-file=apps/web/.env.local", "apps/web/.next/standalone/apps/web/server.js"],
+      "port": 3100
+    },
+    {
+      "name": "admin:prod",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@easyesg/admin", "start:prod"],
+      "port": 3200
+    },
+    {
       "name": "design",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "3900", "--bind", "127.0.0.1", "--directory", "design/screens"],
