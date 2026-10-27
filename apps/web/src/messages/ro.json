@@ -1424,6 +1424,7 @@
           "comprehensive": "Modulul cuprinzător"
         },
         "count": "{done} din {counted} finalizate",
+        "added": "Adăugat la {date}",
         "discounted": "Nu se numără: {modules}.",
         "waiting": "{modules} așteaptă răspunsurile din B1.",
         "footer": "Le puteți completa în orice ordine. Doar modulele care depind de răspunsurile din B1 le așteaptă.",
@@ -1518,6 +1519,7 @@
       "step": {
         "outstanding": "{count, plural, =0 {Nimic de completat} one {Un câmp rămas} few {# câmpuri rămase} other {# de câmpuri rămase}}",
         "position": "Modulul {position} din {total}",
+        "added": "Modulul cuprinzător a fost adăugat la {date}. Nimic din ce ați răspuns în Modulul de bază nu s-a schimbat.",
         "foot": {
           "next": "Următorul: {label}",
           "nextShort": "Următorul: {module}",

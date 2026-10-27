@@ -77,6 +77,19 @@ export function stepStatusNote(
     : null;
 }
 
+/**
+ * When the Comprehensive Module was added, on its group's head in place of the count (task 79.1; *20 · S-07*) — the
+ * caller passes `comprehensiveAddedAt`'s answer, so it is said only while the module holds no answer.
+ */
+export function addedWords(t: WizardTranslator, format: Formatter, at: number): string {
+  return t('rail.added', { date: format.dateTime(new Date(at), 'short') });
+}
+
+/** C1's opening while the Comprehensive Module holds no answer (task 79.1; *20 · S-07*), in place of its summary. */
+export function addedOpening(t: WizardTranslator, format: Formatter, at: number): string {
+  return t('step.added', { date: format.dateTime(new Date(at), 'long') });
+}
+
 /** The group's count — *5 of 10 done* — or *not checked yet* where no run has made one (task-42 row (3)). */
 export function groupCountWords(t: WizardTranslator, count: GroupCount): string {
   return count.checked ? t('rail.count', { done: count.done, counted: count.counted }) : t('rail.state.unchecked');

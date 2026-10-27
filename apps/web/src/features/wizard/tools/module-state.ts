@@ -112,10 +112,29 @@ export function modulesInScope(input: {
  * 78.3; `architecture.md` §12.5.6's task-182 report-authoring row (10)). **Over every module the api served**, not
  * the scope's list: lowering is offered on a Basic-and-Comprehensive report, where the two are the same, and a caller
  * handed the scope's list of a Basic report would find nothing to name.
+ *
+ * **An answer only the Comprehensive scope asks** (task 79.1): `comprehensiveAnswered`, never `answered`, which counts
+ * the eight figures C3 shares with B3 — answers a lowered report still shows, in B3.
  */
 export function comprehensiveWithAnswers(modules: readonly DisclosureModuleSummary[]): readonly string[] {
-  return modules.filter((summary) => isComprehensive(summary) && summary.answered > 0).map((summary) => summary.module);
+  return modules.filter((summary) => summary.comprehensiveAnswered > 0).map((summary) => summary.module);
 }
+
+/**
+ * When the Comprehensive Module was added, while it holds no answer — `null` from its first answer on, and wherever the
+ * report says no time (task 79.1; `architecture.md` §12.5.6's task-79.1 row (1)): the module list's group head and C1's
+ * opening read it, and both give way to the count and the summary once the reporter has started.
+ */
+export function comprehensiveAddedAt(input: {
+  readonly addedAt: number | null;
+  readonly modules: readonly DisclosureModuleSummary[];
+}): number | null {
+  return input.addedAt !== null && comprehensiveWithAnswers(input.modules).length === 0 ? input.addedAt : null;
+}
+
+/** The module that opens the Comprehensive group, C1 — the step whose opening says when the module was added. */
+export const comprehensiveOpening = (modules: readonly DisclosureModuleSummary[]): string | undefined =>
+  modules.find(isComprehensive)?.module;
 
 /**
  * The modules by group, each in the order the api sent them — the taxonomy's own — split by the reference's letter.

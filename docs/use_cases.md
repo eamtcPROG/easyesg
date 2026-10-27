@@ -948,6 +948,28 @@ their numbers put them.
 - **Related FRs:** FR-177, FR-27, FR-28, FR-54
 - **Related UCs:** UC-18, UC-19, UC-57, UC-58, UC-183 … UC-191
 
+### UC-183 — Complete C1 — Strategy: business model and sustainability-related initiatives
+
+*Written 27 Oct 2026 by task 79.1, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template 1.3.0's* General Information *sheet, rows 526 … 531, headed* C1 - Strategy: Business Model and Sustainability - Related Initiatives *[Always to be reported + If applicable], and the four C1 elements both registered taxonomies carry. The decisions are §12.5.6's task-79.1 row.*
+
+- **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
+- **Module:** Comprehensive Module
+- **Stakeholders and interests:** Contributor — describes the business once, in the company's own words; the counterparty that asked for the Comprehensive Module, a bank or a large customer — reads what the company sells, to whom and through whom, and where sustainability sits in its strategy; a future limited-assurance reviewer — reads each answer as it was written.
+- **Preconditions:** An editable report session (UC-18) on a report whose scope is Basic and Comprehensive — chosen at creation (FR-177) or added since (UC-192).
+- **Trigger:** The Contributor reaches the C1 step: on adding the Comprehensive Module (UC-192 step 4), or from the module list.
+- **Main success scenario:**
+  1. The Contributor describes the significant groups of products and/or services the undertaking offers (VSME ¶47(a)).
+  2. The Contributor describes the significant markets it operates in — for example business-to-business, wholesale, retail, and the countries (¶47(b)).
+  3. The Contributor describes its main business relationships, such as key suppliers, customers and distribution channels (¶47(c)).
+  4. Where the strategy has key elements that relate to or affect sustainability issues, the Contributor describes them (¶47(d)).
+  5. The system stores each answer as written, in the change trail (FR-54), and counts C1's progress over the four (FR-24).
+- **Alternate flows:** 1a. **The Comprehensive Module was added after the report was created, and no Comprehensive answer exists yet.** C1 opens by saying when the module was added and that nothing answered in the Basic Module changed, and the module list says when on the Comprehensive group's head; both give way to C1's summary and the group's count once a Comprehensive answer exists (`architecture.md` §12.5.6's task-79.1 row (1)). 4a. **The strategy has no such elements.** The Contributor leaves ¶47(d) unanswered or declares it not available with a reason (UX-15). EFRAG's template asks a yes/no before ¶47(d) — *"Has the strategy key elements that relate to or affect sustainability issues?"* — which no element in either registered taxonomy carries: it is the template's scaffolding for the *If applicable* heading, answered by the export from whether ¶47(d) holds an answer (task 80.3), as B1's certification question and B2's practice question are (task 46).
+- **Exception flows:** A Basic report has no C1 step: its address answers not found, and a write to a C1 element is refused (UC-192's exception flows). A read-only report shows C1's answers and takes none, and says why (UX-13).
+- **Postconditions:** Each answer stored as written, attributed and timestamped; shown, counted and exported exactly while the report's scope is Basic and Comprehensive (UC-192).
+- **Business rules:** C1 is narrative throughout — four text blocks, with no axis, no unit and no applicability rule naming them. It extends B2's ground rather than repeating it: B2 states the practices, policies and initiatives, C1 the business and the strategy they sit in, and nothing in C1 restates a B2 answer. No length is required of an answer; UX-19's soft target stays deferred (`architecture.md` §12.5.6's task-36.2 row). Every answer is printed as written.
+- **Related FRs:** FR-177, FR-24, FR-27
+- **Related UCs:** UC-18, UC-20, UC-192
+
 ### UC-30 — Declare a section omitted as classified or sensitive information
 
 - **Primary actor:** RC

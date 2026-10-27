@@ -33675,3 +33675,125 @@ rail's anatomy.
   `*:prove`s), which CI runs on the push — no generated facade, seed, image input or boundary rule moved.
 - **Not built, by decision**: frame 20's *added on* date and C1's opening sentence (task 79.1's row); the entitlement
   gate on the Comprehensive choice (task 81.1).
+
+## Task 79.1 — C1, and the day the Comprehensive Module was added · 2026-10-28
+
+The first Comprehensive slice. UC-183's §5 specification was written first, against EFRAG's package (the task-36.8
+standing rule; §12.5.6's task-182 report-authoring row (8)). The package is the Digital Template 1.3.0's *General
+Information* sheet, rows 526 … 531, and the four C1 elements both registered taxonomies carry. One question was asked
+after that; its answer and what the build took within it are in `architecture.md` §12.5.6's task-79.1 row. FR-177 and
+S-07 are amended by it. The row widens from `web` to `api+web+pkg:contracts+docs`, on task 36.2's precedent: the date
+and the count are api reads.
+
+### Decided (project owner)
+
+- ***Added on* shows until a Comprehensive answer exists.** Frame 20 draws it and frame 25 does not, and the two
+  frames differ in exactly that respect. The other options were the date for good (a reassurance that turns into noise)
+  and the date on arrival only (lost to a reload, against UX-4).
+
+### What the building decided within that
+
+- **The date is the trail's, not a column's.** Task 78's row (3) said 79.1 needs *when the scope was last raised*. The
+  task-30.3 row already answers where a "when was this changed" lives: `core.field_change`, read through
+  `field_change_record_idx`, because a column the use case wrote beside the trigger would be two writers of one fact.
+  - The report read gains a scalar subquery: the latest `scope` row whose old value is Basic and new value is Basic and
+    Comprehensive, asked only while the scope is the latter.
+  - The insert's row has no old value, so a report created with the module answers `null`, which is the case that
+    should never say *added*.
+  - No migration was written.
+- **"A Comprehensive answer" could not be read off `answered`.** `module-progress.ts` counts the eight figures C3
+  shares with B3 into C3 as well (task 36.4, deliberately). So every report whose B3 emissions are answered would have
+  read as "C3 holds answers":
+  - the date would have vanished the moment it was added;
+  - task 78.3's lowering dialogue would have named C3 among the modules going dark, though its shared answers stay
+    shown in B3.
+
+  Each module summary now carries `comprehensiveAnswered` beside `answered`: answers to elements none of whose
+  modules a Basic report asks, which is the task-78 row's own definition of a C element. `comprehensiveWithAnswers`
+  reads it, so the lowering dialogue is corrected by the same change. **Found in passing, in task 78's own code a day
+  after it closed**: its spec built every C summary by `answered` alone and never met a shared element, which is why
+  nothing failed.
+- **C1 needed no rendering code.** It is four `text_block`s with no axis, unit or applicability rule. Labels exist in
+  three locales, and help comes from EFRAG's documentation where the package has it and the platform's sentence (task
+  94) elsewhere. As on B2 (the task-36.3 row), the deliverable is the proof.
+- **EFRAG's yes/no before ¶47(d)** has no element in either taxonomy. It is template scaffolding the export answers
+  (task 80.3), the category B4's row 74 and B2's contact point were found to be.
+- **Frame 20 draws C1 wrong.** Its *Total energy consumption* and *Emission reduction target* are not C1 elements in
+  the package. Frame 25 is C1's artboard, and frame 20 is read for its opening alone.
+- **Things declined, with the reason recorded in the row:**
+  - frame 25's typical-length counts (UX-19's soft target, still deferred);
+  - its lead naming the bank (no source, the task-78 row (3));
+  - its note pointing ¶47(d) at B2 (a finding, validation's if anyone's).
+- **The opening names the module.** The artboard's bare *Added on 3 April*, under C1's heading, reads as C1's own date.
+  The sentence is *The Comprehensive Module was added on …*, and S-07's amendment quotes it so.
+- **Both formats are the existing named ones**: `short` on the group's head, `long` in the sentence. The spec pins the
+  configured zone, with an instant that is still 2 April in UTC and already 3 April in Chișinău. `en` reads
+  month-first, as every other dated message here does; the spec's first expectation assumed otherwise and was the
+  thing corrected.
+- **Searched for the shape**:
+  - every reader of a module summary's `answered` that means "holds a C answer" — `comprehensiveWithAnswers` was the
+    only one;
+  - every fixture building a `Report` or a `DisclosureModuleSummary` — seven, found by the typecheck and given the new
+    fields.
+
+  The fake report store models the raise, as the real store reads it.
+
+### Skills read against the diff
+
+- **`nestjs-best-practices`**: `db-avoid-n-plus-one` (the date is a correlated subquery inside the one statement each
+  read already runs, on an index whose leading column RLS supplies — no query per report);
+  `arch-use-repository-pattern` (the trail read sits in the store, the model carries the instant, the DTO converts it,
+  OQ-50).
+- **`vercel-react-best-practices`**: `server-parallel-fetching` (the formatter joins the step's existing
+  `Promise.all`); `server-serialization` (the rail takes a number).
+- **`one-idea-per-file`**:
+  - `pure-logic-leaves-the-component` — `comprehensiveAddedAt` and `comprehensiveOpening` sit in `module-state.ts`
+    beside the private letter test they read, and `addedWords` and `addedOpening` in `module-words.ts`, each with
+    cases.
+  - No file was added, so `one-kind-per-folder` had nothing to place.
+
+### Verified, and what is not
+
+- **The api, through HTTP and the database** (`wizard.e2e-spec.ts`'s two new cases):
+  - a report created with the module, and a Basic one, say no date;
+  - raised, the date is the trail's latest raise;
+  - lowered, none;
+  - raised again, the later raise;
+  - a figure C3 shares with B3 counts into both modules' `answered` and neither's `comprehensiveAnswered`, while a C1
+    answer counts into both of C1's.
+
+  `module-progress.spec.ts` holds the count, and `module-state.spec.ts` the date's three branches, the opening module
+  and C3 not named for shared figures.
+- **The browser** (`wizard.spec.ts`'s new journey): a seeded Basic report is raised from the list and lands on C1.
+  - Before an answer: C1 opens with the sentence instead of its summary, and the group's head says *Adăugat la …*.
+  - The four narratives render under their labels in EFRAG's order, and one stores.
+  - After the answer and a reload: the summary is back and the head carries no date.
+  - The value reads under the English and Russian labels.
+- **The close's run**, by the lookup table — a change reaching `apps/api`, `apps/web` and, through
+  `packages/contracts`, every dependent's row:
+  - unit suites: `pnpm --filter @easyesg/api test` 2,537; `pnpm --filter @easyesg/web test` 2,155 (236 files);
+    `pnpm --filter @easyesg/admin test` 322;
+  - `typecheck` in api, web, admin and contracts; `pnpm lint`;
+  - `pnpm openapi:check` (the contract gaining both fields); `pnpm routes:check`; `pnpm docs:check` 48 of 48;
+  - `pnpm e2e`: 77 suites, 1,986 tests — 1,975 passed in the full run; all eleven of `pdf-export.e2e-spec.ts`'s cases
+    failed on one render. Details:
+    - The cases share one export made in the suite's setup, and the test stack's renderer, idle for seven hours, killed
+      that one render at its 60-second deadline (its log: one 504 at 66 s, then renders of 5–6 s for the next suites).
+    - Run alone, the suite passed 11 of 11. Nothing in this change reaches the document.
+  - `pnpm e2e:worker`: 17 of 17.
+  - `pnpm e2e:web --project identity --project expansion`: 372 of 373. The new C1 journey and task 78's two scope
+    journeys passed.
+    - The one failure was S-15's expansion check at 1440: registration's `POST /auth/register` timed out before the
+      page reached the verify step. Run alone, S-15's three widths passed 3 of 3.
+    - Its 29 `⨯` lines are every one digest `2667547900`, the abandoned streams `apps/web/CLAUDE.md` describes.
+  - `pnpm e2e:web --project admin`: 28 of 28, nothing logged.
+- **What the api run printed, read rather than skipped.** It logged three *Message catalogue used before
+  initialiseCatalogue()* errors and one outbox warning (*Custom Id cannot contain :*, on an `export-refused` request).
+  - Task 78's run log holds the same four lines, so they predate this change.
+  - Task 78's entry says its run printed *nothing beyond the results*, and that sentence was wrong.
+  - They are not this task's to fix, and are raised rather than left.
+- **Skipped**: the Stage-end gates (`boundaries`, `image:check`, `facade:check`, the two `*:prove`s), which CI runs on
+  the push. No import edge crosses a module boundary that did not before, and no generated facade, seed or migration
+  moved.
+- **Not built, by decision**: *at the request of …* (no source models who asked); typical-length counts (UX-19's soft
+  target); C2 … C9 (79.2 … 79.9).

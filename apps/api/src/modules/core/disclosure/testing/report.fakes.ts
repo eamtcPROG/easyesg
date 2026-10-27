@@ -41,6 +41,8 @@ export const aReport = (overrides: Partial<Report> = {}): Report => ({
   id: '00000000-0000-0000-0000-0000000000f1',
   reportingPeriodId: '00000000-0000-0000-0000-0000000000c1',
   scope: REPORT_SCOPE.BASIC,
+  // A Basic report, so nothing was ever added to it (task 79.1).
+  comprehensiveAddedAt: null,
   status: REPORT_STATUS.OPEN,
   // Never validated, so never ready (task 41.3) and with nothing to summarise (task 42.2) — what a new report reads.
   readyToFile: false,
@@ -125,9 +127,17 @@ export class FakeReportStore implements ReportStore {
     // The absent field is skipped rather than spread, exactly as the real store's `if (scope ===
     // undefined)` guard does — a plain spread of a DTO instance erases what the patch never named
     // (the defect task 31.1 hit, avoided here rather than rediscovered).
+    const scope = input.patch.scope ?? found.scope;
     const updated: Report = {
       ...found,
-      scope: input.patch.scope ?? found.scope,
+      scope,
+      // What the real store reads off the trail (task 79.1): the moment of the latest raise, while the scope holds it.
+      comprehensiveAddedAt:
+        scope === REPORT_SCOPE.BASIC
+          ? null
+          : found.scope === REPORT_SCOPE.BASIC
+            ? input.at
+            : found.comprehensiveAddedAt,
       updatedAt: input.at,
     };
     this.rows = this.rows.map((row) => (row.id === found.id ? updated : row));

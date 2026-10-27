@@ -4,6 +4,7 @@ import type { TaxonomyElement } from '@api/contracts/taxonomy-registry.port';
 import type { EvaluatedApplicability } from '../models/applicability.model';
 import type { DisclosureValue } from '../models/disclosure-value.model';
 import type { DisclosureModuleSummary } from '../models/wizard-step.model';
+import { REPORT_SCOPE, scopeAsks } from '../models/report.model';
 import { soleCause } from './applicability';
 import { toCause } from './applicability-cause';
 
@@ -38,6 +39,9 @@ export function moduleSummaries(input: {
     // An element counts as answered when ANY of its rows is (task 91.2): a repeating group's
     // second site is as much an answer as its first, and `total` counts elements, not rows.
     const answered = (input.byElement.get(element.key) ?? []).filter(isAnswered);
+    // An element only the Comprehensive scope asks — none of its modules a Basic report asks, the task-78 row's C element
+    // — is what a lowered scope hides, so its answer is counted apart as well (task 79.1).
+    const comprehensiveOnly = !element.modules.some((module) => scopeAsks({ scope: REPORT_SCOPE.BASIC, module }));
 
     // **Counted into every module that presents it** (task 36.4). The eight disclosures B3 and C3
     // share are one obligation with one stored value, so each module's own denominator includes
@@ -59,6 +63,7 @@ export function moduleSummaries(input: {
       count.total += 1;
       if (answered.length > 0) {
         count.answered += 1;
+        if (comprehensiveOnly) count.comprehensiveAnswered += 1;
         // The latest answer in the module is where work last happened (task 35.3, FR-39). A row
         // cleared back to holding nothing is not an answer and does not move it (182/17).
         for (const value of answered) {
@@ -82,6 +87,7 @@ export function moduleSummaries(input: {
       {
         module,
         answered: count.answered,
+        comprehensiveAnswered: count.comprehensiveAnswered,
         total: count.total,
         lastAnsweredAt: count.lastAnsweredAt,
         applicable: count.applicable,
@@ -101,6 +107,7 @@ export function moduleSummaries(input: {
  */
 interface ModuleCount {
   answered: number;
+  comprehensiveAnswered: number;
   total: number;
   lastAnsweredAt: number | null;
   applicable: boolean;
@@ -109,6 +116,7 @@ interface ModuleCount {
 
 const newModuleCount = (): ModuleCount => ({
   answered: 0,
+  comprehensiveAnswered: 0,
   total: 0,
   lastAnsweredAt: null,
   // False until an applicable element is met: a module whose every element a rule ruled out has

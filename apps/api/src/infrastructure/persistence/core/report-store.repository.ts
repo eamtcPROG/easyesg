@@ -9,12 +9,13 @@ import { isConsolidationBasis } from '@api/modules/core/entity/models/reporting-
 import {
   ReportAlreadyExistsError,
 } from '@api/modules/core/disclosure/errors/report.errors';
-import type {
-  NewReport,
-  Report,
-  ReportPatch,
-  ReportScope,
-  ReportStatus,
+import {
+  REPORT_SCOPE,
+  type NewReport,
+  type Report,
+  type ReportPatch,
+  type ReportScope,
+  type ReportStatus,
 } from '@api/modules/core/disclosure/models/report.model';
 import { displayName } from '@api/modules/identity/account/domain/display-name';
 import { returnedRows } from '../returned-rows';
@@ -29,6 +30,7 @@ interface ReportRow {
   id: string;
   reporting_period_id: string;
   scope: ReportScope;
+  comprehensive_added_at: Date | null;
   status: ReportStatus;
   ready_to_file: boolean;
   validation_summary: ValidationSummaryColumn | null;
@@ -81,11 +83,25 @@ const FILE_COUNT = `(SELECT count(*)::int ${COMPLETED_FILES})`;
 const LATEST_EXPORT_ID = `(SELECT a.id ${COMPLETED_FILES} ORDER BY a.completed_at DESC, a.id DESC LIMIT 1)`;
 
 /**
+ * When the Comprehensive Module was last added after creation (task 79.1; §12.5.6's task-79.1 row): the trail's latest
+ * change of `scope` from Basic to Basic and Comprehensive. The insert's row has no old value, so a report created with the
+ * module answers none; and it is asked only while the scope is Basic and Comprehensive, so a lowered report answers none.
+ * `table_name` is schema-qualified because the capture trigger writes it so (`organization-store.repository.ts`), and
+ * the organization is named beside the record so the read is `field_change_record_idx`'s.
+ */
+const COMPREHENSIVE_ADDED_AT = `CASE WHEN r.scope = '${REPORT_SCOPE.BASIC_AND_COMPREHENSIVE}' THEN (
+          SELECT max(fc.occurred_at) FROM core.field_change fc
+           WHERE fc.organization_id = r.organization_id AND fc.table_name = 'core.report' AND fc.record_id = r.id
+             AND fc.field_name = 'scope' AND fc.old_value = '${REPORT_SCOPE.BASIC}'
+             AND fc.new_value = '${REPORT_SCOPE.BASIC_AND_COMPREHENSIVE}') END`;
+
+/**
  * Qualified with the alias every statement here uses, because one of them joins the period and an
  * unqualified `id` would be ambiguous there. One list rather than two is what keeps the three reads
  * answering the same shape.
  */
-const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, r.status, ${readyToFileOf('r')} AS ready_to_file,
+const REPORT_COLUMNS = `r.id, r.reporting_period_id, r.scope, ${COMPREHENSIVE_ADDED_AT} AS comprehensive_added_at,
+        r.status, ${readyToFileOf('r')} AS ready_to_file,
         ${validationSummaryOf('r')} AS validation_summary, ${EXPORTED} AS exported,
         ${FILE_COUNT} AS file_count, ${LATEST_EXPORT_ID} AS latest_export_id,
         r.filed_on::text AS filed_on, r.filed_on_tz, r.filed_at, r.filed_by, filer.id IS NOT NULL AS filer_found,
@@ -118,6 +134,7 @@ const toReport = (row: ReportRow): Report => ({
   id: row.id,
   reportingPeriodId: row.reporting_period_id,
   scope: row.scope,
+  comprehensiveAddedAt: row.comprehensive_added_at,
   status: row.status,
   readyToFile: row.ready_to_file,
   validation: row.validation_summary,

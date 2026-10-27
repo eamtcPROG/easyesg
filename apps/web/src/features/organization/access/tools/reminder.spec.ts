@@ -31,6 +31,7 @@ const aReport = (over: Partial<Report> = {}): Report => ({
   id: 'report-2026',
   reportingPeriodId: 'period-2026',
   scope: 'basic',
+  comprehensiveAddedAt: null,
   status: REPORT_STATUS.OPEN,
   locked: false,
   validation: null,

@@ -2,6 +2,8 @@ import { COMPLETION_STATUS, REPORT_SCOPE, type DisclosureModuleSummary, type Mod
 import { describe, expect, it } from 'vitest';
 import {
   MODULE_GROUP,
+  comprehensiveAddedAt,
+  comprehensiveOpening,
   comprehensiveWithAnswers,
   groupCount,
   moduleChecksOf,
@@ -14,6 +16,7 @@ import {
 const summary = (overrides: Partial<DisclosureModuleSummary> = {}): DisclosureModuleSummary => ({
   module: 'B1',
   answered: 0,
+  comprehensiveAnswered: 0,
   total: 5,
   lastAnsweredAt: null,
   applicable: true,
@@ -174,14 +177,48 @@ describe('comprehensiveWithAnswers (task 78.3)', () => {
   it('names the Comprehensive modules holding an answer, in the order served, and no Basic one', () => {
     const served = [
       summary({ module: 'B1', answered: 4 }),
-      summary({ module: 'C1', answered: 2 }),
+      summary({ module: 'C1', answered: 2, comprehensiveAnswered: 2 }),
       summary({ module: 'C2', answered: 0 }),
-      summary({ module: 'C9', answered: 1 }),
+      summary({ module: 'C9', answered: 1, comprehensiveAnswered: 1 }),
     ];
     expect(comprehensiveWithAnswers(served)).toEqual(['C1', 'C9']);
   });
 
   it('names none where no Comprehensive module holds one', () => {
     expect(comprehensiveWithAnswers([summary({ module: 'B1', answered: 3 }), summary({ module: 'C1' })])).toEqual([]);
+  });
+
+  // Task 79.1: C3 answered only by the figures it shares with B3 holds nothing a lowered report hides.
+  it('does not name C3 for the figures it shares with B3', () => {
+    expect(comprehensiveWithAnswers([summary({ module: 'B3', answered: 2 }), summary({ module: 'C3', answered: 2 })])).toEqual(
+      [],
+    );
+  });
+});
+
+describe('comprehensiveAddedAt (task 79.1)', () => {
+  const ADDED = Date.UTC(2026, 3, 3);
+  const unanswered = [summary({ module: 'B3', answered: 2 }), summary({ module: 'C1' }), summary({ module: 'C3', answered: 2 })];
+
+  it('says when the module was added while nothing only it asks is answered — B3’s shared figures included', () => {
+    expect(comprehensiveAddedAt({ addedAt: ADDED, modules: unanswered })).toBe(ADDED);
+  });
+
+  it('gives way from the first Comprehensive answer', () => {
+    const started = [...unanswered, summary({ module: 'C9', answered: 1, comprehensiveAnswered: 1 })];
+    expect(comprehensiveAddedAt({ addedAt: ADDED, modules: started })).toBeNull();
+  });
+
+  it('says nothing where the report gives no time', () => {
+    expect(comprehensiveAddedAt({ addedAt: null, modules: unanswered })).toBeNull();
+  });
+});
+
+describe('comprehensiveOpening (task 79.1)', () => {
+  it('is the first Comprehensive module served, and none on a list without one', () => {
+    expect(comprehensiveOpening([summary({ module: 'B11' }), summary({ module: 'C1' }), summary({ module: 'C2' })])).toBe(
+      'C1',
+    );
+    expect(comprehensiveOpening([summary({ module: 'B1' })])).toBeUndefined();
   });
 });

@@ -6,6 +6,7 @@ import { placeOf } from './step-place';
 const summary = (module: string, overrides: Partial<DisclosureModuleSummary> = {}): DisclosureModuleSummary => ({
   module,
   answered: 0,
+  comprehensiveAnswered: 0,
   total: 5,
   lastAnsweredAt: null,
   applicable: true,

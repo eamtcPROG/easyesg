@@ -268,6 +268,7 @@ describe('the row from the wire', () => {
     id: 'r1',
     reportingPeriodId: 'p1',
     scope: 'basic',
+    comprehensiveAddedAt: null,
     status: REPORT_STATUS.OPEN,
     locked: false,
     validation: null,

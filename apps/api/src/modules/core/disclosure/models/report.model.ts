@@ -175,6 +175,16 @@ export interface Report {
   /** The period this report covers. At most one report per period, so this identifies it too. */
   readonly reportingPeriodId: string;
   readonly scope: ReportScope;
+  /**
+   * When the Comprehensive Module was last added to the report after it was created (task 79.1; UC-192) — the latest
+   * change of `scope` from Basic to Basic and Comprehensive. `null` on a Basic report, on one created with the module,
+   * and on one whose trail no longer holds the change.
+   *
+   * **Read from `core.field_change`, never from a column this application maintains** (§12.5.6's task-30.3 and task-79.1
+   * rows): the capture trigger already records the change with its actor and time, and a column written beside it by
+   * the use case would be a second writer of one fact.
+   */
+  readonly comprehensiveAddedAt: Date | null;
   readonly status: ReportStatus;
   /**
    * Whether its latest validation run left nothing outstanding (task 41.3) — read from the run, never stored. The wire

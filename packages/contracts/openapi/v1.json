@@ -11260,6 +11260,11 @@
               "basic_and_comprehensive"
             ]
           },
+          "comprehensiveAddedAt": {
+            "type": "number",
+            "nullable": true,
+            "description": "When the Comprehensive Module was last added to the report after it was created (UC-192) — Unix epoch milliseconds, UTC. Read from the report’s change trail. Null on a Basic report, on one created with the module, and on one whose trail no longer holds the change."
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -11342,6 +11347,7 @@
           "id",
           "reportingPeriodId",
           "scope",
+          "comprehensiveAddedAt",
           "status",
           "locked",
           "exported",
@@ -11494,6 +11500,10 @@
             "type": "number",
             "description": "Fields the pinned version puts in this module."
           },
+          "comprehensiveAnswered": {
+            "type": "number",
+            "description": "Of the fields answered, those only the Comprehensive Module asks — the answers a report lowered to Basic keeps hidden (FR-177). Zero on every Basic module; on C3, short of answered by the figures it shares with B3."
+          },
           "lastAnsweredAt": {
             "type": "number",
             "nullable": true,
@@ -11522,6 +11532,7 @@
           "module",
           "answered",
           "total",
+          "comprehensiveAnswered",
           "lastAnsweredAt",
           "applicable",
           "omitted",

@@ -1,5 +1,5 @@
 import { CALLOUT_INTENT, Callout, WizardShell } from '@easyesg/ui';
-import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import { getFormatter, getLocale, getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { getPathname } from '@/i18n/navigation';
 import { mayWrite, readActiveMembership } from '@/server/data/memberships';
@@ -22,10 +22,17 @@ import { StepFiguresProvider } from '../providers/step-figures-context';
 import { ValidationProvider } from '../providers/validation-context';
 import { ValidationSection } from '../panel/section/validation-section';
 import { WizardReauthentication } from '../session/wizard-reauthentication';
-import { checkOf, moduleChecksOf, modulesInScope, moduleStateOf } from '../../tools/module-state';
+import {
+  checkOf,
+  comprehensiveAddedAt,
+  comprehensiveOpening,
+  moduleChecksOf,
+  modulesInScope,
+  moduleStateOf,
+} from '../../tools/module-state';
 import { placeOf } from '../../tools/step-place';
 import { SCOPE_CHANGE, scopeChangeOffered } from '../../tools/scope-change';
-import { moduleLabel, moduleStatus, moduleSummary, stepStatusNote } from '../../tools/module-words';
+import { addedOpening, moduleLabel, moduleStatus, moduleSummary, stepStatusNote } from '../../tools/module-words';
 import { StepFoot } from '../foot/step-foot';
 import { ReportBar } from '../bar/report-bar';
 import { ModuleRail } from '../rail/module-rail';
@@ -66,9 +73,10 @@ export async function WizardStep({
   readonly reportId: string;
   readonly module: string;
 }) {
-  const [t, messages, read, session, membership, locale, calculatorFigures, validation, inlineRules] =
+  const [t, format, messages, read, session, membership, locale, calculatorFigures, validation, inlineRules] =
     await Promise.all([
       getTranslations(WIZARD_MESSAGES),
+      getFormatter(),
       getMessages(),
       readWizardStep({ reportId, module }),
       readSession(),
@@ -118,6 +126,9 @@ export async function WizardStep({
   const readOnly = read.readOnly !== null;
   // The change of scope this reader is offered, if any (task 78.3): adding C1 – C9 from the list, removing them from the bar.
   const scopeChange = scopeChangeOffered({ scope: read.report.scope, writable: !readOnly });
+  // When the Comprehensive Module was added, said while it holds no answer (task 79.1): on its group's head in the list,
+  // and as C1's opening in place of its summary — *20 · S-07*.
+  const addedAt = comprehensiveAddedAt({ addedAt: read.report.comprehensiveAddedAt, modules });
   const fields = labelledOptions(read.step.fields, messages.vocabulary.countries);
   // Last year's comparable answers, indexed by the queue's key — read beside each field, and by the interpreter for the
   // year-over-year rule (FR-46).
@@ -134,6 +145,7 @@ export async function WizardStep({
       checks={checks}
       current={module}
       offersComprehensive={scopeChange === SCOPE_CHANGE.RAISE}
+      comprehensiveAddedAt={addedAt}
     />
   );
 
@@ -162,7 +174,11 @@ export async function WizardStep({
           }
           title={moduleLabel(t, module)}
           position={t('step.position', { position: place.position, total: place.total })}
-          summary={moduleSummary(t, module)}
+          summary={
+            addedAt !== null && module === comprehensiveOpening(modules)
+              ? addedOpening(t, format, addedAt)
+              : moduleSummary(t, module)
+          }
           status={{
             state,
             words: moduleStatus(t, { state, checked }),

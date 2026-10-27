@@ -40,6 +40,7 @@ describe('moduleSummaries', () => {
     expect(b1).toEqual({
       module: 'B1',
       answered: 1,
+      comprehensiveAnswered: 0,
       total: 3,
       lastAnsweredAt: 3_000,
       applicable: true,
@@ -56,6 +57,34 @@ describe('moduleSummaries', () => {
     expect(result.map(({ module, answered, total }) => ({ module, answered, total }))).toEqual([
       { module: 'B3', answered: 1, total: 1 },
       { module: 'C3', answered: 1, total: 1 },
+    ]);
+  });
+
+  /*
+   * Task 79.1: the answers a lowered scope hides are those to an element only the Comprehensive scope asks — so C3's
+   * own target counts there and the Scope 1 figure it shares with B3 does not, though both count into C3's progress.
+   */
+  it('counts apart the answers only the Comprehensive scope asks, and a figure C3 shares with B3 is not one', () => {
+    const { byElement } = indexStored([
+      aStoredValue({ elementKey: 'GrossScope1', valueNumeric: '12.5' }),
+      aStoredValue({ elementKey: 'ReductionTarget', valueNumeric: '30' }),
+      aStoredValue({ elementKey: 'Strategy', valueText: 'Mai puțin gaz.' }),
+    ]);
+
+    const result = summaries({
+      elements: [
+        anElement({ key: 'GrossScope1', modules: ['B3', 'C3'] }),
+        anElement({ key: 'ReductionTarget', modules: ['C3'] }),
+        anElement({ key: 'Strategy', modules: ['C1'] }),
+      ],
+      moduleOrder: ['B3', 'C1', 'C3'],
+      byElement,
+    });
+
+    expect(result.map(({ module, answered, comprehensiveAnswered }) => ({ module, answered, comprehensiveAnswered }))).toEqual([
+      { module: 'B3', answered: 1, comprehensiveAnswered: 0 },
+      { module: 'C1', answered: 1, comprehensiveAnswered: 1 },
+      { module: 'C3', answered: 2, comprehensiveAnswered: 1 },
     ]);
   });
 
@@ -89,6 +118,7 @@ describe('moduleSummaries', () => {
     expect(result.find((summary) => summary.module === 'B8')).toEqual({
       module: 'B8',
       answered: 0,
+      comprehensiveAnswered: 0,
       total: 0,
       lastAnsweredAt: null,
       applicable: false,

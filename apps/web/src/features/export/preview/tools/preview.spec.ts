@@ -5,6 +5,7 @@ import { documentAddress, documentPages, previewLanguage } from './preview';
 const summary = (module: string): DisclosureModuleSummary => ({
   module,
   answered: 0,
+  comprehensiveAnswered: 0,
   total: 1,
   lastAnsweredAt: null,
   applicable: true,

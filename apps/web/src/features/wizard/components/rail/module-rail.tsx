@@ -2,8 +2,15 @@ import type { DisclosureModuleSummary } from '@easyesg/contracts';
 import { WizardModuleGroup, WizardModuleItem } from '@easyesg/ui';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { reportStepRoute } from '@/lib/routes';
-import { checkOf, groupCount, moduleGroups, moduleStateOf, type ModuleChecks } from '../../tools/module-state';
-import { groupCountWords, moduleLabel, moduleStatus, rollUpNote } from '../../tools/module-words';
+import {
+  MODULE_GROUP,
+  checkOf,
+  groupCount,
+  moduleGroups,
+  moduleStateOf,
+  type ModuleChecks,
+} from '../../tools/module-state';
+import { addedWords, groupCountWords, moduleLabel, moduleStatus, rollUpNote } from '../../tools/module-words';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import styles from './module-rail.module.css';
 import { StepLink } from '../shared/step-link';
@@ -25,7 +32,8 @@ import { ComprehensiveOffer } from './comprehensive-offer';
  * condition turned, and a module nobody can open is a module nobody can see them in.
  *
  * **A Basic report's list ends with the offer of the Comprehensive Module** (task 78.3; UC-192), beneath the groups, for
- * a reader who may write it — the section says whether (`offersComprehensive`).
+ * a reader who may write it — the section says whether (`offersComprehensive`). **Once added, its group's head says
+ * when** in place of its count, until the module holds an answer (task 79.1; `comprehensiveAddedAt`).
  */
 export async function ModuleRail({
   reportId,
@@ -33,6 +41,7 @@ export async function ModuleRail({
   checks,
   current,
   offersComprehensive,
+  comprehensiveAddedAt,
 }: {
   readonly reportId: string;
   readonly modules: readonly DisclosureModuleSummary[];
@@ -41,6 +50,8 @@ export async function ModuleRail({
   readonly current: string;
   /** The report is Basic and the reader may change it (`offersComprehensive` in `tools/scope-change.ts`). */
   readonly offersComprehensive: boolean;
+  /** When the Comprehensive Module was added, while it holds no answer (`comprehensiveAddedAt` in `module-state.ts`). */
+  readonly comprehensiveAddedAt: number | null;
 }) {
   const [t, format] = await Promise.all([getTranslations(WIZARD_MESSAGES), getFormatter()]);
 
@@ -52,7 +63,11 @@ export async function ModuleRail({
           <WizardModuleGroup
             key={group}
             name={t(`rail.groups.${group}`)}
-            count={groupCountWords(t, counts)}
+            count={
+              group === MODULE_GROUP.COMPREHENSIVE && comprehensiveAddedAt !== null
+                ? addedWords(t, format, comprehensiveAddedAt)
+                : groupCountWords(t, counts)
+            }
             segments={members.map((summary) => ({ key: summary.module, state: moduleStateOf({ summary, checks }) }))}
             note={rollUpNote(t, format, counts)}
           >

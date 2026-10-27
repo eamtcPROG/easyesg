@@ -46,6 +46,7 @@ describe('resumeModule', () => {
   const summary = (module: string, answered: number, lastAnsweredAt: number | null, total = 3) => ({
     module,
     answered,
+    comprehensiveAnswered: 0,
     total,
     lastAnsweredAt,
     // FR-28's applicability reaches the list since task 91.3. A module the rules ruled out counts

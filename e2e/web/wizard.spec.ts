@@ -463,6 +463,86 @@ test('B2 renders and stores each of its kinds, with no code of its own (UC-20)',
 });
 
 /**
+ * C1 end to end (UC-183, FR-177; task 79.1) — **B2's proof for the first Comprehensive module**, and its opening.
+ *
+ * C1 is four narratives with no axis, unit or applicability rule — kinds the anatomy has rendered since B1 — so, as on
+ * B2, the only way to know it needs no code is to drive it (`architecture.md` §12.5.6's task-79.1 row). The report is
+ * seeded Basic and raised through the module list, the product's one path to a report the module was *added* to: the
+ * date C1 opens with is the trail's record of that raise, which a seeded scope would not have written.
+ */
+test('C1 opens by saying when the Comprehensive Module was added, then renders and stores its four narratives (UC-183)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'c1');
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/B1`);
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+  const add = rail.getByRole('button', { name: 'Adăugați C1 – C9' });
+  await untilHydrated(add);
+  await add.click();
+  await page.waitForURL(`**/reports/${reportId}/C1`);
+
+  // *20 · S-07*'s opening while nothing only the Comprehensive Module asks is answered: the day it was added, on the
+  // group's head in place of its count and as C1's lead in place of its summary. The day is today's in the configured
+  // zone; matched by shape so a run crossing midnight cannot fail it.
+  const opening =
+    /^Modulul cuprinzător a fost adăugat la \d{1,2} \p{L}+ \d{4}\. Nimic din ce ați răspuns în Modulul de bază nu s-a schimbat\.$/u;
+  const summary = 'Ce produceți și vindeți, pentru cine și cum se leagă strategia companiei de sustenabilitate.';
+  await expect(page.getByText(opening)).toBeVisible();
+  await expect(page.getByText(summary, { exact: true })).toHaveCount(0);
+  await expect(rail.getByText(/^Adăugat la \d{1,2} /u)).toBeVisible();
+
+  // EFRAG's ¶47(a) … (d), in the taxonomy's order, each a narrative under its label in the reader's language. ¶47(d)'s
+  // yes/no is the template's, not a field (UC-183 4a).
+  const fields = [
+    'Descrierea grupelor semnificative de produse și/sau servicii oferite',
+    'Descrierea piețelor semnificative pe care operează întreprinderea',
+    'Descrierea principalelor relații de afaceri (de exemplu, furnizori-cheie, clienți, canale de distribuție)',
+    'Descrierea elementelor-cheie ale strategiei care privesc sau afectează aspectele de sustenabilitate',
+  ];
+  const main = page.getByRole('main');
+  await expect(main.getByRole('textbox')).toHaveCount(fields.length);
+  for (const [index, name] of fields.entries()) {
+    await expect(main.getByRole('textbox').nth(index)).toHaveAccessibleName(name);
+  }
+
+  const products = main.getByRole('textbox', { name: fields[0] });
+  await products.fill('Pâine și covrigi, 61 % din venituri.');
+  // Blur is the commit (UX-34), and this is the step's only typed field.
+  await products.blur();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, { timeout: 15_000 });
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey: 'DescriptionOfSignificantGroupsOfProductsAndOrServicesOffered',
+          })
+        )?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('Pâine și covrigi, 61 % din venituri.');
+
+  // Answered, the opening gives way to *25 · S-07 · C1*'s: the summary, and the group's head says no date.
+  await page.reload();
+  await expect(page.getByText(summary, { exact: true })).toBeVisible();
+  await expect(page.getByText(opening)).toHaveCount(0);
+  await expect(rail.getByText(/^Adăugat la /u)).toHaveCount(0);
+
+  // *Stored in three locales* — the label is the one string the app does not own (task 33.2), asserted with the value.
+  await page.goto(`/en/reports/${reportId}/C1`);
+  await expect(
+    page.getByRole('textbox', { name: 'Description of significant groups of products and/or services offered' }),
+  ).toHaveValue('Pâine și covrigi, 61 % din venituri.');
+  await page.goto(`/ru/reports/${reportId}/C1`);
+  await expect(
+    page.getByRole('textbox', { name: 'Описание значимых групп предлагаемых продуктов и/или услуг' }),
+  ).toHaveValue('Pâine și covrigi, 61 % din venituri.');
+});
+
+/**
  * B3's energy breakdown in a browser (UC-21, FR-24; task 36.4).
  *
  * **The one claim that spans everything this task built**: the extractor now emits the axis

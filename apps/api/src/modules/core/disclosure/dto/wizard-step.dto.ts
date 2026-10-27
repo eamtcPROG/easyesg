@@ -131,6 +131,13 @@ export class DisclosureModuleSummaryDto {
   readonly total: number;
 
   @ApiProperty({
+    description:
+      'Of the fields answered, those only the Comprehensive Module asks — the answers a report lowered to Basic keeps ' +
+      'hidden (FR-177). Zero on every Basic module; on C3, short of answered by the figures it shares with B3.',
+  })
+  readonly comprehensiveAnswered: number;
+
+  @ApiProperty({
     nullable: true,
     type: Number,
     description:
@@ -170,6 +177,7 @@ export class DisclosureModuleSummaryDto {
     this.module = summary.module;
     this.answered = summary.answered;
     this.total = summary.total;
+    this.comprehensiveAnswered = summary.comprehensiveAnswered;
     this.lastAnsweredAt = summary.lastAnsweredAt;
     this.applicable = summary.applicable;
     this.omitted = summary.omitted;

@@ -4053,6 +4053,8 @@ export interface components {
             reportingPeriodId: string;
             /** @enum {string} */
             scope: "basic" | "basic_and_comprehensive";
+            /** @description When the Comprehensive Module was last added to the report after it was created (UC-192) — Unix epoch milliseconds, UTC. Read from the report’s change trail. Null on a Basic report, on one created with the module, and on one whose trail no longer holds the change. */
+            comprehensiveAddedAt: number | null;
             /**
              * @description Where the report stands. Open and locked follow the reporting period’s lock, which is their only writer (FR-22). An open report whose latest validation run left nothing outstanding reads ready to file (FR-41, 182/19) — read, never written. A report its reporter marked filed reads filed, whether its period is open or locked (task 47.5).
              * @enum {string}
@@ -4156,6 +4158,8 @@ export interface components {
             answered: number;
             /** @description Fields the pinned version puts in this module. */
             total: number;
+            /** @description Of the fields answered, those only the Comprehensive Module asks — the answers a report lowered to Basic keeps hidden (FR-177). Zero on every Basic module; on C3, short of answered by the figures it shares with B3. */
+            comprehensiveAnswered: number;
             /** @description Unix epoch milliseconds, UTC — when the module's most recent answer was stored, or null where nothing in it is answered. Where work last happened is where a returning reporter resumes (FR-39). */
             lastAnsweredAt: number | null;
             /** @description Whether the module has anything to answer (FR-28). True while any one of its elements applies; answered and total above count applicable elements only. */

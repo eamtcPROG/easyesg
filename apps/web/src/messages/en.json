@@ -1424,6 +1424,7 @@
           "comprehensive": "Comprehensive Module"
         },
         "count": "{done} of {counted} done",
+        "added": "Added {date}",
         "discounted": "Not counted: {modules}.",
         "waiting": "{modules} {count, plural, one {waits} other {wait}} on your B1 answers.",
         "footer": "Answer them in any order. Only the modules that depend on your B1 answers wait for them.",
@@ -1518,6 +1519,7 @@
       "step": {
         "outstanding": "{count, plural, =0 {Nothing left to answer} one {One field left} other {# fields left}}",
         "position": "Module {position} of {total}",
+        "added": "The Comprehensive Module was added on {date}. Nothing you answered in the Basic Module changed.",
         "foot": {
           "next": "Next: {label}",
           "nextShort": "Next: {module}",

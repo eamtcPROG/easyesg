@@ -594,7 +594,10 @@ Four things to know before touching it:
   elements B3 and C3 share stay writable. Lowering touches no answer; `ChangeReportScope` rewrites B1's
   `BasisForPreparation` to the scope's option in the same transaction **only where B1 holds a row**, because any stored
   record key reads as *B1 opened* (task 180.2), and the write admits that field only as the scope's option
-  (`statesBasis`). A suite wanting a generic B1 field must not use the basis.
+  (`statesBasis`). A suite wanting a generic B1 field must not use the basis. **Since task 79.1** the report serves
+  `comprehensiveAddedAt`, the trail's latest Basic-to-Comprehensive change of `scope` (the task-30.3 row's rule: read
+  from `core.field_change`, never a column), and each module summary `comprehensiveAnswered` — the answers only the
+  Comprehensive scope asks, which C3's figures shared with B3 are not.
 - **The writes admit the editor**, which is the opposite of the split `EntitiesController` and
   `PeriodsController` carry — master data is OA-owned (D-2), a report is the Contributor's workspace
   (UC-18, FR-26). A create route the RC could not reach means the author cannot start their report.

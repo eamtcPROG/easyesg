@@ -162,6 +162,16 @@ export class ReportResponseDto {
   readonly scope: ReportScope;
 
   @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      `When the Comprehensive Module was last added to the report after it was created (UC-192) — ${EPOCH_MILLIS} ` +
+      'Read from the report’s change trail. Null on a Basic report, on one created with the module, and on one whose ' +
+      'trail no longer holds the change.',
+  })
+  readonly comprehensiveAddedAt: EpochMillis | null;
+
+  @ApiProperty({
     enum: STATUSES,
     description:
       'Where the report stands. Open and locked follow the reporting period’s lock, which is ' +
@@ -243,6 +253,7 @@ export class ReportResponseDto {
     this.id = report.id;
     this.reportingPeriodId = report.reportingPeriodId;
     this.scope = report.scope;
+    this.comprehensiveAddedAt = report.comprehensiveAddedAt?.getTime() ?? null;
     this.status = statusAsRead({ ...report, filed: report.filing !== null });
     this.locked = report.status === REPORT_STATUS.LOCKED;
     this.exported = report.exported;

@@ -324,7 +324,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-177 — The Comprehensive Module
 
-**Status.** Partial — delivered 31.3, 33.1, 33.3, 36.4, 78.1 … 78.4, 179 · remaining 79.1 … 79.9, 80.1 … 80.3, 81.1
+**Status.** Partial — delivered 31.3, 33.1, 33.3, 36.4, 78.1 … 78.4, 79.1, 179 · remaining 79.2 … 79.9, 80.1 … 80.3, 81.1
 
 **Obligation.** The system shall support the VSME Comprehensive Module C1 … C9 as an additive extension of Basic, selected by the report's scope flag at creation or on a report in progress, and authored, made conditional, validated and exported by the same mechanisms as B1 … B11.
 
@@ -339,8 +339,8 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Behaviour.**
 1. The scope is a column on the report, checked by a constraint and audited on change (task-31.3 row). It also sets B1's basis for preparation (FR-27): a change rewrites B1's stored basis in the same transaction where B1 holds one, and never writes one where B1 was never opened (task-78 row (1)).
 2. The C1 … C9 elements are taxonomy data in every registered version. The api serves every module, and the module list shows a Basic report's eleven (task-179.1 row).
-3. **Raising** the scope keeps every B answer and re-runs applicability (task 78.3). On S-07 it is the module list's *Add C1 – C9*, beneath the Basic group, landing on C1 (task-78 row (2)).
-4. **Lowering** the scope is admitted behind a consequence dialogue. C answers are retained, not shown, not counted and not exported, and are restored on raising again (§12.5.6 task-182 row (10)). On S-07 it is the bar's ⋯, the dialogue naming the C modules that hold answers (task-78 row (2)).
+3. **Raising** the scope keeps every B answer and re-runs applicability (task 78.3). On S-07 it is the module list's *Add C1 – C9*, beneath the Basic group, landing on C1 (task-78 row (2)). Until a Comprehensive answer exists, the module list's Comprehensive group and C1's opening say when the module was added, read from the change trail (task-79.1 row (1)).
+4. **Lowering** the scope is admitted behind a consequence dialogue. C answers are retained, not shown, not counted and not exported, and are restored on raising again (§12.5.6 task-182 row (10)). On S-07 it is the bar's ⋯, the dialogue naming the C modules that hold answers (task-78 row (2)) — answers to elements only the Comprehensive scope asks, so B3's emissions, which C3 shares, name no C module (task-79.1 row).
 5. **A write to a C element on a Basic report is refused**, and a C step read on it answers out of scope (row (11)). A C element is one no module of which the scope asks, so the elements B3 and C3 share stay writable (task-78 row).
 6. With billing disabled, Comprehensive stays authorable (NFR-1). Gating it by plan is task 81.1's.
 7. Each C module's use case is specified by its own slice before it is built (row (8)).
@@ -358,8 +358,9 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-3** Given C answers, when the scope is lowered, then they are kept and not shown or exported. When the scope is raised again, they reappear. *(source: §12.5.6 task-182 row (10))*
 - **AC-4** Given a Basic report, when a C element is written, then it is refused with 409. *(source: §12.5.6 task-182 row (11))*
 - **AC-5** Given a Comprehensive report, then FR-28's applicability, validation and both exports treat C1 … C9 by the same mechanisms as B1 … B11. *(source: FR text)* Unmet until 80.1 … 80.3.
-- **AC-6** Given the three locales, then every C module is authorable in each. *(source: FR text)* Unmet until 79.x.
+- **AC-6** Given the three locales, then every C module is authorable in each. *(source: FR text)* Met for C1 by 79.1; unmet for C2 … C9 until 79.2 … 79.9.
 - **AC-7** Given a report whose B1 has been opened, when the scope is changed in either direction, then B1's basis for preparation reads the new scope's option, and the change is in the trail. *(source: §12.5.6 task-78 row (1))*
+- **AC-8** Given a report whose scope was raised after it was created and that holds no answer to an element only the Comprehensive scope asks, then the module list's Comprehensive group and C1's opening say when the module was added; once such an answer exists, they read the group's count and C1's summary. A report created with the Comprehensive Module never says it. *(source: §12.5.6 task-79.1 row (1))*
 
 **History.**
 - 25 Aug 2026 · project owner · promoted from §8 into MVP, keeping its identifier · `problem_overview.md` OQ-12
@@ -367,6 +368,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - 5 Sep 2026 · review · the creation flow sends no scope, recorded as a deferral · §12.5.6 task-32.3 row
 - 5 Oct 2026 · project owner · scope asked at creation; lowering admitted with C answers hidden; C writes refused on Basic; task 78 re-cut · §12.5.6 task-182 row (8) … (12)
 - 27 Oct 2026 · project owner · the scope sets B1's basis for preparation; raised from the module list and lowered from the bar's ⋯; the *added on* date waits for C1 · §12.5.6 task-78 row
+- 27 Oct 2026 · project owner · *added on* shows until a Comprehensive answer exists, read from the trail; a C module holds answers only to elements the Comprehensive scope alone asks · §12.5.6 task-79.1 row
 
 ### FR-210 — Delete a report
 

@@ -70,6 +70,12 @@ export interface DisclosureModuleSummary {
   readonly answered: number;
   readonly total: number;
   /**
+   * How many of `answered` are elements only the Comprehensive scope asks (task 79.1; §12.5.6's task-79.1 row) — the
+   * answers a lowered scope hides (task 78.3). Zero on every Basic module, and on C3 short of `answered` by the elements
+   * it shares with B3 (task 36.4), which a Basic report asks too.
+   */
+  readonly comprehensiveAnswered: number;
+  /**
    * When this module's most recent answer was stored — epoch milliseconds — or `null` where nothing
    * in it has been answered (task 35.3; UC-36, FR-39). **Position is where work last happened**:
    * the module with the latest value is where a returning reporter is put, on any device, and

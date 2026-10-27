@@ -66,6 +66,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
   interface ModuleSummary {
     omitted: boolean;
     module: string; answered: number; total: number; lastAnsweredAt: number | null;
+    /** Of `answered`, the elements only the Comprehensive scope asks (task 79.1). */
+    comprehensiveAnswered: number;
     applicable: boolean; applicabilityCause: Cause | null;
   }
   interface Field {
@@ -2210,6 +2212,61 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       ]);
       expect(trail[2]?.occurred_at).toEqual(trail[1]?.occurred_at);
       expect(trail[1]?.occurred_at).not.toEqual(trail[0]?.occurred_at);
+    });
+
+    /** The report as S-07 reads it — its `comprehensiveAddedAt` is what is under test. */
+    const addedAtOf = async (reportId: string): Promise<number | null> =>
+      objectOf<{ comprehensiveAddedAt: number | null }>(
+        (await http().get(`/api/v1/reports/${reportId}`).set(editor.authorization).expect(200)).body,
+      ).comprehensiveAddedAt;
+    /** The latest raise the trail holds for the report, read as its owner — the read must agree with it. */
+    const latestRaise = async (reportId: string): Promise<number | undefined> => {
+      const rows = (await asOrganization(owner, ORG, (run) =>
+        run(
+          `SELECT occurred_at FROM core.field_change
+            WHERE record_id = $1 AND field_name = 'scope' AND new_value = $2 AND operation = 'UPDATE'
+            ORDER BY occurred_at DESC LIMIT 1`,
+          [reportId, REPORT_SCOPE.BASIC_AND_COMPREHENSIVE],
+        ))) as { occurred_at: Date }[];
+      return rows[0]?.occurred_at.getTime();
+    };
+
+    it('says when the Comprehensive Module was added, from the trail — never for a report created with it, nor once lowered (task 79.1)', async () => {
+      const created = await createReport(await openPeriod(2025), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      expect(await addedAtOf(created)).toBeNull();
+
+      const reportId = await createReport(await openPeriod(2026));
+      expect(await addedAtOf(reportId)).toBeNull();
+
+      await setScope(reportId, REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      const first = await addedAtOf(reportId);
+      expect(first).not.toBeNull();
+      expect(first).toBe(await latestRaise(reportId));
+
+      // Lowered, it was not added; raised again, it was added then — the latest raise, not the first.
+      await setScope(reportId, REPORT_SCOPE.BASIC);
+      expect(await addedAtOf(reportId)).toBeNull();
+      await setScope(reportId, REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      const again = await addedAtOf(reportId);
+      expect(again).toBe(await latestRaise(reportId));
+      expect(again).toBeGreaterThan(first ?? Number.POSITIVE_INFINITY);
+    });
+
+    it('counts apart the answers only the Comprehensive scope asks — a figure C3 shares with B3 is not one (task 79.1)', async () => {
+      const reportId = await createReport(await openPeriod(2026), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      const summaryOf = async (module: string) =>
+        objectsOf<ModuleSummary>(
+          (await http().get(`/api/v1/reports/${reportId}/modules`).set(editor.authorization).expect(200)).body,
+        ).find((summary) => summary.module === module);
+
+      await putValues(reportId, [{ elementKey: SHARED, valueNumeric: '4.2', state: DISCLOSURE_STATE.OK }]).expect(200);
+      expect(await summaryOf('C3')).toMatchObject({ answered: 1, comprehensiveAnswered: 0 });
+      expect(await summaryOf('B3')).toMatchObject({ answered: 1, comprehensiveAnswered: 0 });
+
+      await putValues(reportId, [
+        { elementKey: STRATEGY, valueText: 'Pâine și covrigi', state: DISCLOSURE_STATE.OK },
+      ]).expect(200);
+      expect(await summaryOf('C1')).toMatchObject({ answered: 1, comprehensiveAnswered: 1 });
     });
   });
 });

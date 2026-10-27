@@ -8,6 +8,8 @@ import ro from '@/messages/ro.json';
 import ru from '@/messages/ru.json';
 import { NAMED_MODULES } from './module-names';
 import {
+  addedOpening,
+  addedWords,
   groupCountWords,
   moduleLabel,
   moduleName,
@@ -104,6 +106,23 @@ describe('module words', () => {
     );
     expect(moduleStatus(tRo, { state: WIZARD_STEP_STATE.IN_PROGRESS, checked: checked(25) })).toBe(
       'În lucru · 25 de câmpuri rămase',
+    );
+  });
+});
+
+describe('when the Comprehensive Module was added (task 79.1)', () => {
+  // The configured zone, as `i18n/request.ts` gives the server's formatter: the last evening of 2 April in UTC is
+  // already 3 April in Chișinău, which is the day the reader lived it.
+  const ADDED = Date.UTC(2026, 3, 2, 22, 30);
+  const formatIn = (locale: 'en' | 'ro') => createFormatter({ locale, formats, timeZone: 'Europe/Chisinau' });
+
+  it('says the day on the group’s head and opens C1 with it, in the reader’s words', () => {
+    expect(addedWords(translator('en', en), formatIn('en'), ADDED)).toBe('Added Apr 3, 2026');
+    expect(addedOpening(translator('en', en), formatIn('en'), ADDED)).toBe(
+      'The Comprehensive Module was added on April 3, 2026. Nothing you answered in the Basic Module changed.',
+    );
+    expect(addedOpening(translator('ro', ro), formatIn('ro'), ADDED)).toBe(
+      'Modulul cuprinzător a fost adăugat la 3 aprilie 2026. Nimic din ce ați răspuns în Modulul de bază nu s-a schimbat.',
     );
   });
 });

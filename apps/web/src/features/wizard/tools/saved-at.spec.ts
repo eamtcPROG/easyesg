@@ -5,6 +5,7 @@ import { initialSavedAt, lastSavedAt } from './saved-at';
 const summaryAt = (lastAnsweredAt: number | null): DisclosureModuleSummary => ({
   module: 'B1',
   answered: 1,
+  comprehensiveAnswered: 0,
   total: 2,
   lastAnsweredAt,
   applicable: true,
