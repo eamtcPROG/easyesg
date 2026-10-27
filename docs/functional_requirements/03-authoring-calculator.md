@@ -122,9 +122,9 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-27 — B1 pre-filled from the company record
 
-**Status.** Built — delivered 31.1, 36.2, 91.2, 180.2, 180.3
+**Status.** Built — delivered 31.1, 36.2, 91.2, 180.2, 180.3, 78.3
 
-**Obligation.** The system shall pre-fill B1 from the reporting entity's point-in-time snapshot (FR-18), keep every pre-filled value editable in the report without altering the entity record, and refresh the snapshot from the entity until B1 is first opened.
+**Obligation.** The system shall pre-fill B1 from the reporting entity's point-in-time snapshot (FR-18), keep every pre-filled value editable in the report without altering the entity record, and refresh the snapshot from the entity until B1 is first opened. The basis for preparation is the report's scope rather than the record's, and follows it (FR-177).
 
 | | |
 |---|---|
@@ -134,7 +134,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 **Behaviour.**
 1. The step read serves a `defaultValue` per field, resolved from the period's snapshot and the report's scope. It is `null` once any row for that field exists, in any state. The api never writes on a read (task-91.2 row).
-2. Legal form maps to EFRAG's five members through the country's legal-form artefact. An activity code with no NACE member is left out and logged. The basis for preparation defaults from the scope (Basic → Option A; Basic-and-Comprehensive → Option B).
+2. Legal form maps to EFRAG's five members through the country's legal-form artefact. An activity code with no NACE member is left out and logged. The basis for preparation defaults from the scope (Basic → Option A; Basic-and-Comprehensive → Option B), **and follows it**: it is not typed into in B1, a scope change rewrites it where B1 holds it, and a write naming the other option is refused (§12.5.6 task-78 row (1)).
 3. A shown default becomes the report's answer when the reporter leaves the field, and otherwise **when its step opens**. An unvisited step holds nothing (task-36.2 row).
 4. **The snapshot follows the entity until B1 is opened.** Saving the entity re-takes the snapshot of each unlocked period whose report holds none of B1's record answers. After that, a correction does not re-fill. A locked period's snapshot never moves (task-180.2 row).
 5. A pre-filled value is marked as coming from the company record (task-180.3 row).
@@ -152,6 +152,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - 2 Sep 2026 · project owner · "the entity master record" means the period's point-in-time snapshot · §12.5.6 task-91.2 rows
 - 3 Sep 2026 · project owner · a shown default commits when its step opens · §12.5.6 task-36.2 row
 - 30 Sep 2026 · project owner · the snapshot follows the entity until B1 is opened · §12.5.6 task-180.2 row
+- 27 Oct 2026 · project owner · the basis for preparation follows the report's scope and is not typed into · §12.5.6 task-78 row (1)
 
 ### FR-28 — Conditional applicability
 
@@ -323,7 +324,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-177 — The Comprehensive Module
 
-**Status.** Partial — delivered 31.3, 33.1, 33.3, 36.4, 78.2, 179 · remaining 78.1, 78.3, 78.4, 79.1 … 79.9, 80.1 … 80.3, 81.1
+**Status.** Partial — delivered 31.3, 33.1, 33.3, 36.4, 78.1 … 78.4, 179 · remaining 79.1 … 79.9, 80.1 … 80.3, 81.1
 
 **Obligation.** The system shall support the VSME Comprehensive Module C1 … C9 as an additive extension of Basic, selected by the report's scope flag at creation or on a report in progress, and authored, made conditional, validated and exported by the same mechanisms as B1 … B11.
 
@@ -336,16 +337,18 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 **Inputs.** Scope: `basic` or `basic_and_comprehensive`, defaulting to `basic`.
 
 **Behaviour.**
-1. The scope is a column on the report, checked by a constraint and audited on change (task-31.3 row). It also sets B1's basis for preparation (FR-27).
+1. The scope is a column on the report, checked by a constraint and audited on change (task-31.3 row). It also sets B1's basis for preparation (FR-27): a change rewrites B1's stored basis in the same transaction where B1 holds one, and never writes one where B1 was never opened (task-78 row (1)).
 2. The C1 … C9 elements are taxonomy data in every registered version. The api serves every module, and the module list shows a Basic report's eleven (task-179.1 row).
-3. **Raising** the scope keeps every B answer and re-runs applicability (task 78.3).
-4. **Lowering** the scope is admitted behind a consequence dialogue. C answers are retained, not shown, not counted and not exported, and are restored on raising again (§12.5.6 task-182 row (10)).
-5. **A write to a C element on a Basic report is refused**, and a C step read on it answers out of scope (row (11)).
+3. **Raising** the scope keeps every B answer and re-runs applicability (task 78.3). On S-07 it is the module list's *Add C1 – C9*, beneath the Basic group, landing on C1 (task-78 row (2)).
+4. **Lowering** the scope is admitted behind a consequence dialogue. C answers are retained, not shown, not counted and not exported, and are restored on raising again (§12.5.6 task-182 row (10)). On S-07 it is the bar's ⋯, the dialogue naming the C modules that hold answers (task-78 row (2)).
+5. **A write to a C element on a Basic report is refused**, and a C step read on it answers out of scope (row (11)). A C element is one no module of which the scope asks, so the elements B3 and C3 share stay writable (task-78 row).
 6. With billing disabled, Comprehensive stays authorable (NFR-1). Gating it by plan is task 81.1's.
 7. Each C module's use case is specified by its own slice before it is built (row (8)).
 
 **Refusals.**
 - A C write on a Basic report → 409 `conflict` (78.1)
+- A C step read on a Basic report → 409 `conflict` (78.1; task-78 row)
+- A B1 basis for preparation naming the option the scope does not → 409 `conflict` (78.3; task-78 row (1))
 - A scope change on a locked period → 409 `report-not-editable`
 - A second report for a period → 409 `report-already-exists`
 
@@ -356,12 +359,14 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-4** Given a Basic report, when a C element is written, then it is refused with 409. *(source: §12.5.6 task-182 row (11))*
 - **AC-5** Given a Comprehensive report, then FR-28's applicability, validation and both exports treat C1 … C9 by the same mechanisms as B1 … B11. *(source: FR text)* Unmet until 80.1 … 80.3.
 - **AC-6** Given the three locales, then every C module is authorable in each. *(source: FR text)* Unmet until 79.x.
+- **AC-7** Given a report whose B1 has been opened, when the scope is changed in either direction, then B1's basis for preparation reads the new scope's option, and the change is in the trail. *(source: §12.5.6 task-78 row (1))*
 
 **History.**
 - 25 Aug 2026 · project owner · promoted from §8 into MVP, keeping its identifier · `problem_overview.md` OQ-12
 - 29 and 31 Aug 2026 · project owner · the flag ships with the report table; a report is created explicitly with its scope · §12.5.6 task-31.3 rows
 - 5 Sep 2026 · review · the creation flow sends no scope, recorded as a deferral · §12.5.6 task-32.3 row
 - 5 Oct 2026 · project owner · scope asked at creation; lowering admitted with C answers hidden; C writes refused on Basic; task 78 re-cut · §12.5.6 task-182 row (8) … (12)
+- 27 Oct 2026 · project owner · the scope sets B1's basis for preparation; raised from the module list and lowered from the bar's ⋯; the *added on* date waits for C1 · §12.5.6 task-78 row
 
 ### FR-210 — Delete a report
 

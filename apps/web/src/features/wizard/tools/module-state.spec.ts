@@ -2,6 +2,7 @@ import { COMPLETION_STATUS, REPORT_SCOPE, type DisclosureModuleSummary, type Mod
 import { describe, expect, it } from 'vitest';
 import {
   MODULE_GROUP,
+  comprehensiveWithAnswers,
   groupCount,
   moduleChecksOf,
   modulesInScope,
@@ -166,5 +167,21 @@ describe('modulesInScope', () => {
     expect(
       modulesInScope({ modules: served, scope: REPORT_SCOPE.BASIC_AND_COMPREHENSIVE }).map((m) => m.module),
     ).toEqual(['B1', 'B2', 'B11', 'C1', 'C9']);
+  });
+});
+
+describe('comprehensiveWithAnswers (task 78.3)', () => {
+  it('names the Comprehensive modules holding an answer, in the order served, and no Basic one', () => {
+    const served = [
+      summary({ module: 'B1', answered: 4 }),
+      summary({ module: 'C1', answered: 2 }),
+      summary({ module: 'C2', answered: 0 }),
+      summary({ module: 'C9', answered: 1 }),
+    ];
+    expect(comprehensiveWithAnswers(served)).toEqual(['C1', 'C9']);
+  });
+
+  it('names none where no Comprehensive module holds one', () => {
+    expect(comprehensiveWithAnswers([summary({ module: 'B1', answered: 3 }), summary({ module: 'C1' })])).toEqual([]);
   });
 });

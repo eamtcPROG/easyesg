@@ -182,7 +182,7 @@ traps each one left — grouped by area rather than by the task that built it.
   reads as the document prints it; a closed vocabulary from the shared catalogue's `vocabulary` namespace, which
   `apps/web` reads too; an activity code with the classifier's label (§12.5.6's task-84 row).
 - **Not live**: billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18, A-19 and A-21 (67 … 70), the production edge and
-  deploy (71 … 73, staging's three sub-steps aside — architecture.md §10.5), the public tier (74 … 77), the Comprehensive Module (78 … 81), the advisor domain
+  deploy (71 … 73, staging's three sub-steps aside — architecture.md §10.5), the public tier (74 … 77), the Comprehensive Module's content (79 … 81), the advisor domain
   (116 … 121).
 
 ### Traps and load-bearing facts, by area
@@ -588,6 +588,13 @@ Four things to know before touching it:
   (`isLineRefusal`) name the line. **That extension is how autosave tells an item's refusal from the report's**, so a
   new per-value check belongs in `valueRefusal` and a new line refusal in `isLineRefusal` — thrown anywhere else, it
   names no item and holds the reporter's whole queue.
+- **The scope drives what a report holds** (task 78; §12.5.6's task-182 report-authoring row (10), (11) and its task-78
+  row). `scopeAsks` over an element's **modules** decides: a write to an element no module of which the scope asks is
+  refused per value, 409 `conflict` (`valueRefusal`), and the step read for such a module is refused 409 too — the eight
+  elements B3 and C3 share stay writable. Lowering touches no answer; `ChangeReportScope` rewrites B1's
+  `BasisForPreparation` to the scope's option in the same transaction **only where B1 holds a row**, because any stored
+  record key reads as *B1 opened* (task 180.2), and the write admits that field only as the scope's option
+  (`statesBasis`). A suite wanting a generic B1 field must not use the basis.
 - **The writes admit the editor**, which is the opposite of the split `EntitiesController` and
   `PeriodsController` carry — master data is OA-owned (D-2), a report is the Contributor's workspace
   (UC-18, FR-26). A create route the RC could not reach means the author cannot start their report.

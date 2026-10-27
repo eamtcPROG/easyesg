@@ -49,6 +49,7 @@ const field = (over: Partial<DisclosureField> & { elementKey: string }): Disclos
   notAvailableReason: null,
   carriedForward: false,
   fromRecord: false,
+  followsScope: false,
   applicable: true,
   applicabilityCause: null,
   ...over,

@@ -40,6 +40,7 @@ const field = (over: Partial<DisclosureField>): DisclosureField => ({
   notAvailableReason: null,
   carriedForward: false,
   fromRecord: false,
+  followsScope: false,
   applicable: false,
   applicabilityCause: null,
   ...over,

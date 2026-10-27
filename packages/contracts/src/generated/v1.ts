@@ -1146,7 +1146,7 @@ export interface paths {
         head?: never;
         /**
          * Change the report’s module scope (FR-177)
-         * @description Comprehensive may be added to a report already in progress. The pinned versions are not editable: DR-4 moves them only by an explicit migration run (FR-69), so no field on this request can name one and the application role holds no privilege to write one.
+         * @description Comprehensive may be added to a report already in progress, or taken off it: no answer is removed either way, C answers being kept and not shown while the scope is Basic. B1’s basis for preparation follows the scope, rewritten in the same transaction where B1 holds one (FR-27). The pinned versions are not editable: DR-4 moves them only by an explicit migration run (FR-69), so no field on this request can name one and the application role holds no privilege to write one.
          */
         patch: operations["ReportsController_update"];
         trace?: never;
@@ -4282,6 +4282,8 @@ export interface components {
             carriedForward: boolean;
             /** @description Whether the value shown is what the company record gives — the record’s default not yet stored, or a stored answer still equal to it. False once the reporter changes it, and for what the record does not answer: the report’s own scope and the template’s answers are not the company’s. */
             fromRecord: boolean;
+            /** @description Whether the answer is the report’s module scope rather than the reporter’s — B1’s basis for preparation (FR-27, FR-177). Shown and never typed into: a write naming another option is refused, and changing the report’s scope rewrites a stored answer with it. */
+            followsScope: boolean;
             /** @description Whether this field applies to this reporter (FR-28). False does not mean empty: a value entered before the condition turned is retained and served as stored (UX-28), so a retained answer is applicable false beside a state that is not missing. */
             applicable: boolean;
             /** @description Why, for the fields a rule governs; null for the ones no rule names. */
@@ -8346,7 +8348,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The reporting period is locked. */
+            /** @description The reporting period is locked, or the report’s entity is archived. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -8534,6 +8536,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description A Comprehensive module on a report whose scope is Basic (FR-177): it is not served until the scope asks it. Answers given before the scope was lowered are kept, and served again once it is raised. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     WizardController_write: {
@@ -8576,7 +8585,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The reporting period is locked (FR-22), with no `refused` — or, listing them in `refused`, every value reached a figure the calculator computed, whose replacement is the override route. */
+            /** @description The reporting period is locked (FR-22), with no `refused` — or, listing them in `refused`, nothing was stored and the first value was refused for the report’s state: a figure the calculator computed, whose replacement is the override route; a Comprehensive element on a Basic report (FR-177); or B1’s basis for preparation naming an option the report’s scope does not, the scope being changed on the report itself (FR-27). */
             409: {
                 headers: {
                     [name: string]: unknown;

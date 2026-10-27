@@ -416,8 +416,9 @@ export function StepFields({
         // **A derived figure is read-only even on an editable step** (FR-29, task 36.10). The api
         // refuses a write to one, so an input here would be a control whose every use is rejected;
         // UX-13's own rule is that read-only keeps the layout and removes the affordance, which is
-        // exactly what a computed figure wants — it is shown, beside the values it came from.
-        readOnly={readOnly || derived.has(served.elementKey)}
+        // exactly what a computed figure wants — it is shown, beside the values it came from. **So is
+        // B1's basis for preparation since task 78.3**: it is the report's scope, which the api says.
+        readOnly={readOnly || derived.has(served.elementKey) || served.followsScope}
         chosenUnit={units[served.elementKey] ?? null}
         onChooseUnit={(code) => chooseUnit(served.elementKey, code)}
         prior={priorValues.get(writeKey(served)) ?? null}

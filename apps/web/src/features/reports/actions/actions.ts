@@ -17,14 +17,9 @@ import { api } from '@/server/api/api-client';
  * filing two disagreeing pins with nothing failing, and `esg_app` holds no `UPDATE` on either
  * column — this seam simply has nothing to send.
  *
- * **`scope` is not sent, and that is a recorded deferral rather than a decision the requirement
- * supports.** It defaults to `basic` at the API. FR-177's acceptance criteria say the flag is
- * *"settable at creation"*, so this leaves that clause unmet; `architecture.md` §12.5.6's task-32.3
- * row carries what is assumed meanwhile — Comprehensive is added after the fact, which FR-177's own
- * text permits and the artboard states to the reader — and what changes if that is wrong. It also
- * records the gap the deferral rests on: **whether narrowing an existing report is refused, warned
- * about, or a consequence-disclosing action is task 78.1's open question**, and no task row owns
- * the creation-surface control at all.
+ * **`scope` is sent since task 78.4**, as S-39 chose it — Basic unless the reader chose otherwise (FR-177's *settable
+ * at creation*; §12.5.6's task-182 report-authoring row (9)), which closes task 32.3's recorded deferral. The api applies
+ * the same default to a request naming none.
  */
 export async function createReportAction(
   input: CreateReportRequest,

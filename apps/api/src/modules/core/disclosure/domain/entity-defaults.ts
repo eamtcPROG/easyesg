@@ -4,6 +4,7 @@ import {
   type ConsolidationBasis,
 } from '@api/modules/core/entity/models/reporting-entity.model';
 import { B1_ELEMENT } from '../models/b1-element.model';
+import { DISCLOSURE_STATE, type DisclosureValueContents } from '../models/disclosure-value.model';
 import type { EntitySnapshot } from '../models/entity-snapshot.model';
 import { REPORT_SCOPE, type ReportScope } from '../models/report.model';
 import type { DisclosureDefault } from '../models/wizard-step.model';
@@ -26,6 +27,29 @@ export const SCOPE_MEMBER: Readonly<Record<ReportScope, string>> = {
   [REPORT_SCOPE.BASIC]: 'OptionABasicModuleOnlyMember',
   [REPORT_SCOPE.BASIC_AND_COMPREHENSIVE]: 'OptionBBasicModuleAndComprehensiveModuleMember',
 };
+
+/**
+ * B1's basis for preparation as the report's scope states it — the member's qualified name, or `null` where the pinned
+ * version declares no such member (task 78.3; §12.5.6's task-78 row (1)).
+ *
+ * **One function for every reader of that fact**: the field's default below, the write that refuses another option, and
+ * the scope change that rewrites a stored one. Since task 78 the basis *follows* the scope rather than only defaulting
+ * from it, so three copies of the lookup would be three places for the filing to start stating two bases.
+ */
+export const basisForPreparationOf = (input: {
+  readonly registered: RegisteredTaxonomy;
+  readonly scope: ReportScope;
+}): string | null =>
+  memberOf(input.registered, { domain: B1_DOMAIN.BASIS_FOR_PREPARATION, member: SCOPE_MEMBER[input.scope] });
+
+/**
+ * Whether an answer states exactly this basis — the member, answered, and nothing beside it (task 78.3). What the write
+ * admits for the field, and what a scope change finds already true and leaves alone.
+ */
+export const statesBasis = (input: {
+  readonly contents: Pick<DisclosureValueContents, 'state' | 'valueText'>;
+  readonly basis: string;
+}): boolean => input.contents.state === DISCLOSURE_STATE.OK && input.contents.valueText === input.basis;
 
 /** FR-19's boundary, in EFRAG's words. */
 export const BASIS_MEMBER: Readonly<Record<ConsolidationBasis, string>> = {
@@ -139,10 +163,7 @@ export function entityDefaults(input: EntityDefaultsInput): {
     if (value !== null) defaults.set(key, [text(value)]);
   };
 
-  scalar(
-    B1_ELEMENT.BASIS_FOR_PREPARATION,
-    memberOf(registered, { domain: B1_DOMAIN.BASIS_FOR_PREPARATION, member: SCOPE_MEMBER[scope] }),
-  );
+  scalar(B1_ELEMENT.BASIS_FOR_PREPARATION, basisForPreparationOf({ registered, scope }));
   if (snapshot === null) return { defaults, unmappedActivityCodes: [] };
 
   scalar(

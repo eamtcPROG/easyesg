@@ -6,11 +6,8 @@ import { REPORT_STORE, type ReportStore } from '../interfaces/report-store.inter
 import { ReportNotFoundError } from '../errors/report.errors';
 // A value import, not `import type` — Nest reads `design:paramtypes` from the value graph, and an
 // erased type-only import leaves `Function` in the metadata (see `PeriodService`'s note).
-import {
-  CreateReport,
-  type CreateReportCommand,
-  type UpdateReportCommand,
-} from '../use-cases/create-report.use-case';
+import { CreateReport, type CreateReportCommand } from '../use-cases/create-report.use-case';
+import { ChangeReportScope, type ChangeReportScopeCommand } from '../use-cases/change-report-scope.use-case';
 import { MarkReportFiled, type MarkReportFiledCommand } from '../use-cases/mark-report-filed.use-case';
 import { SendReportReminder, type SendReportReminderCommand } from '../use-cases/send-report-reminder.use-case';
 import { WithdrawReportFiling } from '../use-cases/withdraw-report-filing.use-case';
@@ -42,6 +39,7 @@ export class ReportService {
     private readonly withdrawing: WithdrawReportFiling,
     private readonly deleting: DeleteReport,
     @Inject(TAXONOMY_REGISTRY) private readonly registry: TaxonomyRegistry,
+    private readonly scoping: ChangeReportScope,
   ) {}
 
   /** What a new report would pin today — the adoption a report's own pin is compared with (FR-51). */
@@ -71,8 +69,9 @@ export class ReportService {
     return this.reports.create(command);
   }
 
-  update(command: UpdateReportCommand): Promise<Report> {
-    return this.reports.update(command);
+  /** UC-192 (tasks 31.3, 78.3): the scope raised or lowered, and B1's stored basis with it. */
+  update(command: ChangeReportScopeCommand): Promise<Report> {
+    return this.scoping.execute(command);
   }
 
   /** UC-213 (task 192): the organization is the request's, for the notice the deletion withdraws. */

@@ -1209,10 +1209,21 @@
           "taxonomy": "Taxonomy",
           "hint": "They are taken from the period you choose and stay fixed for the life of the report, so a figure always means the same thing."
         },
-        "comprehensive": "You will start on B1. The Comprehensive module can be added later if a customer asks for it.",
         "submit": "Create the report",
         "cancel": "Cancel",
-        "loading": "Loading the entities and periods…"
+        "loading": "Loading the entities and periods…",
+        "scope": {
+          "title": "What the report covers",
+          "hint": "You will start on B1 either way. The Comprehensive Module can also be added or removed later, on the report itself.",
+          "basic": {
+            "label": "Basic Module",
+            "description": "The eleven sections, B1 to B11."
+          },
+          "comprehensive": {
+            "label": "Basic and Comprehensive Modules",
+            "description": "Those and C1 to C9: twenty sections."
+          }
+        }
       },
       "loading": "Loading the reports…",
       "searchLabel": "Search by entity or fiscal year",
@@ -1428,7 +1439,15 @@
         "all": "All modules",
         "more": "{count, plural, one {One more module} other {# more modules}}",
         "position": "{module} · {position} of {total}",
-        "close": "Close the module list"
+        "close": "Close the module list",
+        "offer": {
+          "absent": "The Comprehensive Module is not part of this report.",
+          "add": "Add C1 – C9",
+          "unreachable": {
+            "title": "The module could not be added",
+            "body": "We could not reach the server, so the report is as it was. Try again in a moment."
+          }
+        }
       },
       "modules": {
         "B1": "Basis for preparation",
@@ -1480,7 +1499,21 @@
         "meta": "{entity} · {period} · {standing}",
         "export": "Export",
         "review": "Review the report",
-        "more": "More actions for this report"
+        "more": "More actions for this report",
+        "lowering": {
+          "item": "Remove the Comprehensive Module…",
+          "title": "Remove the Comprehensive Module from this report?",
+          "object": "{entity}, the {year} report",
+          "consequence": "{count, plural, one {{modules} holds answers} other {{modules} hold answers}}. Once the module is removed they are not shown, counted or exported.",
+          "consequenceNone": "No Comprehensive section holds an answer yet. The report goes back to the eleven Basic sections.",
+          "retained": "Every answer is kept, and comes back as it was if you add the Comprehensive Module again. B1's basis for preparation becomes “Basic Module only”.",
+          "confirm": "Remove the module",
+          "cancel": "Keep it",
+          "unreachable": {
+            "title": "The module could not be removed",
+            "body": "We could not reach the server, so the report is as it was. Try again in a moment."
+          }
+        }
       },
       "step": {
         "outstanding": "{count, plural, =0 {Nothing left to answer} one {One field left} other {# fields left}}",
@@ -1588,7 +1621,8 @@
         },
         "unnamed": "Unnamed",
         "yes": "Yes",
-        "overridden": "Your figure"
+        "overridden": "Your figure",
+        "followsScope": "This answer is the modules the report covers. Add the Comprehensive Module from the list of sections, or remove it from the report's menu."
       },
       "session": {
         "expired": "Your session expired while {module} was open.",

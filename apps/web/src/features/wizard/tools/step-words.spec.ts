@@ -49,6 +49,7 @@ const field = (options: DisclosureOption[] | null): DisclosureField => ({
   notAvailableReason: null,
   carriedForward: false,
   fromRecord: false,
+  followsScope: false,
   applicable: true,
   applicabilityCause: null,
 });

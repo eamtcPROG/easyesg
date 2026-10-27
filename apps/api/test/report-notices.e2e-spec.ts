@@ -253,7 +253,9 @@ describe('the outstanding-report and deadline notices (task 51.2)', () => {
         valueText: OMITTED_MODULES.map((member) => `vsme:${member}`).join(' '),
         state: DISCLOSURE_STATE.OK,
       },
-      ...B1_DECLARED.map((elementKey) => ({
+      // The basis for preparation is the report's scope, and only the scope's option is admitted (task 78.3).
+      { elementKey: 'BasisForPreparation', valueText: 'vsme:OptionABasicModuleOnlyMember', state: DISCLOSURE_STATE.OK },
+      ...B1_DECLARED.filter((elementKey) => elementKey !== 'BasisForPreparation').map((elementKey) => ({
         elementKey,
         state: DISCLOSURE_STATE.NOT_AVAILABLE,
         notAvailableReason: 'Informația nu este disponibilă',

@@ -85,7 +85,7 @@ export type ModuleGroup = (typeof MODULE_GROUP)[keyof typeof MODULE_GROUP];
 
 /**
  * The letter a Comprehensive Module reference begins with — the standard's own naming, B for the Basic Module and C for
- * the Comprehensive. Declared once, for the two rules below that read it.
+ * the Comprehensive. Declared once, for the three rules below that read it.
  */
 const COMPREHENSIVE_LETTER = 'C';
 
@@ -105,6 +105,16 @@ export function modulesInScope(input: {
   return input.scope === REPORT_SCOPE.BASIC_AND_COMPREHENSIVE
     ? input.modules
     : input.modules.filter((summary) => !isComprehensive(summary));
+}
+
+/**
+ * The Comprehensive modules holding an answer, in the list's order — what lowering the scope's dialogue names (task
+ * 78.3; `architecture.md` §12.5.6's task-182 report-authoring row (10)). **Over every module the api served**, not
+ * the scope's list: lowering is offered on a Basic-and-Comprehensive report, where the two are the same, and a caller
+ * handed the scope's list of a Basic report would find nothing to name.
+ */
+export function comprehensiveWithAnswers(modules: readonly DisclosureModuleSummary[]): readonly string[] {
+  return modules.filter((summary) => isComprehensive(summary) && summary.answered > 0).map((summary) => summary.module);
 }
 
 /**

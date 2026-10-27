@@ -18,6 +18,7 @@ import { ModuleSwitcher } from '@/features/wizard/components/rail/module-switche
 import { WizardReauthentication } from '@/features/wizard/components/session/wizard-reauthentication';
 import { WIZARD_MESSAGES } from '@/features/wizard/components/shared/wizard-messages';
 import { moduleChecksOf, modulesInScope } from '@/features/wizard/tools/module-state';
+import { SCOPE_CHANGE, scopeChangeOffered } from '@/features/wizard/tools/scope-change';
 import { moduleLabel } from '@/features/wizard/tools/module-words';
 import { placeOf } from '@/features/wizard/tools/step-place';
 import { CALCULATOR_MODULE } from '../../tools/calculator-module';
@@ -98,7 +99,18 @@ export async function CalculatorStep({
   const readOnly = read.readOnly !== null || calculator.factorSet === null;
   const checks = moduleChecksOf(validation);
   // Drawn twice as two elements, never one element in two slots — S-07's reason (`wizard-step.tsx`, task 42.2).
-  const rail = () => <ModuleRail reportId={reportId} modules={modules} checks={checks} current={CALCULATOR_MODULE} />;
+  // The list's offer of the Comprehensive Module, as the wizard's step draws it (task 78.3).
+  const offersComprehensive =
+    scopeChangeOffered({ scope: read.report.scope, writable: read.readOnly === null }) === SCOPE_CHANGE.RAISE;
+  const rail = () => (
+    <ModuleRail
+      reportId={reportId}
+      modules={modules}
+      checks={checks}
+      current={CALCULATOR_MODULE}
+      offersComprehensive={offersComprehensive}
+    />
+  );
   const b3 = moduleLabel(tWizard, CALCULATOR_MODULE);
 
   return (

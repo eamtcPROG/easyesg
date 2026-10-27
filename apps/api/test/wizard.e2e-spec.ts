@@ -14,6 +14,7 @@ import { ConfigurationStore } from '../src/infrastructure/configuration/configur
 import { MEMBERSHIP_ROLE } from '../src/modules/identity/membership/models/membership.model';
 import { DISCLOSURE_APPLICABILITY_CONFIG_KIND } from '../src/modules/core/disclosure/constants/disclosure.constants';
 import { DISCLOSURE_STATE } from '../src/modules/core/disclosure/models/disclosure-value.model';
+import { REPORT_SCOPE } from '../src/modules/core/disclosure/models/report.model';
 import { TAXONOMY_STANDARD } from '../src/modules/platform/taxonomy/constants/taxonomy.constants';
 import { asOrganization, connectAs, deleteNoticeWithdrawalsOf } from './support/database';
 import {
@@ -26,8 +27,12 @@ const ORG = '01930000-0000-7000-8000-0000000000f3';
 const EMAILS = { admin: 'oa@wizard.test', editor: 'rc@wizard.test', viewer: 'vi@wizard.test' };
 const CHISINAU = 'Europe/Chisinau';
 
-/** Real, undimensioned, and in B1 at both registered versions. */
-const B1_ELEMENT = 'BasisForPreparation';
+/**
+ * Real, undimensioned, and in B1 at both registered versions — and the reporter's own: no record default and no scope.
+ * It was `BasisForPreparation` until task 78.3 made that field the report's scope, whose only admitted answer is the
+ * scope's option.
+ */
+const B1_ELEMENT = 'DescriptionOfSustainabilityRelatedCertificationsOrLabels';
 
 /**
  * The wizard's server half over real HTTP (task 89; S-07, UC-19, UC-35; FR-24 … FR-32, FR-37).
@@ -71,6 +76,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     carriedForward: boolean;
     /** The company record's value, shown or still stored as given (task 180.3). */
     fromRecord: boolean;
+    /** The report's scope rather than the reporter's answer — B1's basis for preparation (task 78.3). */
+    followsScope: boolean;
     unitCode: string | null; unitCodes: string[];
     /** The filing's currency on a monetary element; null on every other kind (task 36.12). */
     currency: string | null;
@@ -112,9 +119,9 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     return (response.body as { object: { id: string } }).object.id;
   };
 
-  const createReport = async (periodId: string): Promise<string> => {
+  const createReport = async (periodId: string, scope: string = REPORT_SCOPE.BASIC): Promise<string> => {
     const response = await http().post('/api/v1/reports').set(editor.authorization)
-      .send({ reportingPeriodId: periodId }).expect(201);
+      .send({ reportingPeriodId: periodId, scope }).expect(201);
     return (response.body as { object: { id: string } }).object.id;
   };
 
@@ -224,7 +231,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     expect(modules.filter((m) => m.module !== 'B1').every((m) => m.lastAnsweredAt === null)).toBe(true);
 
     // The MOST RECENT answer in the module, not the last one in the taxonomy's order: `Assets`
-    // iterates before `BasisForPreparation`, and it is answered second, so a summary that took the
+    // iterates before `B1_ELEMENT`, and it is answered second, so a summary that took the
     // last element it met would report the older timestamp.
     const later = storedOf<{ updatedAt: number }>((await http()
       .put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
@@ -584,9 +591,10 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     const { entityId, reportId } = await ownReport('Moara Veche');
 
     // B1 opened: opening it commits every default it shows, and any one of the record's keys stored is the fact the
-    // copy stops on. A row in any state counts, `missing` included.
+    // copy stops on. A row in any state counts, a cleared one included — written to the basis for reporting, since the
+    // basis for preparation admits only the scope's option (task 78.3).
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({
-      values: [{ elementKey: 'BasisForPreparation', state: DISCLOSURE_STATE.OK }],
+      values: [{ elementKey: 'BasisForReporting', state: DISCLOSURE_STATE.OK }],
     }).expect(200);
 
     // The Administrator corrects the record AFTER B1 was opened.
@@ -1057,7 +1065,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
      * fails here and passes there.
      */
     it('serves the emissions FR-34 writes into, which B3 shares with C3', async () => {
-      const reportId = await createReport(await openPeriod(2026));
+      // Basic and Comprehensive, because C3's step is served only where the scope asks it (task 78.1).
+      const reportId = await createReport(await openPeriod(2026), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
       const step = objectOf<Step>(
         (await http()
           .get(`/api/v1/reports/${reportId}/modules/B3`)
@@ -2091,4 +2100,116 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     });
   });
 
+  /**
+   * **D-A's scope drives what a report holds** (task 78; FR-177; `architecture.md` §12.5.6's task-182 report-authoring
+   * row (10), (11) and its task-78 row). The rules are the use cases' and their specs'; what only this suite can show is
+   * that a refusal reaches the wire as a conflict, that a lowered scope removes nothing from the store, and that B1's
+   * basis is rewritten **in the scope's own transaction** — which the trigger-captured trail is the witness to.
+   */
+  describe('the scope drives what a report holds (task 78)', () => {
+    /** C1's, and C1's alone. */
+    const STRATEGY = 'DescriptionOfSignificantGroupsOfProductsAndOrServicesOffered';
+    /** One of the eight elements B3 and C3 share (task 36.4). */
+    const SHARED = 'GrossScope1GreenhouseGasEmissions';
+    const BASIS = 'BasisForPreparation';
+    const OPTION_A = 'vsme:OptionABasicModuleOnlyMember';
+    const OPTION_B = 'vsme:OptionBBasicModuleAndComprehensiveModuleMember';
+    const CONFLICT = `${PROBLEM_BASE_URI}/conflict`;
+
+    const setScope = (reportId: string, scope: string) =>
+      http().patch(`/api/v1/reports/${reportId}`).set(editor.authorization).send({ scope }).expect(200);
+    const putValues = (reportId: string, values: Record<string, unknown>[]) =>
+      http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({ values });
+    const refusalOf = (response: { body: unknown }) =>
+      response.body as { type: string; refused?: { elementKey: string }[] };
+    /** What the store holds for an element, read as its owner — the screen's reads are what is under test. */
+    const storedRows = async (reportId: string, elementKey: string) =>
+      (await asOrganization(owner, ORG, (run) =>
+        run(
+          `SELECT id, value_text FROM core.report_disclosure_value WHERE report_id = $1 AND element_key = $2`,
+          [reportId, elementKey],
+        ))) as { id: string; value_text: string | null }[];
+
+    it('refuses a C module’s step and a C answer on a Basic report as a conflict, and serves both once the scope asks', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+
+      const read = await http().get(`/api/v1/reports/${reportId}/modules/C1`).set(editor.authorization).expect(409);
+      expect(refusalOf(read).type).toBe(CONFLICT);
+      const written = await putValues(reportId, [
+        { elementKey: STRATEGY, valueText: 'Pâine și covrigi', state: DISCLOSURE_STATE.OK },
+      ]).expect(409);
+      expect(refusalOf(written).type).toBe(CONFLICT);
+      expect(refusalOf(written).refused?.map((item) => item.elementKey)).toEqual([STRATEGY]);
+      expect(await storedRows(reportId, STRATEGY)).toEqual([]);
+
+      await setScope(reportId, REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      await putValues(reportId, [
+        { elementKey: STRATEGY, valueText: 'Pâine și covrigi', state: DISCLOSURE_STATE.OK },
+      ]).expect(200);
+      expect(rowsOf(await readStep(reportId, 'C1'), STRATEGY)[0]?.valueText).toBe('Pâine și covrigi');
+    });
+
+    it('keeps a field B3 and C3 share writable on a Basic report — it is a Basic element too', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      await putValues(reportId, [{ elementKey: SHARED, valueNumeric: '4.2', state: DISCLOSURE_STATE.OK }]).expect(200);
+      expect(rowsOf(await readStep(reportId, 'B3'), SHARED)[0]?.valueNumeric).toBe('4.2');
+    });
+
+    it('keeps a C answer through a lowered scope, served nowhere, and serves it again when raised (FR-177 AC-3)', async () => {
+      const reportId = await createReport(await openPeriod(2026), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      await putValues(reportId, [
+        { elementKey: STRATEGY, valueText: 'Pâine și covrigi', state: DISCLOSURE_STATE.OK },
+      ]).expect(200);
+
+      await setScope(reportId, REPORT_SCOPE.BASIC);
+      await http().get(`/api/v1/reports/${reportId}/modules/C1`).set(editor.authorization).expect(409);
+      expect((await storedRows(reportId, STRATEGY)).map((row) => row.value_text)).toEqual(['Pâine și covrigi']);
+
+      await setScope(reportId, REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      expect(rowsOf(await readStep(reportId, 'C1'), STRATEGY)[0]?.valueText).toBe('Pâine și covrigi');
+    });
+
+    it('lets B1’s basis follow the scope — unwritten where B1 is unopened, rewritten in the scope’s transaction where it is (task 78.3)', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+
+      // Unopened: raising stores nothing — a stored record key would read as B1 opened (task 180.2) — and the field's
+      // default is the new option, which the reporter is shown and does not type into.
+      await setScope(reportId, REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      expect(await storedRows(reportId, BASIS)).toEqual([]);
+      expect(rowsOf(await readStep(reportId), BASIS)[0]).toMatchObject({
+        followsScope: true,
+        defaultValue: { valueText: OPTION_B },
+      });
+      expect(rowsOf(await readStep(reportId), 'Assets')[0]?.followsScope).toBe(false);
+
+      // Opened: the shown option is admitted as an answer, and the other is refused.
+      await putValues(reportId, [{ elementKey: BASIS, valueText: OPTION_B, state: DISCLOSURE_STATE.OK }]).expect(200);
+      const refused = await putValues(reportId, [
+        { elementKey: BASIS, valueText: OPTION_A, state: DISCLOSURE_STATE.OK },
+      ]).expect(409);
+      expect(refusalOf(refused).type).toBe(CONFLICT);
+
+      // Lowered: the stored answer follows.
+      await setScope(reportId, REPORT_SCOPE.BASIC);
+      const [stored] = await storedRows(reportId, BASIS);
+      expect(stored?.value_text).toBe(OPTION_A);
+
+      // **In the scope's own transaction**: the trail's time is the transaction's start, so the lowering's two entries
+      // share one, and neither the raise nor the reporter's commit does.
+      const trail = (await asOrganization(owner, ORG, (run) =>
+        run(
+          `SELECT field_name, old_value, new_value, occurred_at FROM core.field_change
+            WHERE record_id = ANY($1) AND operation = 'UPDATE' AND field_name IN ('scope', 'value_text')
+            ORDER BY occurred_at, id`,
+          [[reportId, stored?.id]],
+        ))) as { field_name: string; old_value: string; new_value: string; occurred_at: Date }[];
+      expect(trail.map(({ field_name, old_value, new_value }) => [field_name, old_value, new_value])).toEqual([
+        ['scope', REPORT_SCOPE.BASIC, REPORT_SCOPE.BASIC_AND_COMPREHENSIVE],
+        ['scope', REPORT_SCOPE.BASIC_AND_COMPREHENSIVE, REPORT_SCOPE.BASIC],
+        ['value_text', OPTION_B, OPTION_A],
+      ]);
+      expect(trail[2]?.occurred_at).toEqual(trail[1]?.occurred_at);
+      expect(trail[1]?.occurred_at).not.toEqual(trail[0]?.occurred_at);
+    });
+  });
 });

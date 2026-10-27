@@ -20,6 +20,7 @@ import { indexStored, keyOf, type StoredValues } from '../domain/stored-values';
 import { answeredRows, withRecordSiteNames } from '../domain/typed-axis-rows';
 import {
   DisclosureModuleNotFoundError,
+  DisclosureModuleOutOfScopeError,
   ReportNotFoundError,
   TaxonomyVersionUnavailableError,
 } from '../errors/report.errors';
@@ -41,7 +42,7 @@ import { NO_DIMENSION, type DisclosureValue } from '../models/disclosure-value.m
 import type { EntitySnapshot } from '../models/entity-snapshot.model';
 import { evaluationScope, rolledUpModules, type ReportEvaluationScope } from '../models/evaluation-scope';
 import { OMITTED_DISCLOSURES_ELEMENT, omittedModules, withheldElements } from '../models/omission.model';
-import type { Report } from '../models/report.model';
+import { scopeAsks, type Report } from '../models/report.model';
 import type { DisclosureModuleSummary, DisclosureStep } from '../models/wizard-step.model';
 import { MemberResolver } from './member-resolver';
 import { OptionResolver } from './option-resolver';
@@ -166,6 +167,10 @@ export class ReadWizardStep {
     // answered 200 with no fields, which a client cannot tell from a module whose every field is inapplicable — and
     // nothing below needs to run for an address that names nothing.
     if (!registered.modules.includes(query.module)) throw new DisclosureModuleNotFoundError();
+    // **And a Comprehensive module on a Basic report is out of scope** (task 78.1; §12.5.6's task-182 report-authoring
+    // row (11)), refused rather than served: a field served here is a field a reporter could answer, which the write
+    // would then refuse. Lowering the scope keeps the answers already given; this read simply does not show them.
+    if (!scopeAsks({ scope: report.scope, module: query.module })) throw new DisclosureModuleOutOfScopeError();
     const { byKey, byElement } = await this.stored(query.reportId);
     // Read unconditionally rather than only for B8 and B9: the step does not yet know which of its
     // fields are derived — that is settled below, off the artefact — and this is one indexed read of

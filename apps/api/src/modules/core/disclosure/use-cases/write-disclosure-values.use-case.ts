@@ -5,6 +5,7 @@ import {
   ReportNotFoundError,
   TaxonomyVersionUnavailableError,
 } from '../errors/report.errors';
+import { basisForPreparationOf } from '../domain/entity-defaults';
 import { valueRefusal } from '../domain/value-refusal';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
@@ -78,6 +79,8 @@ export class WriteDisclosureValues {
     const known = new Map(registered.elements.map((element) => [element.key, element]));
     const breakdowns = this.axisShapes.breakdownAxes({ standard: registered.standard });
     const derived = new Set(this.derivations.all({ standard: TAXONOMY_STANDARD.VSME }).keys());
+    // What the report's scope asks, and the basis for preparation it states (tasks 78.1, 78.3) — read once per batch.
+    const basisForPreparation = basisForPreparationOf({ registered, scope: report.scope });
 
     // **Each value is judged on its own, and what is admitted is stored** (task 218; §12.5.6's task-218 row (1)). Until
     // then a batch was all-or-nothing about what it named, so the indicator could never say *saved* over half a step —
@@ -92,6 +95,8 @@ export class WriteDisclosureValues {
         breakdowns,
         derived,
         axisOf: (key) => this.axisOf(report.taxonomyVersion, key),
+        scope: report.scope,
+        basisForPreparation,
       });
       if (refusal === null) admitted.push(value);
       else refused.push({ key: keyOf(value), modules: known.get(value.elementKey)?.modules ?? [], refusal });

@@ -248,12 +248,16 @@ test('opens B1 pre-filled, stores what the reporter accepts, and groups the site
   await expect(first.getByText('Din fișa companiei', { exact: true })).toHaveCount(2);
   await expect(second.getByText('Din fișa companiei', { exact: true })).toHaveCount(2);
 
-  // Task 179.2: B1 opens with what the report is — its basis, as option cards — and the sites come after the single
-  // questions, though the standard orders them first. Measured on the page, because the order is the claim.
-  const basis = page.getByRole('radiogroup', {
+  // Task 179.2: B1 opens with what the report is — its basis — and the sites come after the single questions, though
+  // the standard orders them first. Measured on the page, because the order is the claim. **Since task 78.3 the basis is
+  // the report's scope, shown and not chosen here** (FR-27 as amended): the scope's option in words, no radio, and the
+  // sentence saying where the scope is changed.
+  const basis = page.getByRole('group', {
     name: 'Baza de întocmire (numai Modulul de bază sau Modulul de bază și cel cuprinzător)',
   });
-  await expect(basis.getByRole('radio')).toHaveCount(2);
+  await expect(basis.getByText('Opțiunea A (doar Modulul de bază)', { exact: true })).toBeVisible();
+  await expect(basis.getByRole('radio')).toHaveCount(0);
+  await expect(basis.getByText(/^Acest răspuns reflectă modulele pe care le cuprinde raportul\./u)).toBeVisible();
   const basisTop = (await basis.boundingBox())?.y ?? Number.POSITIVE_INFINITY;
   const firstSiteTop = (await first.boundingBox())?.y ?? Number.NEGATIVE_INFINITY;
   expect(basisTop).toBeLessThan(firstSiteTop);

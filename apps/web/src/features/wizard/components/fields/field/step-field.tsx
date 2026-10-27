@@ -251,12 +251,20 @@ export function StepField({
             {field.notAvailableReason}
           </>
         ) : (
-          (carriedNote ?? undefined)
+          // B1's basis for preparation says where it is changed (task 78.3): on the report, not in the field.
+          (carriedNote ?? (field.followsScope ? tField('followsScope') : undefined))
         )
       }
-      // The carried note alone takes the tone the artboard tints it with; a declared gap keeps the reasoned one.
+      // The carried note alone takes the tone the artboard tints it with; a declared gap keeps the reasoned one, and the
+      // basis's sentence is information, not a verdict.
       messageTone={
-        verdict !== null ? TONE_OF_STATE[verdict] : carriedNote !== null ? FIELD_TONE.OK : FIELD_TONE.REASONED
+        verdict !== null
+          ? TONE_OF_STATE[verdict]
+          : carriedNote !== null
+            ? FIELD_TONE.OK
+            : field.state === DISCLOSURE_STATE.NOT_AVAILABLE
+              ? FIELD_TONE.REASONED
+              : FIELD_TONE.NEUTRAL
       }
       // **UX-15's declaration, live since task 36.5.** This slot carried `null` from task 35.2 with
       // task 36.13 named as its owner — the field-level half is built here for every module, and

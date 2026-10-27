@@ -24,6 +24,7 @@ import { ValidationSection } from '../panel/section/validation-section';
 import { WizardReauthentication } from '../session/wizard-reauthentication';
 import { checkOf, moduleChecksOf, modulesInScope, moduleStateOf } from '../../tools/module-state';
 import { placeOf } from '../../tools/step-place';
+import { SCOPE_CHANGE, scopeChangeOffered } from '../../tools/scope-change';
 import { moduleLabel, moduleStatus, moduleSummary, stepStatusNote } from '../../tools/module-words';
 import { StepFoot } from '../foot/step-foot';
 import { ReportBar } from '../bar/report-bar';
@@ -115,6 +116,8 @@ export async function WizardStep({
   // Where the step stands, computed once for the heading, the stepper and the foot (`section-compute-once`).
   const place = placeOf({ modules, current: module });
   const readOnly = read.readOnly !== null;
+  // The change of scope this reader is offered, if any (task 78.3): adding C1 – C9 from the list, removing them from the bar.
+  const scopeChange = scopeChangeOffered({ scope: read.report.scope, writable: !readOnly });
   const fields = labelledOptions(read.step.fields, messages.vocabulary.countries);
   // Last year's comparable answers, indexed by the queue's key — read beside each field, and by the interpreter for the
   // year-over-year rule (FR-46).
@@ -124,7 +127,15 @@ export async function WizardStep({
   // own; one element placed twice makes the shell's row refer to itself through that row, and once the list shares any
   // object with the rest of the step — the step mark's icon, drawn in the heading and on the list's row — the browser's
   // Flight client waits on a cycle it never resolves. The navigation to the step never commits, with no error.
-  const rail = () => <ModuleRail reportId={reportId} modules={modules} checks={checks} current={module} />;
+  const rail = () => (
+    <ModuleRail
+      reportId={reportId}
+      modules={modules}
+      checks={checks}
+      current={module}
+      offersComprehensive={scopeChange === SCOPE_CHANGE.RAISE}
+    />
+  );
 
   return (
     <AutosaveProvider reportId={reportId} accountId={session.account.id}>

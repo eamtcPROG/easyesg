@@ -33577,3 +33577,101 @@ spec is the one that reads another workspace's source.
   every one digest `2667547900`, the abandoned prefetches `apps/web/CLAUDE.md` describes, and nothing else.
 - **Skipped**: `apps/admin`'s suites — its source is unchanged, only its `CLAUDE.md` — and the Stage-end gates, which
   CI runs on the push.
+
+## Task 78 — the scope drives what a report holds, and is set at creation · 2026-10-27
+
+78.2 had closed with tasks 33.1 and 33.3; this closes 78.1, 78.3 and 78.4. Most of what they needed was already decided
+— §12.5.6's task-182 report-authoring row (8) … (12), settled on 5 Oct 2026 — so one batch of three settled what was
+left; `architecture.md` §12.5.6's task-78 row holds it, FR-27 and FR-177 are amended by it, `design_spec.md` S-07 and
+S-39 say where each control is, and UC-192's §5 specification was written against EFRAG's package before the build
+(task 36.8's standing rule), which also amended UC-19's step 1.
+
+### Decided (project owner)
+
+- **The scope sets B1's basis for preparation**, which is D-A's flag in EFRAG's words: rewritten with a scope change,
+  shown and not typed into, and a write naming the other option refused — over making the B1 field the scope's control
+  (lowering from a radio button would need a consequence dialogue inside a field) and over leaving the stored answer,
+  which lets a filing state two bases.
+- **Raising from the module list, lowering from the bar's ⋯** — the artboard's *Add C1 – C9* beneath the Basic group,
+  at once; the removal behind (10)'s consequence dialogue — over both in the rail, and over a dialogue before raising.
+- **Frame 20's *added on* date waits for C1**, with C1's own opening, on task 79.1's row; nothing models who asked.
+
+### What the building decided within that
+
+- **The basis is rewritten only where B1 holds a row.** The first reading of (1) was *rewrite it*; task 180.2 reads any
+  stored record key as *B1 opened*, so writing the basis on a report whose B1 nobody opened would have ended the
+  snapshot following the entity for a reporter who never looked. Where no row is held the field's default already is
+  the scope's, and opening B1 commits it. Recorded in the task-78 row and in UC-192's step 2.
+- **The scope change is its own use case**, `ChangeReportScope`, out of `CreateReport`: it gained a second behaviour
+  (the basis) and `file-one-behaviour-api` puts that in its own file. `CreateReport` lost `update` and narrowed its
+  store to `Pick<ReportStore, 'create'>`; the update's spec cases moved with it.
+- **A C element is one none of whose modules the scope asks** — `scopeAsks` over `element.modules`, so the eight
+  elements B3 and C3 share (task 36.4) stay writable on a Basic report; a case writes one.
+- **The out-of-scope step read is 409 `conflict`**, its own message, not 404: (6) keeps 404 for a module the pinned
+  taxonomy lacks, and this one exists and is one action away. `apps/web`'s step read maps the 409 to the same
+  not-found arm as the 404, so the screen is unchanged; every other caller of the step read already filters by scope.
+- **The basis's refusal sits after the derived-figure check and before the shape checks**, so a *not available* basis
+  answers the scope's conflict rather than a missing reason. The wizard suite's generic B1 field was the basis, written
+  as `'Consolidated'` and declared *not available* in a dozen cases; it is now
+  `DescriptionOfSustainabilityRelatedCertificationsOrLabels`, which iterates after `Assets` as the one ordering case
+  needs. Two other suites declared the basis *not available* to complete B1 and now answer it with the scope's option;
+  the case that opens B1 with a cleared record key writes `BasisForReporting`, keeping its *a row in any state counts*.
+- **A scope change moves no validation run** — 182/26: the report reads as its last run left it until the next.
+- **The read-only basis is the codebase's per-field read-only form** — the option's words, as a derived figure is drawn
+  on an editable step — and the Radio group's own docblock says a read-only answer is text. Its sentence sits in the
+  field's message slot, neutral in tone. Task 179.2's option cards for this field are gone; the browser case that
+  counted two radios now reads the words.
+- **`DEFAULT_REPORT_SCOPE` and `isReportScope` joined `REPORT_SCOPE` in `@easyesg/contracts`**: S-39 opens on the
+  default and narrows the radio's string, both operations over the vocabulary, beside it. The api keeps its own
+  default beside its own copy, as it must.
+- **Who is offered which change is one function**, `scopeChangeOffered` (`tools/scope-change.ts`), read by the step,
+  S-09's step and the bar; the C modules a lowering names is `comprehensiveWithAnswers`, beside the private letter test
+  in `module-state.ts` that its two siblings read.
+- **Found in passing**: `ReportsController`'s docblock said *No `DELETE`* a fortnight after task 192 shipped it;
+  corrected in the file this task edited. **Searched for the shape**: every reader of the step read (`.step(`) — the
+  export reads only modules in scope, the calculator only B1, support access a module an operator names; every suite
+  and fixture writing `BasisForPreparation` or a C-only element (`config/golden-reports` answers the basis as Option A
+  on a Basic report and is unaffected); every caller of `seedReport` asserting an editor's ⋯ (a Basic report offers
+  no lowering, so the editor case holds).
+
+### Skills read against the diff
+
+`nestjs-best-practices`: `arch-single-responsibility` (the use case split), `di-interface-segregation` (`ChangeReportScope`
+takes `Pick`s of the three ports it calls), `db-use-transactions` (the scope and the basis on the request's one
+transaction, which the trail's shared instant proves), `error-use-exception-filters` (three `DomainError`s with message
+keys in three catalogues). `error-throw-http-exceptions` declined by name, as ever. `one-idea-per-file`:
+`file-one-behaviour-api` (above), `pure-logic-leaves-the-component` (`scopeChangeOffered` and
+`comprehensiveWithAnswers` with specs), `reason-docblock-carries-the-why` on each new file. `one-kind-per-folder`:
+the offer under `rail/`, the lowering hook under `bar/` beside its two readers — the deletion's hook lives in `shared/`
+because two screens read it, and this one serves one. `vercel-react-best-practices`: `server-serialization` (the
+client parts take a report id and module references), `rerender-memo-with-default-value` (`NOTHING_HELD` hoisted),
+`rendering-usetransition-loading` (both writes). `vercel-composition-patterns`' boolean-prop rule considered for
+`ModuleRail`'s `offersComprehensive` and declined: it is data the rail draws one part from, not a mode that changes the
+rail's anatomy.
+
+### Verified, and what is not
+
+- **The api, through HTTP and the database** (`wizard.e2e-spec.ts`'s four new cases): a C step and a C answer on a
+  Basic report each answer 409 `conflict` — the answer listed in `refused`, no row stored — and both are served once
+  the scope is raised; a field B3 and C3 share is stored on a Basic report; a C answer outlives a lowered scope in the
+  store, unserved, and is served again when raised; and B1's basis is not written by raising an unopened B1, is
+  refused as the other option, is rewritten by lowering, and the trail holds the scope's two changes and the answer's
+  one, **the lowering's two sharing one transaction's instant** and the raise not sharing it. The use case's spec holds
+  the four branches of `followBasis`; `valueRefusal`'s holds the scope and the basis rules.
+- **The browser** (`reports.spec.ts`'s three new journeys): S-39 asks the scope with Basic chosen, and a report made
+  with the Comprehensive Module opens listing C1 … C9 with its basis in words; a Basic report's *Add C1 – C9* lands on
+  C1; an editor's ⋯ removes the module behind its dialogue, lands at the resume point among the eleven, the offer is
+  back and C1's address is a 404. `wizard.spec.ts`'s B1 journey now reads the basis as the scope's words.
+- **The close's run**, by the lookup table — a change reaching `apps/api`, `apps/web` and, through `packages/contracts`
+  and `packages/i18n`, every dependent's row: `pnpm --filter @easyesg/i18n test` 172; `pnpm --filter @easyesg/api test`
+  2,536; `pnpm --filter @easyesg/web test` 2,149 (236 files); `pnpm --filter @easyesg/admin test` 322; `typecheck` in api,
+  web, admin, contracts and i18n; `pnpm lint`; `pnpm docs:check` 48 of 48, after `apps/web/CLAUDE.md`'s Client
+  Component count moved to 250; `pnpm openapi:check`, the contract gaining `followsScope` and the routes' 409s;
+  `pnpm routes:check`; `pnpm e2e` 77 suites, 1,984 tests, nothing logged beyond the results; `pnpm e2e:worker` 17 of 17;
+  `pnpm e2e:web --project identity --project expansion` 372 of 372, its 34 `⨯` lines every one digest `2667547900`, the
+  abandoned streams `apps/web/CLAUDE.md` describes, and nothing else; `pnpm e2e:web --project admin` 28 of 28.
+- **`pnpm boundaries` too**, a Stage-end gate run here because the calculator's step reads a second wizard tool: no
+  violation across 3,263 modules. **Skipped**: the other Stage-end gates (`image:check`, `facade:check`, the two
+  `*:prove`s), which CI runs on the push — no generated facade, seed, image input or boundary rule moved.
+- **Not built, by decision**: frame 20's *added on* date and C1's opening sentence (task 79.1's row); the entitlement
+  gate on the Comprehensive choice (task 81.1).

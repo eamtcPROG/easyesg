@@ -439,6 +439,14 @@ export class DisclosureFieldDto {
 
   @ApiProperty({
     description:
+      'Whether the answer is the report’s module scope rather than the reporter’s — B1’s basis for preparation ' +
+      '(FR-27, FR-177). Shown and never typed into: a write naming another option is refused, and changing the ' +
+      'report’s scope rewrites a stored answer with it.',
+  })
+  readonly followsScope: boolean;
+
+  @ApiProperty({
+    description:
       'Whether this field applies to this reporter (FR-28). False does not mean empty: a value ' +
       'entered before the condition turned is retained and served as stored (UX-28), so a ' +
       'retained answer is applicable false beside a state that is not missing.',
@@ -503,6 +511,7 @@ export class DisclosureFieldDto {
     this.notAvailableReason = field.notAvailableReason;
     this.carriedForward = field.carriedForward;
     this.fromRecord = field.fromRecord;
+    this.followsScope = field.followsScope;
     this.applicable = field.applicable;
     this.applicabilityCause =
       field.applicabilityCause === null ? null : new ApplicabilityCauseDto(field.applicabilityCause);

@@ -343,7 +343,9 @@ describe('validation runs and their findings (task 41.2)', () => {
           valueText: OMITTED_MODULES.map((member) => `vsme:${member}`).join(' '),
           state: DISCLOSURE_STATE.OK,
         },
-        ...B1_REQUIRED.map((elementKey) => ({
+        // The basis for preparation is the report's scope, and only the scope's option is admitted (task 78.3).
+        { elementKey: 'BasisForPreparation', valueText: 'vsme:OptionABasicModuleOnlyMember', state: DISCLOSURE_STATE.OK },
+        ...B1_REQUIRED.filter((elementKey) => elementKey !== 'BasisForPreparation').map((elementKey) => ({
           elementKey,
           state: DISCLOSURE_STATE.NOT_AVAILABLE,
           notAvailableReason: 'Informația nu este disponibilă',
@@ -401,7 +403,7 @@ describe('validation runs and their findings (task 41.2)', () => {
         modulesCounted: rollUp?.modules.length ?? -1,
         outstanding: rollUp?.report.outstanding ?? -1,
       };
-      // Every Basic module but B1 omitted, and B1 reasoned whole: one module counted, and it complete.
+      // Every Basic module but B1 omitted, and B1 answered or reasoned whole: one module counted, and it complete.
       expect(expected).toEqual({ modulesComplete: 1, modulesCounted: 1, outstanding: 0 });
       expect(await listed(reportId)).toEqual(expected);
       expect(await ofPeriod(periodId)).toEqual(expected);

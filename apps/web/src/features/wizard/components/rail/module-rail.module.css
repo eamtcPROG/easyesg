@@ -10,3 +10,36 @@
   color: var(--text-muted);
   font: 400 13px/19px var(--font-text);
 }
+
+/*
+ * A Basic report's offer of the Comprehensive Module (task 78.3) — `EasyESG Reporting Screens.dc.html`'s block beneath
+ * the Basic group: a rule above, a muted sentence, and the link-styled action that adds C1 – C9.
+ */
+.offer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: var(--space-4) var(--space-5) 0;
+  border-block-start: 1px solid var(--border-default);
+}
+
+.offerText {
+  margin: 0;
+  color: var(--text-muted);
+  font: 400 13px/19px var(--font-text);
+}
+
+/* A button wearing `TextLink`'s look: the link's colour and underline, none of a button's chrome. */
+.offerAction {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 500 13px/19px var(--font-text);
+  cursor: pointer;
+}
+
+.offerAction:disabled {
+  cursor: progress;
+}

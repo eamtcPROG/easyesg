@@ -410,3 +410,96 @@ test('a report on an archived entity reads only, says the archive is why, and ca
     page.getByRole('region', { name: 'Verificarea raportului' }).getByRole('button', { name: 'Verificați raportul' }),
   ).toHaveCount(1);
 });
+
+/**
+ * **D-A's scope on S-39 and S-07** (task 78; FR-177; `design_spec.md` S-39 and S-07's amendment of 27 Oct 2026): chosen
+ * at creation, added from the module list, taken off from the bar — each through the product's own path. What the api
+ * keeps and refuses is `wizard.e2e-spec.ts`'s; what only a browser shows is that each control is where the spec puts it
+ * and lands where it says.
+ */
+test('the creation flow asks the scope, Basic chosen, and a report made with the Comprehensive Module lists C1 … C9 (task 78.4)', async ({
+  page,
+}) => {
+  const organizationId = await signedIn(page, 'scope-create');
+  await seedOpenPeriod({ organizationId, name: `${RUN_PREFIX}-Cuprinzătoare` });
+
+  await page.goto('/reports/new');
+  await page.getByRole('link', { name: `${RUN_PREFIX}-Cuprinzătoare` }).click();
+  await page.waitForURL(/\/reports\/new\?entity=/u);
+  await page.getByRole('link', { name: '2026', exact: true }).click();
+  await page.waitForURL(/period=/u);
+
+  // Its own region after the pins, two answers, Basic chosen until the reader chooses otherwise (FR-177's default).
+  const scope = page.getByRole('radiogroup', { name: 'Ce cuprinde raportul' });
+  await expect(scope.getByRole('radio')).toHaveCount(2);
+  await expect(scope.getByRole('radio', { name: /^Modulul de bază Cele unsprezece/u })).toBeChecked();
+  const comprehensive = scope.getByRole('radio', { name: /^Modulul de bază și cel cuprinzător/u });
+  await untilHydrated(comprehensive);
+  await comprehensive.check();
+
+  await page.getByRole('button', { name: 'Creați raportul' }).click();
+  await page.waitForURL(/\/reports\/[0-9a-f-]+\/B1$/u);
+
+  // Opened with the Comprehensive Module listed after the Basic — C1 through C9 — and no offer to add what it holds.
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+  await expect(rail.getByRole('link', { name: /^C\d — /u })).toHaveCount(9);
+  await expect(rail.getByRole('link', { name: 'C1 — Strategie și model de afaceri', exact: true })).toBeVisible();
+  await expect(rail.getByRole('button', { name: 'Adăugați C1 – C9' })).toHaveCount(0);
+  // B1's basis is the scope it was created with, in words.
+  await expect(
+    page
+      .getByRole('group', { name: 'Baza de întocmire (numai Modulul de bază sau Modulul de bază și cel cuprinzător)' })
+      .getByText('Opțiunea B (Modulul de bază și Modulul cuprinzător)', { exact: true }),
+  ).toBeVisible();
+});
+
+test('a Basic report adds the Comprehensive Module from its list and lands on C1 (task 78.3; UC-192)', async ({ page }) => {
+  const organizationId = await signedIn(page, 'scope-raise');
+  const reportId = await seedReport({ organizationId, name: `${RUN_PREFIX}-Extinsă` });
+  await page.goto(`/reports/${reportId}/B1`);
+
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+  await expect(rail.getByText('Modulul cuprinzător nu face parte din acest raport.', { exact: true })).toBeVisible();
+  await expect(rail.getByRole('link', { name: /^C\d — /u })).toHaveCount(0);
+  const add = rail.getByRole('button', { name: 'Adăugați C1 – C9' });
+  await untilHydrated(add);
+  await add.click();
+
+  await page.waitForURL(`**/reports/${reportId}/C1`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C1');
+  await expect(rail.getByRole('link', { name: /^C\d — /u })).toHaveCount(9);
+  await expect(rail.getByRole('button', { name: 'Adăugați C1 – C9' })).toHaveCount(0);
+});
+
+test('the bar takes the Comprehensive Module off behind a dialogue, and the report is Basic again (task 78.3)', async ({
+  page,
+}) => {
+  // As an editor: both changes are any writer's, where the deletion beside them is the administrator's alone.
+  const organizationId = await signedIn(page, 'scope-lower', 'editor');
+  const reportId = await seedReport({ organizationId, name: `${RUN_PREFIX}-Restrânsă` });
+  await page.goto(`/reports/${reportId}/B1`);
+  // Raised through the list first, the one way a seeded Basic report gains the module.
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+  const add = rail.getByRole('button', { name: 'Adăugați C1 – C9' });
+  await untilHydrated(add);
+  await add.click();
+  await page.waitForURL(`**/reports/${reportId}/C1`);
+
+  const menu = page.getByRole('button', { name: 'Mai multe acțiuni pentru acest raport' });
+  await untilHydrated(menu);
+  await menu.click();
+  await page.getByRole('menuitem', { name: 'Eliminați Modulul cuprinzător…' }).click();
+  const dialogue = page.getByRole('alertdialog', { name: 'Eliminați Modulul cuprinzător din acest raport?' });
+  // Nothing answered in C1 … C9 yet, so the dialogue says so — and says every answer is kept either way.
+  await expect(dialogue.getByText(/^Nicio secțiune a Modulului cuprinzător nu are încă răspunsuri\./u)).toBeVisible();
+  await expect(dialogue.getByText(/^Toate răspunsurile rămân păstrate/u)).toBeVisible();
+  await dialogue.getByRole('button', { name: 'Eliminați modulul' }).click();
+
+  // The report's own address resolves to where work resumes, among the eleven.
+  await page.waitForURL(new RegExp(`/reports/${reportId}/B\\d+$`, 'u'));
+  await expect(rail.getByRole('link', { name: /^C\d — /u })).toHaveCount(0);
+  await expect(rail.getByRole('button', { name: 'Adăugați C1 – C9' })).toBeVisible();
+  // C1's address is a module this report no longer carries.
+  const gone = await page.goto(`/reports/${reportId}/C1`);
+  expect(gone?.status()).toBe(404);
+});

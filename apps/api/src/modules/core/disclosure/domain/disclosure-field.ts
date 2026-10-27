@@ -14,6 +14,7 @@ import type {
   DisclosureField,
   DisclosureOption,
 } from '../models/wizard-step.model';
+import { B1_ELEMENT } from '../models/b1-element.model';
 import type { FieldRow } from './field-rows';
 
 /** What the step read knows about one row before it becomes a field. */
@@ -102,6 +103,8 @@ export function toField(element: TaxonomyElement, row: ResolvedRow, resolved: Re
     notAvailableReason: value?.notAvailableReason ?? null,
     carriedForward: value?.carriedForward ?? false,
     fromRecord: row.fromRecord,
+    // B1's basis for preparation is the report's scope (task 78.3; §12.5.6's task-78 row (1)): shown, never typed into.
+    followsScope: element.key === B1_ELEMENT.BASIS_FOR_PREPARATION,
     // Every row of an element shares its verdict: FR-28's drivers are the report's answers, not
     // this row's, so a second site is as applicable as the first.
     applicable: resolved.applicable,

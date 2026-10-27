@@ -1209,10 +1209,21 @@
           "taxonomy": "Taxonomie",
           "hint": "Sunt preluate din perioada aleasă și rămân neschimbate pe toată durata raportului, ca cifrele să însemne mereu același lucru."
         },
-        "comprehensive": "Veți începe cu B1. Modulul Comprehensive poate fi adăugat mai târziu, dacă vi-l cere un client.",
         "submit": "Creați raportul",
         "cancel": "Renunțați",
-        "loading": "Se încarcă entitățile și perioadele…"
+        "loading": "Se încarcă entitățile și perioadele…",
+        "scope": {
+          "title": "Ce cuprinde raportul",
+          "hint": "Veți începe cu B1 în ambele cazuri. Modulul cuprinzător poate fi adăugat sau eliminat și mai târziu, din raport.",
+          "basic": {
+            "label": "Modulul de bază",
+            "description": "Cele unsprezece secțiuni, de la B1 la B11."
+          },
+          "comprehensive": {
+            "label": "Modulul de bază și cel cuprinzător",
+            "description": "Acestea și secțiunile C1–C9: douăzeci de secțiuni."
+          }
+        }
       },
       "loading": "Se încarcă lista rapoartelor…",
       "searchLabel": "Căutați după entitate sau an fiscal",
@@ -1428,7 +1439,15 @@
         "all": "Toate modulele",
         "more": "{count, plural, one {Încă un modul} few {Încă # module} other {Încă # de module}}",
         "position": "{module} · {position} din {total}",
-        "close": "Închideți lista modulelor"
+        "close": "Închideți lista modulelor",
+        "offer": {
+          "absent": "Modulul cuprinzător nu face parte din acest raport.",
+          "add": "Adăugați C1 – C9",
+          "unreachable": {
+            "title": "Modulul nu a putut fi adăugat",
+            "body": "Nu am putut ajunge la server, așa că raportul a rămas cum era. Încercați din nou peste câteva momente."
+          }
+        }
       },
       "modules": {
         "B1": "Baza de întocmire",
@@ -1480,7 +1499,21 @@
         "meta": "{entity} · {period} · {standing}",
         "export": "Exportați",
         "review": "Revizuiți raportul",
-        "more": "Mai multe acțiuni pentru acest raport"
+        "more": "Mai multe acțiuni pentru acest raport",
+        "lowering": {
+          "item": "Eliminați Modulul cuprinzător…",
+          "title": "Eliminați Modulul cuprinzător din acest raport?",
+          "object": "{entity}, raportul pentru {year}",
+          "consequence": "{count, plural, one {{modules} are răspunsuri} other {{modules} au răspunsuri}}. După eliminarea modulului, acestea nu mai sunt afișate, numărate sau exportate.",
+          "consequenceNone": "Nicio secțiune a Modulului cuprinzător nu are încă răspunsuri. Raportul revine la cele unsprezece secțiuni de bază.",
+          "retained": "Toate răspunsurile rămân păstrate și revin neschimbate dacă adăugați din nou Modulul cuprinzător. Baza de întocmire din B1 devine „numai Modulul de bază”.",
+          "confirm": "Eliminați modulul",
+          "cancel": "Păstrați-l",
+          "unreachable": {
+            "title": "Modulul nu a putut fi eliminat",
+            "body": "Nu am putut ajunge la server, așa că raportul a rămas cum era. Încercați din nou peste câteva momente."
+          }
+        }
       },
       "step": {
         "outstanding": "{count, plural, =0 {Nimic de completat} one {Un câmp rămas} few {# câmpuri rămase} other {# de câmpuri rămase}}",
@@ -1588,7 +1621,8 @@
         },
         "unnamed": "Fără denumire",
         "yes": "Da",
-        "overridden": "Cifra dumneavoastră"
+        "overridden": "Cifra dumneavoastră",
+        "followsScope": "Acest răspuns reflectă modulele pe care le cuprinde raportul. Adăugați Modulul cuprinzător din lista de secțiuni sau eliminați-l din meniul raportului."
       },
       "session": {
         "expired": "Sesiunea a expirat în timp ce secțiunea {module} era deschisă.",

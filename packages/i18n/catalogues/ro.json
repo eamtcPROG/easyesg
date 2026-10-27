@@ -373,7 +373,10 @@
       "not_exported": "Niciun export al acestui raport nu s-a finalizat încă, așa că nu există nimic de înregistrat ca depus. Generați mai întâi fișierul PDF sau Excel, apoi marcați raportul ca depus.",
       "exported": "Un fișier al acestui raport a fost exportat sau se pregătește, așa că raportul este o dovadă a ceea ce s-a transmis și nu poate fi șters. Fișierele și răspunsurile lui rămân păstrate.",
       "filing_date_invalid": "Data depunerii nu este o zi reală din calendar, așa că marcajul nu a fost înregistrat. Alegeți ziua în care a fost depus raportul și încercați din nou.",
-      "entity_archived": "Entitatea pentru care este întocmit raportul a fost arhivată, așa că raportul nu mai poate fi modificat sau șters de nimeni, iar arhivarea nu se poate anula. Puteți în continuare să îl verificați, să îl exportați și să îl marcați ca depus."
+      "entity_archived": "Entitatea pentru care este întocmit raportul a fost arhivată, așa că raportul nu mai poate fi modificat sau șters de nimeni, iar arhivarea nu se poate anula. Puteți în continuare să îl verificați, să îl exportați și să îl marcați ca depus.",
+      "disclosure_out_of_scope": "Acest răspuns aparține Modulului cuprinzător, care nu face parte din acest raport, așa că nu a fost salvat. Adăugați Modulul cuprinzător la raport din lista de secțiuni, apoi răspundeți.",
+      "module_out_of_scope": "Această secțiune aparține Modulului cuprinzător, care nu face parte din acest raport, așa că nu este nimic de afișat. Adăugați Modulul cuprinzător la raport din lista de secțiuni pentru a o completa.",
+      "basis_follows_scope": "Baza de întocmire este stabilită de modulele pe care le cuprinde acest raport, așa că răspunsul nu a fost salvat. Schimbați în schimb modulele raportului din lista de secțiuni sau din meniul raportului."
     },
     "calculator": {
       "unknown_source": "Sursa de energie trimisă nu se numără printre cele acoperite de factorii de emisie ai acestui raport, așa că linia nu a putut fi salvată. Reîmprospătați pagina pentru a încărca sursele din care puteți alege.",

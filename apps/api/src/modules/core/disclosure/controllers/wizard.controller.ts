@@ -79,6 +79,12 @@ export class WizardController {
     status: 404,
     description: `${NO_SUCH_REPORT} Also a module the report's pinned taxonomy version does not carry.`,
   })
+  @ApiResponse({
+    status: 409,
+    description:
+      'A Comprehensive module on a report whose scope is Basic (FR-177): it is not served until the scope asks it. ' +
+      'Answers given before the scope was lowered are kept, and served again once it is raised.',
+  })
   async step(
     @Param('id', ParseUUIDPipe) reportId: string,
     @Param('module') module: string,
@@ -113,8 +119,10 @@ export class WizardController {
   @ApiResponse({
     status: 409,
     description:
-      'The reporting period is locked (FR-22), with no `refused` — or, listing them in `refused`, every value ' +
-      'reached a figure the calculator computed, whose replacement is the override route.',
+      'The reporting period is locked (FR-22), with no `refused` — or, listing them in `refused`, nothing was stored ' +
+      'and the first value was refused for the report’s state: a figure the calculator computed, whose replacement is ' +
+      'the override route; a Comprehensive element on a Basic report (FR-177); or B1’s basis for preparation naming ' +
+      'an option the report’s scope does not, the scope being changed on the report itself (FR-27).',
   })
   async write(
     @Param('id', ParseUUIDPipe) reportId: string,

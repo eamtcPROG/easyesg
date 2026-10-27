@@ -366,3 +366,48 @@ export class DisclosureModuleNotFoundError extends DomainError {
     super('core.report.module_not_found');
   }
 }
+
+/**
+ * A write to a Comprehensive element on a report whose scope is Basic (task 78.1; §12.5.6's task-182 report-authoring
+ * row (11)). **Refused rather than stored**: lowering the scope keeps the C answers already written (row (10)), and
+ * this is what stops new ones — a C answer is given once the module is added. An element B3 and C3 share is a Basic
+ * element too and never reaches this (`scopeAsks` over its modules).
+ *
+ * **Under the generic conflict slug**: the report's scope, not the value sent, is what refuses it.
+ */
+export class DisclosureOutOfScopeError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.disclosure_out_of_scope');
+  }
+}
+
+/**
+ * A step read for a Comprehensive module on a report whose scope is Basic (task 78.1; row (11): *answers out of scope
+ * rather than serving fields*). A conflict rather than `DisclosureModuleNotFoundError`'s 404, which is kept for a module
+ * the pinned taxonomy does not carry — this one exists and is one action away (§12.5.6's task-78 row).
+ */
+export class DisclosureModuleOutOfScopeError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.module_out_of_scope');
+  }
+}
+
+/**
+ * B1's basis for preparation written as an option the report's scope does not state (task 78.3; §12.5.6's task-78 row
+ * (1)). The basis *is* the scope, so an answer naming the other option would make the filing state two bases; the scope
+ * is changed on the report itself, which rewrites this answer with it.
+ */
+export class BasisForPreparationFollowsScopeError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.Conflict;
+  readonly status = 409;
+
+  constructor() {
+    super('core.report.basis_follows_scope');
+  }
+}

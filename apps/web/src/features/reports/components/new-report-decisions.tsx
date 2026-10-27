@@ -146,11 +146,12 @@ export async function NewReportDecisions({
           <p className={`t-numeric ${styles.decisionHint}`}>
             {t('period.value', { start: period.periodStart.date, end: period.periodEnd.date })}
           </p>
-          <p className={`t-caption ${styles.decisionHint}`}>{t('comprehensive')}</p>
-          {/* Its own provider since task 99 — see `i18n/client-messages.ts`. */}
-          <CreateReportForm periodId={period.id} />
         </section>
       )}
+
+      {/* The scope, its own region after the pins (task 78.4; S-39), and the confirm row — the screen's one
+          interactive part, so one Client Component draws both. */}
+      {period === undefined ? null : <CreateReportForm periodId={period.id} />}
     </div>
   );
 }

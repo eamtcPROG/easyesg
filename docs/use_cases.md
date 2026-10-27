@@ -778,10 +778,10 @@ their numbers put them.
 - **Preconditions:** An editable report session (UC-18); entity master data exists (UC-52 … UC-54).
 - **Trigger:** The Contributor enters the first wizard step.
 - **Main success scenario:**
-  1. The Contributor confirms or completes module choice (Basic at MVP), legal form, NACE code(s), the employee count together with its basis — headcount or full-time equivalent — and whether it is taken at period end or as a period average, site geolocations, and consolidation scope. **Amended 9 Sep 2026 (project owner, task 36.9), twice in one day and the second time to undo the first.** The step read *"employee headcount and FTE"*; an amendment made on a search of element keys and labels alone replaced it with *"employee headcount"*, on the false finding that no FTE exists. It does: `TypeOfNumberOfEmployees` admits `HeadcountMember` and `Full-TimeEquivalentFTEMember`, both labelled in three locales, and `EmployeeCountingMethodology` carries the period-end/average basis — three B1 elements where the step had named one. Found by task 36.9's spec review, which read the enumeration domains the first pass did not.
+  1. The Contributor confirms or completes module choice — shown from the report's scope, and changed through UC-192 rather than answered here *(amended 27 Oct 2026, task 78; `architecture.md` §12.5.6's task-78 row (1))* — legal form, NACE code(s), the employee count together with its basis — headcount or full-time equivalent — and whether it is taken at period end or as a period average, site geolocations, and consolidation scope. **Amended 9 Sep 2026 (project owner, task 36.9), twice in one day and the second time to undo the first.** The step read *"employee headcount and FTE"*; an amendment made on a search of element keys and labels alone replaced it with *"employee headcount"*, on the false finding that no FTE exists. It does: `TypeOfNumberOfEmployees` admits `HeadcountMember` and `Full-TimeEquivalentFTEMember`, both labelled in three locales, and `EmployeeCountingMethodology` carries the period-end/average basis — three B1 elements where the step had named one. Found by task 36.9's spec review, which read the enumeration domains the first pass did not.
   2. The Contributor records any sensitive information omitted under the standard's omission provision.
   3. The system uses the answers to drive conditional-applicability logic for every subsequent module.
-- **Business rules:** Values pre-populate from the entity master record (D-2) but remain editable here, because B1 is a disclosure, not master data. B1 is entered first because its answers drive conditional applicability.
+- **Business rules:** Values pre-populate from the entity master record (D-2) but remain editable here, because B1 is a disclosure, not master data — except the basis for preparation, which is the report's scope (FR-27, UC-192). B1 is entered first because its answers drive conditional applicability.
 - **Related FRs:** FR-24, FR-27, FR-28
 - **Related UCs:** UC-26, UC-28, UC-54, UC-81
 
@@ -926,6 +926,27 @@ their numbers put them.
 - **Note on the gating question.** EFRAG's B11 block opens with *"has the undertaking incurred in convictions and fines in the reporting period?"*, which carries **no taxonomy element** — the sixth such gate, after B2's, B4's, B6's, B7's and B8's. This platform therefore does not gate on it, and the reason is stronger here than elsewhere: with FR-30's nil return, answering **0** says *none* affirmatively, where EFRAG's *No* leaves two empty cells that say nothing at all.
 - **Related FRs:** FR-24, FR-30
 - **Related UCs:** UC-27
+
+### UC-192 — Add the Comprehensive Module to a report in progress
+
+*Written 27 Oct 2026 by task 78.3, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package, whose B1 states the basis for preparation as one of two options — *Option A (Basic Module only)* and *Option B (Basic Module and Comprehensive Module)* — under `BasisForPreparation`, the element D-A's scope flag is (`architecture.md` §12.5.6's task-91.2 row). The decisions are §12.5.6's task-182 report-authoring row (10), (11) and its task-78 row.*
+
+- **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
+- **Module:** Comprehensive Module
+- **Stakeholders and interests:** Contributor — extends a report already under way when a bank or a large customer asks for the Comprehensive Module, without re-entering anything; the counterparty — receives one report whose basis for preparation states what it covers; a future limited-assurance reviewer — needs every change of scope attributable.
+- **Preconditions:** An editable report session (UC-18): the report's period is open and its entity is not archived. The report's scope is Basic.
+- **Trigger:** The Contributor chooses to add the Comprehensive Module, from the report's module list.
+- **Main success scenario:**
+  1. The Contributor adds C1 … C9 to the report.
+  2. The system sets the report's scope to Basic and Comprehensive, and with it B1's basis for preparation to Option B where B1 already holds an answer; where B1 has not been opened, its basis opens as Option B (FR-27).
+  3. The system records the change with the acting user and the time (FR-54).
+  4. The module list shows C1 … C9 after B1 … B11, and the Contributor arrives at C1. Every Basic answer stands as it was, and applicability is evaluated again from B1's answers rather than reset (FR-28).
+- **Alternate flows:** 1a. **The Contributor removes the Comprehensive Module** from a Basic-and-Comprehensive report. The system names the C modules that hold answers and says they will be kept, hidden, not counted and not exported, and restored if the module is added again; the Contributor confirms. The system sets the scope to Basic and B1's basis to Option A where B1 holds one, records the change (FR-54), and returns the Contributor to the report's resume point. The C answers remain stored and untouched.
+- **Exception flows:** Where the period is locked, the change is refused and the lock is named; reopening the period (UC-58) lifts it. Where the report's entity is archived, the change is refused and nothing restores it. A view-only member is not offered either action. A write to a C element, or a C step read, on a Basic report is refused rather than stored or served, so a C answer can only be given once the module is added.
+- **Postconditions:** The report's scope and B1's basis for preparation agree. Its C answers are shown, counted and exported exactly while the scope is Basic and Comprehensive. Both changes are in the report's change trail.
+- **Business rules:** Comprehensive is additive over Basic and never a second report (D-A). The basis for preparation is the scope and is not answered separately in B1, so the report cannot state two bases (`architecture.md` §12.5.6's task-78 row (1)). Lowering the scope never deletes an answer — the rule task 91.3 set for a field that stops applying. A report's last validation run is not moved by a change of scope; it is read as it was left until the next run (182/26), and an export runs validation first (FR-44). Gating the Comprehensive scope by plan is task 81.1's; until then, and with billing disabled, it is authorable (NFR-1).
+- **Related FRs:** FR-177, FR-27, FR-28, FR-54
+- **Related UCs:** UC-18, UC-19, UC-57, UC-58, UC-183 … UC-191
 
 ### UC-30 — Declare a section omitted as classified or sensitive information
 

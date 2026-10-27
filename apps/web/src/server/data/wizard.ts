@@ -9,7 +9,7 @@ import {
   type Report,
   type ReportScope,
 } from '@easyesg/contracts';
-import { API_OUTCOME } from '@/lib/api-outcome';
+import { API_OUTCOME, type ApiOutcome } from '@/lib/api-outcome';
 import { api } from '../api/api-client';
 import { readActiveMembership } from './memberships';
 import {
@@ -78,6 +78,12 @@ export type WizardStepRead =
   | TenantReadNotFound
   | TenantReadRefusal;
 
+/** The status the step read refuses a Comprehensive module on a Basic report with (task 78.1) — its only conflict. */
+const OUT_OF_SCOPE_STATUS = 409;
+
+const isOutOfScope = (outcome: ApiOutcome<unknown>): boolean =>
+  outcome.status === API_OUTCOME.Problem && outcome.problem.status === OUT_OF_SCOPE_STATUS;
+
 export async function readWizardStep(input: {
   readonly reportId: string;
   readonly module: string;
@@ -102,14 +108,14 @@ export async function readWizardStep(input: {
   }
   // A report the organization does not hold — unknown, or deleted (FR-210; task 192): the 404 screen, not *try again*.
   if (isNotFound(report)) return { status: TENANT_READ.NOT_FOUND };
-  // The step read's one answer of its own (task 183's consequence): the report and its module list read, and the step
-  // answered 404 — the api's word, since task 183, for a module the pinned taxonomy does not carry. The section answers
-  // it as it answers a module outside the report's scope: the 404 screen, never the unreachable state, which would tell
-  // a reader with a stale link to try again later.
+  // The step read's two answers of its own: the report and its module list read, and the step answered 404 — the api's
+  // word, since task 183, for a module the pinned taxonomy does not carry — or 409, its word since task 78.1 for a
+  // Comprehensive module on a Basic report. The section answers both as it answers a module outside the report's scope:
+  // the 404 screen, never the unreachable state, which would tell a reader with a stale link to try again later.
   if (
     modules.status === API_OUTCOME.Ok &&
     report.status === API_OUTCOME.Ok &&
-    isNotFound(step)
+    (isNotFound(step) || isOutOfScope(step))
   ) {
     return { status: WIZARD_READ.MODULE_NOT_FOUND };
   }

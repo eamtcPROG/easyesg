@@ -296,6 +296,12 @@ export interface DisclosureField {
    */
   readonly fromRecord: boolean;
   /**
+   * Whether the answer is the report's scope rather than the reporter's — B1's basis for preparation (task 78.3; FR-27,
+   * FR-177; §12.5.6's task-78 row (1)). Shown and never typed into: the write refuses any other option, and the scope
+   * is changed on the report itself, which rewrites a stored answer with it.
+   */
+  readonly followsScope: boolean;
+  /**
    * Whether this field applies to this reporter (task 91.3; FR-28, BR-APP-5).
    *
    * **`false` does not mean empty.** UX-28 requires a value entered before the condition turned to

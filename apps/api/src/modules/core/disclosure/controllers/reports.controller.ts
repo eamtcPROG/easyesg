@@ -29,9 +29,8 @@ import { ReportService } from '../services/report.service';
  * **The reminder is the administrator's alone** (task 50.3): UC-175's actor is the OA, and S-16, where it is sent
  * from, is the administrator's screen. It writes nothing on the report — it raises a notice about it.
  *
- * **No `DELETE`.** Nothing in UC-17 or UC-18 removes a report, and a report against a period that
- * has been reported on is the record of a filing — FR-22 locks it. The route does not exist rather
- * than existing and refusing.
+ * **`DELETE` is the administrator's alone, and soft** (task 192; UC-213): a report whose period is locked or which
+ * has left the platform as a file is refused, since FR-22 and FR-53 make it the record of a filing.
  *
  * **No route names a version, on any method.** DR-4 pins at creation from the period, and FR-69
  * moves a pin by an explicit migration run — so a field for one would make "never moves silently" a
@@ -115,14 +114,16 @@ export class ReportsController {
   @ApiOperation({
     summary: 'Change the report’s module scope (FR-177)',
     description:
-      'Comprehensive may be added to a report already in progress. The pinned versions are not ' +
+      'Comprehensive may be added to a report already in progress, or taken off it: no answer is removed either way, ' +
+      'C answers being kept and not shown while the scope is Basic. B1’s basis for preparation follows the scope, ' +
+      'rewritten in the same transaction where B1 holds one (FR-27). The pinned versions are not ' +
       'editable: DR-4 moves them only by an explicit migration run (FR-69), so no field on this ' +
       'request can name one and the application role holds no privilege to write one.',
   })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiObjectResponse(ReportResponseDto, { status: 200, description: 'The report as it now stands.' })
   @ApiResponse({ status: 404, description: NO_SUCH_REPORT })
-  @ApiResponse({ status: 409, description: 'The reporting period is locked.' })
+  @ApiResponse({ status: 409, description: 'The reporting period is locked, or the report’s entity is archived.' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateReportRequestDto,

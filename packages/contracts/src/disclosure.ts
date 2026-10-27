@@ -113,6 +113,16 @@ export const REPORT_SCOPE = {
 export type ReportScope = (typeof REPORT_SCOPE)[keyof typeof REPORT_SCOPE];
 
 /**
+ * The scope a report is created with unless its creator chooses otherwise — Basic, FR-177's default (task 78.4): S-39
+ * opens on it. The api applies the same default to a request naming none, from its own copy beside its own vocabulary.
+ */
+export const DEFAULT_REPORT_SCOPE: ReportScope = REPORT_SCOPE.BASIC;
+
+/** Is this unvalidated value one of the scopes? Beside the set, not retyped at each reader — a radio answers a string. */
+export const isReportScope = (value: unknown): value is ReportScope =>
+  (Object.values(REPORT_SCOPE) as readonly unknown[]).includes(value);
+
+/**
  * Where a stored value came from (task 36.4) — the `report_disclosure_value_origin_known` CHECK's
  * vocabulary, mirrored here like the objects above.
  *

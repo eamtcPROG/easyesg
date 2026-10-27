@@ -65,6 +65,7 @@ import { ReportFilingStoreRepository } from '@api/infrastructure/persistence/cor
 import { ReportDeletionStoreRepository } from '@api/infrastructure/persistence/core/report-deletion-store.repository';
 import { WizardService } from './services/wizard.service';
 import { CreateReport } from './use-cases/create-report.use-case';
+import { ChangeReportScope } from './use-cases/change-report-scope.use-case';
 import { SendReportReminder } from './use-cases/send-report-reminder.use-case';
 import { ReadWizardStep, type WizardVocabulary } from './use-cases/read-wizard-step.use-case';
 import { OMISSION_SECTIONS, type OmissionSections } from './interfaces/omission-sections.interface';
@@ -279,6 +280,13 @@ const httpProviders: Provider[] = [
     inject: [REPORT_STORE, REPORTING_PERIOD_STORE, CLOCK],
     useFactory: (reports: ReportStore, periods: ReportingPeriodStore, now: Clock) =>
       new CreateReport(reports, periods, now),
+  },
+  // UC-192's scope change (task 78.3), and B1's stored basis with it — on the request's transaction, as every store is.
+  {
+    provide: ChangeReportScope,
+    inject: [REPORT_STORE, DISCLOSURE_VALUE_STORE, TAXONOMY_REGISTRY, CLOCK],
+    useFactory: (reports: ReportStore, values: DisclosureValueStore, taxonomy: TaxonomyRegistry, now: Clock) =>
+      new ChangeReportScope(reports, values, taxonomy, now),
   },
   // Task 51.2's withdrawal: the write that answers the last of what FR-164's notice listed cancels it on its own
   // transaction (182/134), judged against the last run's stored list.

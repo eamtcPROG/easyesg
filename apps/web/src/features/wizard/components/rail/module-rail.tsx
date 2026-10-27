@@ -7,6 +7,7 @@ import { groupCountWords, moduleLabel, moduleStatus, rollUpNote } from '../../to
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import styles from './module-rail.module.css';
 import { StepLink } from '../shared/step-link';
+import { ComprehensiveOffer } from './comprehensive-offer';
 
 /**
  * S-07's module list (UX-5), as `EasyESG Reporting Core.dc.html`'s rail draws it (task 179.1): a group per module
@@ -22,18 +23,24 @@ import { StepLink } from '../shared/step-link';
  *
  * **A module FR-28 has ruled out, or one waiting on B1, stays reachable**: UX-28 keeps values entered before the
  * condition turned, and a module nobody can open is a module nobody can see them in.
+ *
+ * **A Basic report's list ends with the offer of the Comprehensive Module** (task 78.3; UC-192), beneath the groups, for
+ * a reader who may write it — the section says whether (`offersComprehensive`).
  */
 export async function ModuleRail({
   reportId,
   modules,
   checks,
   current,
+  offersComprehensive,
 }: {
   readonly reportId: string;
   readonly modules: readonly DisclosureModuleSummary[];
   /** What the last validation run found per module, or `null` where none has checked the report (task 42.2). */
   readonly checks: ModuleChecks;
   readonly current: string;
+  /** The report is Basic and the reader may change it (`offersComprehensive` in `tools/scope-change.ts`). */
+  readonly offersComprehensive: boolean;
 }) {
   const [t, format] = await Promise.all([getTranslations(WIZARD_MESSAGES), getFormatter()]);
 
@@ -68,6 +75,7 @@ export async function ModuleRail({
           </WizardModuleGroup>
         );
       })}
+      {offersComprehensive ? <ComprehensiveOffer reportId={reportId} /> : null}
       <p className={styles.footer}>{t('rail.footer')}</p>
     </>
   );

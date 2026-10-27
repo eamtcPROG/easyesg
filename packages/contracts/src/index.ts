@@ -209,6 +209,7 @@ export {
   APPLICABILITY_CONDITION,
   COLUMN_OF_KIND,
   COMPARABILITY,
+  DEFAULT_REPORT_SCOPE,
   DISCLOSURE_KIND,
   DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
@@ -216,6 +217,7 @@ export {
   REPORT_SCOPE,
   REPORT_STATUS,
   VALUE_COLUMN,
+  isReportScope,
   membersOf,
   type ApplicabilityCondition,
   type Comparability,
@@ -231,6 +233,8 @@ export type Report = components['schemas']['ReportResponseDto'];
 /** Creating one (UC-18; task 32.3). Carries the period and an optional scope — the two version pins
  *  are copied from the period and are deliberately not fields (FR-66, DR-4). */
 export type CreateReportRequest = components['schemas']['CreateReportRequestDto'];
+/** Changing its scope on a report in progress (UC-192; task 78.3) — the one field a later edit may name. */
+export type UpdateReportRequest = components['schemas']['UpdateReportRequestDto'];
 /** UC-175's reminder about a report, sent from S-16 (task 50.3). */
 export type SendReportReminderRequest = components['schemas']['SendReportReminderRequestDto'];
 export type DisclosureModuleSummary = components['schemas']['DisclosureModuleSummaryDto'];

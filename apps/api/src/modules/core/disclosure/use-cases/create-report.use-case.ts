@@ -3,24 +3,20 @@ import { EntityArchivedError } from '@api/modules/core/entity/errors/entity.erro
 import { ENTITY_STATUS } from '@api/modules/core/entity/models/reporting-entity.model';
 import { PeriodNotFoundError } from '@api/modules/core/period/errors/period.errors';
 import type { ReportingPeriodStore } from '@api/modules/core/period/interfaces/reporting-period-store.interface';
-import type { Report, ReportPatch, ReportScope } from '../models/report.model';
-import { DEFAULT_REPORT_SCOPE, REPORT_STATUS } from '../models/report.model';
+import type { Report, ReportScope } from '../models/report.model';
+import { DEFAULT_REPORT_SCOPE } from '../models/report.model';
 import type { ReportStore } from '../interfaces/report-store.interface';
-import { ReportNotEditableError, ReportNotFoundError } from '../errors/report.errors';
+import { ReportNotEditableError } from '../errors/report.errors';
 
 export interface CreateReportCommand {
   readonly reportingPeriodId: string;
   /** Absent where the caller named none — `DEFAULT_REPORT_SCOPE` is applied here, not at the edge. */
   readonly scope?: ReportScope;
 }
-export interface UpdateReportCommand {
-  readonly reportId: string;
-  readonly patch: ReportPatch;
-}
 
 /**
- * UC-18 — create the report for a reporting period, and set its scope afterwards (FR-24 … FR-32,
- * FR-66, FR-177).
+ * UC-18 — create the report for a reporting period, with its scope (FR-24 … FR-32, FR-66, FR-177). Changing the scope
+ * afterwards is UC-192's, `ChangeReportScope` (task 78.3).
  *
  * **The pin is not this use case's to resolve, and that is the whole of DR-4 in one sentence.**
  * `TAXONOMY_REGISTRY.pinFor()` is asked once, at period open, for the period's own start date
@@ -40,11 +36,11 @@ export interface UpdateReportCommand {
  * **An archived entity's period takes no new report** (FR-20; §12.5.6's task-187 row), refused with the
  * `entity-archived` a new period on it meets, from the entity status the period's read already joins. S-39 stops
  * offering the entity; this is what a race, a stale address or another client meets. A report already opened is
- * untouched, so `update` does not ask.
+ * untouched by this rule; changing its scope meets the archive's own trigger (task 214).
  */
 export class CreateReport {
   constructor(
-    private readonly reports: ReportStore,
+    private readonly reports: Pick<ReportStore, 'create'>,
     private readonly periods: ReportingPeriodStore,
     private readonly now: Clock,
   ) {}
@@ -68,24 +64,5 @@ export class CreateReport {
     // or an organization removed in parallel. The period's own answer is the honest one.
     if (!created) throw new PeriodNotFoundError();
     return created;
-  }
-
-  /**
-   * FR-177's *settable on a report already in progress*.
-   *
-   * **Narrowing back to Basic is permitted, and that is a recorded deferral rather than a
-   * decision.** Nothing is lost today because task 34's disclosure store does not exist, so a
-   * Comprehensive report holds no C1–C9 values to orphan. When it does, whether narrowing is
-   * refused, warned about, or a consequence-disclosing action under UX-70 is task 78.1's to settle
-   * with the values in front of it — inventing the rule here would be a policy nobody asked for.
-   */
-  async update(command: UpdateReportCommand): Promise<Report> {
-    const current = await this.reports.findReport({ reportId: command.reportId });
-    if (!current) throw new ReportNotFoundError();
-    if (current.status === REPORT_STATUS.LOCKED) throw new ReportNotEditableError();
-
-    const updated = await this.reports.update({ ...command, at: this.now() });
-    if (!updated) throw new ReportNotFoundError();
-    return updated;
   }
 }

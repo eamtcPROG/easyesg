@@ -2,13 +2,13 @@ import { EntityArchivedError } from '@api/modules/core/entity/errors/entity.erro
 import { ENTITY_STATUS } from '@api/modules/core/entity/models/reporting-entity.model';
 import { PeriodNotFoundError } from '@api/modules/core/period/errors/period.errors';
 import { aPeriod, FakeReportingPeriodStore } from '@api/modules/core/period/testing/period.fakes';
-import { ReportNotEditableError, ReportNotFoundError } from '../errors/report.errors';
+import { ReportNotEditableError } from '../errors/report.errors';
 import { REPORT_SCOPE, REPORT_STATUS } from '../models/report.model';
 import { aReport, FakeReportStore } from '../testing/report.fakes';
 import { CreateReport } from './create-report.use-case';
 
 /**
- * UC-18 — creating the report and setting its scope (task 31.3).
+ * UC-18 — creating the report with its scope (task 31.3). Changing it later is `ChangeReportScope`'s (task 78.3).
  *
  * **The pin is what this spec is mostly about**, because it is the invariant the task exists to
  * prove rather than a column it happens to write. The assertions come in two kinds: the report
@@ -26,7 +26,6 @@ const REGISTERED = '2026-05-01';
 const SUPERSEDED = '2025-11-30';
 
 const PERIOD_ID = '00000000-0000-0000-0000-0000000000c1';
-const REPORT_ID = '00000000-0000-0000-0000-0000000000f1';
 
 const build = (options: { periods?: ReturnType<typeof aPeriod>[]; reports?: ReturnType<typeof aReport>[] } = {}) => {
   const periods = options.periods ?? [aPeriod({ id: PERIOD_ID })];
@@ -136,62 +135,6 @@ describe('CreateReport', () => {
       await expect(
         useCase.create({ reportingPeriodId: PERIOD_ID, scope: REPORT_SCOPE.BASIC }),
       ).rejects.toBeInstanceOf(ReportNotEditableError);
-    });
-  });
-
-  describe('changing the scope (FR-177)', () => {
-    it('adds Comprehensive to a report already in progress', async () => {
-      const { useCase } = build({ reports: [aReport({ id: REPORT_ID })] });
-
-      const updated = await useCase.update({
-        reportId: REPORT_ID,
-        patch: { scope: REPORT_SCOPE.BASIC_AND_COMPREHENSIVE },
-      });
-
-      expect(updated.scope).toBe(REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
-      expect(updated.updatedAt).toEqual(AT);
-    });
-
-    /**
-     * **The pin does not move on an edit, and cannot be named on one.** There is no field for it on
-     * `ReportPatch`, so this asserts the consequence rather than the mechanism — the mechanism is a
-     * type, and below it a privilege.
-     */
-    it('leaves the pinned versions exactly where they were', async () => {
-      const { useCase } = build({
-        reports: [
-          aReport({ id: REPORT_ID, templateVersion: SUPERSEDED, taxonomyVersion: SUPERSEDED }),
-        ],
-      });
-
-      const updated = await useCase.update({
-        reportId: REPORT_ID,
-        patch: { scope: REPORT_SCOPE.BASIC_AND_COMPREHENSIVE },
-      });
-
-      expect(updated.templateVersion).toBe(SUPERSEDED);
-      expect(updated.taxonomyVersion).toBe(SUPERSEDED);
-    });
-
-    it('refuses an edit to a report whose period is locked', async () => {
-      const { useCase } = build({
-        reports: [aReport({ id: REPORT_ID, status: REPORT_STATUS.LOCKED })],
-      });
-
-      await expect(
-        useCase.update({
-          reportId: REPORT_ID,
-          patch: { scope: REPORT_SCOPE.BASIC_AND_COMPREHENSIVE },
-        }),
-      ).rejects.toBeInstanceOf(ReportNotEditableError);
-    });
-
-    it('refuses a report that does not exist, or belongs to another tenant', async () => {
-      const { useCase } = build();
-
-      await expect(
-        useCase.update({ reportId: REPORT_ID, patch: { scope: REPORT_SCOPE.BASIC } }),
-      ).rejects.toBeInstanceOf(ReportNotFoundError);
     });
   });
 });

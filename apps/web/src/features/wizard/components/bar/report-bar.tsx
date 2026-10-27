@@ -4,7 +4,9 @@ import { getFormatter, getTranslations } from 'next-intl/server';
 import { ROUTES, reportExportRoute, reportPreviewRoute } from '@/lib/routes';
 import { mayAdminister, readActiveMembership } from '@/server/data/memberships';
 import type { ReadOnlyCause } from '@/server/data/wizard';
+import { comprehensiveWithAnswers } from '../../tools/module-state';
 import { reportIdentity } from '../../tools/report-identity';
+import { SCOPE_CHANGE, scopeChangeOffered } from '../../tools/scope-change';
 import { initialSavedAt } from '../../tools/saved-at';
 import { WIZARD_MESSAGES } from '../shared/wizard-messages';
 import { ExitLink } from './exit-link';
@@ -43,8 +45,13 @@ export async function ReportBar({
     readActiveMembership(),
   ]);
   const { title, meta } = reportIdentity({ report, t, tReports, format });
-  // UC-213's deletion is the administrator's alone (task 192); anyone else's ⋯ at `medium` would hold nothing.
+  // UC-213's deletion is the administrator's alone (task 192); UC-192's lowering is any writer's on a report carrying
+  // the Comprehensive Module (task 78.3). A reader offered neither is drawn no ⋯ at `medium`, which would hold nothing.
   const mayDelete = mayAdminister(membership);
+  const lowerable =
+    scopeChangeOffered({ scope: report.scope, writable: readOnly === null }) === SCOPE_CHANGE.LOWER;
+  // What lowering's dialogue names — the list here is the scope's, which on a report carrying the module is every one.
+  const held = lowerable ? comprehensiveWithAnswers(modules) : NOTHING_HELD;
 
   return (
     <WizardBar
@@ -63,10 +70,15 @@ export async function ReportBar({
           <Button asChild variant={BUTTON_VARIANT.PRIMARY}>
             <ExitLink href={reportPreviewRoute({ reportId: report.id })}>{t('bar.review')}</ExitLink>
           </Button>
-          {mayDelete ? <ReportMenu report={report} /> : null}
+          {mayDelete || lowerable ? (
+            <ReportMenu report={report} mayDelete={mayDelete} lowerable={lowerable} held={held} />
+          ) : null}
         </>
       }
-      overflow={<ReportOverflow report={report} mayDelete={mayDelete} />}
+      overflow={<ReportOverflow report={report} mayDelete={mayDelete} lowerable={lowerable} held={held} />}
     />
   );
 }
+
+/** No Comprehensive module named — module-level, so a report not offered the lowering hands down one stable array. */
+const NOTHING_HELD: readonly string[] = [];
