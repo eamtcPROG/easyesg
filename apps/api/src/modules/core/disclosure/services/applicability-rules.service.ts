@@ -96,7 +96,7 @@ export class ApplicabilityRulesService implements ApplicabilityRules {
     return read;
   }
 
-  /** One condition, narrowed to the three the vocabulary declares; `null` for anything else. */
+  /** One condition, narrowed to those the vocabulary declares; `null` for anything else. */
   private readCondition(condition: unknown): ApplicabilityConditionSpec | null {
     if (!isRecord(condition)) return null;
     switch (condition.kind) {
@@ -121,6 +121,10 @@ export class ApplicabilityRulesService implements ApplicabilityRules {
               elementKey: condition.elementKey,
               members: condition.members,
             }
+          : null;
+      case APPLICABILITY_CONDITION.IS_TRUE:
+        return typeof condition.elementKey === 'string' && condition.elementKey !== ''
+          ? { kind: APPLICABILITY_CONDITION.IS_TRUE, elementKey: condition.elementKey }
           : null;
       default:
         return null;

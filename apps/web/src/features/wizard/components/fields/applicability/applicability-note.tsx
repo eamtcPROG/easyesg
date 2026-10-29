@@ -1,8 +1,7 @@
 import { Button, BUTTON_VARIANT, Callout, CALLOUT_INTENT, TextLink } from '@easyesg/ui';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { ApplicabilityNote as Note } from '../../../tools/applicability-notes';
-import { noteWords } from '../../../tools/applicability-words';
-import { BASIS_MODULE } from '../../../tools/basis-module';
+import { noteWords, placeOf } from '../../../tools/applicability-words';
 import { fieldHref } from '../../../tools/field-anchor';
 import { StepLink } from '../../shared/step-link';
 import { APPLICABILITY_MESSAGES } from '../shared/step-messages';
@@ -22,16 +21,21 @@ import styles from '../styles/step.module.css';
 export function ApplicabilityNote({
   note,
   reportId,
+  onStep,
   onDismiss,
 }: {
   readonly note: Note;
   readonly reportId: string;
+  /** The element keys this step presents — where a follow-on's question is (task 80.1). */
+  readonly onStep: ReadonlySet<string>;
   readonly onDismiss: () => void;
 }) {
   const t = useTranslations(APPLICABILITY_MESSAGES);
   const format = useFormatter();
-  const { title, body } = noteWords(t, format, note);
+  const { title, body } = noteWords(t, format, note, onStep);
   const driver = note.cause.drivers[0];
+  // The driver's own module since task 80.1 — B1's, B2's for C2's target, this step's for a follow-on's question.
+  const where = placeOf({ cause: note.cause, onStep });
 
   return (
     <Callout
@@ -39,16 +43,16 @@ export function ApplicabilityNote({
       title={title}
       action={
         <span className={styles.noteActions}>
-          {driver === undefined ? null : (
+          {driver === undefined || driver.module === null ? null : (
             <TextLink asChild>
               <StepLink
                 href={fieldHref({
                   reportId,
-                  module: BASIS_MODULE,
+                  module: driver.module,
                   field: { elementKey: driver.elementKey, dimensionKey: '', ordinal: 0 },
                 })}
               >
-                {t('note.see')}
+                {t('note.see', where)}
               </StepLink>
             </TextLink>
           )}

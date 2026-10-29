@@ -55,12 +55,54 @@ describe('the Digital Template map', () => {
     const gate = { at: { sheet: 'General Information', cell: 'E396' }, when: ['DescriptionOfSustainabilityRelatedCertificationsOrLabels'] };
     const unansweredGate = { ...shipped('1.3.0'), gates: [gate] };
     const gateOnNothing = { ...shipped('1.3.0'), gates: [{ ...gate, when: ['NoSuchElement'], answer: 'held' }] };
-    for (const payload of [unknownList, unknownTable, memberWithoutCell, notAnAddress, noSuchKind, unansweredGate, gateOnNothing, null, 'a map', []]) {
+    // A choice on an element the map places nowhere, one with no option, and a map that says nothing of its choices.
+    const status = { at: { sheet: 'Environmental Disclosures', cell: 'D57' } };
+    const choiceOnNothing = { ...shipped('1.3.0'), choices: [{ ...status, options: [{ value: 'A transition plan has already been adopted', when: ['NoSuchPlan'] }] }] };
+    const choiceOfNothing = { ...shipped('1.3.0'), choices: [{ ...status, options: [] }] };
+    const { choices: _choices, ...noChoices } = shipped('1.3.0');
+    const dayWithoutMonth = withElement('DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet', {
+      kind: 'day',
+      at: { name: 'DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet' },
+      day: { year: { sheet: 'Environmental Disclosures', cell: 'I59' }, day: { sheet: 'Environmental Disclosures', cell: 'I61' } },
+    });
+    for (const payload of [
+      unknownList,
+      unknownTable,
+      memberWithoutCell,
+      notAnAddress,
+      noSuchKind,
+      unansweredGate,
+      gateOnNothing,
+      choiceOnNothing,
+      choiceOfNothing,
+      noChoices,
+      dayWithoutMonth,
+      null,
+      'a map',
+      [],
+    ]) {
       expect(readDigitalTemplateMap(payload)).toBeNull();
       expect(digitalTemplateMapShapeRefusal(payload)).toEqual(expect.stringContaining('read whole'));
     }
     expect(digitalTemplateMapShapeRefusal(unknownList)).toContain('no-such-list');
     expect(digitalTemplateMapShapeRefusal(gateOnNothing)).toContain('NoSuchElement');
+    expect(digitalTemplateMapShapeRefusal(choiceOnNothing)).toContain('NoSuchPlan');
+  });
+
+  it('reads the Comprehensive Module’s shapes — a column of checkboxes, a date in three cells, a choice (task 80.3)', () => {
+    const map = readDigitalTemplateMap(shipped('1.3.0'));
+    expect(map?.elements.TypeOfHumanRightRelatedToTheConfirmedIncident).toEqual({
+      kind: TEMPLATE_PLACEMENT.CHECKBOX_ROWS,
+      at: { kind: CELL_TARGET.NAMED, name: 'TypeOfHumanRightRelatedToTheConfirmedIncident' },
+      // The template's five rights, the rows C7 offers — accident prevention, C6's sixth, has none (the task-79.7 row).
+      rows: { 'vsme:ChildLabourMember': 0, 'vsme:ForcedLabourMember': 1, 'vsme:HumanTraffickingMember': 2, 'vsme:DiscriminationMember': 3, 'vsme:OtherContentMember': 4 },
+      encoding: { as: 'boolean' },
+    });
+    expect(map?.elements.DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet).toMatchObject({
+      kind: TEMPLATE_PLACEMENT.DAY,
+      day: { year: { kind: CELL_TARGET.ADDRESS, sheet: 'Environmental Disclosures', cell: 'I59' } },
+    });
+    expect(map?.choices.map((choice) => choice.at)).toEqual([{ kind: CELL_TARGET.ADDRESS, sheet: 'Environmental Disclosures', cell: 'D57' }]);
   });
 
   describe('its publication check', () => {
@@ -95,6 +137,12 @@ describe('the Digital Template map', () => {
         JSON.stringify({ kind: CELL_TARGET.NAMED, name: 'SustainabilityIssueAddressedByPracticePolicyAndOrFutureInitiative', column: 9 }),
       );
       expect(targets).not.toContain(JSON.stringify({ kind: CELL_TARGET.NAMED, name: 'EnergyConsumptionFromFuels_RenewableEnergyMember' }));
+      // C6's every row, C3's day cells and its status choice are cells the export writes (task 80.3).
+      expect(targets).toContain(
+        JSON.stringify({ kind: CELL_TARGET.NAMED, name: 'TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce', row: 5 }),
+      );
+      expect(targets).toContain(JSON.stringify({ kind: CELL_TARGET.ADDRESS, sheet: 'Environmental Disclosures', cell: 'I60' }));
+      expect(targets).toContain(JSON.stringify({ kind: CELL_TARGET.ADDRESS, sheet: 'Environmental Disclosures', cell: 'D57' }));
       expect(new Set(targets).size).toBe(targets.length);
     });
   });

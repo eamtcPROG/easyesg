@@ -80,7 +80,11 @@ describe('validation runs and their findings (task 41.2)', () => {
   const objectsOf = <T>(body: unknown): T[] => (body as { objects: T[] }).objects;
   const rulesOf = (validation: Validation): string[] => validation.findings.map((finding) => finding.rule);
 
-  const openReport = async (year: number, entity = entityId): Promise<{ periodId: string; reportId: string }> => {
+  const openReport = async (
+    year: number,
+    entity = entityId,
+    scope?: string,
+  ): Promise<{ periodId: string; reportId: string }> => {
     const period = await http().post('/api/v1/periods').set(admin.authorization).send({
       reportingEntityId: entity,
       fiscalYear: year,
@@ -89,7 +93,7 @@ describe('validation runs and their findings (task 41.2)', () => {
     }).expect(201);
     const periodId = objectOf<{ id: string }>(period.body).id;
     const report = await http().post('/api/v1/reports').set(editor.authorization)
-      .send({ reportingPeriodId: periodId }).expect(201);
+      .send({ reportingPeriodId: periodId, ...(scope === undefined ? {} : { scope }) }).expect(201);
     return { periodId, reportId: objectOf<{ id: string }>(report.body).id };
   };
 
@@ -303,6 +307,64 @@ describe('validation runs and their findings (task 41.2)', () => {
         await restoreSlot(app, slot, shipped?.payload ?? { rules: [] });
         await store.refreshIfStale();
       }
+    });
+  });
+
+  /**
+   * Task 80.2 (FR-177 AC-5): C is checked and rolled up by the mechanisms B is, from the same rule set — and a Basic
+   * report's verdicts are what they would be were there no C at all.
+   */
+  describe('the Comprehensive Module, validated as the Basic is (task 80.2)', () => {
+    const verdicts = (validation: Validation) => ({ findings: validation.findings, rollUp: validation.rollUp });
+
+    it('gives a Basic report the same findings and roll-up whether or not the rule set carries C’s rules', async () => {
+      const { reportId } = await openReport(2031);
+      await write(reportId, [
+        { elementKey: 'Assets', valueNumeric: '500', state: DISCLOSURE_STATE.OK },
+        { elementKey: 'PubliclyAvailableDisclosure', valueBoolean: true, state: DISCLOSURE_STATE.OK },
+      ]);
+      const withC = verdicts(await run(reportId));
+      expect(withC.findings.length).toBeGreaterThan(0);
+
+      const store = app.get(ConfigurationStore);
+      const shipped = store.get<{ rules: { id: string }[] }>({
+        kind: VALIDATION_RULE_SET_CONFIG_KIND,
+        scope: VALIDATION_RULE_SET_CONFIG_SCOPE,
+      });
+      const basicOnly = (shipped?.payload.rules ?? []).filter((rule) => !/^c\d/u.test(rule.id));
+      // The seeded set does carry C's rules, or the comparison below would compare a set with itself.
+      expect(basicOnly.length).toBeLessThan(shipped?.payload.rules.length ?? 0);
+      const slot = await snapshotSlot(app, { kind: VALIDATION_RULE_SET_CONFIG_KIND, scope: VALIDATION_RULE_SET_CONFIG_SCOPE });
+      try {
+        await app.get(ConfigurationPublisher).publish({
+          kind: VALIDATION_RULE_SET_CONFIG_KIND,
+          scope: VALIDATION_RULE_SET_CONFIG_SCOPE,
+          payload: { rules: basicOnly },
+        });
+        await store.refreshIfStale();
+        // Byte for byte: every finding with its field, words and params, and every module's counts and status.
+        expect(JSON.stringify(verdicts(await run(reportId)))).toBe(JSON.stringify(withC));
+      } finally {
+        await restoreSlot(app, slot, shipped?.payload ?? { rules: [] });
+        await store.refreshIfStale();
+      }
+    });
+
+    it('rolls a Comprehensive report up over B1 … B11 and C1 … C9, naming its C findings by their fields', async () => {
+      const { reportId } = await openReport(2032, entityId, 'basic_and_comprehensive');
+      const { findings, rollUp } = await run(reportId);
+      expect(rollUp?.modules.map((module) => module.module)).toEqual([
+        'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11',
+        'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9',
+      ]);
+      // C1's three narratives the template always asks, each named in the reader's words and placed in C1.
+      const c1 = findings.filter((finding) => finding.rule.startsWith('c1-'));
+      expect(c1.map((finding) => finding.rule).sort()).toEqual(['c1-business-relationships', 'c1-markets', 'c1-products-and-services']);
+      for (const finding of c1) {
+        expect(finding.field.modules).toEqual(['C1']);
+        expect(finding.field.label).not.toBeNull();
+      }
+      expect(rollUp?.modules.find((module) => module.module === 'C1')).toMatchObject({ outstanding: 3, status: 'not_started' });
     });
   });
 

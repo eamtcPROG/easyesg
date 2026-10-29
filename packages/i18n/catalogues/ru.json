@@ -545,6 +545,23 @@
           },
           "page": "Страница {page} из {pages}",
           "omissions": "Пропуски и замечания"
+        },
+        "inputs": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Средняя валовая почасовая оплата труда женщин",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "Средняя валовая почасовая оплата труда мужчин",
+          "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": "Не менее 50% выручки от газообразного топлива",
+          "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": "Не менее 50% выручки от производства электроэнергии свыше 100 г CO₂e/кВт·ч",
+          "HoursWorkedByOneFullTimeEmployee": "Часов, отработанных одним сотрудником на полной ставке за период",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Сотрудников на начало периода",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Сотрудников на конец периода",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Сотрудники, охваченные коллективными договорами",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Сотрудники, уволившиеся за период",
+          "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": "Женщины в органе управления на конец периода",
+          "NumberOfFemaleEmployeesAtManagementLevel": "Женщины-сотрудники на руководящем уровне",
+          "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": "Мужчины в органе управления на конец периода",
+          "NumberOfMaleEmployeesAtManagementLevel": "Мужчины-сотрудники на руководящем уровне",
+          "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": "Не менее 1% выручки от каменного угля и лигнита",
+          "TenPercentOrMoreOfRevenuesFromOilFuels": "Не менее 10% выручки от нефтяного топлива"
         }
       },
       "workbook": {

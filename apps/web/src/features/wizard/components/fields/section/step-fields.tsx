@@ -41,6 +41,7 @@ import { ClassificationRow } from '../rows/classification-row';
 import { TargetChanges } from '../rows/target-changes';
 import { FIELD_MESSAGES, GROUP_MESSAGES, INPUT_MESSAGES } from '../shared/step-messages';
 import styles from '../styles/step.module.css';
+import { useFollowOnReread } from './use-follow-on-reread';
 
 /**
  * A step's fields as §6.2's anatomy, bound to autosave (task 35.2) — the list task 35.1 rendered,
@@ -110,6 +111,8 @@ export function StepFields({
   const tField = useTranslations(FIELD_MESSAGES);
   const tGroup = useTranslations(GROUP_MESSAGES);
   const tInput = useTranslations(INPUT_MESSAGES);
+  // An input's name is the PDF's too, so it is the shared catalogue's (task 80.3); its help is S-07's alone.
+  const tInputName = useTranslations('derivationInputNames');
   // Only the defaults' commit is this component's business now; every per-field read moved to
   // `StepField` with the state it needs (task 91.4).
   const { change } = useAutosaveContext();
@@ -159,21 +162,21 @@ export function StepFields({
    * than an unlabelled box.
    */
   const inputWords: Readonly<Record<string, { label: string; help: string }>> = {
-    AverageGrossHourlyPayLevelOfFemaleEmployees: { label: tInput('names.AverageGrossHourlyPayLevelOfFemaleEmployees'), help: tInput('help.AverageGrossHourlyPayLevelOfFemaleEmployees') },
-    AverageGrossHourlyPayLevelOfMaleEmployees: { label: tInput('names.AverageGrossHourlyPayLevelOfMaleEmployees'), help: tInput('help.AverageGrossHourlyPayLevelOfMaleEmployees') },
-    HoursWorkedByOneFullTimeEmployee: { label: tInput('names.HoursWorkedByOneFullTimeEmployee'), help: tInput('help.HoursWorkedByOneFullTimeEmployee') },
-    NumberOfEmployeesAtTheBeginningOfTheReportingPeriod: { label: tInput('names.NumberOfEmployeesAtTheBeginningOfTheReportingPeriod'), help: tInput('help.NumberOfEmployeesAtTheBeginningOfTheReportingPeriod') },
-    NumberOfEmployeesAtTheEndOfTheReportingPeriod: { label: tInput('names.NumberOfEmployeesAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfEmployeesAtTheEndOfTheReportingPeriod') },
-    NumberOfEmployeesCoveredByCollectiveBargainingAgreements: { label: tInput('names.NumberOfEmployeesCoveredByCollectiveBargainingAgreements'), help: tInput('help.NumberOfEmployeesCoveredByCollectiveBargainingAgreements') },
-    NumberOfEmployeesWhoLeftDuringTheReportingPeriod: { label: tInput('names.NumberOfEmployeesWhoLeftDuringTheReportingPeriod'), help: tInput('help.NumberOfEmployeesWhoLeftDuringTheReportingPeriod') },
-    NumberOfFemaleEmployeesAtManagementLevel: { label: tInput('names.NumberOfFemaleEmployeesAtManagementLevel'), help: tInput('help.NumberOfFemaleEmployeesAtManagementLevel') },
-    NumberOfMaleEmployeesAtManagementLevel: { label: tInput('names.NumberOfMaleEmployeesAtManagementLevel'), help: tInput('help.NumberOfMaleEmployeesAtManagementLevel') },
-    OnePercentOrMoreOfRevenuesFromHardCoalAndLignite: { label: tInput('names.OnePercentOrMoreOfRevenuesFromHardCoalAndLignite'), help: tInput('help.OnePercentOrMoreOfRevenuesFromHardCoalAndLignite') },
-    TenPercentOrMoreOfRevenuesFromOilFuels: { label: tInput('names.TenPercentOrMoreOfRevenuesFromOilFuels'), help: tInput('help.TenPercentOrMoreOfRevenuesFromOilFuels') },
-    FiftyPercentOrMoreOfRevenuesFromGaseousFuels: { label: tInput('names.FiftyPercentOrMoreOfRevenuesFromGaseousFuels'), help: tInput('help.FiftyPercentOrMoreOfRevenuesFromGaseousFuels') },
-    FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration: { label: tInput('names.FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration'), help: tInput('help.FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration') },
-    NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod: { label: tInput('names.NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod') },
-    NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod: { label: tInput('names.NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod') },
+    AverageGrossHourlyPayLevelOfFemaleEmployees: { label: tInputName('AverageGrossHourlyPayLevelOfFemaleEmployees'), help: tInput('help.AverageGrossHourlyPayLevelOfFemaleEmployees') },
+    AverageGrossHourlyPayLevelOfMaleEmployees: { label: tInputName('AverageGrossHourlyPayLevelOfMaleEmployees'), help: tInput('help.AverageGrossHourlyPayLevelOfMaleEmployees') },
+    HoursWorkedByOneFullTimeEmployee: { label: tInputName('HoursWorkedByOneFullTimeEmployee'), help: tInput('help.HoursWorkedByOneFullTimeEmployee') },
+    NumberOfEmployeesAtTheBeginningOfTheReportingPeriod: { label: tInputName('NumberOfEmployeesAtTheBeginningOfTheReportingPeriod'), help: tInput('help.NumberOfEmployeesAtTheBeginningOfTheReportingPeriod') },
+    NumberOfEmployeesAtTheEndOfTheReportingPeriod: { label: tInputName('NumberOfEmployeesAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfEmployeesAtTheEndOfTheReportingPeriod') },
+    NumberOfEmployeesCoveredByCollectiveBargainingAgreements: { label: tInputName('NumberOfEmployeesCoveredByCollectiveBargainingAgreements'), help: tInput('help.NumberOfEmployeesCoveredByCollectiveBargainingAgreements') },
+    NumberOfEmployeesWhoLeftDuringTheReportingPeriod: { label: tInputName('NumberOfEmployeesWhoLeftDuringTheReportingPeriod'), help: tInput('help.NumberOfEmployeesWhoLeftDuringTheReportingPeriod') },
+    NumberOfFemaleEmployeesAtManagementLevel: { label: tInputName('NumberOfFemaleEmployeesAtManagementLevel'), help: tInput('help.NumberOfFemaleEmployeesAtManagementLevel') },
+    NumberOfMaleEmployeesAtManagementLevel: { label: tInputName('NumberOfMaleEmployeesAtManagementLevel'), help: tInput('help.NumberOfMaleEmployeesAtManagementLevel') },
+    OnePercentOrMoreOfRevenuesFromHardCoalAndLignite: { label: tInputName('OnePercentOrMoreOfRevenuesFromHardCoalAndLignite'), help: tInput('help.OnePercentOrMoreOfRevenuesFromHardCoalAndLignite') },
+    TenPercentOrMoreOfRevenuesFromOilFuels: { label: tInputName('TenPercentOrMoreOfRevenuesFromOilFuels'), help: tInput('help.TenPercentOrMoreOfRevenuesFromOilFuels') },
+    FiftyPercentOrMoreOfRevenuesFromGaseousFuels: { label: tInputName('FiftyPercentOrMoreOfRevenuesFromGaseousFuels'), help: tInput('help.FiftyPercentOrMoreOfRevenuesFromGaseousFuels') },
+    FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration: { label: tInputName('FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration'), help: tInput('help.FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration') },
+    NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod: { label: tInputName('NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod') },
+    NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod: { label: tInputName('NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod') },
   };
 
   // Which questions this reporter is asked, which figures are derived, and which inputs are worth
@@ -181,6 +184,10 @@ export function StepFields({
   // because this component re-renders on every autosave transition while `fields` and
   // `derivationInputs` move only when the server re-renders.
   const asked = useMemo(() => askedFields(fields), [fields]);
+  // The step's element keys — where a follow-on's question is, which its note and notice word as *here* (task 80.1).
+  const onStep = useMemo(() => new Set(fields.map((field) => field.elementKey)), [fields]);
+  // And the step read again once one of those questions is answered and stored, so its follow-on appears or goes.
+  useFollowOnReread(fields);
   const derived = useMemo(() => derivedElements(fields), [fields]);
   const askedInputs = useMemo(
     () => askedInputsOf({ inputs: derivationInputs, asked }),
@@ -301,6 +308,7 @@ export function StepFields({
             key={`note ${note.key}`}
             note={note}
             reportId={scope.reportId}
+            onStep={onStep}
             onDismiss={() => dismiss(note.elementKeys)}
           />
         )),
@@ -439,7 +447,7 @@ export function StepFields({
    */
   function renderField(served: DisclosureFieldShape, named?: string | null) {
     // A field the reporter is no longer asked is laid out only because its answer is kept, and it is said, not asked.
-    if (!served.applicable) return <RetainedNotice key={writeKey(served)} field={served} />;
+    if (!served.applicable) return <RetainedNotice key={writeKey(served)} field={served} onStep={onStep} />;
     return (
       <StepField
         key={writeKey(served)}

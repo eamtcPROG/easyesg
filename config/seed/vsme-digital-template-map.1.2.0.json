@@ -253,6 +253,66 @@
       },
       "unit": null
     },
+    "DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet": {
+      "kind": "day",
+      "at": {
+        "name": "DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet"
+      },
+      "day": {
+        "year": {
+          "sheet": "Environmental Disclosures",
+          "cell": "I59"
+        },
+        "month": {
+          "sheet": "Environmental Disclosures",
+          "cell": "I60"
+        },
+        "day": {
+          "sheet": "Environmental Disclosures",
+          "cell": "I61"
+        }
+      }
+    },
+    "DescriptionOfActionsTakeToAddressTheConfirmedIncidents": {
+      "kind": "cell",
+      "at": {
+        "name": "DescriptionOfActionsTakeToAddressTheConfirmedIncidents"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
+    "DescriptionOfATargetRelatedToAPolicy": {
+      "kind": "cell",
+      "at": {
+        "name": "DescriptionOfATargetRelatedToAPolicy"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
+    "DescriptionOfATransitionPlanForClimateChangeMitigationIncludingAnExplanationOfHowItIsContributingToReduceGhgEmissions": {
+      "kind": "cell",
+      "at": {
+        "name": "DescriptionOfATransitionPlanForClimateChangeMitigationIncludingAnExplanationOfHowItIsContributingToReduceGhgEmissions"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
+    "DescriptionOfClimateRelatedHazardsAndClimateRelatedTransitionEvents": {
+      "kind": "cell",
+      "at": {
+        "name": "DescriptionOfClimateRelatedHazardsAndClimateRelatedTransitionEvents"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
     "DescriptionOfHowCircularEconomyPrinciplesAreApplied": {
       "kind": "cell",
       "at": {
@@ -263,10 +323,60 @@
       },
       "unit": null
     },
+    "DescriptionOfKeyElementsOfStrategyThatRelatesToOrAffectsSustainabilityIssues": {
+      "kind": "cell",
+      "at": {
+        "name": "DescriptionOfKeyElementsOfStrategyThatRelatesToOrAffectsSustainabilityIssues"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
     "DescriptionOfLimitsToTheDistributionOfProfitsConnectedToTheMutualisticNatureOrToTheNatureOfTheActivitiesConsistingInServicesOfGeneralEconomicInterestSGEI": {
       "kind": "cell",
       "at": {
         "name": "DescriptionOfLimitsToTheDistributionOfProfitsConnectedToTheMutualisticNatureOrToTheNatureOfTheActivitiesConsistingInServicesOfGeneralEconomicInterestSGEI"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
+    "DescriptionOfMainBusinessRelationships": {
+      "kind": "cell",
+      "at": {
+        "name": "DescriptionOfMainBusinessRelationships"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
+    "DescriptionOfPracticesPoliciesAndOrFutureInitiatives": {
+      "kind": "cell",
+      "at": {
+        "name": "DescriptionOfPracticesPoliciesAndOrFutureInitiatives"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
+    "DescriptionOfSignificantGroupsOfProductsAndOrServicesOffered": {
+      "kind": "cell",
+      "at": {
+        "name": "DescriptionOfSignificantGroupsOfProductsAndOrServicesOffered"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
+    "DescriptionOfSignificantMarketsTheUndertakingOperatesIn": {
+      "kind": "cell",
+      "at": {
+        "name": "DescriptionOfSignificantMarketsTheUndertakingOperatesIn"
       },
       "encoding": {
         "as": "text"
@@ -330,6 +440,38 @@
       },
       "encoding": {
         "as": "text"
+      },
+      "unit": null
+    },
+    "DisclosureOfHowItHasAssessedTheExposureAndSensitivityOfItsAssetsActivitiesAndValueChainToTheseHazardsAndTransitionEvents": {
+      "kind": "cell",
+      "at": {
+        "name": "DisclosureOfHowItHasAssessedTheExposureAndSensitivityOfItsAssetsActivitiesAndValueChainToTheseHazardsAndTransitionEvents"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
+    "DisclosureOfListOfMainActionsTheEntitySeeksInOrderToAchieveItsTargets": {
+      "kind": "cell",
+      "at": {
+        "name": "DisclosureOfListOfMainActionsTheEntitySeeksInOrderToAchieveItsTargets"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
+    "DisclosureOfWhetherItHasUndertakenClimateChangeAdaptationActionsForAnyClimateRelatedHazardsAndTransitionEvents": {
+      "kind": "cell",
+      "at": {
+        "name": "DisclosureOfWhetherItHasUndertakenClimateChangeAdaptationActionsForAnyClimateRelatedHazardsAndTransitionEvents"
+      },
+      "encoding": {
+        "as": "words",
+        "true": "YES",
+        "false": "NO"
       },
       "unit": null
     },
@@ -428,6 +570,13 @@
         "as": "number"
       }
     },
+    "FemaleToMaleRatioAtManagementLevelForTheReportingPeriod": {
+      "kind": "computed",
+      "at": {
+        "name": "FemaleToMaleRatioAtManagementLevelForTheReportingPeriod"
+      },
+      "derived": true
+    },
     "FinancialInvestmentInTheCapitalOrAssetsOfSocialEconomyEntities": {
       "kind": "cell",
       "at": {
@@ -438,6 +587,13 @@
       },
       "unit": null
     },
+    "GenderDiversityRatioInGovernanceBody": {
+      "kind": "computed",
+      "at": {
+        "name": "GenderDiversityRatioInGovernanceBody"
+      },
+      "derived": true
+    },
     "GPSLocationOfSite": {
       "kind": "computed",
       "at": {
@@ -446,11 +602,37 @@
       "group": "IdentifierOfSiteTypedAxis",
       "derived": false
     },
+    "GreenhouseGasEmissionReductionTargetBaseYear": {
+      "kind": "cell",
+      "at": {
+        "name": "GreenhouseGasEmissionReductionTargetBaseYear"
+      },
+      "encoding": {
+        "as": "number"
+      },
+      "unit": null
+    },
+    "GreenhouseGasEmissionReductionTargetYear": {
+      "kind": "cell",
+      "at": {
+        "name": "GreenhouseGasEmissionReductionTargetYear"
+      },
+      "encoding": {
+        "as": "number"
+      },
+      "unit": null
+    },
     "GrossLocationBasedScope2GreenhouseGasEmissions": {
       "kind": "members",
       "cells": {
         "": {
           "name": "GrossLocationBasedScope2GreenhouseGasEmissions"
+        },
+        "BaselineYearMember": {
+          "name": "GrossLocationBasedScope2GreenhouseGasEmissions_BaselineYearMember"
+        },
+        "TargetYearMember": {
+          "name": "GrossLocationBasedScope2GreenhouseGasEmissions_TargetYearMember"
         }
       },
       "computed": [],
@@ -464,6 +646,12 @@
       "cells": {
         "": {
           "name": "GrossMarketBasedScope2GreenhouseGasEmissions"
+        },
+        "BaselineYearMember": {
+          "name": "GrossMarketBasedScope2GreenhouseGasEmissions_BaselineYearMember"
+        },
+        "TargetYearMember": {
+          "name": "GrossMarketBasedScope2GreenhouseGasEmissions_TargetYearMember"
         }
       },
       "computed": [],
@@ -477,6 +665,12 @@
       "cells": {
         "": {
           "name": "GrossScope1GreenhouseGasEmissions"
+        },
+        "BaselineYearMember": {
+          "name": "GrossScope1GreenhouseGasEmissions_BaselineYearMember"
+        },
+        "TargetYearMember": {
+          "name": "GrossScope1GreenhouseGasEmissions_TargetYearMember"
         }
       },
       "computed": [],
@@ -488,12 +682,20 @@
     "GrossScope3GreenhouseGasEmissions": {
       "kind": "members",
       "cells": {
+        "BaselineYearMember": {
+          "name": "GrossScope3GreenhouseGasEmissions_BaselineYearMember"
+        },
         "": {
           "name": "GrossScope3GreenhouseGasEmissions_CurrentlyStatedMember"
+        },
+        "TargetYearMember": {
+          "name": "GrossScope3GreenhouseGasEmissions_TargetYearMember"
         }
       },
       "computed": [
-        ""
+        "BaselineYearMember",
+        "",
+        "TargetYearMember"
       ],
       "derived": false,
       "encoding": {
@@ -523,6 +725,16 @@
     },
     "ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation": {
       "kind": "omission"
+    },
+    "MostSeniorLevelAccountableForImplementationOfPolicies": {
+      "kind": "cell",
+      "at": {
+        "name": "MostSeniorLevelAccountableForImplementationOfPolicies"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
     },
     "NaceSectorClassificationCodes": {
       "kind": "list",
@@ -690,6 +902,16 @@
       },
       "unit": null
     },
+    "PotentialAdverseEffectsOfClimateRisksThatMayAffectItsFinancialPerformanceOrBusinessOperationsInTheShortMediumOrLongTermIndicatingWhetherItAssessesTheRisksToBeHighMediumOrLow": {
+      "kind": "cell",
+      "at": {
+        "name": "PotentialAdverseEffectsOfClimateRisksThatMayAffectItsFinancialPerformanceOrBusinessOperationsInTheShortMediumOrLongTermIndicatingWhetherItAssessesTheRisksToBeHighMediumOrLow"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
     "PracticePolicyAndOrFutureInitiativeIsPubliclyAvailable": {
       "kind": "cell",
       "at": {
@@ -738,6 +960,66 @@
       },
       "unit": null
     },
+    "RevenueDerivedFromChemicalProduction": {
+      "kind": "cell",
+      "at": {
+        "name": "RevenueDerivedFromChemicalProduction"
+      },
+      "encoding": {
+        "as": "number"
+      },
+      "unit": null
+    },
+    "RevenueDerivedFromCoal": {
+      "kind": "cell",
+      "at": {
+        "name": "RevenueDerivedFromCoal"
+      },
+      "encoding": {
+        "as": "number"
+      },
+      "unit": null
+    },
+    "RevenueDerivedFromControversialWeaponsAntiPersonnelMinesClusterMunitionsChemicalWeaponsAndBiologicalWeapons": {
+      "kind": "cell",
+      "at": {
+        "name": "RevenueDerivedFromControversialWeaponsAntiPersonnelMinesClusterMunitionsChemicalWeaponsAndBiologicalWeapons"
+      },
+      "encoding": {
+        "as": "number"
+      },
+      "unit": null
+    },
+    "RevenueDerivedFromCultivationAndProductionOfTobacco": {
+      "kind": "cell",
+      "at": {
+        "name": "RevenueDerivedFromCultivationAndProductionOfTobacco"
+      },
+      "encoding": {
+        "as": "number"
+      },
+      "unit": null
+    },
+    "RevenueDerivedFromGas": {
+      "kind": "cell",
+      "at": {
+        "name": "RevenueDerivedFromGas"
+      },
+      "encoding": {
+        "as": "number"
+      },
+      "unit": null
+    },
+    "RevenueDerivedFromOil": {
+      "kind": "cell",
+      "at": {
+        "name": "RevenueDerivedFromOil"
+      },
+      "encoding": {
+        "as": "number"
+      },
+      "unit": null
+    },
     "Scope1AndScope2GreenhouseGasEmissionsIntensityValueLocationBased": {
       "kind": "computed",
       "at": {
@@ -774,6 +1056,36 @@
       },
       "unit": null
     },
+    "SpecificationOfAnyConfirmedIncidentInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers": {
+      "kind": "cell",
+      "at": {
+        "name": "SpecificationOfAnyConfirmedIncidentInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
+    "SpecificationOfOtherHumanRightsRelatedToTheConfirmedIncident": {
+      "kind": "cell",
+      "at": {
+        "name": "SpecificationOfOtherHumanRightsRelatedToTheConfirmedIncident"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
+    "SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy": {
+      "kind": "cell",
+      "at": {
+        "name": "SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
+    },
     "SustainabilityIssueAddressedByPracticePolicyAndOrFutureInitiative": {
       "kind": "columns",
       "at": {
@@ -794,6 +1106,16 @@
       "encoding": {
         "as": "boolean"
       }
+    },
+    "TimeHorizonsOfAnyClimateRelatedHazardsAndTransitionEventsIdentified": {
+      "kind": "cell",
+      "at": {
+        "name": "TimeHorizonsOfAnyClimateRelatedHazardsAndTransitionEventsIdentified"
+      },
+      "encoding": {
+        "as": "text"
+      },
+      "unit": null
     },
     "TotalAmountOfFinesForTheViolationOfAnticorruptionAndAntibriberyLaws": {
       "kind": "cell",
@@ -828,12 +1150,20 @@
     "TotalGrossLocationBasedGHGEmissions": {
       "kind": "members",
       "cells": {
+        "BaselineYearMember": {
+          "name": "TotalGrossLocationBasedGHGEmissions_BaselineYearMember"
+        },
         "": {
           "name": "TotalGrossLocationBasedGHGEmissions_CurrentlyStatedMember"
+        },
+        "TargetYearMember": {
+          "name": "TotalGrossLocationBasedGHGEmissions_TargetYearMember"
         }
       },
       "computed": [
-        ""
+        "BaselineYearMember",
+        "",
+        "TargetYearMember"
       ],
       "derived": false,
       "encoding": {
@@ -845,10 +1175,18 @@
       "cells": {
         "": {
           "name": "TotalGrossLocationBasedScope1AndScope2GHGEmissions"
+        },
+        "BaselineYearMember": {
+          "name": "TotalGrossLocationBasedScope1AndScope2GHGEmissions_BaselineYearMember"
+        },
+        "TargetYearMember": {
+          "name": "TotalGrossLocationBasedScope1AndScope2GHGEmissions_TargetYearMember"
         }
       },
       "computed": [
-        ""
+        "",
+        "BaselineYearMember",
+        "TargetYearMember"
       ],
       "derived": true,
       "encoding": {
@@ -858,12 +1196,20 @@
     "TotalGrossMarketBasedGHGEmissions": {
       "kind": "members",
       "cells": {
+        "BaselineYearMember": {
+          "name": "TotalGrossMarketBasedGHGEmissions_BaselineYearMember"
+        },
         "": {
           "name": "TotalGrossMarketBasedGHGEmissions_CurrentlyStatedMember"
+        },
+        "TargetYearMember": {
+          "name": "TotalGrossMarketBasedGHGEmissions_TargetYearMember"
         }
       },
       "computed": [
-        ""
+        "BaselineYearMember",
+        "",
+        "TargetYearMember"
       ],
       "derived": false,
       "encoding": {
@@ -875,10 +1221,18 @@
       "cells": {
         "": {
           "name": "TotalGrossMarketBasedScope1AndScope2GHGEmissions"
+        },
+        "BaselineYearMember": {
+          "name": "TotalGrossMarketBasedScope1AndScope2GHGEmissions_BaselineYearMember"
+        },
+        "TargetYearMember": {
+          "name": "TotalGrossMarketBasedScope1AndScope2GHGEmissions_TargetYearMember"
         }
       },
       "computed": [
-        ""
+        "",
+        "BaselineYearMember",
+        "TargetYearMember"
       ],
       "derived": false,
       "encoding": {
@@ -983,6 +1337,33 @@
       },
       "unit": null
     },
+    "TotalNumberOfSelfEmployedWorkersWithoutPersonnelThatAreWorkingExclusivelyForTheUndertaking": {
+      "kind": "cell",
+      "at": {
+        "name": "TotalNumberOfSelfEmployedWorkersWithoutPersonnelThatAreWorkingExclusivelyForTheUndertaking"
+      },
+      "encoding": {
+        "as": "number"
+      },
+      "unit": null
+    },
+    "TotalNumberOfTemporaryWorkersProvidedByUndertakingsPrimarilyEngagedInEmploymentActivities": {
+      "kind": "cell",
+      "at": {
+        "name": "TotalNumberOfTemporaryWorkersProvidedByUndertakingsPrimarilyEngagedInEmploymentActivities"
+      },
+      "encoding": {
+        "as": "number"
+      },
+      "unit": null
+    },
+    "TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector": {
+      "kind": "computed",
+      "at": {
+        "name": "TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector"
+      },
+      "derived": true
+    },
     "TotalSealedArea": {
       "kind": "cell",
       "at": {
@@ -1069,6 +1450,39 @@
       },
       "unit": null
     },
+    "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce": {
+      "kind": "checkbox_rows",
+      "at": {
+        "name": "TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce"
+      },
+      "rows": {
+        "vsme:ChildLabourMember": 0,
+        "vsme:ForcedLabourMember": 1,
+        "vsme:HumanTraffickingMember": 2,
+        "vsme:DiscriminationMember": 3,
+        "vsme:AccidentPreventionMember": 4,
+        "vsme:OtherContentMember": 5
+      },
+      "encoding": {
+        "as": "boolean"
+      }
+    },
+    "TypeOfHumanRightRelatedToTheConfirmedIncident": {
+      "kind": "checkbox_rows",
+      "at": {
+        "name": "TypeOfHumanRightRelatedToTheConfirmedIncident"
+      },
+      "rows": {
+        "vsme:ChildLabourMember": 0,
+        "vsme:ForcedLabourMember": 1,
+        "vsme:HumanTraffickingMember": 2,
+        "vsme:DiscriminationMember": 3,
+        "vsme:OtherContentMember": 4
+      },
+      "encoding": {
+        "as": "boolean"
+      }
+    },
     "TypeOfNumberOfEmployees": {
       "kind": "cell",
       "at": {
@@ -1092,6 +1506,42 @@
       },
       "unit": null
     },
+    "UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce": {
+      "kind": "cell",
+      "at": {
+        "name": "UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce"
+      },
+      "encoding": {
+        "as": "words",
+        "true": "YES",
+        "false": "NO"
+      },
+      "unit": null
+    },
+    "UndertakingHasAComplaintHandlingMechanismForItsOwnWorkforce": {
+      "kind": "cell",
+      "at": {
+        "name": "UndertakingHasAComplaintHandlingMechanismForItsOwnWorkforce"
+      },
+      "encoding": {
+        "as": "words",
+        "true": "YES",
+        "false": "NO"
+      },
+      "unit": null
+    },
+    "UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce": {
+      "kind": "cell",
+      "at": {
+        "name": "UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce"
+      },
+      "encoding": {
+        "as": "words",
+        "true": "YES",
+        "false": "NO"
+      },
+      "unit": null
+    },
     "UndertakingHasSetATargetWhichIsRelatedToAPolicy": {
       "kind": "cell",
       "at": {
@@ -1101,6 +1551,25 @@
         "as": "boolean"
       },
       "unit": null
+    },
+    "UndertakingIsAwareOfAnyConfirmedIncidentsInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers": {
+      "kind": "cell",
+      "at": {
+        "name": "UndertakingIsAwareOfAnyConfirmedIncidentsInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers"
+      },
+      "encoding": {
+        "as": "words",
+        "true": "YES",
+        "false": "NO"
+      },
+      "unit": null
+    },
+    "UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement": {
+      "kind": "computed",
+      "at": {
+        "name": "UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement"
+      },
+      "derived": true
     },
     "UndertakingsLegalForm": {
       "kind": "cell",
@@ -1360,7 +1829,8 @@
       "when": [
         "SustainabilityIssueAddressedByPracticePolicyAndOrFutureInitiative",
         "PracticePolicyAndOrFutureInitiativeIsPubliclyAvailable",
-        "UndertakingHasSetATargetWhichIsRelatedToAPolicy"
+        "UndertakingHasSetATargetWhichIsRelatedToAPolicy",
+        "DescriptionOfPracticesPoliciesAndOrFutureInitiatives"
       ],
       "answer": "held"
     },
@@ -1462,6 +1932,99 @@
         "TotalAmountOfFinesForTheViolationOfAnticorruptionAndAntibriberyLaws"
       ],
       "answer": "affirmed"
+    },
+    {
+      "at": {
+        "sheet": "General Information",
+        "cell": "E528"
+      },
+      "when": [
+        "DescriptionOfKeyElementsOfStrategyThatRelatesToOrAffectsSustainabilityIssues"
+      ],
+      "answer": "held"
+    },
+    {
+      "at": {
+        "sheet": "Environmental Disclosures",
+        "cell": "J19"
+      },
+      "when": [
+        "GreenhouseGasEmissionReductionTargetBaseYear",
+        "GreenhouseGasEmissionReductionTargetYear",
+        "DisclosureOfListOfMainActionsTheEntitySeeksInOrderToAchieveItsTargets"
+      ],
+      "answer": "held"
+    },
+    {
+      "at": {
+        "sheet": "Environmental Disclosures",
+        "cell": "E539"
+      },
+      "when": [
+        "DescriptionOfClimateRelatedHazardsAndClimateRelatedTransitionEvents",
+        "DisclosureOfHowItHasAssessedTheExposureAndSensitivityOfItsAssetsActivitiesAndValueChainToTheseHazardsAndTransitionEvents",
+        "TimeHorizonsOfAnyClimateRelatedHazardsAndTransitionEventsIdentified",
+        "DisclosureOfWhetherItHasUndertakenClimateChangeAdaptationActionsForAnyClimateRelatedHazardsAndTransitionEvents",
+        "PotentialAdverseEffectsOfClimateRisksThatMayAffectItsFinancialPerformanceOrBusinessOperationsInTheShortMediumOrLongTermIndicatingWhetherItAssessesTheRisksToBeHighMediumOrLow"
+      ],
+      "answer": "held"
+    },
+    {
+      "at": {
+        "sheet": "Governance Disclosures",
+        "cell": "H10"
+      },
+      "when": [
+        "RevenueDerivedFromControversialWeaponsAntiPersonnelMinesClusterMunitionsChemicalWeaponsAndBiologicalWeapons",
+        "RevenueDerivedFromCultivationAndProductionOfTobacco",
+        "RevenueDerivedFromCoal",
+        "RevenueDerivedFromOil",
+        "RevenueDerivedFromGas",
+        "RevenueDerivedFromChemicalProduction"
+      ],
+      "answer": "affirmed"
+    },
+    {
+      "at": {
+        "sheet": "Governance Disclosures",
+        "cell": "H26"
+      },
+      "when": [
+        "UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement"
+      ],
+      "answer": "denied"
+    },
+    {
+      "at": {
+        "sheet": "Governance Disclosures",
+        "cell": "H30"
+      },
+      "when": [
+        "GenderDiversityRatioInGovernanceBody"
+      ],
+      "answer": "held"
+    }
+  ],
+  "choices": [
+    {
+      "at": {
+        "sheet": "Environmental Disclosures",
+        "cell": "D57"
+      },
+      "options": [
+        {
+          "value": "A transition plan has already been adopted",
+          "when": [
+            "DescriptionOfATransitionPlanForClimateChangeMitigationIncludingAnExplanationOfHowItIsContributingToReduceGhgEmissions"
+          ]
+        },
+        {
+          "value": "Adoption of a transition plan is planned in the future",
+          "when": [
+            "DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet"
+          ]
+        }
+      ]
     }
   ],
   "omission": {

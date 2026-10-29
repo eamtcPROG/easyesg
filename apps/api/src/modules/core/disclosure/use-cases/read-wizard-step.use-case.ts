@@ -7,7 +7,8 @@ import type { OrganizationVocabulary } from '@api/modules/core/organization/inte
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { VOCABULARY_COUNTRY } from '../constants/classification.constants';
 import { evaluateApplicability, type MemberAncestry } from '../domain/applicability';
-import { toCause } from '../domain/applicability-cause';
+import { moduleResolver, toCause } from '../domain/applicability-cause';
+import { stepDrivers } from '../domain/step-drivers';
 import { chosenMembers } from '../domain/chosen-members';
 import { derivationInputsFor } from '../domain/derivation-inputs';
 import { toField } from '../domain/disclosure-field';
@@ -251,6 +252,13 @@ export class ReadWizardStep {
     const derivations = this.derivations.all({ standard: registered.standard });
     // The axes one module asks at a base and a target year beside the others' reporting year (task 79.3).
     const targets = this.axisShapes.targetAxes({ standard: registered.standard });
+    // Where each driver is asked, for the note to name and link (task 80.1), and which of this step's fields a rule over
+    // another of them reads — a follow-on's question, whose stored answer the browser reads the step again after.
+    const moduleOf = moduleResolver(registered.elements);
+    const driving = stepDrivers({
+      rules: this.applicability.rulesFor({ standard: registered.standard }),
+      onStep: new Set(registered.elements.filter((element) => element.modules.includes(query.module)).map((e) => e.key)),
+    });
     const fields = registered.elements
       // Membership, not equality: eight of B3's seventeen are presented in C3 as well (task 36.4).
       .filter((element) => element.modules.includes(query.module))
@@ -263,7 +271,8 @@ export class ReadWizardStep {
           options: options.optionsFor(element),
           // An element no rule names applies, always — the artefact holds conditions, not verdicts.
           applicable: verdict?.applicable ?? true,
-          applicabilityCause: toCause(verdict, catalogue),
+          applicabilityCause: toCause(verdict, catalogue, moduleOf),
+          drivesApplicability: driving.has(element.key),
           // Off the report rather than off the element: it is the filing's answer, one per workbook
           // as EFRAG's template carries it, and `toField` gives it only to the monetary kinds.
           currency: report.reportingCurrency,

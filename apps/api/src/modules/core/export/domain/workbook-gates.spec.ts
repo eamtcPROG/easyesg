@@ -33,4 +33,13 @@ describe('gateIsAffirmed', () => {
     expect(gateIsAffirmed({ gate: countries, held: [held('Employees', [{ number: '50' }], 'MD')] })).toBe(false);
     expect(gateIsAffirmed({ gate: countries, held: [held('Employees', [{ number: '40' }], 'MD'), held('Employees', [{ number: '10' }], 'RO')] })).toBe(true);
   });
+
+  it('answers a denied gate yes only for a no — C8’s none of the above, from an exclusion worked out as no (task 80.3)', () => {
+    const none = gate(TEMPLATE_GATE.DENIED, ['Excluded']);
+    expect(gateIsAffirmed({ gate: none, held: [held('Excluded', [{ yes: false }])] })).toBe(true);
+    expect(gateIsAffirmed({ gate: none, held: [held('Excluded', [{ yes: true }])] })).toBe(false);
+    expect(gateIsAffirmed({ gate: none, held: [] })).toBe(false);
+    // A nil return is a zero, not an answer of no.
+    expect(gateIsAffirmed({ gate: none, held: [held('Excluded', [{ number: '0' }])] })).toBe(false);
+  });
 });

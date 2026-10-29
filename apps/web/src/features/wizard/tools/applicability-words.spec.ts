@@ -22,7 +22,7 @@ const words = (locale: 'en' | 'ro' | 'ru', messages: typeof ro) => ({
 
 const headcount = (answer: string | null): ApplicabilityCause => ({
   condition: APPLICABILITY_CONDITION.NUMERIC_AT_LEAST,
-  drivers: [{ elementKey: 'NumberOfEmployees', label: 'Number of employees' }],
+  drivers: [{ elementKey: 'NumberOfEmployees', label: 'Number of employees', module: 'B1' }],
   threshold: '50',
   answer,
 });
@@ -30,8 +30,8 @@ const headcount = (answer: string | null): ApplicabilityCause => ({
 const sites: ApplicabilityCause = {
   condition: APPLICABILITY_CONDITION.ANY_ROW_ANSWERED,
   drivers: [
-    { elementKey: 'AddressOfSite', label: 'Address of site' },
-    { elementKey: 'CityOfSite', label: 'City of site' },
+    { elementKey: 'AddressOfSite', label: 'Address of site', module: 'B1' },
+    { elementKey: 'CityOfSite', label: 'City of site', module: 'B1' },
   ],
   threshold: null,
   answer: null,
@@ -39,10 +39,13 @@ const sites: ApplicabilityCause = {
 
 const sector = (answer: string | null): ApplicabilityCause => ({
   condition: APPLICABILITY_CONDITION.MEMBER_WITHIN,
-  drivers: [{ elementKey: 'NaceSectorClassificationCodes', label: 'NACE sector classification codes' }],
+  drivers: [{ elementKey: 'NaceSectorClassificationCodes', label: 'NACE sector classification codes', module: 'B1' }],
   threshold: null,
   answer,
 });
+
+/** A step none of whose fields is a driver — every cause is answered on another step, B1's until task 80.1. */
+const ELSEWHERE: ReadonlySet<string> = new Set();
 
 const note = (cause: ApplicabilityCause, labels: string[]): ApplicabilityNote => ({
   key: 'k',
@@ -55,16 +58,16 @@ describe('noteWords', () => {
   const { t, format } = words('en', en);
 
   it('quotes the headcount and its threshold, and names every question the cause brought', () => {
-    expect(noteWords(t, format, note(headcount('52'), ['Employee turnover rate'])).title).toBe(
+    expect(noteWords(t, format, note(headcount('52'), ['Employee turnover rate']), ELSEWHERE).title).toBe(
       'Because you answered 52 to “Number of employees” in B1 — 50 or more — this step also asks for Employee turnover rate.',
     );
-    expect(noteWords(t, format, note(sites, ['In the area', 'Area'])).title).toBe(
+    expect(noteWords(t, format, note(sites, ['In the area', 'Area']), ELSEWHERE).title).toBe(
       'Because you answered Address of site or City of site in B1, this step also asks for In the area and Area.',
     );
   });
 
   it('never quotes a sector, whose stored form is an XBRL name', () => {
-    const title = noteWords(t, format, note(sector('nace:NACE_C1071'), ['Water withdrawn'])).title;
+    const title = noteWords(t, format, note(sector('nace:NACE_C1071'), ['Water withdrawn']), ELSEWHERE).title;
     expect(title).toBe(
       'Because of your answer to “NACE sector classification codes” in B1, this step also asks for Water withdrawn.',
     );
@@ -72,9 +75,9 @@ describe('noteWords', () => {
   });
 
   it('falls back to neutral words, never a key, where the catalogue named nothing', () => {
-    const unnamed: ApplicabilityCause = { ...headcount('52'), drivers: [{ elementKey: 'NumberOfEmployees', label: null }] };
-    const title = noteWords(t, format, note(unnamed, [])).title;
-    expect(title).toContain('a B1 question');
+    const unnamed: ApplicabilityCause = { ...headcount('52'), drivers: [{ elementKey: 'NumberOfEmployees', label: null, module: 'B1' }] };
+    const title = noteWords(t, format, note(unnamed, []), ELSEWHERE).title;
+    expect(title).toContain('another question');
     expect(title).toContain('a further question');
     expect(title).not.toContain('NumberOfEmployees');
   });
@@ -82,7 +85,7 @@ describe('noteWords', () => {
   it.each(LOCALES)('words every kind, and says what a change does, in %s', (locale, messages) => {
     const local = words(locale, messages);
     const rendered = [headcount('52'), sites, sector('nace:NACE_C')].map((cause) =>
-      noteWords(local.t, local.format, note(cause, ['X'])),
+      noteWords(local.t, local.format, note(cause, ['X']), ELSEWHERE),
     );
     // `request.ts`'s fallback renders a missing message as '' — so a non-empty, distinct sentence per kind is the check.
     expect(new Set(rendered.map((words) => words.title)).size).toBe(3);
@@ -94,22 +97,22 @@ describe('hiddenReason', () => {
   const { t, format } = words('en', en);
 
   it('says the headcount is below the threshold', () => {
-    expect(hiddenReason(t, format, headcount('12'))).toBe(
+    expect(hiddenReason(t, format, headcount('12'), ELSEWHERE)).toBe(
       'This question is hidden because you answered 12 to “Number of employees” in B1, which is below 50.',
     );
   });
 
   it('says the question waits on B1 where its driver is unanswered, rather than naming a value', () => {
-    expect(hiddenReason(t, format, headcount(null))).toBe(
+    expect(hiddenReason(t, format, headcount(null), ELSEWHERE)).toBe(
       'This question is hidden until “Number of employees” is answered in B1.',
     );
-    expect(hiddenReason(t, format, sector(null))).toBe(
+    expect(hiddenReason(t, format, sector(null), ELSEWHERE)).toBe(
       'This question is hidden until “NACE sector classification codes” is answered in B1.',
     );
   });
 
   it('says no site is listed, naming the site questions as alternatives', () => {
-    expect(hiddenReason(t, format, sites)).toBe(
+    expect(hiddenReason(t, format, sites, ELSEWHERE)).toBe(
       'This question is hidden because B1 has no answer to Address of site or City of site.',
     );
   });
@@ -117,10 +120,59 @@ describe('hiddenReason', () => {
   it.each(LOCALES)('words every reason distinctly in %s', (locale, messages) => {
     const local = words(locale, messages);
     const reasons = [headcount('12'), headcount(null), sites, sector('nace:NACE_G')].map((cause) =>
-      hiddenReason(local.t, local.format, cause),
+      hiddenReason(local.t, local.format, cause, ELSEWHERE),
     );
     expect(new Set(reasons).size).toBe(4);
     expect(reasons.every((reason) => reason !== '')).toBe(true);
+  });
+});
+
+/** A follow-on's question (task 80.1): a yes/no, on the step it governs or on an earlier one. */
+describe('a follow-on’s cause', () => {
+  const published = (answer: string | null, module = 'B4'): ApplicabilityCause => ({
+    condition: APPLICABILITY_CONDITION.IS_TRUE,
+    drivers: [{ elementKey: 'PubliclyAvailableDisclosure', label: 'Publicly available disclosure', module }],
+    threshold: null,
+    answer,
+  });
+  const HERE: ReadonlySet<string> = new Set(['PubliclyAvailableDisclosure']);
+  const { t, format } = words('en', en);
+
+  it('says the yes brought it, naming no module where the question is on this very step', () => {
+    expect(noteWords(t, format, note(published('true'), ['URL']), HERE).title).toBe(
+      'Because you answered Yes to “Publicly available disclosure”, this step also asks for URL.',
+    );
+  });
+
+  it('names the module where the question is another step’s — C2’s target after B2’s', () => {
+    expect(noteWords(t, format, note(published('true', 'B2'), ['Target']), ELSEWHERE).title).toBe(
+      'Because you answered Yes to “Publicly available disclosure” in B2, this step also asks for Target.',
+    );
+  });
+
+  it('hides it after a no, and waits for a yes while unanswered', () => {
+    expect(hiddenReason(t, format, published('false'), HERE)).toBe(
+      'This question is hidden because you answered No to “Publicly available disclosure”.',
+    );
+    expect(hiddenReason(t, format, published(null), HERE)).toBe(
+      'This question appears once you answer Yes to “Publicly available disclosure”.',
+    );
+  });
+
+  it.each(LOCALES)('words the note and both reasons, here and elsewhere, in %s', (locale, messages) => {
+    const local = words(locale, messages);
+    const sentences = [
+      noteWords(local.t, local.format, note(published('true'), ['X']), HERE).title,
+      noteWords(local.t, local.format, note(published('true', 'B2'), ['X']), ELSEWHERE).title,
+      hiddenReason(local.t, local.format, published('false'), HERE),
+      hiddenReason(local.t, local.format, published(null), HERE),
+      hiddenReason(local.t, local.format, published(null), ELSEWHERE),
+    ];
+    expect(new Set(sentences).size).toBe(sentences.length);
+    expect(sentences.every((sentence) => sentence !== '' && !sentence.includes('{'))).toBe(true);
+    // The module is named where it is another step, and not where it is this one.
+    expect(sentences[1]).toContain('B2');
+    expect(sentences[0]).not.toContain('B4');
   });
 });
 

@@ -27,6 +27,7 @@ const resolved = (over: Partial<ResolvedElement> = {}): ResolvedElement => ({
   options: null,
   applicable: true,
   applicabilityCause: null,
+  drivesApplicability: false,
   currency: 'MDL',
   derived: false,
   ...over,

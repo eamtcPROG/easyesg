@@ -91,6 +91,11 @@ export interface DocumentRow {
   /** Withheld by a section omitted as classified or sensitive (FR-31) — printed with that mark and no value. */
   readonly withheld: boolean;
   readonly override: DocumentOverride | null;
+  /**
+   * A value the figure above it is worked out from, by its key, which the document words (task 80.3; §12.5.6's task-80.3
+   * row (1)) — B9's working year, C8's thresholds; `null` for a disclosure. Printed under its figure, never as one.
+   */
+  readonly input: string | null;
 }
 
 /** A narrative disclosure — a block of the reporter's own text, printed under its label. */

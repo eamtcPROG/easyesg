@@ -15,12 +15,18 @@ One directory per report:
 
 | File | Holds |
 | --- | --- |
-| `report.json` | The inputs, as the api's routes take them: `entity`, `period`, `values` (one per field, as the wizard writes it — `ordinal` for a site, `dimensionKey` for a member), `derivationInputs`, the calculator's `sources`, and the languages it `exports` in |
+| `report.json` | The inputs, as the api's routes take them: `entity`, `period`, the report's `scope` where it is not the Basic Module (task 78), `values` (one per field, as the wizard writes it — `ordinal` for a site, `dimensionKey` for a member or one of C3's years), `derivationInputs`, the calculator's `sources`, and the languages it `exports` in |
 | `expected.json` | `pins` (the template and taxonomy versions the report must pin), `pdf` (phrases each language's PDF must say), `xlsx` (per language, `Sheet!A1` → what Calc shows there once the file is open) and `computed` (each figure the platform derives and the template computes again, by element and cell) |
 
 `bakery-2026` answers every Basic Module section — a calculated Scope 1 and location-based Scope 2, a nil return, a
 field not available, a section withheld, a figure the template computes stated beside it, and the inputs of every
 figure the platform derives the way the template does.
+
+`bakery-comprehensive-2026` is the same bakery with the Comprehensive Module (task 80.3): its Basic answers under
+Option B, and every C section answered — C3's targets at a base and a target year beside B3's calculated figures and
+its transition plan planned for a date, C6's contents as checkbox rows, C7's nil return as two answers of no, and C8's
+exclusion worked out as no from four thresholds answered no — with the template's own questions before each group
+answered from them.
 
 ## What the expectation holds the export to
 

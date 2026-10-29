@@ -32,6 +32,12 @@ export interface ApplicabilityDriver {
   readonly elementKey: string;
   /** The element's wording in the request's locale; `null` where the catalogue names none. */
   readonly label: string | null;
+  /**
+   * The module whose step asks it — B1 for every driver until task 80.1, then B2 for C2's target and the step's own
+   * module for a follow-on's question — so the note names where the answer is and links to it; `null` for an element
+   * presented in none.
+   */
+  readonly module: string | null;
 }
 
 /**
@@ -326,6 +332,12 @@ export interface DisclosureField {
   readonly applicable: boolean;
   /** Why, for the fields a rule governs; `null` for the ones no rule names, which is most. */
   readonly applicabilityCause: DisclosureApplicabilityCause | null;
+  /**
+   * Whether a rule over another field on this step reads this one (task 80.1; §12.5.6's task-80.1 row) — a follow-on's
+   * question. The browser reads the step again once this field's answer is stored, so the follow-on appears or goes as
+   * the reporter answers; the verdict stays the api's.
+   */
+  readonly drivesApplicability: boolean;
 }
 
 /**

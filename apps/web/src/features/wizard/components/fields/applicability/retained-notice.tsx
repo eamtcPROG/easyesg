@@ -20,7 +20,14 @@ import styles from '../styles/step.module.css';
  * it takes its colours, space and type from the token cascade alone. No directive: drawn inside `StepFields`, a client
  * boundary already.
  */
-export function RetainedNotice({ field }: { readonly field: DisclosureField }) {
+export function RetainedNotice({
+  field,
+  onStep,
+}: {
+  readonly field: DisclosureField;
+  /** The element keys this step presents — where a follow-on's question is (task 80.1). */
+  readonly onStep: ReadonlySet<string>;
+}) {
   const t = useTranslations(APPLICABILITY_MESSAGES);
   const tField = useTranslations(FIELD_MESSAGES);
   const tUnit = useTranslations(`${FIELD_MESSAGES}.units`);
@@ -31,7 +38,7 @@ export function RetainedNotice({ field }: { readonly field: DisclosureField }) {
     <div className={styles.retained}>
       <p className={styles.retainedLabel}>{field.label ?? tField('unnamed')}</p>
       <p className={styles.retainedReason}>
-        {field.applicabilityCause === null ? null : `${hiddenReason(t, format, field.applicabilityCause)} `}
+        {field.applicabilityCause === null ? null : `${hiddenReason(t, format, field.applicabilityCause, onStep)} `}
         {t('hidden.kept')}
       </p>
       {kept === null ? null : (

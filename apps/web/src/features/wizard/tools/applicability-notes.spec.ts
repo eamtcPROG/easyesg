@@ -53,19 +53,20 @@ const field = (over: Partial<DisclosureField> & { elementKey: string }): Disclos
   answeredIn: null,
   applicable: true,
   applicabilityCause: null,
+  drivesApplicability: false,
   ...over,
 });
 
 const headcount = (answer: string | null): ApplicabilityCause => ({
   condition: APPLICABILITY_CONDITION.NUMERIC_AT_LEAST,
-  drivers: [{ elementKey: 'NumberOfEmployees', label: 'Numărul de angajați' }],
+  drivers: [{ elementKey: 'NumberOfEmployees', label: 'Numărul de angajați', module: 'B1' }],
   threshold: '50',
   answer,
 });
 
 const sites: ApplicabilityCause = {
   condition: APPLICABILITY_CONDITION.ANY_ROW_ANSWERED,
-  drivers: [{ elementKey: 'AddressOfSite', label: 'Adresa amplasamentului' }],
+  drivers: [{ elementKey: 'AddressOfSite', label: 'Adresa amplasamentului', module: 'B1' }],
   threshold: null,
   answer: null,
 };

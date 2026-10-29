@@ -60,24 +60,22 @@ describe('the shipped Digital Template registrations', () => {
   );
 
   /**
-   * **Every registered template has a map, read from it, placing every disclosure the Basic Module asks** (task 46.1):
-   * B1 … B11 and the four *any other* disclosures that belong to no module. A map generated against a taxonomy that
-   * later gained an element, or from a binary since replaced, fails here rather than at an export that drops a value.
+   * **Every registered template has a map, read from it, placing every disclosure of its taxonomy** (task 46.1, widened
+   * to the Comprehensive Module by task 80.3): B1 … B11, C1 … C9 and the four *any other* disclosures that belong to no
+   * module. A map generated against a taxonomy that later gained an element, or from a binary since replaced, fails
+   * here rather than at an export that refuses a report.
    */
   it.each(registrations.map((entry) => [entry.scope, entry] as const))(
-    'maps every Basic Module disclosure of %s, from that very binary',
+    'maps every disclosure of %s’s taxonomy, from that very binary',
     async (version, entry) => {
       const registered = readDigitalTemplateEntry(entry.payload);
       const template = await registry.templateFor({ templateVersion: version, taxonomyVersion: registered?.taxonomyVersion ?? '' });
       expect(template?.map.template.sha256).toBe(registered?.sha256);
       const taxonomy = entries.find((candidate) => candidate.kind === VSME_TAXONOMY_CONFIG_KIND && candidate.scope === registered?.taxonomyVersion);
       const elements = (taxonomy?.payload.elements ?? {}) as Record<string, { modules: string[] }>;
-      const basic = Object.entries(elements)
-        .filter(([, element]) => element.modules.length === 0 || element.modules.some((module) => /^B\d+$/.test(module)))
-        .map(([key]) => key)
-        .sort();
-      expect(basic.length).toBeGreaterThan(100);
-      expect(Object.keys(template?.map.elements ?? {}).sort()).toEqual(basic);
+      const every = Object.keys(elements).sort();
+      expect(every.filter((key) => elements[key].modules.some((module) => /^C\d+$/.test(module))).length).toBeGreaterThan(40);
+      expect(Object.keys(template?.map.elements ?? {}).sort()).toEqual(every);
     },
   );
 });

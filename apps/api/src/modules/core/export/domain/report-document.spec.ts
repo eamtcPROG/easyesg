@@ -1,6 +1,8 @@
 import type { Finding } from '@easyesg/validation';
 import { DOCUMENT_MODULE, DOCUMENT_VALUE } from '@api/contracts/report-document.port';
 import type { DisclosureField } from '@api/modules/core/disclosure/models/wizard-step.model';
+import { INPUT_ANSWER } from '@api/modules/core/disclosure/models/derivation.model';
+import { REPORT_SCOPE } from '@api/modules/core/disclosure/models/report.model';
 import { assembleReportDocument, modulesToRead, type DocumentSources } from './report-document';
 
 /** A field as the wizard's step read answers it, answered with nothing unless a case says otherwise. */
@@ -39,6 +41,7 @@ function field(overrides: Partial<DisclosureField> & Pick<DisclosureField, 'elem
     answeredIn: null,
     applicable: true,
     applicabilityCause: null,
+    drivesApplicability: false,
     ...overrides,
   };
 }
@@ -58,6 +61,7 @@ function sources(overrides: Partial<DocumentSources> = {}): DocumentSources {
     },
     modules: [{ module: 'B3', applicable: true, omitted: false, applicabilityCause: null }],
     steps: new Map([['B3', []]]),
+    inputs: new Map(),
     inScope: new Set(),
     prior: { availability: 'no_prior_period', prior: null, values: [] },
     run: null,
@@ -134,6 +138,7 @@ describe('assembleReportDocument (task 43; FR-48, UX-119)', () => {
         unresolved: false,
         withheld: false,
         override: null,
+        input: null,
       },
     ]);
   });
@@ -160,6 +165,48 @@ describe('assembleReportDocument (task 43; FR-48, UX-119)', () => {
       { value: { kind: DOCUMENT_VALUE.PERCENT, value: '0.1020408163265306', places: 2 }, unit: null },
       // No places configured for it: every digit, which is never wrong, only long.
       { value: { kind: DOCUMENT_VALUE.FIGURE, value: '4', places: null }, unit: null },
+    ]);
+  });
+
+  it('prints what a worked-out figure is computed from under it — a typed input, an offer it used, a yes or a no (task 80.3)', () => {
+    const RATE = 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod';
+    const EXCLUSION = 'UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement';
+    const document = assembleReportDocument(
+      sources({
+        report: { ...sources().report, scope: REPORT_SCOPE.BASIC_AND_COMPREHENSIVE },
+        modules: [
+          { module: 'B9', applicable: true, omitted: false, applicabilityCause: null },
+          { module: 'C8', applicable: true, omitted: false, applicabilityCause: null },
+        ],
+        steps: new Map([
+          ['B9', [field({ elementKey: RATE, valueNumeric: '6', derived: true })]],
+          ['C8', [field({ elementKey: EXCLUSION, kind: 'boolean', valueBoolean: false, derived: true })]],
+        ]),
+        inputs: new Map([
+          ['B9', [
+            // Unanswered, the offer is what the rate was computed with, so it is what is printed.
+            { key: 'HoursWorkedByOneFullTimeEmployee', derives: RATE, answer: INPUT_ANSWER.NUMBER, value: null, offered: '2000' },
+            // An input of another figure is not this one's.
+            { key: 'NumberOfEmployeesWhoLeftDuringTheReportingPeriod', derives: 'EmployeeTurnoverRate', answer: INPUT_ANSWER.NUMBER, value: '3', offered: null },
+          ]],
+          ['C8', [
+            { key: 'OnePercentOrMoreOfRevenuesFromHardCoalAndLignite', derives: EXCLUSION, answer: INPUT_ANSWER.YES_NO, value: '0', offered: null },
+            // Neither answered nor offered, it fed nothing.
+            { key: 'TenPercentOrMoreOfRevenuesFromOilFuels', derives: EXCLUSION, answer: INPUT_ANSWER.YES_NO, value: null, offered: null },
+          ]],
+        ]),
+        inScope: new Set([RATE, EXCLUSION]),
+      }),
+    );
+    expect(document.modules.map((module) => module.rows.map(({ value, input }) => ({ value, input })))).toEqual([
+      [
+        { value: { kind: DOCUMENT_VALUE.FIGURE, value: '6', places: null }, input: null },
+        { value: { kind: DOCUMENT_VALUE.FIGURE, value: '2000', places: null }, input: 'HoursWorkedByOneFullTimeEmployee' },
+      ],
+      [
+        { value: { kind: DOCUMENT_VALUE.YES_NO, value: false }, input: null },
+        { value: { kind: DOCUMENT_VALUE.YES_NO, value: false }, input: 'OnePercentOrMoreOfRevenuesFromHardCoalAndLignite' },
+      ],
     ]);
   });
 
@@ -372,6 +419,7 @@ describe('assembleReportDocument (task 43; FR-48, UX-119)', () => {
         unresolved: false,
         withheld: true,
         override: null,
+        input: null,
       },
     ]);
     expect(document.gaps).toEqual([{ module: 'B3', label: 'Label of Secret', member: null, value: null, withheld: true }]);

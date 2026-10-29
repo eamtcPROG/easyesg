@@ -545,6 +545,23 @@
           },
           "page": "Pagina {page} din {pages}",
           "omissions": "Omisiuni și constatări"
+        },
+        "inputs": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Salariul mediu brut pe oră al angajatelor femei",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "Salariul mediu brut pe oră al angajaților bărbați",
+          "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": "Cel puțin 50% din venituri din combustibili gazoși",
+          "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": "Cel puțin 50% din venituri din producerea de energie electrică peste 100 g CO₂e/kWh",
+          "HoursWorkedByOneFullTimeEmployee": "Ore lucrate de un angajat cu normă întreagă în perioadă",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Angajați la începutul perioadei",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Angajați la sfârșitul perioadei",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Angajați acoperiți de contracte colective de muncă",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Angajați care au plecat în perioadă",
+          "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": "Femei în organul de conducere la sfârșitul perioadei",
+          "NumberOfFemaleEmployeesAtManagementLevel": "Angajate femei la nivel de conducere",
+          "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": "Bărbați în organul de conducere la sfârșitul perioadei",
+          "NumberOfMaleEmployeesAtManagementLevel": "Angajați bărbați la nivel de conducere",
+          "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": "Cel puțin 1% din venituri din huilă și lignit",
+          "TenPercentOrMoreOfRevenuesFromOilFuels": "Cel puțin 10% din venituri din combustibili petrolieri"
         }
       },
       "workbook": {

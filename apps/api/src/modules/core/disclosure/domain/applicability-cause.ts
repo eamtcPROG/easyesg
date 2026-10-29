@@ -1,4 +1,5 @@
 import type { DisclosureLabel } from '@easyesg/i18n';
+import type { TaxonomyElement } from '@api/contracts/taxonomy-registry.port';
 import type { EvaluatedApplicability } from '../models/applicability.model';
 import type { DisclosureApplicabilityCause } from '../models/wizard-step.model';
 
@@ -12,6 +13,8 @@ import type { DisclosureApplicabilityCause } from '../models/wizard-step.model';
 export const toCause = (
   evaluated: EvaluatedApplicability | undefined,
   catalogue: Readonly<Record<string, DisclosureLabel>> | null,
+  /** The module whose step asks an element — its first, as the registry orders it; `null` for one in none. */
+  moduleOf: (elementKey: string) => string | null,
 ): DisclosureApplicabilityCause | null =>
   evaluated === undefined
     ? null
@@ -20,7 +23,19 @@ export const toCause = (
         drivers: evaluated.cause.driverKeys.map((elementKey) => ({
           elementKey,
           label: catalogue?.[elementKey]?.text ?? null,
+          module: moduleOf(elementKey),
         })),
         threshold: evaluated.cause.threshold,
         answer: evaluated.cause.answer,
       };
+
+/**
+ * The module whose step asks each element — its first, the module its `section` and `order` describe (task 36.4) — for a
+ * cause's drivers (task 80.1). Built once per read from the version's elements.
+ */
+export function moduleResolver(
+  elements: readonly Pick<TaxonomyElement, 'key' | 'modules'>[],
+): (elementKey: string) => string | null {
+  const first = new Map(elements.map((element) => [element.key, element.modules[0] ?? null]));
+  return (elementKey) => first.get(elementKey) ?? null;
+}

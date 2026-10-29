@@ -45,6 +45,7 @@ const field = (over: Partial<DisclosureField> & { elementKey: string }): Disclos
   answeredIn: null,
   applicable: true,
   applicabilityCause: null,
+  drivesApplicability: false,
   ...over,
 });
 

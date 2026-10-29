@@ -560,8 +560,24 @@ test('C2 renders its three narratives in the taxonomy order, each with the help 
 }) => {
   const reportId = await signedInWithReport(page, 'c2', { comprehensive: true });
   const organizationId = organizationOf.get(reportId) ?? '';
+  // The target's description is asked once B2 says a target is set (task 80.1): unanswered there, C2 asks two.
+  await page.goto(`/reports/${reportId}/C2`);
+  await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(2);
+  await page.goto(`/reports/${reportId}/B2`);
+  const target = page
+    .getByRole('radiogroup', { name: 'Întreprinderea a stabilit o țintă legată de o politică' })
+    .getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  await untilHydrated(target);
+  await target.check();
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'UndertakingHasSetATargetWhichIsRelatedToAPolicy' }))?.valueBoolean, { timeout: 15_000 })
+    .toBe(true);
   await page.goto(`/reports/${reportId}/C2`);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('C2');
+  // UX-27's note names B2's answer, in B2, and links there (task 80.1).
+  const note = page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' });
+  await expect(note).toContainText('„Întreprinderea a stabilit o țintă legată de o politică” în B2 ați răspuns „Da”');
+  await expect(note.getByRole('link', { name: 'Vedeți răspunsul din B2' })).toHaveCount(1);
   await expect(
     page.getByText('Mai multe despre practicile și politicile din B2: cine răspunde de ele și ce ținte v-ați stabilit.', {
       exact: true,
@@ -1168,9 +1184,16 @@ test('a field can be declared not available, with a reason, and answered after a
   const organizationId = organizationOf.get(reportId) ?? '';
 
   await page.goto(`/reports/${reportId}/B4`);
+  // The URL is asked once the disclosure is said to be public (task 80.1): the yes first, then the field, read again.
+  const published = page
+    .getByRole('radiogroup', { name: 'Informație disponibilă public' })
+    .getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  await untilHydrated(published);
+  await published.check();
   const url = page.getByRole('group', {
     name: 'Adresa URL sau linkul către informația disponibilă public',
   });
+  await expect(url).toBeVisible({ timeout: 15_000 });
 
   // First-class: the action is on the field, before anything has been typed into it.
   await url.getByRole('button', { name: 'Marcați ca indisponibil' }).click();
@@ -2137,7 +2160,9 @@ test('C5 works out the female-to-male ratio from two counts beside it, and takes
   await expect(page.getByRole('textbox', { name: 'Женщины-сотрудники на руководящем уровне' })).toHaveValue('3');
 });
 
-test('C6 asks its policy questions in order, offers all six contents, and stores the answers (UC-188)', async ({ page }) => {
+test('C6 asks what its policy covers after its yes, and the other content after other (UC-188; task 80.1)', async ({
+  page,
+}) => {
   const reportId = await signedInWithReport(page, 'c6', { comprehensive: true });
   const organizationId = organizationOf.get(reportId) ?? '';
   await page.goto(`/reports/${reportId}/C6`);
@@ -2153,28 +2178,50 @@ test('C6 asks its policy questions in order, offers all six contents, and stores
   const other = main.getByRole('textbox', {
     name: 'Precizarea altor tipuri de conținut acoperite de codul de conduită sau de politica privind drepturile omului',
   });
-  // The standard's order (task 79.6): the question, what it covers, then the other content it specifies.
-  const top = async (locator: typeof policy) => (await locator.boundingBox())?.y ?? Number.NaN;
-  expect(await top(policy)).toBeLessThan(await top(contents));
-  expect(await top(contents)).toBeLessThan(await top(other));
+  // Unanswered, the policy's follow-ons are not asked (task 80.1): two yes/no questions and nothing between them.
+  await expect(main.getByRole('radiogroup')).toHaveCount(2);
+  await expect(contents).toHaveCount(0);
+  await expect(other).toHaveCount(0);
 
+  // Its yes asks what the policy covers, beneath it, with UX-27's note saying why — and no module, the question being here.
   const yes = policy.getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
   await untilHydrated(yes);
   await yes.check();
+  await expect(contents).toBeVisible({ timeout: 15_000 });
+  const note = page.getByRole('status').filter({ hasText: 'acest pas vă întreabă și' });
+  await expect(note).toHaveCount(1);
+  await expect(note).not.toContainText(' în C6');
+  const top = async (locator: typeof policy) => (await locator.boundingBox())?.y ?? Number.NaN;
+  expect(await top(policy)).toBeLessThan(await top(contents));
+  await expect(other).toHaveCount(0);
+
+  // C6 offers its whole domain, accident prevention among it — C7 offers five of these (task 79.7); *other* asks its
+  // specification, beneath the choice.
+  await untilHydrated(contents);
   await contents.click();
-  // C6 offers its whole domain, accident prevention among it — C7 offers five of these (task 79.7).
   await expect(page.getByRole('option')).toHaveCount(6);
-  await page.getByRole('option', { name: 'Prevenirea accidentelor', exact: true }).click();
+  await page.getByRole('option', { name: 'Alt conținut', exact: true }).click();
+  await expect(other).toBeVisible({ timeout: 15_000 });
+  expect(await top(contents)).toBeLessThan(await top(other));
+  await other.fill('Dreptul la concediu pentru îngrijirea unui copil bolnav');
+  await other.blur();
   await expect
-    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce' }))?.valueBoolean, { timeout: 15_000 })
-    .toBe(true);
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy' }))?.valueText, { timeout: 15_000 })
+    .toBe('Dreptul la concediu pentru îngrijirea unui copil bolnav');
+
+  // A no takes both away again and keeps what they held, said in their place (UX-28).
+  const no = policy.getByRole('radio', { name: 'Nu', exact: true });
+  await no.check();
+  await expect(contents).toHaveCount(0, { timeout: 15_000 });
+  await expect(other).toHaveCount(0);
+  await expect(main.getByText(/Păstrat: Dreptul la concediu pentru îngrijirea unui copil bolnav/u)).toHaveCount(1);
   await expect
     .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce' }))?.valueText, { timeout: 15_000 })
-    .toBe('vsme:AccidentPreventionMember');
+    .toBe('vsme:OtherContentMember');
 
   await page.goto(`/en/reports/${reportId}/C6`);
   await expect(
-    page.getByRole('radiogroup', { name: 'Undertaking has a code of conduct or human rights policy for its own workforce' }).getByRole('radio', { name: 'Yes', exact: true }),
+    page.getByRole('radiogroup', { name: 'Undertaking has a code of conduct or human rights policy for its own workforce' }).getByRole('radio', { name: 'No', exact: true }),
   ).toBeChecked();
 });
 
@@ -2185,15 +2232,29 @@ test('C7 takes two answers of no as the nil return, and a run finds the module c
   await page.goto(`/reports/${reportId}/C7`);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('C7');
   const main = page.getByRole('main');
-
-  // The five rights the template's C7 lists — not accident prevention, which the domain it shares with C6 carries.
+  const incidents = main.getByRole('radiogroup', {
+    name: 'Întreprinderea are incidente confirmate privind drepturile omului în cadrul forței de muncă proprii',
+  });
   const rights = main.getByRole('combobox', { name: 'Tipul de drept al omului vizat de incidentul confirmat' });
+  const actions = main.getByRole('textbox', { name: 'Descrierea măsurilor luate pentru soluționarea incidentelor confirmate' });
+
+  // Nothing that follows an incident is asked before one is confirmed (task 80.1).
+  await expect(rights).toHaveCount(0);
+  await expect(actions).toHaveCount(0);
+  // A yes asks the rights — the five the template's C7 lists, not accident prevention, which C6's domain carries — and
+  // the actions.
+  const yes = incidents.getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  await untilHydrated(yes);
+  await yes.check();
+  await expect(rights).toBeVisible({ timeout: 15_000 });
+  await expect(actions).toBeVisible();
   await untilHydrated(rights);
   await rights.click();
   await expect(page.getByRole('option')).toHaveCount(5);
   await expect(page.getByRole('option', { name: 'Prevenirea accidentelor' })).toHaveCount(0);
   await page.keyboard.press('Escape');
 
+  // **The nil return**: two answers of no, which take the follow-ons away again.
   for (const name of [
     'Întreprinderea are incidente confirmate privind drepturile omului în cadrul forței de muncă proprii',
     'Întreprinderea are cunoștință de incidente confirmate care implică lucrători din lanțul valoric, comunități afectate, consumatori sau utilizatori finali',
@@ -2202,6 +2263,7 @@ test('C7 takes two answers of no as the nil return, and a run finds the module c
     await untilHydrated(no);
     await no.check();
   }
+  await expect(rights).toHaveCount(0, { timeout: 15_000 });
   await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, { timeout: 15_000 });
   // **Absence as a positive statement** (FR-30): two stored answers of no, not two empty fields.
   for (const elementKey of [

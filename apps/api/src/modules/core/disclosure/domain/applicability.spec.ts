@@ -222,6 +222,43 @@ describe('evaluateApplicability (task 91.3; FR-28)', () => {
     });
   });
 
+  describe('a follow-on after its yes (task 80.1)', () => {
+    const PUBLISHED = 'PubliclyAvailableDisclosure';
+    const URL = 'URLOrLinkToThePubliclyAvailableDisclosure';
+    const followOn: ApplicabilityRule = { elements: [URL], condition: { kind: APPLICABILITY_CONDITION.IS_TRUE, elementKey: PUBLISHED } };
+
+    it('applies after a yes, and quotes it', () => {
+      const evaluated = evaluate([followOn], [value({ elementKey: PUBLISHED, valueBoolean: true })]);
+      expect(evaluated.get(URL)).toEqual({
+        applicable: true,
+        cause: { condition: APPLICABILITY_CONDITION.IS_TRUE, driverKeys: [PUBLISHED], threshold: null, answer: 'true' },
+      });
+    });
+
+    it('is hidden after a no, quoting it, and while unanswered, quoting nothing', () => {
+      const no = evaluate([followOn], [value({ elementKey: PUBLISHED, valueBoolean: false })]).get(URL);
+      expect(no).toMatchObject({ applicable: false, cause: { answer: 'false' } });
+      const unanswered = evaluate([followOn], []).get(URL);
+      expect(unanswered).toMatchObject({ applicable: false, cause: { answer: null } });
+    });
+
+    it('chains: a specification of *other* applies only where its choice holds it and that choice’s yes holds too', () => {
+      const POLICY = 'UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce';
+      const CONTENT = 'TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce';
+      const OTHER = 'SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy';
+      const rules: ApplicabilityRule[] = [
+        { elements: [CONTENT, OTHER], condition: { kind: APPLICABILITY_CONDITION.IS_TRUE, elementKey: POLICY } },
+        { elements: [OTHER], condition: { kind: APPLICABILITY_CONDITION.MEMBER_WITHIN, elementKey: CONTENT, members: ['vsme:OtherContentMember'] } },
+      ];
+      const chosen = value({ elementKey: CONTENT, valueText: 'vsme:ChildLabourMember vsme:OtherContentMember' });
+      expect(evaluate(rules, [value({ elementKey: POLICY, valueBoolean: true }), chosen]).get(OTHER)?.applicable).toBe(true);
+      // The choice kept from before a no still holds *other*, and the specification goes with its question.
+      const withdrawn = evaluate(rules, [value({ elementKey: POLICY, valueBoolean: false }), chosen]);
+      expect(withdrawn.get(OTHER)?.applicable).toBe(false);
+      expect(withdrawn.get(CONTENT)?.applicable).toBe(false);
+    });
+  });
+
   describe('two rules over one element are a conjunction', () => {
     const satisfied: ApplicabilityRule = { elements: [WATER], condition: waterRule.condition };
     const refused: ApplicabilityRule = { elements: [WATER], condition: atLeastRule('50', WATER).condition };

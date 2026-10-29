@@ -1667,23 +1667,6 @@
         "targetSoFar": "Schimbarea de până acum, anul de raportare față de anul de referință: {change}"
       },
       "derivationInput": {
-        "names": {
-          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Salariul mediu brut pe oră al angajatelor femei",
-          "AverageGrossHourlyPayLevelOfMaleEmployees": "Salariul mediu brut pe oră al angajaților bărbați",
-          "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": "Cel puțin 50% din venituri din combustibili gazoși",
-          "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": "Cel puțin 50% din venituri din producerea de energie electrică peste 100 g CO₂e/kWh",
-          "HoursWorkedByOneFullTimeEmployee": "Ore lucrate de un angajat cu normă întreagă în perioadă",
-          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Angajați la începutul perioadei",
-          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Angajați la sfârșitul perioadei",
-          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Angajați acoperiți de contracte colective de muncă",
-          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Angajați care au plecat în perioadă",
-          "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": "Femei în organul de conducere la sfârșitul perioadei",
-          "NumberOfFemaleEmployeesAtManagementLevel": "Angajate femei la nivel de conducere",
-          "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": "Bărbați în organul de conducere la sfârșitul perioadei",
-          "NumberOfMaleEmployeesAtManagementLevel": "Angajați bărbați la nivel de conducere",
-          "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": "Cel puțin 1% din venituri din huilă și lignit",
-          "TenPercentOrMoreOfRevenuesFromOilFuels": "Cel puțin 10% din venituri din combustibili petrolieri"
-        },
         "help": {
           "AverageGrossHourlyPayLevelOfFemaleEmployees": "Brut, în aceeași monedă ca salariul de mai sus.",
           "AverageGrossHourlyPayLevelOfMaleEmployees": "Brut, înainte de impozite și contribuții. Folosiți aceeași monedă la ambele salarii — diferența se calculează procentual, așa că moneda nu apare în rezultat.",
@@ -1762,24 +1745,27 @@
       },
       "applicability": {
         "note": {
-          "numericAtLeast": "Pentru că la „{driver}” în B1 ați răspuns {answer}, adică {threshold} sau mai mult, acest pas vă întreabă și: {fields}.",
-          "anyRowAnswered": "Pentru că în B1 ați completat {drivers}, acest pas vă întreabă și: {fields}.",
-          "memberWithin": "Ca urmare a răspunsului dat la „{driver}” în B1, acest pas vă întreabă și: {fields}.",
+          "numericAtLeast": "Pentru că la „{driver}”{place, select, here {} other { în {module}}} ați răspuns {answer}, adică {threshold} sau mai mult, acest pas vă întreabă și: {fields}.",
+          "anyRowAnswered": "Pentru că {place, select, here {aici} other {în {module}}} ați completat {drivers}, acest pas vă întreabă și: {fields}.",
+          "memberWithin": "Ca urmare a răspunsului dat la „{driver}”{place, select, here {} other { în {module}}}, acest pas vă întreabă și: {fields}.",
+          "isTrue": "Pentru că la „{driver}”{place, select, here {} other { în {module}}} ați răspuns „Da”, acest pas vă întreabă și: {fields}.",
           "body": "Dacă schimbați acel răspuns, aceste întrebări dispar din nou, iar ce ați completat aici se păstrează.",
-          "see": "Vedeți răspunsul din B1",
+          "see": "Vedeți răspunsul{place, select, here {} other { din {module}}}",
           "dismiss": "Ascundeți nota"
         },
         "hidden": {
-          "numericAtLeast": "Această întrebare este ascunsă pentru că la „{driver}” în B1 ați răspuns {answer}, adică sub {threshold}.",
-          "anyRowAnswered": "Această întrebare este ascunsă pentru că în B1 nu ați completat {drivers}.",
-          "memberWithin": "Această întrebare este ascunsă ca urmare a răspunsului dat la „{driver}” în B1.",
-          "waiting": "Această întrebare este ascunsă până răspundeți la „{driver}” în B1.",
+          "numericAtLeast": "Această întrebare este ascunsă pentru că la „{driver}”{place, select, here {} other { în {module}}} ați răspuns {answer}, adică sub {threshold}.",
+          "anyRowAnswered": "Această întrebare este ascunsă pentru că {place, select, here {aici} other {în {module}}} nu ați completat {drivers}.",
+          "memberWithin": "Această întrebare este ascunsă ca urmare a răspunsului dat la „{driver}”{place, select, here {} other { în {module}}}.",
+          "isTrue": "Această întrebare este ascunsă pentru că la „{driver}”{place, select, here {} other { în {module}}} ați răspuns „Nu”.",
+          "waiting": "Această întrebare este ascunsă până răspundeți la „{driver}”{place, select, here {} other { în {module}}}.",
+          "isTrueWaiting": "Această întrebare apare dacă la „{driver}”{place, select, here {} other { în {module}}} răspundeți „Da”.",
           "kept": "Răspunsul dat anterior a fost păstrat și va reapărea dacă situația se schimbă.",
           "keptValue": "Păstrat: {value}",
           "notAvailable": "declarat indisponibil",
           "quantity": "{value} {unit}"
         },
-        "unnamedDriver": "o întrebare din B1",
+        "unnamedDriver": "o altă întrebare",
         "unnamedFields": "o întrebare în plus"
       }
     },

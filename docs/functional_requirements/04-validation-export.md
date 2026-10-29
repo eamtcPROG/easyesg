@@ -437,7 +437,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 
 ### FR-49 — The PDF
 
-**Status.** Built — delivered 43.1 (the rendering it shares with the preview), 44.1 … 44.7 (the renderer, the job with its record and stored file, the conformance, the hang, the queue of its own, the override marker, the platform-authored-labels statement), 46.4 (a figure stored with no unit at the digits the Excel shows) , 47.1 (the history and the file, byte for byte), 47.3 (the completion notice to the person who asked, past 30 s), 47.4 (the request and its answer)
+**Status.** Built — delivered 43.1 (the rendering it shares with the preview), 44.1 … 44.7 (the renderer, the job with its record and stored file, the conformance, the hang, the queue of its own, the override marker, the platform-authored-labels statement), 46.4 (a figure stored with no unit at the digits the Excel shows) , 47.1 (the history and the file, byte for byte), 47.3 (the completion notice to the person who asked, past 30 s), 47.4 (the request and its answer), 80.3 (what a worked-out figure is worked out from, printed beneath it)
 
 **Obligation.** The system shall generate a formatted, publication-ready PDF from stored data in the selected export language.
 
@@ -456,6 +456,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 4. **The document** has its own layout system (UX-117): a cover with entity, period, module scope, taxonomy version and generation date; a contents list; one section per module in the standard order; indicator tables with comparatives; and a provenance page naming template version, taxonomy version, factor-set version and the generating user. Print structure is controlled (UX-118), the structure is tagged (UX-120), and nothing depends on colour (UX-121).
 5. Every export embeds the entity, period, template and taxonomy version, factor-set version, language and generation timestamp (NFR-22).
 6. **What the values say.** Each figure rounds once, half-up, to the per-unit precision configuration holds, set by task 44's artboard (task-182 row (3)). **A figure stored with no unit** — a calculated or derived one — is presented in its element's one admitted unit (B3's tonnes CO2e), or else at its element's configured places, set to the digits EFRAG's template shows the same cell at; a share, stored as a fraction, prints as a percentage (task 46; §12.5.6's task-46 row (10)). A nil return renders as a stated zero (FR-30/AC-4). A section declared omitted is stated (FR-31). A figure that replaced a computed one carries a *company estimate* marker and a footnote with its reason and the superseded value (task 44.6; task-182 row (7)). Gaps are marked (FR-44).
+6a. **What a figure is worked out from is printed beneath it** (task 80.3; §12.5.6's task-80.3 row (1)): each derivation input a row under the figure it feeds, named in the export's language and set apart from a disclosure — B8's turnover counts, B9's working year, B10's pay and coverage, C5's and C9's counts, C8's four thresholds as yes or no. An input left unanswered prints the offer the figure was worked out with — B9's 2,000 hours — and a figure not worked out prints no inputs.
 7. **Labels.** Where the export language's VSME labels are platform-authored (Romanian and Russian at `2026-05-01`), the document says so (UX-98; T-14).
 8. User-entered text is escaped for markup and script (NFR-70; `architecture.md` §9.7).
 9. Pinned versions govern which template and labels are used (FR-51).
@@ -478,6 +479,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-8** Given an export in a language whose labels are platform-authored, then the document states it. *(source: UX-98; T-14)* Met by 44.7, on the cover and the provenance page.
 - **AC-9** Given a render that hangs, then it is killed and the job completes on a fresh instance. *(source: T-13; task 44.4)* Met by 44.4, against a real Chromium stopped mid-launch.
 - **AC-10** Given user text beginning with markup, then the PDF shows it as text. *(source: NFR-70; §9.7)* Met by 44.2.
+- **AC-12** Given a figure the platform works out from derivation inputs, then the PDF prints each input beneath it, named in the document's language, the offer where none is stored. *(source: §12.5.6 task-80.3 row (1))* Met by 80.3: `report-document.spec.ts` and the renderer's spec, and both golden reports' PDFs.
 - **AC-11** Given a PDF, then a figure agrees with the Excel export's. *(source: NFR-18; task 46.4)* Met by 46.4: the golden corpus holds the PDF to the digits EFRAG's formats show the Excel's exact figures at (§12.5.6's task-46 row (10)).
 
 **History.**
@@ -488,10 +490,11 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 11 Oct 2026 · project owner · the completion notice arrives with S-11 (47.3); a render attempt runs at most 60 s and an export is attempted three times; Chromium in a renderer service of its own · §12.5.6 task-44 row
 - 11 Oct 2026 · project owner · exports have a queue of their own, measured · §12.5.6 task-44 row (5)
 - 11 Oct 2026 · project owner · a figure stored with no unit is printed at the digits the Excel export shows it at · §12.5.6 task-46 row (10)
+- 29 Oct 2026 · project owner · every derivation input printed under the figure it feeds · §12.5.6 task-80.3 row (1)
 
 ### FR-50 — The EFRAG Excel Digital Template
 
-**Status.** Built — delivered 45.1 (a patch with no writes is the template byte for byte), 45.2 (values written into the template's own cells, its formulas, formatting and validation untouched), 45.3 (a report's template pin resolves the registered binary), 46.1 … 46.5 (the map and the job on the export queue, the LibreOffice Calc gate, the platform-authored-labels statement, the golden-report corpus, the marks) , 47.1 (the history and the file), 47.3 (the completion notice), 47.4 (the request and its answer)
+**Status.** Built — delivered 45.1 (a patch with no writes is the template byte for byte), 45.2 (values written into the template's own cells, its formulas, formatting and validation untouched), 45.3 (a report's template pin resolves the registered binary), 46.1 … 46.5 (the map and the job on the export queue, the LibreOffice Calc gate, the platform-authored-labels statement, the golden-report corpus, the marks) , 47.1 (the history and the file), 47.3 (the completion notice), 47.4 (the request and its answer), 80.3 (the Comprehensive Module)
 
 **Obligation.** The system shall write stored values into the named ranges of the official EFRAG Excel Digital Template at the version pinned to the report, preserving the template's own dropdowns and consistency-check formulas.
 
@@ -521,6 +524,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 17. **A unit the template's cell cannot hold** is converted exactly into one it can — the finest among the figures it governs — with a footnote stating the figure as stored (§12.5.6's task-46 row (6)).
 18. **The file names the platform as its application**, so LibreOffice recalculates the template's formulas on open as Excel does, and carries NFR-22's facts that have no cell as its document properties and, for the factor set, as footnotes on the calculated B3 figures (§12.5.6's task-46 row (4), (7)).
 19. **The template's own yes/no questions** before a group — a certification obtained, sites in or near biodiversity-sensitive areas, convictions and fines incurred, more than one country — are answered *yes* only where the report affirms them, each as its question asks; one the report does not affirm is left as EFRAG ships it (§12.5.6's task-46 row (a)).
+20. **The Comprehensive Module is placed as the Basic is** (task 80.3; §12.5.6's task-80.3 row): the map places every element of the taxonomy. C3's emissions at the base and the target year are members of B3's, in the template's two columns beside the reporting year's; C3's date of foreseen adoption is the template's three day cells, as the period's are; C6's contents and C7's rights are its column of checkboxes, C7's the five rows it offers; C6's and C7's questions are EFRAG's words. **The template's own questions before C's groups are answered from the report** as item 19 says — C1's strategy, C3's targets, C4's hazards, C8's revenues, C9's governance body, and C8's *None of the above* where the exclusion is worked out as no — and **a dropdown no element answers is written from the answers that do**: C3's status of a transition plan, *adopted* where the plan is described, *planned* where only its date is. A row a step shows and another module answers — B3's figure on C3 — is written once, from its own module.
 13. **Comparatives** (182/33). The template has no prior-period cells, so no prior-period value is written. The three B1 statements about unchanged disclosures (FR-47 item 6) carry the standard's own wording.
 14. The export is a job, with the same pipeline, concurrency and notification as FR-49.
 
@@ -540,6 +544,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - **AC-11** Given an export in any language, then the template's language cell reads English and its translations sheet is unchanged. *(source: §12.5.6 task-182 validation row, 182/31)* Met by 46.1.
 - **AC-12** Given a figure the template computes by formula, then its cell still holds the formula and no stored value is written over it; given the golden corpus, then the formula's result equals the stored figure. *(source: §12.5.6 task-182 validation row, 182/32)* Met by 46.1 and 46.4: the map refuses a target the template computes, and the golden corpus holds six such figures equal to the stored ones in every language's file.
 - **AC-13** Given a report holding prior-period values, then the Excel export writes none of them. *(source: §12.5.6 task-182 validation row, 182/33)* Met by 46.1.
+- **AC-14** Given a Basic-and-Comprehensive report, then every C answer lands in the template's own cells, its questions before each C group are answered from the report, and its status per C section reads `OK` where the report answers it. *(source: FR-177 AC-5; §12.5.6 task-80.3 row)* Met by 80.3: `report-workbook.spec.ts` over the shipped map, both registered releases' maps placing every element, and `bakery-comprehensive-2026` read in Calc.
 
 **History.**
 - 18 Aug 2026 · architecture · the Excel verification is split: Calc in CI, Excel by hand · NFR-20 ratified, `architecture.md` §17.1
@@ -552,6 +557,7 @@ Business rules held here: BR-VAL-1 … BR-VAL-4, BR-VER-2 (§4). Entities held h
 - 11 Oct 2026 · project owner · the map is configuration per template version; marks are footnotes; a computed figure keeps its formula and the undertaking's own is footnoted; the file names the platform as its application; the IDNO goes with the scheme blank; units the cell cannot hold are converted exactly; NFR-22's facts are document properties and footnotes; the golden corpus lives in `config/golden-reports/`; a template with no Footnotes sheet (`1.2.0`) carries each footnote as a cell note · §12.5.6 task-46 row
 - 11 Oct 2026 · architecture · the template's own yes/no questions are answered as each asks — held, affirmed or more than one · §12.5.6 task-46 row (a)
 - 11 Oct 2026 · project owner · a calculated or derived figure is written exact, EFRAG's formats showing it at the PDF's digits · §12.5.6 task-46 row (10)
+- 29 Oct 2026 · project owner · the Comprehensive Module placed; the template's questions before C's groups and C3's status answered from the report · §12.5.6 task-80.3 row
 
 ### FR-51 — Never an export against an unplanned version
 

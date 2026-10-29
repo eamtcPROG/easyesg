@@ -53,6 +53,11 @@ import sharedRu from '@easyesg/i18n/catalogues/ru.json';
  * them — the shared catalogue's `core.export.document.modules`, under a name of its own because `core` is the api's
  * namespace and most of it is nothing this app reads. S-29 names the eleven Basic sections to a visitor; a second
  * wording here would let the home promise a section the report then calls something else.
+ *
+ * **And a fourth, `derivationInputNames`** (task 80.3; §12.5.6's task-80.3 row (1)): what each value a figure is worked
+ * out from is called — the shared catalogue's `core.export.document.inputs`, since the PDF prints each under its
+ * figure. They moved out of this app's `organization.wizard.derivationInput`, where S-07 named them alone; their help,
+ * which only S-07 shows, stayed.
  */
 const CATALOGUES: Readonly<Record<Locale, MessageCatalogue>> = {
   ro: {
@@ -60,18 +65,21 @@ const CATALOGUES: Readonly<Record<Locale, MessageCatalogue>> = {
     validation: sharedRo.validation,
     vocabulary: sharedRo.vocabulary,
     reportModules: sharedRo.core.export.document.modules,
+    derivationInputNames: sharedRo.core.export.document.inputs,
   },
   en: {
     ...en,
     validation: sharedEn.validation,
     vocabulary: sharedEn.vocabulary,
     reportModules: sharedEn.core.export.document.modules,
+    derivationInputNames: sharedEn.core.export.document.inputs,
   },
   ru: {
     ...ru,
     validation: sharedRu.validation,
     vocabulary: sharedRu.vocabulary,
     reportModules: sharedRu.core.export.document.modules,
+    derivationInputNames: sharedRu.core.export.document.inputs,
   },
 };
 

@@ -1,12 +1,14 @@
 import { CELL_VALUE_KIND, type CellValue } from '@easyesg/xlsx-patch';
 import { type DigitalTemplateMap, TEMPLATE_ENCODING, type TemplateEncoding } from '@api/contracts/digital-template-map';
 
-/** One answer, as the field holds it: a decimal, text, a yes/no, or a member's qualified name. */
+/** One answer, as the field holds it: a decimal, text, a yes/no, a member's qualified name, or a calendar day. */
 export type WorkbookAnswer =
   | { readonly number: string }
   | { readonly text: string }
   | { readonly yes: boolean }
-  | { readonly member: string };
+  | { readonly member: string }
+  /** `YYYY-MM-DD`, a legal date as the store holds it — written into the template's three day cells (task 80.3). */
+  | { readonly date: string };
 
 /** A member the cell's list has no string for — the caller decides whether that is a note or a refusal. */
 export interface Unlisted {

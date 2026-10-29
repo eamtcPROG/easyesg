@@ -33,7 +33,7 @@ describe('placeOf', () => {
       applicable: false,
       applicabilityCause: {
         condition: 'numeric_at_least',
-        drivers: [{ elementKey: 'NumberOfEmployees', label: null }],
+        drivers: [{ elementKey: 'NumberOfEmployees', label: null, module: 'B1' }],
         threshold: '50',
         answer: null,
       },

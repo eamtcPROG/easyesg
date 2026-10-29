@@ -59,7 +59,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
 
   interface Cause {
     condition: string;
-    drivers: { elementKey: string; label: string | null }[];
+    drivers: { elementKey: string; label: string | null; module: string | null }[];
     threshold: string | null;
     answer: string | null;
   }
@@ -95,6 +95,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     applicabilityCause: Cause | null;
     /** The places a computed figure in the field is shown to — its unit's, else its element's (task 211). */
     places: number | null;
+    /** Whether a rule over another field on this step reads this one — a follow-on's question (task 80.1). */
+    drivesApplicability: boolean;
   }
   interface Axis { key: string; label: string | null; memberLanguage: string | null; members: { value: string; label: string | null; code: string | null; hazardous: boolean | null }[] }
   interface DerivationInput {
@@ -2608,6 +2610,74 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       expect(await counts('1', '0')).toMatchObject({ valueNumeric: '0', state: DISCLOSURE_STATE.NIL_RETURN });
       expect((await counts('0', '3'))?.valueNumeric).toBe('0');
       expect(fieldOf(await readStep(reportId, 'C9'), RATIO)?.places).toBe(2);
+    });
+  });
+  describe('a follow-on after its yes, and C3’s transition plan by sector (task 80.1)', () => {
+    const put = (reportId: string, values: Record<string, unknown>[]) =>
+      http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({ values }).expect(200);
+    const fieldOf = (step: Step, elementKey: string): Field | undefined =>
+      step.fields.find((field) => field.elementKey === elementKey);
+    const PLAN = 'DescriptionOfATransitionPlanForClimateChangeMitigationIncludingAnExplanationOfHowItIsContributingToReduceGhgEmissions';
+
+    it('asks C3’s transition plan of a high-impact sector, naming B1’s answer, and not of another', async () => {
+      const reportId = await createReport(await openPeriod(2026), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      await put(reportId, [{ elementKey: 'NaceSectorClassificationCodes', valueText: 'nace:NACE_C1071', state: DISCLOSURE_STATE.OK }]);
+      const manufacturer = fieldOf(await readStep(reportId, 'C3'), PLAN);
+      expect(manufacturer?.applicable).toBe(true);
+      expect(manufacturer?.applicabilityCause).toMatchObject({
+        condition: 'member_within',
+        drivers: [{ elementKey: 'NaceSectorClassificationCodes', module: 'B1' }],
+      });
+      // Section J — publishing — is no high climate impact sector.
+      await put(reportId, [{ elementKey: 'NaceSectorClassificationCodes', valueText: 'nace:NACE_J', state: DISCLOSURE_STATE.OK }]);
+      expect(fieldOf(await readStep(reportId, 'C3'), PLAN)?.applicable).toBe(false);
+    });
+
+    it('asks B4’s URL after its yes, and marks the question as one the step is read again after', async () => {
+      const reportId = await createReport(await openPeriod(2026));
+      const URL = 'URLOrLinkToThePubliclyAvailableDisclosure';
+      const unanswered = await readStep(reportId, 'B4');
+      expect(fieldOf(unanswered, URL)).toMatchObject({ applicable: false, applicabilityCause: { condition: 'is_true', answer: null } });
+      // The question is this step's own, so the step names it a driver; the figures it does not govern are not.
+      expect(fieldOf(unanswered, 'PubliclyAvailableDisclosure')?.drivesApplicability).toBe(true);
+      expect(fieldOf(unanswered, 'AmountOfEmissionToAir')?.drivesApplicability).toBe(false);
+      expect(fieldOf(unanswered, URL)?.applicabilityCause?.drivers).toEqual([
+        expect.objectContaining({ elementKey: 'PubliclyAvailableDisclosure', module: 'B4' }),
+      ]);
+
+      await put(reportId, [{ elementKey: 'PubliclyAvailableDisclosure', valueBoolean: true, state: DISCLOSURE_STATE.OK }]);
+      expect(fieldOf(await readStep(reportId, 'B4'), URL)).toMatchObject({ applicable: true, applicabilityCause: { answer: 'true' } });
+      // A no hides it again, keeping what it holds (UX-28).
+      await put(reportId, [{ elementKey: URL, valueText: 'https://example.md/raport', state: DISCLOSURE_STATE.OK }]);
+      await put(reportId, [{ elementKey: 'PubliclyAvailableDisclosure', valueBoolean: false, state: DISCLOSURE_STATE.OK }]);
+      expect(fieldOf(await readStep(reportId, 'B4'), URL)).toMatchObject({ applicable: false, valueText: 'https://example.md/raport' });
+    });
+
+    it('asks C2’s target description after B2’s target yes, naming B2 — a driver on an earlier step, read when C2 is', async () => {
+      const reportId = await createReport(await openPeriod(2026), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      const TARGET = 'DescriptionOfATargetRelatedToAPolicy';
+      expect(fieldOf(await readStep(reportId, 'C2'), TARGET)?.applicable).toBe(false);
+      await put(reportId, [{ elementKey: 'UndertakingHasSetATargetWhichIsRelatedToAPolicy', valueBoolean: true, state: DISCLOSURE_STATE.OK }]);
+      const c2 = await readStep(reportId, 'C2');
+      expect(fieldOf(c2, TARGET)?.applicable).toBe(true);
+      expect(fieldOf(c2, TARGET)?.applicabilityCause?.drivers[0]?.module).toBe('B2');
+      // B2's question is not on C2, so nothing on C2 drives a rule there.
+      expect(c2.fields.some((field) => field.drivesApplicability)).toBe(false);
+    });
+
+    it('asks C6’s other content only where the choice holds *other* and its policy is yes', async () => {
+      const reportId = await createReport(await openPeriod(2026), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      const CONTENT = 'TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce';
+      const OTHER = 'SpecificationOfOtherTypesOfContentCoveredByTheCodeOfConductOrHumanRightsPolicy';
+      await put(reportId, [
+        { elementKey: 'UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce', valueBoolean: true, state: DISCLOSURE_STATE.OK },
+        { elementKey: CONTENT, valueText: 'vsme:ChildLabourMember', state: DISCLOSURE_STATE.OK },
+      ]);
+      const chosen = await readStep(reportId, 'C6');
+      expect([fieldOf(chosen, CONTENT)?.applicable, fieldOf(chosen, OTHER)?.applicable]).toEqual([true, false]);
+      expect(fieldOf(chosen, CONTENT)?.drivesApplicability).toBe(true);
+      await put(reportId, [{ elementKey: CONTENT, valueText: 'vsme:ChildLabourMember vsme:OtherContentMember', state: DISCLOSURE_STATE.OK }]);
+      expect(fieldOf(await readStep(reportId, 'C6'), OTHER)?.applicable).toBe(true);
     });
   });
 });

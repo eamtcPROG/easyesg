@@ -52,6 +52,7 @@ const field = (over: Partial<DisclosureField>): DisclosureField => ({
   answeredIn: null,
   applicable: true,
   applicabilityCause: null,
+  drivesApplicability: false,
   ...over,
 });
 

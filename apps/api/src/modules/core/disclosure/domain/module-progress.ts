@@ -7,7 +7,7 @@ import type { TargetAxis } from '../models/target-axis';
 import type { DisclosureModuleSummary } from '../models/wizard-step.model';
 import { REPORT_SCOPE, scopeAsks } from '../models/report.model';
 import { soleCause } from './applicability';
-import { toCause } from './applicability-cause';
+import { moduleResolver, toCause } from './applicability-cause';
 import { modulesAskingRow } from './target-rows';
 
 /**
@@ -34,6 +34,7 @@ export function moduleSummaries(input: {
   readonly targets: ReadonlyMap<string, TargetAxis>;
 }): readonly DisclosureModuleSummary[] {
   const counts = new Map<string, ModuleCount>();
+  const moduleOf = moduleResolver(input.elements);
   for (const element of input.elements) {
     // An element FR-28 has ruled out is not part of this report's obligations, so it is counted
     // into neither side of the module's progress (task 91.3): a services company that can never
@@ -99,7 +100,7 @@ export function moduleSummaries(input: {
         total: count.total,
         lastAnsweredAt: count.lastAnsweredAt,
         applicable: count.applicable,
-        applicabilityCause: toCause(only, input.catalogue),
+        applicabilityCause: toCause(only, input.catalogue, moduleOf),
         omitted: input.omitted.has(module),
       },
     ];

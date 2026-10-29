@@ -180,6 +180,15 @@ function placementOf(
         columns: entries(raw.columns, `${where}.columns`, count),
         encoding: encodingOf(raw.encoding, `${where}.encoding`, names.lists),
       };
+    case TEMPLATE_PLACEMENT.CHECKBOX_ROWS:
+      return {
+        kind: raw.kind,
+        at: cellOf(raw.at, `${where}.at`),
+        rows: entries(raw.rows, `${where}.rows`, count),
+        encoding: encodingOf(raw.encoding, `${where}.encoding`, names.lists),
+      };
+    case TEMPLATE_PLACEMENT.DAY:
+      return { kind: raw.kind, at: cellOf(raw.at, `${where}.at`), day: dayOf(raw.day, `${where}.day`) };
     case TEMPLATE_PLACEMENT.OMISSION:
       return { kind: raw.kind };
     case TEMPLATE_PLACEMENT.COMPUTED:
@@ -248,7 +257,15 @@ function mapOf(payload: unknown): DigitalTemplateMap {
   const language = record(raw.language, 'language');
   const report = record(raw.report, 'report');
   if (!Array.isArray(raw.gates)) throw new Unreadable('gates is not a list');
+  if (!Array.isArray(raw.choices)) throw new Unreadable('choices is not a list');
   const elements = entries(raw.elements, 'elements', (placement, where) => placementOf(placement, where, names));
+  /** The elements a gate or a choice is answered from, each one the map places. */
+  const placed = (value: unknown, where: string): string[] => {
+    const when = texts(value, where);
+    const unplaced = when.find((elementKey) => elements[elementKey] === undefined);
+    if (unplaced !== undefined) throw new Unreadable(`${where} names ${unplaced}, an element the map places nowhere`);
+    return when;
+  };
   return {
     templateVersion: text(raw.templateVersion, 'templateVersion', TEMPLATE_VERSION),
     taxonomyVersion: text(raw.taxonomyVersion, 'taxonomyVersion', TAXONOMY_VERSION),
@@ -270,10 +287,19 @@ function mapOf(payload: unknown): DigitalTemplateMap {
     gates: raw.gates.map((gate: unknown, index) => {
       const entry = record(gate, `gates[${index}]`);
       if (!GATE_ANSWERS.has(entry.answer)) throw new Unreadable(`gates[${index}].answer is no way of answering a gate`);
-      const when = texts(entry.when, `gates[${index}].when`);
-      const unplaced = when.find((elementKey) => elements[elementKey] === undefined);
-      if (unplaced !== undefined) throw new Unreadable(`gates[${index}].when names ${unplaced}, an element the map places nowhere`);
+      const when = placed(entry.when, `gates[${index}].when`);
       return { at: cellOf(entry.at, `gates[${index}].at`), when, answer: entry.answer as TemplateGateAnswer };
+    }),
+    choices: raw.choices.map((choice: unknown, index) => {
+      const entry = record(choice, `choices[${index}]`);
+      if (!Array.isArray(entry.options) || entry.options.length === 0) throw new Unreadable(`choices[${index}] offers no option`);
+      return {
+        at: cellOf(entry.at, `choices[${index}].at`),
+        options: entry.options.map((option: unknown, at) => {
+          const raw = record(option, `choices[${index}].options[${at}]`);
+          return { value: text(raw.value, `choices[${index}].options[${at}].value`), when: placed(raw.when, `choices[${index}].options[${at}].when`) };
+        }),
+      };
     }),
     omission: entries(raw.omission, 'omission', (cells, where) => {
       if (!Array.isArray(cells) || cells.length === 0) throw new Unreadable(`${where} sets no checkbox`);

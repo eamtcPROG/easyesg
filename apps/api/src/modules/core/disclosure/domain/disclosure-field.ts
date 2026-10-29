@@ -36,6 +36,8 @@ export interface ResolvedElement {
   readonly options: readonly DisclosureOption[] | null;
   readonly applicable: boolean;
   readonly applicabilityCause: DisclosureApplicabilityCause | null;
+  /** Whether a rule over another field on this step reads this element (task 80.1). */
+  readonly drivesApplicability: boolean;
   /** The filing's own currency (task 36.12) — read by monetary elements and by no other kind. */
   readonly currency: string;
   /** Whether the derivation artefact computes this element (task 38.4). */
@@ -112,5 +114,6 @@ export function toField(element: TaxonomyElement, row: ResolvedRow, resolved: Re
     // this row's, so a second site is as applicable as the first.
     applicable: resolved.applicable,
     applicabilityCause: resolved.applicabilityCause,
+    drivesApplicability: resolved.drivesApplicability,
   };
 }

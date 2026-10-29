@@ -22,7 +22,12 @@ import {
 } from '@api/modules/core/comparatives/models/prior-period-value.model';
 import { DISCLOSURE_ORIGIN, DISCLOSURE_STATE } from '@api/modules/core/disclosure/models/disclosure-value.model';
 import { scopeAsks, type ReportScope } from '@api/modules/core/disclosure/models/report.model';
-import type { DisclosureField, DisclosureModuleSummary } from '@api/modules/core/disclosure/models/wizard-step.model';
+import type {
+  DerivationInputField,
+  DisclosureField,
+  DisclosureModuleSummary,
+} from '@api/modules/core/disclosure/models/wizard-step.model';
+import { INPUT_ANSWER, YES_NO_INPUT } from '@api/modules/core/disclosure/models/derivation.model';
 import { type FigurePrecision, presentedPlaces, presentedUnit } from '@api/modules/core/disclosure/domain/figure-precision';
 
 /**
@@ -58,6 +63,8 @@ export interface DocumentSources {
   readonly modules: readonly ModuleStanding[];
   /** The fields of each module {@link modulesToRead} names, read in the document's language. */
   readonly steps: ReadonlyMap<string, readonly DisclosureField[]>;
+  /** The values each module's worked-out figures are computed from (task 80.3) — printed under their figure. */
+  readonly inputs: ReadonlyMap<string, readonly DerivationInputField[]>;
   /** The elements a validation run would evaluate — what a declared section withholds is not among them. */
   readonly inScope: ReadonlySet<string>;
   readonly prior: Pick<PriorPeriodComparatives, 'availability' | 'prior' | 'values'>;
@@ -152,6 +159,7 @@ export function assembleReportDocument(sources: DocumentSources): ReportDocument
           unresolved: false,
           withheld: true,
           override: null,
+          input: null,
         });
         gaps.push({ module: summary.module, label: field.label, member: null, value: null, withheld: true });
         continue;
@@ -184,7 +192,12 @@ export function assembleReportDocument(sources: DocumentSources): ReportDocument
                 person: field.overriddenBy?.name ?? null,
               }
             : null,
+        input: null,
       });
+      // **And what it is worked out from, under it** (task 80.3; §12.5.6's task-80.3 row (1)), so a reader retraces it.
+      if (field.derived && value.kind !== DOCUMENT_VALUE.UNANSWERED) {
+        rows.push(...inputRows({ derives: field.elementKey, inputs: sources.inputs.get(summary.module) ?? [] }));
+      }
       if (value.kind === DOCUMENT_VALUE.NOT_AVAILABLE) {
         gaps.push({ module: summary.module, label: field.label, member: field.dimensionLabel, value, withheld: false });
       }
@@ -302,4 +315,34 @@ function priorOf(
     default:
       return { kind: DOCUMENT_VALUE.FIGURE, value: prior.valueNumeric, places };
   }
+}
+
+/**
+ * A worked-out figure's inputs as rows (task 80.3) — each stored answer, or the offer the figure was computed with where
+ * none is (B9's 2 000 hours); an input holding neither fed nothing and prints nothing. A yes/no input is a yes or a no,
+ * every other a figure with every digit it was typed with.
+ */
+function inputRows(input: { readonly derives: string; readonly inputs: readonly DerivationInputField[] }): DocumentRow[] {
+  return input.inputs
+    .filter((candidate) => candidate.derives === input.derives)
+    .flatMap((candidate): DocumentRow[] => {
+      const held = candidate.value ?? candidate.offered;
+      if (held === null) return [];
+      return [
+        {
+          label: null,
+          member: null,
+          value:
+            candidate.answer === INPUT_ANSWER.YES_NO
+              ? { kind: DOCUMENT_VALUE.YES_NO, value: held === YES_NO_INPUT.YES }
+              : { kind: DOCUMENT_VALUE.FIGURE, value: held, places: null },
+          prior: null,
+          unit: null,
+          unresolved: false,
+          withheld: false,
+          override: null,
+          input: candidate.key,
+        },
+      ];
+    });
 }

@@ -4131,14 +4131,19 @@ export interface components {
             elementKey: string;
             /** @description The element's wording in the request's locale — what the announcement names, since an element key is not something a reader may be shown. Null where the catalogue holds none. */
             label: string | null;
+            /**
+             * @description The module whose step asks it — B1, B2, or the step’s own for a follow-on’s question (task 80.1) — so the announcement says where the answer is and links to it. Null for an element presented in no module.
+             * @example B1
+             */
+            module: string | null;
         };
         ApplicabilityCauseDto: {
             /**
              * @description How the rule decides. The client words the announcement from this plus the values below; no sentence is composed server-side.
              * @enum {string}
              */
-            condition: "numeric_at_least" | "any_row_answered" | "member_within";
-            /** @description The B1 elements whose answers decide it. */
+            condition: "numeric_at_least" | "any_row_answered" | "member_within" | "is_true";
+            /** @description The elements whose answers decide it. */
             drivers: components["schemas"]["ApplicabilityDriverDto"][];
             /**
              * @description Decimal as a string, never a float (NFR-58). Null for conditions that carry no threshold.
@@ -4297,6 +4302,8 @@ export interface components {
             applicable: boolean;
             /** @description Why, for the fields a rule governs; null for the ones no rule names. */
             applicabilityCause: components["schemas"]["ApplicabilityCauseDto"] | null;
+            /** @description Whether a rule over another field on this step reads this one — a follow-on’s question (task 80.1). The browser reads the step again once this field’s answer is stored, so the follow-on appears or goes as it is answered; the verdict stays the api’s. */
+            drivesApplicability: boolean;
             /** @description How many changes the field’s history holds (UC-47) — S-07’s footer, *Changed N times*; 0 for a field never answered. Its entries are `GET /reports/{id}/values/{elementKey}/history`. */
             changeCount: number;
             /**

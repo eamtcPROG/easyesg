@@ -27,7 +27,7 @@ const summary = (overrides: Partial<DisclosureModuleSummary> = {}): DisclosureMo
 
 const cause = (answer: string | null): DisclosureModuleSummary['applicabilityCause'] => ({
   condition: 'numeric_at_least',
-  drivers: [{ elementKey: 'NumberOfEmployees', label: null }],
+  drivers: [{ elementKey: 'NumberOfEmployees', label: null, module: 'B1' }],
   threshold: '50',
   answer,
 });

@@ -13,11 +13,12 @@
  */
 
 /**
- * How a rule decides — the three shapes FR-28's four rules take.
+ * How a rule decides.
  *
  * `numeric_at_least` carries both thresholds (BR-APP-1's 50, BR-APP-2's 150); `any_row_answered` is
- * BR-APP-3's site-driven biodiversity; `member_within` is BR-APP-4's sector-driven water. Declared
- * once, as every closed vocabulary here is, so a reader branches on a member and never on a
+ * BR-APP-3's site-driven biodiversity; `member_within` is BR-APP-4's sector-driven water, and since task 80.1 C3's
+ * high-impact sector and a choice of *other*; `is_true` is a follow-on asked only after its yes (task 80.1; §12.5.6's
+ * task-80.1 row (2)). Declared once, as every closed vocabulary here is, so a reader branches on a member and never on a
  * spelling of one.
  */
 export const APPLICABILITY_CONDITION = {
@@ -27,6 +28,8 @@ export const APPLICABILITY_CONDITION = {
   ANY_ROW_ANSWERED: 'any_row_answered',
   /** The driver's stored member is one of `members`, or descends from one. */
   MEMBER_WITHIN: 'member_within',
+  /** The driver, a yes/no, is answered yes — a follow-on's question (task 80.1). */
+  IS_TRUE: 'is_true',
 } as const;
 
 export type ApplicabilityCondition =
@@ -64,10 +67,21 @@ export interface MemberWithinCondition {
   readonly members: readonly string[];
 }
 
+/**
+ * A follow-on asked only after its yes (task 80.1; §12.5.6's task-80.1 row (2)) — C7's actions after an incident, B4's
+ * URL after *publicly available*. **Unanswered hides it as a no does**: the follow-on is asked after the yes, and a
+ * question nobody has answered is not one.
+ */
+export interface IsTrueCondition {
+  readonly kind: typeof APPLICABILITY_CONDITION.IS_TRUE;
+  readonly elementKey: string;
+}
+
 export type ApplicabilityConditionSpec =
   | NumericAtLeastCondition
   | AnyRowAnsweredCondition
-  | MemberWithinCondition;
+  | MemberWithinCondition
+  | IsTrueCondition;
 
 /** One rule: the elements it governs, and what has to hold for them to apply. */
 export interface ApplicabilityRule {

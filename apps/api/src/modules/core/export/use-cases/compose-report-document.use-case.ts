@@ -1,7 +1,7 @@
 import type { Locale } from '@easyesg/i18n';
 import type { DocumentProduction, ReportDocument } from '@api/contracts/report-document.port';
 import type { ReadPriorPeriodValues } from '@api/modules/core/comparatives/use-cases/read-prior-period-values.use-case';
-import type { DisclosureField } from '@api/modules/core/disclosure/models/wizard-step.model';
+import type { DerivationInputField, DisclosureField } from '@api/modules/core/disclosure/models/wizard-step.model';
 import { assembleReportDocument } from '../domain/report-document';
 import type { ReadReportContents } from './read-report-contents.use-case';
 
@@ -44,6 +44,9 @@ export class ComposeReportDocument {
       },
       modules: contents.modules,
       steps: new Map<string, readonly DisclosureField[]>([...contents.steps].map(([module, step]) => [module, step.fields])),
+      inputs: new Map<string, readonly DerivationInputField[]>(
+        [...contents.steps].map(([module, step]) => [module, step.derivationInputs]),
+      ),
       inScope: contents.inScope,
       prior,
       run: contents.run,

@@ -54,6 +54,7 @@ export function writableTargetsOf(map: DigitalTemplateMap): readonly TemplateCel
   for (const day of [report.periodStart, report.periodEnd]) for (const cell of [day.year, day.month, day.day]) add(cell);
   Object.values(map.inputs).forEach(add);
   map.gates.forEach((gate) => add(gate.at));
+  map.choices.forEach((choice) => add(choice.at));
   Object.values(map.omission).forEach((boxes) => boxes.forEach(add));
   for (const group of Object.values(map.groups)) {
     if (group.kind === TEMPLATE_GROUP.KEYED) add(group.key);
@@ -74,6 +75,12 @@ export function writableTargetsOf(map: DigitalTemplateMap): readonly TemplateCel
         break;
       case TEMPLATE_PLACEMENT.COLUMNS:
         for (const column of Object.values(placement.columns)) add({ ...placement.at, ...('name' in placement.at ? { column } : {}) });
+        break;
+      case TEMPLATE_PLACEMENT.CHECKBOX_ROWS:
+        for (const row of Object.values(placement.rows)) add({ ...placement.at, ...('name' in placement.at ? { row } : {}) });
+        break;
+      case TEMPLATE_PLACEMENT.DAY:
+        [placement.day.year, placement.day.month, placement.day.day].forEach(add);
         break;
       case TEMPLATE_PLACEMENT.COMPUTED:
         if (placement.unit !== undefined) add(placement.unit.at);

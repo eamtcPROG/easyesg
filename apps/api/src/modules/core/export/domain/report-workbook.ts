@@ -79,8 +79,11 @@ const ALWAYS_REPORTED = 'BasisForPreparation';
  *   unresolved finding and a company estimate are notes on the figure, with the factor set a calculated figure used
  *   and — where the export's language has no EFRAG labels — task 46.3's statement (row (7)).
  *
- * **A value the map cannot place is refused**, never dropped: an answered element with no placement (a Comprehensive
- * disclosure, task 80.3's), a member a single choice's list does not hold, a table the report outgrows.
+ * - **The template's own questions are answered from what the report holds** — a yes/no before a group (the map's
+ *   gates) and, since task 80.3, a dropdown no element answers (its choices, C3's status of a transition plan).
+ *
+ * **A value the map cannot place is refused**, never dropped: an answered element with no placement, a member a single
+ * choice's list does not hold, a table the report outgrows.
  */
 export function assembleReportWorkbook(sources: WorkbookSources, map: DigitalTemplateMap): ReportWorkbook {
   const writes = new Map<string, WorkbookWrite>();
@@ -135,12 +138,14 @@ export function assembleReportWorkbook(sources: WorkbookSources, map: DigitalTem
   // ── Which fields are written, and the tables they fill ─────────────────────────────────────────────────────────
   const placementOf = (field: DisclosureField): TemplatePlacement => {
     const placement = map.elements[field.elementKey];
-    if (placement === undefined) {
-      throw new Error(`template ${map.templateVersion} places no ${field.elementKey}; a Comprehensive disclosure is task 80.3's`);
-    }
+    if (placement === undefined) throw new Error(`template ${map.templateVersion} places no ${field.elementKey}`);
     return placement;
   };
-  const written = sources.fields.filter((field) => field.applicable && sources.inScope.has(field.elementKey));
+  // A row a step shows and another module answers — B3's figure on C3, beside its years (task 79.3) — is written from
+  // the module that answers it, once: from C3 it would be a second write of B3's cell, and a way past B3's omission.
+  const written = sources.fields.filter(
+    (field) => field.applicable && field.answeredIn === null && sources.inScope.has(field.elementKey),
+  );
   const held = new Map(written.map((field) => [field, holdingOf(field)]));
   const answered = written.filter((field) => held.get(field)?.kind === FIELD_HOLDING.ANSWERS);
 
@@ -162,6 +167,8 @@ export function assembleReportWorkbook(sources: WorkbookSources, map: DigitalTem
       case TEMPLATE_PLACEMENT.CELL:
       case TEMPLATE_PLACEMENT.LIST:
       case TEMPLATE_PLACEMENT.COLUMNS:
+      case TEMPLATE_PLACEMENT.CHECKBOX_ROWS:
+      case TEMPLATE_PLACEMENT.DAY:
         return { at: placement.at, dimension: field.dimensionKey };
       case TEMPLATE_PLACEMENT.MEMBERS: {
         const at = placement.cells[field.dimensionKey];
@@ -300,6 +307,24 @@ export function assembleReportWorkbook(sources: WorkbookSources, map: DigitalTem
         }
         continue;
       }
+      case TEMPLATE_PLACEMENT.CHECKBOX_ROWS: {
+        for (const answer of answers) {
+          const member = memberOf(answer);
+          const row = placement.rows[member];
+          if (row === undefined) throw new Error(`${field.elementKey} has no row for ${member}`);
+          const value = cellValueOf({ encoding: placement.encoding, answer: { yes: true }, lists: map.lists });
+          if (!isUnlisted(value)) write(offsetCell(placement.at, { row }), value);
+        }
+        continue;
+      }
+      case TEMPLATE_PLACEMENT.DAY: {
+        // The template's own day cells, as the period's are written: a year, a month and a day, each a number.
+        const [year, month, day] = dateOf(answers[0]).split('-').map((part) => String(Number(part)));
+        write(placement.day.year, number(year));
+        write(placement.day.month, number(month));
+        write(placement.day.day, number(day));
+        continue;
+      }
       case TEMPLATE_PLACEMENT.COMPUTED: {
         if (!placement.derived && place !== null) ownFigure(field, answers[0], place);
         // The template computes the figure and still asks its unit — B7's waste totals (row (b)).
@@ -406,6 +431,13 @@ export function assembleReportWorkbook(sources: WorkbookSources, map: DigitalTem
   for (const gate of map.gates) {
     if (gateIsAffirmed({ gate, held: heldAnswers })) write(gate.at, { kind: CELL_VALUE_KIND.BOOLEAN, value: true });
   }
+  // A dropdown no element answers takes the first option the report holds an answer for — C3's *adopted* before its
+  // *planned*, since a plan described is a plan adopted, whatever date of adoption the report also gives (task 80.3).
+  const answeredElements = new Set(heldAnswers.map((field) => field.elementKey));
+  for (const choice of map.choices) {
+    const option = choice.options.find(({ when }) => when.some((elementKey) => answeredElements.has(elementKey)));
+    if (option !== undefined) write(choice.at, text(option.value));
+  }
 
   if (sources.labelStanding === LABEL_STANDING.PLATFORM_AUTHORED) {
     const statement = map.elements[ALWAYS_REPORTED];
@@ -437,6 +469,11 @@ function firstCellOf(placement: TemplatePlacement): TemplateCell | null {
 const memberOf = (answer: WorkbookAnswer): string => {
   if (!('member' in answer)) throw new Error('a set holds members');
   return answer.member;
+};
+
+const dateOf = (answer: WorkbookAnswer | undefined): string => {
+  if (answer === undefined || !('date' in answer)) throw new Error('a date holds a day');
+  return answer.date;
 };
 
 /**

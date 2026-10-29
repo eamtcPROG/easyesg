@@ -18,6 +18,8 @@ export interface HeldAnswers {
  *   area, a conviction. A report answering *no* for every site, or a nil return for convictions and fines, holds the
  *   group and still answers the question *no*.
  * - `several`: the group held for more than one member — B8's employees in more than one country.
+ * - `denied`: one of the group's answers says no — C8's *None of the above*, ticked by an exclusion worked out as no
+ *   (task 80.3). A figure is no answer of no, so only a yes/no can deny.
  */
 export function gateIsAffirmed(input: { readonly gate: TemplateGate; readonly held: readonly HeldAnswers[] }): boolean {
   const { gate } = input;
@@ -29,6 +31,8 @@ export function gateIsAffirmed(input: { readonly gate: TemplateGate; readonly he
       return group.some((field) => field.answers.some(affirms));
     case TEMPLATE_GATE.SEVERAL:
       return new Set(group.map((field) => field.dimensionKey)).size > 1;
+    case TEMPLATE_GATE.DENIED:
+      return group.some((field) => field.answers.some((answer) => 'yes' in answer && !answer.yes));
   }
 }
 

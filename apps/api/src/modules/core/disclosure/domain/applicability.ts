@@ -125,6 +125,18 @@ function evaluate(
         cause: cause(condition, { driverKeys: [condition.elementKey], threshold: null, answer }),
       };
     }
+    case APPLICABILITY_CONDITION.IS_TRUE: {
+      // The yes/no as the store holds it, quoted as text the way every cause's answer is — `null` where it is unanswered.
+      const answered = answeredRow(input.answers, condition.elementKey)?.valueBoolean ?? null;
+      return {
+        applicable: answered === true,
+        cause: cause(condition, {
+          driverKeys: [condition.elementKey],
+          threshold: null,
+          answer: answered === null ? null : String(answered),
+        }),
+      };
+    }
   }
 }
 

@@ -95,6 +95,7 @@ const shaped = (over: Partial<DisclosureField> & { elementKey: string }): Disclo
   answeredIn: null,
   applicable: true,
   applicabilityCause: null,
+  drivesApplicability: false,
   ...over,
 });
 

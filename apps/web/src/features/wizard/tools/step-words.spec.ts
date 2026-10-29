@@ -53,6 +53,7 @@ const field = (options: DisclosureOption[] | null): DisclosureField => ({
   answeredIn: null,
   applicable: true,
   applicabilityCause: null,
+  drivesApplicability: false,
 });
 
 describe('labelledOptions', () => {

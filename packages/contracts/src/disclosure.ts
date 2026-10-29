@@ -204,8 +204,10 @@ export const APPLICABILITY_CONDITION = {
   NUMERIC_AT_LEAST: 'numeric_at_least',
   /** Any row of B1's listed elements answered — the site rule. */
   ANY_ROW_ANSWERED: 'any_row_answered',
-  /** A B1 choice within listed members, or below one — the NACE rule. */
+  /** A choice within listed members, or below one — the NACE rules, and a choice of *other* (task 80.1). */
   MEMBER_WITHIN: 'member_within',
+  /** A yes/no answered yes — a follow-on's question (task 80.1). */
+  IS_TRUE: 'is_true',
 } as const;
 
 export type ApplicabilityCondition = (typeof APPLICABILITY_CONDITION)[keyof typeof APPLICABILITY_CONDITION];

@@ -21,9 +21,10 @@ export function ModuleRow(props: {
   const { row, note, words } = props;
   const figure = FIGURES.has(row.value.kind) ? 'figure' : undefined;
   return (
-    <tr>
+    <tr className={row.input === null ? undefined : 'input'}>
       <th scope="row">
-        {row.label}
+        {/* An input is named by the document, beneath the figure it feeds (task 80.3); a disclosure by its label. */}
+        {row.input === null ? row.label : words.t(`inputs.${row.input}`)}
         {row.member === null ? null : <span className="member">{row.member}</span>}
         {row.unresolved ? <Mark mark={DOCUMENT_MARK.UNRESOLVED} words={words} /> : null}
       </th>

@@ -34199,3 +34199,133 @@ refusals, AC-6, AC-10, AC-11) and S-07 are amended. The row's scope gains `tools
     figure;
   - C's validation beyond the seeded rules (task 80.2);
   - reading EFRAG's taxonomy package for C7's `enum2:linkrole` (raised above).
+
+## Task 80 — C made conditional, validated and exported by B's mechanisms · 2026-10-29
+
+Task 80's three slices in one close. FR-28, FR-177, the task-91.3 and task-95 rows, frames 30 and 33 of
+`EasyESG Reporting Screens.dc.html` and the `Organization Admin` artboard's claim — *Comprehensive disclosures stay
+hidden until a value crosses a threshold* — were read against EFRAG's package before anything was built. One batch of
+four was put, then a second question on the first's reach. The answers, and what the build took within them, are
+`architecture.md` §12.5.6's task-80.1, 80.2 and 80.3 rows. FR-28 (behaviours 8 and 9, AC-10, AC-11), FR-49
+(behaviour 6a, AC-12), FR-50 (behaviour 20, AC-14), FR-177 (behaviour 11, AC-5 met), S-07 and UX-27 are amended. The
+row's scope gains `pkg:contracts`, `pkg:i18n` and `tools`.
+
+### Decided (project owner)
+
+- **C's own threshold is C3's transition plan, by sector**: asked of an undertaking whose B1 NACE answer is in
+  sections A … H or M, the template's `D56`, as a `member_within` rule. Declined: a size threshold showing the
+  Comprehensive Module, which no source states (the task-80.1 row (1)).
+- **A follow-on is hidden until the answer it follows is yes** — or until a choice of *other* — and B and C alike, the
+  second question. Declined: keeping them shown as the template prints them; and C alone (row (2)).
+- **Task 41's row (ii) stands for C3's targets**: no rule asks a target year where a base year is given, the template
+  flagging it only behind its own question. Declined: a member-aware condition in the interpreter (the task-80.2 row).
+- **Every module's derivation inputs are printed under the figure they feed.** Declined: the figures alone (the
+  task-80.3 row (1)).
+
+### What the building decided within that
+
+- **A yes is a condition kind of its own, `is_true`**, so an unanswered question hides its follow-on as a no does. Ten
+  rules join the four; C6's and C7's *other* specifications are two rules each, which the interpreter's conjunction
+  already stated and a unit case now reaches. Mirrored in `packages/contracts`, held to the wire.
+- **A cause names its driver's module.** UX-27's note said *in B1* in every locale, which was true while every driver
+  was B1's; it now says *in B2* for C2's target and nothing for a question on the step itself, an ICU `select` on the
+  driver's place, and links to the answer in its own module.
+- **S-07 reads the step again when an answer that governs another field on it is stored.** The step read marks such
+  a field `drivesApplicability`; the browser compares the acknowledged answers of those fields and calls
+  `router.refresh()` when they move. The verdict stays the api's: re-evaluating the rules in the browser would be a
+  second interpreter over the same artefact. Nothing re-reads on arrival.
+- **The derivation inputs' names moved to the shared catalogue** (`core.export.document.inputs`), because the PDF is
+  printed on the worker, which reads no browser catalogue; S-07 reads them as `derivationInputNames`. A spec over the
+  shipped derivations holds every input named in every locale — proven by renaming one Russian key, which failed it.
+- **80.2 needed no code**: C's rules were seeded with task 41. What it adds is the proof — a Basic report's findings
+  and roll-up byte-identical with the rule set published without its C rules, and a Comprehensive report rolled up
+  over B1 … C9 with C1's findings named in C1.
+- **The PDF's input rows**: `DocumentRow.input` carries the key; an unanswered input prints the offer the figure used
+  (B9's 2,000 hours), one neither stored nor offered prints nothing, a figure not worked out prints none.
+- **The Excel map places every element.** The extractor's set widened from B to the whole taxonomy, and both releases'
+  maps were regenerated — every Basic placement unchanged, read line by line in the diff. C3's base and target years
+  are members of B3's emissions. Three shapes are new: a column of checkboxes (C6's six contents, C7's five rights,
+  matched by row label), a date as three day cells (C3's date of foreseen adoption, through the period's own reader,
+  `dayCellsOf`), and `choices`, a dropdown no element answers (C3's status of a transition plan).
+- **C3's status takes the first option the report holds**: *adopted* where the plan is described, *planned* where only
+  its date is, and *adopted* where both are, a described plan being an adopted one. A routine judgement, recorded in
+  the row rather than asked.
+- **Six of the template's own questions before C's groups are answered**, as task 46's gates are — C1's strategy, C3's
+  targets (by a year or the actions; a base-year figure alone states no target), C4's hazards, C8's revenues, C9's
+  governance body, and B2's practices question by C2's description too. **C8's *None of the above* is a new gate
+  answer, `denied`**: read in the template, its exclusion (`H27`) reads *-* with four thresholds unticked unless `H26`
+  is ticked, and *NO* once it is.
+- **EFRAG ships C6's and C7's four yes/no cells with no validation**, in both releases, their status formulas testing
+  for `"YES"`; they join B10's minimum wage in `wordsWithoutValidation`. C3's status list's validation sits on `C56`,
+  the label above, so the choice names its column and list, and the extractor requires the row's status formula to
+  read the cell as each option — the proof it is the cell the template means. C3's targets question sits in column
+  G, so `rowLabelled` reads every column and still requires one row.
+
+### Found in passing
+
+- **B3's figure reached the workbook twice on a Comprehensive report** — once from B3's step, once from C3's, where
+  task 79.3 shows it read-only — and the assembly refused the second write. A row a step shows and another module
+  answers (`answeredIn`) is now written from its own module only, which also closes a way past B3's omission. Found by
+  the golden corpus's first run; a unit case holds it.
+- **The golden suite's computed-figure check read a figure by element alone**, which C3's three rows of one element
+  make ambiguous. A `computed` entry may name its member, and the suite matches on it.
+- **`architecture.md`'s task-80.3 row cited FR-47**, carrying a prior value forward, where it meant FR-49; corrected.
+- **Task 80's Covered FR read FR-28, FR-177**; with 80.3 on FR-49's and FR-50's Status lines, `docs:check` required
+  FR-49 and FR-50 too.
+- Searched for the shapes: every reader of `sources.fields` in the export (the workbook alone writes cells from it; the
+  document prints C3's comparison row on purpose); every `rowLabelled` caller (the inputs and the gates, both still
+  one row each); every hard-coded *in B1* in the applicability wording (none left).
+
+### Skills read against the diff
+
+- **`nestjs-best-practices`**: nothing new is injected; `di-interface-segregation` — `stepDrivers` and
+  `moduleResolver` take the rules and the elements, not the services that hold them.
+- **`vercel-react-best-practices`**: `rerender-move-effect-to-event` considered and declined for
+  `useFollowOnReread` — the moment is autosave's acknowledgement, which no handler of this component sees, and its
+  docblock says so; `rerender-dependencies` — the effect depends on one string key, not the committed map;
+  `rendering-usetransition-loading` — the refresh runs in a transition, so the step stays drawn while it is read.
+- **`one-idea-per-file`**: `pure-logic-leaves-the-component` — `stepDrivers`, `driverAnswersKey`, `placeOf` and
+  `inputRows` are pure, each with its spec; `file-one-idea` — the hook is its own file beside `step-fields.tsx`.
+- **`one-kind-per-folder`**: the hook joins `fields/section/`, a leaf of files only; `tools/driver-answers.ts` joins
+  `tools/`. Nothing moved.
+
+### Verified, and what is not
+
+- **The api, through HTTP and the database**:
+  - `wizard.e2e-spec.ts`'s four new cases: C3's plan asked of a bakery (NACE C) and not of a software house (NACE J);
+    B4's URL hidden until *publicly available* is yes, its question marked as driving it; C2's target governed from
+    B2, the cause naming B2; C6's *other* specification behind both its yes and its *other*;
+  - `validation.e2e-spec.ts`'s two: a Basic report byte-identical with and without C's rules, and a Comprehensive
+    one rolled up B1 … C9.
+- **The browser** (`wizard.spec.ts`'s B4, C2, C6 and C7 journeys, rewritten): each follow-on appearing under its yes
+  with no reload, the note naming *în B2* and linking there, C6's contents and *other* appearing in turn and a *no*
+  hiding them with *Păstrat: …*, and C7 complete on two answers of no.
+- **Both files** (`bakery-comprehensive-2026`, every cell of its expectation written by hand from the template's
+  formulas before the first run): C1 … C9 in their cells, the six gates and C3's status as the report states them,
+  C3's base and target totals and C5's, C8's and C9's figures equal to the template's own formulas, and every C
+  section's status `OK`. Proven to bite by flipping `H26` in the expectation, which failed the suite.
+- **The close's run**, by the lookup table — a change reaching `apps/api` (worker included), `apps/web`,
+  `config/seed` and `tools/` and, through `packages/contracts` and `packages/i18n`, every dependent's row:
+  - unit suites: `pnpm --filter @easyesg/i18n test` 172; `pnpm --filter @easyesg/api test` 2,633 (317 suites);
+    `pnpm --filter @easyesg/web test` 2,171 (238 files); `pnpm --filter @easyesg/admin test` 322 — `packages/contracts`
+    has no unit suite;
+  - `typecheck` in contracts, i18n, api, web and admin; `pnpm lint`;
+  - `pnpm openapi:check`, with the regenerated contract staged; `pnpm routes:check`; `pnpm docs:check` 48 of 48, after
+    task 80's Covered FR and the archive's counts moved;
+  - `pnpm e2e`: 77 suites, **2,008 of 2,008**, both golden reports among them;
+  - `pnpm e2e:worker`: 17 of 17, nothing logged — the export jobs are the worker's;
+  - `pnpm e2e:web --project identity --project expansion`: 381 of 381. Its 13 `⨯` lines are every one digest
+    `2667547900`, the abandoned streams `apps/web/CLAUDE.md` describes;
+  - the admin project, 28 of 28, nothing logged, through `tools/with-test-stack.sh` on the bundle the identity run's
+    `pree2e:web` had just built, with no source changed between.
+- **What the api's runs printed, read rather than skipped**: the two *Message catalogue used before
+  initialiseCatalogue()* errors and the outbox's *Custom Id cannot contain :* warning task 79.1's entry raised, and the
+  suppression and bounce warnings the notification suites provoke on purpose — nothing new.
+- **Skipped**: the Stage-end gates (`boundaries`, `image:check`, `facade:check`, the two `*:prove`s), which CI runs on
+  the push. No facade, migration or boundary rule moved; a seed, two generated maps and their generator did, which
+  `pnpm e2e`'s pre-hook seeds and Stage 7's cold run will see again. Stage 7 does not end here: task 81 is open.
+- **Not built, by the plan or by decision**:
+  - gating the Comprehensive Module by plan (task 81);
+  - a check that a C3 emission given at the base year is given at the target year too (the task-80.2 row; the
+    file's own status column carries it once its targets question is answered);
+  - reading EFRAG's taxonomy package for C7's `enum2:linkrole` (task 79's entry, still raised).

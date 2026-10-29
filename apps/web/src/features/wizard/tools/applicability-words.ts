@@ -20,6 +20,26 @@ import { KEPT_ANSWER, type KeptAnswer } from './kept-answer';
 type ApplicabilityTranslator = ReturnType<typeof useTranslations<'organization.wizard.applicability'>>;
 type Formatter = ReturnType<typeof useFormatter>;
 
+/**
+ * Where the answer that decides is (task 80.1): `here`, on this very step — a follow-on's question — or its module, which
+ * the sentence names. B1 for every driver until task 80.1, and still for the thresholds, the sites and the sectors.
+ */
+export const DRIVER_PLACE = { HERE: 'here', OTHER: 'other' } as const;
+
+type DriverPlace = (typeof DRIVER_PLACE)[keyof typeof DRIVER_PLACE];
+
+/** The rule's first driver's place, and the module to name where it is not this step. */
+export function placeOf(input: {
+  readonly cause: ApplicabilityCause;
+  /** The element keys this step presents. */
+  readonly onStep: ReadonlySet<string>;
+}): { readonly place: DriverPlace; readonly module: string } {
+  const driver = input.cause.drivers[0];
+  return driver === undefined || input.onStep.has(driver.elementKey)
+    ? { place: DRIVER_PLACE.HERE, module: '' }
+    : { place: DRIVER_PLACE.OTHER, module: driver.module ?? '' };
+}
+
 /** The rule's first driver, by its label — the question every kind but the site rule names. */
 function driverOf(t: ApplicabilityTranslator, cause: ApplicabilityCause): string {
   return cause.drivers[0]?.label ?? t('unnamedDriver');
@@ -39,9 +59,11 @@ export function noteWords(
   t: ApplicabilityTranslator,
   format: Formatter,
   note: ApplicabilityNote,
+  onStep: ReadonlySet<string>,
 ): { readonly title: string; readonly body: string } {
   const fields = note.labels.length === 0 ? t('unnamedFields') : format.list(note.labels, 'enumeration');
   const { cause } = note;
+  const where = placeOf({ cause, onStep });
   const body = t('note.body');
   switch (cause.condition) {
     case APPLICABILITY_CONDITION.NUMERIC_AT_LEAST:
@@ -51,13 +73,16 @@ export function noteWords(
           answer: numberOf(format, cause.answer ?? '0'),
           threshold: numberOf(format, cause.threshold ?? '0'),
           fields,
+          ...where,
         }),
         body,
       };
     case APPLICABILITY_CONDITION.ANY_ROW_ANSWERED:
-      return { title: t('note.anyRowAnswered', { drivers: driversOf(t, format, cause), fields }), body };
+      return { title: t('note.anyRowAnswered', { drivers: driversOf(t, format, cause), fields, ...where }), body };
     case APPLICABILITY_CONDITION.MEMBER_WITHIN:
-      return { title: t('note.memberWithin', { driver: driverOf(t, cause), fields }), body };
+      return { title: t('note.memberWithin', { driver: driverOf(t, cause), fields, ...where }), body };
+    case APPLICABILITY_CONDITION.IS_TRUE:
+      return { title: t('note.isTrue', { driver: driverOf(t, cause), fields, ...where }), body };
   }
 }
 
@@ -66,22 +91,34 @@ export function noteWords(
  * the field waits on B1 rather than being ruled out by it (§12.5.6's task-91.3 row: *"the cause saying the driver is
  * unanswered rather than naming a value"*). The site rule has no single answer to wait on — no site is its whole reason.
  */
-export function hiddenReason(t: ApplicabilityTranslator, format: Formatter, cause: ApplicabilityCause): string {
+export function hiddenReason(
+  t: ApplicabilityTranslator,
+  format: Formatter,
+  cause: ApplicabilityCause,
+  onStep: ReadonlySet<string>,
+): string {
+  const where = placeOf({ cause, onStep });
   switch (cause.condition) {
     case APPLICABILITY_CONDITION.NUMERIC_AT_LEAST:
       return cause.answer === null
-        ? t('hidden.waiting', { driver: driverOf(t, cause) })
+        ? t('hidden.waiting', { driver: driverOf(t, cause), ...where })
         : t('hidden.numericAtLeast', {
             driver: driverOf(t, cause),
             answer: numberOf(format, cause.answer),
             threshold: numberOf(format, cause.threshold ?? '0'),
+            ...where,
           });
     case APPLICABILITY_CONDITION.ANY_ROW_ANSWERED:
-      return t('hidden.anyRowAnswered', { drivers: driversOf(t, format, cause) });
+      return t('hidden.anyRowAnswered', { drivers: driversOf(t, format, cause), ...where });
     case APPLICABILITY_CONDITION.MEMBER_WITHIN:
       return cause.answer === null
-        ? t('hidden.waiting', { driver: driverOf(t, cause) })
-        : t('hidden.memberWithin', { driver: driverOf(t, cause) });
+        ? t('hidden.waiting', { driver: driverOf(t, cause), ...where })
+        : t('hidden.memberWithin', { driver: driverOf(t, cause), ...where });
+    // A follow-on waits on its yes, and a *no* is its own sentence (task 80.1).
+    case APPLICABILITY_CONDITION.IS_TRUE:
+      return cause.answer === null
+        ? t('hidden.isTrueWaiting', { driver: driverOf(t, cause), ...where })
+        : t('hidden.isTrue', { driver: driverOf(t, cause), ...where });
   }
 }
 

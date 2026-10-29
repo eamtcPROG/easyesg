@@ -78,9 +78,20 @@ export class ApplicabilityDriverDto {
   })
   readonly label: string | null;
 
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: 'B1',
+    description:
+      'The module whose step asks it — B1, B2, or the step’s own for a follow-on’s question (task 80.1) — so the ' +
+      'announcement says where the answer is and links to it. Null for an element presented in no module.',
+  })
+  readonly module: string | null;
+
   constructor(driver: ApplicabilityDriver) {
     this.elementKey = driver.elementKey;
     this.label = driver.label;
+    this.module = driver.module;
   }
 }
 
@@ -94,7 +105,7 @@ export class ApplicabilityCauseDto {
   })
   readonly condition: ApplicabilityCondition;
 
-  @ApiProperty({ type: [ApplicabilityDriverDto], description: 'The B1 elements whose answers decide it.' })
+  @ApiProperty({ type: [ApplicabilityDriverDto], description: 'The elements whose answers decide it.' })
   readonly drivers: ApplicabilityDriverDto[];
 
   @ApiProperty({
@@ -484,6 +495,14 @@ export class DisclosureFieldDto {
 
   @ApiProperty({
     description:
+      'Whether a rule over another field on this step reads this one — a follow-on’s question (task 80.1). The ' +
+      'browser reads the step again once this field’s answer is stored, so the follow-on appears or goes as it is ' +
+      'answered; the verdict stays the api’s.',
+  })
+  readonly drivesApplicability: boolean;
+
+  @ApiProperty({
+    description:
       'How many changes the field’s history holds (UC-47) — S-07’s footer, *Changed N times*; 0 for a field never ' +
       'answered. Its entries are `GET /reports/{id}/values/{elementKey}/history`.',
   })
@@ -538,6 +557,7 @@ export class DisclosureFieldDto {
     this.applicable = field.applicable;
     this.applicabilityCause =
       field.applicabilityCause === null ? null : new ApplicabilityCauseDto(field.applicabilityCause);
+    this.drivesApplicability = field.drivesApplicability;
   }
 }
 

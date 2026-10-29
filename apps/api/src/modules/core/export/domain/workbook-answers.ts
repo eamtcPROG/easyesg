@@ -49,13 +49,10 @@ export function holdingOf(
         ? { kind: FIELD_HOLDING.NOTHING }
         : { kind: FIELD_HOLDING.ANSWERS, answers: members.map((member) => ({ member })) };
     }
+    // C3's years are four digits held as text (task 79.3), and the template takes them as the numbers they are.
     case DISCLOSURE_KIND.YEAR:
+      return one(text === null ? null : { number: text.trim() });
     case DISCLOSURE_KIND.DATE:
-      // No Basic Module disclosure is a year or a date; C3's are task 80.3's.
-      return text === null && field.valueDate === null ? { kind: FIELD_HOLDING.NOTHING } : unplaceable(field.kind);
+      return one(field.valueDate === null ? null : { date: field.valueDate });
   }
 }
-
-const unplaceable = (kind: string): never => {
-  throw new Error(`a ${kind} disclosure has no place in the Basic Module's template`);
-};

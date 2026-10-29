@@ -156,9 +156,9 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-28 — Conditional applicability
 
-**Status.** Partial — delivered 91.3, 36.7, 36.9, 36.11, 179.1, 95 (the note at a conditional field and the kept answer's notice) · remaining 80.1 (C modules)
+**Status.** Built — delivered 91.3, 36.7, 36.9, 36.11, 179.1, 95 (the note at a conditional field and the kept answer's notice), 80.1 (C3's sector rule, and a follow-on asked after its yes)
 
-**Obligation.** The system shall decide from B1's stored answers, by effective-dated rules held as configuration, which disclosures apply, showing those that do and not showing those that do not rather than presenting a field and rejecting it later.
+**Obligation.** The system shall decide from a report's stored answers — B1's, and since task 80.1 the question a follow-on follows — by effective-dated rules held as configuration, which disclosures apply, showing those that do and not showing those that do not rather than presenting a field and rejecting it later.
 
 | | |
 |---|---|
@@ -174,10 +174,12 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 5. An inapplicable field is not rendered (task-36.9 row).
 6. **A field a rule governs says why it is asked**: a dismissible note at the field names the B1 answer that brought it, says the question goes away again if that answer changes and anything entered is kept, and links to that answer. The note is read off each step read, one per cause, and a dismissal is the reader's, in one browser, forgotten when the field is next seen not asked (task-95 row (1)).
 7. **A hidden field whose answer is kept is said, not asked**: where it stood, its label, why it is hidden, that the answer is kept and returns with the condition, and the kept answer itself (task-95 row (2)).
+8. **C3's transition plan is asked of a high climate impact sector** — B1's NACE answer within sections A … H or M of NACE Rev. 2.1, member-or-descendant (task-80.1 row (1)). VSME sets no size threshold for the Comprehensive Module, which the report's scope carries.
+9. **A follow-on is asked after its yes, or after a choice of *other*, in B and C alike** (task-80.1 row (2)): B1's other legal form, its list of unchanged disclosures and the link; B4's URL; C2's target description after B2's target; C6's content and its *other*; C7's rights, their *other* and the actions after an incident, and the value chain's specification. Unanswered hides it, as a *no* does. A driver is never in a later module than what it governs. Where the question is on the same step, **the step is read again once its answer is stored**, so the follow-on appears or goes as it is answered; the note and the notice name no module for it, and otherwise name the driver's.
 
-**Configuration-held values.** `config/seed/disclosure-applicability.vsme.json`: `numeric_at_least NumberOfEmployees 50` and `150`; `any_row_answered` over B1's five site elements; `member_within NaceSectorClassificationCodes` ∈ `NACE_A` … `NACE_E`.
+**Configuration-held values.** `config/seed/disclosure-applicability.vsme.json`: `numeric_at_least NumberOfEmployees 50` and `150`; `any_row_answered` over B1's five site elements; `member_within NaceSectorClassificationCodes` ∈ `NACE_A` … `NACE_E`, and ∈ `NACE_A` … `NACE_H`, `NACE_M` for C3's transition plan; `member_within` a choice of *other* for B1's other legal form and C6's and C7's specifications; `is_true` for every other follow-on (behaviour 9).
 
-**Boundaries.** An unanswered field that stops applying is not announced; the module list's waiting and ruled-out states say why a module asks less (task-95 row). Notifying reports in progress of a rule change is FR-166's. The C modules' rules are task 80.1's.
+**Boundaries.** An unanswered field that stops applying is not announced; the module list's waiting and ruled-out states say why a module asks less (task-95 row). Notifying reports in progress of a rule change is FR-166's.
 
 **Acceptance criteria.**
 - **AC-1** Given B1 headcount 49, then turnover is not shown. At 50 it is shown the next time its step is read, with no page reload and no rejected submission. *(source: FR text; disclosure-applicability artefact)*
@@ -189,11 +191,14 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-7** Given the threshold is changed in configuration, then the next read applies it with no deployment. *(source: FR-72; UC-81)*
 - **AC-8** Given B1 headcount 50, when B8 is read, then the turnover rate carries a note naming the B1 answer and linking to it; dismissed, it stays dismissed across a reload, and it returns after headcount falls below 50 and rises again. *(source: UX-27; §12.5.6 task-95 row (1))*
 - **AC-9** Given a stored turnover rate and B1 headcount 10, then B8 shows, where the turnover rate stood, why it is hidden, that the answer is kept, and the kept figure, with no control. *(source: UX-28; §12.5.6 task-95 row (2))*
+- **AC-10** Given a Comprehensive report whose B1 NACE answer is in section C, then C3 asks the transition plan with a note naming B1's answer; in section J, it does not. *(source: §12.5.6 task-80.1 row (1))*
+- **AC-11** Given C7's incident question unanswered or answered no, then its rights, their *other* and the actions are not asked; answered yes on the step, they appear beneath it with no reload, and a no hides them again with what they hold kept. B4's URL behaves so after *publicly available*. *(source: §12.5.6 task-80.1 row (2))*
 
 **History.**
 - 2–3 Sep 2026 · project owner · the rules as a thresholds artefact evaluated by the api; water as NACE A–E; the site rule scoped to B5's dimensioned elements; resolves as of today and fails open · §12.5.6 task-91.3 rows; BR-APP-3, BR-APP-4, BR-APP-5
 - 8–9 Sep 2026 · project owner · water governs all four of B6; an inapplicable field is not rendered · §12.5.6 task-36.7 and task-36.9 rows
 - 9 Oct 2026 · project owner · UX-27 as a note at the field read off each step read, UX-28 as a notice in the hidden field's place · §12.5.6 task-95 row; UX-27, UX-28
+- 29 Oct 2026 · project owner · C3's transition plan by sector; a follow-on asked after its yes, B and C alike · §12.5.6 task-80.1 row
 
 ### FR-29 — Quantities in the standard's units, intensities derived
 
@@ -324,7 +329,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-177 — The Comprehensive Module
 
-**Status.** Partial — delivered 31.3, 33.1, 33.3, 36.4, 78.1 … 78.4, 79.1 … 79.9, 179 · remaining 80.1 … 80.3, 81.1
+**Status.** Partial — delivered 31.3, 33.1, 33.3, 36.4, 78.1 … 78.4, 79.1 … 79.9, 179, 80.1 … 80.3 · remaining 81.1
 
 **Obligation.** The system shall support the VSME Comprehensive Module C1 … C9 as an additive extension of Basic, selected by the report's scope flag at creation or on a report in progress, and authored, made conditional, validated and exported by the same mechanisms as B1 … B11.
 
@@ -347,6 +352,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 8. **C modules derive what the template computes, as B modules do (FR-29).** C5's female-to-male ratio at management level and C9's gender diversity ratio are worked out from two counts each that no element carries, held as derivation inputs — C9's zero where either count is, as EFRAG's cell computes it — and C8's fossil-fuel total from its three parts, each required. C8's exclusion from EU Paris-aligned benchmarks is worked out from the template's four revenue thresholds, each a yes/no derivation input, the one derived yes/no. A derivation input of a figure only the Comprehensive scope asks is refused on a Basic report, as a C answer is (task-79.5 row (3), task-79.8 row, task-79.9 row).
 9. **A choice element offers the members configuration says, where that is narrower than its domain** (`disclosure_offered_members`): C7's rights are the template's five of the six its domain carries, and a write naming another is refused (task-79.7 row).
 10. **A step reads the standard's presentation order** — module, section, then each element after the element it belongs to — for C1 … C9 and B1 … B11 alike (task-79.6 row (4)).
+11. **C is made conditional, validated and exported by B's mechanisms** (task 80): FR-28's rules reach C3's transition plan by sector and every follow-on after its yes, B and C alike (task-80.1 row); a run validates and rolls C up as it does B, and a Basic report's verdicts are those it had before C's rules existed (task-80.2 row); the PDF prints C's pages and every worked-out figure's inputs, and the Excel export places every C answer in the template's own cells (task-80.3 row; FR-49, FR-50).
 
 **Refusals.**
 - A C write on a Basic report → 409 `conflict` (78.1)
@@ -363,7 +369,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-2** Given a Basic report in progress, when the scope is raised, then every B answer is unchanged and C1 … C9 appear. *(source: FR text; task 78.3)*
 - **AC-3** Given C answers, when the scope is lowered, then they are kept and not shown or exported. When the scope is raised again, they reappear. *(source: §12.5.6 task-182 row (10))*
 - **AC-4** Given a Basic report, when a C element is written, then it is refused with 409. *(source: §12.5.6 task-182 row (11))*
-- **AC-5** Given a Comprehensive report, then FR-28's applicability, validation and both exports treat C1 … C9 by the same mechanisms as B1 … B11. *(source: FR text)* Unmet until 80.1 … 80.3.
+- **AC-5** Given a Comprehensive report, then FR-28's applicability, validation and both exports treat C1 … C9 by the same mechanisms as B1 … B11. *(source: FR text)* Met by 80.1 … 80.3: C3's sector rule and the follow-ons (`wizard.e2e-spec.ts`, `e2e/web/wizard.spec.ts`), a Basic report's findings unchanged and a Comprehensive one rolled up over B1 … C9 (`validation.e2e-spec.ts`), and `bakery-comprehensive-2026` exported to both files.
 - **AC-6** Given the three locales, then every C module is authorable in each. *(source: FR text)* Met by 79.1 … 79.9: each module's browser journey answers it in Romanian and reads it back in English and Russian (`e2e/web/wizard.spec.ts`).
 - **AC-7** Given a report whose B1 has been opened, when the scope is changed in either direction, then B1's basis for preparation reads the new scope's option, and the change is in the trail. *(source: §12.5.6 task-78 row (1))*
 - **AC-8** Given a report whose scope was raised after it was created and that holds no answer to an element only the Comprehensive scope asks, then the module list's Comprehensive group and C1's opening say when the module was added; once such an answer exists, they read the group's count and C1's summary. A report created with the Comprehensive Module never says it. *(source: §12.5.6 task-79.1 row (1))*
@@ -380,6 +386,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - 27 Oct 2026 · project owner · *added on* shows until a Comprehensive answer exists, read from the trail; a C module holds answers only to elements the Comprehensive scope alone asks · §12.5.6 task-79.1 row
 - 28 Oct 2026 · project owner · C3 asks B3's emissions at the base and target year beside B3's figure, read-only; the base and target years of a B3 element are Comprehensive rows, refused on a Basic report and counted into C3 alone · §12.5.6 task-79.3 row
 - 29 Oct 2026 · project owner · C7 offers the template's five rights; C8's exclusion is worked out from the template's four thresholds and its fossil total needs all three parts; C9's ratio is EFRAG's cell, zero where either count is; a step reads the standard's presentation tree · §12.5.6 task-79.6 row (4), task-79.7, 79.8 and 79.9 rows
+- 29 Oct 2026 · project owner · C made conditional, validated and exported by B's mechanisms · §12.5.6 task-80.1, 80.2 and 80.3 rows
 
 ### FR-210 — Delete a report
 

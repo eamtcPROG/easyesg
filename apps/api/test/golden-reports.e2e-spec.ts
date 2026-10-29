@@ -36,6 +36,8 @@ const CORPUS = resolve(process.cwd(), '../../config/golden-reports');
 interface GoldenReport {
   readonly entity: Record<string, unknown>;
   readonly period: { readonly fiscalYear: number; readonly start: string; readonly end: string; readonly timezone: string };
+  /** The report's scope at creation (task 78) — the Basic Module where the report states none. */
+  readonly scope?: string;
   readonly values: readonly Record<string, unknown>[];
   readonly derivationInputs: readonly Record<string, unknown>[];
   readonly calculator: { readonly sources: readonly Record<string, unknown>[] };
@@ -47,8 +49,11 @@ interface GoldenExpectation {
   readonly pdf: Readonly<Record<string, readonly string[]>>;
   /** Per language: `Sheet!A1` → the value LibreOffice Calc shows there once the export is open. */
   readonly xlsx: Readonly<Record<string, Readonly<Record<string, string>>>>;
-  /** Figures the template computes by formula and the platform derives, each held equal to the other (182/32). */
-  readonly computed: readonly { readonly element: string; readonly cell: string }[];
+  /**
+   * Figures the template computes by formula and the platform derives, each held equal to the other (182/32) — at a
+   * member where one is named: C3's totals at its base and its target year (task 80.3).
+   */
+  readonly computed: readonly { readonly element: string; readonly dimensionKey?: string; readonly cell: string }[];
 }
 
 const corpus = readdirSync(CORPUS, { withFileTypes: true })
@@ -71,7 +76,8 @@ const corpus = readdirSync(CORPUS, { withFileTypes: true })
  * coverage (task-46 row (3)) — the template computes it again by its own formula, so the value Calc computes in the file
  * must equal the figure the platform stored, to the precision of a double. A figure the standard does not ask of the
  * undertaking is neither printed nor computed: its inputs are not written (FR-28), which the expectation's empty cells
- * hold — `bakery-2026`'s pay gap, at 50 employees.
+ * hold — `bakery-2026`'s pay gap, at 50 employees. **Since task 80.3 the Comprehensive Module's are among them**: C5's
+ * and C9's ratios and C8's fossil-fuel total, in `bakery-comprehensive-2026`.
  *
  * **The expectation's cells include the template's own checks** — the ToC's status per section, which reads every
  * section `OK` the report answers and B1's identifier line `MISSING VALUE`, the template having no scheme for an IDNO
@@ -173,7 +179,8 @@ describe.each(corpus)('the golden report $name (task 46.4)', ({ name, report, ex
       periodEnd: { date: report.period.end, timezone: report.period.timezone },
     }).expect(201);
     const created = await http().post('/api/v1/reports').set(editor.authorization)
-      .send({ reportingPeriodId: objectOf<{ id: string }>(period.body).id }).expect(201);
+      .send({ reportingPeriodId: objectOf<{ id: string }>(period.body).id, ...(report.scope === undefined ? {} : { scope: report.scope }) })
+      .expect(201);
     reportId = objectOf<{ id: string }>(created.body).id;
 
     await http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({ values: report.values }).expect(200);
@@ -226,13 +233,13 @@ describe.each(corpus)('the golden report $name (task 46.4)', ({ name, report, ex
 
   it('computes, by the template’s own formula, each figure the platform derives from the inputs it writes (182/32)', async () => {
     const stored = await asOrganization(owner, ORG, async (run) =>
-      (await run(`SELECT element_key, value_numeric::text AS value FROM core.report_disclosure_value WHERE report_id = $1`, [reportId])) as {
-        element_key: string;
-        value: string | null;
-      }[]);
-    for (const { element, cell } of expected.computed) {
+      (await run(
+        `SELECT element_key, dimension_key, value_numeric::text AS value FROM core.report_disclosure_value WHERE report_id = $1`,
+        [reportId],
+      )) as { element_key: string; dimension_key: string; value: string | null }[]);
+    for (const { element, dimensionKey = '', cell } of expected.computed) {
       const [sheet, address] = cell.split('!');
-      const figure = stored.find((row) => row.element_key === element)?.value ?? null;
+      const figure = stored.find((row) => row.element_key === element && row.dimension_key === dimensionKey)?.value ?? null;
       for (const [, calc] of workbooks) {
         const computed = computedValueOf(calc.roundTrip, sheet, address);
         expect({ element, figure: figure !== null, computed: computed !== null }).toEqual({ element, figure: true, computed: true });

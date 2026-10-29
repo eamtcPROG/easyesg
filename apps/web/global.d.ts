@@ -17,10 +17,12 @@ import type { formats } from '@/i18n/formats';
 declare module 'next-intl' {
   interface AppConfig {
     // The `validation` and `vocabulary` namespaces are the shared catalogue's, read beside this app's own (tasks 42.1,
-    // 84), and so is `reportModules`, the export's module names (task 74.3) — `server/messages/messages.ts` says why.
+    // 84), and so is `reportModules`, the export's module names (task 74.3), and `derivationInputNames`, the names the
+    // PDF prints an input under (task 80.3) — `server/messages/messages.ts` says why.
     Messages: typeof ro &
       Pick<typeof sharedRo, 'validation' | 'vocabulary'> & {
         reportModules: typeof sharedRo.core.export.document.modules;
+        derivationInputNames: typeof sharedRo.core.export.document.inputs;
       };
     Formats: typeof formats;
     Locale: import('@easyesg/i18n').Locale;

@@ -40,6 +40,7 @@ const field = (elementKey: string, kind: DisclosureField['kind'], answer: Partia
     explanation: null,
     overriddenBy: null,
     options: null,
+    answeredIn: null,
     ...answer,
   }) as DisclosureField;
 
@@ -406,10 +407,111 @@ describe('the report as the Digital Template takes it', () => {
     });
   });
 
+  describe('the Comprehensive Module (task 80.3)', () => {
+    it('writes C1’s narratives into their cells and answers the strategy’s own question from ¶47(d)', () => {
+      const products = field('DescriptionOfSignificantGroupsOfProductsAndOrServicesOffered', DISCLOSURE_KIND.TEXT_BLOCK, { valueText: 'Bread' });
+      const strategy = field('DescriptionOfKeyElementsOfStrategyThatRelatesToOrAffectsSustainabilityIssues', DISCLOSURE_KIND.TEXT_BLOCK, {
+        valueText: 'Local flour',
+      });
+      const without = assembleReportWorkbook(sources([products]), map);
+      expect(writtenAt(without, named('DescriptionOfSignificantGroupsOfProductsAndOrServicesOffered'))).toEqual(text('Bread'));
+      expect(writtenAt(without, address('General Information', 'E530'))).toBeUndefined();
+      expect(writtenAt(assembleReportWorkbook(sources([products, strategy]), map), address('General Information', 'E530'))).toEqual(yes);
+    });
+
+    it('writes B3’s figure once, from B3, though C3’s step shows it beside its years (task 79.3)', () => {
+      const own = field('GrossScope1GreenhouseGasEmissions', DISCLOSURE_KIND.NUMERIC, { valueNumeric: '12.5', unitCode: 'tCO2e' });
+      const shown = { ...own, answeredIn: 'B3' };
+      const workbook = assembleReportWorkbook(sources([own, shown]), map);
+      expect(workbook.writes.filter((write) => JSON.stringify(write.at) === JSON.stringify(named('GrossScope1GreenhouseGasEmissions')))).toHaveLength(1);
+      // Shown on C3 alone — B3 omitted, say — it is not written at all.
+      expect(writtenAt(assembleReportWorkbook(sources([shown]), map), named('GrossScope1GreenhouseGasEmissions'))).toBeUndefined();
+    });
+
+    it('writes C3’s targets at their years beside B3’s figure, and answers the template’s targets question', () => {
+      const scope = (dimensionKey: string, valueNumeric: string) =>
+        field('GrossScope1GreenhouseGasEmissions', DISCLOSURE_KIND.NUMERIC, { dimensionKey, valueNumeric, unitCode: 'tCO2e' });
+      const baseYear = field('GreenhouseGasEmissionReductionTargetBaseYear', DISCLOSURE_KIND.YEAR, { valueText: '2019' });
+      const workbook = assembleReportWorkbook(sources([scope('', '12.5'), scope('BaselineYearMember', '20.456'), scope('TargetYearMember', '10'), baseYear]), map);
+      expect(writtenAt(workbook, named('GrossScope1GreenhouseGasEmissions'))).toEqual(number('12.5'));
+      // Each year rounded once at its unit's places, as this year's figure is.
+      expect(writtenAt(workbook, named('GrossScope1GreenhouseGasEmissions_BaselineYearMember'))).toEqual(number('20.46'));
+      expect(writtenAt(workbook, named('GrossScope1GreenhouseGasEmissions_TargetYearMember'))).toEqual(number('10'));
+      expect(writtenAt(workbook, named('GreenhouseGasEmissionReductionTargetBaseYear'))).toEqual(number('2019'));
+      expect(writtenAt(workbook, address('Environmental Disclosures', 'J19'))).toEqual(yes);
+      // A base-year figure alone states no target, so the question is left as EFRAG ships it.
+      expect(writtenAt(assembleReportWorkbook(sources([scope('BaselineYearMember', '20')]), map), address('Environmental Disclosures', 'J19'))).toBeUndefined();
+    });
+
+    it('states C3’s transition plan as adopted where it is described, and as planned where only its date is given', () => {
+      const plan = field(
+        'DescriptionOfATransitionPlanForClimateChangeMitigationIncludingAnExplanationOfHowItIsContributingToReduceGhgEmissions',
+        DISCLOSURE_KIND.TEXT_BLOCK,
+        { valueText: 'Electric ovens by 2030' },
+      );
+      const date = field('DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet', DISCLOSURE_KIND.DATE, {
+        valueDate: '2027-03-01',
+      });
+      const status = address('Environmental Disclosures', 'D57');
+      const planned = assembleReportWorkbook(sources([date]), map);
+      expect(writtenAt(planned, status)).toEqual(text('Adoption of a transition plan is planned in the future'));
+      // The template's own day cells, as the period's are written.
+      expect(['I59', 'I60', 'I61'].map((cell) => writtenAt(planned, address('Environmental Disclosures', cell)))).toEqual(['2027', '3', '1'].map(number));
+      expect(writtenAt(assembleReportWorkbook(sources([plan]), map), status)).toEqual(text('A transition plan has already been adopted'));
+      // A plan described is a plan adopted, whatever date the report also gives.
+      expect(writtenAt(assembleReportWorkbook(sources([plan, date]), map), status)).toEqual(text('A transition plan has already been adopted'));
+      expect(writtenAt(assembleReportWorkbook(sources([]), map), status)).toBeUndefined();
+    });
+
+    it('writes C6’s and C7’s questions as EFRAG’s words and ticks the rows of what they cover', () => {
+      const policy = field('UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce', DISCLOSURE_KIND.BOOLEAN, { valueBoolean: true });
+      const content = field('TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce', DISCLOSURE_KIND.ENUMERATION_SET, {
+        valueText: 'vsme:ChildLabourMember vsme:OtherContentMember',
+      });
+      const incidents = field('UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce', DISCLOSURE_KIND.BOOLEAN, { valueBoolean: false });
+      const workbook = assembleReportWorkbook(sources([policy, content, incidents]), map);
+      expect(writtenAt(workbook, named('UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce'))).toEqual(text('YES'));
+      expect(writtenAt(workbook, named('UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce'))).toEqual(text('NO'));
+      const ticked = [0, 1, 2, 3, 4, 5].map((row) => writtenAt(workbook, named('TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce', { row })));
+      expect(ticked).toEqual([yes, undefined, undefined, undefined, undefined, yes]);
+    });
+
+    it('refuses a right C7’s rows have no box for, rather than ticking another', () => {
+      const rights = field('TypeOfHumanRightRelatedToTheConfirmedIncident', DISCLOSURE_KIND.ENUMERATION_SET, { valueText: 'vsme:AccidentPreventionMember' });
+      expect(() => assembleReportWorkbook(sources([rights]), map)).toThrow(/has no row for vsme:AccidentPreventionMember/u);
+    });
+
+    it('answers C8’s revenues question from a revenue above zero, and ticks none of the above where the exclusion is worked out as no', () => {
+      const coal = (valueNumeric: string) => field('RevenueDerivedFromCoal', DISCLOSURE_KIND.MONETARY, { valueNumeric, currency: 'MDL' });
+      const excluded = (valueBoolean: boolean) =>
+        field('UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement', DISCLOSURE_KIND.BOOLEAN, {
+          valueBoolean,
+          derived: true,
+          origin: DISCLOSURE_ORIGIN.CALCULATED,
+        });
+      const revenues = address('Governance Disclosures', 'H10');
+      const none = address('Governance Disclosures', 'H26');
+      const clean = assembleReportWorkbook(sources([coal('0'), excluded(false)]), map);
+      expect(writtenAt(clean, revenues)).toBeUndefined();
+      expect(writtenAt(clean, none)).toEqual(yes);
+      // The exclusion is the template's to compute from the boxes; the platform's own answer is not written over it.
+      expect(writtenAt(clean, named('UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement'))).toBeUndefined();
+      const exposed = assembleReportWorkbook(sources([coal('1500'), excluded(true)]), map);
+      expect(writtenAt(exposed, revenues)).toEqual(yes);
+      expect(writtenAt(exposed, none)).toBeUndefined();
+    });
+
+    it('answers C9’s governance body question once its ratio is worked out', () => {
+      const ratio = field('GenderDiversityRatioInGovernanceBody', DISCLOSURE_KIND.NUMERIC, { valueNumeric: '0.5', derived: true, origin: DISCLOSURE_ORIGIN.CALCULATED });
+      expect(writtenAt(assembleReportWorkbook(sources([ratio]), map), address('Governance Disclosures', 'H30'))).toEqual(yes);
+      expect(writtenAt(assembleReportWorkbook(sources([]), map), address('Governance Disclosures', 'H30'))).toBeUndefined();
+    });
+  });
+
   describe('what it refuses', () => {
-    it('an answered disclosure the template map places nowhere — a Comprehensive one, task 80.3’s', () => {
-      const c1 = field('DescriptionOfSignificantGroupsOfProductsAndOrServicesOffered', DISCLOSURE_KIND.TEXT_BLOCK, { valueText: 'Bread' });
-      expect(() => assembleReportWorkbook(sources([c1]), map)).toThrow(/places no DescriptionOfSignificantGroupsOfProductsAndOrServicesOffered/u);
+    it('an answered disclosure the template map places nowhere — one a later taxonomy added, say', () => {
+      const later = field('DescriptionOfSomethingALaterReleaseAsks', DISCLOSURE_KIND.TEXT_BLOCK, { valueText: 'Bread' });
+      expect(() => assembleReportWorkbook(sources([later]), map)).toThrow(/places no DescriptionOfSomethingALaterReleaseAsks/u);
     });
 
     it('a single choice EFRAG’s list has no string for', () => {

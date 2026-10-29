@@ -57,6 +57,10 @@ export const TEMPLATE_PLACEMENT = {
   LIST: 'list',
   /** An enumeration set as a row of yes/no columns, one per member — B2's sustainability issues. */
   COLUMNS: 'columns',
+  /** An enumeration set as a column of yes/no rows, one per member — C6's contents, C7's rights (task 80.3). */
+  CHECKBOX_ROWS: 'checkbox_rows',
+  /** A date asked as a year, a month and a day, each a cell, which the template joins by formula — C3's (task 80.3). */
+  DAY: 'day',
   /** B1's omitted disclosures, which the template computes from its ToC checkboxes (FR-31). */
   OMISSION: 'omission',
   /** A figure the template computes by formula (182/32): written by nobody. */
@@ -101,6 +105,19 @@ export type TemplatePlacement =
       /** Each member's column, counted from the range's first. */
       readonly columns: Readonly<Record<string, number>>;
       readonly encoding: TemplateEncoding;
+    }
+  | {
+      readonly kind: typeof TEMPLATE_PLACEMENT.CHECKBOX_ROWS;
+      readonly at: TemplateCell;
+      /** Each member's row, counted from the range's first. */
+      readonly rows: Readonly<Record<string, number>>;
+      readonly encoding: TemplateEncoding;
+    }
+  | {
+      readonly kind: typeof TEMPLATE_PLACEMENT.DAY;
+      /** The cell the template joins the three into, which a cell note is attached to. */
+      readonly at: TemplateCell;
+      readonly day: TemplateDay;
     }
   | { readonly kind: typeof TEMPLATE_PLACEMENT.OMISSION }
   | {
@@ -176,6 +193,11 @@ export const TEMPLATE_GATE = {
   AFFIRMED: 'affirmed',
   /** Yes when the group's elements are held for more than one member — B8's *more than one country*. */
   SEVERAL: 'several',
+  /**
+   * Yes when one of the group's held answers is a no — C8's *None of the above*, which is what an exclusion worked out
+   * as no from four thresholds answered no says (task 80.3).
+   */
+  DENIED: 'denied',
 } as const;
 
 export type TemplateGateAnswer = (typeof TEMPLATE_GATE)[keyof typeof TEMPLATE_GATE];
@@ -185,6 +207,16 @@ export interface TemplateGate {
   readonly at: TemplateCell;
   readonly when: readonly string[];
   readonly answer: TemplateGateAnswer;
+}
+
+/**
+ * One of the template's own dropdowns that no element answers, written with the first option the report holds an answer
+ * for — C3's *status of implementation of a transition plan*, which a described plan answers *adopted* and a date of
+ * foreseen adoption *planned* (task 80.3). A choice none of whose options the report holds is left as EFRAG ships it.
+ */
+export interface TemplateChoice {
+  readonly at: TemplateCell;
+  readonly options: readonly { readonly value: string; readonly when: readonly string[] }[];
 }
 
 /** A report day as the template asks it: a year, a month and a day, each a cell. */
@@ -213,13 +245,15 @@ export interface DigitalTemplateMap {
     readonly periodEnd: TemplateDay;
   };
   readonly notes: TemplateNotes;
-  /** Each element the Basic Module's export places. */
+  /** Each element the export places — the Basic Module's and, since task 80.3, the Comprehensive Module's. */
   readonly elements: Readonly<Record<string, TemplatePlacement>>;
   readonly groups: Readonly<Record<string, TemplateGroup>>;
   /** Each derivation input's cell (task 36.10), which the template's own formula reads. */
   readonly inputs: Readonly<Record<string, TemplateCell>>;
   /** The template's own yes/no questions before a group, each answered from the group's elements as it says. */
   readonly gates: readonly TemplateGate[];
+  /** The template's own dropdowns no element answers, each written from the report's answers (task 80.3). */
+  readonly choices: readonly TemplateChoice[];
   /** Each member of B1's omission domain, to the ToC checkboxes it sets (FR-31). */
   readonly omission: Readonly<Record<string, readonly TemplateCell[]>>;
   /** Each list a member is written through: the member, or unit code, to EFRAG's string. */

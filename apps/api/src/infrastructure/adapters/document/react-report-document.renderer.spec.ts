@@ -11,6 +11,7 @@ const row = (overrides: Partial<DocumentRow>): DocumentRow => ({
   unresolved: false,
   withheld: false,
   override: null,
+  input: null,
   ...overrides,
 });
 
@@ -121,6 +122,28 @@ describe('ReactReportDocumentRenderer (task 43; FR-48, UX-117 … UX-121)', () =
       });
     expect(share('en')).toContain('<td class="figure">10.20%</td><td class="figure">—</td><td class="unit">—</td>');
     expect(share('ro')).toContain('<td class="figure">10,20\u00a0%</td>');
+  });
+
+  it('names an input under its figure in the document’s language, set apart from a disclosure (task 80.3)', () => {
+    const rendered = (locale: 'en' | 'ro' | 'ru') =>
+      new ReactReportDocumentRenderer().render({
+        ...DOCUMENT,
+        locale,
+        modules: [
+          {
+            module: 'B9',
+            standing: DOCUMENT_MODULE.REPORTED,
+            narrative: [],
+            rows: [
+              row({ label: 'Rate of recordable accidents', value: { kind: DOCUMENT_VALUE.FIGURE, value: '6', places: 2 }, unit: null }),
+              row({ label: null, value: { kind: DOCUMENT_VALUE.FIGURE, value: '2000', places: null }, unit: null, input: 'HoursWorkedByOneFullTimeEmployee' }),
+            ],
+          },
+        ],
+      });
+    expect(rendered('en')).toContain('<tr class="input"><th scope="row">Hours worked by one full-time employee in the period</th>');
+    expect(rendered('ro')).toContain('Ore lucrate de un angajat cu normă întreagă în perioadă');
+    expect(rendered('ru')).not.toContain('HoursWorkedByOneFullTimeEmployee');
   });
 
   it('is worded in Romanian and Russian too, figures laid out as each locale writes them', () => {

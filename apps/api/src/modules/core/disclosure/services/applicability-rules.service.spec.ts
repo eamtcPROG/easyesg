@@ -1,9 +1,11 @@
 import { Logger } from '@nestjs/common';
+import { DISCLOSURE_KIND } from '@easyesg/vsme';
 import type { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { TaxonomyRegistryService } from '@api/modules/platform/taxonomy/services/taxonomy-registry.service';
 import { readSeedEntries, seedConfigurationStore } from '@api/testing/seed-configuration-store';
 import { DISCLOSURE_APPLICABILITY_CONFIG_KIND } from '../constants/disclosure.constants';
+import { qualifiedDomainOf } from '../domain/qualified-domain';
 import { APPLICABILITY_CONDITION } from '../models/applicability.model';
 import { ApplicabilityRulesService } from './applicability-rules.service';
 
@@ -52,6 +54,9 @@ describe('ApplicabilityRulesService (FR-28, FR-72)', () => {
         rule(threshold),
         rule({ kind: APPLICABILITY_CONDITION.ANY_ROW_ANSWERED, elementKeys: ['CityOfSite'] }),
         rule({ kind: APPLICABILITY_CONDITION.MEMBER_WITHIN, elementKey: 'NaceSectorClassificationCodes', members: ['nace:NACE_C'] }),
+        rule({ kind: APPLICABILITY_CONDITION.IS_TRUE, elementKey: 'PubliclyAvailableDisclosure' }),
+        // An `is_true` naming no element is malformed, dropped whole, its elements left applicable (fail open).
+        rule({ kind: APPLICABILITY_CONDITION.IS_TRUE, elementKey: '' }),
       ],
     }).rulesFor({ standard: TAXONOMY_STANDARD.VSME });
 
@@ -59,8 +64,9 @@ describe('ApplicabilityRulesService (FR-28, FR-72)', () => {
       APPLICABILITY_CONDITION.NUMERIC_AT_LEAST,
       APPLICABILITY_CONDITION.ANY_ROW_ANSWERED,
       APPLICABILITY_CONDITION.MEMBER_WITHIN,
+      APPLICABILITY_CONDITION.IS_TRUE,
     ]);
-    expect(logged).toEqual([]);
+    expect(logged).toHaveLength(1);
   });
 
   it('answers nothing for a standard with no entry, and logs nothing about it', () => {
@@ -126,42 +132,90 @@ describe('the shipped rules, against the shipped taxonomy versions', () => {
   const versions = registry.registeredVersions({ standard: TAXONOMY_STANDARD.VSME });
   const rules = new ApplicabilityRulesService(seedConfigurationStore(entries)).rulesFor({ standard: TAXONOMY_STANDARD.VSME });
 
-  it('registers FR-28’s four rules, and reads all four', () => {
-    expect(rules).toHaveLength(4);
+  it('registers FR-28’s four rules, C3’s sector rule and the follow-ons’ (task 80.1), and reads every one', () => {
+    // Exact: a rule added or lost is a field that starts or stops being asked, which is a decision.
+    expect(rules.map((entry) => entry.condition.kind)).toEqual([
+      APPLICABILITY_CONDITION.NUMERIC_AT_LEAST,
+      APPLICABILITY_CONDITION.NUMERIC_AT_LEAST,
+      APPLICABILITY_CONDITION.ANY_ROW_ANSWERED,
+      APPLICABILITY_CONDITION.MEMBER_WITHIN,
+      APPLICABILITY_CONDITION.MEMBER_WITHIN,
+      APPLICABILITY_CONDITION.MEMBER_WITHIN,
+      APPLICABILITY_CONDITION.IS_TRUE,
+      APPLICABILITY_CONDITION.IS_TRUE,
+      APPLICABILITY_CONDITION.IS_TRUE,
+      APPLICABILITY_CONDITION.IS_TRUE,
+      APPLICABILITY_CONDITION.MEMBER_WITHIN,
+      APPLICABILITY_CONDITION.IS_TRUE,
+      APPLICABILITY_CONDITION.MEMBER_WITHIN,
+      APPLICABILITY_CONDITION.IS_TRUE,
+    ]);
     expect(versions.length).toBeGreaterThanOrEqual(2);
   });
 
-  it.each(versions)('%s names every element the rules govern and read', (version) => {
+  it.each(versions)('%s names every element the rules govern and read, and no driver later than what it governs', (version) => {
     const taxonomy = registry.taxonomy({ standard: TAXONOMY_STANDARD.VSME, version });
     const byKey = new Map((taxonomy?.elements ?? []).map((element) => [element.key, element]));
+    const rank = (key: string): number => (taxonomy?.modules ?? []).indexOf(byKey.get(key)?.modules[0] ?? '');
 
     for (const entry of rules) {
       for (const key of entry.elements) {
         // A governed element the version does not carry would make its rule govern nothing.
         expect({ key, present: byKey.has(key) }).toEqual({ key, present: true });
       }
-      // Every driver is a B1 element: FR-28 says applicability is evaluated "from B1 inputs", and
-      // a rule reading a later module's answer would make B1's precedence (UX-9) meaningless.
       const drivers =
         entry.condition.kind === APPLICABILITY_CONDITION.ANY_ROW_ANSWERED
           ? entry.condition.elementKeys
           : [entry.condition.elementKey];
-      for (const key of drivers) expect({ key, modules: byKey.get(key)?.modules }).toEqual({ key, modules: ['B1'] });
+      for (const key of drivers) {
+        expect({ key, present: byKey.has(key) }).toEqual({ key, present: true });
+        // **A driver is never in a later module than a field it governs** (task 80.1, widening task 91.3's *every
+        // driver is B1's*): B1's answers, B2's target for C2, or a follow-on's own question on its step. A rule reading
+        // a later module's answer would make the earlier step change behind the reporter, which UX-9's precedence is
+        // for — B1 first, then the modules in order.
+        for (const governed of entry.elements) {
+          expect({ key, governed, earlier: rank(key) <= rank(governed) }).toEqual({ key, governed, earlier: true });
+        }
+      }
+      // An `is_true` driver is a yes/no, or the condition reads an answer it can never hold.
+      if (entry.condition.kind === APPLICABILITY_CONDITION.IS_TRUE) {
+        const key = entry.condition.elementKey;
+        expect({ key, kind: byKey.get(key)?.kind }).toEqual({ key, kind: DISCLOSURE_KIND.BOOLEAN });
+      }
     }
   });
 
-  it.each(versions)('%s declares every NACE section the water rule names, at the domain’s root', (version) => {
+  it.each(versions)('%s declares every member a choice rule names, in its driver’s own domain', (version) => {
+    const taxonomy = registry.taxonomy({ standard: TAXONOMY_STANDARD.VSME, version });
+    for (const { condition } of rules) {
+      if (condition.kind !== APPLICABILITY_CONDITION.MEMBER_WITHIN) continue;
+      const driver = taxonomy?.elements.find((candidate) => candidate.key === condition.elementKey);
+      // Keyed qualified, as the registry keys every enumeration — a VSME domain is bare on its element (task 91.1).
+      const domain = driver === undefined ? null : qualifiedDomainOf(driver);
+      const enumeration = taxonomy?.enumerations.find((candidate) => candidate.key === domain);
+      const declared = new Set((enumeration?.members ?? []).map((member) => `${enumeration?.taxonomy}:${member.key}`));
+      for (const member of condition.members) {
+        expect({ driver: driver?.key, member, declared: declared.has(member) }).toEqual({ driver: driver?.key, member, declared: true });
+      }
+    }
+  });
+
+  it.each(versions)('%s declares every NACE section the water and sector rules name, at the domain’s root', (version) => {
+    // The water rule and C3's sector rule read NACE (task 80.1); the other choice rules read a VSME domain, held above.
     const within = rules.flatMap((entry) =>
-      entry.condition.kind === APPLICABILITY_CONDITION.MEMBER_WITHIN ? [entry.condition] : [],
+      entry.condition.kind === APPLICABILITY_CONDITION.MEMBER_WITHIN &&
+      entry.condition.elementKey === 'NaceSectorClassificationCodes'
+        ? [entry.condition]
+        : [],
     );
-    expect(within).toHaveLength(1);
+    expect(within).toHaveLength(2);
 
     const taxonomy = registry.taxonomy({ standard: TAXONOMY_STANDARD.VSME, version });
     const element = taxonomy?.elements.find((candidate) => candidate.key === within[0]?.elementKey);
     const enumeration = taxonomy?.enumerations.find((candidate) => candidate.key === element?.domain);
     const members = new Map((enumeration?.members ?? []).map((member) => [`nace:${member.key}`, member]));
 
-    for (const member of within[0]?.members ?? []) {
+    for (const member of within.flatMap((condition) => condition.members)) {
       // Declared, and a *section*: a rule naming a class would silently match only that class,
       // since descent is what relates the stored answer to it.
       expect({ member, declared: members.has(member) }).toEqual({ member, declared: true });

@@ -19,12 +19,14 @@
  *
  * **What the workbook does not name is the `AUTHORED` table below**, and each entry is checked against the workbook
  * rather than trusted: a derivation input's cell is found by EFRAG's own label id in the row; a gate's by its label id;
- * a member whose English label is not EFRAG's dropdown string carries the string it maps to, and that string must be
- * one the dropdown holds.
+ * a choice's by its label id, its options by the template's own list and the row's status formula reading them; a
+ * member whose English label is not EFRAG's dropdown string carries the string it maps to, and that string must be one
+ * the dropdown holds.
  *
  * ## It asserts rather than defaults
  *
- * Every Basic Module element, and the four *any other* disclosures, must get a placement; every member of every
+ * Every element of the taxonomy — the Basic Module's, the Comprehensive Module's since task 80.3, and the four *any
+ * other* disclosures — must get a placement; every member of every
  * classification the export writes must find exactly one string in EFRAG's list; every cell a placement names must be
  * one the template does not compute — proven by patching every target through `@easyesg/xlsx-patch` itself, whose
  * refusals are the definition of a cell the export may not write. A run that cannot say where a value goes fails,
@@ -54,6 +56,7 @@ const taxonomy = json(`config/seed/vsme-taxonomy.${taxonomyVersion}.json`);
 const naceClassification = json(`config/seed/vsme-nace-classification.${taxonomyVersion}.json`);
 const wasteClassification = json(`config/seed/vsme-waste-classification.${taxonomyVersion}.json`);
 const derivations = json('config/seed/disclosure-derivation.vsme.json').derivations;
+const offeredMembers = json('config/seed/disclosure-offered-members.vsme.json').elements;
 const elementLabels = json(`packages/i18n/catalogues/disclosure/${taxonomyVersion}/en.json`);
 const memberLabels = json(`packages/i18n/catalogues/disclosure/${taxonomyVersion}/members/en.json`);
 
@@ -85,9 +88,9 @@ const AUTHORED = {
     NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod: { sheet: 'Governance Disclosures', label: 'template_label_number_of_male_board_members_at_the_end_of_the_reporting_period' },
   },
   /**
-   * A yes/no the template asks before a group of disclosures and the taxonomy has no element for — every one the Basic
-   * Module's sheets ask, the Comprehensive Module's being task 80.3's and *previous period unchanged* having nothing to
-   * answer it (182/33). The value is the row's yes/no cell, right of the label, and **how the group answers it is the
+   * A yes/no the template asks before a group of disclosures and the taxonomy has no element for — every one the
+   * template asks, *previous period unchanged* having nothing to answer it (182/33), the Comprehensive Module's since
+   * task 80.3. The value is the row's yes/no cell, right of the label, and **how the group answers it is the
    * question's**: `held` where holding any of the group's values is the answer, `affirmed` where only a yes or a figure
    * above zero is, and `several` where it asks about more than one member. Otherwise EFRAG's own answer stands. Left
    * alone on purpose: B1's consent to an OpenStreetMap lookup, which is the reader's to give.
@@ -138,16 +141,85 @@ const AUTHORED = {
       when: ['TotalNumberOfConvictionsForTheViolationOfAntiCorruptionAndAntiBriberyLaws', 'TotalAmountOfFinesForTheViolationOfAnticorruptionAndAntibriberyLaws'],
       answer: 'affirmed',
     },
+    // C1's ¶47(d), asked after the strategy's own yes/no (the task-79.1 row).
+    {
+      label: 'template_label_has_the_strategy_key_elements_that_relate_to_or_affect_sustainability_issues',
+      when: ['DescriptionOfKeyElementsOfStrategyThatRelatesToOrAffectsSustainabilityIssues'],
+      answer: 'held',
+    },
+    // C3's targets: a year stated, or the actions taken to reach them. A base-year figure alone sets no target year.
+    {
+      label: 'template_label_has_the_undertaking_has_established_ghg_emission_reduction_targets',
+      when: ['GreenhouseGasEmissionReductionTargetBaseYear', 'GreenhouseGasEmissionReductionTargetYear', 'DisclosureOfListOfMainActionsTheEntitySeeksInOrderToAchieveItsTargets'],
+      answer: 'held',
+    },
+    // C4's hazards, which every one of its five disclosures is about (the task-79.4 row (2)).
+    {
+      label: 'template_label_has_the_undertaking_identified_climate_related_hazards_and_climate_related_transition_events',
+      when: [
+        'DescriptionOfClimateRelatedHazardsAndClimateRelatedTransitionEvents',
+        'DisclosureOfHowItHasAssessedTheExposureAndSensitivityOfItsAssetsActivitiesAndValueChainToTheseHazardsAndTransitionEvents',
+        'TimeHorizonsOfAnyClimateRelatedHazardsAndTransitionEventsIdentified',
+        'DisclosureOfWhetherItHasUndertakenClimateChangeAdaptationActionsForAnyClimateRelatedHazardsAndTransitionEvents',
+        'PotentialAdverseEffectsOfClimateRisksThatMayAffectItsFinancialPerformanceOrBusinessOperationsInTheShortMediumOrLongTermIndicatingWhetherItAssessesTheRisksToBeHighMediumOrLow',
+      ],
+      answer: 'held',
+    },
+    // C8's revenues: a revenue above zero from one of the activities, a nil return for each being no.
+    {
+      label: 'template_label_is_the_undertaking_deriving_revenues_from_one_of_the_activities_listed_below',
+      when: [
+        'RevenueDerivedFromControversialWeaponsAntiPersonnelMinesClusterMunitionsChemicalWeaponsAndBiologicalWeapons',
+        'RevenueDerivedFromCultivationAndProductionOfTobacco',
+        'RevenueDerivedFromCoal',
+        'RevenueDerivedFromOil',
+        'RevenueDerivedFromGas',
+        'RevenueDerivedFromChemicalProduction',
+      ],
+      answer: 'affirmed',
+    },
+    // C8's fifth box, which four thresholds answered no say (the task-79.8 row (1)) — the exclusion worked out as no.
+    {
+      label: 'template_label_none_of_the_above',
+      when: ['UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement'],
+      answer: 'denied',
+    },
+    // C9's governance body, whose ratio is worked out once both counts are given.
+    {
+      label: 'template_label_does_the_undertaking_have_a_governance_body_in_place',
+      when: ['GenderDiversityRatioInGovernanceBody'],
+      answer: 'held',
+    },
+  ],
+  /**
+   * A dropdown the template asks and no element answers, written with the first option the report holds an answer for
+   * (task 80.3): C3's status of a transition plan, *adopted* where the plan is described, *planned* where only its date
+   * of foreseen adoption is. EFRAG ships its list's validation on `C56`, the label above, in both releases, so the cell
+   * is named by its column in the label's row and the list by its name; the row's own status formula must read the cell
+   * against the option strings, which is what proves it is the cell the template means.
+   */
+  choices: [
+    {
+      label: 'template_label_status_of_implementation_of_a_transition_plan_in_relation_to_climate_change_mitigation',
+      column: 'D',
+      list: 'enum_ImplementationStatus',
+      options: [
+        { value: 'A transition plan has already been adopted', when: ['DescriptionOfATransitionPlanForClimateChangeMitigationIncludingAnExplanationOfHowItIsContributingToReduceGhgEmissions'] },
+        { value: 'Adoption of a transition plan is planned in the future', when: ['DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet'] },
+      ],
+    },
   ],
   /**
    * B2's question — *has the undertaking put in place practices, policies or future initiatives* — is the yes/no left
-   * of the set its answers fill, in both releases, and is answered yes when any of B2's three elements is.
+   * of the set its answers fill, in both releases, and is answered yes when any of B2's three elements is, or C2's
+   * description of those practices (task 80.3), whose status column reads the same question.
    */
   setGates: {
     SustainabilityIssueAddressedByPracticePolicyAndOrFutureInitiative: [
       'SustainabilityIssueAddressedByPracticePolicyAndOrFutureInitiative',
       'PracticePolicyAndOrFutureInitiativeIsPubliclyAvailable',
       'UndertakingHasSetATargetWhichIsRelatedToAPolicy',
+      'DescriptionOfPracticesPoliciesAndOrFutureInitiatives',
     ],
   },
   /**
@@ -160,11 +232,18 @@ const AUTHORED = {
     TypeOfWasteAxis: 'enum_ListTypeOfWastes',
   },
   /**
-   * A yes/no whose `YES`/`NO` list EFRAG ships on the wrong cell: B10's minimum-wage answer, whose `enum_ListYesNo`
-   * validation sits on `C143`, a B9 label, in both releases. `1.3.0` ships `YES` in the answer's own cell, which is the
-   * intent; `1.2.0` ships it empty, and its status formula tests only for blank.
+   * A yes/no whose `YES`/`NO` list EFRAG ships on the wrong cell, or on none: B10's minimum-wage answer, whose
+   * `enum_ListYesNo` validation sits on `C143`, a B9 label, in both releases — `1.3.0` ships `YES` in the answer's own
+   * cell, which is the intent; `1.2.0` ships it empty, and its status formula tests only for blank — and C6's and C7's
+   * four questions, which carry no validation and whose status formulas test for `"YES"` (task 80.3).
    */
-  wordsWithoutValidation: ['EmployeesReceivePayEqualOrAboveMinimumWageDeterminedByNationalLawOrCollectiveAgreement'],
+  wordsWithoutValidation: [
+    'EmployeesReceivePayEqualOrAboveMinimumWageDeterminedByNationalLawOrCollectiveAgreement',
+    'UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce',
+    'UndertakingHasAComplaintHandlingMechanismForItsOwnWorkforce',
+    'UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce',
+    'UndertakingIsAwareOfAnyConfirmedIncidentsInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers',
+  ],
   /**
    * Members whose English label is not the string EFRAG's dropdown holds — each right side must be a string the list
    * holds, checked below. Every other member matches its label, compared without case or punctuation.
@@ -177,6 +256,8 @@ const AUTHORED = {
     AtTheEndOfTheReportingPeriodMember: 'At the end of the reporting period',
     // EFRAG's taxonomy labels it *Abestos*; its own template's pollutant list spells it right.
     AsbestosMember: 'Asbestos',
+    // C6's and C7's *other* rows ask the reporter to specify it in the row below.
+    OtherContentMember: 'other? ( if yes specify)',
   },
 };
 
@@ -300,11 +381,18 @@ function rangeFromReference(reference) {
   return start && end ? { sheet, start, end } : null;
 }
 
-/** The row of a sheet whose column C carries EFRAG's label id — by its formula, which is the label's reference. */
+/**
+ * The row of a sheet carrying EFRAG's label id — by its formula, which is the label's reference. Column C holds most
+ * labels; C3's targets question sits in G (task 80.3), so any column is read and the label must be on one row only.
+ */
 const rowLabelled = (sheet, labelId) => {
-  const rows = [...cellsOf(sheet).cells.entries()]
-    .filter(([ref, cell]) => ref.startsWith('C') && /^C\d+$/.test(ref) && cell.formula !== null && cell.formula.trim().startsWith(labelId))
-    .map(([ref]) => parseCell(ref).row);
+  const rows = [
+    ...new Set(
+      [...cellsOf(sheet).cells.entries()]
+        .filter(([, cell]) => cell.formula !== null && new RegExp(`^${labelId}\\b`).test(cell.formula.trim()))
+        .map(([ref]) => parseCell(ref).row),
+    ),
+  ];
   return rows.length === 1 ? rows[0] : null;
 };
 
@@ -481,7 +569,7 @@ function encodingFor(elementKey, element, sheet, position) {
       };
     }
     default:
-      return fail(`${elementKey} is a ${element.kind}, which the Basic Module does not hold`);
+      return fail(`${elementKey} is a ${element.kind}, which no template cell holds`);
   }
 }
 
@@ -518,10 +606,22 @@ const columnName = (elementKey, range) => {
   return tableColumns.get(id);
 };
 
-/** Which elements the Basic Module's export places: B1 … B11, and the four that belong to no module. */
-const basic = Object.entries(taxonomy.elements).filter(
-  ([, element]) => element.modules.length === 0 || element.modules.some((module) => /^B\d+$/.test(module)),
-);
+/** Which elements the export places: every one — B1 … B11, C1 … C9 since task 80.3, and the four in no module. */
+const placed = Object.entries(taxonomy.elements);
+
+/**
+ * The three cells a template's date is joined from — `D6 & "-" & TEXT(D7, "00") & …`, a year, a month and a day, in
+ * that order: the period's two, and C3's date of foreseen adoption (task 80.3).
+ */
+function dayCellsOf(name) {
+  const range = rangeOf(name) ?? fail(`no ${name}`);
+  const formula = cellAt(range.sheet, range.start)?.formula ?? fail(`${name} is not computed from day fields`);
+  const refs = [...new Set([...formula.matchAll(/\b([A-Z]{1,2}\d+)\b/g)].map((m) => m[1]))];
+  if (refs.length !== 3) fail(`${name} reads ${refs.length} cells, not a year, a month and a day`);
+  const [year, month, day] = refs.map((cell) => ({ sheet: range.sheet, cell }));
+  for (const field of [year, month, day]) if (isFormula(range.sheet, parseCell(field.cell))) fail(`${range.sheet}!${field.cell} is computed`);
+  return { year, month, day };
+}
 
 const groups = {};
 const elements = {};
@@ -564,7 +664,7 @@ function groupFor(axis, range) {
   return fail(`no key column shares rows ${range.start.row}…${range.end.row} on ${range.sheet} for ${axis}`);
 }
 
-for (const [elementKey, element] of basic) {
+for (const [elementKey, element] of placed) {
   if (elementKey === 'ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation') {
     elements[elementKey] = { kind: 'omission' };
     continue;
@@ -581,10 +681,9 @@ for (const [elementKey, element] of basic) {
       ...(own === null ? [] : [['', elementKey]]),
       ...memberNames.map((name) => [name.slice(elementKey.length + 1), name]),
     ];
-    // B3's scopes keep only the current period: the base year and the target are C3's (task 80.3).
-    const forBasic = axis === 'ReportingScopesAxis' ? entries.filter(([member]) => member === '' || member === 'CurrentlyStatedMember') : entries;
+    // B3's scopes: the current period's figure is the undimensioned row, the base and the target years C3's (task 80.3).
     let encoding = null;
-    for (const [member, name] of forBasic) {
+    for (const [member, name] of entries) {
       const range = rangeOf(name) ?? fail(`${name} does not resolve`);
       const dimension = member === 'CurrentlyStatedMember' ? '' : member;
       // Every member's cell is named — a computed one too, which a cell note (task-46 row (9)) is attached to.
@@ -611,7 +710,26 @@ for (const [elementKey, element] of basic) {
       gatesOut.push({ at: gate, when: AUTHORED.setGates[elementKey] ?? fail(`no gate group for ${elementKey}`), answer: 'held' });
       continue;
     }
+    if (own.rows > 1 && validationAt(own.sheet, own.start)?.type !== 'list') {
+      // C6's contents and C7's rights: a checkbox per row, its member named by the row's label in column C (task 80.3) —
+      // the members the element offers (`disclosure_offered_members`), each matched to a row, every row to a member.
+      const labels = [];
+      for (let row = own.start.row; row <= own.end.row; row += 1) labels.push(cellAt(own.sheet, { column: 3, row })?.value ?? '');
+      const offered = offeredMembers[elementKey] ?? taxonomy.enumerations[`vsme:${element.domain}`].members;
+      const byLabel = matchAll({ domain: element.domain, members: offered, strings: labels, labelOf: (member) => memberLabels[member] });
+      const unmatched = labels.filter((label) => !Object.values(byLabel).includes(label));
+      if (unmatched.length > 0) fail(`${elementKey}'s rows ${unmatched.join(' | ')} match no member it offers`);
+      const rows = Object.fromEntries(Object.entries(byLabel).map(([member, label]) => [`vsme:${member}`, labels.indexOf(label)]));
+      elements[elementKey] = { kind: 'checkbox_rows', at: nameAt(elementKey), rows, encoding: yesNoEncoding(own.sheet, own.start) };
+      continue;
+    }
     elements[elementKey] = { kind: 'list', at: nameAt(elementKey), rows: own.rows, encoding: encodingFor(elementKey, element, own.sheet, own.start) };
+    continue;
+  }
+
+  if (element.kind === 'date') {
+    // C3's date of foreseen adoption: the template asks a year, a month and a day and joins them (task 80.3).
+    elements[elementKey] = { kind: 'day', at: nameAt(elementKey), day: dayCellsOf(elementKey) };
     continue;
   }
 
@@ -645,15 +763,7 @@ const language = (() => {
 
 /** The report's own block: the entity, its identifier and scheme, the currency and the period's six day fields. */
 const report = (() => {
-  const periodCells = (name) => {
-    const range = rangeOf(name) ?? fail(`no ${name}`);
-    const formula = cellAt(range.sheet, range.start)?.formula ?? fail(`${name} is not computed from day fields`);
-    const refs = [...new Set([...formula.matchAll(/\b([A-Z]{1,2}\d+)\b/g)].map((m) => m[1]))];
-    if (refs.length !== 3) fail(`${name} reads ${refs.length} cells, not a year, a month and a day`);
-    const [year, month, day] = refs.map((cell) => ({ sheet: range.sheet, cell }));
-    for (const field of [year, month, day]) if (isFormula(range.sheet, parseCell(field.cell))) fail(`${range.sheet}!${field.cell} is computed`);
-    return { year, month, day };
-  };
+  const periodCells = dayCellsOf;
   const schemes = listOf(validationAt(rangeOf('template_reporting_entity_identifier_scheme').sheet, rangeOf('template_reporting_entity_identifier_scheme').start)?.formula ?? fail('no scheme list'));
   if (!schemes.includes('LEI')) fail(`the identifier schemes ${schemes.join(', ')} offer no LEI`);
   return {
@@ -683,22 +793,41 @@ const inputs = Object.fromEntries(
 const declaredInputs = new Set(derivations.flatMap(({ operands }) => Object.values(operands).filter((o) => o.from === 'input').map((o) => o.key)));
 for (const inputKey of declaredInputs) if (inputs[inputKey] === undefined) fail(`derivation input ${inputKey} has no cell`);
 
+const DISCLOSURE_SHEETS = ['General Information', 'Environmental Disclosures', 'Social Disclosures', 'Governance Disclosures'];
+
+/** The one row of the disclosure sheets a label id is on — the run fails where it is on none, or on two sheets. */
+const labelledRow = (labelId) => {
+  const found = DISCLOSURE_SHEETS.map((sheet) => ({ sheet, row: rowLabelled(sheet, labelId) })).filter(({ row }) => row !== null);
+  if (found.length !== 1) fail(`the label ${labelId} is on ${found.length} rows of the disclosure sheets`);
+  return found[0];
+};
+
 /** The template's own yes/no questions before a group, each found by its label and checked to be a yes/no. */
 for (const gate of AUTHORED.gates) {
-  let found = null;
-  for (const sheet of ['General Information', 'Environmental Disclosures', 'Social Disclosures', 'Governance Disclosures']) {
-    const row = rowLabelled(sheet, gate.label);
-    if (row === null) continue;
-    const yesNo = [...cellsOf(sheet).cells.entries()].find(([ref, cell]) => parseCell(ref)?.row === row && cell.type === 'b' && cell.formula === null);
-    if (yesNo) found = { sheet, cell: yesNo[0] };
-  }
-  if (found === null) fail(`no yes/no labelled ${gate.label}`);
-  gatesOut.push({ at: found, when: gate.when, answer: gate.answer });
+  const { sheet, row } = labelledRow(gate.label);
+  const yesNo = [...cellsOf(sheet).cells.entries()].filter(([ref, cell]) => parseCell(ref)?.row === row && cell.type === 'b' && cell.formula === null);
+  if (yesNo.length !== 1) fail(`the row labelled ${gate.label} holds ${yesNo.length} yes/no cells`);
+  gatesOut.push({ at: { sheet, cell: yesNo[0][0] }, when: gate.when, answer: gate.answer });
 }
 for (const gate of gatesOut) {
-  if (!['held', 'affirmed', 'several'].includes(gate.answer)) fail(`the gate at ${gate.at.sheet}!${gate.at.cell} says no way of answering it`);
+  if (!['held', 'affirmed', 'several', 'denied'].includes(gate.answer)) fail(`the gate at ${gate.at.sheet}!${gate.at.cell} says no way of answering it`);
   for (const elementKey of gate.when) if (elements[elementKey] === undefined) fail(`the gate at ${gate.at.sheet}!${gate.at.cell} names ${elementKey}, which the map places nowhere`);
 }
+
+/** The template's own dropdowns no element answers: the cell, each option a string of its list the row's status reads. */
+const choices = AUTHORED.choices.map((choice) => {
+  const { sheet, row } = labelledRow(choice.label);
+  const cell = `${choice.column}${row}`;
+  if (isFormula(sheet, parseCell(cell))) fail(`${sheet}!${cell} is computed`);
+  const offered = listOf(choice.list);
+  const statuses = [...cellsOf(sheet).cells.values()].map(({ formula }) => formula ?? '');
+  for (const { value, when } of choice.options) {
+    if (!offered.includes(value)) fail(`${choice.list} offers no ${JSON.stringify(value)}`);
+    if (!statuses.some((formula) => formula.includes(`${cell}="${value}"`))) fail(`no status formula on ${sheet} reads ${cell} as ${JSON.stringify(value)}`);
+    for (const elementKey of when) if (elements[elementKey] === undefined) fail(`the choice at ${sheet}!${cell} names ${elementKey}, which the map places nowhere`);
+  }
+  return { at: { sheet, cell }, options: choice.options };
+});
 
 /** The ToC's checkboxes, each matched to the member of the omission domain whose label its row carries. */
 const omission = (() => {
@@ -749,7 +878,7 @@ const notes = (() => {
   const byKey = new Map(offered.map((text) => [key(text), text]));
   const out = {};
   const missing = [];
-  for (const [elementKey] of basic) {
+  for (const [elementKey] of placed) {
     const text = byKey.get(key(elementLabels[elementKey] ?? '#')) ?? byKey.get(key((elementLabels[elementKey] ?? '#').replace(/ on the reporting period$/, '')));
     if (text === undefined) missing.push(elementKey);
     else out[elementKey] = text;
@@ -783,11 +912,14 @@ add(language.at);
 for (const at of [report.entityName, report.identifierScheme, report.identifier, report.currency, ...Object.values(report.periodStart), ...Object.values(report.periodEnd)]) add(at);
 for (const at of Object.values(inputs)) add(at);
 for (const gate of gatesOut) add(gate.at);
+for (const choice of choices) add(choice.at);
 for (const boxes of Object.values(omission)) for (const at of boxes) if (!probe.some((p) => p.at.sheet === at.sheet && p.at.cell === at.cell)) add(at);
 const seenUnits = new Set();
 for (const placement of Object.values(elements)) {
   if (placement.kind === 'cell') add(placement.at);
   if (placement.kind === 'members') Object.entries(placement.cells).filter(([member]) => !placement.computed.includes(member)).forEach(([, at]) => add(at));
+  if (placement.kind === 'checkbox_rows') Object.values(placement.rows).forEach((row) => add({ ...placement.at, row }));
+  if (placement.kind === 'day') Object.values(placement.day).forEach(add);
   for (const unit of [placement.unit].filter((u) => u && !u.computed)) {
     const id = JSON.stringify(unit.at);
     if (!seenUnits.has(id)) {
@@ -814,6 +946,7 @@ const map = {
   groups,
   inputs,
   gates: gatesOut,
+  choices,
   omission,
   lists: Object.fromEntries(Object.entries(lists).sort(([a], [b]) => a.localeCompare(b))),
 };

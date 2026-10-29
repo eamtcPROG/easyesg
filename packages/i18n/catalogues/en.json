@@ -545,6 +545,23 @@
           },
           "page": "Page {page} of {pages}",
           "omissions": "Omissions and findings"
+        },
+        "inputs": {
+          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Average gross hourly pay of female employees",
+          "AverageGrossHourlyPayLevelOfMaleEmployees": "Average gross hourly pay of male employees",
+          "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": "50% or more of revenue from gaseous fuels",
+          "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": "50% or more of revenue from electricity generation above 100 g CO₂e/kWh",
+          "HoursWorkedByOneFullTimeEmployee": "Hours worked by one full-time employee in the period",
+          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Employees at the beginning of the period",
+          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Employees at the end of the period",
+          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Employees covered by collective bargaining agreements",
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Employees who left during the period",
+          "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": "Female members of the governance body at the end of the period",
+          "NumberOfFemaleEmployeesAtManagementLevel": "Female employees at management level",
+          "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": "Male members of the governance body at the end of the period",
+          "NumberOfMaleEmployeesAtManagementLevel": "Male employees at management level",
+          "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": "1% or more of revenue from hard coal and lignite",
+          "TenPercentOrMoreOfRevenuesFromOilFuels": "10% or more of revenue from oil fuels"
         }
       },
       "workbook": {

@@ -1,5 +1,7 @@
 import { Logger } from '@nestjs/common';
+import { LOCALES, leafKeys } from '@easyesg/i18n';
 import { DISCLOSURE_KIND } from '@easyesg/vsme';
+import { COMMITTED_CATALOGUES } from '@api/app/messages/committed-catalogues';
 import type { ConfigurationStore } from '@api/infrastructure/configuration/configuration-store.service';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
 import { TaxonomyRegistryService } from '@api/modules/platform/taxonomy/services/taxonomy-registry.service';
@@ -77,6 +79,19 @@ describe('the shipped derivations (tasks 36.10, 38.4, 79)', () => {
         });
       }
     }
+  });
+
+  it.each(LOCALES)('names every input it is typed from in %s — S-07 asks it and the document prints it (task 80.3)', (locale) => {
+    // One namespace with two readers: the wizard's input labels and the PDF's rows under a worked-out figure. An input
+    // with no name there renders its key to the reporter, which the user-facing-text rule forbids on both surfaces.
+    const named = new Set(leafKeys(COMMITTED_CATALOGUES[locale]));
+    const inputs = [...shipped().values()].flatMap((derivation) =>
+      Object.values(derivation.operands)
+        .filter((operand) => operand.from === OPERAND_SOURCE.INPUT)
+        .map((operand) => operand.key),
+    );
+    expect(inputs.length).toBeGreaterThan(0);
+    expect(inputs.filter((key) => !named.has(`core.export.document.inputs.${key}`))).toEqual([]);
   });
 
   it.each(versions)('%s derives a yes or a no only into a yes/no element, and a figure only into one that is not', (version) => {

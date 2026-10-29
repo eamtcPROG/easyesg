@@ -1667,23 +1667,6 @@
         "targetSoFar": "Change so far, this reporting year against the base year: {change}"
       },
       "derivationInput": {
-        "names": {
-          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Average gross hourly pay of female employees",
-          "AverageGrossHourlyPayLevelOfMaleEmployees": "Average gross hourly pay of male employees",
-          "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": "50% or more of revenue from gaseous fuels",
-          "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": "50% or more of revenue from electricity generation above 100 g CO₂e/kWh",
-          "HoursWorkedByOneFullTimeEmployee": "Hours worked by one full-time employee in the period",
-          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Employees at the beginning of the period",
-          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Employees at the end of the period",
-          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Employees covered by collective bargaining agreements",
-          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Employees who left during the period",
-          "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": "Female members of the governance body at the end of the period",
-          "NumberOfFemaleEmployeesAtManagementLevel": "Female employees at management level",
-          "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": "Male members of the governance body at the end of the period",
-          "NumberOfMaleEmployeesAtManagementLevel": "Male employees at management level",
-          "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": "1% or more of revenue from hard coal and lignite",
-          "TenPercentOrMoreOfRevenuesFromOilFuels": "10% or more of revenue from oil fuels"
-        },
         "help": {
           "AverageGrossHourlyPayLevelOfFemaleEmployees": "Gross, in the same currency as the figure above.",
           "AverageGrossHourlyPayLevelOfMaleEmployees": "Gross, before tax and contributions. Use the same currency for both pay figures — the gap is worked out as a percentage, so the currency does not appear in the result.",
@@ -1762,24 +1745,27 @@
       },
       "applicability": {
         "note": {
-          "numericAtLeast": "Because you answered {answer} to “{driver}” in B1 — {threshold} or more — this step also asks for {fields}.",
-          "anyRowAnswered": "Because you answered {drivers} in B1, this step also asks for {fields}.",
-          "memberWithin": "Because of your answer to “{driver}” in B1, this step also asks for {fields}.",
+          "numericAtLeast": "Because you answered {answer} to “{driver}”{place, select, here {} other { in {module}}} — {threshold} or more — this step also asks for {fields}.",
+          "anyRowAnswered": "Because you answered {drivers}{place, select, here {} other { in {module}}}, this step also asks for {fields}.",
+          "memberWithin": "Because of your answer to “{driver}”{place, select, here {} other { in {module}}}, this step also asks for {fields}.",
+          "isTrue": "Because you answered Yes to “{driver}”{place, select, here {} other { in {module}}}, this step also asks for {fields}.",
           "body": "If you change that answer, these questions go away again, and anything you have entered here is kept.",
-          "see": "See the B1 answer",
+          "see": "See the {place, select, here {answer} other {{module} answer}}",
           "dismiss": "Dismiss"
         },
         "hidden": {
-          "numericAtLeast": "This question is hidden because you answered {answer} to “{driver}” in B1, which is below {threshold}.",
-          "anyRowAnswered": "This question is hidden because B1 has no answer to {drivers}.",
-          "memberWithin": "This question is hidden because of your answer to “{driver}” in B1.",
-          "waiting": "This question is hidden until “{driver}” is answered in B1.",
+          "numericAtLeast": "This question is hidden because you answered {answer} to “{driver}”{place, select, here {} other { in {module}}}, which is below {threshold}.",
+          "anyRowAnswered": "This question is hidden because {place, select, here {this step} other {{module}}} has no answer to {drivers}.",
+          "memberWithin": "This question is hidden because of your answer to “{driver}”{place, select, here {} other { in {module}}}.",
+          "isTrue": "This question is hidden because you answered No to “{driver}”{place, select, here {} other { in {module}}}.",
+          "waiting": "This question is hidden until “{driver}” is answered{place, select, here {} other { in {module}}}.",
+          "isTrueWaiting": "This question appears once you answer Yes to “{driver}”{place, select, here {} other { in {module}}}.",
           "kept": "Your earlier answer has been kept and will come back if that changes.",
           "keptValue": "Kept: {value}",
           "notAvailable": "declared not available",
           "quantity": "{value} {unit}"
         },
-        "unnamedDriver": "a B1 question",
+        "unnamedDriver": "another question",
         "unnamedFields": "a further question"
       }
     },

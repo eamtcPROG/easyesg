@@ -167,7 +167,7 @@ describe('moduleSummaries', () => {
       applicable: false,
       applicabilityCause: {
         condition: APPLICABILITY_CONDITION.NUMERIC_AT_LEAST,
-        drivers: [{ elementKey: 'NumberOfEmployees', label: 'Număr de angajați' }],
+        drivers: [{ elementKey: 'NumberOfEmployees', label: 'Număr de angajați', module: 'B1' }],
         threshold: '50',
         answer: '40',
       },

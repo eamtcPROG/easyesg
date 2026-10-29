@@ -1667,23 +1667,6 @@
         "targetSoFar": "Изменение на сегодня, отчётный год по сравнению с базовым: {change}"
       },
       "derivationInput": {
-        "names": {
-          "AverageGrossHourlyPayLevelOfFemaleEmployees": "Средняя валовая почасовая оплата труда женщин",
-          "AverageGrossHourlyPayLevelOfMaleEmployees": "Средняя валовая почасовая оплата труда мужчин",
-          "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": "Не менее 50% выручки от газообразного топлива",
-          "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": "Не менее 50% выручки от производства электроэнергии свыше 100 г CO₂e/кВт·ч",
-          "HoursWorkedByOneFullTimeEmployee": "Часов, отработанных одним сотрудником на полной ставке за период",
-          "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Сотрудников на начало периода",
-          "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Сотрудников на конец периода",
-          "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Сотрудники, охваченные коллективными договорами",
-          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Сотрудники, уволившиеся за период",
-          "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": "Женщины в органе управления на конец периода",
-          "NumberOfFemaleEmployeesAtManagementLevel": "Женщины-сотрудники на руководящем уровне",
-          "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": "Мужчины в органе управления на конец периода",
-          "NumberOfMaleEmployeesAtManagementLevel": "Мужчины-сотрудники на руководящем уровне",
-          "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": "Не менее 1% выручки от каменного угля и лигнита",
-          "TenPercentOrMoreOfRevenuesFromOilFuels": "Не менее 10% выручки от нефтяного топлива"
-        },
         "help": {
           "AverageGrossHourlyPayLevelOfFemaleEmployees": "До вычета налогов и взносов, в той же валюте, что и выше.",
           "AverageGrossHourlyPayLevelOfMaleEmployees": "До вычета налогов и взносов. Укажите обе суммы в одной валюте — разрыв считается в процентах, поэтому валюта в результат не входит.",
@@ -1762,24 +1745,27 @@
       },
       "applicability": {
         "note": {
-          "numericAtLeast": "Поскольку в B1 на вопрос «{driver}» вы ответили {answer}, то есть {threshold} или больше, этот шаг также запрашивает: {fields}.",
-          "anyRowAnswered": "Поскольку в B1 вы заполнили {drivers}, этот шаг также запрашивает: {fields}.",
-          "memberWithin": "В связи с вашим ответом на вопрос «{driver}» в B1 этот шаг также запрашивает: {fields}.",
+          "numericAtLeast": "Поскольку{place, select, here {} other { в {module}}} на вопрос «{driver}» вы ответили {answer}, то есть {threshold} или больше, этот шаг также запрашивает: {fields}.",
+          "anyRowAnswered": "Поскольку {place, select, here {здесь} other {в {module}}} вы заполнили {drivers}, этот шаг также запрашивает: {fields}.",
+          "memberWithin": "В связи с вашим ответом на вопрос «{driver}»{place, select, here {} other { в {module}}} этот шаг также запрашивает: {fields}.",
+          "isTrue": "Поскольку{place, select, here {} other { в {module}}} на вопрос «{driver}» вы ответили «Да», этот шаг также запрашивает: {fields}.",
           "body": "Если вы измените этот ответ, эти вопросы снова исчезнут, а всё, что вы здесь ввели, сохранится.",
-          "see": "Перейти к ответу в B1",
+          "see": "Перейти к ответу{place, select, here {} other { в {module}}}",
           "dismiss": "Скрыть"
         },
         "hidden": {
-          "numericAtLeast": "Этот вопрос скрыт, поскольку в B1 на вопрос «{driver}» вы ответили {answer}, то есть меньше {threshold}.",
-          "anyRowAnswered": "Этот вопрос скрыт, поскольку в B1 не заполнено ни одно из полей: {drivers}.",
-          "memberWithin": "Этот вопрос скрыт в связи с вашим ответом на вопрос «{driver}» в B1.",
-          "waiting": "Этот вопрос скрыт, пока в B1 нет ответа на вопрос «{driver}».",
+          "numericAtLeast": "Этот вопрос скрыт, поскольку{place, select, here {} other { в {module}}} на вопрос «{driver}» вы ответили {answer}, то есть меньше {threshold}.",
+          "anyRowAnswered": "Этот вопрос скрыт, поскольку {place, select, here {здесь} other {в {module}}} не заполнено ни одно из полей: {drivers}.",
+          "memberWithin": "Этот вопрос скрыт в связи с вашим ответом на вопрос «{driver}»{place, select, here {} other { в {module}}}.",
+          "isTrue": "Этот вопрос скрыт, поскольку{place, select, here {} other { в {module}}} на вопрос «{driver}» вы ответили «Нет».",
+          "waiting": "Этот вопрос скрыт, пока{place, select, here {} other { в {module}}} нет ответа на вопрос «{driver}».",
+          "isTrueWaiting": "Этот вопрос появится, если{place, select, here {} other { в {module}}} на вопрос «{driver}» вы ответите «Да».",
           "kept": "Ваш прежний ответ сохранён и вернётся, если это изменится.",
           "keptValue": "Сохранено: {value}",
           "notAvailable": "отмечено как недоступное",
           "quantity": "{value} {unit}"
         },
-        "unnamedDriver": "вопрос из B1",
+        "unnamedDriver": "другой вопрос",
         "unnamedFields": "дополнительный вопрос"
       }
     },
