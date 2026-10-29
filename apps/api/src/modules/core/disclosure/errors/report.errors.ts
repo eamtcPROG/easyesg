@@ -226,6 +226,34 @@ export class UnknownDerivationInputError extends DomainError {
 }
 
 /**
+ * A derivation input answered yes or no held something else (task 79.8; §12.5.6's task-79.8 row) — C8's revenue
+ * thresholds, stored as `1` or `0`. Anything else would read as no answer to the formula, so the exclusion would go
+ * quiet over a value that was sent and stored.
+ */
+export class DerivationInputNotYesOrNoError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.derivation_input_not_yes_or_no');
+  }
+}
+
+/**
+ * A choice the field does not offer (task 79.7; §12.5.6's task-79.7 row) — accident prevention on C7's rights, which
+ * the domain C7 shares with C6 carries and EFRAG's C7 has no box for. **Only where `disclosure_offered_members` narrows
+ * the element**: the domain's own members are what every other choice field offers.
+ */
+export class MemberNotOfferedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.member_not_offered');
+  }
+}
+
+/**
  * FR-20's behaviour 7 (task 214; `architecture.md` §12.5.6's task-214 row): the report's entity is archived, so the
  * report takes no write to what it answers and cannot be deleted — it can still be checked, exported and marked filed.
  *

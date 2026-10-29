@@ -2042,3 +2042,263 @@ test('last year’s value shows beside this year’s, and carries forward marked
   await page.reload();
   await expect(page.getByRole('group', { name: 'Consumul total de energie' })).not.toContainText('Preluat');
 });
+
+/**
+ * C4 … C9 (tasks 79.4 … 79.9) — the Comprehensive Module's last six forms, each on a report seeded with the module, each
+ * a step of the anatomy B1 … B11 use: narratives, yes/no cards, a choice of several, counts, and figures the platform
+ * works out from inputs beside them. One journey per module, each proving what its use case adds.
+ */
+test('C4 renders four narratives and a yes/no in the template’s order, and stores them (UC-186)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'c4', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C4`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C4');
+
+  const main = page.getByRole('main');
+  const narratives = [
+    'Descrierea pericolelor legate de climă și a evenimentelor de tranziție legate de climă',
+    'Prezentarea modului în care întreprinderea a evaluat expunerea și sensibilitatea activelor, activităților și lanțului valoric la aceste pericole și evenimente de tranziție',
+    'Orizonturile de timp ale pericolelor climatice și ale evenimentelor de tranziție identificate',
+    'Efectele negative potențiale ale riscurilor climatice care pot afecta performanța financiară sau activitatea întreprinderii pe termen scurt, mediu sau lung, indicând dacă riscurile sunt evaluate ca fiind ridicate, medii sau scăzute',
+  ];
+  await expect(main.getByRole('textbox')).toHaveCount(narratives.length);
+  for (const [index, name] of narratives.entries()) await expect(main.getByRole('textbox').nth(index)).toHaveAccessibleName(name);
+  // ¶57(d) between the horizons and ¶58, as the template prints it — a yes/no with nothing chosen.
+  const adaptation = main.getByRole('radiogroup', {
+    name: 'Prezentarea faptului dacă întreprinderea a întreprins acțiuni de adaptare la schimbările climatice pentru pericolele climatice și evenimentele de tranziție identificate',
+  });
+  const horizonsBottom = (await main.getByRole('textbox').nth(2).boundingBox())?.y ?? Number.POSITIVE_INFINITY;
+  const effectsTop = (await main.getByRole('textbox').nth(3).boundingBox())?.y ?? Number.NEGATIVE_INFINITY;
+  const adaptationTop = (await adaptation.boundingBox())?.y ?? Number.NaN;
+  expect(adaptationTop).toBeGreaterThan(horizonsBottom);
+  expect(adaptationTop).toBeLessThan(effectsTop);
+  for (const answer of await adaptation.getByRole('radio').all()) await expect(answer).not.toBeChecked();
+
+  const hazards = main.getByRole('textbox', { name: narratives[0] });
+  await hazards.fill('Secetele de vară reduc recolta de grâu a furnizorilor.');
+  await hazards.blur();
+  const yes = adaptation.getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  await untilHydrated(yes);
+  await yes.check();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, { timeout: 15_000 });
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'DescriptionOfClimateRelatedHazardsAndClimateRelatedTransitionEvents' }))?.valueText, { timeout: 15_000 })
+    .toBe('Secetele de vară reduc recolta de grâu a furnizorilor.');
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'DisclosureOfWhetherItHasUndertakenClimateChangeAdaptationActionsForAnyClimateRelatedHazardsAndTransitionEvents' }))?.valueBoolean, { timeout: 15_000 })
+    .toBe(true);
+
+  await page.goto(`/en/reports/${reportId}/C4`);
+  await expect(page.getByRole('textbox', { name: 'Description of climate-related hazards and climate-related transition events' })).toHaveValue(
+    'Secetele de vară reduc recolta de grâu a furnizorilor.',
+  );
+  await page.goto(`/ru/reports/${reportId}/C4`);
+  await expect(page.getByRole('textbox', { name: /^Описание климатических опасностей/u })).toHaveValue(
+    'Secetele de vară reduc recolta de grâu a furnizorilor.',
+  );
+});
+
+test('C5 works out the female-to-male ratio from two counts beside it, and takes the other two as counts (UC-187)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'c5', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C5`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C5');
+
+  // The ratio has no input: it is worked out (FR-29), from the two counts the template asks and the taxonomy does not carry.
+  const ratio = page.getByRole('group', { name: 'Raportul femei/bărbați la nivel de conducere pentru perioada de raportare' });
+  await expect(ratio.getByRole('textbox')).toHaveCount(0);
+  const women = page.getByRole('textbox', { name: 'Angajate femei la nivel de conducere' });
+  const men = page.getByRole('textbox', { name: 'Angajați bărbați la nivel de conducere' });
+  await women.fill('3');
+  await women.blur();
+  await men.fill('4');
+  await men.blur();
+  const RATIO = 'FemaleToMaleRatioAtManagementLevelForTheReportingPeriod';
+  await expect
+    .poll(async () => Number((await disclosureValueOf({ organizationId, reportId, elementKey: RATIO }))?.valueNumeric), { timeout: 15_000 })
+    .toBeCloseTo(0.75, 6);
+
+  // None engaged is an answer, a nil return (FR-30), not an empty field.
+  const selfEmployed = page
+    .getByRole('group', { name: 'Numărul total de lucrători independenți fără personal care lucrează exclusiv pentru întreprindere' })
+    .getByRole('textbox');
+  await selfEmployed.fill('0');
+  await selfEmployed.blur();
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'TotalNumberOfSelfEmployedWorkersWithoutPersonnelThatAreWorkingExclusivelyForTheUndertaking' }))?.state, { timeout: 15_000 })
+    .toBe('nil_return');
+
+  // Shown to its cell's two places once the step is read again, as B9's rate is.
+  await page.reload();
+  await expect(ratio.getByText('0,75', { exact: true })).toHaveCount(1);
+  await page.goto(`/ru/reports/${reportId}/C5`);
+  await expect(page.getByRole('textbox', { name: 'Женщины-сотрудники на руководящем уровне' })).toHaveValue('3');
+});
+
+test('C6 asks its policy questions in order, offers all six contents, and stores the answers (UC-188)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'c6', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C6`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C6');
+  const main = page.getByRole('main');
+
+  const policy = main.getByRole('radiogroup', {
+    name: 'Întreprinderea are un cod de conduită sau o politică privind drepturile omului pentru forța de muncă proprie',
+  });
+  const contents = main.getByRole('combobox', {
+    name: 'Tipul de conținut acoperit de codul de conduită sau de politica privind drepturile omului pentru forța de muncă proprie',
+  });
+  const other = main.getByRole('textbox', {
+    name: 'Precizarea altor tipuri de conținut acoperite de codul de conduită sau de politica privind drepturile omului',
+  });
+  // The standard's order (task 79.6): the question, what it covers, then the other content it specifies.
+  const top = async (locator: typeof policy) => (await locator.boundingBox())?.y ?? Number.NaN;
+  expect(await top(policy)).toBeLessThan(await top(contents));
+  expect(await top(contents)).toBeLessThan(await top(other));
+
+  const yes = policy.getByRole('radio', { name: FIELD_WORDS.yes, exact: true });
+  await untilHydrated(yes);
+  await yes.check();
+  await contents.click();
+  // C6 offers its whole domain, accident prevention among it — C7 offers five of these (task 79.7).
+  await expect(page.getByRole('option')).toHaveCount(6);
+  await page.getByRole('option', { name: 'Prevenirea accidentelor', exact: true }).click();
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce' }))?.valueBoolean, { timeout: 15_000 })
+    .toBe(true);
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce' }))?.valueText, { timeout: 15_000 })
+    .toBe('vsme:AccidentPreventionMember');
+
+  await page.goto(`/en/reports/${reportId}/C6`);
+  await expect(
+    page.getByRole('radiogroup', { name: 'Undertaking has a code of conduct or human rights policy for its own workforce' }).getByRole('radio', { name: 'Yes', exact: true }),
+  ).toBeChecked();
+});
+
+test('C7 takes two answers of no as the nil return, and a run finds the module complete (UC-189)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const reportId = await signedInWithReport(page, 'c7', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C7`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C7');
+  const main = page.getByRole('main');
+
+  // The five rights the template's C7 lists — not accident prevention, which the domain it shares with C6 carries.
+  const rights = main.getByRole('combobox', { name: 'Tipul de drept al omului vizat de incidentul confirmat' });
+  await untilHydrated(rights);
+  await rights.click();
+  await expect(page.getByRole('option')).toHaveCount(5);
+  await expect(page.getByRole('option', { name: 'Prevenirea accidentelor' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+
+  for (const name of [
+    'Întreprinderea are incidente confirmate privind drepturile omului în cadrul forței de muncă proprii',
+    'Întreprinderea are cunoștință de incidente confirmate care implică lucrători din lanțul valoric, comunități afectate, consumatori sau utilizatori finali',
+  ]) {
+    const no = main.getByRole('radiogroup', { name }).getByRole('radio', { name: 'Nu', exact: true });
+    await untilHydrated(no);
+    await no.check();
+  }
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, { timeout: 15_000 });
+  // **Absence as a positive statement** (FR-30): two stored answers of no, not two empty fields.
+  for (const elementKey of [
+    'UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce',
+    'UndertakingIsAwareOfAnyConfirmedIncidentsInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers',
+  ]) {
+    await expect.poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey }))?.valueBoolean, { timeout: 15_000 }).toBe(false);
+  }
+
+  // And a run finds C7 complete on them: nothing that follows an incident is asked where there was none.
+  const check = page.getByRole('region', { name: 'Verificarea raportului' }).getByRole('button', { name: 'Verificați raportul' });
+  await untilHydrated(check);
+  await check.click();
+  const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
+  await expect(rail.getByRole('list', { name: 'Modulul cuprinzător' }).getByRole('listitem').filter({ hasText: 'C7' })).toContainText(
+    'Finalizat',
+    { timeout: 15_000 },
+  );
+});
+
+test('C8 works out the fossil-fuel total and the benchmark exclusion from what the reporter answers (UC-190)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'c8', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C8`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C8');
+  const main = page.getByRole('main');
+
+  const revenue = (name: string) => main.getByRole('group', { name, exact: true }).getByRole('textbox');
+  for (const [name, figure] of [
+    ['Venituri obținute din cărbune', '1200,50'],
+    ['Venituri obținute din petrol', '300'],
+    ['Venituri obținute din gaze naturale', '0'],
+  ] as const) {
+    await revenue(name).fill(figure);
+    await revenue(name).blur();
+  }
+  // Neither worked-out figure takes typing (FR-29).
+  const total = main.getByRole('group', { name: 'Veniturile totale obținute din sectorul combustibililor fosili (cărbune, petrol și gaze naturale)' });
+  await expect(total.getByRole('textbox')).toHaveCount(0);
+  const exclusion = main.getByRole('group', { name: 'Întreprinderile sunt excluse din indicii de referință ai UE aliniați la Acordul de la Paris' });
+  await expect(exclusion.getByRole('radio')).toHaveCount(0);
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector' }))?.valueNumeric, { timeout: 15_000 })
+    .toBe('1500.5');
+
+  // The four thresholds, each a yes/no below the fields; four answers of no say *not excluded*.
+  const thresholds = [
+    'Cel puțin 1% din venituri din huilă și lignit',
+    'Cel puțin 10% din venituri din combustibili petrolieri',
+    'Cel puțin 50% din venituri din combustibili gazoși',
+    'Cel puțin 50% din venituri din producerea de energie electrică peste 100 g CO₂e/kWh',
+  ];
+  for (const name of thresholds) {
+    const no = main.getByRole('radiogroup', { name }).getByRole('radio', { name: 'Nu', exact: true });
+    await untilHydrated(no);
+    await no.check();
+  }
+  const EXCLUSION = 'UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement';
+  await expect.poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: EXCLUSION }))?.valueBoolean, { timeout: 15_000 }).toBe(false);
+  // One yes is enough to exclude.
+  await main.getByRole('radiogroup', { name: thresholds[1] }).getByRole('radio', { name: FIELD_WORDS.yes, exact: true }).check();
+  await expect.poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: EXCLUSION }))?.valueBoolean, { timeout: 15_000 }).toBe(true);
+
+  // Both read back worked out, in the reader's words, and the answer the reporter gave stays chosen.
+  await page.reload();
+  await expect(exclusion.getByText(FIELD_WORDS.yes, { exact: true })).toHaveCount(1);
+  await expect(total).toContainText('1.500,5');
+  await expect(main.getByRole('radiogroup', { name: thresholds[1] }).getByRole('radio', { name: FIELD_WORDS.yes, exact: true })).toBeChecked();
+  await page.goto(`/en/reports/${reportId}/C8`);
+  await expect(page.getByRole('radiogroup', { name: '10% or more of revenue from oil fuels' }).getByRole('radio', { name: 'Yes', exact: true })).toBeChecked();
+});
+
+test('C9 works out the governance body’s gender ratio from its two counts, zero where either is (UC-191)', async ({ page }) => {
+  const reportId = await signedInWithReport(page, 'c9', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C9`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C9');
+
+  const ratio = page.getByRole('group', { name: 'Raportul de diversitate de gen în organul de conducere' });
+  await expect(ratio.getByRole('textbox')).toHaveCount(0);
+  const women = page.getByRole('textbox', { name: 'Femei în organul de conducere la sfârșitul perioadei' });
+  const men = page.getByRole('textbox', { name: 'Bărbați în organul de conducere la sfârșitul perioadei' });
+  await women.fill('2');
+  await women.blur();
+  await men.fill('3');
+  await men.blur();
+  const RATIO = 'GenderDiversityRatioInGovernanceBody';
+  await expect
+    .poll(async () => Number((await disclosureValueOf({ organizationId, reportId, elementKey: RATIO }))?.valueNumeric), { timeout: 15_000 })
+    .toBeCloseTo(2 / 3, 6);
+  await page.reload();
+  await expect(ratio.getByText('0,67', { exact: true })).toHaveCount(1);
+
+  // A body of women alone reads 0, as EFRAG's cell computes it (§12.5.6's task-79.9 row).
+  await men.fill('0');
+  await men.blur();
+  await expect.poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: RATIO }))?.valueNumeric, { timeout: 15_000 }).toBe('0');
+  await page.goto(`/en/reports/${reportId}/C9`);
+  await expect(page.getByRole('textbox', { name: 'Female members of the governance body at the end of the period' })).toHaveValue('2');
+});

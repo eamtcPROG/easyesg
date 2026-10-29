@@ -4343,6 +4343,12 @@ export interface components {
              * @example RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod
              */
             derives: string;
+            /**
+             * @description How the input is answered: a number, or a yes or a no — its formula’s (task 79.8). A yes/no input’s `value` is `1` or `0`, and a write of anything else to it is refused.
+             * @example number
+             * @enum {string}
+             */
+            answer: "number" | "yes_no";
             /** @description What the reporter stored, as a decimal string; null where they answered nothing. */
             value: string | null;
             /**
@@ -4474,7 +4480,7 @@ export interface components {
             /** @example HoursWorkedByOneFullTimeEmployee */
             inputKey: string;
             /**
-             * @description A decimal string. **Omit or send null to clear**, which restores the published offer — a stored zero would instead make the rate undefined, a zero denominator being no answer rather than a working year of no hours.
+             * @description A decimal string. **Omit or send null to clear**, which restores the published offer — a stored zero would instead make the rate undefined, a zero denominator being no answer rather than a working year of no hours. **An input answered yes or no takes `1` or `0`** (task 79.8).
              * @example 1800
              */
             valueNumeric?: string | null;

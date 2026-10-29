@@ -6,7 +6,7 @@ import { targetMembers } from '../models/target-axis';
 
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
-import { OPERAND_SOURCE, computeDerivation, type Derivation } from '../models/derivation.model';
+import { OPERAND_SOURCE, derivedAnswer, type Derivation } from '../models/derivation.model';
 import type { Derivations } from '../interfaces/derivation.interface';
 
 /**
@@ -89,7 +89,8 @@ export class DerivationCalculator implements DerivationRecalculator {
         }
         await this.values.writeDerived({
           key: { reportId: command.reportId, elementKey: derivation.element, dimensionKey, ordinal: 0 },
-          valueNumeric: computeDerivation({ formula: derivation.formula, operands }),
+          // A figure, or a yes or a no for C8's exclusion (task 79.8) — the formula decides the column.
+          ...derivedAnswer({ formula: derivation.formula, operands }),
         });
       }
     }

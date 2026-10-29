@@ -1,4 +1,12 @@
-import { DERIVATION_FORMULA, computeDerivation, type DerivationFormula } from './derivation.model';
+import {
+  DERIVATION_FORMULA,
+  INPUT_ANSWER,
+  computeAffirmation,
+  computeDerivation,
+  derivedAnswer,
+  inputAnswerOf,
+  type DerivationFormula,
+} from './derivation.model';
 import { DISCLOSURE_STATE, answeredState } from './disclosure-value.model';
 
 /**
@@ -265,5 +273,93 @@ describe('B3 — the emissions total and the GHG intensity (task 38.4)', () => {
   it('is no figure from an operand that is not a non-negative decimal', () => {
     expect(total('-1', '2')).toBeNull();
     expect(intensity('1', '2', '-5000000')).toBeNull();
+  });
+});
+
+/**
+ * The Comprehensive Module's derived figures (task 79; §12.5.6's task-79.5, 79.8 and 79.9 rows), against the Digital
+ * Template's own cells: `Social Disclosures!D167` for C5's ratio, `Governance Disclosures!H33` for C9's and `H27` for
+ * C8's exclusion.
+ */
+describe('C5 — the female-to-male ratio at management level (task 79.5)', () => {
+  const ratio = (numerator: string | null, denominator: string | null) =>
+    computeDerivation({ formula: DERIVATION_FORMULA.RATIO, operands: { numerator, denominator } });
+
+  it('divides the female count by the male, as D167 does', () => {
+    expect(Number(ratio('3', '4'))).toBeCloseTo(0.75, 12);
+  });
+
+  it('is a ratio of zero with no women, which is a nil return', () => {
+    expect(ratio('0', '4')).toBe('0');
+  });
+
+  it('is no ratio with no men — D167 cannot divide — nor while either count is unanswered', () => {
+    expect(ratio('3', '0')).toBeNull();
+    expect(ratio(null, '4')).toBeNull();
+    expect(ratio('3', null)).toBeNull();
+  });
+});
+
+describe('C9 — the gender diversity ratio in the governance body (task 79.9)', () => {
+  const ratio = (numerator: string | null, denominator: string | null) =>
+    computeDerivation({ formula: DERIVATION_FORMULA.GENDER_DIVERSITY_RATIO, operands: { numerator, denominator } });
+
+  it('divides the female members by the male, as H33 does', () => {
+    expect(Number(ratio('2', '3'))).toBeCloseTo(2 / 3, 12);
+  });
+
+  it('is zero where either count is zero — H33’s IF(OR(H31=0,H32=0),0,…), the owner’s choice', () => {
+    expect(ratio('2', '0')).toBe('0');
+    expect(ratio('0', '3')).toBe('0');
+  });
+
+  it('is no ratio while either count is unanswered, H33’s "-"', () => {
+    expect(ratio(null, '3')).toBeNull();
+    expect(ratio('2', null)).toBeNull();
+  });
+});
+
+describe('C8 — exclusion from EU Paris-aligned benchmarks (task 79.8)', () => {
+  const excluded = (...answers: (string | null)[]) =>
+    computeAffirmation({ operands: Object.fromEntries(answers.map((answer, index) => [`threshold${index}`, answer])) });
+
+  it('is yes as soon as one threshold is yes, whatever the others say or leave unsaid', () => {
+    expect(excluded('0', '1', null, '0')).toBe(true);
+  });
+
+  it('is no once all four are no — what the template’s "None of the above" says', () => {
+    expect(excluded('0', '0', '0', '0')).toBe(false);
+  });
+
+  it('is no answer while one is unanswered and none is yes: an unanswered threshold is not a no', () => {
+    expect(excluded('0', '0', null, '0')).toBeNull();
+    expect(excluded()).toBeNull();
+  });
+
+  it('answers in the yes/no column, and asks its inputs yes or no; every other formula a figure and numbers', () => {
+    expect(
+      derivedAnswer({ formula: DERIVATION_FORMULA.ANY_AFFIRMED, operands: { a: '1', b: '0' } }),
+    ).toEqual({ valueNumeric: null, valueBoolean: true });
+    expect(
+      derivedAnswer({ formula: DERIVATION_FORMULA.SUM, operands: { coal: '10', oil: '0', gas: '5' } }),
+    ).toEqual({ valueNumeric: '15', valueBoolean: null });
+    expect(inputAnswerOf(DERIVATION_FORMULA.ANY_AFFIRMED)).toBe(INPUT_ANSWER.YES_NO);
+    const numbered = Object.values(DERIVATION_FORMULA).filter((formula) => formula !== DERIVATION_FORMULA.ANY_AFFIRMED);
+    expect(numbered.map(inputAnswerOf)).toEqual(numbered.map(() => INPUT_ANSWER.NUMBER));
+    // A figure formula never answers a yes or a no from the figure path, so nothing can write both columns.
+    expect(computeDerivation({ formula: DERIVATION_FORMULA.ANY_AFFIRMED, operands: { a: '1' } })).toBeNull();
+  });
+});
+
+describe('C8 — the fossil-fuel total (task 79.8)', () => {
+  const total = (coal: string | null, oil: string | null, gas: string | null) =>
+    computeDerivation({ formula: DERIVATION_FORMULA.SUM, operands: { coal, oil, gas } });
+
+  it('adds coal, oil and gas exactly', () => {
+    expect(total('1200.50', '300', '0')).toBe('1500.5');
+  });
+
+  it('is no total while any of the three is unanswered — B3’s rule, not the template’s sum of what is entered', () => {
+    expect(total('1200.50', null, '0')).toBeNull();
   });
 });

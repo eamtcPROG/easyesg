@@ -1014,6 +1014,136 @@ their numbers put them.
 - **Related FRs:** FR-177, FR-24, FR-27, FR-29, FR-45, FR-46
 - **Related UCs:** UC-18, UC-21, UC-33, UC-45, UC-46, UC-192
 
+### UC-186 — Complete C4 — Climate risks
+
+*Written 29 Oct 2026 by task 79.4, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Environmental Disclosures *sheet, rows 538 … 544 in both 1.2.0 and 1.3.0, headed* C4 - Climate risks *[If applicable], and the five C4 elements both registered taxonomies carry. What the build took is §12.5.6's task-79.4 row.*
+
+- **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
+- **Module:** Comprehensive Module
+- **Stakeholders and interests:** Contributor — says which climate hazards and transition events the undertaking faces and what it does about them, in its own words; the counterparty that asked for the Comprehensive Module — reads the exposure a loan or a contract carries, its horizon and how severe the undertaking judges it; a future limited-assurance reviewer — reads each answer as it was written.
+- **Preconditions:** An editable report session (UC-18) on a report whose scope is Basic and Comprehensive — chosen at creation (FR-177) or added since (UC-192).
+- **Trigger:** The Contributor reaches the C4 step, from the module list or from C3.
+- **Main success scenario:**
+  1. The Contributor describes the climate-related hazards and climate-related transition events the undertaking has identified (VSME ¶57(a)).
+  2. The Contributor discloses how it has assessed the exposure and sensitivity of its assets, activities and value chain to them (¶57(b)).
+  3. The Contributor states the time horizons of the hazards and transition events identified (¶57(c)).
+  4. The Contributor answers whether the undertaking has undertaken climate change adaptation actions for any of them, yes or no (¶57(d)).
+  5. Optionally, the Contributor describes the potential adverse effects of climate risks on its financial performance or business operations in the short, medium or long term, saying whether it assesses each as high, medium or low (¶58).
+  6. The system stores each answer as written, in the change trail (FR-54), and counts C4's progress over the five (FR-24).
+- **Alternate flows:** 1a. **The undertaking has identified no climate-related hazard or transition event.** The Contributor leaves C4 unanswered or declares its fields not available with a reason (UX-15). EFRAG's template asks a yes/no first — *"Has the undertaking identified climate-related hazards and climate-related transition events creating gross climate-related risks for the undertaking?"* — which no element in either registered taxonomy carries, so nothing makes ¶57's four required (`architecture.md` §12.5.6's task-41 row (1) (ii)); the export answers it from whether ¶57 holds an answer (task 80.3). 5a. **The Contributor gives no assessment of adverse effects.** ¶58 is a *may* in the standard and in the template, whose status column never flags it; it is left unanswered.
+- **Exception flows:** A Basic report has no C4 step: its address answers not found, and a write to a C4 element is refused (UC-192's exception flows). A read-only report shows C4's answers and takes none, and says why (UX-13).
+- **Postconditions:** Each answer stored as written, attributed and timestamped; shown, counted and exported exactly while the report's scope is Basic and Comprehensive (UC-192).
+- **Business rules:** C4 is four text blocks and one yes/no, with no axis, no unit and no applicability rule naming them, presented in the taxonomy's order, which is the template's. High, medium or low is part of ¶58's narrative, not a choice the template or the taxonomy offers. No length is required of an answer; UX-19's soft target stays deferred (`architecture.md` §12.5.6's task-36.2 row). Every answer is printed as written.
+- **Related FRs:** FR-177, FR-24, FR-27
+- **Related UCs:** UC-18, UC-20, UC-192
+
+### UC-187 — Complete C5 — Additional workforce characteristics
+
+*Written 29 Oct 2026 by task 79.5, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Social Disclosures *sheet, rows 164 … 169 in both 1.2.0 and 1.3.0, headed* C5 - Additional (general) workforce characteristics *[May (optional)], and the three C5 elements both registered taxonomies carry. What the build took is §12.5.6's task-79.5 row.*
+
+- **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
+- **Module:** Comprehensive Module
+- **Stakeholders and interests:** Contributor — counts the people at management level once and is told the ratio, rather than working it out; the counterparty that asked for the Comprehensive Module — reads the balance of women and men in management and how much of the workforce sits outside the payroll B8 counts; a future limited-assurance reviewer — retraces the ratio to the two counts it is worked out from.
+- **Preconditions:** An editable report session (UC-18) on a report whose scope is Basic and Comprehensive — chosen at creation (FR-177) or added since (UC-192).
+- **Trigger:** The Contributor reaches the C5 step, from the module list or from C4.
+- **Main success scenario:**
+  1. The Contributor states the number of male and the number of female employees at management level.
+  2. **The system works out the female-to-male ratio at management level** for the reporting period — the female count divided by the male count, as the template's cell computes it — and shows it beside the two counts, read-only (VSME ¶59; FR-29).
+  3. The Contributor states the number of self-employed workers without personnel working exclusively for the undertaking, and the number of temporary workers provided by undertakings primarily engaged in employment activities (¶60).
+  4. The system stores each answer as written, in the change trail (FR-54), and counts C5's progress over the three elements (FR-24).
+- **Alternate flows:** 2a. **Either count is unanswered, or there are no male employees at management level.** No ratio is shown or stored — the template's cell shows *-* for the first and cannot divide for the second. 2b. **There are no female employees at management level.** The ratio is zero, a nil return (FR-30). 3a. **The undertaking engages none.** The Contributor answers 0, a nil return; an unanswered count is not a zero.
+- **Exception flows:** A Basic report has no C5 step: its address answers not found, and a write to a C5 element or to one of the two management counts is refused (UC-192's exception flows). A count that is not a number is refused at the field and kept (task 218). A read-only report shows C5's answers and takes none, and says why (UX-13).
+- **Postconditions:** The two counts stored as derivation inputs and the ratio as a derived figure (§7.3), the other two as answers, each attributed and timestamped; shown, counted and exported exactly while the report's scope is Basic and Comprehensive (UC-192).
+- **Business rules:** The management-level counts are no taxonomy element; they are the template's own working rows, held as derivation inputs exactly as B8's and B10's are (`architecture.md` §12.5.6's task-36.10 and task-36.11 rows). The ratio is rounded to two places for display, EFRAG's cell format, and stored exact. C5 extends B8 with three further figures and no breakdown — the template draws none — so it is presented as B8 is, labelled fields in a flat list (the task-36.9 row). The whole of C5 is a *may* in the template's heading, and its status column flags nothing unanswered.
+- **Related FRs:** FR-177, FR-24, FR-27, FR-29, FR-30
+- **Related UCs:** UC-18, UC-26, UC-192
+
+### UC-188 — Complete C6 — Human rights policies and processes
+
+*Written 29 Oct 2026 by task 79.6, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Social Disclosures *sheet, rows 171 … 181 in both 1.2.0 and 1.3.0, headed* C6 - Additional own workforce information - Human rights policies and processes *[Always to be reported], and the four C6 elements both registered taxonomies carry. What the build took is §12.5.6's task-79.6 row.*
+
+- **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
+- **Module:** Comprehensive Module
+- **Stakeholders and interests:** Contributor — says whether a code of conduct or human rights policy covers the undertaking's own workforce, what it covers, and whether workers can raise a complaint; the counterparty that asked for the Comprehensive Module — reads the policies its own supply-chain due diligence asks about; a future limited-assurance reviewer — reads each answer as it was given.
+- **Preconditions:** An editable report session (UC-18) on a report whose scope is Basic and Comprehensive — chosen at creation (FR-177) or added since (UC-192).
+- **Trigger:** The Contributor reaches the C6 step, from the module list or from C5.
+- **Main success scenario:**
+  1. The Contributor answers whether the undertaking has a code of conduct or human rights policy for its own workforce, yes or no (VSME ¶61(a)).
+  2. Where it has, the Contributor chooses what it covers among child labour, forced labour, human trafficking, discrimination, accident prevention and other content, any number of them (¶61(b)).
+  3. Where other content is chosen, the Contributor specifies it.
+  4. The Contributor answers whether the undertaking has a complaint-handling mechanism for its own workforce, yes or no (¶61(c)).
+  5. The system stores each answer as given, in the change trail (FR-54), and counts C6's progress over the four (FR-24).
+- **Alternate flows:** 1a. **The undertaking has no such code or policy.** The Contributor answers no, and steps 2 and 3 are not required: a validation run asks what the policy covers only where step 1 is yes, and the specification only where other content is chosen (the seeded rule set's C6 rules, carried from the template's status column by task 41). The two fields stay shown, as the template prints them, and their finding is live on the step (`architecture.md` §12.5.6's task-42 row (1)).
+- **Exception flows:** A Basic report has no C6 step: its address answers not found, and a write to a C6 element is refused (UC-192's exception flows). A read-only report shows C6's answers and takes none, and says why (UX-13).
+- **Postconditions:** Each answer stored as given, attributed and timestamped; shown, counted and exported exactly while the report's scope is Basic and Comprehensive (UC-192).
+- **Business rules:** C6 is two yes/no answers, one choice of several and one text, with no axis, no unit and no applicability rule naming them, in the taxonomy's order. EFRAG's template draws the choice as six checkboxes that ship unticked; an unticked set is no answer, so nothing is pre-answered (the task-79.6 row). C6 is *always to be reported* in the template; its two yes/no answers are required by a validation run on a Basic-and-Comprehensive report.
+- **Related FRs:** FR-177, FR-24, FR-27, FR-40
+- **Related UCs:** UC-18, UC-192
+
+### UC-189 — Complete C7 — Severe negative human rights incidents
+
+*Written 29 Oct 2026 by task 79.7, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Social Disclosures *sheet, rows 183 … 194 in both 1.2.0 and 1.3.0, headed* C7 - Severe negative human rights incidents *[Always to be reported], and the six C7 elements both registered taxonomies carry. The decision is §12.5.6's task-79.7 row.*
+
+- **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
+- **Module:** Comprehensive Module
+- **Stakeholders and interests:** Contributor — states that there were no confirmed incidents, or what there were and what was done, without having to answer questions that only follow an incident; the counterparty that asked for the Comprehensive Module — reads *no confirmed incidents* as something the undertaking stated, never as a module nobody opened; a future limited-assurance reviewer — reads each answer as it was given.
+- **Preconditions:** An editable report session (UC-18) on a report whose scope is Basic and Comprehensive — chosen at creation (FR-177) or added since (UC-192).
+- **Trigger:** The Contributor reaches the C7 step, from the module list or from C6.
+- **Main success scenario:**
+  1. The Contributor answers whether the undertaking has confirmed incidents in its own workforce, yes or no (VSME ¶62).
+  2. Where it has, the Contributor chooses which human rights the incidents relate to among child labour, forced labour, human trafficking, discrimination and other, any number of them, and specifies any other (¶62(a)).
+  3. Where it has, the Contributor describes the actions taken to address them (¶62(b)).
+  4. The Contributor answers whether the undertaking is aware of any confirmed incidents involving workers in the value chain, affected communities, consumers and end-users, yes or no, and where it is, specifies them (¶62(c)).
+  5. The system stores each answer as given, in the change trail (FR-54), and counts C7's progress (FR-24).
+- **Alternate flows:** 1a. **The nil return.** The Contributor answers no at step 1 and no at step 4. Each *no* is a stored answer, distinguishable from a question left unanswered, and nothing else is required: a validation run asks the rights and their specification only where step 1 is yes and the value chain's specification only where step 4 is yes (the seeded rule set's C7 rules, carried from the template's status column by task 41). So a run finds C7 complete on the two answers, which is the distinction FR-30 draws for B11's nil return carried to a yes/no — *no confirmed incidents* reaches the reader as a statement. The follow-on fields stay shown, as the template prints them, and their findings are live on the step (`architecture.md` §12.5.6's task-42 row (1)).
+- **Exception flows:** A Basic report has no C7 step: its address answers not found, and a write to a C7 element is refused (UC-192's exception flows). A right the template's C7 does not offer — accident prevention, which C6's list carries — is refused and kept aside, naming the field (task 218). A read-only report shows C7's answers and takes none, and says why (UX-13).
+- **Postconditions:** Each answer stored as given, attributed and timestamped; shown, counted and exported exactly while the report's scope is Basic and Comprehensive (UC-192).
+- **Business rules:** C7 offers the five rights EFRAG's template lists for an incident. The taxonomy draws C7's rights from the same domain as C6's code-of-conduct content, which carries a sixth, accident prevention; which members an element offers is configuration (`architecture.md` §12.5.6's task-79.7 row). Steps 1 and 4 are required by a validation run on a Basic-and-Comprehensive report — C7 is *always to be reported* in the template. Step 3 is never flagged unanswered, as the template's status column never flags it.
+- **Related FRs:** FR-177, FR-24, FR-27, FR-30, FR-40
+- **Related UCs:** UC-18, UC-29, UC-192
+
+### UC-190 — Complete C8 — Revenues from certain sectors and benchmark exclusion
+
+*Written 29 Oct 2026 by task 79.8, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Governance Disclosures *sheet, rows 9 … 27 in both 1.2.0 and 1.3.0: the revenues (*C8 - Revenues from certain activities [If applicable]*, rows 9 … 18) and the exclusion (*C8 - Exclusion from EU reference benchmarks [Always to be reported]*, rows 20 … 27) — and the eight C8 elements both registered taxonomies carry. The decisions are §12.5.6's task-79.8 row.*
+
+- **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
+- **Module:** Comprehensive Module
+- **Stakeholders and interests:** Contributor — answers four questions about where its revenue comes from rather than a question about EU benchmark regulation it cannot be expected to know; the counterparty that asked for the Comprehensive Module, a bank above all — reads the sector exposure its own benchmark screening asks about; a future limited-assurance reviewer — retraces the exclusion to the four answers it is worked out from, and the fossil-fuel total to its three parts.
+- **Preconditions:** An editable report session (UC-18) on a report whose scope is Basic and Comprehensive — chosen at creation (FR-177) or added since (UC-192).
+- **Trigger:** The Contributor reaches the C8 step, from the module list or from C7.
+- **Main success scenario:**
+  1. The Contributor states the revenue derived from controversial weapons, from the cultivation and production of tobacco, from coal, from oil, from gas and from chemicals production, each in the report's currency, which the step shows beside the field (VSME ¶63(a) … (d); task 36.12).
+  2. **The system works out the total revenue from the fossil fuel sector**, coal plus oil plus gas, and shows it read-only (¶63(c); FR-29).
+  3. The Contributor answers four questions, each yes or no: whether 1 % or more of revenue comes from the exploration, mining, extraction, distribution or refining of hard coal and lignite; 10 % or more from the exploration, extraction, distribution or refining of oil fuels; 50 % or more from the exploration, extraction, manufacturing or distribution of gaseous fuels; and 50 % or more from electricity generation with a GHG intensity above 100 g CO₂e/kWh (¶64).
+  4. **The system works out whether the undertaking is excluded from EU reference benchmarks aligned with the Paris Agreement** — yes as soon as one of the four is yes, no once all four are no — and shows it read-only (¶64; FR-29).
+  5. The system stores each answer as given, in the change trail (FR-54), and counts C8's progress over the eight elements (FR-24).
+- **Alternate flows:** 1a. **The undertaking derives no revenue from these activities.** The Contributor answers 0 for each, a nil return (FR-30), or leaves them unanswered. EFRAG's template asks a yes/no first — *"Is the undertaking deriving revenues from one of the activities listed below?"* — which no element in either registered taxonomy carries, so nothing makes the six required (`architecture.md` §12.5.6's task-41 row (1) (ii)). 2a. **Coal, oil or gas is unanswered.** No total is shown or stored: a revenue nobody answered is not a revenue of zero, as for B3's total (FR-30). 4a. **Some of the four are unanswered and none is yes.** No exclusion is shown or stored, and a validation run flags it missing.
+- **Exception flows:** A Basic report has no C8 step: its address answers not found, and a write to a C8 element or to one of the four questions is refused (UC-192's exception flows). A typed total or exclusion is refused, being the system's to work out (FR-29). A revenue that is not a number, or an answer to the four that is not yes or no, is refused and kept aside, naming the field (task 218). A read-only report shows C8's answers and takes none, and says why (UX-13).
+- **Postconditions:** The revenues stored as answers, the total and the exclusion as derived figures, and the four answers as derivation inputs (§7.3), each attributed and timestamped; shown, counted and exported exactly while the report's scope is Basic and Comprehensive (UC-192).
+- **Business rules:** The exclusion is EFRAG's to compute from the four thresholds, which carry no taxonomy element, so they are held as derivation inputs as B8's and B10's working rows are (`architecture.md` §12.5.6's task-36.10 and task-79.8 rows). EFRAG's template adds a fifth box, *None of the above*; four answers of no say the same, so it is not asked. The step presents C8 in the standard's presentation order — weapons, tobacco, the fossil-fuel total with coal, oil and gas beneath it, chemicals, then the exclusion — where the template prints the total below its parts (`architecture.md` §12.5.6's task-79.6 row (4)); the four questions follow the fields, as every derivation input does. A validation run holds the six revenues' sum to no more than B1's turnover (the seeded rule set's C8 rule, from the template's status column).
+- **Related FRs:** FR-177, FR-24, FR-27, FR-29, FR-30, FR-40
+- **Related UCs:** UC-18, UC-19, UC-192
+
+### UC-191 — Complete C9 — Gender diversity ratio in the governance body
+
+*Written 29 Oct 2026 by task 79.9, before it was built, under the standing rule `architecture.md` §12.5.6 records for module slices (task 36.8) and its task-182 report-authoring row (8); read against EFRAG's package — the Digital Template's* Governance Disclosures *sheet, rows 29 … 33 in both 1.2.0 and 1.3.0, headed* C9 - Gender diversity ratio in the governance body *[If applicable], and the one C9 element both registered taxonomies carry. The decision is §12.5.6's task-79.9 row.*
+
+- **Primary actor:** RC; the Organization Administrator too, who may write report content (`architecture.md` §12.5.6's task-182 report-authoring row (1)).
+- **Module:** Comprehensive Module
+- **Stakeholders and interests:** Contributor — counts the members of the governance body once and is told the ratio; the counterparty that asked for the Comprehensive Module — reads the gender balance of the body that governs the undertaking, as every VSME report computes it; a future limited-assurance reviewer — retraces the ratio to the two counts beside it.
+- **Preconditions:** An editable report session (UC-18) on a report whose scope is Basic and Comprehensive — chosen at creation (FR-177) or added since (UC-192).
+- **Trigger:** The Contributor reaches the C9 step, from the module list or from C8.
+- **Main success scenario:**
+  1. The Contributor states the number of female and the number of male members of the governance body at the end of the reporting period.
+  2. **The system works out the gender diversity ratio in the governance body** — the female count divided by the male count — and shows it beside the two counts, read-only (VSME ¶65; FR-29).
+  3. The system stores each count as written, in the change trail (FR-54), and counts C9's progress over its one element (FR-24).
+- **Alternate flows:** 1a. **The undertaking has no governance body.** The Contributor leaves C9 unanswered or declares it not available with a reason (UX-15). EFRAG's template asks a yes/no first — *"Does the undertaking have a governance body in place?"* — which no element in either registered taxonomy carries, so nothing makes C9 required (`architecture.md` §12.5.6's task-41 row (1) (ii)). 2a. **Either count is unanswered.** No ratio is shown or stored, as the template's cell shows *-*. 2b. **Either count is zero.** The ratio is zero, as the template's cell computes it — so a body of women alone, like a body of men alone, reads 0 (`architecture.md` §12.5.6's task-79.9 row).
+- **Exception flows:** A Basic report has no C9 step: its address answers not found, and a write to one of the two counts is refused (UC-192's exception flows). A count that is not a number is refused at the field and kept (task 218). A read-only report shows C9's answer and takes none, and says why (UX-13).
+- **Postconditions:** The two counts stored as derivation inputs and the ratio as a derived figure (§7.3), attributed and timestamped; shown, counted and exported exactly while the report's scope is Basic and Comprehensive (UC-192).
+- **Business rules:** The board counts are no taxonomy element; they are the template's own working rows, held as derivation inputs (`architecture.md` §12.5.6's task-36.10 row). The ratio is a figure at the end of the reporting period, the element's instant period type, rounded to two places for display, EFRAG's cell format, and stored exact. The derivation is visible beside its inputs rather than asserted, as B9's accident rate is.
+- **Related FRs:** FR-177, FR-24, FR-27, FR-29, FR-30
+- **Related UCs:** UC-18, UC-27, UC-192
+
 ### UC-30 — Declare a section omitted as classified or sensitive information
 
 - **Primary actor:** RC

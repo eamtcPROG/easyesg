@@ -211,6 +211,24 @@ export const APPLICABILITY_CONDITION = {
 export type ApplicabilityCondition = (typeof APPLICABILITY_CONDITION)[keyof typeof APPLICABILITY_CONDITION];
 
 /**
+ * How a derivation input is answered (task 79.8) — a number, or a yes or a no — the mirror of `apps/api`'s
+ * `INPUT_ANSWER`, which its formula decides. S-07 branches on it to draw C8's thresholds as yes/no questions and
+ * every other input as a number field, so the value must exist at runtime here.
+ */
+export const INPUT_ANSWER = { NUMBER: 'number', YES_NO: 'yes_no' } as const;
+
+export type InputAnswer = (typeof INPUT_ANSWER)[keyof typeof INPUT_ANSWER];
+
+const inputAnswerMirrorsTheApi: Same<InputAnswer, components['schemas']['DerivationInputDto']['answer']> = true;
+void inputAnswerMirrorsTheApi;
+
+/**
+ * A yes/no input as it is written and read — `1` for yes, `0` for no (task 79.8): the column every input is held in is a
+ * number, and the api refuses anything else for such an input. The mirror of `apps/api`'s `YES_NO_INPUT`.
+ */
+export const YES_NO_INPUT = { YES: '1', NO: '0' } as const;
+
+/**
  * How an `enumeration_set` answer is written: the chosen members, space-separated.
  *
  * **A mirror of `@easyesg/vsme`'s, kept by hand like `COLUMN_OF_KIND` above and for its reason**:

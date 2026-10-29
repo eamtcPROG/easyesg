@@ -3,6 +3,7 @@ import type { DisclosureKind } from '@easyesg/vsme';
 import type { PeriodType } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
 import type { ApplicabilityCondition } from './applicability.model';
+import type { InputAnswer } from './derivation.model';
 import type { DisclosureOrigin, DisclosureState, OverridingPerson } from './disclosure-value.model';
 
 /**
@@ -346,6 +347,11 @@ export interface DerivationInputField {
   readonly key: string;
   /** The element this feeds, so a screen can put the input beside the figure it produces (UC-27). */
   readonly derives: string;
+  /**
+   * How it is answered — a number, or a yes or a no, held as `1` or `0` (task 79.8): its formula's, so C8's
+   * thresholds draw a yes/no and every other input a number field.
+   */
+  readonly answer: InputAnswer;
   /** What the reporter has stored, as a decimal string; `null` where they have answered nothing. */
   readonly value: string | null;
   /**

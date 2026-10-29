@@ -1,7 +1,8 @@
 import { divideDecimals, isDecimalString, sumDecimals } from '@api/contracts/types/decimal';
 
 /**
- * The Basic-module figures EFRAG computes rather than asks for (task 36.10; FR-29, §7.3).
+ * The figures EFRAG computes rather than asks for (task 36.10; FR-29, §7.3) — the Basic module's, and since task 79 the
+ * Comprehensive module's: C5's and C9's ratios, C8's fossil-fuel total and its benchmark exclusion, a yes or a no.
  *
  * **The split between this file and the artefact is AD-4's own line, not a preference.** The
  * *operands* — which value feeds which slot, and what the platform offers when nobody has answered —
@@ -82,6 +83,32 @@ export const DERIVATION_FORMULA = {
    * No turnover, or a turnover of zero, is no intensity.
    */
   INTENSITY: 'intensity',
+  /**
+   * C5's female-to-male ratio at management level — `numerator ÷ denominator`, the female count over the male (task
+   * 79.5; §12.5.6's task-79.5 row).
+   *
+   * **No ratio where the denominator is zero**: the template's cell divides with no guard and shows `#DIV/0!`, and a
+   * zero here would file *no women in management* for a management of women alone. A zero numerator is a ratio of
+   * zero, a nil return (FR-30).
+   */
+  RATIO: 'ratio',
+  /**
+   * C9's gender diversity ratio in the governance body — `numerator ÷ denominator`, the female members over the male,
+   * **and zero where either count is zero** (task 79.9; §12.5.6's task-79.9 row), as the template's `H33` computes it.
+   *
+   * **A formula of its own rather than `RATIO` with a flag**, because the zero rule is the opposite: the project owner
+   * chose EFRAG's cell, so the PDF and the Excel file, whose template computes its own cell from the two counts, agree.
+   */
+  GENDER_DIVERSITY_RATIO: 'gender_diversity_ratio',
+  /**
+   * C8's exclusion from EU Paris-aligned benchmarks — **yes as soon as one operand is yes, no once every operand is no**,
+   * and no answer while some are unanswered and none is yes (task 79.8; §12.5.6's task-79.8 row). The operands are the
+   * template's revenue thresholds, each a yes/no derivation input.
+   *
+   * **The one formula whose answer is a yes or a no**, so it is `computeAffirmation`'s rather than `computeDerivation`'s,
+   * and its inputs are answered yes or no (`inputAnswerOf`).
+   */
+  ANY_AFFIRMED: 'any_affirmed',
 } as const;
 
 /** The precision an intensity is stored at (§12.5.6's task-38.4 row). Display rounds further. */
@@ -92,6 +119,28 @@ export type DerivationFormula = (typeof DERIVATION_FORMULA)[keyof typeof DERIVAT
 /** Is this unvalidated value one of them? Beside the set, not retyped at each reader (CLAUDE.md). */
 export const isDerivationFormula = (value: unknown): value is DerivationFormula =>
   typeof value === 'string' && (Object.values(DERIVATION_FORMULA) as string[]).includes(value);
+
+/**
+ * How a derivation input is answered (task 79.8): a number, or a yes or a no. **The formula says which** — `any_affirmed`
+ * reads yes/no answers and every other formula numbers — so an operand needs no kind of its own to disagree with it.
+ */
+export const INPUT_ANSWER = { NUMBER: 'number', YES_NO: 'yes_no' } as const;
+
+export type InputAnswer = (typeof INPUT_ANSWER)[keyof typeof INPUT_ANSWER];
+
+/** How the inputs of a derivation with this formula are answered. */
+export const inputAnswerOf = (formula: DerivationFormula): InputAnswer =>
+  formula === DERIVATION_FORMULA.ANY_AFFIRMED ? INPUT_ANSWER.YES_NO : INPUT_ANSWER.NUMBER;
+
+/**
+ * A yes/no input as `core.report_derivation_input.value_numeric` holds it (task 79.8; §12.5.6's task-79.8 row) — the
+ * column every input is held in (§7.3), so a yes is `1` and a no `0`, as the template map's *affirmed* gates read a
+ * figure above zero as a yes.
+ */
+export const YES_NO_INPUT = { YES: '1', NO: '0' } as const;
+
+/** Is this a yes/no input's stored answer? The write refuses anything else for such an input. */
+export const isYesNoInput = (value: string): boolean => value === YES_NO_INPUT.YES || value === YES_NO_INPUT.NO;
 
 /** Where an operand's value comes from. */
 export const OPERAND_SOURCE = {
@@ -212,11 +261,59 @@ export function computeDerivation(input: {
     return divideDecimals(sumDecimals(parts), turnover, { significantFigures: INTENSITY_SIGNIFICANT_FIGURES });
   }
 
+  if (input.formula === DERIVATION_FORMULA.RATIO || input.formula === DERIVATION_FORMULA.GENDER_DIVERSITY_RATIO) {
+    const numerator = number('numerator');
+    const denominator = number('denominator');
+    if (numerator === null || denominator === null) return null;
+    // The two ratios part here and only here (§12.5.6's task-79.5 and task-79.9 rows): C9's is EFRAG's `H33`, zero
+    // where either count is; C5's has no figure where it cannot divide.
+    if (input.formula === DERIVATION_FORMULA.GENDER_DIVERSITY_RATIO && (numerator === 0 || denominator === 0)) {
+      return '0';
+    }
+    if (denominator === 0) return null;
+    return String(numerator / denominator);
+  }
+
+  // A yes or a no is not a figure: `computeAffirmation` answers it, and `derivedAnswer` is what dispatches.
+  if (input.formula === DERIVATION_FORMULA.ANY_AFFIRMED) return null;
+
   // **Named rather than fallen through to** (gate-integrity review, 9 Sep 2026). As an implicit
   // `else` this branch answered every formula, so a fifth kind whose own branch was forgotten would
   // silently compute an *accident rate* from operands it does not have — `null`, because the names
   // would not resolve, which reads as "not enough answers yet" rather than as the mistake it is.
   return null;
+}
+
+/**
+ * Work out a yes or a no from yes/no operands (`any_affirmed`, task 79.8): yes as soon as one is yes, no once every one
+ * is no, and `null` while some are unanswered and none is yes — **an unanswered threshold is not a no**, FR-30's
+ * distinction carried to a yes/no, so a reporter whose answers so far are all no is told nothing rather than *not
+ * excluded*.
+ */
+export function computeAffirmation(input: { readonly operands: Readonly<Record<string, string | null>> }): boolean | null {
+  const answers = Object.values(input.operands);
+  if (answers.length === 0) return null;
+  if (answers.some((answer) => answer === YES_NO_INPUT.YES)) return true;
+  return answers.every((answer) => answer === YES_NO_INPUT.NO) ? false : null;
+}
+
+/** What a derivation writes: a figure, or a yes or a no — never both (task 79.8). */
+export interface DerivedAnswer {
+  readonly valueNumeric: string | null;
+  readonly valueBoolean: boolean | null;
+}
+
+/**
+ * The answer a derivation's formula gives, in the column it belongs in — the one place a formula's answer kind is
+ * decided, so the calculator never asks which.
+ */
+export function derivedAnswer(input: {
+  readonly formula: DerivationFormula;
+  readonly operands: Readonly<Record<string, string | null>>;
+}): DerivedAnswer {
+  return input.formula === DERIVATION_FORMULA.ANY_AFFIRMED
+    ? { valueNumeric: null, valueBoolean: computeAffirmation({ operands: input.operands }) }
+    : { valueNumeric: computeDerivation(input), valueBoolean: null };
 }
 
 /**

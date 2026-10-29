@@ -24,6 +24,8 @@ import { ReportsController } from './controllers/reports.controller';
 import { WizardController } from './controllers/wizard.controller';
 import { AXIS_SHAPES, type AxisShapes } from './interfaces/axis-shape.interface';
 import { AxisShapeService } from './services/axis-shape.service';
+import { OFFERED_MEMBERS, type OfferedMembers } from './interfaces/offered-members.interface';
+import { OfferedMembersService } from './services/offered-members.service';
 import { DerivationCalculator } from './services/derivation-calculator.service';
 import { DerivationService } from './services/derivation.service';
 import { TemplateDefaultService } from './services/template-default.service';
@@ -129,6 +131,9 @@ const evaluationProviders: Provider[] = [
   // that holds its values.
   { provide: APPLICABILITY_RULES, useClass: ApplicabilityRulesService },
   { provide: AXIS_SHAPES, useClass: AxisShapeService },
+  // Task 79.7: which members a choice element offers where that is narrower than its domain — C7's rights. Beside the
+  // axis shapes, for their reason: an adapter over the store that validates and caches per revision.
+  { provide: OFFERED_MEMBERS, useClass: OfferedMembersService },
   // Task 41.2's sections: which elements each section B1's omission list offers withholds (FR-31 AC-3). Beside the
   // applicability rules, for their reason — an adapter over the store that validates and caches per revision.
   { provide: OMISSION_SECTIONS, useClass: OmissionSectionsService },
@@ -146,6 +151,7 @@ const evaluationProviders: Provider[] = [
       DERIVATION_INPUT_STORE,
       TEMPLATE_DEFAULTS,
       OMISSION_SECTIONS,
+      OFFERED_MEMBERS,
     ],
     useFactory: (
       reports: ReportStore,
@@ -159,6 +165,7 @@ const evaluationProviders: Provider[] = [
       derivationInputs: DerivationInputStore,
       templateDefaults: TemplateDefaults,
       omissionSections: OmissionSections,
+      offeredMembers: OfferedMembers,
     ) =>
       new ReadWizardStep(
         reports,
@@ -173,6 +180,7 @@ const evaluationProviders: Provider[] = [
         templateDefaults,
         new Logger(ReadWizardStep.name),
         omissionSections,
+        offeredMembers,
       ),
   },
   { provide: DERIVATION_INPUT_STORE, useClass: DerivationInputStoreRepository },
@@ -230,6 +238,7 @@ const httpProviders: Provider[] = [
       DERIVATIONS,
       DERIVATION_RECALCULATOR,
       AXIS_SHAPES,
+      OFFERED_MEMBERS,
     ],
     useFactory: (
       reports: ReportStore,
@@ -238,7 +247,8 @@ const httpProviders: Provider[] = [
       derivations: Derivations,
       calculator: DerivationRecalculator,
       axisShapes: AxisShapes,
-    ) => new WriteDisclosureValues(reports, values, taxonomy, derivations, calculator, axisShapes),
+      offeredMembers: OfferedMembers,
+    ) => new WriteDisclosureValues(reports, values, taxonomy, derivations, calculator, axisShapes, offeredMembers),
   },
   // Task 38.4: the carbon calculator's figures arrive through this module's own rules, not through its store — a run's
   // write, and UC-34's override, its removal and an explanation, one use case each behind one service.
@@ -268,13 +278,14 @@ const httpProviders: Provider[] = [
   { provide: CALCULATED_FIGURES, useClass: CalculatedFiguresService },
   {
     provide: WriteDerivationInputs,
-    inject: [REPORT_STORE, DERIVATION_INPUT_STORE, DERIVATIONS, DERIVATION_RECALCULATOR],
+    inject: [REPORT_STORE, DERIVATION_INPUT_STORE, DERIVATIONS, DERIVATION_RECALCULATOR, TAXONOMY_REGISTRY],
     useFactory: (
       reports: ReportStore,
       inputs: DerivationInputStore,
       derivations: Derivations,
       calculator: DerivationRecalculator,
-    ) => new WriteDerivationInputs(reports, inputs, derivations, calculator),
+      taxonomy: TaxonomyRegistry,
+    ) => new WriteDerivationInputs(reports, inputs, derivations, calculator, taxonomy),
   },
   {
     provide: CreateReport,

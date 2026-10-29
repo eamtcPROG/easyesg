@@ -7,6 +7,7 @@ import {
   NotAvailableReasonUnexpectedError,
   UnitNotAdmittedError,
   UnknownDisclosureDimensionError,
+  MemberNotOfferedError,
   UnknownDisclosureElementError,
   YearNotWellFormedError,
 } from '../errors/report.errors';
@@ -62,8 +63,13 @@ const BASE_YEAR = anElement({
   modules: ['C3'],
   kind: DISCLOSURE_KIND.YEAR,
 });
+const RIGHTS = anElement({
+  key: 'TypeOfHumanRightRelatedToTheConfirmedIncident',
+  modules: ['C7'],
+  kind: DISCLOSURE_KIND.ENUMERATION_SET,
+});
 const KNOWN = new Map<string, TaxonomyElement>(
-  [ELECTRICITY, EMISSION, RATE, NAME, STRATEGY, SHARED, BASIS, SCOPE1, BASE_YEAR].map((element) => [
+  [ELECTRICITY, EMISSION, RATE, NAME, STRATEGY, SHARED, BASIS, SCOPE1, BASE_YEAR, RIGHTS].map((element) => [
     element.key,
     element,
   ]),
@@ -97,6 +103,7 @@ const judged = (
     breakdowns: new Set([ENERGY_AXIS.key]),
     targets: report.targets ?? new Map(),
     derived: new Set([RATE.key]),
+    offered: new Map([[RIGHTS.key, new Set(['ChildLabourMember', 'DiscriminationMember'])]]),
     axisOf: (key) => AXES.get(key) ?? null,
     scope: report.scope ?? REPORT_SCOPE.BASIC,
     basisForPreparation: report.basisForPreparation === undefined ? OPTION_A : report.basisForPreparation,
@@ -172,6 +179,28 @@ describe('valueRefusal', () => {
     expect(judged({ elementKey: EMISSION.key, dimensionKey: 'AlachlorMember', contents: numeric })).toBeInstanceOf(
       UnitNotAdmittedError,
     );
+  });
+
+  describe('a choice the element offers (task 79.7)', () => {
+    const comprehensive = { scope: REPORT_SCOPE.BASIC_AND_COMPREHENSIVE };
+    const chosen = (valueText: string | null) => contents({ valueText });
+
+    it('admits members the element offers, qualified as the store holds them, and an answer holding none', () => {
+      expect(
+        judged({ elementKey: RIGHTS.key, contents: chosen('vsme:ChildLabourMember vsme:DiscriminationMember') }, comprehensive),
+      ).toBeNull();
+      expect(judged({ elementKey: RIGHTS.key, contents: chosen(null) }, comprehensive)).toBeNull();
+    });
+
+    it('refuses a member of the domain the element does not offer, even beside one it does', () => {
+      expect(
+        judged({ elementKey: RIGHTS.key, contents: chosen('vsme:ChildLabourMember vsme:AccidentPreventionMember') }, comprehensive),
+      ).toBeInstanceOf(MemberNotOfferedError);
+    });
+
+    it('judges no member of an element the list does not narrow', () => {
+      expect(judged({ elementKey: NAME.key, contents: chosen('vsme:AccidentPreventionMember') })).toBeNull();
+    });
   });
 
   describe('a target axis (task 79.3)', () => {

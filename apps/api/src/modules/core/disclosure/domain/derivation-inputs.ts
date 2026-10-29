@@ -1,4 +1,4 @@
-import { OPERAND_SOURCE, type Derivation } from '../models/derivation.model';
+import { OPERAND_SOURCE, inputAnswerOf, type Derivation } from '../models/derivation.model';
 import type { DerivationInputField } from '../models/wizard-step.model';
 
 /**
@@ -28,6 +28,8 @@ export function derivationInputsFor(query: {
       fields.push({
         key: operand.key,
         derives: derivation.element,
+        // The formula's — C8's thresholds are yes/no, every other input a number (task 79.8).
+        answer: inputAnswerOf(derivation.formula),
         value: query.stored.get(operand.key) ?? null,
         offered: operand.fallback,
       });

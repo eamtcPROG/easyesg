@@ -1317,6 +1317,38 @@
     "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": {
       "sheet": "Social Disclosures",
       "cell": "D151"
+    },
+    "NumberOfMaleEmployeesAtManagementLevel": {
+      "sheet": "Social Disclosures",
+      "cell": "D165"
+    },
+    "NumberOfFemaleEmployeesAtManagementLevel": {
+      "sheet": "Social Disclosures",
+      "cell": "D166"
+    },
+    "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": {
+      "sheet": "Governance Disclosures",
+      "cell": "H22"
+    },
+    "TenPercentOrMoreOfRevenuesFromOilFuels": {
+      "sheet": "Governance Disclosures",
+      "cell": "H23"
+    },
+    "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": {
+      "sheet": "Governance Disclosures",
+      "cell": "H24"
+    },
+    "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": {
+      "sheet": "Governance Disclosures",
+      "cell": "H25"
+    },
+    "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": {
+      "sheet": "Governance Disclosures",
+      "cell": "H31"
+    },
+    "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": {
+      "sheet": "Governance Disclosures",
+      "cell": "H32"
     }
   },
   "gates": [

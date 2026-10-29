@@ -1,10 +1,11 @@
 'use client';
 
-import type { DerivationInput, DerivationInputWrite } from '@easyesg/contracts';
+import { INPUT_ANSWER, type DerivationInput, type DerivationInputWrite } from '@easyesg/contracts';
 import { useTranslations } from 'next-intl';
 import { NumberField } from '@/shared/number-field';
 import { useAutosaveContext } from '../../providers/autosave-context';
 import { FIELD_MESSAGES } from '../shared/step-messages';
+import { YesNoInputControl } from './yes-no-input-control';
 
 /**
  * One value a derived figure is computed from (task 36.10; UC-26, UC-27).
@@ -24,6 +25,9 @@ import { FIELD_MESSAGES } from '../shared/step-messages';
  *
  * **`NumberField` since task 220**, as every typed number is: read by the language's own marks, asked about where it
  * reads two ways, shown in the reader's format, and an unreadable draft now says so rather than staying silently unsent.
+ *
+ * **A yes or a no since task 79.8**, where the api says the input is answered so (`answer`, its formula's) — C8's revenue
+ * thresholds, the template's own checkboxes — which `YesNoInputControl` draws.
  */
 export function DerivationInputControl({
   input,
@@ -38,6 +42,10 @@ export function DerivationInputControl({
 }) {
   const t = useTranslations(FIELD_MESSAGES);
   const { change } = useAutosaveContext();
+
+  if (input.answer === INPUT_ANSWER.YES_NO) {
+    return <YesNoInputControl input={input} readOnly={readOnly} label={label} help={help} />;
+  }
 
   return (
     <NumberField
@@ -61,3 +69,4 @@ export function DerivationInputControl({
     />
   );
 }
+

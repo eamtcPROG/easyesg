@@ -19,6 +19,7 @@ import {
   REPORTING_TAXONOMY_CONFIG_KIND,
   TAXONOMY_STANDARD,
 } from '../constants/taxonomy.constants';
+import { presentationOrder } from '../domain/presentation-order';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -226,18 +227,10 @@ export class TaxonomyRegistryService implements TaxonomyRegistry {
       );
     }
 
-    // The standard's own order: module as `modules` lists it, then presentation order within the
-    // section. An unmoduled element sorts last rather than first, which is where the pillar-level
-    // catch-alls belong — `indexOf` answering -1 would put them ahead of B1.
-    //
-    // **An element in two modules sorts by its first**, which is the module `section` and `order`
-    // describe (task 36.4). The eight B3/C3 disclosures therefore sort inside B3; C3's step selects
-    // them by membership and orders them by the same `order`, which is the value both roles state.
-    const moduleRank = (of: readonly string[]): number =>
-      of.length === 0 ? modules.length : modules.indexOf(of[0]);
-    return read.sort(
-      (a, b) => moduleRank(a.modules) - moduleRank(b.modules) || a.order - b.order,
-    );
+    // The standard's own order: module as `modules` lists it, then section, then each element after the element it
+    // belongs to — `presentationOrder`'s, since task 79.6, which found `order` alone mixing the levels of the tree.
+    // C3's step selects the eight disclosures it shares with B3 by membership and keeps this order.
+    return read.sort(presentationOrder({ elements: read, modules }));
   }
 
   private readAxes(

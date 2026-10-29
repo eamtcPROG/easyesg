@@ -97,6 +97,74 @@
           "key": "Turnover"
         }
       }
+    },
+    {
+      "element": "FemaleToMaleRatioAtManagementLevelForTheReportingPeriod",
+      "formula": "ratio",
+      "operands": {
+        "numerator": {
+          "from": "input",
+          "key": "NumberOfFemaleEmployeesAtManagementLevel"
+        },
+        "denominator": {
+          "from": "input",
+          "key": "NumberOfMaleEmployeesAtManagementLevel"
+        }
+      }
+    },
+    {
+      "element": "TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector",
+      "formula": "sum",
+      "operands": {
+        "coal": {
+          "from": "disclosure",
+          "key": "RevenueDerivedFromCoal"
+        },
+        "oil": {
+          "from": "disclosure",
+          "key": "RevenueDerivedFromOil"
+        },
+        "gas": {
+          "from": "disclosure",
+          "key": "RevenueDerivedFromGas"
+        }
+      }
+    },
+    {
+      "element": "UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement",
+      "formula": "any_affirmed",
+      "operands": {
+        "hardCoalAndLignite": {
+          "from": "input",
+          "key": "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite"
+        },
+        "oilFuels": {
+          "from": "input",
+          "key": "TenPercentOrMoreOfRevenuesFromOilFuels"
+        },
+        "gaseousFuels": {
+          "from": "input",
+          "key": "FiftyPercentOrMoreOfRevenuesFromGaseousFuels"
+        },
+        "electricityGeneration": {
+          "from": "input",
+          "key": "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration"
+        }
+      }
+    },
+    {
+      "element": "GenderDiversityRatioInGovernanceBody",
+      "formula": "gender_diversity_ratio",
+      "operands": {
+        "numerator": {
+          "from": "input",
+          "key": "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod"
+        },
+        "denominator": {
+          "from": "input",
+          "key": "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod"
+        }
+      }
     }
   ]
 }

@@ -4,6 +4,7 @@ import {
   BasisForPreparationFollowsScopeError,
   DerivedDisclosureNotWritableError,
   DisclosureOutOfScopeError,
+  MemberNotOfferedError,
   NotAvailableReasonRequiredError,
   NotAvailableReasonUnexpectedError,
   UnitNotAdmittedError,
@@ -15,6 +16,7 @@ import { DISCLOSURE_KIND } from '@easyesg/vsme';
 import { unitIsAdmitted } from '../models/admitted-unit';
 import { admitsMember } from '../models/axis-leaves';
 import { statesBasis } from './entity-defaults';
+import { holdsOnlyOffered } from './offered-members';
 import { B1_ELEMENT } from '../models/b1-element.model';
 import type { DisclosureValueContents, DisclosureValueKey } from '../models/disclosure-value.model';
 import { NOT_AVAILABLE_REASON, notAvailableReasonVerdict } from '../models/not-available-reason';
@@ -50,6 +52,8 @@ export function valueRefusal(input: {
   readonly targets: ReadonlyMap<string, TargetAxis>;
   /** The elements a registered derivation computes. */
   readonly derived: ReadonlySet<string>;
+  /** The members each narrowed choice element offers (`OfferedMembers`, task 79.7); an element absent offers its domain. */
+  readonly offered: ReadonlyMap<string, ReadonlySet<string>>;
   readonly axisOf: (key: string) => TaxonomyAxis | null;
   /** D-A's scope — which modules the report asks (task 78.1). */
   readonly scope: ReportScope;
@@ -95,6 +99,13 @@ export function valueRefusal(input: {
 
   // **And a figure the platform derives is not the reporter's to write** (task 36.10, FR-29).
   if (input.derived.has(value.elementKey)) return new DerivedDisclosureNotWritableError();
+
+  // **And a choice the field does not offer, since task 79.7** (§12.5.6's task-79.7 row): C7's rights are narrower than
+  // the domain they are drawn from, and the step serves the narrower list — an answer naming another member is one the
+  // template cannot hold.
+  if (!holdsOnlyOffered({ valueText: value.contents.valueText, offered: input.offered.get(value.elementKey) })) {
+    return new MemberNotOfferedError();
+  }
 
   // **And B1's basis for preparation is the scope's, since task 78.3** (§12.5.6's task-78 row (1)): an answer stating
   // another option — or none — would make the filing state two bases. Opening B1 still commits the scope's own option,

@@ -98,3 +98,13 @@ export const DISCLOSURE_TEMPLATE_DEFAULT_CONFIG_KIND = 'disclosure_template_defa
  * subsidiaries' check reads B1's sites table, and C2's reads the NACE rows — so they are not the source.
  */
 export const DISCLOSURE_OMISSION_SECTION_CONFIG_KIND = 'disclosure_omission_section';
+
+/**
+ * Which members an enumeration element offers, where that is narrower than its domain (task 79.7; `architecture.md`
+ * §12.5.6's task-79.7 row) — seeded from `config/seed/disclosure-offered-members.vsme.json`. **Scope is the standard**,
+ * as the applicability artefact's.
+ *
+ * **Data, because nothing in the extracted taxonomy says it**: C7's rights are drawn from the domain C6's content is,
+ * which carries accident prevention, and EFRAG's C7 has no box for it. An element it does not name offers its domain.
+ */
+export const DISCLOSURE_OFFERED_MEMBERS_CONFIG_KIND = 'disclosure_offered_members';

@@ -1,4 +1,4 @@
-import { DERIVATION_FORMULA, OPERAND_SOURCE, type Derivation } from '../models/derivation.model';
+import { DERIVATION_FORMULA, INPUT_ANSWER, OPERAND_SOURCE, type Derivation } from '../models/derivation.model';
 import { derivationInputsFor } from './derivation-inputs';
 
 /** Task 133.2: the derivation inputs a step shows — the ones its own figures read. */
@@ -49,15 +49,35 @@ describe('derivationInputsFor', () => {
       {
         key: 'AverageNumberOfEmployees',
         derives: 'RateOfRecordableWorkRelatedAccidents',
+        answer: INPUT_ANSWER.NUMBER,
         value: '48',
         offered: null,
       },
       {
         key: 'HoursWorkedByOneFullTimeEmployee',
         derives: 'RateOfRecordableWorkRelatedAccidents',
+        answer: INPUT_ANSWER.NUMBER,
         value: null,
         offered: '2000',
       },
+    ]);
+  });
+
+  it('asks a yes/no formula’s inputs yes or no — C8’s thresholds (task 79.8)', () => {
+    const exclusion: Derivation = {
+      element: 'UndertakingsAreExcluded',
+      formula: DERIVATION_FORMULA.ANY_AFFIRMED,
+      operands: { coal: { from: OPERAND_SOURCE.INPUT, key: 'OnePercentFromCoal', fallback: null } },
+      along: null,
+    };
+    const fields = derivationInputsFor({
+      elements: ['UndertakingsAreExcluded'],
+      derivations: new Map([[exclusion.element, exclusion]]),
+      stored: new Map([['OnePercentFromCoal', '1']]),
+    });
+
+    expect(fields.map(({ key, answer, value }) => ({ key, answer, value }))).toEqual([
+      { key: 'OnePercentFromCoal', answer: INPUT_ANSWER.YES_NO, value: '1' },
     ]);
   });
 

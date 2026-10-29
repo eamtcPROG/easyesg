@@ -9,6 +9,8 @@
  * Pure, so the derivation is a unit spec rather than something only a browser can reach.
  */
 
+import { bareMember } from './bare-member';
+
 /** The element the declaration is stored in — a B1 `enumeration_set` over the 51-section domain. */
 export const OMITTED_DISCLOSURES_ELEMENT =
   'ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation';
@@ -57,7 +59,7 @@ export function omittedModules(input: {
     const parsed = moduleOfOmissionMember(member);
     if (parsed === null || !parsed.section) continue;
     const known = sectionsOf.get(parsed.module) ?? [];
-    known.push(bare(member));
+    known.push(bareMember(member));
     sectionsOf.set(parsed.module, known);
   }
 
@@ -65,7 +67,7 @@ export function omittedModules(input: {
   // registry's raw keys and the selection carries what the store holds, which is qualified. Matching
   // them as given is the defect this line exists to prevent — and it passed an api test that had
   // fabricated the unqualified form rather than writing one the way the browser does.
-  const chosen = new Set(input.selected.map(bare));
+  const chosen = new Set(input.selected.map(bareMember));
   const omitted = new Set<string>();
   for (const member of chosen) {
     const parsed = moduleOfOmissionMember(member);
@@ -78,9 +80,6 @@ export function omittedModules(input: {
   }
   return omitted;
 }
-
-/** A member without its taxonomy prefix. The one place the two forms are reconciled. */
-const bare = (member: string): string => member.slice(member.indexOf(':') + 1);
 
 /**
  * The elements the selected **sections** withhold (task 41.2; FR-31 AC-3; §12.5.6's task-41 row (4)) — each selected
@@ -96,7 +95,7 @@ export function withheldElements(input: {
 }): ReadonlySet<string> {
   const withheld = new Set<string>();
   for (const member of input.selected) {
-    for (const element of input.sections.get(bare(member)) ?? []) withheld.add(element);
+    for (const element of input.sections.get(bareMember(member)) ?? []) withheld.add(element);
   }
   return withheld;
 }

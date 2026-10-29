@@ -1,8 +1,9 @@
+import type { TaxonomyRegistry } from '@api/contracts/taxonomy-registry.port';
 import { TAXONOMY_STANDARD } from '@api/modules/platform/taxonomy/constants/taxonomy.constants';
-import { ReportNotFoundError, UnknownDerivationInputError } from '../errors/report.errors';
+import { ReportNotFoundError, TaxonomyVersionUnavailableError } from '../errors/report.errors';
+import { inputRefusal } from '../domain/input-refusal';
 import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
-import { OPERAND_SOURCE } from '../models/derivation.model';
 import type { RefusedInput } from '../models/refused-write.model';
 import type {
   DerivationRecalculator,
@@ -44,6 +45,8 @@ export class WriteDerivationInputs {
     private readonly inputs: DerivationInputStore,
     private readonly derivations: Derivations,
     private readonly calculator: DerivationRecalculator,
+    // The one read the scope check asks — the pinned version's elements, for each figure's modules (task 79.5).
+    private readonly taxonomy: Pick<TaxonomyRegistry, 'taxonomy'>,
   ) {}
 
   async write(command: WriteDerivationInputsCommand): Promise<{ readonly refused: RefusedInput[] }> {
@@ -51,22 +54,30 @@ export class WriteDerivationInputs {
     // RLS makes "not yours" and "not there" one answer (task 31.3).
     if (report === null) throw new ReportNotFoundError();
 
-    // **Every key is checked against the registered derivations**, for `WriteDisclosureValues`'
-    // reason one table over: a row under a key no formula reads is a live value nothing will ever
-    // look at, invisible to every read because a read walks the artefact and would never ask for it.
-    const registered = new Set(
-      [...this.derivations.all({ standard: TAXONOMY_STANDARD.VSME }).values()].flatMap((derivation) =>
-        Object.values(derivation.operands)
-          .filter((operand) => operand.from === OPERAND_SOURCE.INPUT)
-          .map((operand) => operand.key),
-      ),
-    );
+    // The version the report pins says which modules each figure belongs to — what the scope check reads (task 79.5).
+    const registered = this.taxonomy.taxonomy({ standard: TAXONOMY_STANDARD.VSME, version: report.taxonomyVersion });
+    if (registered === null) throw new TaxonomyVersionUnavailableError();
+    const modules = new Map(registered.elements.map((element) => [element.key, element.modules]));
+    const derivations = this.derivations.all({ standard: TAXONOMY_STANDARD.VSME });
+
     // **Each input judged on its own, and what is admitted stored** (task 218; §12.5.6's task-218 row (1), (4)) — the
-    // reason `WriteDisclosureValues` states: one input refused for good must not hold the rest of the queue back.
-    const refused: RefusedInput[] = command.inputs
-      .filter((input) => !registered.has(input.inputKey))
-      .map((input) => ({ inputKey: input.inputKey, refusal: new UnknownDerivationInputError() }));
-    const admitted = command.inputs.filter((input) => registered.has(input.inputKey));
+    // reason `WriteDisclosureValues` states: one input refused for good must not hold the rest of the queue back. What
+    // each is judged on is `inputRefusal`'s: a key no formula reads (`WriteDisclosureValues`' reason one table over — a
+    // row under a key no formula reads is a live value nothing will ever look at), an input of a module the scope does
+    // not ask, a yes/no holding anything else.
+    const refused: RefusedInput[] = [];
+    const admitted: DerivationInputWriteInput[] = [];
+    for (const input of command.inputs) {
+      const refusal = inputRefusal({
+        inputKey: input.inputKey,
+        valueNumeric: input.valueNumeric,
+        derivations,
+        modulesOf: (elementKey) => modules.get(elementKey) ?? [],
+        scope: report.scope,
+      });
+      if (refusal === null) admitted.push(input);
+      else refused.push({ inputKey: input.inputKey, refusal });
+    }
 
     for (const input of admitted) {
       if (input.valueNumeric === null) {

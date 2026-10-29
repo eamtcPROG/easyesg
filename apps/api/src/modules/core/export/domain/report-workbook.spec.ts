@@ -5,6 +5,7 @@ import { DISCLOSURE_KIND } from '@easyesg/vsme';
 import { CELL_TARGET, CELL_VALUE_KIND, type CellValue } from '@easyesg/xlsx-patch';
 import type { DigitalTemplateMap, TemplateCell } from '@api/contracts/digital-template-map';
 import { WORKBOOK_NOTE, type WorkbookNote } from '@api/contracts/report-workbook.port';
+import { INPUT_ANSWER } from '@api/modules/core/disclosure/models/derivation.model';
 import { DISCLOSURE_ORIGIN, DISCLOSURE_STATE } from '@api/modules/core/disclosure/models/disclosure-value.model';
 import type { DisclosureField } from '@api/modules/core/disclosure/models/wizard-step.model';
 import { readDigitalTemplateMap } from '@api/modules/platform/taxonomy/domain/digital-template-map';
@@ -185,11 +186,11 @@ describe('the report as the Digital Template takes it', () => {
     it('writes the inputs of a figure the platform derives the same way, and nothing over the formula — B8’s turnover rate', () => {
       const rate = field('EmployeeTurnoverRate', DISCLOSURE_KIND.PERCENT, { valueNumeric: '0.1', origin: DISCLOSURE_ORIGIN.CALCULATED });
       const inputs = [
-        { key: 'NumberOfEmployeesWhoLeftDuringTheReportingPeriod', derives: 'EmployeeTurnoverRate', value: '3', offered: null },
-        { key: 'NumberOfEmployeesAtTheBeginningOfTheReportingPeriod', derives: 'EmployeeTurnoverRate', value: '40', offered: null },
-        { key: 'NumberOfEmployeesAtTheEndOfTheReportingPeriod', derives: 'EmployeeTurnoverRate', value: '20', offered: null },
+        { key: 'NumberOfEmployeesWhoLeftDuringTheReportingPeriod', derives: 'EmployeeTurnoverRate', answer: INPUT_ANSWER.NUMBER, value: '3', offered: null },
+        { key: 'NumberOfEmployeesAtTheBeginningOfTheReportingPeriod', derives: 'EmployeeTurnoverRate', answer: INPUT_ANSWER.NUMBER, value: '40', offered: null },
+        { key: 'NumberOfEmployeesAtTheEndOfTheReportingPeriod', derives: 'EmployeeTurnoverRate', answer: INPUT_ANSWER.NUMBER, value: '20', offered: null },
         // An offer the reporter never stored is not filed (task 36.10).
-        { key: 'HoursWorkedByOneFullTimeEmployee', derives: 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod', value: null, offered: '2000' },
+        { key: 'HoursWorkedByOneFullTimeEmployee', derives: 'RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod', answer: INPUT_ANSWER.NUMBER, value: null, offered: '2000' },
       ];
       const workbook = assembleReportWorkbook(sources([rate], { inputs }), map);
       expect(['D134', 'D135', 'D136', 'D141'].map((cell) => writtenAt(workbook, address('Social Disclosures', cell)))).toEqual([
@@ -202,6 +203,17 @@ describe('the report as the Digital Template takes it', () => {
       expect(workbook.notes).toEqual([]);
     });
 
+    it('writes a yes/no input as the boolean its cell holds, never as the 1 or 0 it is stored as (task 79.8)', () => {
+      const rate = field('EmployeeTurnoverRate', DISCLOSURE_KIND.PERCENT, { valueNumeric: '0.1', origin: DISCLOSURE_ORIGIN.CALCULATED });
+      const answered = (value: string) => [
+        { key: 'NumberOfEmployeesWhoLeftDuringTheReportingPeriod', derives: 'EmployeeTurnoverRate', answer: INPUT_ANSWER.YES_NO, value, offered: null },
+      ];
+      const yes = assembleReportWorkbook(sources([rate], { inputs: answered('1') }), map);
+      const no = assembleReportWorkbook(sources([rate], { inputs: answered('0') }), map);
+      expect(writtenAt(yes, address('Social Disclosures', 'D134'))).toEqual({ kind: CELL_VALUE_KIND.BOOLEAN, value: true });
+      expect(writtenAt(no, address('Social Disclosures', 'D134'))).toEqual({ kind: CELL_VALUE_KIND.BOOLEAN, value: false });
+    });
+
     it('writes no input of a figure the standard does not ask — B10’s pay gap below 150 employees (FR-28; NFR-18)', () => {
       const gap = field('PercentageGapInPayBetweenFemaleAndMaleEmployees', DISCLOSURE_KIND.PERCENT, {
         valueNumeric: '0.05',
@@ -209,8 +221,8 @@ describe('the report as the Digital Template takes it', () => {
         applicable: false,
       });
       const inputs = [
-        { key: 'AverageGrossHourlyPayLevelOfMaleEmployees', derives: 'PercentageGapInPayBetweenFemaleAndMaleEmployees', value: '60', offered: null },
-        { key: 'AverageGrossHourlyPayLevelOfFemaleEmployees', derives: 'PercentageGapInPayBetweenFemaleAndMaleEmployees', value: '57', offered: null },
+        { key: 'AverageGrossHourlyPayLevelOfMaleEmployees', derives: 'PercentageGapInPayBetweenFemaleAndMaleEmployees', answer: INPUT_ANSWER.NUMBER, value: '60', offered: null },
+        { key: 'AverageGrossHourlyPayLevelOfFemaleEmployees', derives: 'PercentageGapInPayBetweenFemaleAndMaleEmployees', answer: INPUT_ANSWER.NUMBER, value: '57', offered: null },
       ];
       const workbook = assembleReportWorkbook(sources([gap], { inputs }), map);
       expect(['D148', 'D149'].map((cell) => writtenAt(workbook, address('Social Disclosures', cell)))).toEqual([undefined, undefined]);

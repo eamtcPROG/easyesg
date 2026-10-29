@@ -48,10 +48,14 @@ export interface DisclosureValueStore {
    *
    * `null` clears the figure back to unanswered, for a derivation whose operands are no longer all
    * present — a stale computed number outliving its inputs is worse than an empty field.
+   *
+   * **A figure or a yes or a no, in the column its formula answers in** (task 79.8): C8's benchmark exclusion is a derived
+   * yes/no, and both columns are written every time, so a derivation can never leave the other one's value.
    */
   writeDerived(value: {
     readonly key: DisclosureValueKey;
     readonly valueNumeric: string | null;
+    readonly valueBoolean: boolean | null;
   }): Promise<DisclosureValue>;
 
   /**

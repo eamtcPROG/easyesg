@@ -21,6 +21,7 @@ import { fieldChangeKey } from '@api/contracts/field-change-counts.port';
 import { PERIOD_TYPE } from '@api/contracts/taxonomy-registry.port';
 import type { EpochMillis } from '@api/contracts/types/time';
 import { APPLICABILITY_CONDITION, type ApplicabilityCondition } from '../models/applicability.model';
+import { INPUT_ANSWER, type InputAnswer } from '../models/derivation.model';
 import { OverridingPersonDto } from './overriding-person.dto';
 import {
   DISCLOSURE_ORIGIN,
@@ -48,6 +49,7 @@ const STATES = Object.values(DISCLOSURE_STATE);
 const KINDS = Object.values(DISCLOSURE_KIND);
 const PERIOD_TYPES = Object.values(PERIOD_TYPE);
 const CONDITIONS = Object.values(APPLICABILITY_CONDITION);
+const INPUT_ANSWERS = Object.values(INPUT_ANSWER);
 
 /** NFR-58's rule, stated once for the three numeric columns the surface carries. */
 const DECIMAL_AS_STRING = 'Decimal as a string, never a float (NFR-58).';
@@ -628,6 +630,15 @@ export class DerivationInputDto {
   readonly derives: string;
 
   @ApiProperty({
+    enum: INPUT_ANSWERS,
+    example: INPUT_ANSWER.NUMBER,
+    description:
+      'How the input is answered: a number, or a yes or a no — its formula’s (task 79.8). A yes/no input’s ' +
+      '`value` is `1` or `0`, and a write of anything else to it is refused.',
+  })
+  readonly answer: InputAnswer;
+
+  @ApiProperty({
     nullable: true,
     type: String,
     description: 'What the reporter stored, as a decimal string; null where they answered nothing.',
@@ -648,6 +659,7 @@ export class DerivationInputDto {
   constructor(input: DerivationInputField) {
     this.key = input.key;
     this.derives = input.derives;
+    this.answer = input.answer;
     this.value = input.value;
     this.offered = input.offered;
   }
@@ -871,7 +883,7 @@ export class DerivationInputWriteDto {
     description:
       'A decimal string. **Omit or send null to clear**, which restores the published offer — a ' +
       'stored zero would instead make the rate undefined, a zero denominator being no answer ' +
-      'rather than a working year of no hours.',
+      'rather than a working year of no hours. **An input answered yes or no takes `1` or `0`** (task 79.8).',
   })
   @IsOptional()
   @IsNumberString()

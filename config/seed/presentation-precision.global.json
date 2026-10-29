@@ -8,6 +8,8 @@
     "EmployeeTurnoverRate": 2,
     "RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod": 2,
     "PercentageGapInPayBetweenFemaleAndMaleEmployees": 2,
-    "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements": 2
+    "PercentageOfEmployeesCoveredByCollectiveBargainingAgreements": 2,
+    "FemaleToMaleRatioAtManagementLevelForTheReportingPeriod": 2,
+    "GenderDiversityRatioInGovernanceBody": 2
   }
 }

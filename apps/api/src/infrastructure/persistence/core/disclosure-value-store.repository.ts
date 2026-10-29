@@ -298,10 +298,15 @@ export class DisclosureValueStoreRepository
    * derived rate of zero is a **nil return**, an affirmative *no accidents in the period*, and a
    * derivation whose operands are not all present clears back to an empty row rather than to zero — in state `ok`, since a
    * row holds answers only (182/17, task 41.2).
+   *
+   * **Both columns, every time** (task 79.8): C8's exclusion answers in `value_boolean` and every other derivation in
+   * `value_numeric`, and writing the pair means neither can keep a value its formula no longer gives. A derived *no* is
+   * an answer in `ok`, as a typed one is; only a zero figure is a nil return.
    */
   async writeDerived(value: {
     key: DisclosureValueKey;
     valueNumeric: string | null;
+    valueBoolean: boolean | null;
   }): Promise<DisclosureValue> {
     const state =
       value.valueNumeric === null
@@ -313,12 +318,13 @@ export class DisclosureValueStoreRepository
           `WITH written AS (
            INSERT INTO core.report_disclosure_value (
                organization_id, report_id, element_key, dimension_key, ordinal,
-               value_numeric, state, origin)
-           SELECT r.organization_id, r.id, $2, $3, $4, $5, $6, $7
+               value_numeric, value_boolean, state, origin)
+           SELECT r.organization_id, r.id, $2, $3, $4, $5, $6, $7, $8
              FROM core.report r
             WHERE r.id = $1
       ON CONFLICT (report_id, element_key, dimension_key, ordinal) DO UPDATE
               SET value_numeric = EXCLUDED.value_numeric,
+                  value_boolean = EXCLUDED.value_boolean,
                   state         = EXCLUDED.state,
                   origin        = EXCLUDED.origin,
                   updated_at    = now()
@@ -330,6 +336,7 @@ export class DisclosureValueStoreRepository
             value.key.dimensionKey,
             value.key.ordinal,
             value.valueNumeric,
+            value.valueBoolean,
             state,
             DISCLOSURE_ORIGIN.CALCULATED,
           ],

@@ -20,6 +20,7 @@ import {
 } from '@api/contracts/report-workbook.port';
 import type { LegalDate } from '@api/contracts/types/time';
 import { DISCLOSURE_ORIGIN } from '@api/modules/core/disclosure/models/disclosure-value.model';
+import { INPUT_ANSWER, YES_NO_INPUT } from '@api/modules/core/disclosure/models/derivation.model';
 import type { DerivationInputField, DisclosureField } from '@api/modules/core/disclosure/models/wizard-step.model';
 import { FIELD_HOLDING, holdingOf } from './workbook-answers';
 import { type FigurePrecision, presentedPlaces, presentedUnit } from '@api/modules/core/disclosure/domain/figure-precision';
@@ -391,7 +392,15 @@ export function assembleReportWorkbook(sources: WorkbookSources, map: DigitalTem
   const writtenElements = new Set(written.map((field) => field.elementKey));
   for (const input of sources.inputs) {
     const at = map.inputs[input.key];
-    if (input.value !== null && at !== undefined && writtenElements.has(input.derives)) write(at, number(input.value));
+    if (input.value === null || at === undefined || !writtenElements.has(input.derives)) continue;
+    // A yes/no input is the template's own checkbox — C8's thresholds (task 79.8) — so it is written as the
+    // boolean the cell holds, never as the `1` or `0` it is stored as.
+    write(
+      at,
+      input.answer === INPUT_ANSWER.YES_NO
+        ? { kind: CELL_VALUE_KIND.BOOLEAN, value: input.value === YES_NO_INPUT.YES }
+        : number(input.value),
+    );
   }
 
   for (const gate of map.gates) {

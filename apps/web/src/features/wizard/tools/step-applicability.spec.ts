@@ -2,6 +2,7 @@ import {
   DISCLOSURE_KIND,
   DISCLOSURE_ORIGIN,
   DISCLOSURE_STATE,
+  INPUT_ANSWER,
   type DerivationInput,
   type DisclosureField,
 } from '@easyesg/contracts';
@@ -50,6 +51,7 @@ const field = (over: Partial<DisclosureField> & { elementKey: string }): Disclos
 const input = (key: string, derives: string): DerivationInput => ({
   key,
   derives,
+  answer: INPUT_ANSWER.NUMBER,
   value: null,
   offered: null,
 });

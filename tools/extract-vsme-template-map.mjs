@@ -62,15 +62,27 @@ const memberLabels = json(`packages/i18n/catalogues/disclosure/${taxonomyVersion
  * stable across `1.2.0` and `1.3.0`, and a release that changes one fails the run on the check beside each.
  */
 const AUTHORED = {
-  /** A derivation input (task 36.10) is a row EFRAG labels and does not name; its value is column D of that row. */
+  /**
+   * A derivation input (task 36.10) is a row EFRAG labels and does not name; its value is the answer column of that row
+   * on the sheet named — `D` on *Social Disclosures*, `H` on *Governance Disclosures* (`INPUT_COLUMN`), where C8's
+   * thresholds and C9's board counts are (tasks 79.8, 79.9).
+   */
   inputs: {
-    NumberOfEmployeesWhoLeftDuringTheReportingPeriod: 'template_label_number_of_employees_who_left_during_the_reporting_period',
-    NumberOfEmployeesAtTheBeginningOfTheReportingPeriod: 'template_label_number_of_employees_at_the_beginning_of_the_reporting_period',
-    NumberOfEmployeesAtTheEndOfTheReportingPeriod: 'template_label_number_of_employees_at_the_end_of_the_reporting_period',
-    HoursWorkedByOneFullTimeEmployee: 'template_label_number_of_hours_worked_by_one_fulltime_employee_in_the_reporting_period',
-    AverageGrossHourlyPayLevelOfMaleEmployees: 'template_label_average_gross_hourly_pay_level_of_male_employees',
-    AverageGrossHourlyPayLevelOfFemaleEmployees: 'template_label_average_gross_hourly_pay_level_of_female_employees',
-    NumberOfEmployeesCoveredByCollectiveBargainingAgreements: 'template_label_number_of_employees_covered_by_collective_bargaining_agreements',
+    NumberOfEmployeesWhoLeftDuringTheReportingPeriod: { sheet: 'Social Disclosures', label: 'template_label_number_of_employees_who_left_during_the_reporting_period' },
+    NumberOfEmployeesAtTheBeginningOfTheReportingPeriod: { sheet: 'Social Disclosures', label: 'template_label_number_of_employees_at_the_beginning_of_the_reporting_period' },
+    NumberOfEmployeesAtTheEndOfTheReportingPeriod: { sheet: 'Social Disclosures', label: 'template_label_number_of_employees_at_the_end_of_the_reporting_period' },
+    HoursWorkedByOneFullTimeEmployee: { sheet: 'Social Disclosures', label: 'template_label_number_of_hours_worked_by_one_fulltime_employee_in_the_reporting_period' },
+    AverageGrossHourlyPayLevelOfMaleEmployees: { sheet: 'Social Disclosures', label: 'template_label_average_gross_hourly_pay_level_of_male_employees' },
+    AverageGrossHourlyPayLevelOfFemaleEmployees: { sheet: 'Social Disclosures', label: 'template_label_average_gross_hourly_pay_level_of_female_employees' },
+    NumberOfEmployeesCoveredByCollectiveBargainingAgreements: { sheet: 'Social Disclosures', label: 'template_label_number_of_employees_covered_by_collective_bargaining_agreements' },
+    NumberOfMaleEmployeesAtManagementLevel: { sheet: 'Social Disclosures', label: 'template_label_number_of_male_employees_at_management_level' },
+    NumberOfFemaleEmployeesAtManagementLevel: { sheet: 'Social Disclosures', label: 'template_label_number_of_female_employees_at_management_level' },
+    OnePercentOrMoreOfRevenuesFromHardCoalAndLignite: { sheet: 'Governance Disclosures', label: 'template_label_1_percent_or_more_of_their_revenues_from_exploration_mining_extraction_distribution_or_refining_of_hard_coal_and_lignite' },
+    TenPercentOrMoreOfRevenuesFromOilFuels: { sheet: 'Governance Disclosures', label: 'template_label_10_percent_or_more_of_their_revenues_from_the_exploration_extraction_distribution_or_refining_of_oil_fuels' },
+    FiftyPercentOrMoreOfRevenuesFromGaseousFuels: { sheet: 'Governance Disclosures', label: 'template_label_50_percent_or_more_of_their_revenues_from_the_exploration_extraction_manufacturing_or_distribution_of_gaseous_fuels' },
+    FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration: { sheet: 'Governance Disclosures', label: 'template_label_50_percent_or_more_of_their_revenues_from_electricity_generation' },
+    NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod: { sheet: 'Governance Disclosures', label: 'template_label_number_of_female_board_members_at_the_end_of_the_reporting_period' },
+    NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod: { sheet: 'Governance Disclosures', label: 'template_label_number_of_male_board_members_at_the_end_of_the_reporting_period' },
   },
   /**
    * A yes/no the template asks before a group of disclosures and the taxonomy has no element for — every one the Basic
@@ -655,13 +667,17 @@ const report = (() => {
   };
 })();
 
-/** The derivation inputs' cells: column D of the row EFRAG labels. */
+/** Each sheet's answer column, where a derivation input is written beside EFRAG's label. */
+const INPUT_COLUMN = { 'Social Disclosures': 'D', 'Governance Disclosures': 'H' };
+
+/** The derivation inputs' cells: the sheet's answer column, in the row EFRAG labels. */
 const inputs = Object.fromEntries(
-  Object.entries(AUTHORED.inputs).map(([inputKey, labelId]) => {
-    const row = rowLabelled('Social Disclosures', labelId) ?? fail(`no row labelled ${labelId}`);
-    const cell = `D${row}`;
-    if (isFormula('Social Disclosures', parseCell(cell))) fail(`Social Disclosures!${cell} is computed`);
-    return [inputKey, { sheet: 'Social Disclosures', cell }];
+  Object.entries(AUTHORED.inputs).map(([inputKey, { sheet, label }]) => {
+    const column = INPUT_COLUMN[sheet] ?? fail(`no answer column for ${sheet}`);
+    const row = rowLabelled(sheet, label) ?? fail(`no row labelled ${label}`);
+    const cell = `${column}${row}`;
+    if (isFormula(sheet, parseCell(cell))) fail(`${sheet}!${cell} is computed`);
+    return [inputKey, { sheet, cell }];
   }),
 );
 const declaredInputs = new Set(derivations.flatMap(({ operands }) => Object.values(operands).filter((o) => o.from === 'input').map((o) => o.key)));

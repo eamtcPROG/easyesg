@@ -1,4 +1,3 @@
-import type { AxisShapes } from '../interfaces/axis-shape.interface';
 import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
 import type { Derivations } from '../interfaces/derivation.interface';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
@@ -47,7 +46,7 @@ describe('DerivationCalculator along a target axis (task 79.3)', () => {
         },
       } as unknown as DisclosureValueStore,
       { forReport: () => Promise.resolve([]) } as unknown as DerivationInputStore,
-      { targetAxes: () => input.targets } as unknown as AxisShapes,
+      { targetAxes: () => input.targets },
     );
     await calculator.recompute({
       reportId: 'report',
@@ -80,5 +79,52 @@ describe('DerivationCalculator along a target axis (task 79.3)', () => {
       reportingYearOnly,
     );
     expect(await run({ derivation: total(SCOPES.key), targets: new Map(), stored })).toEqual(reportingYearOnly);
+  });
+});
+
+/**
+ * A derivation whose answer is a yes or a no (task 79.8; §12.5.6's task-79.8 row) — C8's exclusion from EU Paris-aligned
+ * benchmarks, worked out from four yes/no inputs and written to the yes/no column, never the figure's.
+ */
+describe('DerivationCalculator for a yes/no derivation (task 79.8)', () => {
+  const EXCLUSION = 'UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement';
+  const thresholds = ['Coal', 'Oil', 'Gas', 'Electricity'];
+  const exclusion: Derivation = {
+    element: EXCLUSION,
+    formula: DERIVATION_FORMULA.ANY_AFFIRMED,
+    operands: Object.fromEntries(
+      thresholds.map((name) => [name, { from: OPERAND_SOURCE.INPUT, key: `Threshold${name}`, fallback: null }]),
+    ),
+    along: null,
+  };
+
+  const run = async (answers: Readonly<Record<string, string>>) => {
+    const written: { valueNumeric: string | null; valueBoolean: boolean | null }[] = [];
+    const calculator = new DerivationCalculator(
+      { all: () => new Map([[EXCLUSION, exclusion]]) } as unknown as Derivations,
+      {
+        forReport: () => Promise.resolve([]),
+        writeDerived: (value: { valueNumeric: string | null; valueBoolean: boolean | null }) => {
+          written.push({ valueNumeric: value.valueNumeric, valueBoolean: value.valueBoolean });
+          return Promise.resolve();
+        },
+      } as unknown as DisclosureValueStore,
+      {
+        forReport: () =>
+          Promise.resolve(Object.entries(answers).map(([name, valueNumeric]) => ({ inputKey: `Threshold${name}`, valueNumeric }))),
+      } as unknown as DerivationInputStore,
+      { targetAxes: () => new Map() },
+    );
+    await calculator.recompute({ reportId: 'report', standard: 'vsme', touched: new Set(['ThresholdOil']) });
+    return written;
+  };
+
+  it('writes yes to the yes/no column, and clears the figure’s', async () => {
+    expect(await run({ Coal: '0', Oil: '1' })).toEqual([{ valueNumeric: null, valueBoolean: true }]);
+  });
+
+  it('writes no once all four are no, and nothing while one is unanswered', async () => {
+    expect(await run({ Coal: '0', Oil: '0', Gas: '0', Electricity: '0' })).toEqual([{ valueNumeric: null, valueBoolean: false }]);
+    expect(await run({ Coal: '0', Oil: '0', Gas: '0' })).toEqual([{ valueNumeric: null, valueBoolean: null }]);
   });
 });

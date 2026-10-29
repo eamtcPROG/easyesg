@@ -9,6 +9,7 @@ import {
 } from '@api/contracts/taxonomy-registry.port';
 import type { OrganizationVocabulary } from '@api/modules/core/organization/interfaces/organization-vocabulary.interface';
 import { PUBLISHED_CLASSIFICATION_LOCALE, VOCABULARY_COUNTRY } from '../constants/classification.constants';
+import { offeredOptions } from '../domain/offered-members';
 import { qualifiedDomainOf } from '../domain/qualified-domain';
 import type { DisclosureOption } from '../models/wizard-step.model';
 
@@ -45,6 +46,8 @@ export class OptionResolver {
       readonly memberLabels: Readonly<Record<string, DisclosureLabel>> | null;
       readonly vocabulary: OptionVocabulary;
       readonly locale: Locale;
+      /** The members a narrowed element offers (task 79.7) — by element, since C6 and C7 share one domain. */
+      readonly offered: ReadonlyMap<string, ReadonlySet<string>>;
     },
   ) {}
 
@@ -52,6 +55,11 @@ export class OptionResolver {
     if (element.kind !== DISCLOSURE_KIND.ENUMERATION && element.kind !== DISCLOSURE_KIND.ENUMERATION_SET) {
       return null;
     }
+    return offeredOptions({ options: this.domainOptions(element), offered: this.input.offered.get(element.key) });
+  }
+
+  /** The domain's options, resolved once per domain — the narrowing is per element, after the cache. */
+  private domainOptions(element: TaxonomyElement): readonly DisclosureOption[] {
     const key = qualifiedDomainOf(element);
     if (key === null) return [];
     const cached = this.cache.get(key);

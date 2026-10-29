@@ -44,13 +44,20 @@ const vocabulary: OptionVocabulary = {
     countryCode === 'md' ? [{ code: '10.71', labels: { ro: 'Fabricarea pâinii', ru: 'Производство хлеба' } }] : null,
 };
 
-const resolver = (over: { readonly locale?: Locale; readonly registry?: RecordingEnumerations } = {}) =>
+const resolver = (
+  over: {
+    readonly locale?: Locale;
+    readonly registry?: RecordingEnumerations;
+    readonly offered?: ReadonlyMap<string, ReadonlySet<string>>;
+  } = {},
+) =>
   new OptionResolver({
     registered: { standard: 'vsme', version: '2026-05-01' },
     taxonomy: over.registry ?? new RecordingEnumerations(),
     memberLabels: { CooperativeMember: aLabel('Cooperativă') },
     vocabulary,
     locale: over.locale ?? 'ro',
+    offered: over.offered ?? new Map(),
   });
 
 describe('OptionResolver', () => {
@@ -76,6 +83,21 @@ describe('OptionResolver', () => {
       { value: 'vsme:PartnershipMember', code: null, hazardous: null, label: null },
     ]);
     expect(options.optionsFor(set)).toBe(options.optionsFor(single));
+    expect(registry.asked).toEqual(['vsme:ListOfUndertakingsLegalFormsMember']);
+  });
+
+  it('narrows the element an offered list names, and leaves another on the same domain whole (task 79.7)', () => {
+    const registry = new RecordingEnumerations();
+    const domain = 'ListOfUndertakingsLegalFormsMember';
+    const options = resolver({ registry, offered: new Map([['Narrowed', new Set(['PartnershipMember'])]]) });
+
+    expect(options.optionsFor(anElement({ key: 'Narrowed', kind: DISCLOSURE_KIND.ENUMERATION_SET, domain }))).toEqual([
+      { value: 'vsme:PartnershipMember', code: null, hazardous: null, label: null },
+    ]);
+    expect(
+      options.optionsFor(anElement({ key: 'Whole', kind: DISCLOSURE_KIND.ENUMERATION_SET, domain }))?.map((o) => o.value),
+    ).toEqual(['vsme:CooperativeMember', 'vsme:PartnershipMember']);
+    // The domain is still read once: the narrowing is per element, after the cache.
     expect(registry.asked).toEqual(['vsme:ListOfUndertakingsLegalFormsMember']);
   });
 

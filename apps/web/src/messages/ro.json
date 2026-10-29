@@ -1670,20 +1670,36 @@
         "names": {
           "AverageGrossHourlyPayLevelOfFemaleEmployees": "Salariul mediu brut pe oră al angajatelor femei",
           "AverageGrossHourlyPayLevelOfMaleEmployees": "Salariul mediu brut pe oră al angajaților bărbați",
+          "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": "Cel puțin 50% din venituri din combustibili gazoși",
+          "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": "Cel puțin 50% din venituri din producerea de energie electrică peste 100 g CO₂e/kWh",
           "HoursWorkedByOneFullTimeEmployee": "Ore lucrate de un angajat cu normă întreagă în perioadă",
           "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Angajați la începutul perioadei",
           "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Angajați la sfârșitul perioadei",
           "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Angajați acoperiți de contracte colective de muncă",
-          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Angajați care au plecat în perioadă"
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Angajați care au plecat în perioadă",
+          "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": "Femei în organul de conducere la sfârșitul perioadei",
+          "NumberOfFemaleEmployeesAtManagementLevel": "Angajate femei la nivel de conducere",
+          "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": "Bărbați în organul de conducere la sfârșitul perioadei",
+          "NumberOfMaleEmployeesAtManagementLevel": "Angajați bărbați la nivel de conducere",
+          "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": "Cel puțin 1% din venituri din huilă și lignit",
+          "TenPercentOrMoreOfRevenuesFromOilFuels": "Cel puțin 10% din venituri din combustibili petrolieri"
         },
         "help": {
           "AverageGrossHourlyPayLevelOfFemaleEmployees": "Brut, în aceeași monedă ca salariul de mai sus.",
           "AverageGrossHourlyPayLevelOfMaleEmployees": "Brut, înainte de impozite și contribuții. Folosiți aceeași monedă la ambele salarii — diferența se calculează procentual, așa că moneda nu apare în rezultat.",
+          "FiftyPercentOrMoreOfRevenuesFromGaseousFuels": "Răspundeți „Da” dacă cel puțin 50% din veniturile întreprinderii provin din explorarea, extracția, producerea sau distribuția combustibililor gazoși.",
+          "FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration": "Răspundeți „Da” dacă cel puțin 50% din veniturile întreprinderii provin din producerea de energie electrică cu o intensitate a emisiilor de gaze cu efect de seră de peste 100 g CO₂e pe kWh.",
           "HoursWorkedByOneFullTimeEmployee": "Standardul pornește de la 2 000 de ore pe an. Cifra diferă de la o țară sau ramură la alta, după legislația națională ori contractul colectiv — dacă la dumneavoastră este alta, scrieți-o aici.",
           "NumberOfEmployeesAtTheBeginningOfTheReportingPeriod": "Numărul de angajați în prima zi a perioadei. Împreună cu cel de la sfârșit dă media pe care se calculează fluctuația.",
           "NumberOfEmployeesAtTheEndOfTheReportingPeriod": "Numărul de angajați în ultima zi a perioadei.",
           "NumberOfEmployeesCoveredByCollectiveBargainingAgreements": "Câți dintre angajați intră sub un contract colectiv de muncă. Ponderea se calculează față de numărul de angajați declarat la B1.",
-          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Câți angajați au încetat raporturile de muncă pe parcursul perioadei, indiferent de motiv."
+          "NumberOfEmployeesWhoLeftDuringTheReportingPeriod": "Câți angajați au încetat raporturile de muncă pe parcursul perioadei, indiferent de motiv.",
+          "NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod": "Câte femei fac parte din organul de conducere în ultima zi a perioadei. Raportul se calculează împărțind acest număr la cel al bărbaților.",
+          "NumberOfFemaleEmployeesAtManagementLevel": "Câte femei dintre angajați ocupă funcții de conducere. Raportul femei/bărbați se calculează împărțind acest număr la cel al bărbaților.",
+          "NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod": "Câți bărbați fac parte din organul de conducere în ultima zi a perioadei. Dacă unul dintre cele două numere este zero, raportul este zero, așa cum îl calculează standardul.",
+          "NumberOfMaleEmployeesAtManagementLevel": "Câți bărbați dintre angajați ocupă funcții de conducere. Fără niciun bărbat, raportul nu se poate calcula.",
+          "OnePercentOrMoreOfRevenuesFromHardCoalAndLignite": "Răspundeți „Da” dacă cel puțin 1% din veniturile întreprinderii provin din explorarea, extracția, distribuția sau rafinarea huilei și a lignitului.",
+          "TenPercentOrMoreOfRevenuesFromOilFuels": "Răspundeți „Da” dacă cel puțin 10% din veniturile întreprinderii provin din explorarea, extracția, distribuția sau rafinarea combustibililor petrolieri."
         }
       },
       "panel": {

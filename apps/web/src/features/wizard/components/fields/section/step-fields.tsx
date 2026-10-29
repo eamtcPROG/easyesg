@@ -166,6 +166,14 @@ export function StepFields({
     NumberOfEmployeesAtTheEndOfTheReportingPeriod: { label: tInput('names.NumberOfEmployeesAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfEmployeesAtTheEndOfTheReportingPeriod') },
     NumberOfEmployeesCoveredByCollectiveBargainingAgreements: { label: tInput('names.NumberOfEmployeesCoveredByCollectiveBargainingAgreements'), help: tInput('help.NumberOfEmployeesCoveredByCollectiveBargainingAgreements') },
     NumberOfEmployeesWhoLeftDuringTheReportingPeriod: { label: tInput('names.NumberOfEmployeesWhoLeftDuringTheReportingPeriod'), help: tInput('help.NumberOfEmployeesWhoLeftDuringTheReportingPeriod') },
+    NumberOfFemaleEmployeesAtManagementLevel: { label: tInput('names.NumberOfFemaleEmployeesAtManagementLevel'), help: tInput('help.NumberOfFemaleEmployeesAtManagementLevel') },
+    NumberOfMaleEmployeesAtManagementLevel: { label: tInput('names.NumberOfMaleEmployeesAtManagementLevel'), help: tInput('help.NumberOfMaleEmployeesAtManagementLevel') },
+    OnePercentOrMoreOfRevenuesFromHardCoalAndLignite: { label: tInput('names.OnePercentOrMoreOfRevenuesFromHardCoalAndLignite'), help: tInput('help.OnePercentOrMoreOfRevenuesFromHardCoalAndLignite') },
+    TenPercentOrMoreOfRevenuesFromOilFuels: { label: tInput('names.TenPercentOrMoreOfRevenuesFromOilFuels'), help: tInput('help.TenPercentOrMoreOfRevenuesFromOilFuels') },
+    FiftyPercentOrMoreOfRevenuesFromGaseousFuels: { label: tInput('names.FiftyPercentOrMoreOfRevenuesFromGaseousFuels'), help: tInput('help.FiftyPercentOrMoreOfRevenuesFromGaseousFuels') },
+    FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration: { label: tInput('names.FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration'), help: tInput('help.FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration') },
+    NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod: { label: tInput('names.NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod') },
+    NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod: { label: tInput('names.NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod'), help: tInput('help.NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod') },
   };
 
   // Which questions this reporter is asked, which figures are derived, and which inputs are worth

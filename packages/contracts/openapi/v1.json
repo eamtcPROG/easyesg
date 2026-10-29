@@ -11965,6 +11965,15 @@
             "example": "RateOfRecordableWorkRelatedAccidentsInTheReportingPeriod",
             "description": "The derived element this feeds, so a screen can show the input beside the figure."
           },
+          "answer": {
+            "type": "string",
+            "enum": [
+              "number",
+              "yes_no"
+            ],
+            "example": "number",
+            "description": "How the input is answered: a number, or a yes or a no — its formula’s (task 79.8). A yes/no input’s `value` is `1` or `0`, and a write of anything else to it is refused."
+          },
           "value": {
             "type": "string",
             "nullable": true,
@@ -11980,6 +11989,7 @@
         "required": [
           "key",
           "derives",
+          "answer",
           "value",
           "offered"
         ]
@@ -12325,7 +12335,7 @@
             "type": "string",
             "nullable": true,
             "example": "1800",
-            "description": "A decimal string. **Omit or send null to clear**, which restores the published offer — a stored zero would instead make the rate undefined, a zero denominator being no answer rather than a working year of no hours."
+            "description": "A decimal string. **Omit or send null to clear**, which restores the published offer — a stored zero would instead make the rate undefined, a zero denominator being no answer rather than a working year of no hours. **An input answered yes or no takes `1` or `0`** (task 79.8)."
           }
         },
         "required": [

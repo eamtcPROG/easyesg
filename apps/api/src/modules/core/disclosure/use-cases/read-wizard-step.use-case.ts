@@ -27,6 +27,7 @@ import {
 } from '../errors/report.errors';
 import type { ApplicabilityRules } from '../interfaces/applicability-rules.interface';
 import type { AxisShapes } from '../interfaces/axis-shape.interface';
+import type { OfferedMembers } from '../interfaces/offered-members.interface';
 import type { DerivationInputStore } from '../interfaces/derivation-input-store.interface';
 import type { Derivations } from '../interfaces/derivation.interface';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
@@ -143,6 +144,8 @@ export class ReadWizardStep {
      * validation scope needs that the wizard's own did not, since a module's omission is derived from B1 alone.
      */
     private readonly omissionSections: OmissionSections,
+    /** Which members a choice element offers where that is narrower than its domain (task 79.7) — C7's rights. */
+    private readonly offeredMembers: OfferedMembers,
   ) {}
 
   /** The persistent module list (UX-5), with how much of each module has been answered. */
@@ -198,6 +201,7 @@ export class ReadWizardStep {
       memberLabels,
       vocabulary: this.vocabulary,
       locale: query.locale,
+      offered: this.offeredMembers.offered({ standard: registered.standard }),
     });
     const members = new MemberResolver({
       registered,

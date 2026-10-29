@@ -100,6 +100,8 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
   interface DerivationInput {
     key: string;
     derives: string;
+    /** How it is answered — a number, or a yes or a no held as `1` or `0` (task 79.8). */
+    answer: string;
     value: string | null;
     offered: string | null;
   }
@@ -267,9 +269,35 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
     expect(step.taxonomyVersion).toBe('2026-05-01');
     expect(step.fields.length).toBeGreaterThan(0);
     // Presentation order is EFRAG's, and a step that rendered it out of order would read as a
-    // different questionnaire.
-    const orders = step.fields.map((f) => f.order);
-    expect([...orders].sort((a, b) => a - b)).toEqual(orders);
+    // different questionnaire. **The tree's, since task 79.6** (§12.5.6's task-79.6 row (4)): sections in their code
+    // order and each element after the one it belongs to — the other legal form after the legal form, the list of
+    // unchanged disclosures after its yes/no — where `order` alone had put both ahead of their questions. Exact, because
+    // the order is knowable and a change to it is a decision.
+    expect([...new Set(step.fields.map((f) => f.elementKey))]).toEqual([
+      'BasisForPreparation',
+      'BasisForReporting',
+      'ReportContainsDisclosuresFromThePreviousReportingPeriodThatRemainUnchanged',
+      'ListOfDisclosuresForWhichNoChangesAreReportedComparedToThePreviousPeriodReporting',
+      'LinkToPreviousReportContainingDisclosuresThatRemainUnchanged',
+      'ListOfOmittedDisclosuresDeemedToBeClassifiedOrSensitiveInformation',
+      'UndertakingsLegalForm',
+      'OtherUndertakingsLegalForm',
+      'NaceSectorClassificationCodes',
+      'Assets',
+      'Turnover',
+      'NumberOfEmployees',
+      'EmployeeCountingMethodology',
+      'TypeOfNumberOfEmployees',
+      'CountryOfPrimaryOperationsAndLocationOfSignificantAssets',
+      'DescriptionOfSustainabilityRelatedCertificationsOrLabels',
+      'NameOfTheSubsidiary',
+      'RegisteredAddressOfTheSubsidiary',
+      'AddressOfSite',
+      'PostalCodeOfSite',
+      'CityOfSite',
+      'CountryOfSite',
+      'GPSLocationOfSite',
+    ]);
 
     const field = step.fields.find((f) => f.elementKey === B1_ELEMENT);
     expect(field).toBeDefined();
@@ -2401,6 +2429,185 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       const refused = await put(reportId, [{ elementKey: BASE_YEAR, valueText: '19', state: DISCLOSURE_STATE.OK }]).expect(400);
       expect((refused.body as { type: string }).type).toBe(`${PROBLEM_BASE_URI}/validation-failed`);
       expect(rowsOf(await readStep(reportId, 'C3'), BASE_YEAR)[0]?.valueText).toBe('2019');
+    });
+  });
+  describe('C4 … C9 on the anatomy B1 … B11 use (tasks 79.4 … 79.9)', () => {
+    const put = (reportId: string, values: Record<string, unknown>[]) =>
+      http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({ values });
+    const putInputs = (reportId: string, values: Record<string, unknown>[]) =>
+      http().put(`/api/v1/reports/${reportId}/derivation-inputs`).set(editor.authorization).send({ values });
+    const comprehensiveReport = async (year = 2026): Promise<string> =>
+      createReport(await openPeriod(year), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+    const fieldOf = (step: Step, elementKey: string): Field | undefined =>
+      step.fields.find((field) => field.elementKey === elementKey);
+    const shape = (step: Step) => step.fields.map(({ elementKey, kind }) => ({ elementKey, kind }));
+    const problemOf = (response: { body: unknown }) => response.body as { type: string };
+
+    it('serves C4 as four narratives and a yes/no, and C6 as two yes/no, a choice of six and a text, in the taxonomy’s order', async () => {
+      const reportId = await comprehensiveReport();
+      expect(shape(await readStep(reportId, 'C4'))).toEqual([
+        { elementKey: 'DescriptionOfClimateRelatedHazardsAndClimateRelatedTransitionEvents', kind: 'text_block' },
+        { elementKey: 'DisclosureOfHowItHasAssessedTheExposureAndSensitivityOfItsAssetsActivitiesAndValueChainToTheseHazardsAndTransitionEvents', kind: 'text_block' },
+        { elementKey: 'TimeHorizonsOfAnyClimateRelatedHazardsAndTransitionEventsIdentified', kind: 'text_block' },
+        { elementKey: 'DisclosureOfWhetherItHasUndertakenClimateChangeAdaptationActionsForAnyClimateRelatedHazardsAndTransitionEvents', kind: 'boolean' },
+        { elementKey: 'PotentialAdverseEffectsOfClimateRisksThatMayAffectItsFinancialPerformanceOrBusinessOperationsInTheShortMediumOrLongTermIndicatingWhetherItAssessesTheRisksToBeHighMediumOrLow', kind: 'text_block' },
+      ]);
+      const c6 = await readStep(reportId, 'C6');
+      expect(shape(c6).map(({ kind }) => kind)).toEqual(['boolean', 'enumeration_set', 'text', 'boolean']);
+      // C7's two specifications under their questions, and C8's exclusion after its revenues (task 79.6 row (4)).
+      expect(shape(await readStep(reportId, 'C7')).map(({ elementKey }) => elementKey)).toEqual([
+        'UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce',
+        'TypeOfHumanRightRelatedToTheConfirmedIncident',
+        'SpecificationOfOtherHumanRightsRelatedToTheConfirmedIncident',
+        'DescriptionOfActionsTakeToAddressTheConfirmedIncidents',
+        'UndertakingIsAwareOfAnyConfirmedIncidentsInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers',
+        'SpecificationOfAnyConfirmedIncidentInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers',
+      ]);
+      expect(shape(await readStep(reportId, 'C8')).map(({ elementKey }) => elementKey)).toEqual([
+        'RevenueDerivedFromControversialWeaponsAntiPersonnelMinesClusterMunitionsChemicalWeaponsAndBiologicalWeapons',
+        'RevenueDerivedFromCultivationAndProductionOfTobacco',
+        'TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector',
+        'RevenueDerivedFromCoal',
+        'RevenueDerivedFromOil',
+        'RevenueDerivedFromGas',
+        'RevenueDerivedFromChemicalProduction',
+        'UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement',
+      ]);
+      expect(fieldOf(c6, 'TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce')?.options?.length).toBe(6);
+      // A C4 answer and a C6 answer store as any other (UC-186, UC-188).
+      await put(reportId, [
+        { elementKey: 'DescriptionOfClimateRelatedHazardsAndClimateRelatedTransitionEvents', valueText: 'Secetă', state: DISCLOSURE_STATE.OK },
+        { elementKey: 'UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce', valueBoolean: true, state: DISCLOSURE_STATE.OK },
+      ]).expect(200);
+      expect(fieldOf(await readStep(reportId, 'C6'), 'UndertakingHasACodeOfConductOrHumanRightsPolicyForItsOwnWorkforce')?.valueBoolean).toBe(true);
+    });
+
+    it('derives C5’s female-to-male ratio from two counts the taxonomy does not carry — no ratio without men (task 79.5)', async () => {
+      const reportId = await comprehensiveReport();
+      const RATIO = 'FemaleToMaleRatioAtManagementLevelForTheReportingPeriod';
+      const c5 = await readStep(reportId, 'C5');
+      expect(c5.derivationInputs.map(({ key, derives, answer }) => ({ key, derives, answer }))).toEqual([
+        { key: 'NumberOfFemaleEmployeesAtManagementLevel', derives: RATIO, answer: 'number' },
+        { key: 'NumberOfMaleEmployeesAtManagementLevel', derives: RATIO, answer: 'number' },
+      ]);
+      expect(fieldOf(c5, RATIO)?.places).toBe(2);
+
+      await putInputs(reportId, [
+        { inputKey: 'NumberOfFemaleEmployeesAtManagementLevel', valueNumeric: '3' },
+        { inputKey: 'NumberOfMaleEmployeesAtManagementLevel', valueNumeric: '4' },
+      ]).expect(200);
+      const ratio = fieldOf(await readStep(reportId, 'C5'), RATIO);
+      expect(Number(ratio?.valueNumeric)).toBeCloseTo(0.75, 12);
+      expect(ratio?.origin).toBe('calculated');
+
+      await putInputs(reportId, [{ inputKey: 'NumberOfMaleEmployeesAtManagementLevel', valueNumeric: '0' }]).expect(200);
+      expect(fieldOf(await readStep(reportId, 'C5'), RATIO)?.valueNumeric).toBeNull();
+    });
+
+    it('refuses a Comprehensive figure’s input on a Basic report, as a C answer is, and admits a Basic one (UC-192)', async () => {
+      const basic = await createReport(await openPeriod(2025));
+      const refused = await putInputs(basic, [{ inputKey: 'NumberOfFemaleEmployeesAtManagementLevel', valueNumeric: '3' }]).expect(409);
+      expect(problemOf(refused).type).toBe(`${PROBLEM_BASE_URI}/conflict`);
+      await putInputs(basic, [{ inputKey: 'HoursWorkedByOneFullTimeEmployee', valueNumeric: '1800' }]).expect(200);
+      const held = (await asOrganization(owner, ORG, (run) =>
+        run(`SELECT input_key FROM core.report_derivation_input WHERE report_id = $1`, [basic]),
+      )) as { input_key: string }[];
+      expect(held.map((row) => row.input_key)).toEqual(['HoursWorkedByOneFullTimeEmployee']);
+    });
+
+    it('offers C7 the template’s five rights and refuses the sixth its domain carries; C6 keeps all six (task 79.7)', async () => {
+      const reportId = await comprehensiveReport();
+      const RIGHTS = 'TypeOfHumanRightRelatedToTheConfirmedIncident';
+      const offered = fieldOf(await readStep(reportId, 'C7'), RIGHTS)?.options?.map((option) => option.value);
+      expect(offered).toEqual([
+        'vsme:ChildLabourMember',
+        'vsme:ForcedLabourMember',
+        'vsme:HumanTraffickingMember',
+        'vsme:DiscriminationMember',
+        'vsme:OtherContentMember',
+      ]);
+
+      await put(reportId, [{ elementKey: RIGHTS, valueText: 'vsme:ChildLabourMember vsme:DiscriminationMember', state: DISCLOSURE_STATE.OK }]).expect(200);
+      const refused = await put(reportId, [{ elementKey: RIGHTS, valueText: 'vsme:ChildLabourMember vsme:AccidentPreventionMember', state: DISCLOSURE_STATE.OK }]).expect(400);
+      expect(problemOf(refused).type).toBe(`${PROBLEM_BASE_URI}/validation-failed`);
+      expect(fieldOf(await readStep(reportId, 'C7'), RIGHTS)?.valueText).toBe('vsme:ChildLabourMember vsme:DiscriminationMember');
+      // C6 draws from the same domain and offers all six, accident prevention among them.
+      expect(fieldOf(await readStep(reportId, 'C6'), 'TypeOfContentCoveredByTheCodeOfConductOrHumanRightsPolicyForItsOwnWorkforce')?.options?.map((option) => option.value)).toContain('vsme:AccidentPreventionMember');
+    });
+
+    it('finds C7 complete on two answers of no — the nil return — and not before them (task 79.7, FR-30)', async () => {
+      const reportId = await comprehensiveReport();
+      const check = async () => {
+        const body: unknown = (await http().post(`/api/v1/reports/${reportId}/validation/runs`).set(editor.authorization).expect(201)).body;
+        return objectOf<{ rollUp: { modules: { module: string; status: string; outstanding: number }[] } }>(body).rollUp.modules.find((module) => module.module === 'C7');
+      };
+      // Unanswered, the two questions C7 always asks are outstanding, and nothing is resolved.
+      expect(await check()).toMatchObject({ status: 'not_started', outstanding: 2 });
+      await put(reportId, [
+        { elementKey: 'UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce', valueBoolean: false, state: DISCLOSURE_STATE.OK },
+        { elementKey: 'UndertakingIsAwareOfAnyConfirmedIncidentsInvolvingWorkersInTheValueChainAffectedCommunitiesConsumersAndEndUsers', valueBoolean: false, state: DISCLOSURE_STATE.OK },
+      ]).expect(200);
+      expect(await check()).toMatchObject({ status: 'complete', outstanding: 0 });
+      // A yes asks what followed, so the module is open again.
+      await put(reportId, [{ elementKey: 'UndertakingHasConfirmedHumanRightsIncidentsInItsOwnWorkforce', valueBoolean: true, state: DISCLOSURE_STATE.OK }]).expect(200);
+      expect(await check()).toMatchObject({ status: 'in_progress', outstanding: 1 });
+    });
+
+    it('derives C8’s fossil-fuel total once coal, oil and gas are each answered, and refuses it typed (task 79.8)', async () => {
+      const reportId = await comprehensiveReport();
+      const TOTAL = 'TotalRevenuesDerivedFromFossilFuelCoalOilAndGasSector';
+      const revenue = (elementKey: string, valueNumeric: string) => ({ elementKey, valueNumeric, state: DISCLOSURE_STATE.OK });
+      await put(reportId, [revenue('RevenueDerivedFromCoal', '1200.50'), revenue('RevenueDerivedFromOil', '300')]).expect(200);
+      const c8 = await readStep(reportId, 'C8');
+      expect(fieldOf(c8, TOTAL)?.valueNumeric).toBeNull();
+      expect(fieldOf(c8, TOTAL)?.currency).toBe('MDL');
+      await put(reportId, [revenue('RevenueDerivedFromGas', '0')]).expect(200);
+      expect(fieldOf(await readStep(reportId, 'C8'), TOTAL)).toMatchObject({ valueNumeric: '1500.5', origin: 'calculated' });
+      await put(reportId, [revenue(TOTAL, '9')]).expect(400);
+    });
+
+    it('works C8’s benchmark exclusion out from four yes/no thresholds, and refuses anything else for them (task 79.8)', async () => {
+      const reportId = await comprehensiveReport();
+      const EXCLUSION = 'UndertakingsAreExcludedFromAnyEuReferenceBenchmarksThatAreAlignedWithTheParisAgreement';
+      const THRESHOLDS = [
+        'FiftyPercentOrMoreOfRevenuesFromGaseousFuels',
+        'FiftyPercentOrMoreOfRevenuesFromHighIntensityElectricityGeneration',
+        'OnePercentOrMoreOfRevenuesFromHardCoalAndLignite',
+        'TenPercentOrMoreOfRevenuesFromOilFuels',
+      ];
+      const c8 = await readStep(reportId, 'C8');
+      expect(c8.derivationInputs.map(({ key, answer }) => ({ key, answer }))).toEqual(
+        THRESHOLDS.map((key) => ({ key, answer: 'yes_no' })),
+      );
+      const answered = async (answers: string[]) => {
+        await putInputs(reportId, THRESHOLDS.slice(0, answers.length).map((inputKey, index) => ({ inputKey, valueNumeric: answers[index] }))).expect(200);
+        return fieldOf(await readStep(reportId, 'C8'), EXCLUSION);
+      };
+      // Three of four no is no answer yet; the fourth no is *not excluded*; one yes is *excluded*.
+      expect((await answered(['0', '0', '0']))?.valueBoolean).toBeNull();
+      expect(await answered(['0', '0', '0', '0'])).toMatchObject({ valueBoolean: false, valueNumeric: null, origin: 'calculated' });
+      expect((await answered(['0', '1']))?.valueBoolean).toBe(true);
+
+      const refused = await putInputs(reportId, [{ inputKey: THRESHOLDS[0], valueNumeric: '2' }]).expect(400);
+      expect(problemOf(refused).type).toBe(`${PROBLEM_BASE_URI}/validation-failed`);
+      await put(reportId, [{ elementKey: EXCLUSION, valueBoolean: false, state: DISCLOSURE_STATE.OK }]).expect(400);
+    });
+
+    it('derives C9’s ratio from the board’s two counts, zero where either is zero — EFRAG’s cell (task 79.9)', async () => {
+      const reportId = await comprehensiveReport();
+      const RATIO = 'GenderDiversityRatioInGovernanceBody';
+      const counts = async (female: string, male: string) => {
+        await putInputs(reportId, [
+          { inputKey: 'NumberOfFemaleBoardMembersAtTheEndOfTheReportingPeriod', valueNumeric: female },
+          { inputKey: 'NumberOfMaleBoardMembersAtTheEndOfTheReportingPeriod', valueNumeric: male },
+        ]).expect(200);
+        return fieldOf(await readStep(reportId, 'C9'), RATIO);
+      };
+      expect(Number((await counts('2', '3'))?.valueNumeric)).toBeCloseTo(2 / 3, 12);
+      // A body of women alone reads 0, as a body of men alone does — and as the workbook's own cell computes it.
+      expect(await counts('1', '0')).toMatchObject({ valueNumeric: '0', state: DISCLOSURE_STATE.NIL_RETURN });
+      expect((await counts('0', '3'))?.valueNumeric).toBe('0');
+      expect(fieldOf(await readStep(reportId, 'C9'), RATIO)?.places).toBe(2);
     });
   });
 });

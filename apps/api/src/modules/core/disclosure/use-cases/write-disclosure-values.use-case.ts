@@ -11,6 +11,7 @@ import { valueRefusal } from '../domain/value-refusal';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
 import type { AxisShapes } from '../interfaces/axis-shape.interface';
+import type { OfferedMembers } from '../interfaces/offered-members.interface';
 import {
   answeredState,
   type DisclosureValue,
@@ -64,6 +65,7 @@ export class WriteDisclosureValues {
     private readonly derivations: Derivations,
     private readonly calculator: DerivationRecalculator,
     private readonly axisShapes: AxisShapes,
+    private readonly offeredMembers: OfferedMembers,
   ) {}
 
   async write(command: WriteDisclosureValuesCommand): Promise<WriteDisclosureValuesOutcome> {
@@ -80,6 +82,7 @@ export class WriteDisclosureValues {
     const known = new Map(registered.elements.map((element) => [element.key, element]));
     const breakdowns = this.axisShapes.breakdownAxes({ standard: registered.standard });
     const targets = this.axisShapes.targetAxes({ standard: registered.standard });
+    const offered = this.offeredMembers.offered({ standard: registered.standard });
     // The modules a refused value names, for the client to say where the field is — the row's, not the element's, so a
     // refused base year of Scope 1 names C3 and not B3 (task 79.3).
     const modulesOf = (value: DisclosureValueInput): readonly string[] => {
@@ -103,6 +106,7 @@ export class WriteDisclosureValues {
         breakdowns,
         targets,
         derived,
+        offered,
         axisOf: (key) => this.axisOf(report.taxonomyVersion, key),
         scope: report.scope,
         basisForPreparation,

@@ -359,6 +359,8 @@
       "not_found": "Raportul indicat nu există în această organizație, așa că nu a putut fi afișat. Reîmprospătați lista pentru a vedea rapoartele curente.",
       "taxonomy_version_unavailable": "Versiunea standardului sub care a fost creat acest raport nu mai este disponibilă în platformă, așa că întrebările lui nu pot fi afișate. Răspunsurile salvate nu sunt afectate. Contactați echipa de asistență; se rezolvă de partea noastră.",
       "unknown_derivation_input": "Valoarea trimisă nu corespunde niciunui element din care sistemul calculează o cifră, așa că nu a putut fi salvată. Reîmprospătați pagina și introduceți din nou valoarea.",
+      "derivation_input_not_yes_or_no": "La această întrebare se răspunde cu da sau nu, așa că valoarea trimisă nu a putut fi salvată. Reîmprospătați pagina și răspundeți din nou.",
+      "member_not_offered": "Opțiunea aleasă nu este printre cele pe care le oferă acest câmp, așa că valoarea nu a putut fi salvată. Reîmprospătați pagina și alegeți din nou din listă.",
       "unknown_disclosure_dimension": "Categoria selectată nu face parte din lista pe care standardul o admite pentru acest câmp, așa că valoarea nu a putut fi salvată. Reîmprospătați pagina și alegeți din nou din listă.",
       "unknown_disclosure_element": "Câmpul trimis nu face parte din versiunea standardului sub care a fost creat acest raport, așa că nu a putut fi salvat. Reîmprospătați pagina pentru a încărca întrebările curente.",
       "reminder_not_outstanding": "Raportul nu mai este deschis — perioada lui a fost blocată sau raportul este gata de depunere —, așa că mementoul nu a fost trimis. Reîmprospătați pagina pentru a vedea rapoartele încă deschise.",

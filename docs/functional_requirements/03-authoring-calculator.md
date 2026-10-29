@@ -324,7 +324,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 
 ### FR-177 — The Comprehensive Module
 
-**Status.** Partial — delivered 31.3, 33.1, 33.3, 36.4, 78.1 … 78.4, 79.1 … 79.3, 179 · remaining 79.4 … 79.9, 80.1 … 80.3, 81.1
+**Status.** Partial — delivered 31.3, 33.1, 33.3, 36.4, 78.1 … 78.4, 79.1 … 79.9, 179 · remaining 80.1 … 80.3, 81.1
 
 **Obligation.** The system shall support the VSME Comprehensive Module C1 … C9 as an additive extension of Basic, selected by the report's scope flag at creation or on a report in progress, and authored, made conditional, validated and exported by the same mechanisms as B1 … B11.
 
@@ -344,6 +344,9 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 5. **A write to a C element on a Basic report is refused**, and a C step read on it answers out of scope (row (11)). A C element is one no module of which the scope asks, so the elements B3 and C3 share stay writable (task-78 row) — **at the reporting year**: their base and target years are C3's alone, and a Basic report refuses them (task-79.3 row).
 6. With billing disabled, Comprehensive stays authorable (NFR-1). Gating it by plan is task 81.1's.
 7. Each C module's use case is specified by its own slice before it is built (row (8)).
+8. **C modules derive what the template computes, as B modules do (FR-29).** C5's female-to-male ratio at management level and C9's gender diversity ratio are worked out from two counts each that no element carries, held as derivation inputs — C9's zero where either count is, as EFRAG's cell computes it — and C8's fossil-fuel total from its three parts, each required. C8's exclusion from EU Paris-aligned benchmarks is worked out from the template's four revenue thresholds, each a yes/no derivation input, the one derived yes/no. A derivation input of a figure only the Comprehensive scope asks is refused on a Basic report, as a C answer is (task-79.5 row (3), task-79.8 row, task-79.9 row).
+9. **A choice element offers the members configuration says, where that is narrower than its domain** (`disclosure_offered_members`): C7's rights are the template's five of the six its domain carries, and a write naming another is refused (task-79.7 row).
+10. **A step reads the standard's presentation order** — module, section, then each element after the element it belongs to — for C1 … C9 and B1 … B11 alike (task-79.6 row (4)).
 
 **Refusals.**
 - A C write on a Basic report → 409 `conflict` (78.1)
@@ -351,6 +354,9 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - A B1 basis for preparation naming the option the scope does not → 409 `conflict` (78.3; task-78 row (1))
 - A scope change on a locked period → 409 `report-not-editable`
 - A second report for a period → 409 `report-already-exists`
+- A derivation input of a Comprehensive figure on a Basic report → 409 `conflict` (79.5)
+- A member a narrowed choice does not offer — accident prevention on C7's rights → 400 `validation-failed` (79.7)
+- A yes/no derivation input holding anything but `1` or `0` → 400 `validation-failed` (79.8)
 
 **Acceptance criteria.**
 - **AC-1** Given a report created as Basic-and-Comprehensive, then its wizard lists C1 … C9 after B1 … B11. *(source: FR text; §12.5.6 task-182 row (9))*
@@ -358,10 +364,12 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - **AC-3** Given C answers, when the scope is lowered, then they are kept and not shown or exported. When the scope is raised again, they reappear. *(source: §12.5.6 task-182 row (10))*
 - **AC-4** Given a Basic report, when a C element is written, then it is refused with 409. *(source: §12.5.6 task-182 row (11))*
 - **AC-5** Given a Comprehensive report, then FR-28's applicability, validation and both exports treat C1 … C9 by the same mechanisms as B1 … B11. *(source: FR text)* Unmet until 80.1 … 80.3.
-- **AC-6** Given the three locales, then every C module is authorable in each. *(source: FR text)* Met for C1 … C3 by 79.1 … 79.3; unmet for C4 … C9 until 79.4 … 79.9.
+- **AC-6** Given the three locales, then every C module is authorable in each. *(source: FR text)* Met by 79.1 … 79.9: each module's browser journey answers it in Romanian and reads it back in English and Russian (`e2e/web/wizard.spec.ts`).
 - **AC-7** Given a report whose B1 has been opened, when the scope is changed in either direction, then B1's basis for preparation reads the new scope's option, and the change is in the trail. *(source: §12.5.6 task-78 row (1))*
 - **AC-8** Given a report whose scope was raised after it was created and that holds no answer to an element only the Comprehensive scope asks, then the module list's Comprehensive group and C1's opening say when the module was added; once such an answer exists, they read the group's count and C1's summary. A report created with the Comprehensive Module never says it. *(source: §12.5.6 task-79.1 row (1))*
 - **AC-9** Given a Basic report, when one of the emissions B3 and C3 share is written at its base or target year, then it is refused with 409; written at the reporting year, it is stored. On a Basic-and-Comprehensive report C3 shows the reporting year's figure as B3 holds it and asks the two years. *(source: §12.5.6 task-79.3 row)*
+- **AC-10** Given a Basic-and-Comprehensive report, when C7's two questions are each answered no, then a validation run finds C7 complete — the nil return — and the follow-on fields are asked only where a question is answered yes. *(source: §12.5.6 task-79.7 row (2))*
+- **AC-11** Given C5's, C8's and C9's inputs, then their ratios, total and exclusion are worked out and not typed; given a Basic report, a C input is refused with 409. *(source: §12.5.6 task-79.5, 79.8 and 79.9 rows)*
 
 **History.**
 - 25 Aug 2026 · project owner · promoted from §8 into MVP, keeping its identifier · `problem_overview.md` OQ-12
@@ -371,6 +379,7 @@ Business rules held here: BR-APP-1 … BR-APP-5, BR-DIS-1 … BR-DIS-4, BR-CALC-
 - 27 Oct 2026 · project owner · the scope sets B1's basis for preparation; raised from the module list and lowered from the bar's ⋯; the *added on* date waits for C1 · §12.5.6 task-78 row
 - 27 Oct 2026 · project owner · *added on* shows until a Comprehensive answer exists, read from the trail; a C module holds answers only to elements the Comprehensive scope alone asks · §12.5.6 task-79.1 row
 - 28 Oct 2026 · project owner · C3 asks B3's emissions at the base and target year beside B3's figure, read-only; the base and target years of a B3 element are Comprehensive rows, refused on a Basic report and counted into C3 alone · §12.5.6 task-79.3 row
+- 29 Oct 2026 · project owner · C7 offers the template's five rights; C8's exclusion is worked out from the template's four thresholds and its fossil total needs all three parts; C9's ratio is EFRAG's cell, zero where either count is; a step reads the standard's presentation tree · §12.5.6 task-79.6 row (4), task-79.7, 79.8 and 79.9 rows
 
 ### FR-210 — Delete a report
 

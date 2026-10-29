@@ -34044,3 +34044,158 @@ scope gains `config`.
   - a target half answered, which the template flags behind its own yes/no (task 80.2);
   - C3's cells in the Excel export (task 80.3), which already refuses a Comprehensive report on C1's elements;
   - C4 … C9 (79.4 … 79.9).
+
+## Tasks 79.4 … 79.9 — C4 … C9, and every step in the standard's tree · 2026-10-29
+
+The last six Comprehensive slices, closing task 79. UC-186 … UC-191's §5 specifications were written first, against
+EFRAG's package (the task-36.8 standing rule; §12.5.6's task-182 report-authoring row (8)):
+- the Digital Template's C4 block, *Environmental Disclosures* rows 538 … 544;
+- C5, C6 and C7 on *Social Disclosures*, rows 164 … 169, 171 … 181 and 183 … 194;
+- C8 and C9 on *Governance Disclosures*, rows 9 … 27 and 29 … 33;
+- each the same in 1.2.0 and 1.3.0, and the C4 … C9 elements both registered taxonomies carry.
+
+Then frames 28 … 33 of `EasyESG Reporting Screens.dc.html` were read. Two batches were put; the answers and what the
+build took within them are `architecture.md` §12.5.6's task-79.4 … 79.9 rows. FR-177 (behaviours 8 … 10, three
+refusals, AC-6, AC-10, AC-11) and S-07 are amended. The row's scope gains `tools`, for the template-map extractor.
+
+### Decided (project owner)
+
+- **C7 offers the template's five rights**, where the extracted taxonomy draws them from C6's six-member content
+  domain. Declined: the taxonomy's six (the task-79.7 row (1)).
+- **C8's benchmark exclusion is worked out from the template's four revenue thresholds**, each a yes/no: yes as soon
+  as one is, no once all four are. Declined: the yes/no asked directly (the task-79.8 row (1)).
+- **C8's fossil-fuel total needs coal, oil and gas each answered**, B3's `sum`. Declined: the template's sum of
+  whatever is entered (row (2)).
+- **C9's ratio is EFRAG's `H33`: female ÷ male, zero where either count is.** Declined: no ratio without men, which
+  puts the PDF at odds with the Excel file (the task-79.9 row).
+- **A step reads the standard's presentation tree** — module, section, then each element after the one it belongs to
+  — for every module. Declined: a child after its parent only; and the order as it stood (the task-79.6 row (4)).
+  Put mid-build, alone: it was found writing C6's api case, after the first batch.
+
+### What the building decided within that
+
+- **C4 and C6 needed no rendering code**, as C1 and C2 did; their follow-ons are the seeded rule set's, live on the
+  step (task 41; the task-42 row (1)), and stay shown, as C2's target description is.
+- **C7's nil return completes C7 with no new mechanism.** The two answers of no are stored, the C7 rules ask the
+  follow-ons only where their question is yes, and the module states are the last run's — so a run finds C7 complete.
+  This was a question until the roll-up was read; nothing in 36.13's terminal states needed changing.
+- **A derivation input may be a yes or a no, and its formula says which** (`inputAnswerOf`). Stored `1` or `0` in the
+  existing `value_numeric` column, with no migration; anything else refused per value. The step read serves
+  `answer`, contracts mirror it (`INPUT_ANSWER`, held to the wire, and `YES_NO_INPUT`), S-07 draws a yes/no input as
+  the boolean cards (`YesNoInputControl`), and the workbook writes it as a boolean.
+- **A derived figure may be a yes or a no**: `derivedAnswer` dispatches, and `writeDerived` writes both value columns
+  every time, so neither can keep a value its formula no longer gives.
+- **A derivation input is judged by `inputRefusal`**, `valueRefusal`'s counterpart. An input of a figure no module of
+  which the scope asks is refused on a Basic report, 409, the C answer's refusal and wording;
+  `WriteDerivationInputs` now reads the pinned taxonomy (`Pick<TaxonomyRegistry, 'taxonomy'>`).
+- **Two formula kinds for the two ratios**, `ratio` and `gender_diversity_ratio`, since their zero rules are opposite
+  (the task-36.11 row's *a flag on a formula is a second formula*). C5's has no figure without men — its cell's
+  `#DIV/0!`. Both are shown to two places, the cells' `0.00`.
+- **`disclosure_offered_members` is the store's thirty-seventh artefact.** Element → bare members; it fails open to
+  the domain, and `offered-members.service.spec.ts` holds the shipped entry to both versions. The option resolver
+  narrows per element after its per-domain cache — C6 and C7 share one domain — and `valueRefusal` refuses a member
+  outside the list. `bareMember` moved out of `omission.model.ts` into its own module for its second reader.
+- **The registry's comparator is `presentationOrder`** (`platform/taxonomy/domain/`), read from the `section` and
+  `parent` the artefact already carries — nothing re-extracted. Measured before deciding: it reorders B1 … B8 and
+  C3 as well as C6 … C8, each into the template's sheet order. The golden corpus pins phrases, not their order.
+- **The template map gains the eight inputs' cells**, regenerated for both versions by the extractor, whose authored
+  inputs now name their sheet (`INPUT_COLUMN`: `D` on *Social*, `H` on *Governance*). The regenerated maps differ
+  from the committed ones in those cells alone.
+- **The task row's *C5's breakdowns share B8's table anatomy*** had nothing to bind: the template draws no breakdown
+  and the taxonomy gives C5 no axis. B8's anatomy is the flat list (the task-36.9 row), which C5 renders on.
+- **The template-default README said *C6/C7 carry thirteen more***. Measured, the *Social* sheet ships eleven unticked
+  member checkboxes, and C4's, C8's and C9's yes/no cells `FALSE`; none is an answer, so none is carried, and the row
+  is corrected (the task-79.6 row (3)).
+- **The exclusion's platform help said *choose Yes if …*** of a field the reporter no longer answers, and named
+  tobacco and weapons, which ¶64's thresholds do not. It is corrected in both version directories (the task-94 row
+  (3)), and the eight inputs are worded in three locales.
+- **Frames 28 … 33 draw C4 … C9 under the list's earlier names**, with content the package does not carry. They were
+  read for what it does, as frames 20 … 27 were: frame 31, *C7 Governance*, is C9; frame 33, *C9 Value chain*, is
+  C7. Frame 33 hides C7's actions on a nil count, which is an applicability condition over an answer — task 80.1's
+  (the task-79.2 row (2)) — so it is not built. S-07's amendment names each.
+
+### Found in passing
+
+- **Task 79.3's calculator spec carried a lint error since it shipped**: two `as unknown as AxisShapes` assertions
+  the receiver's `Pick` made unnecessary. `pnpm lint`'s content cache had skipped the unchanged file, so every warm
+  run since agreed it was clean — the root `CLAUDE.md`'s task-33.2 case exactly. This change re-linted the file; both
+  are removed.
+- **The taxonomy extractor keys an enumeration by its domain alone and keeps the first element's members**
+  (`tools/extract-vsme-taxonomy.mjs`). Were C7's `enum2:linkrole` a narrower list in EFRAG's package, it was lost
+  there; the package is not in the repository, so whether the artefact restates the package or corrects it is
+  **raised, not settled** (the task-79.7 row).
+- **B1's *other legal form* had sorted before the legal form, and B4's URL before its yes/no, since task 36** —
+  `order` alone, which every journey's named locators were blind to. The B1 api case that asserted *orders
+  ascending* encoded the defect and is rewritten to the tree's order, exactly.
+- **No spec held the shipped derivations to the taxonomy**, so a mistyped element in the four new entries would have
+  derived into nothing. `derivation.service.spec.ts` now does, for every derived element and disclosure operand in
+  both versions. Proven by mutation: a typo'd operand and a typo'd member each failed their spec, and passed restored.
+- Searched for the shapes: every `valueRefusal` and `WriteDerivationInputs` caller (one each); every reader of an
+  enumeration's options (`OptionResolver` alone); every implementer of `writeDerived` (the repository and one spec
+  fake); every `bare` helper over members (`omission.model.ts`'s, now shared).
+
+### Skills read against the diff
+
+- **`nestjs-best-practices`**: `di-interface-segregation` (the use case's registry narrowed to `Pick`, in the pass);
+  `di-use-interfaces-tokens` (`OFFERED_MEMBERS`); `perf-use-caching` (the offered members cached per revision);
+  `error-use-exception-filters` (two `DomainError`s worded in three catalogues).
+- **`vercel-react-best-practices`**: `rerender-derived-state-no-effect` (the yes/no control adopts a changed value
+  during render); `rerender-functional-setstate` (its handler, corrected in the pass); `server-serialization` (one
+  short string on each input).
+- **`one-idea-per-file`**: `file-one-idea` — `YesNoInputControl` was first written inside
+  `derivation-input-control.tsx`, a file defining two components, and moved to its own in the pass;
+  `reason-docblock-carries-the-why` — nine docblocks lost a count of things outside themselves (*four thresholds*,
+  *five of the six*); `pure-logic-leaves-the-component` — `presentationOrder`, `inputRefusal`, `offeredOptions` and
+  `holdsOnlyOffered` each with a spec.
+- **`one-kind-per-folder`** was not loaded: the diff adds one file to `fields/field/`, a leaf that holds files only, and moves none.
+
+### Verified, and what is not
+
+- **The api, through HTTP and the database** (`wizard.e2e-spec.ts`'s eight new cases and one rewritten):
+  - C4's and C6's fields in the taxonomy's kinds and the tree's order, C7's two specifications under their
+    questions and C8's exclusion after its revenues; a C4 and a C6 answer stored;
+  - C5's ratio from its two inputs, 0.75, and none with no men; both inputs served as numbers, the ratio at two places;
+  - a C5 input refused 409 on a Basic report, which stores B9's hours input;
+  - C7's five rights, a sixth refused 400 and the stored answer kept; C6 still offers accident prevention;
+  - C7 *not started* unanswered, *complete* on two answers of no, *in progress* again on a yes;
+  - C8's total absent until gas is answered, then `1500.5`, calculated, in MDL, and refused typed;
+  - C8's exclusion: no answer on three of four no, *not excluded* on four, *excluded* on one yes; a `2` refused 400; the
+    exclusion refused typed;
+  - C9's ratio, two thirds, then 0 where either count is zero, a nil return, at two places;
+  - B1's fields in the tree's order, exactly — the case that asserted `order` ascending, rewritten.
+- **The browser** (`wizard.spec.ts`'s six new journeys), each on a report seeded with the module:
+  - C4's four narratives and its yes/no in the template's order, stored, read back in English and Russian;
+  - C5's ratio with no input, worked out from the two counts and shown `0,75` on reload; a count of 0 a nil return;
+  - C6's question above its choice above its specification, six options, both answers stored;
+  - C7's five options, two answers of no stored as `false`, and *Finalizat* on the list after *Check my report*;
+  - C8's total and exclusion with no input, `1500.5` and *not excluded* then *excluded* in the store, *Da* and
+    `1.500,5` on reload, the chosen threshold kept, and the threshold's English label;
+  - C9's ratio `0,67`, then 0 with no men.
+- **The close's run**, by the lookup table — a change reaching `apps/api`, `apps/web`, `config/seed`, `tools/` and,
+  through `packages/contracts` and `packages/i18n`, every dependent's row:
+  - unit suites: `pnpm --filter @easyesg/i18n test` 172; `pnpm --filter @easyesg/api test` 2,609 (316 suites);
+    `pnpm --filter @easyesg/web test` 2,162 (237 files); `pnpm --filter @easyesg/admin test` 322;
+  - `typecheck` in api, web, admin, contracts and i18n; `pnpm lint`, after the three errors above;
+  - `pnpm openapi:check`, with the regenerated contract staged; `pnpm routes:check`; `pnpm docs:check` 48 of 48, after
+    the archive's counts, the artefact count and `apps/web/CLAUDE.md`'s Client Component count moved;
+  - `pnpm e2e`: 77 suites, **1,998 of 1,998** — the PDF export suite among them, which failed on a cold renderer at
+    each of 79.1, 79.2 and 79.3's closes and passed here first time;
+  - `pnpm e2e:worker`: 17 of 17, nothing logged — run because the step read and the calculator are registered in both
+    modes and both gained a dependency;
+  - `pnpm e2e:web --project identity --project expansion`: 381 of 381. Its 19 `⨯` lines are every one digest
+    `2667547900`, the abandoned streams `apps/web/CLAUDE.md` describes;
+  - the admin project, 28 of 28, nothing logged — run through `tools/with-test-stack.sh` on the bundle the identity
+    run's `pree2e:web` had just built, with no source changed between.
+- **What the api's runs printed, read rather than skipped**: the three *Message catalogue used before
+  initialiseCatalogue()* errors and the outbox's *Custom Id cannot contain :* warning that task 79.1's entry raised,
+  and nothing new. The unit run printed the error paths its specs exercise.
+- **Skipped**: the Stage-end gates (`boundaries`, `image:check`, `facade:check`, the two `*:prove`s), which CI runs on
+  the push. No facade, migration or boundary rule moved; a seed, a generated map and its generator did, which is what
+  `pnpm e2e`'s pre-hook seeds and the cold run at Stage 7's end will see again.
+- **Not built, by the plan or by decision**:
+  - hiding a follow-on on a nil or *no* answer (frame 33; task 80.1's);
+  - C4 … C9's cells in the Excel export (task 80.3), which still refuses a Comprehensive report on its C answers — the
+    inputs' cells are mapped so the extractor runs, and a yes/no input is written as a boolean when 80.3 places its
+    figure;
+  - C's validation beyond the seeded rules (task 80.2);
+  - reading EFRAG's taxonomy package for C7's `enum2:linkrole` (raised above).
