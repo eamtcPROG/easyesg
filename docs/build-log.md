@@ -34329,3 +34329,23 @@ row's scope gains `pkg:contracts`, `pkg:i18n` and `tools`.
   - a check that a C3 emission given at the base year is given at the target year too (the task-80.2 row; the
     file's own status column carries it once its targets question is answered);
   - reading EFRAG's taxonomy package for C7's `enum2:linkrole` (task 79's entry, still raised).
+
+## Task 81 — blocked on the billing it sells through · 2026-10-30
+
+**Nothing was built; the row is `BLOCKED`.** Read against the tree before its question batch, every slice stands on work
+not yet started. `modules/billing/*` are thirteen empty modules, and nothing provides `ENTITLEMENT_PORT`, in either
+billing mode. 81.1 needs 53.2's grants and 54.2's seams, the null implementation (54.1) included. 81.2 needs 58.1's
+saga, 61's invoicing and 63's checkout, with 57's numbering beneath them. 81.3 needs A-09 (68.2, over 53.1) and A-04
+(67.6). The row's lead sentence and the Stage's preamble named four of the seven, 53, 54, 63 and 67; both now name 58,
+61 and 68 as well.
+
+### Decided (project owner)
+
+- **Task 81 waits for its prerequisites, and nothing is pulled forward for it.** Declined: building 54.1's null
+  implementation and the core's `module.comprehensive` check at report creation and scope change now. With billing on
+  nothing would implement the port, so the null implementation would be bound in both modes — an interim of the
+  seat-allowance shape, which 54.2 exists to delete. Also declined: starting Stage 4 at task 53. The next task is the
+  owner's choice.
+
+Stage 7 therefore cannot close until Stage 4 has shipped, with 67.6 and 68.2 from Stage 5. Its other rows, 78, 79
+and 80, have closed.
