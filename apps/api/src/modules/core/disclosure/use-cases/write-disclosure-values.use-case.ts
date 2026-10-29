@@ -6,6 +6,7 @@ import {
   TaxonomyVersionUnavailableError,
 } from '../errors/report.errors';
 import { basisForPreparationOf } from '../domain/entity-defaults';
+import { modulesAskingRow } from '../domain/target-rows';
 import { valueRefusal } from '../domain/value-refusal';
 import type { DisclosureValueStore } from '../interfaces/disclosure-value-store.interface';
 import type { ReportStore } from '../interfaces/report-store.interface';
@@ -78,6 +79,13 @@ export class WriteDisclosureValues {
 
     const known = new Map(registered.elements.map((element) => [element.key, element]));
     const breakdowns = this.axisShapes.breakdownAxes({ standard: registered.standard });
+    const targets = this.axisShapes.targetAxes({ standard: registered.standard });
+    // The modules a refused value names, for the client to say where the field is — the row's, not the element's, so a
+    // refused base year of Scope 1 names C3 and not B3 (task 79.3).
+    const modulesOf = (value: DisclosureValueInput): readonly string[] => {
+      const element = known.get(value.elementKey);
+      return element === undefined ? [] : modulesAskingRow({ element, dimensionKey: value.dimensionKey, targets });
+    };
     const derived = new Set(this.derivations.all({ standard: TAXONOMY_STANDARD.VSME }).keys());
     // What the report's scope asks, and the basis for preparation it states (tasks 78.1, 78.3) — read once per batch.
     const basisForPreparation = basisForPreparationOf({ registered, scope: report.scope });
@@ -93,13 +101,14 @@ export class WriteDisclosureValues {
         value,
         known,
         breakdowns,
+        targets,
         derived,
         axisOf: (key) => this.axisOf(report.taxonomyVersion, key),
         scope: report.scope,
         basisForPreparation,
       });
       if (refusal === null) admitted.push(value);
-      else refused.push({ key: keyOf(value), modules: known.get(value.elementKey)?.modules ?? [], refusal });
+      else refused.push({ key: keyOf(value), modules: modulesOf(value), refusal });
     }
 
     const stored: DisclosureValue[] = [];
@@ -118,7 +127,7 @@ export class WriteDisclosureValues {
         // writes nothing and raises nothing, so the transaction stands and the rest may still be stored. A lock or an
         // archived entity raises in the database, aborts the transaction, and refuses the report — rethrown.
         if (!(error instanceof ComputedFigureNotWritableError)) throw error;
-        refused.push({ key: keyOf(value), modules: known.get(value.elementKey)?.modules ?? [], refusal: error });
+        refused.push({ key: keyOf(value), modules: modulesOf(value), refusal: error });
       }
     }
 

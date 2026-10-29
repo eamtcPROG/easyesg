@@ -51,6 +51,7 @@ const field = (over: Partial<DisclosureField> & { elementKey: string }): Disclos
   carriedForward: false,
   fromRecord: false,
   followsScope: false,
+  answeredIn: null,
   applicable: true,
   applicabilityCause: null,
   ...over,
@@ -247,6 +248,29 @@ describe('layOutStep (task 36.2)', () => {
         'TotalEnergyConsumption',
       ]);
     });
+  });
+
+  /**
+   * C3's rows of one emission (task 79.3): the reporting year B3 answers — undimensioned, `answeredIn` B3 — then the
+   * base and the target year. Without the rule the first would stand alone as a question C3 does not ask, above a group
+   * of two that reads as if the reporting year were missing.
+   */
+  it('gathers a row answered on another module into its element’s group, first, as the step serves it', () => {
+    const AXIS = 'ReportingScopesAxis';
+    const entries = layOutStep([
+      field({ elementKey: 'GreenhouseGasEmissionReductionTargetBaseYear', order: 1 }),
+      field({ elementKey: 'GrossScope1', axes: [AXIS], answeredIn: 'B3', order: 2 }),
+      field({ elementKey: 'GrossScope1', axes: [AXIS], dimensionKey: 'BaselineYearMember', order: 2 }),
+      field({ elementKey: 'GrossScope1', axes: [AXIS], dimensionKey: 'TargetYearMember', order: 2 }),
+    ]);
+
+    expect(entries.map((entry) => entry.kind)).toEqual([STEP_ENTRY.FIELD, STEP_ENTRY.BREAKDOWN]);
+    const group = entries[1];
+    expect(group?.kind === STEP_ENTRY.BREAKDOWN ? group.fields.map((f) => f.dimensionKey) : []).toEqual([
+      '',
+      'BaselineYearMember',
+      'TargetYearMember',
+    ]);
   });
 
   it('does not collect repeating fields that carry no axis into one group', () => {

@@ -4288,6 +4288,11 @@ export interface components {
             fromRecord: boolean;
             /** @description Whether the answer is the report’s module scope rather than the reporter’s — B1’s basis for preparation (FR-27, FR-177). Shown and never typed into: a write naming another option is refused, and changing the report’s scope rewrites a stored answer with it. */
             followsScope: boolean;
+            /**
+             * @description The module this row is answered on, where that is not this step — null for every row the step asks (FR-24, FR-177). C3 shows each emission’s reporting-year figure beside its base and target years as B3 holds it, and it is answered on B3: shown here, never written from this step.
+             * @example B3
+             */
+            answeredIn: string | null;
             /** @description Whether this field applies to this reporter (FR-28). False does not mean empty: a value entered before the condition turned is retained and served as stored (UX-28), so a retained answer is applicable false beside a state that is not missing. */
             applicable: boolean;
             /** @description Why, for the fields a rule governs; null for the ones no rule names. */
@@ -4312,6 +4317,20 @@ export interface components {
              * @enum {string|null}
              */
             memberLanguage: "ro" | "en" | "ru" | null;
+        };
+        DisclosureTargetDto: {
+            /** @example ReportingScopesAxis */
+            axis: string;
+            /**
+             * @description The member a target is measured from — the base year.
+             * @example BaselineYearMember
+             */
+            base: string;
+            /**
+             * @description The member a target is set for — the target year.
+             * @example TargetYearMember
+             */
+            target: string;
         };
         DerivationInputDto: {
             /**
@@ -4343,6 +4362,8 @@ export interface components {
             fields: components["schemas"]["DisclosureFieldDto"][];
             /** @description The domains this step’s classifications draw their rows from (UC-22). On the step rather than on each field, because every element on an axis shares one list — B4’s three emissions share 94 pollutants and B7’s waste elements share 973, so a per-field copy is the same answer hundreds of times. Empty for a step with no classification. */
             axes: components["schemas"]["DisclosureAxisDto"][];
+            /** @description The target axes this step asks (UC-185): an axis answered at a base and a target member beside the reporting year another module states. Empty on a step that asks no target axis. */
+            targets: components["schemas"]["DisclosureTargetDto"][];
             /** @description The values this step’s derived figures are computed from (UC-26, UC-27). **Not fields**: they carry no state, unit, dimension or applicability and are not exported as facts, so they are a separate list rather than fields a consumer must remember to exclude. Empty for every module the template computes no figure for. */
             derivationInputs: components["schemas"]["DerivationInputDto"][];
             /**

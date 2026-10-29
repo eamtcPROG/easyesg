@@ -33797,3 +33797,250 @@ and the count are api reads.
   moved.
 - **Not built, by decision**: *at the request of …* (no source models who asked); typical-length counts (UX-19's soft
   target); C2 … C9 (79.2 … 79.9).
+
+## Task 79.2 — C2, the package's three narratives, and the help it asks for · 2026-10-28
+
+The second Comprehensive slice. UC-184's §5 specification was written first, against EFRAG's package (the task-36.8
+standing rule; §12.5.6's task-182 report-authoring row (8)). The package here is the Digital Template's *General
+Information* rows 520 … 523 in 1.3.0 and 518 … 521 in 1.2.0, headed *[If applicable linked with B2]* and printed
+inside B2's block rather than beside C1, plus the three C2 elements both registered taxonomies carry. **No question
+was put**:
+- the task row's *the same anatomy* settled what the step draws;
+- task 41's row had already settled C2's links to B2;
+- the task-94 row provides for correcting a help entry in place.
+
+What the build took is `architecture.md` §12.5.6's task-79.2 row, and FR-177 and S-07 are amended by it. The row's
+scope gains `pkg:i18n`, for the help.
+
+### What the building decided
+
+- **C2 needed no rendering code.** It is three `text_block`s, with no axis, unit or applicability rule, labelled and
+  helped in three locales since tasks 33.2 and 94. As on B2 and C1, the deliverable is the proof.
+- **The step does not recall B2's answers.** The module's summary on the list already names B2, and a recall would
+  be a cross-module read on a step no source draws. That is the ground frame 25's note pointing ¶47(d) at B2 was
+  declined on (the task-79.1 row).
+- **Its links to B2 are task 41's, and the build adds none.** The template asks ¶48's description only after its own
+  yes/no on practices, which no element carries, so nothing requires it (the task-41 row (1) (ii)). It asks the
+  target's description where B2's target boolean is yes, which the seeded `c2-target-description` already carries.
+  That rule reads a B2 element the C2 step does not present, so C2's field shows it as the last run left it (the
+  task-42 row (1)).
+  - The target's description is shown whatever B2 says, as the template prints it.
+  - Hiding it on B2's answer would be an applicability condition over a B2 answer. FR-28's rules have no such
+    condition, and task 80.1 owns it if anyone does.
+- **The platform's help said less than the package asks, and is corrected in place in both version directories**
+  (the task-94 row (3)'s provision):
+  - ¶48's help gains *where one of them covers your suppliers or clients, say so*, which is the template label's
+    *the undertaking shall mention it*.
+  - ¶49's help gains *answer it where the undertaking has decided who that is*, its *when this has been determined
+    by the undertaking*.
+  - Each is a second sentence, inside UX-17's two, authored per locale with Romanian the source. Nothing else pinned
+    the old text: searched every workspace for each sentence.
+- **The step presents the taxonomy's order**: description, accountable level, target. The template prints the target
+  second. The registry sorts by the presentation linkbase's `order`, as every step does, and the Excel export writes
+  each answer to the template's own cell (task 80.3), so the divergence is the screen's alone. UC-184's business rules
+  state it.
+- **Frames 26 and 27 draw C3's content.** Frame 26's *C2 Targets and progress against them* is GHG reduction targets
+  against a base year, with progress worked out from B3, which is C3 in the package. Frame 27's transition plan is
+  C3's other half, and the artboard's Comprehensive list is not the package's either (*C7 Governance*, *C9 Value
+  chain*). Both frames are task 79.3's to read; the module list's names are task 179.1's and stand.
+- **The browser fixture seeds a Comprehensive report.**
+  - `seedReport` takes `comprehensive`, beside `archived`, writing the `CHECK`'s own literal as the fixture's SQL
+    already did.
+  - The wizard suite's `signedInWithReport` takes a named `filing` (`sites`, `comprehensive`) where it took `sites`
+    positionally; its six callers moved. C3 … C9 each need such a report, and a fourth positional parameter is the
+    shape the root `CLAUDE.md` warns against.
+  - C1's journey still raises the scope through the module list, because its date is the trail's record of the raise.
+
+### Found in passing
+
+- **`seedFiling` carried a type error nothing reported.** `sites.map` sat under a test of the snapshot id, which does
+  not narrow `sites`. No gate type-checks `e2e/`:
+  - Playwright strips types;
+  - lint's project service reports no compiler error;
+  - `e2e/tsconfig.json` cannot be run alone, since it cannot resolve `@types/node` from the root.
+
+  It is fixed by narrowing on `sites` itself. Searched for the shape: the whole folder type-checked with its type
+  roots pointed at `apps/api`'s, and this was its one error, before the change and none after. **Raised, not built**:
+  `e2e/` has no type-check gate.
+- **`DisclosureField` draws help beside its control without `aria-describedby`.** `TextField`, `Checkbox` and
+  `CodeField` wire theirs. A screen reader on a disclosure field hears the label and, on a narrative, the character
+  count, but not the help. Searched `design_spec.md` and `architecture.md` for a decision that it should be so, and
+  found none.
+  - The journey's first draft asserted the help as the control's accessible description, and that is how it surfaced.
+  - The journey now holds each sentence to its field's labelled group.
+  - The anatomy is the inventory's and every module's, so it is **raised rather than changed here**.
+
+### Skills read against the diff
+
+No `.tsx` and no source file under `apps/` or `packages/ui` changed — the diff is six catalogue files, two e2e files
+and the documents — so `vercel-react-best-practices`, `vercel-composition-patterns`, `one-idea-per-file`,
+`one-kind-per-folder` and `nestjs-best-practices` had nothing to read against, and none was applied.
+
+### Verified, and what is not
+
+- **The browser** (`wizard.spec.ts`'s new journey), on a report seeded with the Comprehensive Module:
+  - C2's heading and its summary;
+  - exactly three narratives under their Romanian labels in the taxonomy's order, each with its help inside its own
+    field's group — the two corrected sentences among them;
+  - two answers stored, read back from the store under RLS;
+  - the value under the English and Russian labels, with the corrected help in each language.
+- **The close's run**, by the lookup table. The change reaches `packages/i18n`, so every dependent's row ran:
+  - unit suites: `pnpm --filter @easyesg/i18n test` 172; `pnpm --filter @easyesg/api test` 2,537;
+    `pnpm --filter @easyesg/web test` 2,155 (236 files); `pnpm --filter @easyesg/admin test` 322;
+  - `pnpm --filter @easyesg/i18n typecheck`; `pnpm lint`; `pnpm docs:check` 48 of 48; `pnpm routes:check`;
+  - `pnpm e2e`: 77 suites, 1,986 tests, 1,975 passed in the full run. All eleven of `pdf-export.e2e-spec.ts`'s cases
+    failed on one render:
+    - the renderer's log shows its first render in a day killed at its deadline (64 s), and the next two at 16 s
+      and 9 s;
+    - the cases share one export made in the suite's setup;
+    - run alone, the suite passed 11 of 11, and the document prints no help;
+    - **this is the second close running that met it** (task 79.1's entry, the same shape). It costs the job nothing
+      in production, where an export takes three attempts, and a re-run here.
+  - `pnpm e2e:web --project identity --project expansion`: 373 of 374. The one failure was the new journey's first
+    draft (above). Corrected, it passed alone against the same build, which no app source has changed since. The
+    run's 48 `⨯` lines are every one digest `2667547900`, the abandoned streams `apps/web/CLAUDE.md` describes.
+  - `pnpm e2e:web --project admin`: 28 of 28, nothing logged.
+- **What the api's runs printed, read rather than skipped.**
+  - The unit run logged the error paths its specs exercise, and one *worker process has failed to exit gracefully*
+    line, which a catalogue's words cannot reach.
+  - The e2e run logged the three *Message catalogue used before initialiseCatalogue()* errors and the outbox's
+    *Custom Id cannot contain :* warning that task 79.1's entry raised. It also logged the suppression and
+    hard-bounce warnings the notification suites provoke on purpose.
+- **Skipped**: `pnpm e2e:worker`, since nothing here is a consumer and the worker's graph is unchanged. Also skipped:
+  the Stage-end gates (`boundaries`, `image:check`, `facade:check`, the two `*:prove`s), which CI runs on the push. No
+  import, generated facade, seed or migration moved.
+- **Not built, by decision**: a recall of B2's answers on C2's step; hiding the target's description on B2's answer
+  (task 80.1's, if anyone's); the `aria-describedby` wiring of the anatomy's help (raised above); C3 … C9 (79.3 …
+  79.9).
+
+## Task 79.3 — C3 states its targets at their own years beside B3's figure · 2026-10-28
+
+The third Comprehensive slice, and the first that needed more than the anatomy. UC-185's §5 specification was written
+first, against EFRAG's package:
+- the Digital Template's *Environmental Disclosures* rows 16 … 62, the same in 1.2.0 and 1.3.0;
+- the targets: a base-year and a target-year column beside B3's current period;
+- the main actions, rows 49 … 52;
+- the transition plan for high climate impact sectors, rows 55 … 62;
+- the thirteen elements both taxonomies present in C3, eight of them B3's emissions on `ReportingScopesAxis`.
+
+One batch of three questions was put; the answers and what the build took within them are `architecture.md` §12.5.6's
+task-79.3 row. FR-177 (behaviour 5, AC-9) and S-07 are amended by it, and the 36.4 axis-shape row points at it. The row's
+scope gains `config`.
+
+### Decided (project owner)
+
+- **C3 asks B3's emissions at the base year and the target year, with this year's beside them, read-only** — the
+  template's three columns. Declined: the two years alone; and this year's figure editable on C3 as well, which was
+  the state C3 shipped in and meant one stored fact edited from two steps.
+- **The reduction sought and the progress so far are worked out and shown, never stored.**
+- **Base-year figures are typed.** 34.3's path is the comparative every field already has, and needs nothing new.
+
+### What the building decided within that
+
+- **A target axis is the axis-shape artefact's third registration**, `targets`. It names the axis, the module that asks
+  it, and its base and target members. An entry missing any of these is dropped whole and logged, as the two lists are;
+  half a registration would ask a base year with nothing to compare it to.
+  - Why data: nothing in the package says which member is the base, as nothing says which axis is a breakdown.
+  - The step read serves the target module three rows per element: the undimensioned one, marked `answeredIn: 'B3'`,
+    then the base and the target member. It also names the two members on the step (`targets`).
+  - The write admits exactly the two members on a target axis. Until this task the leaf rule admitted the axis's
+    *currently stated* member too, which would be the reporting year written twice.
+- **A row has modules of its own** (`modulesAskingRow`, `domain/target-rows.ts`): the base and target years are C3's,
+  every other row the element's other modules'. Three readers ask it:
+  - the write's scope check — a Basic report now refuses C3's years of a B3 element, which it admitted before, since
+    the element is B3's;
+  - each module's progress;
+  - `comprehensiveAnswered`.
+- **This supersedes task 36.4's *both progress figures move together*** and task 79.1's e2e case asserting it. C3
+  counts its own rows now, and a base-year answer is a Comprehensive one: it holds back *added on*, and the lowering
+  dialogue names C3 for it. The 79.1 case was rewritten to the new rule rather than deleted.
+- **The location-based Scope 1 and Scope 2 total is derived at each year.** The derivation names `along:
+  'ReportingScopesAxis'`, and the calculator works it out at the base and target members from the operands at the same
+  member.
+  - Why named rather than inferred: `recompute` is called for a standard by five callers, and none of them holds the
+    pinned version whose axes would say so.
+  - Without it, the derived-figure refusal would have left C3's base-year and target-year totals unwritable and empty.
+- **A year is four digits.** The write refuses anything else per value, with `YearNotWellFormedError` worded in three
+  catalogues. The field takes numerals on a phone's keypad, at most four.
+- **The two changes are the browser's.** S-07 overlays acknowledged writes without re-reading the step, so a figure
+  the step read worked out would trail the reporter's typing. `tools/target-changes.ts` works them out from
+  `answersHeld`, in floats rounded once for display, as the api's own ratios are. `rows/target-changes.tsx` draws them
+  under each emission's group. The members come from the step's `targets`, so no member key is written into the
+  browser.
+- **The layout gathers a row answered elsewhere into its element's group.** Otherwise C3's reporting-year row would
+  stand alone, as a question C3 does not ask.
+- **Found in passing, and left for its task**: validation's `evaluation-scope.ts` is the one reader that still decides
+  by element. It decides which elements a run evaluates, and no seeded rule reads a base or target row (the task-41
+  row (viii)). If task 80.2 adds such rules, that reader has to become row-aware. Searched every reader of an
+  element's `modules` in `apps/api` (`.modules.some/includes/filter`); the step read's filter is right by element, since
+  both modules present the element.
+
+### Skills read against the diff
+
+- **`nestjs-best-practices`**:
+  - `di-interface-segregation`: the calculator takes `Pick<AxisShapes, 'targetAxes'>`, corrected in the pass;
+  - `di-use-interfaces-tokens`: the factory injects `AXIS_SHAPES`;
+  - `perf-use-caching`: the targets are cached per revision with the two lists;
+  - `error-use-exception-filters`: a `DomainError` with its key in three catalogues;
+  - `error-throw-http-exceptions`: declined by name, as ever.
+- **`vercel-react-best-practices`**:
+  - `rerender-simple-expression-in-memo`: no memo over three fields' arithmetic;
+  - `rerender-no-inline-components`: `renderBreakdown` is a render function beside `renderField`;
+  - `rendering-conditional-render`: ternaries;
+  - `server-serialization`: `targets` is one small object.
+- **`one-idea-per-file`**: `reason-docblock-carries-the-why`, and four of the new docblocks lost a count of things
+  outside themselves (*all but eight elements*, *every other step none*) in the pass. `pure-logic-leaves-the-component`:
+  `target-changes.ts` with its spec.
+- **`one-kind-per-folder`**: `rows/` and `tools/` stay files only, and the new part has one reader.
+
+### Verified, and what is not
+
+- **The api, through HTTP and the database** (`wizard.e2e-spec.ts`'s four new cases and one rewritten):
+  - C3 serves each of the eight emissions as three rows, the first `answeredIn: 'B3'` holding B3's stored figure, and
+    names the two members; B3 still serves one row each and no targets.
+  - The two years are stored on a Comprehensive report and refused 409 on a Basic one, which stores the reporting year.
+    *Currently stated* is refused 400.
+  - The total is derived at the reporting year (50.7) and the base year (56), and is no total at a target year missing
+    its Scope 2. A typed total at a year is refused.
+  - A base year `2019` is stored and `19` refused 400, leaving `2019`.
+  - The unit specs hold the registration's reading and its shipped form against both taxonomy versions, the row rule,
+    the row-aware counts, the per-value refusals, and the calculator at each year.
+- **The browser** (`wizard.spec.ts`'s new journey), on a report seeded with the Comprehensive Module:
+  - B3's Scope 1 typed on B3 and read on C3 as *Anul de raportare — se completează la B3*, read-only;
+  - the base year field taking numerals;
+  - two years typed;
+  - both changes shown before any reload (−24,88 % and −7,42 %);
+  - the three rows in the store at their own years beside B3's;
+  - the rows named in English and Russian.
+
+  The fixture's `seedReport` gained `comprehensive` in task 79.2.
+- **The close's run**, by the lookup table — a change reaching `apps/api`, `apps/web`, `config/seed` and, through
+  `packages/contracts` and `packages/i18n`, every dependent's row:
+  - unit suites: `pnpm --filter @easyesg/i18n test` 172; `pnpm --filter @easyesg/api test` 2,560;
+    `pnpm --filter @easyesg/web test` 2,162 (237 files); `pnpm --filter @easyesg/admin test` 322;
+  - `typecheck` in api, web, admin, contracts and i18n; `pnpm lint`; `pnpm docs:check` 48 of 48, after
+    `apps/web/CLAUDE.md`'s Client Component count moved to 251;
+  - `pnpm openapi:check`, with the regenerated contract staged so its `git diff` compares against it; `pnpm routes:check`;
+  - `pnpm e2e`: 77 suites, 1,990 tests, 1,979 passed in the full run. All eleven of `pdf-export.e2e-spec.ts`'s cases
+    failed on the one export they share:
+    - the renderer's first render after some three hours idle was killed at its deadline (68 s), and the next two
+      took 11 s and 8 s;
+    - run alone, the suite passed 11 of 11, and nothing in this change reaches the document's rendering;
+    - **this is the third close in a row to meet it** (tasks 79.1 and 79.2, the same shape). Raised in the response, as
+      a cold renderer on this host rather than a defect in the suite.
+
+    The run printed the three *Message catalogue used before initialiseCatalogue()* errors and the outbox's *Custom Id
+    cannot contain :* warning task 79.1 raised, and the suppression and bounce warnings the notification suites provoke
+    on purpose — nothing new.
+  - `pnpm e2e:worker`: 17 of 17 — run because the calculator's factory now injects `AXIS_SHAPES`, and the worker composes
+    steps for the export.
+  - `pnpm e2e:web --project identity --project expansion`: 375 of 375, the C3 journey among them. Its 49 `⨯` lines are
+    every one digest `2667547900`, the abandoned streams `apps/web/CLAUDE.md` describes.
+  - `pnpm e2e:web --project admin`: 28 of 28, nothing logged.
+- **Skipped**: the Stage-end gates (`boundaries`, `image:check`, `facade:check`, the two `*:prove`s), which CI runs on
+  the push. No facade, migration or boundary rule moved; the seed did, and `pnpm e2e`'s pre-hook applies it.
+- **Not built, by the plan**:
+  - the transition plan's high climate impact sector gate (task 80.1);
+  - a target half answered, which the template flags behind its own yes/no (task 80.2);
+  - C3's cells in the Excel export (task 80.3), which already refuses a Comprehensive report on C1's elements;
+  - C4 … C9 (79.4 … 79.9).

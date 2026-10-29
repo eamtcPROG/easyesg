@@ -32,6 +32,19 @@
   padding-block-start: var(--space-4);
 }
 
+/* C3's two worked-out changes beneath an emission's three years (task 79.3): said, not asked, so the step's own
+   reading colour and no control's box. */
+.targetChanges {
+  display: grid;
+  gap: var(--space-1);
+  padding-block-start: var(--space-4);
+}
+
+.targetChange {
+  margin: 0;
+  color: var(--text-default);
+}
+
 /* The declared gap's reason, with the artboard's line over it: a third party reads it in the export (UX-30's point,
    said where the reason is shown). */
 .recorded {

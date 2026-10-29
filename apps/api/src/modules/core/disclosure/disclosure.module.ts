@@ -213,12 +213,13 @@ const httpProviders: Provider[] = [
   WizardService,
   {
     provide: DERIVATION_RECALCULATOR,
-    inject: [DERIVATIONS, DISCLOSURE_VALUE_STORE, DERIVATION_INPUT_STORE],
+    inject: [DERIVATIONS, DISCLOSURE_VALUE_STORE, DERIVATION_INPUT_STORE, AXIS_SHAPES],
     useFactory: (
       derivations: Derivations,
       values: DisclosureValueStore,
       inputs: DerivationInputStore,
-    ) => new DerivationCalculator(derivations, values, inputs),
+      axisShapes: AxisShapes,
+    ) => new DerivationCalculator(derivations, values, inputs, axisShapes),
   },
   {
     provide: WriteDisclosureValues,

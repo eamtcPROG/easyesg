@@ -216,6 +216,7 @@ export async function WizardStep({
               <StepFields
                 fields={fields}
                 axes={read.step.axes}
+                targets={read.step.targets}
                 derivationInputs={read.step.derivationInputs}
                 priorValues={prior}
                 readOnly={readOnly}

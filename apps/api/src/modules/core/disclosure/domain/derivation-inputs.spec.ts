@@ -11,6 +11,7 @@ describe('derivationInputsFor', () => {
       hours: { from: OPERAND_SOURCE.INPUT, key: 'HoursWorkedByOneFullTimeEmployee', fallback: '2000' },
       employees: { from: OPERAND_SOURCE.INPUT, key: 'AverageNumberOfEmployees', fallback: null },
     },
+    along: null,
   };
   const turnover: Derivation = {
     element: 'EmployeeTurnoverRate',
@@ -18,6 +19,7 @@ describe('derivationInputsFor', () => {
     operands: {
       departures: { from: OPERAND_SOURCE.INPUT, key: 'NumberOfEmployeesWhoLeft', fallback: null },
     },
+    along: null,
   };
   const derivations = new Map([
     [accidentRate.element, accidentRate],

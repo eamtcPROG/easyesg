@@ -16,6 +16,7 @@ const row = (over: Partial<ResolvedRow> = {}): ResolvedRow => ({
   fromRecord: false,
   repeating: false,
   dimensionLabel: null,
+  answeredIn: null,
   ...over,
 });
 

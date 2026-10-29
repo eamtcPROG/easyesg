@@ -97,7 +97,7 @@ export class DerivationService implements Derivations {
   /** One derivation, whole or not at all. */
   private readOne(candidate: unknown): Derivation | null {
     if (!isRecord(candidate)) return null;
-    const { element, formula, operands } = candidate;
+    const { element, formula, operands, along } = candidate;
     if (typeof element !== 'string' || element === '') return null;
     if (!isDerivationFormula(formula)) return null;
     if (!isRecord(operands)) return null;
@@ -114,6 +114,13 @@ export class DerivationService implements Derivations {
       read[name] = { from: binding.from, key: binding.key, fallback: fallback ?? null };
     }
     if (Object.keys(read).length === 0) return null;
-    return { element, formula, operands: read };
+    // An axis the derivation also holds along (task 79.3) is optional, and must name one where present: an empty or
+    // non-string `along` is a malformed entry, not a derivation that holds along nothing.
+    let axis: string | null = null;
+    if (along !== undefined) {
+      if (typeof along !== 'string' || along === '') return null;
+      axis = along;
+    }
+    return { element, formula, operands: read, along: axis };
   }
 }

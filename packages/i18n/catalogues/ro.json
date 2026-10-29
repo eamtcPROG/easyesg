@@ -369,6 +369,7 @@
       "not_available_reason_required": "Un câmp marcat ca indisponibil are nevoie de un motiv, așa că valoarea nu a fost salvată. Scrieți de ce informația nu este disponibilă și salvați din nou.",
       "not_available_reason_unexpected": "S-a trimis un motiv pentru un câmp care nu este marcat ca indisponibil, așa că valoarea nu a fost salvată. Reîncărcați pagina și completați din nou câmpul.",
       "unit_not_admitted": "Unitatea aleasă nu este una pe care standardul o admite pentru acest câmp, așa că valoarea nu a fost salvată. Reîncărcați pagina și alegeți o unitate din listă.",
+      "year_not_well_formed": "Un an se scrie cu patru cifre, de exemplu 2023, așa că valoarea nu a fost salvată. Introduceți anul complet.",
       "module_not_found": "Acest raport nu are o astfel de secțiune, așa că nu este nimic de afișat. Deschideți din nou raportul din lista de rapoarte.",
       "not_exported": "Niciun export al acestui raport nu s-a finalizat încă, așa că nu există nimic de înregistrat ca depus. Generați mai întâi fișierul PDF sau Excel, apoi marcați raportul ca depus.",
       "exported": "Un fișier al acestui raport a fost exportat sau se pregătește, așa că raportul este o dovadă a ceea ce s-a transmis și nu poate fi șters. Fișierele și răspunsurile lui rămân păstrate.",

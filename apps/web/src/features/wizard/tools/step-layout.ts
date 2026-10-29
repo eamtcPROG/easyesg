@@ -163,8 +163,10 @@ export function layOutStep(
     // **Checked before `repeating`, and the two cannot both hold**: the api gives a row either an
     // ordinal (typed axis) or a member (breakdown axis), never both, because no registered element
     // carries more than one axis. Reading them in this order means a future element that did would
-    // render as a breakdown rather than as an unreadable half of each.
-    if (field.dimensionKey !== '') {
+    // render as a breakdown rather than as an unreadable half of each. **And a row answered on another module joins its
+    // element's group** (task 79.3): C3's reporting-year Scope 1 is undimensioned, and it is the first of three rows
+    // of one question — this year, the base year, the target year — not a question of its own.
+    if (field.dimensionKey !== '' || field.answeredIn !== null) {
       const standing = breakdowns.get(field.elementKey);
       if (standing === undefined) {
         const group = {

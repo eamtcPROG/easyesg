@@ -308,6 +308,12 @@ export interface DisclosureField {
    */
   readonly followsScope: boolean;
   /**
+   * The module this row is answered on, where that is not the step's own — `null` for every row the step asks (task
+   * 79.3; `architecture.md` §12.5.6's task-79.3 row). C3 shows each emission's reporting-year figure beside its base and
+   * target years as B3 holds it, and answers it there: shown, never typed into on this step.
+   */
+  readonly answeredIn: string | null;
+  /**
    * Whether this field applies to this reporter (task 91.3; FR-28, BR-APP-5).
    *
    * **`false` does not mean empty.** UX-28 requires a value entered before the condition turned to
@@ -371,6 +377,20 @@ export interface DisclosureStep {
    * the step carries the axis once.
    */
   readonly axes: readonly DisclosureAxis[];
+  /**
+   * The target axes this step asks (task 79.3) — which member of each is the base and which the target, so a reader
+   * comparing the two years names neither member itself. Empty on a step that asks no target axis.
+   */
+  readonly targets: readonly DisclosureTarget[];
+}
+
+/**
+ * One target axis as a step serves it (task 79.3): its key and its two members. The module is the step's own.
+ */
+export interface DisclosureTarget {
+  readonly axis: string;
+  readonly base: string;
+  readonly target: string;
 }
 
 /**

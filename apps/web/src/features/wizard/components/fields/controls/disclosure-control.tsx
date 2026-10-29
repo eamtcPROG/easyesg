@@ -249,10 +249,18 @@ export function DisclosureControl({
           value={draft}
           onChange={(event) => setDraft(event.currentTarget.value)}
           onBlur={onTextBlur}
+          {...(field.kind === DISCLOSURE_KIND.YEAR ? YEAR_INPUT : {})}
         />
       );
   }
 }
+
+/**
+ * **A calendar year is typed as one** (task 79.3; NFR-34): numerals on a phone's keypad, and no more than four of them.
+ * The kind is stored as text by design, so this is the form's field-level shape and nothing more — the write refuses
+ * anything but four digits, and the refusal is what a pasted *2O23* meets.
+ */
+const YEAR_INPUT = { inputMode: 'numeric', maxLength: 4 } as const;
 
 interface ControlValues {
   readonly draft: string;

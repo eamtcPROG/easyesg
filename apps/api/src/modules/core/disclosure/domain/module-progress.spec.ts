@@ -20,6 +20,7 @@ const summaries = (over: Partial<Parameters<typeof moduleSummaries>[0]> = {}) =>
     byElement: new Map(),
     catalogue: null,
     omitted: new Set(),
+    targets: new Map(),
     ...over,
   });
 
@@ -86,6 +87,48 @@ describe('moduleSummaries', () => {
       { module: 'C1', answered: 1, comprehensiveAnswered: 1 },
       { module: 'C3', answered: 2, comprehensiveAnswered: 1 },
     ]);
+  });
+
+  /*
+   * Task 79.3: on a target axis each module counts the rows it asks — B3 the reporting year, C3 the base and the target
+   * year — so C3 no longer moves with B3's answers, and a base-year answer is one a lowered scope hides.
+   */
+  describe('an element on a target axis (task 79.3)', () => {
+    const scope1 = anElement({ key: 'GrossScope1', modules: ['B3', 'C3'], axes: ['ReportingScopesAxis'] });
+    const targets = new Map([
+      [
+        'ReportingScopesAxis',
+        { key: 'ReportingScopesAxis', module: 'C3', base: 'BaselineYearMember', target: 'TargetYearMember' },
+      ],
+    ]);
+    const counted = (stored: Parameters<typeof indexStored>[0]) =>
+      summaries({ elements: [scope1], byElement: indexStored(stored).byElement, targets }).map(
+        ({ module, answered, comprehensiveAnswered, lastAnsweredAt }) => ({
+          module,
+          answered,
+          comprehensiveAnswered,
+          lastAnsweredAt,
+        }),
+      );
+
+    it('counts the reporting year into B3 alone', () => {
+      expect(counted([aStoredValue({ elementKey: 'GrossScope1', valueNumeric: '38.7', updatedAt: 1_000 })])).toEqual([
+        { module: 'B3', answered: 1, comprehensiveAnswered: 0, lastAnsweredAt: 1_000 },
+        { module: 'C3', answered: 0, comprehensiveAnswered: 0, lastAnsweredAt: null },
+      ]);
+    });
+
+    it('counts a base year into C3 alone, as a Comprehensive answer', () => {
+      expect(
+        counted([
+          aStoredValue({ elementKey: 'GrossScope1', valueNumeric: '38.7', updatedAt: 1_000 }),
+          aStoredValue({ elementKey: 'GrossScope1', dimensionKey: 'BaselineYearMember', valueNumeric: '41.8', updatedAt: 2_000 }),
+        ]),
+      ).toEqual([
+        { module: 'B3', answered: 1, comprehensiveAnswered: 0, lastAnsweredAt: 1_000 },
+        { module: 'C3', answered: 1, comprehensiveAnswered: 1, lastAnsweredAt: 2_000 },
+      ]);
+    });
   });
 
   it('answers in the taxonomy’s module order, and leaves out a module no element presents', () => {

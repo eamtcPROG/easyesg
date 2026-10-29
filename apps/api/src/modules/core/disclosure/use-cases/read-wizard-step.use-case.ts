@@ -17,6 +17,7 @@ import { moduleSummaries } from '../domain/module-progress';
 import { qualifiedDomainOf } from '../domain/qualified-domain';
 import { recordSiteNames, showsRecordValue } from '../domain/record-provenance';
 import { indexStored, keyOf, type StoredValues } from '../domain/stored-values';
+import { answeredElsewhere, targetRowsOn } from '../domain/target-rows';
 import { answeredRows, withRecordSiteNames } from '../domain/typed-axis-rows';
 import {
   DisclosureModuleNotFoundError,
@@ -157,6 +158,8 @@ export class ReadWizardStep {
       // UX-29's third state, derived from B1's own declaration rather than stored per module — VSME's
       // only omission ground, stated where ¶24(b) requires it (task 36.13).
       omitted: this.omittedModules({ registered, byElement }),
+      // Which module asks which row of the eight emissions B3 and C3 share (task 79.3).
+      targets: this.axisShapes.targetAxes({ standard: registered.standard }),
     });
   }
 
@@ -242,6 +245,8 @@ export class ReadWizardStep {
     });
     // Read once for the step: which elements are derived (task 38.4) and, below, the inputs they read.
     const derivations = this.derivations.all({ standard: registered.standard });
+    // The axes one module asks at a base and a target year beside the others' reporting year (task 79.3).
+    const targets = this.axisShapes.targetAxes({ standard: registered.standard });
     const fields = registered.elements
       // Membership, not equality: eight of B3's seventeen are presented in C3 as well (task 36.4).
       .filter((element) => element.modules.includes(query.module))
@@ -272,7 +277,9 @@ export class ReadWizardStep {
         if (classification !== null) classifications.add(classification);
         return rowsOf({
           repeating,
-          members: members.membersFor(element),
+          // **A target axis decides C3's rows before any breakdown could** (task 79.3): the reporting year B3 answers,
+          // then the base and the target year C3 asks — three rows of one element, as the template's three columns.
+          members: targetRowsOn({ element, module: query.module, targets }) ?? members.membersFor(element),
           classification,
           chosen: classification === null ? [] : (chosenByAxis.get(classification) ?? []),
           // The axis's ordinals, which already fold in the snapshot's rows for every element on it.
@@ -310,6 +317,8 @@ export class ReadWizardStep {
               dimensionLabel: repeating
                 ? (answered?.names.get(row.ordinal) ?? null)
                 : members.labelFor(row.dimensionKey),
+              // C3's reporting-year row is B3's, shown as B3 holds it (task 79.3); every row a step asks answers `null`.
+              answeredIn: answeredElsewhere({ element, dimensionKey: row.dimensionKey, module: query.module, targets }),
             },
             resolved,
           );
@@ -336,6 +345,10 @@ export class ReadWizardStep {
           const axis = members.domainOf(name);
           return axis === null ? [] : [axis];
         }),
+      // Which of each target axis' members is the base and which the target, for the step that asks it (task 79.3).
+      targets: [...targets.values()]
+        .filter((axis) => axis.module === query.module)
+        .map((axis) => ({ axis: axis.key, base: axis.base, target: axis.target })),
     };
   }
 

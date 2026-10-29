@@ -36,6 +36,7 @@ function field(overrides: Partial<DisclosureField> & Pick<DisclosureField, 'elem
     carriedForward: false,
     fromRecord: false,
     followsScope: false,
+    answeredIn: null,
     applicable: true,
     applicabilityCause: null,
     ...overrides,

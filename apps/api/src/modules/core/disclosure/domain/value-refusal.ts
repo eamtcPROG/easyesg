@@ -9,7 +9,9 @@ import {
   UnitNotAdmittedError,
   UnknownDisclosureDimensionError,
   UnknownDisclosureElementError,
+  YearNotWellFormedError,
 } from '../errors/report.errors';
+import { DISCLOSURE_KIND } from '@easyesg/vsme';
 import { unitIsAdmitted } from '../models/admitted-unit';
 import { admitsMember } from '../models/axis-leaves';
 import { statesBasis } from './entity-defaults';
@@ -17,6 +19,14 @@ import { B1_ELEMENT } from '../models/b1-element.model';
 import type { DisclosureValueContents, DisclosureValueKey } from '../models/disclosure-value.model';
 import { NOT_AVAILABLE_REASON, notAvailableReasonVerdict } from '../models/not-available-reason';
 import { scopeAsks, type ReportScope } from '../models/report.model';
+import { targetAxisOf, targetMembers, type TargetAxis } from '../models/target-axis';
+import { modulesAskingRow } from './target-rows';
+
+/**
+ * A calendar year as the `year` kind holds it (task 79.3; NFR-34): four digits and nothing else — never an instant, and
+ * never a number, which would print *2 023*.
+ */
+const CALENDAR_YEAR = /^\d{4}$/;
 
 /** One value as a write receives it: the key without its report, and the contents. */
 export interface ValueToJudge extends Omit<DisclosureValueKey, 'reportId'> {
@@ -36,6 +46,8 @@ export function valueRefusal(input: {
   readonly known: ReadonlyMap<string, TaxonomyElement>;
   /** The axes the standard registers as breakdowns (`AxisShapes`). */
   readonly breakdowns: ReadonlySet<string>;
+  /** The axes one module asks at a base and a target year (`AxisShapes`, task 79.3). */
+  readonly targets: ReadonlyMap<string, TargetAxis>;
   /** The elements a registered derivation computes. */
   readonly derived: ReadonlySet<string>;
   readonly axisOf: (key: string) => TaxonomyAxis | null;
@@ -55,8 +67,11 @@ export function valueRefusal(input: {
 
   // **And the report's scope, since task 78.1** (§12.5.6's task-182 report-authoring row (11)): an element no module of
   // which the scope asks is a Comprehensive one on a Basic report. **Over its modules, never its first**: the eight
-  // elements B3 and C3 share are Basic elements too (task 36.4), and stay writable whatever the scope.
-  if (!element.modules.some((module) => scopeAsks({ scope: input.scope, module }))) {
+  // elements B3 and C3 share are Basic elements too (task 36.4), and stay writable whatever the scope. **Over the row's
+  // modules since task 79.3**: their base and target years are C3's alone, so a Basic report refuses those rows of a B3
+  // element and admits its reporting year.
+  const asking = modulesAskingRow({ element, dimensionKey: value.dimensionKey, targets: input.targets });
+  if (!asking.some((module) => scopeAsks({ scope: input.scope, module }))) {
     return new DisclosureOutOfScopeError();
   }
 
@@ -64,11 +79,17 @@ export function valueRefusal(input: {
   // the element's axes do not declare draws a row. Checked here rather than trusted from the browser, which is P-4.
   // **A category is not an answer** (task 36.8), and **a breakdown admits the rows the step read serves, its total
   // included** (task 217) — both `models/axis-leaves.ts`'s rule, which the step read asks too.
+  // **A target axis admits exactly its two years** (task 79.3): the step serves no other row, and a third — the axis's
+  // own *currently stated* member — would be the reporting year written twice, once undimensioned and once not.
   if (value.dimensionKey !== '') {
-    const admits = element.axes.some((key) => {
-      const axis = input.axisOf(key);
-      return axis !== null && admitsMember({ axis, member: value.dimensionKey, breakdown: input.breakdowns.has(key) });
-    });
+    const target = targetAxisOf({ element, targets: input.targets });
+    const admits =
+      target !== null
+        ? targetMembers(target).includes(value.dimensionKey)
+        : element.axes.some((key) => {
+            const axis = input.axisOf(key);
+            return axis !== null && admitsMember({ axis, member: value.dimensionKey, breakdown: input.breakdowns.has(key) });
+          });
     if (!admits) return new UnknownDisclosureDimensionError();
   }
 
@@ -93,6 +114,12 @@ export function valueRefusal(input: {
   if (verdict === NOT_AVAILABLE_REASON.UNEXPECTED) return new NotAvailableReasonUnexpectedError();
   if (!unitIsAdmitted({ unitCode: value.contents.unitCode, admitted: element.unitCodes })) {
     return new UnitNotAdmittedError();
+  }
+  // **And a year is four digits** (task 79.3): stored as text, so nothing below would refuse *2O23*. A cleared field
+  // holds nothing and is not judged.
+  const year = value.contents.valueText;
+  if (element.kind === DISCLOSURE_KIND.YEAR && year !== null && year !== undefined && !CALENDAR_YEAR.test(year)) {
+    return new YearNotWellFormedError();
   }
   return null;
 }

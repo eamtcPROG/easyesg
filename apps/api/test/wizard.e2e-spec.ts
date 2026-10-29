@@ -2252,7 +2252,7 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
       expect(again).toBeGreaterThan(first ?? Number.POSITIVE_INFINITY);
     });
 
-    it('counts apart the answers only the Comprehensive scope asks — a figure C3 shares with B3 is not one (task 79.1)', async () => {
+    it('counts apart the answers only the Comprehensive scope asks — the reporting year C3 shows from B3 is not one (tasks 79.1, 79.3)', async () => {
       const reportId = await createReport(await openPeriod(2026), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
       const summaryOf = async (module: string) =>
         objectsOf<ModuleSummary>(
@@ -2260,13 +2260,147 @@ describe('the wizard surface (S-07; UC-19, UC-35)', () => {
         ).find((summary) => summary.module === module);
 
       await putValues(reportId, [{ elementKey: SHARED, valueNumeric: '4.2', state: DISCLOSURE_STATE.OK }]).expect(200);
-      expect(await summaryOf('C3')).toMatchObject({ answered: 1, comprehensiveAnswered: 0 });
+      // **Task 79.3 narrowed this**: the reporting year is B3's row, which C3 shows and does not ask, so it counts into B3
+      // alone — until then both modules moved together. C3 asks the base and the target year, and those are Comprehensive.
+      expect(await summaryOf('C3')).toMatchObject({ answered: 0, comprehensiveAnswered: 0 });
+      expect(await summaryOf('B3')).toMatchObject({ answered: 1, comprehensiveAnswered: 0 });
+      await putValues(reportId, [
+        { elementKey: SHARED, dimensionKey: 'BaselineYearMember', valueNumeric: '5.1', state: DISCLOSURE_STATE.OK },
+      ]).expect(200);
+      expect(await summaryOf('C3')).toMatchObject({ answered: 1, comprehensiveAnswered: 1 });
       expect(await summaryOf('B3')).toMatchObject({ answered: 1, comprehensiveAnswered: 0 });
 
       await putValues(reportId, [
         { elementKey: STRATEGY, valueText: 'Pâine și covrigi', state: DISCLOSURE_STATE.OK },
       ]).expect(200);
       expect(await summaryOf('C1')).toMatchObject({ answered: 1, comprehensiveAnswered: 1 });
+    });
+  });
+
+  /**
+   * C3's targets at their own years (task 79.3; UC-185; §12.5.6's task-79.3 row). The eight emissions are B3's elements
+   * on `ReportingScopesAxis`, and the axis-shape artefact registers it as C3's target axis: C3 shows the reporting year
+   * as B3 holds it and asks the base and the target year; a Basic report asks only the first.
+   */
+  describe('C3 states its targets at their own years beside B3’s figure (task 79.3)', () => {
+    const SCOPE1 = 'GrossScope1GreenhouseGasEmissions';
+    const SCOPE2 = 'GrossLocationBasedScope2GreenhouseGasEmissions';
+    const TOTAL = 'TotalGrossLocationBasedScope1AndScope2GHGEmissions';
+    const BASE_YEAR = 'GreenhouseGasEmissionReductionTargetBaseYear';
+    const BASE = 'BaselineYearMember';
+    const TARGET = 'TargetYearMember';
+    const EMISSIONS = [
+      'GrossLocationBasedScope2GreenhouseGasEmissions',
+      'GrossMarketBasedScope2GreenhouseGasEmissions',
+      'GrossScope1GreenhouseGasEmissions',
+      'GrossScope3GreenhouseGasEmissions',
+      'TotalGrossLocationBasedGHGEmissions',
+      'TotalGrossLocationBasedScope1AndScope2GHGEmissions',
+      'TotalGrossMarketBasedGHGEmissions',
+      'TotalGrossMarketBasedScope1AndScope2GHGEmissions',
+    ];
+    interface TargetStep extends Step {
+      targets: { axis: string; base: string; target: string }[];
+    }
+    type TargetField = Field & { answeredIn: string | null };
+    const put = (reportId: string, values: Record<string, unknown>[]) =>
+      http().put(`/api/v1/reports/${reportId}/values`).set(editor.authorization).send({ values });
+    const figure = (elementKey: string, dimensionKey: string, valueNumeric: string) => ({
+      elementKey,
+      dimensionKey,
+      valueNumeric,
+      unitCode: 'tCO2e',
+      state: DISCLOSURE_STATE.OK,
+    });
+    const rows = (step: Step, elementKey: string) =>
+      (step.fields as TargetField[])
+        .filter((field) => field.elementKey === elementKey)
+        .map(({ dimensionKey, answeredIn, valueNumeric }) => ({ dimensionKey, answeredIn, valueNumeric }));
+
+    it('serves each emission on C3 as the reporting year from B3, then the base and the target year — and B3 as before', async () => {
+      const reportId = await createReport(await openPeriod(2026), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      await put(reportId, [figure(SCOPE1, '', '38.7')]).expect(200);
+
+      const c3 = (await readStep(reportId, 'C3')) as TargetStep;
+      for (const key of EMISSIONS) {
+        expect({ key, rows: rows(c3, key).map(({ dimensionKey, answeredIn }) => ({ dimensionKey, answeredIn })) }).toEqual({
+          key,
+          rows: [
+            { dimensionKey: '', answeredIn: 'B3' },
+            { dimensionKey: BASE, answeredIn: null },
+            { dimensionKey: TARGET, answeredIn: null },
+          ],
+        });
+      }
+      // The reporting year is B3's stored figure, the same row — not a copy.
+      expect(rows(c3, SCOPE1)[0]?.valueNumeric).toBe('38.7');
+      // The step names which member is which, so the browser names neither.
+      expect(c3.targets).toEqual([{ axis: 'ReportingScopesAxis', base: BASE, target: TARGET }]);
+
+      const b3 = (await readStep(reportId, 'B3')) as TargetStep;
+      for (const key of EMISSIONS) {
+        expect({ key, rows: rows(b3, key).map(({ dimensionKey, answeredIn }) => ({ dimensionKey, answeredIn })) }).toEqual({
+          key,
+          rows: [{ dimensionKey: '', answeredIn: null }],
+        });
+      }
+      expect(b3.targets).toEqual([]);
+    });
+
+    it('stores the two years on a Comprehensive report, refuses them on a Basic one, and refuses the axis’s own current member', async () => {
+      const comprehensive = await createReport(await openPeriod(2026), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      await put(comprehensive, [figure(SCOPE1, BASE, '41.8'), figure(SCOPE1, TARGET, '31.4')]).expect(200);
+      expect(rows(await readStep(comprehensive, 'C3'), SCOPE1).map((row) => row.valueNumeric)).toEqual([
+        null,
+        '41.8',
+        '31.4',
+      ]);
+      // *Currently stated* would be the reporting year written a second time, beside its undimensioned row.
+      const twice = await put(comprehensive, [figure(SCOPE1, 'CurrentlyStatedMember', '38.7')]).expect(400);
+      expect((twice.body as { refused?: { dimensionKey: string }[] }).refused?.map((item) => item.dimensionKey)).toEqual([
+        'CurrentlyStatedMember',
+      ]);
+
+      const basic = await createReport(await openPeriod(2025));
+      const refused = await put(basic, [figure(SCOPE1, BASE, '41.8')]).expect(409);
+      expect((refused.body as { type: string }).type).toBe(`${PROBLEM_BASE_URI}/conflict`);
+      // The reporting year is B3's, and a Basic report asks it.
+      await put(basic, [figure(SCOPE1, '', '38.7')]).expect(200);
+      const held = (await asOrganization(owner, ORG, (run) =>
+        run(`SELECT dimension_key FROM core.report_disclosure_value WHERE report_id = $1 AND element_key = $2`, [basic, SCOPE1]),
+      )) as { dimension_key: string }[];
+      expect(held.map((row) => row.dimension_key)).toEqual(['']);
+    });
+
+    it('works the location-based Scope 1 and Scope 2 total out at each year, from that year’s parts', async () => {
+      const reportId = await createReport(await openPeriod(2026), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      await put(reportId, [
+        figure(SCOPE1, '', '38.7'),
+        figure(SCOPE2, '', '12'),
+        figure(SCOPE1, BASE, '41.8'),
+        figure(SCOPE2, BASE, '14.2'),
+        figure(SCOPE1, TARGET, '31.4'),
+      ]).expect(200);
+
+      const total = (await readStep(reportId, 'C3')).fields.filter((field) => field.elementKey === TOTAL);
+      expect(total.map(({ dimensionKey, valueNumeric, origin }) => ({ dimensionKey, valueNumeric, origin }))).toEqual([
+        { dimensionKey: '', valueNumeric: '50.7', origin: 'calculated' },
+        { dimensionKey: BASE, valueNumeric: '56', origin: 'calculated' },
+        // The target year's Scope 2 is not stated, so its total is no total.
+        { dimensionKey: TARGET, valueNumeric: null, origin: 'calculated' },
+      ]);
+      // And a typed total at a year is refused, as B3's is.
+      await put(reportId, [figure(TOTAL, BASE, '99')]).expect(400);
+    });
+
+    it('stores a base year of four digits and refuses anything else', async () => {
+      const reportId = await createReport(await openPeriod(2026), REPORT_SCOPE.BASIC_AND_COMPREHENSIVE);
+      await put(reportId, [{ elementKey: BASE_YEAR, valueText: '2019', state: DISCLOSURE_STATE.OK }]).expect(200);
+      expect(rowsOf(await readStep(reportId, 'C3'), BASE_YEAR)[0]?.valueText).toBe('2019');
+
+      const refused = await put(reportId, [{ elementKey: BASE_YEAR, valueText: '19', state: DISCLOSURE_STATE.OK }]).expect(400);
+      expect((refused.body as { type: string }).type).toBe(`${PROBLEM_BASE_URI}/validation-failed`);
+      expect(rowsOf(await readStep(reportId, 'C3'), BASE_YEAR)[0]?.valueText).toBe('2019');
     });
   });
 });

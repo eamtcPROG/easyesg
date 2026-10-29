@@ -68,6 +68,7 @@
     {
       "element": "TotalGrossLocationBasedScope1AndScope2GHGEmissions",
       "formula": "sum",
+      "along": "ReportingScopesAxis",
       "operands": {
         "scope1": {
           "from": "disclosure",

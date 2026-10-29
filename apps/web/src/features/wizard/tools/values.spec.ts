@@ -92,6 +92,7 @@ const shaped = (over: Partial<DisclosureField> & { elementKey: string }): Disclo
   carriedForward: false,
   fromRecord: false,
   followsScope: false,
+  answeredIn: null,
   applicable: true,
   applicabilityCause: null,
   ...over,

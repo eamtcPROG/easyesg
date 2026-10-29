@@ -35,6 +35,7 @@ import type {
   DisclosureApplicabilityCause,
   DerivationInputField,
   DisclosureAxis,
+  DisclosureTarget,
   DisclosureDefault,
   PresentedDisclosureField,
   DisclosureModuleSummary,
@@ -454,6 +455,17 @@ export class DisclosureFieldDto {
   readonly followsScope: boolean;
 
   @ApiProperty({
+    nullable: true,
+    type: String,
+    example: 'B3',
+    description:
+      'The module this row is answered on, where that is not this step — null for every row the step asks (FR-24, ' +
+      'FR-177). C3 shows each emission’s reporting-year figure beside its base and target years as B3 holds it, and ' +
+      'it is answered on B3: shown here, never written from this step.',
+  })
+  readonly answeredIn: string | null;
+
+  @ApiProperty({
     description:
       'Whether this field applies to this reporter (FR-28). False does not mean empty: a value ' +
       'entered before the condition turned is retained and served as stored (UX-28), so a ' +
@@ -520,6 +532,7 @@ export class DisclosureFieldDto {
     this.carriedForward = field.carriedForward;
     this.fromRecord = field.fromRecord;
     this.followsScope = field.followsScope;
+    this.answeredIn = field.answeredIn;
     this.applicable = field.applicable;
     this.applicabilityCause =
       field.applicabilityCause === null ? null : new ApplicabilityCauseDto(field.applicabilityCause);
@@ -574,6 +587,27 @@ export class DisclosureAxisDto {
     this.label = axis.label;
     this.members = axis.members.map((member) => new DisclosureOptionDto(member));
     this.memberLanguage = axis.memberLanguage;
+  }
+}
+
+/**
+ * One target axis a step asks (task 79.3): which of its members is the base and which the target, so a client comparing
+ * the two years names neither member itself. Declared above `DisclosureStepDto` for `DisclosureAxisDto`'s reason.
+ */
+export class DisclosureTargetDto {
+  @ApiProperty({ example: 'ReportingScopesAxis' })
+  readonly axis: string;
+
+  @ApiProperty({ example: 'BaselineYearMember', description: 'The member a target is measured from — the base year.' })
+  readonly base: string;
+
+  @ApiProperty({ example: 'TargetYearMember', description: 'The member a target is set for — the target year.' })
+  readonly target: string;
+
+  constructor(target: DisclosureTarget) {
+    this.axis = target.axis;
+    this.base = target.base;
+    this.target = target.target;
   }
 }
 
@@ -643,6 +677,14 @@ export class DisclosureStepDto {
   readonly axes: DisclosureAxisDto[];
 
   @ApiProperty({
+    type: [DisclosureTargetDto],
+    description:
+      'The target axes this step asks (UC-185): an axis answered at a base and a target member beside the reporting ' +
+      'year another module states. Empty on a step that asks no target axis.',
+  })
+  readonly targets: DisclosureTargetDto[];
+
+  @ApiProperty({
     type: [DerivationInputDto],
     description:
       'The values this step’s derived figures are computed from (UC-26, UC-27). **Not fields**: ' +
@@ -669,6 +711,7 @@ export class DisclosureStepDto {
       (field) => new DisclosureFieldDto(field, step.changeCounts.get(fieldChangeKey(field)) ?? 0),
     );
     this.axes = step.axes.map((axis) => new DisclosureAxisDto(axis));
+    this.targets = step.targets.map((target) => new DisclosureTargetDto(target));
     this.derivationInputs = step.derivationInputs.map((input) => new DerivationInputDto(input));
     this.precision = { ...step.precision };
   }

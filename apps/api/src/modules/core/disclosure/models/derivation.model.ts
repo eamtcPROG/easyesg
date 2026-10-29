@@ -123,6 +123,13 @@ export interface Derivation {
   readonly element: string;
   readonly formula: DerivationFormula;
   readonly operands: Readonly<Record<string, DerivationOperand>>;
+  /**
+   * The target axis this derivation holds along as well, or `null` (task 79.3; §12.5.6's task-79.3 row): worked out at
+   * the axis's base and target members too, from the disclosure operands at the same member. B3's location-based Scope
+   * 1 and Scope 2 total is the one, so C3's base-year total is its base-year parts' sum. **Named here rather than
+   * inferred**, because the calculator recomputes for a standard and never reads a pinned version's axes.
+   */
+  readonly along: string | null;
 }
 
 /**

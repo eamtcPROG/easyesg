@@ -7,6 +7,7 @@ import {
   grantMembership,
   seedPriorPeriod,
   seedReport,
+  type SeedReportInput,
   verificationTokenFor,
 } from './support/db';
 import { untilHydrated } from './support/hydration';
@@ -37,11 +38,10 @@ test.afterAll(async () => {
   await cleanupAccounts(RUN_PREFIX);
 });
 
-async function signedInWithReport(
-  page: Page,
-  label: string,
-  sites?: readonly { readonly name: string; readonly locality: string }[],
-): Promise<string> {
+/** What the seeded report holds beyond its defaults — B1's sites, or the Comprehensive Module's scope. */
+type SeededFiling = Pick<SeedReportInput, 'sites' | 'comprehensive'>;
+
+async function signedInWithReport(page: Page, label: string, filing: SeededFiling = {}): Promise<string> {
   const email = addressFor(label);
 
   await page.goto('/register');
@@ -60,7 +60,7 @@ async function signedInWithReport(
     organizationName: `${RUN_PREFIX}-${label}`,
   });
   organizations.push(organizationId);
-  const reportId = await seedReport({ organizationId, name: `${RUN_PREFIX}-entity`, ...(sites ? { sites } : {}) });
+  const reportId = await seedReport({ organizationId, name: `${RUN_PREFIX}-entity`, ...filing });
   organizationOf.set(reportId, organizationId);
 
   await page.goto('/sign-in');
@@ -221,10 +221,12 @@ test('answers a module the pinned taxonomy does not carry with a 404, not an emp
 test('opens B1 pre-filled, stores what the reporter accepts, and groups the sites (FR-27, UX-109)', async ({
   page,
 }) => {
-  const reportId = await signedInWithReport(page, 'b1', [
-    { name: 'Hala', locality: 'Chișinău' },
-    { name: 'Depozit', locality: 'Bălți' },
-  ]);
+  const reportId = await signedInWithReport(page, 'b1', {
+    sites: [
+      { name: 'Hala', locality: 'Chișinău' },
+      { name: 'Depozit', locality: 'Bălți' },
+    ],
+  });
   const organizationId = organizationOf.get(reportId) ?? '';
 
   await page.goto(`/reports/${reportId}/B1`);
@@ -287,7 +289,7 @@ test('opens B1 pre-filled, stores what the reporter accepts, and groups the site
 });
 
 test('offers a choice field the taxonomy’s own members, not a text box (task 91.1)', async ({ page }) => {
-  const reportId = await signedInWithReport(page, 'b1choice', [{ name: 'Hala', locality: 'Chișinău' }]);
+  const reportId = await signedInWithReport(page, 'b1choice', { sites: [{ name: 'Hala', locality: 'Chișinău' }] });
 
   await page.goto(`/reports/${reportId}/B1`);
 
@@ -306,7 +308,7 @@ test('offers a choice field the taxonomy’s own members, not a text box (task 9
 });
 
 test('counts a narrative field’s length, and imposes no limit on it (UX-19)', async ({ page }) => {
-  const reportId = await signedInWithReport(page, 'b1text', [{ name: 'Hala', locality: 'Chișinău' }]);
+  const reportId = await signedInWithReport(page, 'b1text', { sites: [{ name: 'Hala', locality: 'Chișinău' }] });
 
   await page.goto(`/reports/${reportId}/B1`);
   const narrative = page.getByRole('textbox', {
@@ -540,6 +542,191 @@ test('C1 opens by saying when the Comprehensive Module was added, then renders a
   await expect(
     page.getByRole('textbox', { name: 'Описание значимых групп предлагаемых продуктов и/или услуг' }),
   ).toHaveValue('Pâine și covrigi, 61 % din venituri.');
+});
+
+/**
+ * C2 end to end (UC-184, FR-177; task 79.2) — three narratives on the anatomy, so, as on B2 and C1, the proof is the
+ * deliverable (`architecture.md` §12.5.6's task-79.2 row).
+ *
+ * **The help is asserted, field by field**, because it is the one thing this slice changed on screen: EFRAG's package
+ * asks ¶48's description to say where a practice covers suppliers or clients, and ¶49's level only where the
+ * undertaking has determined it, and the platform's help said neither until this task. Each sentence is held to its
+ * own field's group — the card `DisclosureField` names by its label — so help served under the wrong element fails
+ * here. Not to the control's accessible description: the anatomy draws help beside the control without
+ * `aria-describedby`, which the build log of task 79.2 raises.
+ */
+test('C2 renders its three narratives in the taxonomy order, each with the help the package asks, and stores them (UC-184)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'c2', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  await page.goto(`/reports/${reportId}/C2`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C2');
+  await expect(
+    page.getByText('Mai multe despre practicile și politicile din B2: cine răspunde de ele și ce ținte v-ați stabilit.', {
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  // The taxonomy's presentation order — description, accountable level, target — where the template prints the target
+  // second (UC-184's business rules).
+  const fields = [
+    {
+      name: 'Descrierea practicilor, politicilor și/sau inițiativelor viitoare',
+      help: /Dacă una dintre ele îi privește pe furnizori sau pe clienți, menționați acest lucru\./u,
+    },
+    {
+      name: 'Cel mai înalt nivel dintre angajați răspunzător pentru politici',
+      help: /Completați câmpul dacă întreprinderea a stabilit cine răspunde de ele\./u,
+    },
+    {
+      name: 'Descrierea țintei practicilor, politicilor sau inițiativelor viitoare',
+      help: /Descrieți fiecare țintă: ce se măsoară/u,
+    },
+  ];
+  const main = page.getByRole('main');
+  await expect(main.getByRole('textbox')).toHaveCount(fields.length);
+  for (const [index, field] of fields.entries()) {
+    await expect(main.getByRole('textbox').nth(index)).toHaveAccessibleName(field.name);
+    await expect(main.getByRole('group', { name: field.name, exact: true }).getByText(field.help)).toBeVisible();
+  }
+
+  const description = main.getByRole('textbox', { name: fields[0].name });
+  await description.fill('Cuptoarele sunt înlocuite treptat; furnizorii de făină sunt aleși după distanța de transport.');
+  const accountable = main.getByRole('textbox', { name: fields[1].name });
+  await accountable.fill('Directorul general');
+  // Blur is the commit (UX-34), and the second field is the last one typed into.
+  await accountable.blur();
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, { timeout: 15_000 });
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey: 'DescriptionOfPracticesPoliciesAndOrFutureInitiatives',
+          })
+        )?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('Cuptoarele sunt înlocuite treptat; furnizorii de făină sunt aleși după distanța de transport.');
+  await expect
+    .poll(
+      async () =>
+        (
+          await disclosureValueOf({
+            organizationId,
+            reportId,
+            elementKey: 'MostSeniorLevelAccountableForImplementationOfPolicies',
+          })
+        )?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('Directorul general');
+
+  // *Stored in three locales*: each label with the value under it, and the help in the reader's language.
+  await page.goto(`/en/reports/${reportId}/C2`);
+  const english = 'Description of practices, policies and/or future initiatives';
+  await expect(page.getByRole('textbox', { name: english })).toHaveValue(
+    'Cuptoarele sunt înlocuite treptat; furnizorii de făină sunt aleși după distanța de transport.',
+  );
+  await expect(
+    page.getByRole('group', { name: english, exact: true }).getByText(/Where one of them covers your suppliers or clients, say so\./u),
+  ).toBeVisible();
+  await page.goto(`/ru/reports/${reportId}/C2`);
+  const russian = 'Описание практик, политик и/или будущих инициатив';
+  await expect(page.getByRole('textbox', { name: russian })).toHaveValue(
+    'Cuptoarele sunt înlocuite treptat; furnizorii de făină sunt aleși după distanța de transport.',
+  );
+  await expect(
+    page
+      .getByRole('group', { name: russian, exact: true })
+      .getByText(/Если какая-либо из них распространяется на поставщиков или клиентов, укажите это\./u),
+  ).toBeVisible();
+});
+
+/**
+ * C3 end to end (UC-185, FR-177; task 79.3) — **the targets at their own years beside B3's figure**, and the change
+ * worked out from them (`architecture.md` §12.5.6's task-79.3 row).
+ *
+ * B3's Scope 1 is typed on B3, as UC-21's direct entry allows, because C3 shows it and does not ask it: the journey has
+ * to prove the figure crosses from one step to the other, read-only, rather than that C3 can hold a copy of it. **The
+ * two changes are asserted before any reload**, since they are worked out from the answers the wizard holds — a line
+ * that waited for the next read would pass a journey that reloaded first.
+ */
+test('C3 asks each emission at its base and target year beside B3’s figure, and works out the change (UC-185)', async ({
+  page,
+}) => {
+  const reportId = await signedInWithReport(page, 'c3', { comprehensive: true });
+  const organizationId = organizationOf.get(reportId) ?? '';
+  const SCOPE_1 = 'Emisii brute de gaze cu efect de seră din domeniul de aplicare 1';
+
+  await page.goto(`/reports/${reportId}/B3`);
+  const onB3 = page.getByRole('main').getByRole('textbox', { name: SCOPE_1, exact: true });
+  await untilHydrated(onB3);
+  await onB3.fill('38,7');
+  await onB3.blur();
+  await expect
+    .poll(async () => (await disclosureValueOf({ organizationId, reportId, elementKey: 'GrossScope1GreenhouseGasEmissions' }))?.valueNumeric, {
+      timeout: 15_000,
+    })
+    .toBe('38.7');
+
+  await page.goto(`/reports/${reportId}/C3`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('C3');
+
+  // A calendar year, typed as numerals (NFR-34).
+  const baseYear = page.getByRole('textbox', {
+    name: 'Anul de referință al țintei de reducere a emisiilor de gaze cu efect de seră',
+    exact: true,
+  });
+  await untilHydrated(baseYear);
+  await expect(baseYear).toHaveAttribute('inputmode', 'numeric');
+  await baseYear.fill('2019');
+
+  // Scope 1 as three rows: the reporting year as B3 holds it, read-only, then the two years C3 asks.
+  const scope1 = page.getByRole('group', { name: SCOPE_1, exact: true });
+  await expect(scope1.getByText('Anul de raportare — se completează la B3', { exact: true })).toBeVisible();
+  await expect(scope1.getByText('38,7', { exact: true })).toBeVisible();
+  await expect(scope1.getByRole('textbox')).toHaveCount(2);
+  const base = scope1.getByRole('textbox', { name: 'Anul de referință', exact: true });
+  const target = scope1.getByRole('textbox', { name: 'Anul-țintă', exact: true });
+  await base.fill('41,8');
+  await target.fill('31,4');
+  await target.blur();
+
+  // Worked out from the held answers, at once: 31,4 against 41,8, and 38,7 against 41,8 — signed, a cut reads negative.
+  await expect(scope1.getByText(/^Schimbarea urmărită față de anul de referință: [-−]24,88\s%$/u)).toBeVisible();
+  await expect(
+    scope1.getByText(/^Schimbarea de până acum, anul de raportare față de anul de referință: [-−]7,42\s%$/u),
+  ).toBeVisible();
+
+  // Stored at their own years, beside B3's row and never over it.
+  await expect(page.getByRole('status', { name: 'Starea salvării' })).toHaveText(/sunt salvate/u, { timeout: 15_000 });
+  const at = (dimensionKey: string) =>
+    disclosureValueOf({ organizationId, reportId, elementKey: 'GrossScope1GreenhouseGasEmissions', dimensionKey });
+  await expect.poll(async () => (await at('BaselineYearMember'))?.valueNumeric, { timeout: 15_000 }).toBe('41.8');
+  await expect.poll(async () => (await at('TargetYearMember'))?.valueNumeric, { timeout: 15_000 }).toBe('31.4');
+  expect((await at(''))?.valueNumeric).toBe('38.7');
+  await expect
+    .poll(
+      async () =>
+        (await disclosureValueOf({ organizationId, reportId, elementKey: 'GreenhouseGasEmissionReductionTargetBaseYear' }))
+          ?.valueText,
+      { timeout: 15_000 },
+    )
+    .toBe('2019');
+
+  // *Stored in three locales*: the rows named by the members' own labels, and the reporting year's by where it is answered.
+  await page.goto(`/en/reports/${reportId}/C3`);
+  const english = page.getByRole('group', { name: 'Gross Scope 1 greenhouse gas emissions', exact: true });
+  await expect(english.getByRole('textbox', { name: 'Baseline year', exact: true })).toHaveValue('41.8');
+  await expect(english.getByText('This reporting year — answered in B3', { exact: true })).toBeVisible();
+  await page.goto(`/ru/reports/${reportId}/C3`);
+  const russian = page.getByRole('group', { name: 'Валовые выбросы парниковых газов охвата 1', exact: true });
+  await expect(russian.getByRole('textbox', { name: 'Базовый год', exact: true })).toHaveValue('41,8');
+  await expect(russian.getByText('Отчётный год — заполняется в B3', { exact: true })).toBeVisible();
 });
 
 /**
@@ -1108,10 +1295,12 @@ test('a unit is shown where the standard fixes it and asked where it admits seve
  * rule rather than a B5 feature: a typed axis's rows belong to the axis, not to each element.
  */
 test('B5 asks about each site the report knows, and names it (UC-23)', async ({ page }) => {
-  const reportId = await signedInWithReport(page, 'b5', [
-    { name: 'Depozit', locality: 'Bălți' },
-    { name: 'Atelier', locality: 'Orhei' },
-  ]);
+  const reportId = await signedInWithReport(page, 'b5', {
+    sites: [
+      { name: 'Depozit', locality: 'Bălți' },
+      { name: 'Atelier', locality: 'Orhei' },
+    ],
+  });
   const organizationId = organizationOf.get(reportId) ?? '';
 
   // **B1 first, because the rows are the report's answers and not the snapshot's alone** — opening
@@ -1196,7 +1385,7 @@ test('B6 applies once B1 says the undertaking manufactures, and asks in m³ (UC-
   // **A site is what makes the fixture take a snapshot at all** (`seedReport` writes one only when
   // sites are given), and the snapshot is where B1's defaults come from — so without it there is no
   // activity code to commit and this journey would test nothing while looking like it passed.
-  const reportId = await signedInWithReport(page, 'b6', [{ name: 'Brutăria', locality: 'Chișinău' }]);
+  const reportId = await signedInWithReport(page, 'b6', { sites: [{ name: 'Brutăria', locality: 'Chișinău' }] });
   const organizationId = organizationOf.get(reportId) ?? '';
   const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });
 
@@ -1357,7 +1546,7 @@ test('a figure that reads two ways is asked about, and a stored one reads in the
 test('a module waiting on B1 says so on the rail rather than counting to zero (FR-28, UX-9)', async ({
   page,
 }) => {
-  const reportId = await signedInWithReport(page, 'b1rules', [{ name: 'Hala', locality: 'Chișinău' }]);
+  const reportId = await signedInWithReport(page, 'b1rules', { sites: [{ name: 'Hala', locality: 'Chișinău' }] });
 
   await page.goto(`/reports/${reportId}/B1`);
   const rail = page.getByRole('navigation', { name: 'Secțiunile raportului' });

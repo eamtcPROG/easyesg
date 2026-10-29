@@ -41,6 +41,7 @@ const field = (over: Partial<DisclosureField> & { elementKey: string }): Disclos
   carriedForward: false,
   fromRecord: false,
   followsScope: false,
+  answeredIn: null,
   applicable: true,
   applicabilityCause: null,
   ...over,

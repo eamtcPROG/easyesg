@@ -597,7 +597,7 @@ Four things to know before touching it:
   (`statesBasis`). A suite wanting a generic B1 field must not use the basis. **Since task 79.1** the report serves
   `comprehensiveAddedAt`, the trail's latest Basic-to-Comprehensive change of `scope` (the task-30.3 row's rule: read
   from `core.field_change`, never a column), and each module summary `comprehensiveAnswered` — the answers only the
-  Comprehensive scope asks, which C3's figures shared with B3 are not.
+  Comprehensive scope asks, which C3's figures shared with B3 are not. **Since task 79.3 a row has modules of its own**: `ReportingScopesAxis` is C3's target axis (`disclosure_axis_shape`'s `targets`), so `modulesAskingRow` (`domain/target-rows.ts`) gives the base and target years to C3 alone and the undimensioned row to B3 — the write's scope check, each module's count and `comprehensiveAnswered` all read it, so a Basic report refuses C3's years of a B3 element. C3's step shows B3's row marked `answeredIn`, and a derivation `along` the axis is worked out at each year. A new reader of a value's modules asks `modulesAskingRow`, never `element.modules`.
 - **The writes admit the editor**, which is the opposite of the split `EntitiesController` and
   `PeriodsController` carry — master data is OA-owned (D-2), a report is the Contributor's workspace
   (UC-18, FR-26). A create route the RC could not reach means the author cannot start their report.

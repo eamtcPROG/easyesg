@@ -5,6 +5,7 @@ import {
   type DisclosureAxis,
   type DisclosureField as DisclosureFieldShape,
   type DisclosureOption,
+  type DisclosureTarget,
 } from '@easyesg/contracts';
 import { Button, BUTTON_VARIANT, Fieldset } from '@easyesg/ui';
 import { useTranslations } from 'next-intl';
@@ -22,6 +23,7 @@ import { writeKey } from '../../../tools/autosave-state';
 import type { PriorValue } from '../../../tools/comparatives';
 import {
   STEP_ENTRY,
+  type StepBreakdownEntry,
   isLastClassificationRow,
   isLastRow,
   layOutStep,
@@ -36,6 +38,7 @@ import { RetainedNotice } from '../applicability/retained-notice';
 import { DerivationInputControl } from '../field/derivation-input-control';
 import { StepField } from '../field/step-field';
 import { ClassificationRow } from '../rows/classification-row';
+import { TargetChanges } from '../rows/target-changes';
 import { FIELD_MESSAGES, GROUP_MESSAGES, INPUT_MESSAGES } from '../shared/step-messages';
 import styles from '../styles/step.module.css';
 
@@ -79,6 +82,7 @@ import styles from '../styles/step.module.css';
 export function StepFields({
   fields,
   axes,
+  targets,
   derivationInputs,
   priorValues,
   readOnly,
@@ -90,6 +94,8 @@ export function StepFields({
    * step because every element on an axis shares one list.
    */
   readonly axes: readonly DisclosureAxis[];
+  /** The target axes the step asks (task 79.3) — C3's years, which name its base and target rows. */
+  readonly targets: readonly DisclosureTarget[];
   /**
    * The values this step's derived figures are computed from (task 36.10; UC-26, UC-27). Empty for
    * every module EFRAG's own template computes no figure for.
@@ -334,14 +340,7 @@ export function StepFields({
            * element instead of a position, each row is named by its member instead of by its own
            * element, and nothing is added, because the standard fixes the members.
            */
-          <Fieldset
-            key={entry.elementKey}
-            className={styles.group}
-            legend={entry.fields[0]?.label ?? tField('unnamed')}
-            readOnly={readOnly}
-          >
-            {entry.fields.map((field) => renderField(field, field.dimensionLabel))}
-          </Fieldset>
+          renderBreakdown(entry)
         ) : entry.kind === STEP_ENTRY.CLASSIFICATION ? (
           /*
            * A classification row (task 36.5) — **the same `Fieldset` again**, and for the third
@@ -395,6 +394,32 @@ export function StepFields({
     </div>
   );
 
+  /**
+   * One breakdown's `Fieldset` — and, on a target axis, its two worked-out changes (task 79.3). A row answered on another
+   * module is named for it: C3's reporting year, B3's.
+   */
+  function renderBreakdown(entry: StepBreakdownEntry) {
+    const target = targets.find((candidate) => entry.fields[0]?.axes.includes(candidate.axis) ?? false);
+    return (
+      <Fieldset
+        key={entry.elementKey}
+        className={styles.group}
+        legend={entry.fields[0]?.label ?? tField('unnamed')}
+        readOnly={readOnly}
+      >
+        {entry.fields.map((field) =>
+          renderField(
+            field,
+            field.answeredIn === null ? field.dimensionLabel : tGroup('answeredIn', { module: field.answeredIn }),
+          ),
+        )}
+        {target === undefined ? null : (
+          <TargetChanges elementKey={entry.elementKey} target={target} fields={entry.fields} readOnly={readOnly} />
+        )}
+      </Fieldset>
+    );
+  }
+
   /** The domain a classification row picks from — served once per step, never per field. */
   function axisOf(axis: string): DisclosureAxis | undefined {
     return axes.find((candidate) => candidate.key === axis);
@@ -418,7 +443,8 @@ export function StepFields({
         // UX-13's own rule is that read-only keeps the layout and removes the affordance, which is
         // exactly what a computed figure wants — it is shown, beside the values it came from. **So is
         // B1's basis for preparation since task 78.3**: it is the report's scope, which the api says.
-        readOnly={readOnly || derived.has(served.elementKey) || served.followsScope}
+        // **And a row another module answers** (task 79.3): C3 shows the reporting year's figure as B3 holds it.
+        readOnly={readOnly || derived.has(served.elementKey) || served.followsScope || served.answeredIn !== null}
         chosenUnit={units[served.elementKey] ?? null}
         onChooseUnit={(code) => chooseUnit(served.elementKey, code)}
         prior={priorValues.get(writeKey(served)) ?? null}

@@ -1661,7 +1661,10 @@
         "unassignedRow": "{name} — to choose",
         "domainLanguage": "This classification is published in English only, so the names below are in English. The code beside each entry is the one from the official list.",
         "hazardous": "Hazardous",
-        "nonHazardous": "Non-hazardous"
+        "nonHazardous": "Non-hazardous",
+        "answeredIn": "This reporting year — answered in {module}",
+        "targetSought": "Change sought from the base year: {change}",
+        "targetSoFar": "Change so far, this reporting year against the base year: {change}"
       },
       "derivationInput": {
         "names": {

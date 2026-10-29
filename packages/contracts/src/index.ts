@@ -255,6 +255,11 @@ export type DisclosureStep = components['schemas']['DisclosureStepDto'];
  * emissions would otherwise carry 94 pollutants three times over and B7's would carry 973.
  */
 export type DisclosureAxis = components['schemas']['DisclosureAxisDto'];
+/**
+ * One target axis a step asks (task 79.3; UC-185): which member is the base year and which the target year, on the step
+ * because every element on the axis shares them — C3's eight emissions.
+ */
+export type DisclosureTarget = components['schemas']['DisclosureTargetDto'];
 export type DisclosureValueWrite = components['schemas']['DisclosureValueWriteDto'];
 export type WriteDisclosureValuesRequest =
   components['schemas']['WriteDisclosureValuesRequestDto'];

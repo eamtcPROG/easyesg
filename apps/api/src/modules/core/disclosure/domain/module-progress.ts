@@ -3,10 +3,12 @@ import { isAnswered } from '@easyesg/validation';
 import type { TaxonomyElement } from '@api/contracts/taxonomy-registry.port';
 import type { EvaluatedApplicability } from '../models/applicability.model';
 import type { DisclosureValue } from '../models/disclosure-value.model';
+import type { TargetAxis } from '../models/target-axis';
 import type { DisclosureModuleSummary } from '../models/wizard-step.model';
 import { REPORT_SCOPE, scopeAsks } from '../models/report.model';
 import { soleCause } from './applicability';
 import { toCause } from './applicability-cause';
+import { modulesAskingRow } from './target-rows';
 
 /**
  * The persistent module list (UX-5), with how much of each module has been answered (task 89; S-07) — whether it
@@ -28,6 +30,8 @@ export function moduleSummaries(input: {
   readonly catalogue: Readonly<Record<string, DisclosureLabel>> | null;
   /** The modules B1 declares omitted. */
   readonly omitted: ReadonlySet<string>;
+  /** The axes one module asks at a base and a target year (task 79.3) — which divide an element's rows by module. */
+  readonly targets: ReadonlyMap<string, TargetAxis>;
 }): readonly DisclosureModuleSummary[] {
   const counts = new Map<string, ModuleCount>();
   for (const element of input.elements) {
@@ -38,15 +42,18 @@ export function moduleSummaries(input: {
     const verdict = input.applicability.get(element.key);
     // An element counts as answered when ANY of its rows is (task 91.2): a repeating group's
     // second site is as much an answer as its first, and `total` counts elements, not rows.
-    const answered = (input.byElement.get(element.key) ?? []).filter(isAnswered);
-    // An element only the Comprehensive scope asks — none of its modules a Basic report asks, the task-78 row's C element
-    // — is what a lowered scope hides, so its answer is counted apart as well (task 79.1).
-    const comprehensiveOnly = !element.modules.some((module) => scopeAsks({ scope: REPORT_SCOPE.BASIC, module }));
+    const stored = (input.byElement.get(element.key) ?? []).filter(isAnswered);
+    const asking = (value: DisclosureValue) =>
+      modulesAskingRow({ element, dimensionKey: value.dimensionKey, targets: input.targets });
+    // A row only the Comprehensive scope asks — none of whose modules a Basic report asks, the task-78 row's C element
+    // narrowed to the row by task 79.3 — is what a lowered scope hides, so its answer is counted apart as well (task 79.1).
+    const comprehensiveOnly = (value: DisclosureValue) =>
+      !asking(value).some((module) => scopeAsks({ scope: REPORT_SCOPE.BASIC, module }));
 
-    // **Counted into every module that presents it** (task 36.4). The eight disclosures B3 and C3
-    // share are one obligation with one stored value, so each module's own denominator includes
-    // them and both progress figures move together — which is what the taxonomy says, and what a
-    // Comprehensive reporter filling B3 should see on C3.
+    // **Counted into every module that presents it, over the rows that module asks** (task 36.4, narrowed by 79.3). The
+    // disclosures B3 and C3 share are one element each, and each module's denominator includes them; but C3 asks
+    // them at the base and the target year and B3 at the reporting year, so each module's progress moves with its own
+    // rows. Until task 79.3 both moved together, because C3 asked B3's row again.
     //
     // The pillar-level catch-alls present in none (task 33.3). They are reportable and belong to
     // no step, so they are counted into no module rather than into one invented to hold them.
@@ -61,9 +68,10 @@ export function moduleSummaries(input: {
 
       count.applicable = true;
       count.total += 1;
+      const answered = stored.filter((value) => asking(value).includes(module));
       if (answered.length > 0) {
         count.answered += 1;
-        if (comprehensiveOnly) count.comprehensiveAnswered += 1;
+        if (answered.some(comprehensiveOnly)) count.comprehensiveAnswered += 1;
         // The latest answer in the module is where work last happened (task 35.3, FR-39). A row
         // cleared back to holding nothing is not an answer and does not move it (182/17).
         for (const value of answered) {

@@ -58,10 +58,20 @@ describe('AxisShapeService (task 36.4, AD-4)', () => {
     classification: classifications(service),
   });
 
+  /** The third registration (task 79.3) — the axes one module asks at a base and a target member. */
+  const targetsOf = (service: AxisShapeService) =>
+    [...service.targetAxes({ standard: TAXONOMY_STANDARD.VSME }).values()];
+
+  /** C3's registration as the seed writes it, for the cases about something else. */
+  const SCOPES = {
+    ReportingScopesAxis: { module: 'C3', base: 'BaselineYearMember', target: 'TargetYearMember' },
+  };
+
   it('reads a registered shape as its named axes, logging nothing', () => {
     const service = build({
       breakdown: ['BreakdownOfEnergyConsumptionAxis'],
       classification: ['TypeOfPollutantAxis', 'TypeOfWasteAxis'],
+      targets: SCOPES,
     });
     // **The two lists are kept apart, which is the whole of the shape's meaning** — one axis in the
     // wrong list is B3 rendered as a picker or B4 rendered as 282 fields.
@@ -69,6 +79,9 @@ describe('AxisShapeService (task 36.4, AD-4)', () => {
       breakdown: ['BreakdownOfEnergyConsumptionAxis'],
       classification: ['TypeOfPollutantAxis', 'TypeOfWasteAxis'],
     });
+    expect(targetsOf(service)).toEqual([
+      { key: 'ReportingScopesAxis', module: 'C3', base: 'BaselineYearMember', target: 'TargetYearMember' },
+    ]);
     expect(logged).toEqual([]);
   });
 
@@ -77,13 +90,14 @@ describe('AxisShapeService (task 36.4, AD-4)', () => {
     // path here that must NOT log — an error line an operator cannot act on trains them to ignore
     // the ones they can.
     expect(shapesOf(build(undefined))).toEqual({ breakdown: [], classification: [] });
+    expect(targetsOf(build(undefined))).toEqual([]);
     expect(logged).toEqual([]);
   });
 
   it('reads one list where the other is absent, and says which is missing', () => {
     // A payload registering breakdowns and no classifications is not malformed — it is task 36.4's
     // own artefact, before 36.5 added the second list. It must still answer the first.
-    const service = build({ breakdown: ['BreakdownOfEnergyConsumptionAxis'] });
+    const service = build({ breakdown: ['BreakdownOfEnergyConsumptionAxis'], targets: SCOPES });
     expect(shapesOf(service)).toEqual({
       breakdown: ['BreakdownOfEnergyConsumptionAxis'],
       classification: [],
@@ -99,9 +113,11 @@ describe('AxisShapeService (task 36.4, AD-4)', () => {
       ['a payload that is not an object at all', ['BreakdownOfEnergyConsumptionAxis']],
     ])('fails closed on %s, and logs what it did', (_case, payload) => {
       expect(shapesOf(build(payload))).toEqual({ breakdown: [], classification: [] });
-      // **One line per list**, because they degrade independently and an operator fixing one needs
-      // to know the other is also unread — a single line naming the entry would understate it.
-      expect(logged).toHaveLength(2);
+      expect(targetsOf(build(payload))).toEqual([]);
+      // **One line per registration**, because they degrade independently and an operator fixing one
+      // needs to know the others are also unread — a single line naming the entry would understate it.
+      // Six: two builds above, three registrations each.
+      expect(logged).toHaveLength(6);
       for (const line of logged) {
         // Each must name the entry AND the consequence — `apps/api/CLAUDE.md` on fail-soft design.
         expect(line).toContain(DISCLOSURE_AXIS_SHAPE_CONFIG_KIND);
@@ -109,12 +125,14 @@ describe('AxisShapeService (task 36.4, AD-4)', () => {
       }
       expect(logged.join(' ')).toContain('`breakdown`');
       expect(logged.join(' ')).toContain('`classification`');
+      expect(logged.join(' ')).toContain('`targets`');
     });
 
     it('drops a non-string axis, keeps the rest, and says how many it dropped', () => {
       const service = build({
         breakdown: ['BreakdownOfEnergyConsumptionAxis', 42, null],
         classification: ['TypeOfPollutantAxis'],
+        targets: {},
       });
       expect(axes(service)).toEqual(['BreakdownOfEnergyConsumptionAxis']);
       expect(logged).toHaveLength(1);
@@ -126,13 +144,36 @@ describe('AxisShapeService (task 36.4, AD-4)', () => {
       // The two are read from one entry and cached together, so a malformed half must degrade only
       // itself: B4 losing its picker is a defect, and B3 losing its breakdown at the same time is
       // two — which is what a single early return would have produced.
-      const service = build({ breakdown: ['BreakdownOfEnergyConsumptionAxis'], classification: 'nope' });
+      const service = build({
+        breakdown: ['BreakdownOfEnergyConsumptionAxis'],
+        classification: 'nope',
+        targets: SCOPES,
+      });
       expect(shapesOf(service)).toEqual({
         breakdown: ['BreakdownOfEnergyConsumptionAxis'],
         classification: [],
       });
       expect(logged).toHaveLength(1);
       expect(logged[0]).toContain('`classification`');
+      expect(targetsOf(service)).toHaveLength(1);
+    });
+
+    it('drops a target axis registered without its module or two distinct members, and keeps the others', () => {
+      // Half a target axis is worse than none: a base year with no target asks for a figure nothing compares it to.
+      const service = build({
+        breakdown: [],
+        classification: [],
+        targets: {
+          ...SCOPES,
+          NoModule: { base: 'BaselineYearMember', target: 'TargetYearMember' },
+          OneMember: { module: 'C3', base: 'BaselineYearMember', target: 'BaselineYearMember' },
+          NotAnObject: 'C3',
+        },
+      });
+      expect(targetsOf(service).map((axis) => axis.key)).toEqual(['ReportingScopesAxis']);
+      expect(logged).toHaveLength(1);
+      expect(logged[0]).toContain('NoModule, OneMember, NotAnObject');
+      expect(logged[0]).toContain('undimensioned');
     });
   });
 
@@ -182,17 +223,20 @@ describe('AxisShapeService (task 36.4, AD-4)', () => {
       // empty lists — the shape a mistyped republish leaves behind. **This assertion has now done
       // its job twice**: it failed when task 36.8 registered B7's waste axis and again when 36.9
       // registered B8's countries, which is exactly what it was written to do — a screen changing
-      // shape is a decision, and it should not be silent. C3's reporting scopes (79.x) is the one
-      // still to come.
+      // shape is a decision, and it should not be silent. C3's reporting scopes were the last, registered by task 79.3.
       //
       // **`ReportingScopesAxis` is in NEITHER list and that is the third shape** (task 36.5): its
       // members are baseline year / target year / currently stated, so on B3 the default member is
       // the answer and one undimensioned row is right. Moving it into `classification` would put a
-      // year picker over eight emissions disclosures, and this assertion is what would say so.
+      // year picker over eight emissions disclosures, and this assertion is what would say so. **It is
+      // the target axis instead** (task 79.3): C3 asks it at the base and the target year beside that row.
       expect(shapesOf(shipped())).toEqual({
         breakdown: ['BreakdownOfEnergyConsumptionAxis'],
         classification: ['CountryOfEmploymentContractAxis', 'TypeOfPollutantAxis', 'TypeOfWasteAxis'],
       });
+      expect(targetsOf(shipped())).toEqual([
+        { key: 'ReportingScopesAxis', module: 'C3', base: 'BaselineYearMember', target: 'TargetYearMember' },
+      ]);
       expect(logged).toEqual([]);
     });
 
@@ -210,6 +254,35 @@ describe('AxisShapeService (task 36.4, AD-4)', () => {
         // And explicit: a typed axis has no members to expand into, so registering one is a
         // contradiction — the use case resolves it to no rows, which reads as the same silence.
         expect({ version, key, typed: axis?.typed }).toEqual({ version, key, typed: false });
+      }
+    });
+
+    it.each(versions)('%s carries each target axis with both its members, on elements its module presents', (version) => {
+      // A target registration names four things EFRAG owns — an axis, two of its members and a module — and each, renamed
+      // at a release, would leave C3 asking a year nothing stores or nothing at all, silently.
+      const taxonomy = registry.taxonomy({ standard: TAXONOMY_STANDARD.VSME, version });
+      for (const target of targetsOf(shipped())) {
+        const axis = registry.axis({ standard: TAXONOMY_STANDARD.VSME, version, key: target.key });
+        expect({ version, key: target.key, declared: axis !== null, typed: axis?.typed }).toEqual({
+          version,
+          key: target.key,
+          declared: true,
+          typed: false,
+        });
+        const members = axis?.members.map((member) => member.key) ?? [];
+        expect(members).toEqual(expect.arrayContaining([target.base, target.target]));
+        const on = (taxonomy?.elements ?? []).filter((element) => element.axes.includes(target.key));
+        // The eight emissions, each presented by the module asking the axis and by at least one other: the
+        // undimensioned row is that other module's, and an element only the target module presents would have no one
+        // answering its reporting year.
+        expect(on).toHaveLength(8);
+        for (const element of on) {
+          expect({ key: element.key, presented: element.modules.includes(target.module) }).toEqual({
+            key: element.key,
+            presented: true,
+          });
+          expect(element.modules.length).toBeGreaterThan(1);
+        }
       }
     });
   });

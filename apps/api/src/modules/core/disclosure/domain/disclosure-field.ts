@@ -24,6 +24,8 @@ export interface ResolvedRow extends FieldRow {
   readonly fromRecord: boolean;
   readonly repeating: boolean;
   readonly dimensionLabel: string | null;
+  /** The module this row is answered on where it is not the step's (task 79.3; `answeredElsewhere`). */
+  readonly answeredIn: string | null;
 }
 
 /** What the step read resolved once for the element, and every one of its rows shares. */
@@ -105,6 +107,7 @@ export function toField(element: TaxonomyElement, row: ResolvedRow, resolved: Re
     fromRecord: row.fromRecord,
     // B1's basis for preparation is the report's scope (task 78.3; §12.5.6's task-78 row (1)): shown, never typed into.
     followsScope: element.key === B1_ELEMENT.BASIS_FOR_PREPARATION,
+    answeredIn: row.answeredIn,
     // Every row of an element shares its verdict: FR-28's drivers are the report's answers, not
     // this row's, so a second site is as applicable as the first.
     applicable: resolved.applicable,

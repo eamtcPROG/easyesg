@@ -355,6 +355,19 @@ export class UnitNotAdmittedError extends DomainError {
 }
 
 /**
+ * A `year` answered with anything but four digits (task 79.3) — C3's base and target years. The kind is stored as text by
+ * design (`VALUE_COLUMN`), so nothing else would refuse *twenty-thirty* or *23*, and the export writes the year as given.
+ */
+export class YearNotWellFormedError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.ValidationFailed;
+  readonly status = 400;
+
+  constructor() {
+    super('core.report.year_not_well_formed');
+  }
+}
+
+/**
  * A step read for a module the report's pinned taxonomy does not carry (task 183). It answered 200 with no fields,
  * which a client cannot tell from a module whose every field is inapplicable.
  */

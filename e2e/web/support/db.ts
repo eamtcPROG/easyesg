@@ -445,6 +445,12 @@ export interface SeedReportInput {
    * active one, and the product's own archive is already driven end to end by S-13's journey. Omitted means active.
    */
   readonly archived?: boolean;
+  /**
+   * The report made with the Comprehensive Module (FR-177; task 79.2) — what a C2 … C9 journey opens on. Raising the
+   * scope through the module list is C1's journey, which needs the trail's record of the raise; a slice after it needs
+   * only a report whose scope asks its module. Omitted means Basic.
+   */
+  readonly comprehensive?: boolean;
 }
 
 /**
@@ -476,13 +482,23 @@ async function seedFiling(input: {
   readonly sites?: readonly { readonly name: string; readonly locality: string }[];
   readonly dueDate?: string;
   readonly archived?: boolean;
+  readonly comprehensive?: boolean;
   readonly withReport: boolean;
 }): Promise<{
   readonly entityId: string;
   readonly periodId: string;
   readonly reportId: string | null;
 }> {
-  const { organizationId, name, fiscalYear = 2026, sites, dueDate, archived = false, withReport } = input;
+  const {
+    organizationId,
+    name,
+    fiscalYear = 2026,
+    sites,
+    dueDate,
+    archived = false,
+    comprehensive = false,
+    withReport,
+  } = input;
   const client = new Client(asOwner());
   await client.connect();
   try {
@@ -500,8 +516,11 @@ async function seedFiling(input: {
     );
     // The payload is `to_jsonb(row)`'s shape — whatever columns the entity had on the day — which
     // is what the api's reader tolerates by design (task 91.2).
-    const snapshotId = sites === undefined ? null : randomUUID();
-    if (snapshotId !== null) {
+    // Narrowed on `sites` itself: a test on the id it decides does not narrow `sites`, which shipped as a type error
+    // nothing reported — Playwright strips types, and lint reports no compiler error (found by task 79.2).
+    let snapshotId: string | null = null;
+    if (sites !== undefined) {
+      snapshotId = randomUUID();
       await client.query(
         `INSERT INTO core.entity_snapshot (id, organization_id, reporting_entity_id, payload)
          VALUES ($1, $2, $3, $4::jsonb)`,
@@ -543,11 +562,12 @@ async function seedFiling(input: {
       ],
     );
     if (withReport) {
+      // The scope's two members are the `CHECK`'s own literals, which this fixture writes as the store holds them.
       await client.query(
         `INSERT INTO core.report
            (id, organization_id, reporting_period_id, scope, status, template_version, taxonomy_version)
-         VALUES ($1, $2, $3, 'basic', 'open', '1.3.0', '2026-05-01')`,
-        [reportId, organizationId, periodId],
+         VALUES ($1, $2, $3, $4, 'open', '1.3.0', '2026-05-01')`,
+        [reportId, organizationId, periodId, comprehensive ? 'basic_and_comprehensive' : 'basic'],
       );
     }
     await client.query('COMMIT');

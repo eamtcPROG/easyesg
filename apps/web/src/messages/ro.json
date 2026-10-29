@@ -1661,7 +1661,10 @@
         "unassignedRow": "{name} — de ales",
         "domainLanguage": "Această clasificare este publicată doar în engleză, așa că denumirile de mai jos sunt în engleză. Codul din dreptul fiecărei intrări este cel din nomenclatorul oficial.",
         "hazardous": "Periculos",
-        "nonHazardous": "Nepericulos"
+        "nonHazardous": "Nepericulos",
+        "answeredIn": "Anul de raportare — se completează la {module}",
+        "targetSought": "Schimbarea urmărită față de anul de referință: {change}",
+        "targetSoFar": "Schimbarea de până acum, anul de raportare față de anul de referință: {change}"
       },
       "derivationInput": {
         "names": {
