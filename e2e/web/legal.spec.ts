@@ -109,7 +109,7 @@ async function operatorInForce(page: Page): Promise<Record<string, string>> {
   return ((await response.json()) as { object: Record<string, string> }).object;
 }
 
-test('the terms and the privacy notice name the operator in force, state their standing, and say they are provisional', async ({
+test('the terms and the privacy notice name the operator in force and state their standing, counsel having approved them', async ({
   page,
 }) => {
   const operator = await operatorInForce(page);
@@ -122,10 +122,11 @@ test('the terms and the privacy notice name the operator in force, state their s
     const main = page.getByRole('main');
     await expect(main.getByRole('heading', { level: 1, name: title })).toBeVisible();
 
-    // FR-205 AC-4, AC-10: the release's version and effective date; AC-14: provisional, above the summary.
+    // FR-205 AC-4, AC-10: the release's version and effective date. Counsel has checked version 1.0 (task 226), so the
+    // notice AC-14 puts above a provisional document's summary is not drawn, and the date it applies from is unchanged.
     await expect(main.getByText('Versiunea 1.0', { exact: true })).toBeVisible();
     await expect(main.getByText('În vigoare din 13 octombrie 2026', { exact: true })).toBeVisible();
-    await expect(main.getByText('Versiune provizorie', { exact: true })).toBeVisible();
+    await expect(main.getByText('Versiune provizorie', { exact: true })).toHaveCount(0);
     await expect(main.getByRole('heading', { level: 2, name: 'Pe scurt' })).toBeVisible();
 
     // AC-12: the four facts A-21 keeps, the contact a link that writes to it.
@@ -184,7 +185,7 @@ test('the policy is live in all three locales', async ({ page }) => {
 test('the terms and the privacy notice are live in all three locales', async ({ page }) => {
   await page.goto('/en/legal/terms');
   await expect(page.getByRole('heading', { level: 1, name: 'Terms of service' })).toBeVisible();
-  await expect(page.getByText('Provisional version', { exact: true })).toBeVisible();
+  await expect(page.getByText('Provisional version', { exact: true })).toHaveCount(0);
 
   await page.goto('/ru/legal/privacy');
   await expect(page.getByRole('heading', { level: 1, name: 'Политика конфиденциальности' })).toBeVisible();
@@ -202,6 +203,45 @@ test.describe('the Content archetype at its frames', () => {
     // The summary and the five sections (task 75.4 put the summary above the formal text; task 223 added the answer).
     await expect(docked.getByRole('link')).toHaveCount(6);
     await expect(page.locator('summary', { hasText: 'Pe această pagină' })).toBeHidden();
+  });
+
+  /**
+   * §4.6, amended 30 Oct 2026 (task 226): docked, the contents stay in view while the text scrolls past them. Read on the
+   * terms, the longest of the set: scrolled well into the text, the list is where the window shows it.
+   */
+  test('keeps the docked contents in view while the text scrolls at wide', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/legal/terms');
+    const docked = page.getByRole('navigation', { name: 'Pe această pagină' });
+    await expect(docked).toBeInViewport();
+
+    await page.evaluate(() => window.scrollBy(0, 1800));
+    // The page did scroll past where the list started, so a list that scrolled with the text would be above the window.
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(1800);
+    await expect(page.getByRole('heading', { level: 1 })).not.toBeInViewport();
+    const box = await docked.boundingBox();
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(900);
+  });
+
+  /** A window too short for the list: the list scrolls within itself and stays in view, its last entry reachable. */
+  test('scrolls the docked contents within themselves where the window is shorter than the list', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 420 });
+    await page.goto('/legal/terms');
+    await page.evaluate(() => window.scrollBy(0, 1200));
+    const docked = page.getByRole('navigation', { name: 'Pe această pagină' });
+    const column = docked.locator('xpath=..');
+    const extent = await column.evaluate((box) => ({
+      overflow: box.scrollHeight - box.clientHeight,
+      bottom: box.getBoundingClientRect().bottom,
+    }));
+    expect(extent.overflow).toBeGreaterThan(0);
+    expect(extent.bottom).toBeLessThanOrEqual(420);
+
+    const last = docked.getByRole('link').last();
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).toBeInViewport();
+    await expect(page.getByRole('heading', { level: 1 })).not.toBeInViewport();
   });
 
   test('closes the contents into a disclosure, and scrolls the strip to the document being read, at compact', async ({

@@ -13,8 +13,11 @@
  * force on a day is a legal question. Structurally the wire's `LegalDate`, which this package cannot name.
  *
  * **`provisional` is true until counsel approves the text** — the release-checklist item before task 48
- * (`docs/runbooks/release-checklist.md`), which also sets the effective date and drops the marking. A platform
- * operator's details are not part of the standing: A-21 changes them without versioning the documents (row (7)).
+ * (`docs/runbooks/release-checklist.md`), which also sets the effective date and drops the marking. **Counsel has
+ * checked the first version** (project owner, 30 Oct 2026; task 226), so no document of the set is marked, and it keeps
+ * its effective date: the approved text is the one accounts had already accepted as 1.0. A later version — the one
+ * billing brings — is drafted provisional again. A platform operator's details are not part of the standing: A-21
+ * changes them without versioning the documents (row (7)).
  */
 
 /**
@@ -57,16 +60,17 @@ export interface LegalStanding {
 /** The zone a legal document's effective date is a day in — the operator's, Moldova's. */
 const LEGAL_TIMEZONE = 'Europe/Chisinau';
 
-const DRAFTED: LegalStanding = {
+/** The first version, as counsel checked it (task 226). */
+const FIRST_VERSION: LegalStanding = {
   version: '1.0',
   effective: { date: '2026-10-13', timezone: LEGAL_TIMEZONE },
-  provisional: true,
+  provisional: false,
 };
 
 export const LEGAL_STANDING: Readonly<Record<LegalDocument, LegalStanding>> = {
-  [LEGAL_DOCUMENT.TERMS]: DRAFTED,
-  [LEGAL_DOCUMENT.PRIVACY]: DRAFTED,
-  [LEGAL_DOCUMENT.COOKIES]: DRAFTED,
+  [LEGAL_DOCUMENT.TERMS]: FIRST_VERSION,
+  [LEGAL_DOCUMENT.PRIVACY]: FIRST_VERSION,
+  [LEGAL_DOCUMENT.COOKIES]: FIRST_VERSION,
 };
 
 /** A version of each accepted document — what a page displayed, what an account accepted, what is in force. */

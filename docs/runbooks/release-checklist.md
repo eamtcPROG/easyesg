@@ -41,7 +41,9 @@ Record the Excel build numbers checked, and the outcome of each item, in the rel
 published **provisional** (`architecture.md` §12.5.6's task-75 row (6)); whether they are lawful is counsel's judgement,
 and the operating company's registered details are a fact only the owner holds (row (7)). Neither is a property a gate
 can test. **This item binds the release that opens the pilot (task 48)** — until then each page says it is provisional,
-and the operator named is the seed's temporary *EasyESG SRL*.
+and the operator named is the seed's temporary *EasyESG SRL*. **Version 1.0's approval was reported on 30 Oct 2026**
+(project owner, task 226): `provisional` is `false` and the effective date stays 13 Oct 2026, so step 2 is done for it;
+what step 1 also asks, and the reviewers' names, still go in the release's notes. A later version goes through both.
 
 **Before that release:**
 

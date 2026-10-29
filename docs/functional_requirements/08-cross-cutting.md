@@ -288,7 +288,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-205 — The legal documents
 
-**Status.** Delivered — 74.1 and 74.2 (the chrome and the archetype it is drawn on), 75.1 (the decisions written), 75.3 (the set drawn), 75.4 (the text in three locales, drafted in the repository and provisional until counsel approves it — a release-checklist item before the pilot), 75.6 (the operator the documents name, kept on A-21), 195 (the recorded acceptance, AC-8, AC-9, AC-15, AC-16)
+**Status.** Delivered — 74.1 and 74.2 (the chrome and the archetype it is drawn on), 75.1 (the decisions written), 75.3 (the set drawn), 75.4 (the text in three locales, drafted in the repository and provisional until counsel approves it — a release-checklist item before the pilot), 75.6 (the operator the documents name, kept on A-21), 195 (the recorded acceptance, AC-8, AC-9, AC-15, AC-16), 226 (counsel's approval: the marking dropped, version 1.0's effective date kept)
 
 **Obligation.** The system shall publish the terms of service, the privacy notice and the cookie policy as one set, readable without signing in and from the footer of every screen, each with a plain-language summary above its formal text, a version and an effective date, in each of the three locales, so that a person is told what is agreed to and how personal data is handled before any is collected.
 
@@ -339,6 +339,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - 5 Oct 2026 · project owner · the set is three documents · §12.5.6 task-182 public tier row (182/121)
 - 13 Oct 2026 · project owner · the text is drafted here and published provisional; the controller is store data edited on A-21; the version and effective date are a registry committed with the text · §12.5.6 task-75 row (6) … (9)
 - 23 Oct 2026 · project owner · acceptance is recorded, ahead of the pilot: a required checkbox at registration, the versions shown refused once replaced, an account owing an acceptance sent to S-43 and refused all else, each acceptance kept · §12.5.6 task-195 row
+- 30 Oct 2026 · project owner · counsel has checked the three documents: none is marked provisional, and version 1.0 keeps its effective date, 13 Oct 2026 · §12.5.6 task-75 row (6)
 
 ### FR-206 — The cookie choice
 

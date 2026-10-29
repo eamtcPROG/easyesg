@@ -28,13 +28,27 @@
 }
 
 @media (min-width: 64rem) {
-  /* Docked, and kept in view while the text scrolls past it. */
+  /*
+   * Docked, and kept in view while the text scrolls past it (`design_spec.md` §4.6, amended 30 Oct 2026). **The grid
+   * item is what sticks**: a sticky box holds only within its parent, and this item is as tall as the list it holds, so
+   * a sticky list inside it had no room to hold in and scrolled away with the text. The item's grid area is as tall as
+   * the text, which is the room it needs. A list taller than the window scrolls within itself while the text scrolls
+   * with the page — at +40% expansion a long document's list is.
+   */
+  .contents {
+    position: sticky;
+    top: var(--space-6);
+    max-block-size: calc(100dvh - 2 * var(--space-6));
+    overflow-y: auto;
+    /* A scroll box clips what it holds at its edge, a link's focus ring included; this inset is the ring's room. */
+    padding: var(--space-2);
+    margin: calc(-1 * var(--space-2));
+  }
+
   .docked {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    position: sticky;
-    top: var(--space-6);
   }
 
   .disclosure {

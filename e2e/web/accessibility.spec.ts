@@ -40,7 +40,8 @@ const SCREENS = [
   '/legal/cookies',
   '/en/legal/cookies',
   '/ru/legal/cookies',
-  // The terms and the privacy notice since task 75.4, with the operator's facts and the provisional notice.
+  // The terms and the privacy notice since task 75.4, with the operator's facts (the provisional notice dropped with
+  // counsel's approval, task 226).
   '/legal/terms',
   '/legal/privacy',
   '/en/legal/privacy',

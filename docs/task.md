@@ -1,7 +1,7 @@
 # Tasks
 
 **What is left, in the order it will be delivered.** The closed rows are in
-[archived_tasks.md](archived_tasks.md) — 182 numbers and 295 of them — and moving them out is what
+[archived_tasks.md](archived_tasks.md) — 183 numbers and 296 of them — and moving them out is what
 lets this file answer *what is left* without a reader filtering a third of it away first.
 
 The order is the **Stage** sequence below, authored 12 Sep 2026 and **independent of the task
@@ -170,9 +170,9 @@ came with it, being the `(public)` chrome and the `Content` archetype those page
 **both closed on 9 Oct 2026**, so the group moved to Stage 6 with `74.3`–`74.6`, its earliest open sub-step. Task 84, S-12's
 change history, was here because all three of its consumers already existed and the per-field trail was worth having
 readable before the first real SMEs arrive; **it closed on 12 Oct 2026**. **Task 75 closed on 13 Oct 2026**, its text drafted
-in the repository and provisional and its operator kept on A-21, so what still stands between it and task 48 is the
-release-checklist item that has counsel approve the text and the owner enter the operating company — a person's step,
-not a row here.
+in the repository and provisional and its operator kept on A-21. **Counsel checked the text on 30 Oct 2026** (task 226),
+so what still stands between it and task 48 is the rest of the release-checklist item, the owner entering the
+operating company above all — a person's step, not a row here.
 
 | # | Name | Scope | Description | Expected result | Related documents | Covered FR | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |

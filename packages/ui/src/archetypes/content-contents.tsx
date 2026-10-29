@@ -5,7 +5,8 @@ import styles from './content-contents.module.css';
  * `ContentSection` by its id and its heading's words, numbered as the legal set's artboards number them.
  *
  * **Docked beside the text at `wide`, a closed disclosure above it below** (`design_spec.md` §4.6, resolved 9 Oct
- * 2026) — the move S-07's module list makes. Both forms are drawn and a media query shows one, so the list is built by
+ * 2026) — the move S-07's module list makes. **Docked, it stays in view while the text scrolls** (amended 30 Oct 2026),
+ * scrolling within itself where it is taller than the window — CSS alone, so the list stays a Server Component. Both forms are drawn and a media query shows one, so the list is built by
  * a function called twice rather than one element placed twice; whichever is hidden is `display: none` and leaves the
  * accessibility tree with it. **The disclosure is a native `<details>`**, so the archetype stays a Server Component —
  * the one §14.2 lets the framework cache — and it opens and closes with no script.

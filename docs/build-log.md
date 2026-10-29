@@ -34349,3 +34349,72 @@ saga, 61's invoicing and 63's checkout, with 57's numbering beneath them. 81.3 n
 
 Stage 7 therefore cannot close until Stage 4 has shipped, with 67.6 and 68.2 from Stage 5. Its other rows, 78, 79
 and 80, have closed.
+
+## Task 226 — the legal set approved, and its contents kept in view · 2026-10-30
+
+Two asks of S-30 from the project owner: the *On this page* contents should stay put while the text scrolls, and
+counsel has checked the pages, so the notice that says they are provisional goes. One question was put — the effective
+date the approved documents show — and the decisions are `design_spec.md` §4.6's and S-30's amendments and
+`architecture.md` §12.5.6's task-75 row (6). FR-205's status and history are amended; behaviour 10 and AC-14 stand, a
+later version being drafted provisional again.
+
+### Decided (project owner)
+
+- **Version 1.0 keeps its effective date, 13 Oct 2026.** The approved text is the one accounts had already accepted as
+  1.0, so the date they accepted stays true and nobody is asked to accept again. Declined: the approval day, 30 Oct.
+
+### What the building decided within that
+
+- **The contents were meant to stick and could not.** `content-contents.module.css` had carried `position: sticky` on
+  the docked list since task 74.2, with a comment saying it kept the list in view — but a sticky box holds only within
+  its parent, and the list's parent was the grid item, which `align-items: start` makes exactly as tall as the list. It
+  had no room, so it scrolled away with the text, and no gate or browser case said so. The grid item sticks now: its
+  grid area is as tall as the text.
+- **"Scrolled separately" read as one page scroll with the list held, not as two scroll panes.** A text in a pane of its
+  own would move the page's scroll into a box — the reader's find, a section's address and the footer would all behave
+  unlike every other page — for the same visual result. The list scrolls within itself only where it is taller than
+  the window: `max-block-size` is the window less the sticky inset at both ends, which a long document's list at +40%
+  expansion exceeds. Recorded in §4.6's amendment, since the owner's words admit the other reading.
+- **A scroll box clips its children's focus rings**, the cascade's ring being a 4px `box-shadow`; the column takes a
+  4px inset and the same negative margin, so the ring has room and the list does not move.
+- **Below `wide` nothing changes**: the closed disclosure above the text stays where §4.6 put it. A sticky disclosure
+  would cover the text it opens over at a phone's height.
+- **The notice is data, so the change is one flag**: `LEGAL_STANDING`'s entry becomes `FIRST_VERSION` with
+  `provisional: false`, and `LegalProvisional` and its catalogue keys stay — the version billing brings is drafted
+  provisional again, and the arm that draws the notice is what it will need.
+
+### Found in passing
+
+- **`CLAUDE.md`'s archive row read *179 numbers, 292 rows*** while the archive held 182 and 295 — a count no
+  `docs:check` claim pins, three closes stale. Moved with the others to 183 and 296.
+- Searched for the shape: the two other `position: sticky` rules in `packages/ui`. `ValidationDock` sticks inside the
+  wizard's panel, a grid item the grid stretches to the step's height, so it has room; the wizard's foot-of-step rule is
+  on the grid item itself. Neither has this defect.
+
+### Skills read against the diff
+
+- **`vercel-react-best-practices`**: nothing renders differently — the list stays a Server Component, CSS alone holding
+  it, which is what keeps the archetype the one §14.2 lets the framework cache.
+- **`one-idea-per-file`**: `reason-docblock-carries-the-why` — `ContentContents`' docblock and the stylesheet's comment
+  say why the grid item sticks rather than the list.
+
+### Verified, and what is not
+
+- `pnpm lint`; `typecheck` in `ui`, `i18n` and `web`; `pnpm docs:check` — 48 claims, after the archive's and the plan's
+  counts moved to 183 numbers and 296 rows and the plan files' union to 226.
+- Unit, one suite at a time — `packages/i18n` and `packages/ui` being shared, every dependent's row: `i18n` 172, `ui`
+  510, `web` 2,171, `admin` 322, `api` 2,633. `pnpm routes:check`.
+- `pnpm e2e`: **2,008 of 2,008**, no unhandled rejection in the log — the api reads the same standing for acceptance,
+  and version 1.0 did not move.
+- `pnpm e2e:web --project identity --project expansion --project admin`: **411 passed** in 12.4 minutes, the two new
+  cases among them; the server's 23 `⨯` lines are all digest `2667547900`, the known closed stream.
+- **The two new cases bite**: on `HEAD`'s stylesheet, rebuilt, both fail — the list 1,476px above the window after the
+  scroll, and no overflow to scroll at a 420px window. Restored, rebuilt, the legal file's 14 cases pass.
+- In the browser, the built bundle at 1440 × 900 in the dark scheme: scrolled 1,100px into the cookie policy, the list
+  holds 28px from the window's top (the 24px inset and the 4px ring room); no notice above *In short*; no console
+  error. At 375, the disclosure above the text, not sticky, and no sideways scroll on the page.
+- **Not seen in the browser**: the terms and the privacy notice, which read the operator from the api the preview had
+  not started — the browser suite reads both, against the test stack.
+- **Not checked, being counsel's and the owner's**: what the checklist's step 1 asks besides approval — which locale
+  binds, whether a data protection officer is required, a Russian-speaking reviewer for the Russian (NFR-23) — and the
+  operating company on A-21 (step 3), which is store data wherever the release runs and was not read here.

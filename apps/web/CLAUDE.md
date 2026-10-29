@@ -40,8 +40,8 @@ languages and notification preferences, S-28 credentials — both since 24 Sep 2
 layout's rail, as their artboards draw them, rather than the workspace band — S-35 organization unavailable, S-36
 complete your account, S-37 choose organization, S-38 unsubscribe from an email, S-43 accept the terms since task 195 —
 the documents owed with their standing and the acceptance S-01's register step carries too, a required checkbox; S-29 the marketing home since task 74.3 — eight bands over the `--content-max` measure, the hero's and the answering band's pictures drawn by the wizard's own inventory components, read-only and `inert`, the eleven Basic sections named as the exported report names them (`reportModules`), and no pricing section until task 222 — **the one page the build prerenders**, per locale, revalidated hourly (task 74.4), its canonical beside its alternates in the `Link` header (task 74.5); S-30 the legal set since task 75 — the cookie policy, and the terms and the
-privacy notice naming the platform operator A-21 keeps, each with its standing and, until counsel approves it, marked
-provisional; S-31 the cookie choice since task 223 — a banner on a first visit to any screen, fixed at the foot of the
+privacy notice naming the platform operator A-21 keeps, each with its standing — marked provisional until counsel
+approved the set, which since task 226 it has — its contents docked beside the text at `wide` and kept in view; S-31 the cookie choice since task 223 — a banner on a first visit to any screen, fixed at the foot of the
 viewport with its height reserved beneath the page, *Cookie settings* in every footer and on the cookie policy, each
 answer recorded by the api and kept in a cookie the page's own script reads, mounted once by the locale layout as a
 client island **beside the page, never around it**, so the home stays prerendered and a streaming page hydrates
