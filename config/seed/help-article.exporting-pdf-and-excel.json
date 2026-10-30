@@ -1,0 +1,75 @@
+{
+  "topic": "exporting",
+  "order": 5,
+  "related": [
+    "locking-a-period"
+  ],
+  "locales": {
+    "ro": {
+      "title": "Exportul în PDF și în Excel",
+      "summary": "Alegeți formatul și limba la fiecare export. Raportul îl trimiteți dumneavoastră; platforma nu depune nimic în numele companiei.",
+      "module": "Export",
+      "sections": [
+        {
+          "heading": "Pe scurt",
+          "body": "Un raport se exportă în două formate: un PDF de citit și fișierul Excel al EFRAG pentru cine are nevoie de cifre. La fiecare export alegeți limba — română, engleză sau rusă —, indiferent de limba în care folosiți platforma. Fiecare export rămâne în istoricul raportului și poate fi descărcat din nou exact așa cum a fost generat.",
+          "disclosed": false
+        },
+        {
+          "heading": "Constatări nerezolvate",
+          "body": "Dacă raportul mai are constatări nerezolvate, înainte de export vedeți lista lor și confirmați că exportați cu ele. În fișier golurile sunt marcate clar: un câmp fără date apare cu motivul indicat de dumneavoastră, iar o secțiune omisă apare ca omisă.",
+          "disclosed": false
+        },
+        {
+          "heading": "După ce l-ați trimis",
+          "body": "Platforma nu depune raportul nicăieri. După ce l-ați trimis băncii sau clientului, marcați-l ca depus, ca starea raportului să o arate.",
+          "disclosed": true
+        }
+      ]
+    },
+    "en": {
+      "title": "Exporting to PDF and Excel",
+      "summary": "You choose the format and the language each time. You send the report yourself; the platform files nothing on your company's behalf.",
+      "module": "Export",
+      "sections": [
+        {
+          "heading": "In short",
+          "body": "A report exports in two formats: a PDF to read, and EFRAG's Excel file for anyone who wants the figures. Each export is in the language you choose for it — Romanian, English or Russian — whatever language you use the platform in. Every export stays in the report's history and downloads again exactly as it was made.",
+          "disclosed": false
+        },
+        {
+          "heading": "Unresolved findings",
+          "body": "If the report still has unresolved findings, you see them listed before the export and confirm that you are exporting with them. The file marks each gap plainly: a field with no data carries the reason you gave, and an omitted section is named as omitted.",
+          "disclosed": false
+        },
+        {
+          "heading": "After you send it",
+          "body": "The platform files your report nowhere. Once you have sent it to the bank or the buyer, mark it as filed so the report's state says so.",
+          "disclosed": true
+        }
+      ]
+    },
+    "ru": {
+      "title": "Экспорт в PDF и Excel",
+      "summary": "Формат и язык выбираются при каждом экспорте. Отчёт отправляете вы сами: платформа ничего не подаёт от имени компании.",
+      "module": "Экспорт",
+      "sections": [
+        {
+          "heading": "Коротко",
+          "body": "Отчёт экспортируется в двух форматах: PDF для чтения и Excel-файл EFRAG для тех, кому нужны цифры. Язык выбирается при каждом экспорте — румынский, английский или русский — независимо от языка, на котором вы работаете в платформе. Каждый экспорт остаётся в истории отчёта, и его можно скачать снова точно в том виде, в каком он был создан.",
+          "disclosed": false
+        },
+        {
+          "heading": "Неустранённые замечания",
+          "body": "Если в отчёте остались неустранённые замечания, перед экспортом вы увидите их список и подтвердите, что экспортируете с ними. В файле пропуски отмечены явно: у поля без данных указана ваша причина, а пропущенный раздел назван пропущенным.",
+          "disclosed": false
+        },
+        {
+          "heading": "После отправки",
+          "body": "Платформа никуда не подаёт ваш отчёт. Отправив его банку или покупателю, отметьте отчёт как поданный, чтобы это было видно по его состоянию.",
+          "disclosed": true
+        }
+      ]
+    }
+  }
+}

@@ -595,7 +595,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 
 ### FR-10 — Interface language
 
-**Status.** Partial — delivered 19, 22, 52.3 · remaining 76.2 (the recorded fallback for FR-61 content)
+**Status.** Built — delivered 19, 22, 52.3, 76 (the recorded fallback for FR-61 content)
 
 **Obligation.** The system shall persist a per-user interface language across devices and sessions, falling back per string to the default locale where a translation is absent and recording each fallback.
 
@@ -622,7 +622,7 @@ Business rules held here: BR-ID-1 … BR-ID-5, BR-ACC-2 … BR-ACC-4 (§4). Enti
 - **AC-1** Given a language chosen on S-27, then it applies at the next sign-in on any device. *(source: FR text; UC-14; OQ-32)*
 - **AC-2** Given a locale that is not registered, then the save is refused with 400. *(source: UC-14 precondition)*
 - **AC-3** Given a catalogue key present in the source locale and absent from another, then the build fails. *(source: FR-64; OQ-43)*
-- **AC-4** Given an FR-61 string with no translation in the chosen locale, then it renders in the default locale and the gap is recorded. *(source: FR text; UC-14 alternate flow)* Unmet until 76.2.
+- **AC-4** Given an FR-61 string with no translation in the chosen locale, then it renders in the default locale and the gap is recorded. *(source: FR text; UC-14 alternate flow)*
 - **AC-5** Given the three languages on S-27, then changing one does not change the others. *(source: §12.5.6 task-52.3 row (3))*
 
 **History.**

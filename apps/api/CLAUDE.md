@@ -181,8 +181,17 @@ traps each one left — grouped by area rather than by the task that built it.
   language (`providers/change-words.factory.ts`): a disclosure answer through the export's own `documentWords`, so it
   reads as the document prints it; a closed vocabulary from the shared catalogue's `vocabulary` namespace, which
   `apps/web` reads too; an activity code with the classifier's label (§12.5.6's task-84 row).
+- **Content** (`platform/content`, with FR-64's queue in `platform/localization`; task 76): FR-61's published content,
+  read with no session — `GET /content/help/topics`, `GET /content/help/articles`, `GET /content/help/articles/{key}` and
+  `GET /content/plans`, each in the language `?locale=` asks for — over three store kinds, `help_topic`, `help_article` and
+  `plan_copy`, one slot per item with a block per locale, Romanian required. **Each kind's reader is its publication rule
+  too** (`configuration-kind-rules.ts`), so what the store admits is what the read reads, and `RevisionReadings` reads each
+  revision once. A locale an item lacks is served in Romanian with no marker and reported through
+  `CONTENT_FALLBACK_REPORTER`; the queue, `config.content_fallback`, gathers in the process and writes every five seconds,
+  and `ContentTranslationWatch` clears what is translated whenever the store's version moves — so **a suite calls the
+  queue's `write()` and the watch's `settleIfMoved()`** rather than waiting out either (§12.5.6's task-76 row).
 - **Not live**: billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18, A-19 and A-21 (67 … 70), the production edge and
-  deploy (71 … 73, staging's three sub-steps aside — architecture.md §10.5), the public tier (74 … 77), the Comprehensive Module's plan scope (81) — its nine forms shipped with task 79, and its applicability, validation and both exports with task 80 —, the advisor domain
+  deploy (71 … 73, staging's three sub-steps aside — architecture.md §10.5), the public tier's support channel (77), the Comprehensive Module's plan scope (81) — its nine forms shipped with task 79, and its applicability, validation and both exports with task 80 —, the advisor domain
   (116 … 121).
 
 ### Traps and load-bearing facts, by area
@@ -1067,7 +1076,7 @@ src/
 ├─ app/          cross-cutting only: dto/ filters/ interceptors/ guards/ decorators/ constants/ interfaces/ messages/
 ├─ config/       ConfigService schema. Never process.env in business logic
 ├─ contracts/    the ONLY cross-context surface: ports, events/, types/
-├─ modules/      core/(9) identity/(6) billing/(13) platform/(10) — 38, plus the four context modules: 42 `*.module.ts`
+├─ modules/      core/(9) identity/(6) billing/(13) platform/(11) — 39, plus the four context modules: 43 `*.module.ts`
 └─ infrastructure/  persistence/ outbox/ queue/ adapters/ openapi/ observability/ configuration/ provisioning/
 ```
 

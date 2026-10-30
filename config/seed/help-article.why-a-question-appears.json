@@ -1,0 +1,75 @@
+{
+  "topic": "filling-in",
+  "order": 2,
+  "related": [
+    "what-the-report-asks"
+  ],
+  "locales": {
+    "ro": {
+      "title": "De ce o întrebare apare sau dispare",
+      "summary": "Unele întrebări depind de ce ați răspuns mai devreme. Iată care și de ce.",
+      "module": "B1 – B11 · Modulul de bază",
+      "sections": [
+        {
+          "heading": "Pe scurt",
+          "body": "Standardul VSME nu cere aceleași informații de la toate companiile. Când un răspuns face ca o întrebare să fie aplicabilă, întrebarea apare în secțiunea ei; când acel răspuns se schimbă, întrebarea dispare din nou.",
+          "disclosed": false
+        },
+        {
+          "heading": "Exemple",
+          "body": "- **rata de fluctuație a personalului** (B8) se cere companiilor cu cel puțin 50 de angajați;\n- **diferența de remunerare dintre femei și bărbați** (B10) se cere companiilor cu cel puțin 150 de angajați;\n- **întrebările despre biodiversitate** (B5) apar după ce ați indicat în B1 cel puțin o locație;\n- **întrebările despre apă** (B6) li se pun companiilor din agricultură, industria extractivă, industria prelucrătoare, producția și furnizarea de energie, distribuția apei și gestionarea deșeurilor.",
+          "disclosed": false
+        },
+        {
+          "heading": "De unde vin pragurile",
+          "body": "Pragurile sunt cele ale standardului VSME. Platforma nu adaugă praguri proprii.",
+          "disclosed": true
+        }
+      ]
+    },
+    "en": {
+      "title": "Why a question appears or goes away",
+      "summary": "Some questions depend on what you answered earlier. Which ones, and why.",
+      "module": "B1 – B11 · Basic Module",
+      "sections": [
+        {
+          "heading": "In short",
+          "body": "The VSME standard does not ask every company for the same things. When an answer makes a question apply, the question appears in its section; when that answer changes, the question goes away again.",
+          "disclosed": false
+        },
+        {
+          "heading": "Examples",
+          "body": "- **staff turnover rate** (B8) is asked of companies with at least 50 employees;\n- **the pay gap between women and men** (B10) is asked of companies with at least 150 employees;\n- **the biodiversity questions** (B5) appear once you have entered at least one site in B1;\n- **the water questions** (B6) are put to companies in farming, mining, manufacturing, energy supply, and water or waste.",
+          "disclosed": false
+        },
+        {
+          "heading": "Where the thresholds come from",
+          "body": "The thresholds are the VSME standard's own. The platform sets none of its own.",
+          "disclosed": true
+        }
+      ]
+    },
+    "ru": {
+      "title": "Почему вопрос появляется или исчезает",
+      "summary": "Некоторые вопросы зависят от ваших предыдущих ответов. Какие именно и почему.",
+      "module": "B1 – B11 · Базовый модуль",
+      "sections": [
+        {
+          "heading": "Коротко",
+          "body": "Стандарт VSME спрашивает разные компании о разном. Когда ответ делает вопрос применимым, вопрос появляется в своём разделе; если этот ответ меняется, вопрос снова исчезает.",
+          "disclosed": false
+        },
+        {
+          "heading": "Примеры",
+          "body": "- **текучесть кадров** (B8) спрашивают у компаний, где работает не менее 50 человек;\n- **разрыв в оплате труда женщин и мужчин** (B10) — у компаний, где не менее 150 сотрудников;\n- **вопросы о биоразнообразии** (B5) появляются, когда в B1 указана хотя бы одна площадка;\n- **вопросы о воде** (B6) задают компаниям из сельского хозяйства, добычи полезных ископаемых, обрабатывающей промышленности, энергоснабжения, водоснабжения и обращения с отходами.",
+          "disclosed": false
+        },
+        {
+          "heading": "Откуда берутся пороги",
+          "body": "Пороги взяты из самого стандарта VSME. Собственных порогов платформа не вводит.",
+          "disclosed": true
+        }
+      ]
+    }
+  }
+}

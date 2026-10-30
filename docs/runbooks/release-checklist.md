@@ -68,3 +68,24 @@ what step 1 also asks, and the reviewers' names, still go in the release's notes
 
 Record the approval — its date and its reviewers — the versions and effective dates published, and the operator's
 details as saved, in the release's notes.
+
+## The help centre's starter library, before the pilot (FR-61, NFR-23; task 76)
+
+**Why by hand.** The six help topics and six articles the store starts with (`config/seed/help-topic.*.json`,
+`help-article.*.json`) were drafted in the repository by the people who built the product, not by the content team
+(`architecture.md` §12.5.6's task-76 row (7)). Whether an article answers its question in the reader's own terms, and
+whether its English and Russian read as written rather than translated, is an editor's judgement, not a property a gate
+can test. The store already refuses what it can judge — no Romanian, a half-written locale, an internal identifier, an
+HTML tag (row (3)). **This item binds the release that opens the pilot (task 48).**
+
+**Before that release:**
+
+1. **Each article says only what the platform does in that release** — the sections it names, the exports it offers, the
+   way a period locks — read against the product, not against the article's memory of it.
+2. **The content team has reviewed each topic and article in Romanian, English and Russian**, each locale on its own
+   (NFR-23), and republished what it changed on A-03 (67.5). The loader keeps a version an operator published, so no
+   later seed run undoes the review (task 172).
+3. **No plan copy is published that names a plan the billing catalogue does not hold** — plan copy is 53.3's, keyed by
+   the codes 53.1 creates.
+
+Record the reviewers and the articles each signed off in the release's notes.

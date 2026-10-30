@@ -1,0 +1,17 @@
+{
+  "order": 2,
+  "locales": {
+    "ro": {
+      "title": "Completarea secțiunilor",
+      "summary": "Secțiunile de la B1 la B11 și de ce o întrebare apare sau dispare."
+    },
+    "en": {
+      "title": "Filling in the sections",
+      "summary": "Sections B1 to B11, and why a question appears or goes away."
+    },
+    "ru": {
+      "title": "Заполнение разделов",
+      "summary": "Разделы с B1 по B11 и почему вопрос появляется или исчезает."
+    }
+  }
+}

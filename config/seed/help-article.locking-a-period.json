@@ -1,0 +1,75 @@
+{
+  "topic": "entities-and-periods",
+  "order": 4,
+  "related": [
+    "roles-and-invitations"
+  ],
+  "locales": {
+    "ro": {
+      "title": "Ce se întâmplă când blocați o perioadă",
+      "summary": "O perioadă blocată nu mai poate fi modificată de nimeni. Redeschiderea cere un motiv, care rămâne consemnat.",
+      "module": "Entități și perioade",
+      "sections": [
+        {
+          "heading": "Pe scurt",
+          "body": "Administratorul organizației blochează perioada atunci când raportul este gata. Din acel moment nimeni nu mai poate modifica nici raportul perioadei, nici perioada însăși — nici administratorul —, iar raportul blocat rămâne exact cum era în clipa blocării.",
+          "disclosed": false
+        },
+        {
+          "heading": "Redeschiderea",
+          "body": "Dacă trebuie corectat ceva, administratorul redeschide perioada și scrie motivul. Redeschiderea rămâne în istoricul perioadei: cine a redeschis-o, când și de ce. După corectare, perioada poate fi blocată din nou.",
+          "disclosed": false
+        },
+        {
+          "heading": "De ce nici administratorul nu poate modifica",
+          "body": "O corectură făcută după ce raportul a fost trimis trebuie să se vadă ca o corectură. Dacă administratorul ar putea modifica direct o perioadă blocată, schimbarea ar apărea în istoric ca o editare obișnuită, iar cine citește raportul nu ar avea cum să afle că acesta s-a schimbat.",
+          "disclosed": true
+        }
+      ]
+    },
+    "en": {
+      "title": "What happens when you lock a period",
+      "summary": "Nobody can change a locked period. Reopening it takes a reason, and the reason stays on record.",
+      "module": "Entities and periods",
+      "sections": [
+        {
+          "heading": "In short",
+          "body": "The organisation administrator locks a period once its report is ready. From then on nobody can change that period's report or the period itself — the administrator included — and the locked report reads exactly as it did the moment it was locked.",
+          "disclosed": false
+        },
+        {
+          "heading": "Reopening",
+          "body": "If something needs correcting, the administrator reopens the period and writes down why. The reopening stays in the period's record — who reopened it, when and for what reason — and the period can be locked again once the correction is made.",
+          "disclosed": false
+        },
+        {
+          "heading": "Why not even the administrator can edit it",
+          "body": "A correction made after a report has gone out should be visible as a correction. If an administrator could edit a locked period directly, the change would sit in the history as ordinary editing, and a reader of the report would have no way of telling that it had moved.",
+          "disclosed": true
+        }
+      ]
+    },
+    "ru": {
+      "title": "Что происходит, когда период заблокирован",
+      "summary": "Заблокированный период не может изменить никто. Чтобы открыть его снова, нужно указать причину, и она сохраняется.",
+      "module": "Организации и периоды",
+      "sections": [
+        {
+          "heading": "Коротко",
+          "body": "Администратор организации блокирует период, когда отчёт готов. После этого никто — в том числе администратор — не может изменить ни отчёт за этот период, ни сам период, а заблокированный отчёт остаётся точно таким, каким был в момент блокировки.",
+          "disclosed": false
+        },
+        {
+          "heading": "Повторное открытие",
+          "body": "Если нужно что-то исправить, администратор снова открывает период и указывает причину. Запись об этом остаётся в истории периода: кто открыл, когда и почему. После исправления период можно снова заблокировать.",
+          "disclosed": false
+        },
+        {
+          "heading": "Почему даже администратор не может вносить правки",
+          "body": "Исправление, сделанное после того, как отчёт отправлен, должно быть видно как исправление. Если бы администратор мог напрямую менять заблокированный период, изменение выглядело бы в истории как обычная правка, и читатель отчёта не узнал бы, что отчёт изменился.",
+          "disclosed": true
+        }
+      ]
+    }
+  }
+}

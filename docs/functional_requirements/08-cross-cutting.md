@@ -240,7 +240,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-204 — The marketing home
 
-**Status.** Partial — delivered 74.1 (the public band and footer), 74.2 (the Content archetype), 74.3 (the home), 74.4 (its static rendering), 74.5 (its canonical and alternates), 74.6 (the home shipped without its pricing section) · remaining 222 (the pricing section, which waits for 53.3 and 76)
+**Status.** Partial — delivered 74.1 (the public band and footer), 74.2 (the Content archetype), 74.3 (the home), 74.4 (its static rendering), 74.5 (its canonical and alternates), 74.6 (the home shipped without its pricing section), 76 (the content read path the pricing section reads) · remaining 222 (the pricing section, which waits for 53.3)
 
 **Obligation.** The system shall let a visitor with no account and no session read, in the language they choose, what the platform produces and for whom, what it costs and what is asked of them before they sign up, and then proceed to registration or sign-in, while storing nothing against the visitor.
 
@@ -268,7 +268,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 **Boundaries.** Registration and sign-in are FR-1 … FR-5. The legal set is FR-205. The help centre is FR-61 and FR-64. The route to support (UC-182, S-34) is not specified (task 77.1).
 
 **Acceptance criteria.**
-- **AC-1** Given a visitor with no session, when the public address is opened, then the page shows what the platform produces, what it costs and what is asked before signing up, with no sign-in wall. *(source: UC-177 steps; `design_spec.md` S-29)* What it costs is unmet until 53.3 and 76; until then the page shows the rest and omits the pricing section.
+- **AC-1** Given a visitor with no session, when the public address is opened, then the page shows what the platform produces, what it costs and what is asked before signing up, with no sign-in wall. *(source: UC-177 steps; `design_spec.md` S-29)* What it costs is unmet until 53.3 and 222; until then the page shows the rest and omits the pricing section. The read path is task 76's.
 - **AC-2** Given the home, then it offers register, sign in, a language choice, and routes to the help centre and the legal set. *(source: `design_spec.md` S-29)*
 - **AC-3** Given the content read path is unavailable, when the home is opened, then it renders without its pricing section and does not show an error page. *(source: `design_spec.md` S-29)*
 - **AC-4** Given a visit, then nothing is stored against the visitor and the page reads no active organization. *(source: UC-177 postconditions; `design_spec.md` §5.1b)*

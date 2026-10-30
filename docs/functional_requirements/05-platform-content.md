@@ -19,7 +19,7 @@ Business rules held here: BR-VER-1, BR-VER-3, BR-ID-6, BR-ACC-6 (§5). Entities 
 
 ### FR-61 — Help-centre articles and plan copy as versioned data
 
-**Status.** Not started — remaining 53.3 (plan presentation copy), 67.5 (A-03's editor), 76 (76.1 … 76.5, the published read path). The substrate is built: task 16's generic store, with immutable versions, publish and revert, already serves other artefacts.
+**Status.** Partial — delivered 76 (the published read path, its shape, and a starter help library seeded) · remaining 53.3 (plan presentation copy seeded against 53.1's plans), 67.5 (A-03's editor), 71.1 (the edge enforcing AC-5). The substrate is task 16's generic store, with immutable versions, publish and revert.
 
 **Obligation.** The system shall hold help-centre articles and plan presentation copy, the text edited by people who cannot deploy, as versioned data editable through an administrative console, so that a wording correction by support or marketing reaches users without a release.
 
@@ -27,7 +27,7 @@ Business rules held here: BR-VER-1, BR-VER-3, BR-ID-6, BR-ACC-6 (§5). Entities 
 |---|---|
 | **Actors** | PA edits (A-03). A visitor or a signed-in user reads published content. |
 | **Traces** | UC-71 · UC-180, UC-181 (the readers) · NFR-12, NFR-85 · AD-4 · OQ-43, OQ-44 · entity *Content string* |
-| **Surfaces** | A-03 · S-32, S-33 · the `platform/content` module · no route exists yet |
+| **Surfaces** | A-03 · S-32, S-33 · the `platform/content` module · `GET /content/help/topics`, `GET /content/help/articles`, `GET /content/help/articles/{key}`, `GET /content/plans` |
 
 **Inputs.** A content string: key, locale, value and version (§6, *Content string*).
 
@@ -37,27 +37,32 @@ Business rules held here: BR-VER-1, BR-VER-3, BR-ID-6, BR-ACC-6 (§5). Entities 
 3. Each of the three locales is authored separately. None is machine-translated, and editorial sign-off is recorded per locale per publication (NFR-23; task-67.5 row).
 4. Readers reach published content through the public API. `apps/web` does not read the store around it (DR-11, AD-9; task 76.3).
 5. The read side is a module of its own, `platform/content`, apart from `platform/configuration`, which owns the store mechanism and knows nothing of any artefact's meaning (OQ-44).
-6. The unauthenticated read of published content is limited as generic unauthenticated traffic: the unauthenticated budget of 60 requests a minute per IP at the edge, with 429 beyond it, named for the route in `architecture.md` §12.5.6's limits table. It is not an authentication path (the window of 5 attempts in 15 minutes), and it does not take the webhook bucket (182/45).
+6. The unauthenticated read of published content is limited as generic unauthenticated traffic: the unauthenticated budget of 60 requests a minute per IP at the edge, with 429 beyond it, named for the route in `architecture.md` §12.5.6's limits table. It is not an authentication path (the window of 5 attempts in 15 minutes), and it does not take the webhook bucket (182/45). The edge enforces it (task 71.1); the api does not, since it sees the proxy's address until task 71 (§12.5.6's task-76 row (6)).
+7. Three kinds of item are held, one slot each: a help topic, a help article and a plan's presentation copy. Each holds once what does not vary by language and a block per locale; Romanian is required, and English and Russian are each present whole or absent. An article is a title, a summary, the module it belongs to and ordered sections, each a heading, a body in a small Markdown subset and whether it is disclosed rather than shown. Plan copy is a name, a summary, highlights and an optional badge, and never a price (§12.5.6's task-76 row (2), 182/118).
+8. The store refuses an item with no Romanian, with a locale the build does not register, with a locale missing a field, or carrying an internal identifier or an HTML tag in its text (§12.5.6's task-76 row (3); UC-181).
 
 **Effects.** A content publication is a platform event for the system audit log (FR-81).
 
-**Boundaries.** Publishing is FR-62's. The runtime fallback is FR-64's. The terms of service, privacy notice and cookie policy are **not** FR-61 content: their text is committed to the release, which supplies its version and effective date (§12.5.6 task-182 public tier row, 182/116), and it is the owner's or counsel's to supply (§12.5.6 task-75 row). Who seeds the first rows is task 76.5's.
+**Configuration-held values.** A starter help library — six topics and one article in each — seeded from `config/seed/help-topic.*.json` and `help-article.*.json`, drafted in the repository and rewritten by the content team on A-03; no plan copy is seeded (§12.5.6's task-76 row (7)).
+
+**Boundaries.** Publishing is FR-62's. The runtime fallback is FR-64's. The terms of service, privacy notice and cookie policy are **not** FR-61 content: their text is committed to the release, which supplies its version and effective date (§12.5.6 task-182 public tier row, 182/116), and it is the owner's or counsel's to supply (§12.5.6 task-75 row).
 
 **Acceptance criteria.**
-- **AC-1** Given a help-centre article or a plan description edited in the console and published, then users read it with no deployment. *(source: FR text; NFR-85)* Unmet until 67.5 and 76.
-- **AC-2** Given a version that is not published, then no address serves it. *(source: task-76 row)* Unmet until 76.1.
-- **AC-3** Given a published article and a plan description, then each is readable in the three locales through the public API by a caller with no session. *(source: task-76 row, Expected result)* Unmet until 76.
+- **AC-1** Given a help-centre article or a plan description edited in the console and published, then users read it with no deployment. *(source: FR text; NFR-85)* Unmet until 67.5; the read half is 76's.
+- **AC-2** Given a version that is not published, then no address serves it. *(source: task-76 row)*
+- **AC-3** Given a published article and a plan description, then each is readable in the three locales through the public API by a caller with no session. *(source: task-76 row, Expected result)*
 - **AC-4** Given a correction to a field label, a validation message or a notification text, then it ships with a release, and the console offers no editor for it. *(source: OQ-43; A-03's purpose)* Unmet until 67.5.
-- **AC-5** Given an unauthenticated caller who reads published content more than 60 times a minute from one address, then the excess is answered 429, and a reader who opens four articles in a minute is not refused. *(source: §12.5.6 task-182 content row, 182/45)* Unmet until 76.4.
+- **AC-5** Given an unauthenticated caller who reads published content more than 60 times a minute from one address, then the excess is answered 429, and a reader who opens four articles in a minute is not refused. *(source: §12.5.6 task-182 content row, 182/45)* Unmet until 71.1, the edge that enforces it (§12.5.6's task-76 row (6)).
 
 **History.**
 - 19 Aug 2026 · architecture.md OQ-43 · narrowed from *field labels, help text and validation messages* to help-centre articles and plan presentation copy; the rest ships as committed catalogues · `architecture.md` OQ-43; FR-61 row
 - 24 Aug 2026 · project owner · the read side is `platform/content`, a module of its own · `architecture.md` OQ-44
 - 5 Oct 2026 · project owner · the public read is limited as generic unauthenticated traffic, 60 a minute per IP · §12.5.6 task-182 content row (182/45)
+- 30 Oct 2026 · project owner · the read's routes and the three kinds' shape — an article's sections in a Markdown subset, plan copy without a price; the store refuses what the reader would not read; a starter help library seeded, no plan copy; the rate limit enforced at the edge by 71.1 · §12.5.6's task-76 row
 
 ### FR-62 — Publish a reviewed content set, all tenants at once
 
-**Status.** Not started — remaining 67.14 (the multi-slot publication), 67.15 (drafts, review and sign-off), 67.5, 76. The publish and revert mechanism for one slot is task 16's and is built.
+**Status.** Not started — remaining 67.14 (the multi-slot publication), 67.15 (drafts, review and sign-off), 67.5. The publish and revert mechanism for one slot is task 16's and is built, and what a publication puts in force is read by task 76.
 
 **Obligation.** The system shall publish a reviewed set of the content held under FR-61 as an explicit, versioned and reversible step taking effect across all tenants at once, so that a half-finished translation is never live. Catalogue wording is not published by a step: it is published by deploying the release that contains it, and a half-finished catalogue is prevented at build time (FR-64).
 
@@ -135,7 +140,7 @@ Business rules held here: BR-VER-1, BR-VER-3, BR-ID-6, BR-ACC-6 (§5). Entities 
 
 ### FR-64 — No untranslated key reaches a user
 
-**Status.** Partial — delivered 6, 33.2 · remaining 76.6 (the queue's store), 67.5 (the queue's screen), 76.2 (the runtime fallback for FR-61 content)
+**Status.** Partial — delivered 6, 33.2, 76 (the runtime fallback for FR-61 content and the queue's store) · remaining 67.5 (the queue's screen)
 
 **Obligation.** The system shall prevent an untranslated key from reaching a user, by a build-time parity gate for catalogue text and a reviewable runtime fallback queue for the content held under FR-61.
 
@@ -149,22 +154,24 @@ Business rules held here: BR-VER-1, BR-VER-3, BR-ID-6, BR-ACC-6 (§5). Entities 
 1. **Catalogue text.** Every locale's catalogue is present at build time. A key in the source catalogue (`ro`) and absent from another locale fails the build (OQ-43). The same comparison runs over `packages/i18n`'s shared catalogues, over each taxonomy version's disclosure catalogues and over `apps/web`'s messages.
 2. UX-97 prohibits a visible *missing translation* marker, so a missing key is invisible at runtime. For that reason the parity suite also refuses a key present in a translation and absent from the source, and an empty value (`packages/i18n/src/parity.ts`).
 3. **FR-61 content.** Where a translation is absent, the reader is served the source-locale text without decoration, and the gap is reported per key (UC-14; UX-97). A catalogue gap never takes this path. The fallback is for FR-61 content only (task 76.2).
-4. The reporting seam is `FallbackReporter`. The queue behind it is not built (`packages/i18n/src/fallback-reporter.ts`).
+4. The reporting seam is `FallbackReporter` (`packages/i18n/src/fallback-reporter.ts`). Behind it is `platform/localization`'s queue, `config.content_fallback`; the key reported is the item's content key, its kind and its key (§12.5.6's task-76 row (4), (5)).
 5. The queue holds **one row per key and locale**, with when it was first seen, when it was last seen and a count of occurrences. A row leaves the queue when a published translation exists for that key and locale (182/38).
+6. A read writes nothing in its own request: reports gather in the process and are written once per interval of five seconds, one row each. Each item served says the language its text is in, so a page can mark the language of the part (§12.5.6's task-76 row (4), (5)).
 
 **Boundaries.** The alert on locale-fallback spikes is NFR-91's, an operational alert. FR-63 owns how a locale is added.
 
 **Acceptance criteria.**
 - **AC-1** Given a key in the Romanian catalogue and absent from the English or the Russian one, then the build fails. *(source: FR text; OQ-43)*
 - **AC-2** Given a translation that carries a key the source lacks, then the build fails. *(source: FR-63; `packages/i18n/src/parity.ts`)*
-- **AC-3** Given FR-61 content with no translation in the chosen locale, then the reader sees the source-locale text with no marker, and the key is added to the review queue. *(source: FR text; UX-97)* Unmet until 76.2 and 76.6.
-- **AC-4** Given the review queue, then PA sees each key that fell back, with its locale. *(source: UC-74; §6, *Fallback log entry*)* Unmet until 67.5 and 76.6.
+- **AC-3** Given FR-61 content with no translation in the chosen locale, then the reader sees the source-locale text with no marker, and the key is added to the review queue. *(source: FR text; UX-97)*
+- **AC-4** Given the review queue, then PA sees each key that fell back, with its locale. *(source: UC-74; §6, *Fallback log entry*)* Unmet until 67.5; the queue it reads is 76.6's.
 - **AC-5** Given a catalogue gap, then it is stopped before release and never reaches the runtime queue. *(source: OQ-43)*
-- **AC-6** Given a key and locale already in the queue, when it falls back again, then that row's last-seen time and count move and no second row appears. Given a published translation for that key and locale, then the row leaves the queue. *(source: §12.5.6 task-182 content row, 182/38)* Unmet until 76.6.
+- **AC-6** Given a key and locale already in the queue, when it falls back again, then that row's last-seen time and count move and no second row appears. Given a published translation for that key and locale, then the row leaves the queue. *(source: §12.5.6 task-182 content row, 182/38)*
 
 **History.**
 - 19 Aug 2026 · architecture.md OQ-43 · catalogue gaps fail the build; the runtime queue remains for FR-61 content only · `architecture.md` OQ-43; FR-64 row
 - 5 Oct 2026 · project owner · the queue is one row per key and locale with first seen, last seen and a count, cleared when a published translation exists · §12.5.6 task-182 content row (182/38)
+- 30 Oct 2026 · task 76 · the queue is `platform/localization`'s, written once per interval and cleared on the store's version moving; each item names the language of its text · §12.5.6's task-76 row (4), (5)
 
 ## 2. Taxonomy and versioning (index §3.14)
 

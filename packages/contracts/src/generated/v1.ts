@@ -2743,6 +2743,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/content/help/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The help centre’s topics
+         * @description UC-180. What a reader may be doing, each a group of articles, in order.
+         */
+        get: operations["ContentController_helpTopics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/help/articles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The help centre’s library
+         * @description UC-180. Every article in force, without its sections, each naming its topic and the module it belongs to, in order. Nothing is gated: a reader with no account reads the whole library.
+         */
+        get: operations["ContentController_helpArticles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/help/articles/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One help article
+         * @description UC-181. The article whole — its sections in order, and the articles it names to read next.
+         */
+        get: operations["ContentController_helpArticle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/content/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Each plan’s presentation copy
+         * @description FR-204. What the home’s pricing section says of each plan, in order. No price: read prices from the billing catalogue, which versions them.
+         */
+        get: operations["ContentController_planCopy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5849,6 +5929,94 @@ export interface components {
              * @example 1.0
              */
             policyVersion: string;
+        };
+        HelpTopicResponseDto: {
+            /**
+             * @description The topic’s key, which an article names to be grouped under it.
+             * @example first-report
+             */
+            key: string;
+            /**
+             * @description The language this topic’s text is in: the one asked for, or Romanian where the topic has no text in it. A page marks the language of the part it shows, and shows no other sign of the fallback.
+             * @enum {string}
+             */
+            locale: "ro" | "en" | "ru";
+            title: string;
+            summary: string;
+        };
+        HelpArticleSummaryResponseDto: {
+            /**
+             * @description The article’s key — its address under `/content/help/articles`.
+             * @example what-vsme-asks
+             */
+            key: string;
+            /**
+             * @description The key of the topic it is grouped under, which may name no topic in force.
+             * @example first-report
+             */
+            topic: string;
+            /**
+             * @description The language this article’s text is in: the one asked for, or Romanian where the article has no text in it.
+             * @enum {string}
+             */
+            locale: "ro" | "en" | "ru";
+            title: string;
+            summary: string;
+            /** @description The module the article belongs to, as the reader is told it. */
+            module: string;
+        };
+        HelpArticleSectionDto: {
+            heading: string;
+            /** @description A small Markdown subset — paragraphs, lists, emphasis and links. Never HTML: render it with raw HTML off. */
+            body: string;
+            /** @description Whether the section is disclosed for the reader to open rather than shown (UX-17). */
+            disclosed: boolean;
+        };
+        HelpArticleLinkDto: {
+            key: string;
+            /**
+             * @description The language its title is in.
+             * @enum {string}
+             */
+            locale: "ro" | "en" | "ru";
+            title: string;
+        };
+        HelpArticleResponseDto: {
+            /** @example what-vsme-asks */
+            key: string;
+            /** @description The key of the topic it is grouped under, which may name no topic in force. */
+            topic: string;
+            /**
+             * @description The language this article’s text is in: the one asked for, or Romanian where the article has no text in it. A page marks the language of the part it shows, and shows no other sign of the fallback.
+             * @enum {string}
+             */
+            locale: "ro" | "en" | "ru";
+            title: string;
+            summary: string;
+            /** @description The module the article belongs to, as the reader is told it. */
+            module: string;
+            /** @description In order; at least one. */
+            sections: components["schemas"]["HelpArticleSectionDto"][];
+            /** @description The articles it names to read next, in order — each in force; one that is not is left out. */
+            related: components["schemas"]["HelpArticleLinkDto"][];
+        };
+        PlanCopyResponseDto: {
+            /**
+             * @description The plan’s code, as the billing catalogue names the plan.
+             * @example standard
+             */
+            plan: string;
+            /**
+             * @description The language this copy is in: the one asked for, or Romanian where the copy has no text in it.
+             * @enum {string}
+             */
+            locale: "ro" | "en" | "ru";
+            name: string;
+            summary: string;
+            /** @description What the plan offers, in order; may be empty. */
+            highlights: string[];
+            /** @description A word set beside the name, or null. */
+            badge: string | null;
         };
     };
     responses: never;
@@ -12219,6 +12387,146 @@ export interface operations {
                 content: {
                     "application/problem+json": unknown;
                 };
+            };
+        };
+    };
+    ContentController_helpTopics: {
+        parameters: {
+            query: {
+                /** @description The language to read in. Content is authored in Romanian first; an item with no text in the language asked for is served in Romanian, and says so in its own `locale`. */
+                locale: "ro" | "en" | "ru";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every topic in force, in order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["HelpTopicResponseDto"][];
+                    };
+                };
+            };
+            /** @description No language, or one the platform does not publish in, was asked for. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ContentController_helpArticles: {
+        parameters: {
+            query: {
+                /** @description The language to read in. Content is authored in Romanian first; an item with no text in the language asked for is served in Romanian, and says so in its own `locale`. */
+                locale: "ro" | "en" | "ru";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every article in force, in order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["HelpArticleSummaryResponseDto"][];
+                    };
+                };
+            };
+            /** @description No language, or one the platform does not publish in, was asked for. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ContentController_helpArticle: {
+        parameters: {
+            query: {
+                /** @description The language to read in. Content is authored in Romanian first; an item with no text in the language asked for is served in Romanian, and says so in its own `locale`. */
+                locale: "ro" | "en" | "ru";
+            };
+            header?: never;
+            path: {
+                /** @description The article’s key, as the library lists it. */
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The article. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["HelpArticleResponseDto"];
+                    };
+                };
+            };
+            /** @description No language, or one the platform does not publish in, was asked for. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No article is in force under that key — never published, or not published yet (problem type not-found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    ContentController_planCopy: {
+        parameters: {
+            query: {
+                /** @description The language to read in. Content is authored in Romanian first; an item with no text in the language asked for is served in Romanian, and says so in its own `locale`. */
+                locale: "ro" | "en" | "ru";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every plan’s copy in force, in order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultListDto"] & {
+                        objects?: components["schemas"]["PlanCopyResponseDto"][];
+                    };
+                };
+            };
+            /** @description No language, or one the platform does not publish in, was asked for. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -1,10 +1,11 @@
 import { Controller, Get, Header, Param, ParseEnumPipe, ParseUUIDPipe, Query, StreamableFile } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiParam, ApiProduces, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { LOCALES, type Locale } from '@easyesg/i18n';
+import { LOCALE_ENUM } from '@api/app/constants/locale.constants';
 import { NO_SUCH_REPORT } from '@api/modules/core/disclosure/errors/report.errors';
 import { RequiresRole } from '@api/modules/identity/membership/decorators/requires-role.decorator';
 import { MEMBERSHIP_ROLE } from '@api/modules/identity/membership/models/membership.model';
-import { PREVIEW_CONTENT_SECURITY_POLICY, PREVIEW_LOCALES } from '../constants/preview.constants';
+import { PREVIEW_CONTENT_SECURITY_POLICY } from '../constants/preview.constants';
 import { PreviewService } from '../services/preview.service';
 
 /**
@@ -45,7 +46,7 @@ export class PreviewController {
   @Header('X-Content-Type-Options', 'nosniff')
   async preview(
     @Param('id', ParseUUIDPipe) reportId: string,
-    @Query('locale', new ParseEnumPipe(PREVIEW_LOCALES)) locale: Locale,
+    @Query('locale', new ParseEnumPipe(LOCALE_ENUM)) locale: Locale,
   ): Promise<StreamableFile> {
     const document = await this.previews.preview({ reportId, locale });
     return new StreamableFile(Buffer.from(document, 'utf8'), { type: 'text/html; charset=utf-8' });

@@ -1,0 +1,17 @@
+{
+  "order": 4,
+  "locales": {
+    "ro": {
+      "title": "Entități, perioade, blocare",
+      "summary": "Mai multe companii într-un singur cont și ce se schimbă după ce o perioadă este blocată."
+    },
+    "en": {
+      "title": "Entities, periods and locking",
+      "summary": "Several companies in one account, and what changes once a period is locked."
+    },
+    "ru": {
+      "title": "Организации, периоды, блокировка",
+      "summary": "Несколько компаний в одной учётной записи и что меняется после блокировки периода."
+    }
+  }
+}

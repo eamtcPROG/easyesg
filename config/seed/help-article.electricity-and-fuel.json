@@ -1,0 +1,75 @@
+{
+  "topic": "figures-and-calculations",
+  "order": 3,
+  "related": [
+    "exporting-pdf-and-excel"
+  ],
+  "locales": {
+    "ro": {
+      "title": "Cum devin facturile de energie emisiile din B3",
+      "summary": "Introduceți facturile, iar calculatorul obține emisiile directe și pe cele din energia electrică pe care o cumpărați.",
+      "module": "B3 · Energie și emisii",
+      "sections": [
+        {
+          "heading": "Pe scurt",
+          "body": "Introduceți în calculator fiecare factură de energie: sursa (de exemplu energie electrică, gaz natural sau motorină), cantitatea și unitatea de măsură de pe factură. Pentru o perioadă de douăsprezece luni puteți introduce cantitățile și lună de lună.\n\nCalculatorul transformă fiecare rând în MWh și în tone de CO₂ echivalent și completează în B3 emisiile directe, din combustibilul ars de companie, și emisiile din energia electrică cumpărată, calculate după mixul energetic național.",
+          "disclosed": false
+        },
+        {
+          "heading": "Factorii folosiți",
+          "body": "Se folosesc factorii de conversie și de emisie în vigoare la începutul perioadei de raportare, iar fiecare cifră își arată sursa. Un calcul păstrează factorii cu care a fost făcut; dacă acești factori sunt corectați ulterior, primiți o notificare că raportul ar putea avea nevoie de un calcul nou.",
+          "disclosed": false
+        },
+        {
+          "heading": "Când cifra calculată nu este cea corectă",
+          "body": "Puteți înlocui o cifră calculată cu propria cifră, indicând motivul. Pe ecranul raportului apar cifra calculată, cifra dumneavoastră și motivul, astfel încât cine citește vede de ce diferă.",
+          "disclosed": true
+        }
+      ]
+    },
+    "en": {
+      "title": "How energy invoices become B3's emissions",
+      "summary": "Enter your invoices and the calculator works out your direct emissions and those of the electricity you buy.",
+      "module": "B3 · Energy and emissions",
+      "sections": [
+        {
+          "heading": "In short",
+          "body": "Enter each energy invoice in the calculator: the source (electricity, natural gas or diesel, for example), the quantity and the unit printed on the invoice. Over a twelve-month period you can enter the quantities month by month instead.\n\nThe calculator converts each line into MWh and tonnes of CO₂ equivalent, and fills in B3's direct emissions, from the fuel your company burns, and the emissions of the electricity you buy, worked out from the national grid mix.",
+          "disclosed": false
+        },
+        {
+          "heading": "The factors it uses",
+          "body": "The conversion and emission factors are the ones in force at the start of your reporting period, and each figure names its source. A calculation keeps the factors it was made with; if those factors are later corrected, you are notified that your report may need a fresh calculation.",
+          "disclosed": false
+        },
+        {
+          "heading": "When the calculated figure is not the right one",
+          "body": "You can replace a calculated figure with your own, giving your reason. The report screen shows the calculated figure beside yours, with the reason, so a reader can see why they differ.",
+          "disclosed": true
+        }
+      ]
+    },
+    "ru": {
+      "title": "Как счета за энергию превращаются в выбросы раздела B3",
+      "summary": "Внесите счета, и калькулятор рассчитает прямые выбросы и выбросы от электроэнергии, которую вы покупаете.",
+      "module": "B3 · Энергия и выбросы",
+      "sections": [
+        {
+          "heading": "Коротко",
+          "body": "Внесите в калькулятор каждый счёт за энергию: источник (например, электроэнергия, природный газ или дизельное топливо), количество и единицу измерения, указанные в счёте. Если отчётный период длится двенадцать месяцев, количество можно вносить помесячно.\n\nКалькулятор переводит каждую строку в МВт·ч и в тонны CO₂-эквивалента и заполняет в B3 прямые выбросы — от топлива, которое сжигает компания, — и выбросы от покупаемой электроэнергии, рассчитанные по национальному энергобалансу.",
+          "disclosed": false
+        },
+        {
+          "heading": "Какие коэффициенты используются",
+          "body": "Используются коэффициенты пересчёта и выбросов, действующие на начало отчётного периода, и у каждой цифры указан источник. Выполненный расчёт сохраняет коэффициенты, по которым он сделан; если их позже исправят, вы получите уведомление о том, что отчёт, возможно, стоит пересчитать.",
+          "disclosed": false
+        },
+        {
+          "heading": "Если рассчитанная цифра неверна",
+          "body": "Рассчитанную цифру можно заменить своей, указав причину. На экране отчёта рядом с вашей цифрой видны рассчитанная цифра и причина замены, так что читателю понятно, откуда расхождение.",
+          "disclosed": true
+        }
+      ]
+    }
+  }
+}

@@ -69,6 +69,24 @@ const SHAPES: readonly { readonly rule: string; readonly pattern: RegExp }[] = [
 ];
 
 /**
+ * Each declared term's pattern, compiled once per process (task 76). The api's content store passes the taxonomy's
+ * element keys for every line of every help article it reads, and compiling a pattern per term per call was about
+ * three quarters of a reading's time, measured over a library the help-centre prototype's size. A pattern is a function
+ * of its term alone, so keeping it changes no answer.
+ */
+const TERM_PATTERNS = new Map<string, RegExp>();
+
+function termPattern(term: string): RegExp {
+  const kept = TERM_PATTERNS.get(term);
+  if (kept !== undefined) return kept;
+  // Escaped, because a term may carry regex metacharacters — a taxonomy key legitimately can.
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+  const pattern = new RegExp(`(?<![\\w-])${escaped}(?![\\w-])`, 'iu');
+  TERM_PATTERNS.set(term, pattern);
+  return pattern;
+}
+
+/**
  * Every internal identifier in `text`, or an empty array.
  *
  * @param forbiddenTerms exact strings the caller knows to be internal — problem-type slugs, job
@@ -102,12 +120,11 @@ export function findInternalIdentifiers(
   for (const term of forbiddenTerms) {
     // See the note on `forbiddenTerms`: a lowercase single word is prose, not evidence.
     if (/^[a-z]+$/u.test(term)) continue;
-    // Escaped, because a term may carry regex metacharacters — a taxonomy key legitimately can.
-    const escaped = term.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-    if (new RegExp(`(?<![\\w-])${escaped}(?![\\w-])`, 'iu').test(text)) {
+    if (termPattern(term).test(text)) {
       findings.push({ rule: 'a declared internal term', match: term });
     }
   }
 
   return findings;
 }
+

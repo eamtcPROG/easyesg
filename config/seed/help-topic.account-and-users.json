@@ -1,0 +1,17 @@
+{
+  "order": 6,
+  "locales": {
+    "ro": {
+      "title": "Cont și utilizatori",
+      "summary": "Invitații și roluri: cine vede raportul și cine îl poate modifica."
+    },
+    "en": {
+      "title": "Account and users",
+      "summary": "Invitations and roles: who sees the report and who can change it."
+    },
+    "ru": {
+      "title": "Учётная запись и пользователи",
+      "summary": "Приглашения и роли: кто видит отчёт и кто может его менять."
+    }
+  }
+}

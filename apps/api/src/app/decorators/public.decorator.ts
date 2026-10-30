@@ -25,7 +25,9 @@ export const IS_PUBLIC = 'easyesg:public';
  *    more privileged surface for not carrying the less privileged surface's token.
  *  - **What a reader is owed before an account exists** (task 75; §12.5.6's task-75 row (8)). The legal documents
  *    are a precondition of a lawful registration (FR-205), so the operator they name is read without a session —
- *    `GET /legal/controller`, which discloses only what those documents publish.
+ *    `GET /legal/controller`, which discloses only what those documents publish. **And since task 76 FR-61's published
+ *    content** (§12.5.6's task-76 row (1)): the help centre puts nothing behind the account (S-32), and the home's
+ *    pricing section reads a plan's copy before anyone has one — `/content/*`, which serves only what is in force.
  *
  * Swagger's `/docs` needs no marker: `SwaggerModule.setup` mounts express middleware rather than a
  * Nest route, so no `APP_GUARD` ever runs for it.

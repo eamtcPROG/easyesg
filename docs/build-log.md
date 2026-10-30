@@ -34418,3 +34418,110 @@ later version being drafted provisional again.
 - **Not checked, being counsel's and the owner's**: what the checklist's step 1 asks besides approval — which locale
   binds, whether a data protection officer is required, a Russian-speaking reviewer for the Russian (NFR-23) — and the
   operating company on A-21 (step 3), which is store data wherever the release runs and was not read here.
+
+## Task 76 — FR-61's published content read with no session, and FR-64's queue behind its fallback · 2026-10-30
+
+All six sub-steps in one close. FR-61, FR-62, FR-64, FR-10, FR-204, S-32, S-33, UC-180, UC-181, OQ-44, 182/38, 182/45, the
+`EasyESG Help Centre` and `Public Home` prototypes and the store's own code were read before anything was built. Two
+batches were put — four questions, then three the first batch's answer raised. The answers, and what the build took
+within them, are `architecture.md` §12.5.6's new task-76 row (1) … (8), with a limits-table row naming the route, a
+`Content` row in §6.8 and a `platform/content` row in §17.5. FR-61 (behaviours 6 … 8, configuration-held values, AC-2
+and AC-3 met, AC-5 moved to 71.1), FR-62, FR-64 (behaviours 4 … 6, AC-3 and AC-6 met), FR-10 (now *Built*), FR-204,
+S-32 and S-33 are amended, and the release checklist gains the starter library's review.
+
+### Decided (project owner)
+
+- **An article is sections in a small Markdown subset**: per locale a title, a summary, its module and ordered sections,
+  each a heading, a body and whether it is disclosed. Declined: plain paragraphs; one Markdown document per locale
+  (row (2)).
+- **The store starts with a starter library** — the owner's answer, beside the recommended empty store — **drafted here,
+  provisional** (task 75's precedent), **six topics with one article each**, and **no plan copy seeded**: which paid
+  plans exist and what each includes is no document's, and the home prototype's *you need a plan to export*
+  contradicts `problem_overview.md`'s free tier (row (7)).
+- **Plan copy is a name, a summary, highlights and an optional badge**, keyed by the plan's code, never a price
+  (row (2)). Declined: one description; deferring the kind to 53.3.
+- **The rate limit is recorded for 71.1, and the api enforces nothing**: until task 71 sets `trust proxy` the api sees
+  the proxy's address, so a window here would hold every visitor to one budget (row (6)). FR-61's AC-5 waits on 71.1.
+
+### What followed from a source, said rather than asked
+
+- **One slot per item, every locale inside it** — FR-62 behaviour 6 says *each help-centre article or plan-copy item is
+  a slot*, and 67.15's sign-off *one for each locale* is a field of one publication.
+- **Topics are content, a third kind** — S-32's *what you are doing* groups are help-centre text, which OQ-43 puts in
+  the store.
+- **The queue is `platform/localization`'s**, by §6.6's Localization row, not `platform/content`'s. The localization
+  module's docblock had said FR-64's remainder *arrives with its owner*, which read either way; the document decided.
+
+### What the building decided within that
+
+- **Each kind's reader is its publication rule** (`configuration-kind-rules.ts`), `legalControllerRefusal`'s shape: what
+  the store admits is what the read reads, so the read fails closed on nothing the publisher let through. Refused: no
+  Romanian, a locale the build does not register, a half-written locale, an article with no section, and any text
+  carrying an internal identifier or an HTML tag — the tag refused in every field, not only bodies, since no field
+  renders HTML.
+- **UC-181's *taxonomy element key* is enforced**, through `findInternalIdentifiers` with the facade's element keys and
+  axes declared — **only those shaped like an identifier** (a lowercase letter then a capital), because the detector
+  matches case-insensitively and `Turnover` would have refused every English article saying *turnover*.
+- **A reading is kept per revision** (`RevisionReadings`), `FactorSetCatalog`'s reasoning: a published revision cannot
+  change. **And `findInternalIdentifiers` keeps each term's compiled pattern** — measured over a library the
+  prototype's size (3,834 lines, 149 declared terms): 610 ms compiling per call, 160 ms kept. Behaviour unchanged.
+- **Each item says the language its text is in** (`locale`), so a fallen-back item can carry a `lang` attribute (WCAG
+  2.2 3.1.2) — not the *missing translation* marker UX-97 prohibits.
+- **A read writes nothing in its request.** `report` is the port's `void`; the queue gathers per content key and locale
+  and upserts every five seconds (the store's own poll), its times the database's. A failed write is logged and its
+  counts dropped, the next reader reporting again. Written once more in `beforeApplicationShutdown`, while the connection
+  is open.
+- **Clearing is on the store's version moving, in `platform/content`** (`ContentTranslationWatch`), which hands the queue
+  every pair now translated; `settle` writes what was gathered **before** deleting, so a gap a replica gathered from its
+  cache before the publication cannot outlive it. Declined: a hook inside the publication's transaction, which would
+  put the queue's table into `platform/configuration`'s seam; an outbox handler on `replaced`, whose payload carries no
+  kind and which the worker would run for a request-tier table.
+- **The content key is `<kind>/<key>`** (`contentKey`), so the queue is one row per key and locale exactly as 182/38
+  words it, and knows nothing of kinds. The table carries no locale `CHECK`: FR-63 behaviour 2 forbids a schema change
+  for a fourth locale.
+- **The port has two faces** (`CONTENT_FALLBACK_REPORTER`, `CONTENT_FALLBACK_SETTLEMENT`) on one provider, since the read
+  path reports and never settles.
+- **`?locale=` is required and read with `ParseEnumPipe`**, and the locale object it needs moved from the preview's
+  constants to `app/constants/locale.constants.ts` — the second route deriving it was the second copy of a vocabulary's
+  operation. Searched: `LOCALES.map((locale) => [locale, locale])` across the three apps and every package finds only
+  the moved one, and `ParseEnumPipe` over a locale only the preview and the new routes.
+- **`@Public()`'s fourth kind widened** to FR-61's content rather than a fifth kind; the permission table's four rows say
+  so. The not-found answer is one for an article never published and one not in force.
+- **The starter articles say only what was checked in the code or the specification**: the applicability thresholds
+  from the seeded rules (50 and 150 employees, a B1 site, NACE A … E), the lock from FR-22, the roles from the
+  permission table, export from FR-44 and FR-52, the calculator from tasks 37 … 39. The product's own words were taken
+  from the web catalogues — *Edit*, *View only*, British *organisation*, Russian *Организации* for entities.
+
+### Read against the skills
+
+- **`one-idea-per-file`** (`file-one-behaviour-api`): one service per behaviour — the reader, the reads, the watch, the
+  queue; the readers' pure parts in `domain/` with a spec each. `reason-measure-structural-claims` corrected one sentence:
+  the i18n docblock said compiling patterns per call *made reading a library a matter of seconds*, written before
+  measuring; it was 610 ms, and the sentence now says what was measured.
+- **`nestjs-best-practices`**: `arch-module-sharing` — the queue is provided once, in `LocalizationModule`, which the
+  content module imports. `di-scope-awareness` — the in-process state (the gathering, the readings) is singleton by
+  design and holds nothing of a request. `perf-async-hooks`, `devops-graceful-shutdown` — the shutdown write returns its
+  promise. `perf-use-caching` — `RevisionReadings`. **Declined by name**: `error-throw-http-exceptions` (a `DomainError`,
+  as the architecture requires) and `security-rate-limiting` (the edge's, row (6)).
+- **Declined, the anatomy's `use-cases/` for UC-180 and UC-181**: the read is the store's cache through pure domain
+  functions, `platform/legal`'s UC-178 read is the precedent, and every decision the read takes is already a unit spec
+  with no database.
+
+### Verified
+
+The change reaches `apps/api`, `packages/i18n` (a catalogue key and the kept patterns) and `packages/contracts` (the
+regenerated contract and its aliases), so the close ran the api's row and, for the two packages, every dependent's —
+one suite at a time: `pnpm lint`, `pnpm typecheck` (all three apps), `pnpm docs:check`, `pnpm boundaries`; the unit
+suites of `@easyesg/i18n` (172), `@easyesg/contracts`, `@easyesg/api` (2,711), `@easyesg/web` (2,171) and
+`@easyesg/admin` (322); `pnpm openapi:check` (137 paths), `pnpm routes:check`; `pnpm migrations:check` (64 — the
+dev stack started for it and stopped again after, as it was found); `pnpm e2e` (78 suites, 2,046 cases),
+`pnpm e2e:worker` (17 — the worker boots with `LocalizationModule`'s queue left out of its mode) and
+`pnpm e2e:web --project identity --project expansion --project admin` (411). **Read, not only counted**: the api run
+printed the three *Message catalogue used before initialiseCatalogue()* errors and the outbox's *Custom Id* warning
+earlier closes record, and the browser run the client-abandoned *destination stream closed early* `apps/web/CLAUDE.md`
+names; nothing of this task's. **Skipped**, as a task's close does: `image:check`, `facade:check`, the two `*:prove`
+gates and `gates:clean`, which are Stage 6's end — task 76 is not its last row.
+
+**Proven to bite**: swapping `settle`'s write and delete failed the queue's unit spec; removing the delete failed the
+e2e's last case; the seeded library's spec was run against the shipped files, which the loader also published through
+the new rules (twelve `published revision 1` lines in the run's seed).

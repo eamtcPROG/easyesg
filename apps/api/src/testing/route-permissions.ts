@@ -190,6 +190,12 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // The operator the legal documents name (task 75; FR-205): read before anyone has an account, because the documents
   // are a precondition of registering — `public.decorator.ts`'s fourth kind.
   'GET /legal/controller': PERMISSION.PUBLIC,
+  // FR-61's published content (task 76): the help centre is open to everyone and the home's pricing section is read
+  // before an account exists — the same fourth kind. Each serves only what the store holds in force.
+  'GET /content/help/topics': PERMISSION.PUBLIC,
+  'GET /content/help/articles': PERMISSION.PUBLIC,
+  'GET /content/help/articles/:key': PERMISSION.PUBLIC,
+  'GET /content/plans': PERMISSION.PUBLIC,
   // Task 223: the cookie banner's answer — a visitor's with no session, a member's with theirs.
   'POST /legal/cookie-choices': PERMISSION.VISITOR,
   'POST /auth/social/:provider/challenge': PERMISSION.PUBLIC,

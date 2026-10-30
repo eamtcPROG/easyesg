@@ -154,6 +154,17 @@ export type LegalControllerResponse = components['schemas']['LegalControllerResp
 export type RecordCookieChoiceRequest = components['schemas']['RecordCookieChoiceRequestDto'];
 export type CookieChoice = components['schemas']['CookieChoiceResponseDto'];
 
+// platform — FR-61's published content, read with no session (task 76; UC-180, UC-181, FR-204). Each item carries the
+// language its text is in, which is Romanian where it has none in the language asked for: a page marks the part's
+// language and shows no other sign of the fallback (UX-97). A section's body is a Markdown subset — never HTML.
+export type HelpTopic = components['schemas']['HelpTopicResponseDto'];
+export type HelpArticleSummary = components['schemas']['HelpArticleSummaryResponseDto'];
+export type HelpArticle = components['schemas']['HelpArticleResponseDto'];
+export type HelpArticleSection = components['schemas']['HelpArticleSectionDto'];
+export type HelpArticleLink = components['schemas']['HelpArticleLinkDto'];
+/** No price: the billing catalogue's, versioned on purpose (182/118). */
+export type PlanCopy = components['schemas']['PlanCopyResponseDto'];
+
 // core — the organization (FR-13 … FR-16; task 29). `Organization` is the whole profile; S-04
 // creates it with four of those fields and S-15 fills in the rest, so the create request is its
 // own shape rather than a `Partial<Organization>` — the fields a founding screen may set are a

@@ -1540,7 +1540,7 @@ acceptance checkbox.
 - **Archetype:** Index.
 - **Entry points:** the help affordance, which **UX-109** requires to sit in the same place on every screen; S-29; a deep link.
 - **Layout and regions:** Index fixed elements — filter, empty state, row action. The signed-in and signed-out variants are **one screen with a session-dependent shell**, not two screens: the content is identical and only the surrounding chrome differs, which is the same relationship S-01 holds across its three artboards.
-- **Content and data shown:** articles grouped by what the reader is doing; the most-read set; the full library. Every article names the module it belongs to.
+- **Content and data shown:** articles grouped by what the reader is doing; the most-read set; the full library. Every article names the module it belongs to. **Amended 30 Oct 2026** (task 76; `architecture.md` §12.5.6's task-76 row (2), (8)): the groups are help topics, FR-61 content with a title and a summary in each locale, read with the articles from `/content/help`; the most-read set needs a count of readings, which nothing records yet.
 - **Controls and actions:** open an article; narrow the library by its filter and search (§4.7); write to support (S-34); for a signed-in reader, return into the product. *(Field added 6 Oct 2026; the screen's spec had none.)*
 - **States:** loading; ready; empty — the empty state teaches, per the Index archetype; error — system.
 - **Validation behaviour:** none of its own.
@@ -1555,7 +1555,7 @@ acceptance checkbox.
 - **Archetype:** Content.
 - **Entry points:** S-32; a deep link; a contextual help affordance from the screen the article is about.
 - **Layout and regions:** reading measure, with the module the article belongs to named at the top.
-- **Content and data shown:** the article in the active locale, from the FR-61 store's published entries. A locale fallback is reported (FR-64), which reaches FR-61 content because catalogue gaps fail the build instead.
+- **Content and data shown:** the article in the active locale, from the FR-61 store's published entries. A locale fallback is reported (FR-64), which reaches FR-61 content because catalogue gaps fail the build instead. **Amended 30 Oct 2026** (task 76; `architecture.md` §12.5.6's task-76 row (2), (4)): an article is a title, a summary, its module and ordered sections — each a heading, a body in a small Markdown subset and whether it is disclosed (UX-17) — with the articles it names to read next; *On this page* is the sections' headings. A fallen-back article carries the language its text is in, which the page marks on it (WCAG 2.2 3.1.2) without decoration (UX-97).
 - **Controls and actions:** return to the help centre; contact support; follow the article into the product where it names a screen.
 - **States:** loading; ready; error — not found (an unpublished or withdrawn article has no address, since `config.entry_schedule` holds only what is in force); error — system.
 - **Validation behaviour:** none of its own.

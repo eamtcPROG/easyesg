@@ -14,6 +14,10 @@ import { digitalTemplateMapRefusal } from '@api/modules/platform/taxonomy/domain
 import { committedTemplate, efragDirectory } from '@api/modules/platform/taxonomy/services/committed-template';
 import { LEGAL_CONTROLLER_CONFIG_KIND } from '@api/modules/platform/legal/constants/legal-controller.constants';
 import { legalControllerRefusal } from '@api/modules/platform/legal/domain/legal-controller';
+import { CONTENT_KIND } from '@api/modules/platform/content/constants/content.constants';
+import { helpArticleRefusal } from '@api/modules/platform/content/domain/help-article';
+import { helpTopicRefusal } from '@api/modules/platform/content/domain/help-topic';
+import { planCopyRefusal } from '@api/modules/platform/content/domain/plan-copy';
 
 /**
  * What a publication asks of a kind beyond writing it (tasks 37.3, 37.4; `architecture.md` §12.5.6's task-37.3/37.4
@@ -57,6 +61,11 @@ const RULES: Readonly<Record<string, ConfigurationKindRule>> = {
   // address that is not one — is refused before it is written, the seed included, rather than found by the terms of
   // service answering *not yet available* (task 75).
   [LEGAL_CONTROLLER_CONFIG_KIND]: { refusal: legalControllerRefusal },
+  // FR-61's content — a topic, an article, a plan's copy — that the read would leave out: no Romanian, a locale the build
+  // does not register or one half-written, an internal identifier or an HTML tag in its text (task 76).
+  [CONTENT_KIND.HELP_TOPIC]: { refusal: helpTopicRefusal },
+  [CONTENT_KIND.HELP_ARTICLE]: { refusal: helpArticleRefusal },
+  [CONTENT_KIND.PLAN_COPY]: { refusal: planCopyRefusal },
 };
 
 /** The kind's rule, or none: most kinds are written as they come and announce nothing. */
