@@ -165,6 +165,11 @@ export type HelpArticleLink = components['schemas']['HelpArticleLinkDto'];
 /** No price: the billing catalogue's, versioned on purpose (182/118). */
 export type PlanCopy = components['schemas']['PlanCopyResponseDto'];
 
+// platform — a request to support (task 77; UC-182, FR-212, S-34): the topic it is about, and the reference it is given.
+export { SUPPORT_TOPIC, SUPPORT_TOPIC_MIRRORS_WIRE, isSupportTopic, type SupportTopic } from './support';
+export type SubmitSupportRequest = components['schemas']['SubmitSupportRequestDto'];
+export type SupportRequestReceipt = components['schemas']['SupportRequestReceiptDto'];
+
 // core — the organization (FR-13 … FR-16; task 29). `Organization` is the whole profile; S-04
 // creates it with four of those fields and S-15 fills in the rest, so the create request is its
 // own shape rather than a `Partial<Organization>` — the fields a founding screen may set are a

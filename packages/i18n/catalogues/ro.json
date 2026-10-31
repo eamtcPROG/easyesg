@@ -176,6 +176,12 @@
     },
     "legal-controller-unavailable": {
       "title": "Datele operatorului nu pot fi citite acum"
+    },
+    "support-channel-unavailable": {
+      "title": "Asistența nu este disponibilă"
+    },
+    "ticket-reference-unknown": {
+      "title": "Referință necunoscută"
     }
   },
   "validation": {
@@ -725,6 +731,25 @@
           },
           "reason": "Primiți acest mesaj pentru că un operator a invitat această adresă în consola de administrare."
         }
+      },
+      "support_request": {
+        "email": {
+          "subject": "Cerere de asistență {reference}: {topic, select, reporting {o cifră sau un modul} findings {o constatare care nu dispare} exports {exporturi} access {utilizatori și acces} billing {facturi și plan} other {altceva}}",
+          "preheader": "{senderName} a scris prin centrul de ajutor. Răspundeți la acest mesaj pentru a-i scrie.",
+          "heading": "O cerere nouă de asistență",
+          "intro": "{senderOrigin, select, organization {{senderName} ({senderEmail}) a scris pentru organizația {organizationName}:} account {{senderName} ({senderEmail}) a scris din contul său:} other {{senderName} ({senderEmail}) a scris fără cont pe platformă:}}\n\n{question}",
+          "action": "Deschideți consola de administrare",
+          "facts": {
+            "reference": "Referința {reference}",
+            "topic": "Subiectul: {topic, select, reporting {o cifră sau un modul} findings {o constatare care nu dispare} exports {exporturi} access {utilizatori și acces} billing {facturi și plan} other {altceva}}",
+            "language": "Răspundeți în {replyLocale, select, ro {limba română} en {limba engleză} ru {limba rusă} other {{replyLocale}}}"
+          },
+          "note": {
+            "lead": "Pentru a răspunde",
+            "body": "Răspundeți direct la acest mesaj: răspunsul ajunge la {senderEmail}. Păstrați referința {reference} în subiect."
+          },
+          "reason": "Primiți acest mesaj pentru că această adresă primește cererile trimise asistenței easyesg din centrul de ajutor."
+        }
       }
     },
     "reporting": {
@@ -917,7 +942,13 @@
       "request_not_found": "Cererea de acces nu există pentru această organizație, așa că nu a fost modificat nimic. Reîncărcați pagina pentru a vedea cererile actuale.",
       "not_awaiting": "Cererea de acces nu mai așteaptă un răspuns — a primit deja unul sau termenul de așteptare a trecut —, așa că răspunsul nu a fost înregistrat. Reîncărcați pagina pentru a vedea starea ei.",
       "not_active": "Accesul de suport nu este în curs — nu a fost acordat, s-a încheiat deja sau a expirat —, așa că nu a fost nimic de încheiat. Reîncărcați pagina pentru a vedea starea lui.",
-      "required": "Accesul de suport pentru această organizație nu este activ pentru dumneavoastră, așa că datele ei nu au fost citite. Trimiteți o cerere nouă și așteptați ca organizația să o accepte."
+      "required": "Accesul de suport pentru această organizație nu este activ pentru dumneavoastră, așa că datele ei nu au fost citite. Trimiteți o cerere nouă și așteptați ca organizația să o accepte.",
+      "ticket_unknown": "Nicio cerere de asistență nu poartă această referință, așa că cererea de acces nu a fost trimisă. Verificați referința din mesajul cererii — începe cu SR- — și încercați din nou."
+    },
+    "support": {
+      "channel_unavailable": "Cererea nu poate fi trimisă acum, pentru că adresa asistenței nu este disponibilă, așa că nu a fost înregistrată. Încercați din nou puțin mai târziu.",
+      "throttled": "Ați trimis deja mai multe cereri în ultimele 15 minute, așa că aceasta nu a fost trimisă. Așteptați puțin și trimiteți-o din nou.",
+      "sender_required": "Cererea nu are numele sau adresa de e-mail la care să vă răspundem, așa că nu a fost trimisă. Completați-le și trimiteți din nou."
     },
     "notification": {
       "not_found": "Această notificare nu se află printre notificările dumneavoastră, așa că nu a fost modificat nimic. Reîncărcați pagina pentru a vedea notificările actuale.",

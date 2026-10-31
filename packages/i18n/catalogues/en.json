@@ -176,6 +176,12 @@
     },
     "legal-controller-unavailable": {
       "title": "The operator’s details cannot be read right now"
+    },
+    "support-channel-unavailable": {
+      "title": "Support unavailable"
+    },
+    "ticket-reference-unknown": {
+      "title": "Unknown reference"
     }
   },
   "validation": {
@@ -725,6 +731,25 @@
           },
           "reason": "You are receiving this because an operator invited this address to the administration console."
         }
+      },
+      "support_request": {
+        "email": {
+          "subject": "Support request {reference}: {topic, select, reporting {a figure or a module} findings {a finding that will not clear} exports {exports} access {users and access} billing {invoices and plan} other {something else}}",
+          "preheader": "{senderName} wrote from the help centre. Reply to this message to write back.",
+          "heading": "A new support request",
+          "intro": "{senderOrigin, select, organization {{senderName} ({senderEmail}) wrote for {organizationName}:} account {{senderName} ({senderEmail}) wrote from their account:} other {{senderName} ({senderEmail}) wrote without an account on the platform:}}\n\n{question}",
+          "action": "Open the administration console",
+          "facts": {
+            "reference": "Reference {reference}",
+            "topic": "About: {topic, select, reporting {a figure or a module} findings {a finding that will not clear} exports {exports} access {users and access} billing {invoices and plan} other {something else}}",
+            "language": "Reply in {replyLocale, select, ro {Romanian} en {English} ru {Russian} other {{replyLocale}}}"
+          },
+          "note": {
+            "lead": "To answer",
+            "body": "Reply to this message: the answer reaches {senderEmail}. Keep the reference {reference} in the subject."
+          },
+          "reason": "You receive this message because this address receives the requests sent to easyesg support from the help centre."
+        }
       }
     },
     "reporting": {
@@ -917,7 +942,13 @@
       "request_not_found": "This organization has no such access request, so nothing changed. Reload the page to see the current requests.",
       "not_awaiting": "The access request is no longer waiting for an answer — it was already answered or its wait ran out — so your answer was not recorded. Reload the page to see where it stands.",
       "not_active": "Support access is not running — it was never granted, has already ended or has expired — so there was nothing to end. Reload the page to see where it stands.",
-      "required": "Support access to this organization is not active for you, so its data was not read. Send a new request and wait for the organization to grant it."
+      "required": "Support access to this organization is not active for you, so its data was not read. Send a new request and wait for the organization to grant it.",
+      "ticket_unknown": "No support request carries this reference, so the access request was not sent. Check the reference in the request's message — it starts with SR- — and try again."
+    },
+    "support": {
+      "channel_unavailable": "The request cannot be sent right now because the support address is unavailable, so it was not recorded. Try again a little later.",
+      "throttled": "You have already sent several requests in the last 15 minutes, so this one was not sent. Wait a little and send it again.",
+      "sender_required": "The request has no name or email address for us to reply to, so it was not sent. Fill them in and send it again."
     },
     "notification": {
       "not_found": "This notification is not among yours, so nothing changed. Reload the page to see your current notifications.",

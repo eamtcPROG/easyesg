@@ -3717,7 +3717,7 @@
             "name": "filters",
             "required": false,
             "in": "query",
-            "description": "Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder, reporting.report_update, reporting.outstanding_report, reporting.report_deadline, reporting.export_finished. A value outside these, or a field this route does not define, is ignored rather than refused.",
+            "description": "Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder, reporting.report_update, reporting.outstanding_report, reporting.report_deadline, reporting.export_finished, platform.support_request. A value outside these, or a field this route does not define, is ignored rather than refused.",
             "schema": {}
           }
         ],
@@ -5306,6 +5306,12 @@
           },
           "409": {
             "description": "This operator already has a request with the organization that is waiting or running (problem type support-access-outstanding).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "422": {
+            "description": "The ticket reference names no support request on record (problem type ticket-reference-unknown).",
             "content": {
               "application/problem+json": {}
             }
@@ -7729,7 +7735,8 @@
                 "reporting.report_update",
                 "reporting.outstanding_report",
                 "reporting.report_deadline",
-                "reporting.export_finished"
+                "reporting.export_finished",
+                "platform.support_request"
               ],
               "type": "string"
             }
@@ -7818,7 +7825,8 @@
                 "reporting.report_update",
                 "reporting.outstanding_report",
                 "reporting.report_deadline",
-                "reporting.export_finished"
+                "reporting.export_finished",
+                "platform.support_request"
               ],
               "type": "string"
             }
@@ -7913,7 +7921,8 @@
                 "reporting.report_update",
                 "reporting.outstanding_report",
                 "reporting.report_deadline",
-                "reporting.export_finished"
+                "reporting.export_finished",
+                "platform.support_request"
               ],
               "type": "string"
             }
@@ -8099,6 +8108,68 @@
         "summary": "Save the platform operator the legal documents name",
         "tags": [
           "platform"
+        ]
+      }
+    },
+    "/api/v1/support/requests": {
+      "post": {
+        "description": "UC-182. The question is recorded with a reference the reader quotes, and delivered to the support address; support replies by email, quoting the reference. A signed-in reader is not asked their name or address — the account’s, and the active organization’s name, travel with the request. A visitor gives both.",
+        "operationId": "SupportRequestsController_submit",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitSupportRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The request as recorded: its reference.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SupportRequestReceiptDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A field missing or over its length, or a visitor who gave no name or address (validation-failed).",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "A sixth request from one sender within fifteen minutes (rate-limited); nothing was recorded.",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "503": {
+            "description": "No support address is in force (support-channel-unavailable); nothing was recorded.",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Write to support",
+        "tags": [
+          "support"
         ]
       }
     },
@@ -12620,7 +12691,8 @@
               "reporting.report_update",
               "reporting.outstanding_report",
               "reporting.report_deadline",
-              "reporting.export_finished"
+              "reporting.export_finished",
+              "platform.support_request"
             ],
             "description": "What kind of notice this is — a key for the client to act on, never text to show."
           },
@@ -12713,7 +12785,8 @@
               "reporting.report_update",
               "reporting.outstanding_report",
               "reporting.report_deadline",
-              "reporting.export_finished"
+              "reporting.export_finished",
+              "platform.support_request"
             ],
             "description": "The category — a key for the client to act on, never text to show."
           },
@@ -12768,7 +12841,8 @@
               "reporting.report_update",
               "reporting.outstanding_report",
               "reporting.report_deadline",
-              "reporting.export_finished"
+              "reporting.export_finished",
+              "platform.support_request"
             ],
             "description": "The category — a key for the client to act on, never text to show."
           },
@@ -12790,7 +12864,7 @@
         "type": "object",
         "properties": {
           "switchedOff": {
-            "maxItems": 18,
+            "maxItems": 20,
             "description": "Every pair the person has switched off, among those the read offers; every offered pair not named is switched on. A pair the read does not offer — a mandatory category, or a channel the category does not travel on — refuses the whole write. Empty switches everything on.",
             "type": "array",
             "items": {
@@ -12825,7 +12899,8 @@
               "reporting.report_update",
               "reporting.outstanding_report",
               "reporting.report_deadline",
-              "reporting.export_finished"
+              "reporting.export_finished",
+              "platform.support_request"
             ],
             "description": "The category the link is about — a key to act on, never text to show. Absent when unusable."
           },
@@ -14106,7 +14181,7 @@
           },
           "ticketReference": {
             "type": "string",
-            "example": "SUP-4417"
+            "example": "SR-000042"
           },
           "reason": {
             "type": "string",
@@ -14236,8 +14311,8 @@
           "ticketReference": {
             "type": "string",
             "maxLength": 64,
-            "example": "SUP-4417",
-            "description": "The support ticket the request acts on."
+            "example": "SR-000042",
+            "description": "The support request the access acts on — the reference a reader was given when they wrote to support, in any case. It must name a request on record."
           },
           "reason": {
             "type": "string",
@@ -14271,7 +14346,7 @@
           },
           "ticketReference": {
             "type": "string",
-            "example": "SUP-4417"
+            "example": "SR-000042"
           },
           "reason": {
             "type": "string",
@@ -14924,7 +14999,8 @@
               "reporting.report_update",
               "reporting.outstanding_report",
               "reporting.report_deadline",
-              "reporting.export_finished"
+              "reporting.export_finished",
+              "platform.support_request"
             ],
             "nullable": true,
             "description": "The notification category, where the target is a category’s configuration version (task 67.10)."
@@ -15431,7 +15507,8 @@
               "reporting.report_update",
               "reporting.outstanding_report",
               "reporting.report_deadline",
-              "reporting.export_finished"
+              "reporting.export_finished",
+              "platform.support_request"
             ],
             "description": "A key for the console to act on, never text to show."
           },
@@ -15769,6 +15846,66 @@
           "registeredAddress",
           "dataProtectionEmail",
           "revision"
+        ]
+      },
+      "SupportRequestReceiptDto": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string",
+            "example": "SR-000042",
+            "description": "The request’s reference — `SR-` and six digits — which support’s reply carries."
+          }
+        },
+        "required": [
+          "reference"
+        ]
+      },
+      "SubmitSupportRequestDto": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string",
+            "enum": [
+              "reporting",
+              "findings",
+              "exports",
+              "access",
+              "billing",
+              "other"
+            ],
+            "description": "What the question is about — it decides only who at support reads it first."
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 5000,
+            "description": "The question, in the reader’s own words."
+          },
+          "replyLocale": {
+            "type": "string",
+            "enum": [
+              "ro",
+              "en",
+              "ru"
+            ],
+            "description": "The language support replies in."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "A visitor’s name — required with no session; ignored with one, when the account’s travels instead."
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 320,
+            "description": "Where a visitor wants the reply — required with no session; ignored with one."
+          }
+        },
+        "required": [
+          "topic",
+          "question",
+          "replyLocale"
         ]
       },
       "SocketTicketResponseDto": {

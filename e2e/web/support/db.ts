@@ -91,6 +91,75 @@ export async function cleanupAccounts(prefix: string): Promise<void> {
 }
 
 /**
+ * A support request on record, for a suite that needs a ticket to cite — A-07's request must name one since task 77
+ * (§12.5.6's task-77 row (9)). Written as the owner rather than through the api so a journey spends no sender's window;
+ * the api's own route is the help suite's to drive. Answers its reference.
+ */
+export async function recordSupportRequest(input: { readonly senderEmail: string }): Promise<string> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    const { rows } = await client.query<{ reference: string }>(
+      `INSERT INTO identity.support_request (sender_name, sender_email, topic, question, reply_locale)
+       VALUES ('Suita e2e', $1, 'access', 'O cerere pentru acces de suport.', 'ro')
+       RETURNING reference`,
+      [input.senderEmail],
+    );
+    return rows[0].reference;
+  } finally {
+    await client.end();
+  }
+}
+
+/** What S-34 stored for a sender (task 77): the fields the form sent and the reference the screen showed. */
+export async function supportRequestsFrom(email: string): Promise<
+  {
+    readonly reference: string;
+    readonly sender_name: string;
+    readonly organization_name: string | null;
+    readonly topic: string;
+    readonly reply_locale: string;
+    readonly question: string;
+  }[]
+> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    const { rows } = await client.query<{
+      reference: string;
+      sender_name: string;
+      organization_name: string | null;
+      topic: string;
+      reply_locale: string;
+      question: string;
+    }>(
+      `SELECT reference, sender_name, organization_name, topic, reply_locale, question
+         FROM identity.support_request WHERE sender_email = $1 ORDER BY sent_at`,
+      [email],
+    );
+    return rows;
+  } finally {
+    await client.end();
+  }
+}
+
+/** Every support request a run sent or recorded, by its sender's prefix, and the mail each queued (task 77). */
+export async function cleanupSupportRequests(prefix: string): Promise<void> {
+  const client = new Client(asOwner());
+  await client.connect();
+  try {
+    await client.query(
+      `DELETE FROM audit.outbox_event
+        WHERE idempotency_key IN (SELECT 'support-request/' || id FROM identity.support_request WHERE sender_email LIKE $1)`,
+      [`${prefix}%`],
+    );
+    await client.query(`DELETE FROM identity.support_request WHERE sender_email LIKE $1`, [`${prefix}%`]);
+  } finally {
+    await client.end();
+  }
+}
+
+/**
  * Gives the account at `email` a membership in a fresh organization, and returns the organization's
  * id — §4.3's branch needs one to distinguish "none" from "one", and no route creates either yet
  * (task 29 founds an organization, task 26.2 accepts an invitation).

@@ -28,6 +28,15 @@ describe('email template rendering (OQ-43; task 225)', () => {
   const OUTSTANDING = { count: 3, intervalDays: 7, fields: FIELD_LINES };
   const DEADLINE = { dueDate: '30 mai 2027', daysRemaining: 7, started: 'yes', outstanding: 4 };
   const EXPORT_FINISHED = { format: 'pdf', outcome: 'completed' };
+  // `senderName` is the reminder's, which the support mail's wording reads too.
+  const SUPPORT_REQUEST = {
+    reference: 'SR-000042',
+    senderEmail: 'ana@exemplu.md',
+    senderOrigin: 'organization',
+    topic: 'reporting',
+    replyLocale: 'ro',
+    question: 'Ce cifră introduc în B3?',
+  };
   const EVERY_PARAM = {
     link: LINK,
     organizationName: 'Brutăria Lina SRL',
@@ -36,6 +45,7 @@ describe('email template rendering (OQ-43; task 225)', () => {
     ...OUTSTANDING,
     ...DEADLINE,
     ...EXPORT_FINISHED,
+    ...SUPPORT_REQUEST,
   };
   const UNSUBSCRIBE = {
     link: 'https://app.easyesg.md/ro/unsubscribe/v1~abc~def',

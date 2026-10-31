@@ -3233,9 +3233,9 @@ their numbers put them.
 - **Main success scenario:**
   1. The reader states their question.
   2. The request reaches support.
-- **Postconditions:** A support request exists with a ticket reference — **which is what UC-85 has always assumed and no source has ever provided.** This use case is registered to close that gap in the register; it does not close the mechanism.
-- **Business rules:** **The channel is undecided** (`task.md` task 77). The candidates are an address the screen publishes, a form posting to the API and dispatching through the outbox as verification email already does, or an external helpdesk — three different products with three different data-protection footprints, and the choice governs whether this use case has a postcondition inside the platform at all. **Amended 5 Oct 2026** (project owner, task 182, 182/123): a data-subject request (FR-207) reaches the platform through this use case, and its ticket reference starts the request's 30 days; the channel itself remains task 77.1's.
-- **Related FRs:** —
+- **Postconditions:** A support request exists with a ticket reference — **which is what UC-85 has always assumed, and which this use case has provided since 30 Oct 2026** (task 77; FR-212).
+- **Business rules:** **The channel is a form posting to the API** (decided 30 Oct 2026, project owner, task 77.1; `architecture.md` §12.5.6's task-77 row): the request is recorded, given a reference the reader quotes, and delivered to the support address through the outbox; support replies from its own mailbox. Five requests in fifteen minutes per sender. **Amended 5 Oct 2026** (project owner, task 182, 182/123): a data-subject request (FR-207) reaches the platform through this use case, and its ticket reference starts the request's 30 days; the channel itself remains task 77.1's.
+- **Related FRs:** FR-212
 - **Related UCs:** UC-85, UC-180, UC-181
 
 ### UC-196 — Create an advisor organization

@@ -18,6 +18,8 @@ import { CONTENT_KIND } from '@api/modules/platform/content/constants/content.co
 import { helpArticleRefusal } from '@api/modules/platform/content/domain/help-article';
 import { helpTopicRefusal } from '@api/modules/platform/content/domain/help-topic';
 import { planCopyRefusal } from '@api/modules/platform/content/domain/plan-copy';
+import { SUPPORT_CHANNEL_CONFIG_KIND } from '@api/modules/platform/support/constants/support.constants';
+import { supportChannelRefusal } from '@api/modules/platform/support/domain/support-channel';
 
 /**
  * What a publication asks of a kind beyond writing it (tasks 37.3, 37.4; `architecture.md` §12.5.6's task-37.3/37.4
@@ -66,6 +68,8 @@ const RULES: Readonly<Record<string, ConfigurationKindRule>> = {
   [CONTENT_KIND.HELP_TOPIC]: { refusal: helpTopicRefusal },
   [CONTENT_KIND.HELP_ARTICLE]: { refusal: helpArticleRefusal },
   [CONTENT_KIND.PLAN_COPY]: { refusal: planCopyRefusal },
+  // A support address that is not one is refused where it can be corrected, not found by a request refused (task 77).
+  [SUPPORT_CHANNEL_CONFIG_KIND]: { refusal: supportChannelRefusal },
 };
 
 /** The kind's rule, or none: most kinds are written as they come and announce nothing. */

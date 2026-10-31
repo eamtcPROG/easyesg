@@ -53,6 +53,12 @@ export const NOTIFICATION_CATEGORY = {
    * is watched to its end on S-11. **Optional**, in-app and email; it opens S-11.
    */
   EXPORT_FINISHED: 'reporting.export_finished',
+  /**
+   * A reader's request to support, delivered to the platform's support address (task 77; FR-212; §12.5.6's task-77 row
+   * (1)) — a platform notice to an address, in Romanian, its Reply-To the reader's. **Mandatory, an operator's and an
+   * address's**: nobody can switch off support's mail, no tenant account receives it, and it goes by email.
+   */
+  SUPPORT_REQUEST: 'platform.support_request',
 } as const;
 
 export type NotificationCategoryKey = (typeof NOTIFICATION_CATEGORY)[keyof typeof NOTIFICATION_CATEGORY];
@@ -78,6 +84,7 @@ export const MANDATORY_NOTIFICATION_CATEGORIES: ReadonlySet<NotificationCategory
   NOTIFICATION_CATEGORY.PASSWORD_RESET,
   NOTIFICATION_CATEGORY.INVITATION,
   NOTIFICATION_CATEGORY.ADMIN_INVITATION,
+  NOTIFICATION_CATEGORY.SUPPORT_REQUEST,
 ]);
 
 /**
@@ -87,11 +94,12 @@ export const MANDATORY_NOTIFICATION_CATEGORIES: ReadonlySet<NotificationCategory
  */
 export const OPERATOR_NOTIFICATION_CATEGORIES: ReadonlySet<NotificationCategoryKey> = new Set([
   NOTIFICATION_CATEGORY.ADMIN_INVITATION,
+  NOTIFICATION_CATEGORY.SUPPORT_REQUEST,
 ]);
 
 /**
  * The notices sent to an address with a token in their link — verification, reset and both invitations (task 50.1.4) —
- * which go by email whatever their category says, since a centre could show the link and never act on it (§12.5.6's
+ * and, since task 77, the support request, sent to support's own address with none, which go by email whatever their category says, since a centre could show the link and never act on it (§12.5.6's
  * task-50.1 row (20)). **A-17 refuses to publish in-app for them** (task 67.10), so what the console shows and what the
  * delivery does cannot disagree. Declared beside the mandatory set: whoever adds a category decides here too.
  */
@@ -100,6 +108,7 @@ export const ADDRESS_NOTICE_CATEGORIES: ReadonlySet<NotificationCategoryKey> = n
   NOTIFICATION_CATEGORY.PASSWORD_RESET,
   NOTIFICATION_CATEGORY.INVITATION,
   NOTIFICATION_CATEGORY.ADMIN_INVITATION,
+  NOTIFICATION_CATEGORY.SUPPORT_REQUEST,
 ]);
 
 /**

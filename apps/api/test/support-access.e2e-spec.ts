@@ -49,7 +49,8 @@ const TOKEN = `sa${Array.from({ length: 10 }, () => 'abcdefghijklmnopqrstuvwxyz'
 const ALFA = { name: `Acces Alfa ${TOKEN}` };
 const BETA = { name: `Acces Beta ${TOKEN}` };
 
-const TICKET = 'SUP-4417';
+/** The support request every access request here cites — one on record, which A-07 requires since task 77. */
+let TICKET = '';
 const REASON = 'Proprietarul raportează că cifra pentru Scope 2 lipsește din export după recalculare.';
 
 interface ShownRequest {
@@ -264,6 +265,19 @@ describe('support access by the organization’s consent (UC-85, UC-86; task 67.
     alfaId = await createOrganization(ALFA);
     betaId = await createOrganization(BETA);
 
+    // A request to support on record, through its own route as a visitor — the ticket a grant must cite (task 77).
+    const sent = await http()
+      .post('/api/v1/support/requests')
+      .send({
+        topic: 'access',
+        question: 'Cifra pentru Scope 2 lipsește din export.',
+        replyLocale: 'ro',
+        name: 'Ana Popescu',
+        email: `support-ticket-${RUN}@support.test`,
+      })
+      .expect(201);
+    TICKET = objectOf<{ reference: string }>(sent).reference;
+
     const server = app.getHttpServer();
     administrator = await signInFreshAccount({ server, worker, email: `support-oa-${RUN}@support.test` });
     await grantMembership(administrator, alfaId, MEMBERSHIP_ROLE.ORGANIZATION_ADMINISTRATOR);
@@ -320,6 +334,15 @@ describe('support access by the organization’s consent (UC-85, UC-86; task 67.
   }, 180_000);
 
   afterAll(async () => {
+    // The ticket's request and the mail it queued — a support request is the platform's, not an organization's.
+    if (owner?.isInitialized) {
+      await owner.query(
+        `DELETE FROM audit.outbox_event WHERE idempotency_key IN
+           (SELECT 'support-request/' || id FROM identity.support_request WHERE sender_email = $1)`,
+        [`support-ticket-${RUN}@support.test`],
+      );
+      await owner.query(`DELETE FROM identity.support_request WHERE sender_email = $1`, [`support-ticket-${RUN}@support.test`]);
+    }
     await cleanupSignedInOperators({ owner });
     await cleanupSignedInAccounts({ owner });
     // Entities, periods, reports and memberships cascade from the organization. The log's rows stay: it is
@@ -366,6 +389,9 @@ describe('support access by the organization’s consent (UC-85, UC-86; task 67.
     expect(typeOf(nowhere)).toBe(problemTypeUri(ProblemType.NotFound));
 
     await raise(asker, alfaId, { ticketReference: '   ', reason: REASON }).expect(400);
+    // A ticket no support request carries is refused, and nothing is recorded (task 77; FR-78 AC-8).
+    const unknown = await raise(asker, alfaId, { ticketReference: 'SUP-4417', reason: REASON }).expect(422);
+    expect((unknown.body as { type: string }).type).toBe(problemTypeUri(ProblemType.TicketReferenceUnknown));
   });
 
   it('shows the request to the organization’s administrator, and to an editor or another organization nothing', async () => {

@@ -96,6 +96,9 @@ export class SmtpEmailAdapter implements EmailPort {
       // traceable to the outbox row that caused it (§8.4). It is not a deduplication mechanism —
       // the outbox's `jobId` already is one; this is what makes a redelivery diagnosable.
       headers: { 'X-Idempotency-Key': message.idempotencyKey, ...oneClickHeaders(message) },
+      // Where a reply goes, where it is not the sender — the support request's reader (task 77). Nodemailer writes the
+      // header; the address is never logged (NFR-30).
+      ...(message.replyTo === undefined ? {} : { replyTo: message.replyTo }),
     });
 
     // NFR-30: the address is never logged here. The idempotency key identifies the send, and the

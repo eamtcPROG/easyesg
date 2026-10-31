@@ -12,6 +12,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslations } from 'use-intl';
 import { ExpiringRefusal } from '~/realm/components/shared/expiring-refusal';
 import { SUPPORT_ACCESS_QUERY_KEY, raiseSupportAccess } from '../../../queries/support-access';
+import { isUnknownTicket } from '../../../tools/support-access-request-refusal';
 
 /** The api's cost bounds (`RaiseSupportAccessRequestDto`), restated so a person meets them before submitting. */
 const TICKET_MAX = 64;
@@ -28,6 +29,9 @@ type RequestFields = Pick<RaiseSupportAccessRequest, 'ticketReference' | 'reason
  * It shipped single-line until `FormTextArea` joined `@easyesg/ui/forms` (14 Sep 2026, UX-89 amended the same day).
  *
  * The refusal is one value with a lifecycle, cleared on the next submission — A-08's invitation form's reading.
+ *
+ * **A ticket no support request carries is said at its field** (task 77; §12.5.6's task-77 row (9)), not in the
+ * callout above the form: the fix is in that field, and the summary links to it.
  */
 export function RequestForm({
   organization,
@@ -40,7 +44,7 @@ export function RequestForm({
 }) {
   const t = useTranslations('platform.supportAccess.request');
   const queryClient = useQueryClient();
-  const { control, handleSubmit } = useForm<RequestFields>({ mode: 'onTouched' });
+  const { control, handleSubmit, setError } = useForm<RequestFields>({ mode: 'onTouched' });
   const [failure, setFailure] = useState<ApiFailure | null>(null);
   // A refusal leaves after a while, or when closed (design_spec.md §8.1, 28 Sep 2026); the next attempt's is a new
   // object and shows again.
@@ -49,6 +53,10 @@ export function RequestForm({
   const { mutate: raise, isPending } = useMutation({
     mutationFn: raiseSupportAccess,
     onSuccess: (outcome) => {
+      if (isUnknownTicket(outcome)) {
+        setError('ticketReference', { message: t('ticketUnknown') }, { shouldFocus: true });
+        return;
+      }
       if (outcome.status !== API_OUTCOME.Ok) {
         setFailure(outcome);
         return;
@@ -99,6 +107,7 @@ export function RequestForm({
             control={control}
             name="ticketReference"
             label={t('ticketLabel')}
+            help={t('ticketHelp')}
             autoComplete="off"
             rules={{
               required: t('ticketMissing'),

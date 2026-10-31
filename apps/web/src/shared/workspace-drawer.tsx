@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
+import { ROUTES } from '@/lib/routes';
 import { useSignOut } from '@/features/identity/shared/components/sign-out-provider';
 import { NotificationsEntry } from '@/features/notifications/count/components/notifications-entry';
 import { ACCOUNT_SECTIONS } from './account-sections';
@@ -82,6 +83,10 @@ export function WorkspaceDrawer({ organization, sections }: WorkspaceDrawerProps
         organization={organization?.switcher}
         actions={
           <>
+            {/* Help first, as the bar draws it at the wider frames (UX-109; task 77.5). */}
+            <Link className={styles.action} href={ROUTES.HELP_CENTRE}>
+              {t('helpCentre')}
+            </Link>
             {/* The centre is the active organization's (UC-165), so its row is offered exactly when the
                 organization's control is — a second flag for the same fact would be free to disagree. */}
             {organization ? <NotificationsEntry organizationId={organization.id} className={styles.action} /> : null}

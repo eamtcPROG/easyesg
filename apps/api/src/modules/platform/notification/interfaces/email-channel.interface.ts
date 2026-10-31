@@ -22,6 +22,8 @@ export interface NotificationEmail {
   readonly idempotencyKey: string;
   /** FR-169's one-click unsubscribe, on a category the recipient may switch off and no other (task 52.2.2). */
   readonly unsubscribe?: EmailUnsubscribe;
+  /** Where a reply goes, where it is not the sender — the support request's reader (task 77). */
+  readonly replyTo?: string;
 }
 
 /**

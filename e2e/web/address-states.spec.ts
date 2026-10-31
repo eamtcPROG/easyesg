@@ -20,14 +20,12 @@ const PASSWORD = 'Parola123!';
 const NOT_YET_AVAILABLE = 'Această parte nu este încă disponibilă';
 const NOT_FOUND = 'Această adresă nu există';
 
-/** Reachable with no session — `(public)`, per `lib/route-access.ts`'s unauthenticated segments. */
-const PUBLIC_ADDRESSES = [
-  // `/` left this list with task 74.3, which built S-29 there.
-  '/help',
-  '/help/contact',
-  '/help/oarecare-articol',
-  // The legal set left this list with task 75: `/legal/cookies` at 75.3, the terms and the privacy notice at 75.4.
-] as const;
+/*
+ * No address with no session answers *not yet available* since task 77: `/` left with task 74.3, the legal set with
+ * task 75, and the help centre — `/help`, `/help/contact` and an article's address — with task 77, whose unknown
+ * article answers the 404 surface (`e2e/web/help.spec.ts`). The state's signed-out way back stays drawn by
+ * `ReturnLink`, for the next public address that ships before its screen.
+ */
 
 /** `(app)/(workspace)` — the proxy bounces these to sign-in without a session, so they need one. */
 const WORKSPACE_ADDRESSES = [
@@ -75,15 +73,6 @@ async function signedIn(page: Page, label: string): Promise<void> {
 }
 
 test.describe('error — not yet available', () => {
-  for (const address of PUBLIC_ADDRESSES) {
-    test(`${address} answers a heading and a way out, signed out`, async ({ page }) => {
-      await page.goto(address);
-      await expect(page.getByRole('heading', { name: NOT_YET_AVAILABLE })).toBeVisible();
-      // Signed out, the only destination that renders is the one that hands out a session.
-      await expect(page.getByRole('link', { name: 'Mergeți la autentificare' })).toBeVisible();
-    });
-  }
-
   test('every workspace address answers, signed in', async ({ page }) => {
     await signedIn(page, 'workspace');
     for (const address of WORKSPACE_ADDRESSES) {

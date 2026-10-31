@@ -52,6 +52,10 @@ export function PublicDrawerMenu({ query }: { readonly query: string }) {
       brand={<BrandMark />}
       actions={
         <>
+          {/* Help first, as the band draws it at the wider frames (UX-109; task 77.5). */}
+          <Link className={styles.action} href={ROUTES.HELP_CENTRE}>
+            {t('helpCentre')}
+          </Link>
           <Link className={styles.action} href={ROUTES.REGISTER}>
             {t('publicHeader.register')}
           </Link>

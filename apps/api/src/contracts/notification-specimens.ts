@@ -72,6 +72,18 @@ export const NOTIFICATION_SPECIMEN: Readonly<Record<NotificationCategoryKey, Rea
     format: 'pdf',
     outcome: 'completed',
   },
+  // A member writing for their organization — the wording's fullest arm; a visitor's leaves the organization out.
+  [NOTIFICATION_CATEGORY.SUPPORT_REQUEST]: {
+    link: 'https://console.easyesg.md/',
+    reference: 'SR-000042',
+    senderName: 'Ana Ceban',
+    senderEmail: 'ana@exemplu.md',
+    senderOrigin: 'organization',
+    organizationName: SPECIMEN_ENTITY,
+    topic: 'reporting',
+    replyLocale: 'ro',
+    question: 'Chiria include energia electrică, iar factura este pe numele proprietarului. Ce cifră introduc în B3?',
+  },
 };
 
 function specimenLink(path: string): string {

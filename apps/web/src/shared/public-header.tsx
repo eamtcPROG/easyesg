@@ -65,6 +65,11 @@ export async function PublicHeader() {
       actions={
         <>
           <div className={styles.actions}>
+            {/* Help first, as in every chrome (UX-109, WCAG 2.2 3.2.6; task 77.5): the identity header, this band and
+                the global tier open their actions with it, so it is where a reader left it whichever screen they are on. */}
+            <Link className={styles.link} href={ROUTES.HELP_CENTRE}>
+              {t('helpCentre')}
+            </Link>
             <Suspense fallback={<LocaleChoiceMenu query="" />}>
               <LocaleChoice />
             </Suspense>

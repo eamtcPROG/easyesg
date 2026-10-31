@@ -15,3 +15,18 @@
     display: none;
   }
 }
+
+/* The help link at the head of the bar's actions (task 77.5; UX-109) — the public band's anchor on the same pine, so the
+   two chromes draw help alike: medium weight, no underline at rest, underline on hover. */
+.help {
+  color: var(--globalbar-text);
+  font: 500 14.5px/1.4 var(--font-text);
+  text-decoration: none;
+  border-radius: var(--radius-1);
+  white-space: nowrap;
+}
+
+.help:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

@@ -159,6 +159,8 @@ describe('notification categories from the console (A-17; task 67.10)', () => {
       'reporting.report_deadline',
       // The finished export's notice (task 47.3).
       'reporting.export_finished',
+      // A request to support, mailed to the support address (task 77).
+      'platform.support_request',
     ]);
     // Which cadence each keeps is code's, said to the console so it offers the right field (task 51.2).
     expect(read.map((category) => [category.categoryKey, category.cadence])).toEqual(
@@ -172,6 +174,13 @@ describe('notification categories from the console (A-17; task 67.10)', () => {
       leadTimesDays: [14, 7, 1],
     });
     expect(read.find((category) => category.categoryKey === 'identity.password_reset')).toMatchObject({
+      mandatory: true,
+      addressNotice: true,
+      inForce: { channels: ['email'], classification: 'transactional' },
+    });
+    // Support's own mailbox has no account to switch a channel off for, so it is an address notice an operator cannot
+    // make optional (§12.5.6's task-77 row (1)).
+    expect(read.find((category) => category.categoryKey === 'platform.support_request')).toMatchObject({
       mandatory: true,
       addressNotice: true,
       inForce: { channels: ['email'], classification: 'transactional' },

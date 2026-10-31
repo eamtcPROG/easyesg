@@ -693,7 +693,7 @@ The administrative console is a separate application on a separate host, a clien
 
 ### FR-78 — Support access that the organization grants
 
-**Status.** Built — delivered 67.9, 170
+**Status.** Built — delivered 67.9, 170, 77
 
 **Obligation.** The system shall issue scoped, time-limited support-access grants only on a request stating a reason and a ticket reference **and granted by an Organization Administrator of the named organization**, expiring automatically without administrator action.
 
@@ -703,7 +703,7 @@ The administrative console is a separate application on a separate host, a clien
 | **Traces** | UC-85 · D-5 · UX-124 · BR-ACC-6 · entity *Support-access grant* |
 | **Surfaces** | A-07 · `POST /admin/support-access` · `POST /admin/organizations/{organizationId}/support-access/{requestId}/end` · the tenant banner · `GET /support-access` · `POST /support-access/{requestId}/grant`, `/decline`, `/end` |
 
-**Inputs.** The organization, a ticket reference of at most 64 characters and a reason of at most 500, which the organization reads. Both are mandatory (A-07). The ticket reference is **free text**: required, at most 64 characters, and checked against nothing until task 77.1 decides the support channel, which revisits it (§12.5.6 task-182 identity and organization row, 182/7).
+**Inputs.** The organization, a ticket reference of at most 64 characters and a reason of at most 500, which the organization reads. Both are mandatory (A-07). The ticket reference must **name a support request on record** — the `SR-` reference S-34 shows (FR-212) — and is refused otherwise (§12.5.6's task-77 row (9), revisiting 182/7, which left it free text until then).
 
 **Behaviour.**
 1. A request is only a request. **Nobody at the platform can grant it on the organization's behalf.** An active Organization Administrator of the named organization grants or declines it (task-67.9 row (1)).
@@ -719,6 +719,7 @@ The administrative console is a separate application on a separate host, a clien
 **Refusals.**
 - No reason or ticket, or one over its length → 400 `validation-failed`
 - An unknown organization → 404 `not-found`
+- A ticket reference that names no support request on record → 422 `ticket-reference-unknown`
 - A second waiting or running request by the same operator for the organization → 409 `support-access-outstanding`
 - A grant or decline for a request no longer waiting → 409 `conflict`
 - An end for access not running → 409 `conflict`
@@ -737,11 +738,12 @@ The administrative console is a separate application on a separate host, a clien
 - **AC-5** Given a running grant, then every member of the organization sees the operator, the ticket, the reason and the time left, and an Organization Administrator can end it. *(source: UX-124; A-07)*
 - **AC-6** Given a platform session with no organization binding, when it tries to insert a grant, then the database refuses. *(source: §12.5.6 task-67.9 row)*
 - **AC-7** Given a second request by the same operator for the same organization while one is waiting or running, then it is refused with 409. *(source: §12.5.6 task-67.9 row)*
-- **AC-8** Given a ticket reference of any text up to 64 characters, then the request is accepted, and nothing is looked up. *(source: §12.5.6 task-182 identity and organization row, 182/7; `RaiseSupportAccessRequestDto`)*
+- **AC-8** Given a ticket reference that names no support request on record, then the request is refused with 422 `ticket-reference-unknown` and nothing is recorded. *(source: §12.5.6's task-77 row (9))*
 
 **History.**
 - 14 Sep 2026 · project owner (task 67.9) · **consent is the organization's**: a request is only a request, a grant is read-only and lasts 60 minutes, an unanswered request lapses after 24 hours, and any Organization Administrator or any PA may end a grant · §12.5.6 task-67.9 row; UC-85, UX-124, A-07 amended
 - 5 Oct 2026 · project owner · the ticket reference stays free text until the support channel is decided (task 77.1) · §12.5.6 task-182 identity and organization row (182/7)
+- 30 Oct 2026 · project owner (task 77) · the ticket reference must name a support request on record · §12.5.6's task-77 row (9)
 
 ### FR-79 — The support-access log
 

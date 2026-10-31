@@ -34,6 +34,8 @@ export const ROUTES = {
   /** The marketing home — `(public)`, and the only address with no segment. */
   LANDING: '/',
   HELP_CENTRE: '/help',
+  /** S-34 — write to support (task 77). A literal segment, so an article keyed `contact` would be shadowed by it. */
+  HELP_CONTACT: '/help/contact',
   LEGAL_TERMS: '/legal/terms',
   LEGAL_PRIVACY: '/legal/privacy',
   LEGAL_COOKIES: '/legal/cookies',

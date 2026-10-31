@@ -15,6 +15,10 @@ import { FACTOR_SET_REPLACED } from '../src/modules/core/calculator/constants/ca
 import { EXPORT_PDF_REQUESTED, EXPORT_XLSX_REQUESTED } from '../src/modules/core/export/constants/export.constants';
 import { REPORT_NOTICE_CHECK, REPORT_NOTICE_SWEEP } from '../src/modules/core/validation/constants/validation.constants';
 import { COOKIE_CHOICE_PURGE } from '../src/modules/platform/legal/constants/cookie-choice.constants';
+import {
+  SUPPORT_REQUEST_PURGE,
+  SUPPORT_REQUEST_RECEIVED,
+} from '../src/modules/platform/support/constants/support.constants';
 import { EMAIL_VERIFICATION_REQUESTED, PASSWORD_RESET_REQUESTED } from '../src/modules/identity/account/constants/account.constants';
 import { INVITATION_ISSUED } from '../src/modules/identity/invitation/constants/invitation.constants';
 import { AuthGuard } from '../src/modules/identity/session/guards/auth.guard';
@@ -82,6 +86,7 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
     if (owner !== undefined && since !== undefined) {
       await deleteScheduledRuns({ owner, eventType: REPORT_NOTICE_SWEEP, since });
       await deleteScheduledRuns({ owner, eventType: COOKIE_CHOICE_PURGE, since });
+      await deleteScheduledRuns({ owner, eventType: SUPPORT_REQUEST_PURGE, since });
       await owner.destroy();
     }
   });
@@ -126,6 +131,9 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
       REPORT_NOTICE_CHECK,
       // Task 223: the night's purge of the cookie banner's answers.
       COOKIE_CHOICE_PURGE,
+      // Task 77: a support request's mail, and the night's purge of requests past 24 months.
+      SUPPORT_REQUEST_RECEIVED,
+      SUPPORT_REQUEST_PURGE,
     ])('routes %s to its handler', async (name) => {
       const job = { id: 'boot-probe', name, data: {}, attemptsMade: 0, opts: {} } as unknown as Job<
         Record<string, unknown>
@@ -162,13 +170,14 @@ describe(`${workerMode ? 'worker' : 'http'} entrypoint boots (AD-1)`, () => {
      * **Every daily job is scheduled** (task 51.2): the routing probe above proves a job reaches its handler once its
      * row exists, and this proves the row is written — a `@RunsDaily` line deleted resolves everything and starts nothing.
      */
-    it('schedules the notices’ sweep at 07:00 and the cookie answers’ purge at 03:00, daily in Chișinău', () => {
+    it('schedules the notices’ sweep at 07:00, the cookie answers’ purge at 03:00 and the support requests’ at 03:30, daily in Chișinău', () => {
       // Sorted by name, since discovery order is the module graph's and says nothing about the schedule.
       const scheduled = [...app.get(ScheduleTicker, { strict: false }).scheduled()].sort((a, b) =>
         a.jobName.localeCompare(b.jobName),
       );
       expect(scheduled).toEqual([
         { jobName: COOKIE_CHOICE_PURGE, slot: { at: '03:00', timezone: 'Europe/Chisinau' } },
+        { jobName: SUPPORT_REQUEST_PURGE, slot: { at: '03:30', timezone: 'Europe/Chisinau' } },
         { jobName: REPORT_NOTICE_SWEEP, slot: { at: '07:00', timezone: 'Europe/Chisinau' } },
       ]);
     });

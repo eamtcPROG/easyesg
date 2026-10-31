@@ -2683,6 +2683,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/support/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write to support
+         * @description UC-182. The question is recorded with a reference the reader quotes, and delivered to the support address; support replies by email, quoting the reference. A signed-in reader is not asked their name or address — the account’s, and the active organization’s name, travel with the request. A visitor gives both.
+         */
+        post: operations["SupportRequestsController_submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/session/socket-ticket": {
         parameters: {
             query?: never;
@@ -4585,7 +4605,7 @@ export interface components {
              * @description What kind of notice this is — a key for the client to act on, never text to show.
              * @enum {string}
              */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished" | "platform.support_request";
             /** @description The category’s name in the negotiated language, to show beside the notice. Absent when none is written. */
             categoryName?: string;
             /** @description The notice’s title in the negotiated language. Absent when the category has no in-app wording. */
@@ -4628,7 +4648,7 @@ export interface components {
              * @description The category — a key for the client to act on, never text to show.
              * @enum {string}
              */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished" | "platform.support_request";
             /** @description The category’s name in the negotiated language. Absent when none is written. */
             categoryName?: string;
             /** @description Whether the category may not be switched off — security, account, invoice delivery, payment failure and service restriction notices. A mandatory category is listed on every channel it travels on, switched on. */
@@ -4645,7 +4665,7 @@ export interface components {
              * @description The category — a key for the client to act on, never text to show.
              * @enum {string}
              */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished" | "platform.support_request";
             /**
              * @description The channel it is switched off on.
              * @enum {string}
@@ -4666,7 +4686,7 @@ export interface components {
              * @description The category the link is about — a key to act on, never text to show. Absent when unusable.
              * @enum {string}
              */
-            categoryKey?: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
+            categoryKey?: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished" | "platform.support_request";
             /** @description The category’s name in the negotiated language. Absent when unusable, or when none is written. */
             categoryName?: string;
             /**
@@ -5202,7 +5222,7 @@ export interface components {
              * @description The Platform Administrator who asked — the address the organization is shown. Null for an operator account since removed.
              */
             requesterEmail: string | null;
-            /** @example SUP-4417 */
+            /** @example SR-000042 */
             ticketReference: string;
             /** @description Why access is asked for, as the operator wrote it for the organization. */
             reason: string;
@@ -5250,8 +5270,8 @@ export interface components {
              */
             organizationId: string;
             /**
-             * @description The support ticket the request acts on.
-             * @example SUP-4417
+             * @description The support request the access acts on — the reference a reader was given when they wrote to support, in any case. It must name a request on record.
+             * @example SR-000042
              */
             ticketReference: string;
             /**
@@ -5270,7 +5290,7 @@ export interface components {
              * @description The Platform Administrator who asked — the address the organization is shown. Null for an operator account since removed.
              */
             requesterEmail: string | null;
-            /** @example SUP-4417 */
+            /** @example SR-000042 */
             ticketReference: string;
             /** @description Why access is asked for, as the operator wrote it for the organization. */
             reason: string;
@@ -5573,7 +5593,7 @@ export interface components {
              * @description The notification category, where the target is a category’s configuration version (task 67.10).
              * @enum {string|null}
              */
-            targetCategory: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished" | null;
+            targetCategory: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished" | "platform.support_request" | null;
         };
         AdminCredentialsResponseDto: {
             /**
@@ -5761,7 +5781,7 @@ export interface components {
              * @description A key for the console to act on, never text to show.
              * @enum {string}
              */
-            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
+            categoryKey: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished" | "platform.support_request";
             /** @description Code declares it mandatory: its classification is fixed and it travels by email. */
             mandatory: boolean;
             /** @description A notice sent to an address with a token in its link: it never travels in-app. */
@@ -5880,6 +5900,34 @@ export interface components {
             dataProtectionEmail: string;
             /** @description The revision this change was made against — the one the reading answered. A newer one in force refuses the change (problem type legal-controller-changed). */
             revision: number;
+        };
+        SupportRequestReceiptDto: {
+            /**
+             * @description The request’s reference — `SR-` and six digits — which support’s reply carries.
+             * @example SR-000042
+             */
+            reference: string;
+        };
+        SubmitSupportRequestDto: {
+            /**
+             * @description What the question is about — it decides only who at support reads it first.
+             * @enum {string}
+             */
+            topic: "reporting" | "findings" | "exports" | "access" | "billing" | "other";
+            /** @description The question, in the reader’s own words. */
+            question: string;
+            /**
+             * @description The language support replies in.
+             * @enum {string}
+             */
+            replyLocale: "ro" | "en" | "ru";
+            /** @description A visitor’s name — required with no session; ignored with one, when the account’s travels instead. */
+            name?: string;
+            /**
+             * Format: email
+             * @description Where a visitor wants the reply — required with no session; ignored with one.
+             */
+            email?: string;
         };
         SocketTicketResponseDto: {
             /** @description Single-use and opaque; carries no personal data. Present it as the `ticket` query parameter of the socket upgrade within thirty seconds. */
@@ -8858,7 +8906,7 @@ export interface operations {
                 page?: number;
                 /** @description One ordering, `received,<asc|desc>`. Defaults to `received,desc` — newest first. */
                 order?: unknown;
-                /** @description Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder, reporting.report_update, reporting.outstanding_report, reporting.report_deadline, reporting.export_finished. A value outside these, or a field this route does not define, is ignored rather than refused. */
+                /** @description Compact facets, pipe-separated: `read,<unread|read>` and `category,<key>[,<key>…]` over identity.email_verification, identity.password_reset, identity.invitation, platform.admin_invitation, reporting.manual_reminder, reporting.report_update, reporting.outstanding_report, reporting.report_deadline, reporting.export_finished, platform.support_request. A value outside these, or a field this route does not define, is ignored rather than refused. */
                 filters?: unknown;
             };
             header?: never;
@@ -9973,6 +10021,15 @@ export interface operations {
             };
             /** @description This operator already has a request with the organization that is waiting or running (problem type support-access-outstanding). */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description The ticket reference names no support request on record (problem type ticket-reference-unknown). */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11984,7 +12041,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The category. */
-                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
+                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished" | "platform.support_request";
             };
             cookie?: never;
         };
@@ -12049,7 +12106,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The category. */
-                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
+                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished" | "platform.support_request";
             };
             cookie?: never;
         };
@@ -12123,7 +12180,7 @@ export interface operations {
             header?: never;
             path: {
                 /** @description The category. */
-                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished";
+                category: "identity.email_verification" | "identity.password_reset" | "identity.invitation" | "platform.admin_invitation" | "reporting.manual_reminder" | "reporting.report_update" | "reporting.outstanding_report" | "reporting.report_deadline" | "reporting.export_finished" | "platform.support_request";
             };
             cookie?: never;
         };
@@ -12284,6 +12341,59 @@ export interface operations {
             };
             /** @description A newer revision is in force (problem type legal-controller-changed), or the values are those in force (problem type conflict). */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SupportRequestsController_submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitSupportRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The request as recorded: its reference. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["SupportRequestReceiptDto"];
+                    };
+                };
+            };
+            /** @description A field missing or over its length, or a visitor who gave no name or address (validation-failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description A sixth request from one sender within fifteen minutes (rate-limited); nothing was recorded. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+            /** @description No support address is in force (support-channel-unavailable); nothing was recorded. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

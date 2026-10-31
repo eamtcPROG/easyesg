@@ -2458,11 +2458,11 @@
         },
         "collect": {
           "heading": "Ce date păstrăm",
-          "body": "<ul><li><strong>Contul:</strong> numele, adresa de e-mail, limba aleasă și parola, păstrată doar ca amprentă criptografică, pe care nu o putem citi.</li><li><strong>Conectarea:</strong> dacă vă conectați prin Google sau Microsoft, identificatorul contului dumneavoastră la acel furnizor; dacă activați autentificarea în doi pași, secretul acesteia, păstrat criptat.</li><li><strong>Organizațiile:</strong> din ce organizații faceți parte și cu ce rol.</li><li><strong>Activitatea:</strong> când v-ați conectat, încercările de conectare eșuate și adresa de internet de la care au venit, ca să protejăm conturile; și cine a modificat fiecare valoare dintr-un raport și când.</li><li><strong>Notificările:</strong> ce mesaje v-am trimis, pe ce canal și dacă au ajuns.</li><li><strong>Răspunsul la anunțul despre cookie-uri:</strong> ce versiune a politicii de cookie-uri v-a fost afișată și când, precum și contul dumneavoastră, dacă erați conectat.</li></ul>"
+          "body": "<ul><li><strong>Contul:</strong> numele, adresa de e-mail, limba aleasă și parola, păstrată doar ca amprentă criptografică, pe care nu o putem citi.</li><li><strong>Conectarea:</strong> dacă vă conectați prin Google sau Microsoft, identificatorul contului dumneavoastră la acel furnizor; dacă activați autentificarea în doi pași, secretul acesteia, păstrat criptat.</li><li><strong>Organizațiile:</strong> din ce organizații faceți parte și cu ce rol.</li><li><strong>Activitatea:</strong> când v-ați conectat, încercările de conectare eșuate și adresa de internet de la care au venit, ca să protejăm conturile; și cine a modificat fiecare valoare dintr-un raport și când.</li><li><strong>Notificările:</strong> ce mesaje v-am trimis, pe ce canal și dacă au ajuns.</li><li><strong>Răspunsul la anunțul despre cookie-uri:</strong> ce versiune a politicii de cookie-uri v-a fost afișată și când, precum și contul dumneavoastră, dacă erați conectat.</li><li><strong>Cererile trimise asistenței:</strong> numele și adresa de e-mail la care vă răspundem, organizația dumneavoastră dacă scrieți conectat, subiectul, întrebarea și limba răspunsului.</li></ul>"
         },
         "purposes": {
           "heading": "De ce le folosim și pe ce temei",
-          "body": "<ul><li>Ca să vă oferim contul și serviciul pe care l-ați cerut — temeiul este contractul cu dumneavoastră, adică termenii și condițiile.</li><li>Ca să păstrăm conturile în siguranță și să oprim încercările repetate de a ghici o parolă — temeiul este interesul nostru legitim de a proteja serviciul.</li><li>Ca un raport să poată fi verificat: cine a schimbat o valoare și când — temeiul este interesul nostru legitim ca raportul să poată fi verificat.</li><li>Ca să vă trimitem mesaje despre cont și despre rapoarte. Pe cele care nu sunt indispensabile le puteți opri din preferințele de notificare.</li><li>Ca să putem arăta că v-am informat ce cookie-uri setează site-ul — temeiul este obligația noastră legală de a vă informa.</li></ul><p>Nu luăm decizii automate cu efecte juridice asupra dumneavoastră și nu vă creăm un profil.</p>"
+          "body": "<ul><li>Ca să vă oferim contul și serviciul pe care l-ați cerut — temeiul este contractul cu dumneavoastră, adică termenii și condițiile.</li><li>Ca să păstrăm conturile în siguranță și să oprim încercările repetate de a ghici o parolă — temeiul este interesul nostru legitim de a proteja serviciul.</li><li>Ca un raport să poată fi verificat: cine a schimbat o valoare și când — temeiul este interesul nostru legitim ca raportul să poată fi verificat.</li><li>Ca să vă trimitem mesaje despre cont și despre rapoarte. Pe cele care nu sunt indispensabile le puteți opri din preferințele de notificare.</li><li>Ca să putem arăta că v-am informat ce cookie-uri setează site-ul — temeiul este obligația noastră legală de a vă informa.</li><li>Pentru a vă răspunde când scrieți asistenței — temeiul este interesul nostru legitim de a vă ajuta să folosiți serviciul, iar pentru un client, contractul cu dumneavoastră.</li></ul><p>Nu luăm decizii automate cu efecte juridice asupra dumneavoastră și nu vă creăm un profil.</p>"
         },
         "recipients": {
           "heading": "Cine are acces la date",
@@ -2474,7 +2474,7 @@
         },
         "retention": {
           "heading": "Cât timp le păstrăm",
-          "body": "<ul><li>Contul — cât timp există. Dacă ne cereți ștergerea lui, ștergem imediat profilul, apartenența la organizații, sesiunile, preferințele și evidența mesajelor trimise dumneavoastră.</li><li>Conținutul rapoartelor, exporturile generate și istoricul modificărilor — cât timp există organizația și încă un an după aceea.</li><li>Datele introduse în calculatorul de emisii — fără limită de timp, pentru ca o cifră raportată să poată fi refăcută oricând.</li><li>Notificările — cât timp există organizația și încă un an; un anunț al platformei, un an de la trimitere.</li><li>Jurnalul de audit al sistemului — 24 de luni.</li><li>Facturile și evidența contabilă — 6 ani, cât cere legea.</li><li>Răspunsul la anunțul despre cookie-uri — 12 luni.</li></ul>"
+          "body": "<ul><li>Contul — cât timp există. Dacă ne cereți ștergerea lui, ștergem imediat profilul, apartenența la organizații, sesiunile, preferințele și evidența mesajelor trimise dumneavoastră.</li><li>Conținutul rapoartelor, exporturile generate și istoricul modificărilor — cât timp există organizația și încă un an după aceea.</li><li>Datele introduse în calculatorul de emisii — fără limită de timp, pentru ca o cifră raportată să poată fi refăcută oricând.</li><li>Notificările — cât timp există organizația și încă un an; un anunț al platformei, un an de la trimitere.</li><li>Jurnalul de audit al sistemului — 24 de luni.</li><li>Facturile și evidența contabilă — 6 ani, cât cere legea.</li><li>Răspunsul la anunțul despre cookie-uri — 12 luni.</li><li>Cererile trimise asistenței — 24 de luni de la trimitere.</li></ul>"
         },
         "security": {
           "heading": "Cum le protejăm",
@@ -2679,6 +2679,125 @@
       "standing": {
         "answered": "Ați răspuns la anunțul despre cookie-uri pe {date}.",
         "unanswered": "Nu ați răspuns încă la anunțul despre cookie-uri."
+      }
+    }
+  },
+  "help": {
+    "centre": {
+      "metaTitle": "Centrul de ajutor",
+      "title": "Cu ce vă putem ajuta?",
+      "lede": "Scris pentru cei care conduc o afacere, nu pentru cei care citesc standarde. Fiecare articol spune din ce parte a raportului face parte.",
+      "filter": {
+        "label": "Restrângeți biblioteca",
+        "topic": "Subiectul",
+        "everyTopic": "Toate subiectele",
+        "search": "Căutați în articole",
+        "submit": "Căutați",
+        "clear": "Ștergeți căutarea"
+      },
+      "other": "Alte articole",
+      "count": "{count, plural, one {# articol} few {# articole} other {# de articole}}",
+      "loading": "Se încarcă biblioteca",
+      "empty": {
+        "title": "Biblioteca nu are încă articole",
+        "body": "Articolele de ajutor se publică aici pe măsură ce sunt scrise. Până atunci, asistența răspunde la orice întrebare despre raport.",
+        "action": "Scrieți asistenței"
+      },
+      "noMatch": {
+        "title": "Niciun articol nu se potrivește",
+        "body": "Nu am găsit articole pentru această căutare. Încercați alte cuvinte sau toate subiectele.",
+        "action": "Arătați toată biblioteca"
+      },
+      "unavailable": {
+        "title": "Biblioteca nu poate fi citită acum",
+        "body": "Articolele nu au putut fi încărcate, așa că biblioteca nu este afișată. Reîncărcați pagina puțin mai târziu sau scrieți asistenței."
+      },
+      "support": {
+        "title": "Nu ați găsit răspunsul?",
+        "body": "Scrieți-ne cu cuvintele dumneavoastră. Vă răspunde o persoană, în limba aleasă.",
+        "action": "Scrieți asistenței"
+      }
+    },
+    "article": {
+      "breadcrumb": "Centrul de ajutor",
+      "contents": "Pe această pagină",
+      "readNext": "Citiți în continuare",
+      "support": {
+        "title": "Nu v-a lămurit?",
+        "body": "Scrieți-ne și vă răspunde o persoană.",
+        "action": "Scrieți asistenței"
+      },
+      "back": "Înapoi la centrul de ajutor",
+      "loading": "Se încarcă articolul",
+      "unavailable": {
+        "title": "Articolul nu poate fi citit acum",
+        "body": "Articolul nu a putut fi încărcat, așa că nu este afișat. Reîncărcați pagina puțin mai târziu sau întoarceți-vă la centrul de ajutor."
+      },
+      "show": "Afișați secțiunea",
+      "metaTitle": "{title} · Centrul de ajutor"
+    },
+    "contact": {
+      "metaTitle": "Scrieți asistenței",
+      "title": "Scrieți asistenței",
+      "lede": "Descrieți problema cu cuvintele dumneavoastră. Vă răspunde o persoană, prin e-mail, în limba pe care o alegeți.",
+      "topic": {
+        "label": "Despre ce este vorba?",
+        "help": "Hotărăște doar cine o citește primul.",
+        "placeholder": "Alegeți subiectul",
+        "missing": "Subiectul lipsește, iar cererea ajunge la persoana potrivită după el. Alegeți unul.",
+        "options": {
+          "reporting": "O cifră sau o întrebare dintr-un modul",
+          "findings": "O constatare care nu dispare",
+          "exports": "Exporturi",
+          "access": "Utilizatori și acces",
+          "billing": "Facturi și plan",
+          "other": "Altceva"
+        }
+      },
+      "question": {
+        "label": "Întrebarea dumneavoastră",
+        "help": "Spuneți ce încercați să faceți și ce se întâmplă în loc.",
+        "missing": "Întrebarea lipsește, așa că nu avem la ce răspunde. Scrieți-o.",
+        "tooLong": "Întrebarea are mai mult de 5.000 de caractere, așa că nu poate fi trimisă. Scurtați-o la ce trebuie să știm."
+      },
+      "replyLocale": {
+        "label": "Răspundeți-mi în",
+        "help": "Limba răspunsului, independent de limba interfeței.",
+        "options": {
+          "ro": "Română",
+          "en": "Engleză",
+          "ru": "Rusă"
+        }
+      },
+      "name": {
+        "label": "Numele dumneavoastră",
+        "missing": "Numele lipsește, iar răspunsul se adresează cuiva. Scrieți-l.",
+        "tooLong": "Numele are mai mult de 200 de caractere. Scurtați-l."
+      },
+      "email": {
+        "label": "Adresa de e-mail pentru răspuns",
+        "missing": "Adresa lipsește, iar răspunsul nu are unde ajunge. Scrieți-o.",
+        "invalid": "Aceasta nu este o adresă de e-mail, așa că răspunsul nu ar ajunge. Verificați-o."
+      },
+      "known": {
+        "heading": "Trimis împreună cu cererea, ca să nu fie nevoie să le scrieți",
+        "name": "Numele",
+        "email": "Răspunsul ajunge la",
+        "organization": "Organizația"
+      },
+      "promise": "Vă răspundem prin e-mail, iar în răspuns găsiți referința cererii.",
+      "summaryTitle": "Câteva câmpuri au nevoie de atenție înainte de a putea trimite cererea",
+      "submit": "Trimiteți asistenței",
+      "refused": "Cererea nu a fost trimisă",
+      "sent": {
+        "title": "Cererea a fost trimisă",
+        "body": "Referința ei este {reference}. Vă răspundem prin e-mail; dacă ne scrieți din nou despre aceeași problemă, menționați referința.",
+        "action": "Înapoi la centrul de ajutor"
+      },
+      "back": "Înapoi la centrul de ajutor",
+      "unreachable": {
+        "title": "Cererea nu a putut fi trimisă",
+        "body": "Platforma nu a răspuns, așa că nu știm dacă cererea a ajuns. Încercați din nou peste câteva momente; dacă a ajuns, vă răspundem o singură dată."
       }
     }
   },

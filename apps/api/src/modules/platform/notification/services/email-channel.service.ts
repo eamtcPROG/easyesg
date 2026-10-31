@@ -66,6 +66,7 @@ export class EmailChannelService implements EmailChannel {
         params: this.params.forLocale({ params: email.params, locale: email.locale, fieldList: FIELD_LIST_FORM.LINES }),
         idempotencyKey: email.idempotencyKey,
         unsubscribe: email.unsubscribe,
+        ...(email.replyTo === undefined ? {} : { replyTo: email.replyTo }),
         ...(operator === null
           ? {}
           : { operator: { name: operator.registeredName, address: operator.registeredAddress } }),

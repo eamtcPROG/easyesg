@@ -34525,3 +34525,146 @@ gates and `gates:clean`, which are Stage 6's end — task 76 is not its last row
 **Proven to bite**: swapping `settle`'s write and delete failed the queue's unit spec; removing the delete failed the
 e2e's last case; the seeded library's spec was run against the shipped files, which the loader also published through
 the new rules (twelve `published revision 1` lines in the run's seed).
+
+## Task 77 — the help centre, and a request to support that support access can cite · 2026-10-31
+
+All five sub-steps in one close. UC-180 … UC-182, UC-85, FR-78, FR-205, FR-207, S-32 … S-34, §5.1b, UX-109, 182/7,
+182/123, task 76's read path and the `EasyESG Help Centre` prototype were read before anything was built. One batch of
+twelve questions was put — 77.1's channel first, since every other answer hung on it. The answers, and what the build
+took within them, are `architecture.md` §12.5.6's new task-77 row (1) … (13), with a limits-table row for
+`POST /support/requests`, a Support component in §6.6, its area in §6.8, its tree in §6.7, a `platform/support` row in
+§17.5, a retention row in §12.5.7 and §12.5.2's provider-neutral additions grown to three. **FR-212, *Write to support*,
+is new** (an index row in §3.33 and its block in part 08, UC-182 its source, G-9 closed); FR-207 (behaviour 2, AC-4,
+AC-9), FR-78 (its inputs, a refusal and AC-8), FR-205, UC-182, S-34 and §5.1b are amended, and the release checklist
+gains a section for the support address and the privacy notice's new version.
+
+### Decided (project owner)
+
+- **The channel is a form; the api records the request and mails it to support** through the outbox and
+  `NOTIFICATION_DELIVERY` (row (1)). Declined: an address the screen publishes, which records nothing a ticket can cite;
+  an external helpdesk, a processor with no document behind it.
+- **A module of its own, `platform/support`**, the 37th (row (2)), rather than a corner of `platform/content` or
+  `platform/admin`.
+- **The form asks a topic of six, the question (≤ 5,000 characters) and the reply's language**; a visitor adds a name and
+  an address, and a member is asked neither — the account says (row (3)).
+- **Kept 24 months, purged nightly** (row (4)).
+- **The address is a store artefact, `support_channel`, seeded `ajutor@easyesg.md`**, failing closed (row (5)).
+- **Five requests per 15 minutes per sender, enforced in the api** (row (6)). Unlike task 76's limit, which waited on
+  71.1, the key is the sender — the account or the lowercased address — so the proxy's address does not decide it.
+- **No acknowledgement email; the reference is shown on screen** (row (1)): a form that mails any address it is given
+  is an amplifier.
+- **A data-subject request is acted on only once confirmed from the account's registered address** (row (7); FR-207
+  behaviour 2), the reference starting its 30 days as 182/123 set.
+- **`replyTo` on the email port** (row (8)), so support answers by replying.
+- **A-07's ticket reference is checked inside 77** (row (9)) — the owner's choice over recording it for later: a
+  reference naming no request on record is refused, 422 `ticket-reference-unknown`.
+- **The help centre's chrome follows the session and its content does not** (row (10); §5.1b amended): the global tier
+  for a member, the public band and footer for a visitor, from one implementation that reads no session.
+- **The privacy notice moves to 1.1, provisional** (row (11)): it now says support requests are collected, why and for
+  how long, and its version moving sends every account to S-43 — the decision, not a side effect.
+
+### What followed from a source, said rather than asked
+
+- **The web reads the store's Markdown subset itself, with no library** (row (12)) — task 76's row (2) admits only that
+  subset, so a parser for all of Markdown would render syntax nobody may write.
+- **Help opens every chrome's actions** (row (13); UX-109, WCAG 2.2 3.2.6): the identity header already did; the public
+  band, its drawer, the global tier and the workspace drawer now do.
+- **S-32 narrows by topic and by words on the server, and draws no *most read*** (row (13)): the prototype's list needs
+  a reading count nothing records.
+
+### What the building decided within that
+
+- **An eighth route group, `(help)`**, whose layout reads the session only to choose `PublicFrame` or `AppFrame` — the
+  two layouts' bodies, moved into `shared/` so a third layout could pick between them. It renders per request, outside
+  the static zone. A member's help pages carry the global tier and no footer, the frame S-04, S-35 and S-37 have.
+- **The reference is `SR-` and six digits from its own sequence**, a column default, so it exists in the insert's
+  `RETURNING` and is never computed above the database. `esg_app` holds `SELECT, INSERT` — the `RETURNING` needs the
+  first — and `esg_worker` `SELECT, DELETE` for the mail and the purge. The account column is a foreign key with
+  `ON DELETE SET NULL`: an erased account leaves the request as the visitor's it then is.
+- **The window is `admitAuthAttempt` over `identity.auth_attempt`**, keyed `support-request:<account id>` or
+  `support-request:<address>`, spent in the insert's transaction, so a refused request records nothing and a rolled-back
+  one spends nothing.
+- **A member is named in its own short transaction** (`senderOf`), bound to the active organization only to read its
+  name; whatever the body says of a name or an address is ignored.
+- **The mail is Romanian, its button the console**: the support mailbox holds no language to resolve, and the request
+  is in the message. Its facts are the reference, the topic and the reply language, in the plain anatomy. **The address
+  is read when the mail is sent**, so a job with none readable fails and retries rather than mailing nowhere, and a
+  request purged before its mail went is skipped with a warning.
+- **The purge runs at 03:30**, half an hour after the cookie answers', both in Chișinău.
+- **`SUPPORT_TICKETS` compares upper-cased and trimmed**, so a reference quoted in any case is the one on record. The
+  two support-access suites now record a request first and cite it; the console sets the refusal on the ticket field
+  itself (`isUnknownTicket`) rather than in the callout, and the field's help says what to quote.
+- **An article that fell back marks each part in its own language** — eyebrow, title, lede, headings and bodies —
+  rather than wrapping the article, which would mislabel the page's own words inside it.
+- **The article's route has no `loading.tsx`**, since it `notFound()`s on its read and a flushed shell would answer
+  200 — `apps/web/CLAUDE.md`'s trap, met rather than rediscovered.
+- **S-34's outcome is one `useState` over a two-member union** (sent, refused), not a reducer: one value with no
+  transitions worth naming. The sent state takes focus, so the reference is read out.
+- **The address-state spec lost its public loop**: no address with no session answers *not yet available* now, so the
+  loop generated no tests. `ReturnLink`'s signed-out arm is unreachable by any journey and kept, the state being
+  address-agnostic; `public-header.spec.ts` measures its short page on a search that matches nothing, the library now
+  being longer than any window.
+- **The band's actions now hold their size** (`packages/ui`'s `GlobalBar`, found by the close's expansion run): help
+  joined them from the 640 px frame up, as the Workspace artboards draw it, and at 834 under +40% ten signed-in
+  journeys overflowed by 23 px — both of the band's regions shrank by their share, so the organization's name
+  truncated only partly while the actions, whole controls, spilled past the edge. `.actions { flex-shrink: 0 }` gives
+  the whole squeeze to the organization's control, which is drawn to truncate; the rule is inert whenever the band
+  fits. Declined: truncating *Help centre*, which would cut the control UX-109 keeps in place before the name designed
+  to give way.
+- **A-17 lists the new category**, last as declared, mandatory and an address notice with email alone — which
+  `admin-notification-categories.e2e-spec.ts` now pins beside the password reset's, after it failed on the member it
+  did not yet name.
+- **Two stale lines corrected on the way**: the root doc-set table said `FR-1…210` while FR-211 already existed, and
+  says `FR-1…212`; the contract's ticket example was the old free-form `SUP-4417`, and is `SR-000042`.
+
+### Read against the skills
+
+- **`one-idea-per-file`**: every route a shell but one — **`shell-composes-only` declined for S-34's route, with the
+  reason row (10) records**: what a member is not asked comes from the session, and `features/public` reads none, so the
+  route reads it and hands it down. `pure-logic-leaves-the-component` — the library's grouping and search, the
+  Markdown reader, the contact form's request and the address check are `tools/`, each with a spec.
+  `file-one-behaviour-api` holds across `platform/support`.
+- **`one-kind-per-folder`**: `features/public/help/` splits per screen — `centre/`, `article/`, `contact/` — each with
+  its own `components/ · tools/` and S-34's `actions/`, and each `components/` mirrors its section's `return`.
+  `folder-shape.spec.ts` passes.
+- **`nestjs-best-practices`**: the two use cases are framework-free and registered by `useFactory`; controller → service
+  → use case; every refusal a `DomainError` with its key in three catalogues; `di-use-interfaces-tokens` for the store,
+  the channel and `SUPPORT_TICKETS`. **Declined**: `security-rate-limiting`'s throttler, the window being the
+  repository's own.
+- **`vercel-react-best-practices`**, read against the diff: `async-parallel` holds in both reading sections;
+  `server-cache-react` — the help reads are `cache()`d per request, and S-34's member read is the band's own memberships
+  read; `server-serialization` — the form is handed three strings. **Taken**: `js-hoist-regexp`, the link targets'
+  expressions beside `LIST_ITEM`; and S-34's route, which awaited the locale and the read together, now pins the locale
+  first, the house shape, since the read takes its language from it. **Considered and declined**:
+  `bundle-barrel-imports` for `LOCALES` from `@easyesg/i18n`'s barrel, which four client modules already import.
+- **`vercel-composition-patterns`** was not opened: no component API was added or widened — `FormSelect` and
+  `FormTextArea` were already the inventory's.
+
+### Verified
+
+The change reaches `apps/api`, `apps/web`, `apps/admin`, `packages/contracts`, `packages/i18n` and — through the
+band's one rule — `packages/ui`, so the close ran every row of the table, one suite at a time: `pnpm lint` (four
+findings fixed first: an `../../` climb in the store, three literal comparisons in the Markdown reader, now `MARK`, and an
+assertion the console spec's type already made), `pnpm typecheck` (every workspace), `pnpm docs:check` (48),
+`pnpm boundaries`; the unit suites of `@easyesg/i18n` (172), `@easyesg/api` (2,749), `@easyesg/web` (2,226),
+`@easyesg/admin` (324) and `@easyesg/ui` (510) — `@easyesg/contracts` has none, its mirrors held by `typecheck`;
+`pnpm openapi:check` (138 paths — it diffs against the index, so it read the re-emit as drift until the two generated
+files were staged), `pnpm events:check`, `pnpm routes:check`; `pnpm migrations:check` (apply, revert, apply on the
+test stack, then 64 invariants on the dev stack, started for it and stopped again after); `pnpm e2e` (79 suites,
+2,057 cases — A-17's suite failed on the category list and passed alone once it named the member), `pnpm e2e:worker`
+(19 — the two support jobs routed, the purge scheduled at 03:30) and `pnpm e2e:web --project identity --project
+expansion --project admin` (426 — 416 on the first run, the ten 834 journeys above failing until the band's fix).
+`GlobalBar` draws three bands — the global tier, the public band and the console's — and all three projects ran over
+the change.
+
+**Read, not only counted**: the api run printed the three *Message catalogue used before initialiseCatalogue()* errors
+and the outbox's *Custom Id* warning earlier closes record, and nothing from `platform/support`; the browser run
+printed 36 *destination stream closed early* lines, every one digest `2667547900` — `apps/web/CLAUDE.md`'s abandoned
+stream — and no other `⨯`. No baseline count was taken this session; every signed-in band now carries one more link
+the router prefetches. A first targeted run also failed `address-states.spec.ts`'s signed-in journey on a cold api
+(`/memberships` timing out on the run's first requests) and passed on every run after.
+
+**Proven to bite**: `help-article.spec.tsx` failed with the `lang` marking removed; the expansion project failed on the
+band's overflow before the fix, which is the measurement the fix answers to. **Skipped**, as a task's close does:
+`image:check`, `facade:check`, `eslint:prove`, `boundaries:prove`, `test:coverage`, `gates:clean` and the three
+reviews, which are Stage 6's end — task 77 is not its last row; task 222 is.

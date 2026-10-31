@@ -22,6 +22,15 @@
   min-inline-size: 0;
 }
 
+/* **The actions hold their size; the identity takes the squeeze** (task 77). The actions are whole controls — help, the
+   bell, the account corner — that cannot truncate, while the organization's control is drawn to (`.organization`
+   below). Shrinking both by their share, the default, spilled the actions past the band's edge when task 77 put help
+   among them: 23px at the 834 frame under +40%, with the organization's name only partly truncated. Inert whenever the
+   band's content fits. */
+.actions {
+  flex-shrink: 0;
+}
+
 /* The brand anchor is the caller's, so its colour is inherited rather than set: `BrandMark`
    resolves from `currentColor` by design, which is why it needs no dark variant. */
 .identity :is(a) {

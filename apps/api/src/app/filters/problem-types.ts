@@ -152,6 +152,12 @@ export const ProblemType = {
   /** Task 75: no readable operator is in force, so the documents naming it are not served (§12.5.6's task-75 row
    *  (7)). A configuration fault the platform corrects — its way out is to wait, as `seat-allowance-unavailable`'s is. */
   LegalControllerUnavailable: 'legal-controller-unavailable',
+  /** Task 77: no readable support address is in force, so a request to support is refused and nothing recorded
+   *  (§12.5.6's task-77 row (5)) — a configuration fault the platform corrects, and the reader's way out is to wait. */
+  SupportChannelUnavailable: 'support-channel-unavailable',
+  /** Task 77: A-07's ticket reference names no support request on record (§12.5.6's task-77 row (9), revisiting 182/7).
+   *  Its own slug so A-07 can say it at the field, beside the reference typed. */
+  TicketReferenceUnknown: 'ticket-reference-unknown',
   TenantContextMissing: 'tenant-context-missing',
   /** UC-56 refused: another reporting period for the same entity already covers part of these
    *  dates. Its own slug because S-14 must name the way out — adjust the dates, or edit the period

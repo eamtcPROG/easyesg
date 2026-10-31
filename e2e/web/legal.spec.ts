@@ -109,24 +109,26 @@ async function operatorInForce(page: Page): Promise<Record<string, string>> {
   return ((await response.json()) as { object: Record<string, string> }).object;
 }
 
-test('the terms and the privacy notice name the operator in force and state their standing, counsel having approved them', async ({
+test('the terms and the privacy notice name the operator in force and state their standing — the terms approved, the privacy notice’s 1.1 provisional', async ({
   page,
 }) => {
   const operator = await operatorInForce(page);
 
-  for (const [document, title] of [
-    ['terms', 'Termeni și condiții'],
-    ['privacy', 'Politica de confidențialitate'],
+  // Counsel approved version 1.0 of both (task 226); the privacy notice's 1.1, which says what a support request keeps
+  // (task 77), is provisional until counsel approves it in turn — `legal-standing.ts` says each.
+  for (const [document, title, version, effective, provisional] of [
+    ['terms', 'Termeni și condiții', 'Versiunea 1.0', 'În vigoare din 13 octombrie 2026', false],
+    ['privacy', 'Politica de confidențialitate', 'Versiunea 1.1', 'În vigoare din 31 octombrie 2026', true],
   ] as const) {
     await page.goto(`/legal/${document}`);
     const main = page.getByRole('main');
     await expect(main.getByRole('heading', { level: 1, name: title })).toBeVisible();
 
-    // FR-205 AC-4, AC-10: the release's version and effective date. Counsel has checked version 1.0 (task 226), so the
-    // notice AC-14 puts above a provisional document's summary is not drawn, and the date it applies from is unchanged.
-    await expect(main.getByText('Versiunea 1.0', { exact: true })).toBeVisible();
-    await expect(main.getByText('În vigoare din 13 octombrie 2026', { exact: true })).toBeVisible();
-    await expect(main.getByText('Versiune provizorie', { exact: true })).toHaveCount(0);
+    // FR-205 AC-4, AC-10: the release's version and effective date, and AC-14's notice above a provisional document's
+    // summary only where the version is one counsel has not yet approved.
+    await expect(main.getByText(version, { exact: true })).toBeVisible();
+    await expect(main.getByText(effective, { exact: true })).toBeVisible();
+    await expect(main.getByText('Versiune provizorie', { exact: true })).toHaveCount(provisional ? 1 : 0);
     await expect(main.getByRole('heading', { level: 2, name: 'Pe scurt' })).toBeVisible();
 
     // AC-12: the four facts A-21 keeps, the contact a link that writes to it.

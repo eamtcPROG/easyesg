@@ -19,8 +19,10 @@ export class RaiseSupportAccessRequestDto {
 
   @ApiProperty({
     maxLength: 64,
-    example: 'SUP-4417',
-    description: 'The support ticket the request acts on.',
+    example: 'SR-000042',
+    description:
+      'The support request the access acts on — the reference a reader was given when they wrote to support, ' +
+      'in any case. It must name a request on record.',
   })
   @Trim()
   @IsString()

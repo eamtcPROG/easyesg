@@ -88,6 +88,10 @@ export const PROBLEM_TYPE = {
   /** Task 75: no readable platform operator is in force, so S-30's terms and privacy notice answer *not yet available*
    *  rather than the error state a failed read draws (§12.5.6's task-75 row (7)). */
   LegalControllerUnavailable: 'https://easyesg.md/problems/legal-controller-unavailable',
+  /** Task 77: A-07's ticket reference names no support request on record; the console says so at the field. */
+  TicketReferenceUnknown: 'https://easyesg.md/problems/ticket-reference-unknown',
+  /** Task 77: no support address is in force, so S-34 says to try later rather than drawing the form's failure. */
+  SupportChannelUnavailable: 'https://easyesg.md/problems/support-channel-unavailable',
   /** An account still completing its setup reached a route other than its setup routes (task 155). The web tier's proxy
    *  sends an account its session cookie calls in setup to S-36 before any route is asked; a cookie sealed before that
    *  task reads as active and meets this refusal on screen until its next rotation (architecture.md's web cookie row). */

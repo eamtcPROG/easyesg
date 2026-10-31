@@ -58,6 +58,11 @@ export interface DeliverNoticeCommand {
   readonly linkPath: string;
   /** What the category's wording interpolates besides `{link}`, which every such template is written against. */
   readonly params: Record<string, unknown>;
+  /**
+   * Where a reply goes, where it is not the sender — the support request's reader, so support answers by replying
+   * (task 77; §12.5.6's task-77 row (8)). Absent on every other notice.
+   */
+  readonly replyTo?: string;
 }
 
 /** DI token beside the interface, so a consumer imports one thing (CLAUDE.md, P-7). */

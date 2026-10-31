@@ -76,6 +76,7 @@ import { ArchivedEntityReport1793232000000 } from './1793232000000-archived-enti
 import { LegalAcceptance1793318400000 } from './1793318400000-legal-acceptance';
 import { CookieChoice1793404800000 } from './1793404800000-cookie-choice';
 import { ContentFallback1793491200000 } from './1793491200000-content-fallback';
+import { SupportRequest1793577600000 } from './1793577600000-support-request';
 import { AddressNotices1790726400000 } from './1790726400000-address-notices';
 
 /**
@@ -172,4 +173,5 @@ export const migrations = [
   LegalAcceptance1793318400000,
   CookieChoice1793404800000,
   ContentFallback1793491200000,
+  SupportRequest1793577600000,
 ];

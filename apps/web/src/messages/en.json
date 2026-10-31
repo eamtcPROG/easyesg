@@ -2458,11 +2458,11 @@
         },
         "collect": {
           "heading": "What we keep",
-          "body": "<ul><li><strong>Your account:</strong> your name, your email address, the language you chose, and your password, kept only as a cryptographic fingerprint we cannot read back.</li><li><strong>How you sign in:</strong> if you sign in with Google or Microsoft, your account’s identifier with that provider; if you turn on two-step sign-in, its secret, kept encrypted.</li><li><strong>Your organisations:</strong> which organisations you belong to, and in what role.</li><li><strong>Activity:</strong> when you signed in, failed sign-in attempts and the internet address they came from, to protect accounts; and who changed each value in a report, and when.</li><li><strong>Notifications:</strong> which messages we sent you, on which channel, and whether they arrived.</li><li><strong>Your answer to the cookie notice:</strong> which version of the cookie policy you were shown and when, and your account if you were signed in.</li></ul>"
+          "body": "<ul><li><strong>Your account:</strong> your name, your email address, the language you chose, and your password, kept only as a cryptographic fingerprint we cannot read back.</li><li><strong>How you sign in:</strong> if you sign in with Google or Microsoft, your account’s identifier with that provider; if you turn on two-step sign-in, its secret, kept encrypted.</li><li><strong>Your organisations:</strong> which organisations you belong to, and in what role.</li><li><strong>Activity:</strong> when you signed in, failed sign-in attempts and the internet address they came from, to protect accounts; and who changed each value in a report, and when.</li><li><strong>Notifications:</strong> which messages we sent you, on which channel, and whether they arrived.</li><li><strong>Your answer to the cookie notice:</strong> which version of the cookie policy you were shown and when, and your account if you were signed in.</li><li><strong>Requests you send to support:</strong> the name and the email address we reply to, your organisation if you write signed in, the topic, your question and the language of the reply.</li></ul>"
         },
         "purposes": {
           "heading": "Why we use it, and on what basis",
-          "body": "<ul><li>To give you the account and the service you asked for — the basis is our contract with you, the terms of service.</li><li>To keep accounts safe and stop repeated attempts to guess a password — the basis is our legitimate interest in protecting the service.</li><li>So that a report can be checked — who changed a value, and when — the basis is our legitimate interest in a report that can be verified.</li><li>To send you messages about your account and your reports. Those that are not essential you can turn off in your notification preferences.</li><li>To be able to show that we told you which cookies the site sets — the basis is our legal obligation to inform you.</li></ul><p>We take no automated decisions with legal effects on you, and we do not build a profile of you.</p>"
+          "body": "<ul><li>To give you the account and the service you asked for — the basis is our contract with you, the terms of service.</li><li>To keep accounts safe and stop repeated attempts to guess a password — the basis is our legitimate interest in protecting the service.</li><li>So that a report can be checked — who changed a value, and when — the basis is our legitimate interest in a report that can be verified.</li><li>To send you messages about your account and your reports. Those that are not essential you can turn off in your notification preferences.</li><li>To be able to show that we told you which cookies the site sets — the basis is our legal obligation to inform you.</li><li>To answer you when you write to support — the basis is our legitimate interest in helping you use the service, and for a customer, our contract with you.</li></ul><p>We take no automated decisions with legal effects on you, and we do not build a profile of you.</p>"
         },
         "recipients": {
           "heading": "Who can see it",
@@ -2474,7 +2474,7 @@
         },
         "retention": {
           "heading": "How long we keep it",
-          "body": "<ul><li>Your account — for as long as it exists. If you ask us to erase it, we delete your profile, your memberships, your sessions, your preferences and the record of messages sent to you straight away.</li><li>Report content, generated exports and the history of changes — for the life of the organisation and one year after.</li><li>Figures entered in the emissions calculator — without a time limit, so that a reported figure can always be reproduced.</li><li>Notifications — for the life of the organisation and one year after; a platform announcement, one year from sending.</li><li>The system audit log — 24 months.</li><li>Invoices and accounting records — 6 years, as the law requires.</li><li>Your answer to the cookie notice — 12 months.</li></ul>"
+          "body": "<ul><li>Your account — for as long as it exists. If you ask us to erase it, we delete your profile, your memberships, your sessions, your preferences and the record of messages sent to you straight away.</li><li>Report content, generated exports and the history of changes — for the life of the organisation and one year after.</li><li>Figures entered in the emissions calculator — without a time limit, so that a reported figure can always be reproduced.</li><li>Notifications — for the life of the organisation and one year after; a platform announcement, one year from sending.</li><li>The system audit log — 24 months.</li><li>Invoices and accounting records — 6 years, as the law requires.</li><li>Your answer to the cookie notice — 12 months.</li><li>Requests sent to support — 24 months from sending.</li></ul>"
         },
         "security": {
           "heading": "How we protect it",
@@ -2679,6 +2679,125 @@
       "standing": {
         "answered": "You answered the notice about cookies on {date}.",
         "unanswered": "You have not yet answered the notice about cookies."
+      }
+    }
+  },
+  "help": {
+    "centre": {
+      "metaTitle": "Help centre",
+      "title": "How can we help?",
+      "lede": "Written for people who run a business, not for people who read standards. Every article says which part of the report it belongs to.",
+      "filter": {
+        "label": "Narrow the library",
+        "topic": "Topic",
+        "everyTopic": "Every topic",
+        "search": "Search the articles",
+        "submit": "Search",
+        "clear": "Clear the search"
+      },
+      "other": "Other articles",
+      "count": "{count, plural, one {# article} other {# articles}}",
+      "loading": "Loading the library",
+      "empty": {
+        "title": "The library has no articles yet",
+        "body": "Help articles are published here as they are written. Until then, support answers any question about the report.",
+        "action": "Write to support"
+      },
+      "noMatch": {
+        "title": "No article matches",
+        "body": "Nothing was found for this search. Try other words, or every topic.",
+        "action": "Show the whole library"
+      },
+      "unavailable": {
+        "title": "The library cannot be read right now",
+        "body": "The articles could not be loaded, so the library is not shown. Reload the page a little later, or write to support."
+      },
+      "support": {
+        "title": "Did not find the answer?",
+        "body": "Write to us in your own words. A person replies, in the language you choose.",
+        "action": "Write to support"
+      }
+    },
+    "article": {
+      "breadcrumb": "Help centre",
+      "contents": "On this page",
+      "readNext": "Read next",
+      "support": {
+        "title": "Still not clear?",
+        "body": "Write to us and a person replies.",
+        "action": "Write to support"
+      },
+      "back": "Back to the help centre",
+      "loading": "Loading the article",
+      "unavailable": {
+        "title": "The article cannot be read right now",
+        "body": "The article could not be loaded, so it is not shown. Reload the page a little later, or go back to the help centre."
+      },
+      "show": "Show this section",
+      "metaTitle": "{title} · Help centre"
+    },
+    "contact": {
+      "metaTitle": "Write to support",
+      "title": "Write to support",
+      "lede": "Describe the problem in your own words. A person replies by email, in the language you choose.",
+      "topic": {
+        "label": "What is it about?",
+        "help": "This only decides who reads it first.",
+        "placeholder": "Choose a topic",
+        "missing": "The topic is missing, and it is how the request reaches the right person. Choose one.",
+        "options": {
+          "reporting": "A figure, or a question in a module",
+          "findings": "A finding that will not clear",
+          "exports": "Exports",
+          "access": "Users and access",
+          "billing": "Invoices and plan",
+          "other": "Something else"
+        }
+      },
+      "question": {
+        "label": "Your question",
+        "help": "Say what you are trying to do and what happens instead.",
+        "missing": "The question is missing, so there is nothing to answer. Write it.",
+        "tooLong": "The question is longer than 5,000 characters, so it cannot be sent. Shorten it to what we need to know."
+      },
+      "replyLocale": {
+        "label": "Reply to me in",
+        "help": "The reply’s language, whatever the interface’s.",
+        "options": {
+          "ro": "Romanian",
+          "en": "English",
+          "ru": "Russian"
+        }
+      },
+      "name": {
+        "label": "Your name",
+        "missing": "Your name is missing, and the reply is addressed to someone. Write it.",
+        "tooLong": "The name is longer than 200 characters. Shorten it."
+      },
+      "email": {
+        "label": "Email address for the reply",
+        "missing": "The address is missing, so the reply has nowhere to go. Write it.",
+        "invalid": "This is not an email address, so the reply would not arrive. Check it."
+      },
+      "known": {
+        "heading": "Sent with your request, so you need not write it",
+        "name": "Name",
+        "email": "The reply goes to",
+        "organization": "Organisation"
+      },
+      "promise": "We reply by email, and the reply carries the request’s reference.",
+      "summaryTitle": "A few fields need attention before the request can be sent",
+      "submit": "Send to support",
+      "refused": "The request was not sent",
+      "sent": {
+        "title": "Your request was sent",
+        "body": "Its reference is {reference}. We reply by email; if you write again about the same problem, quote the reference.",
+        "action": "Back to the help centre"
+      },
+      "back": "Back to the help centre",
+      "unreachable": {
+        "title": "The request could not be sent",
+        "body": "The platform did not answer, so we cannot tell whether your request arrived. Try again in a few moments; if it did arrive, we reply only once."
       }
     }
   },

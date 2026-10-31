@@ -67,9 +67,20 @@ const FIRST_VERSION: LegalStanding = {
   provisional: false,
 };
 
+/**
+ * The privacy notice's second version (task 77; `architecture.md` §12.5.6's task-77 row (11)): what a support request
+ * keeps, why, and for how long. **Provisional until counsel approves it** — the release checklist's item — and dated the
+ * day it was drafted; every account that accepted 1.0 accepts it again (task 195).
+ */
+const PRIVACY_SUPPORT_REQUESTS: LegalStanding = {
+  version: '1.1',
+  effective: { date: '2026-10-31', timezone: LEGAL_TIMEZONE },
+  provisional: true,
+};
+
 export const LEGAL_STANDING: Readonly<Record<LegalDocument, LegalStanding>> = {
   [LEGAL_DOCUMENT.TERMS]: FIRST_VERSION,
-  [LEGAL_DOCUMENT.PRIVACY]: FIRST_VERSION,
+  [LEGAL_DOCUMENT.PRIVACY]: PRIVACY_SUPPORT_REQUESTS,
   [LEGAL_DOCUMENT.COOKIES]: FIRST_VERSION,
 };
 

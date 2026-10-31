@@ -546,8 +546,10 @@
         "mode": "Mod",
         "modeValue": "Doar citire",
         "ticketLabel": "Referința tichetului",
+        "ticketHelp": "Referința cererii de asistență la care lucrați, așa cum o poartă mesajul ei: SR- și șase cifre.",
         "ticketMissing": "Referința tichetului lipsește, iar accesul de suport există doar pentru un tichet. Completați referința înainte de a trimite cererea.",
         "ticketTooLong": "Referința are mai mult de 64 de caractere, deci nu poate fi înregistrată. Păstrați doar identificatorul tichetului.",
+        "ticketUnknown": "Nicio cerere de asistență nu poartă această referință, așa că cererea de acces nu a fost trimisă. Copiați referința din mesajul cererii — începe cu SR- — și trimiteți din nou.",
         "reasonLabel": "Motivul, pentru organizație",
         "reasonHelp": "Organizația citește acest text înainte de a răspunde. Spuneți ce trebuie verificat și de ce.",
         "reasonMissing": "Motivul lipsește, iar organizația nu poate decide fără el. Scrieți de ce aveți nevoie de acces.",
@@ -778,7 +780,8 @@
         "reportUpdate": "Actualizări ale rapoartelor",
         "outstandingReport": "Câmpuri de completat",
         "reportDeadline": "Termene de depunere",
-        "exportFinished": "Exporturi încheiate"
+        "exportFinished": "Exporturi încheiate",
+        "supportRequest": "Cereri de asistență"
       },
       "channels": {
         "in_app": "În aplicație",

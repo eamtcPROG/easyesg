@@ -109,6 +109,11 @@ export class AdminSupportAccessController {
       'support-access-outstanding).',
     content: PROBLEM,
   })
+  @ApiResponse({
+    status: 422,
+    description: 'The ticket reference names no support request on record (problem type ticket-reference-unknown).',
+    content: PROBLEM,
+  })
   async raise(@Body() body: RaiseSupportAccessRequestDto): Promise<SupportAccessRaisedResponseDto> {
     return new SupportAccessRaisedResponseDto(await this.supportAccess.raise(body));
   }

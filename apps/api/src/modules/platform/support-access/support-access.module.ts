@@ -1,12 +1,14 @@
 import { Module, type Provider } from '@nestjs/common';
 import configuration, { APP_MODE } from '@api/config/configuration';
 import { CLOCK, type Clock } from '@api/contracts/clock.port';
+import { SUPPORT_TICKETS, type SupportTickets } from '@api/contracts/support-tickets.port';
 import { OrganizationSupportAccessStoreRepository } from '@api/infrastructure/persistence/platform/organization-support-access-store.repository';
 import { SupportAccessGrantedReads } from '@api/infrastructure/persistence/platform/support-access-granted-reads';
 import { SupportAccessLedgerRepository } from '@api/infrastructure/persistence/platform/support-access-ledger.repository';
 import { SupportAccessLogReaderRepository } from '@api/infrastructure/persistence/platform/support-access-log-reader.repository';
 import { DisclosureModule } from '@api/modules/core/disclosure/disclosure.module';
 import { AdminModule } from '@api/modules/platform/admin/admin.module';
+import { SupportModule } from '@api/modules/platform/support/support.module';
 import { AdminSupportAccessController } from './controllers/admin-support-access.controller';
 import { OrganizationSupportAccessController } from './controllers/organization-support-access.controller';
 import { SupportAccessGrantController } from './controllers/support-access-grant.controller';
@@ -62,8 +64,9 @@ const httpProviders: Provider[] = [
   OrganizationSupportAccessService,
   {
     provide: RaiseSupportAccessRequest,
-    inject: [SUPPORT_ACCESS_LEDGER, CLOCK],
-    useFactory: (ledger: SupportAccessLedger, now: Clock) => new RaiseSupportAccessRequest(ledger, now),
+    inject: [SUPPORT_ACCESS_LEDGER, SUPPORT_TICKETS, CLOCK],
+    useFactory: (ledger: SupportAccessLedger, tickets: SupportTickets, now: Clock) =>
+      new RaiseSupportAccessRequest(ledger, tickets, now),
   },
   {
     provide: EndSupportAccessAsOperator,
@@ -98,7 +101,7 @@ const httpProviders: Provider[] = [
 ];
 
 @Module({
-  imports: mode === APP_MODE.WORKER ? [] : [AdminModule, DisclosureModule],
+  imports: mode === APP_MODE.WORKER ? [] : [AdminModule, DisclosureModule, SupportModule],
   controllers:
     mode === APP_MODE.WORKER
       ? []

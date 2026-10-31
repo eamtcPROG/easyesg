@@ -1,11 +1,9 @@
 import type { ReactNode } from 'react';
-import { PublicFooter } from '@/shared/public-footer';
-import { PublicHeader } from '@/shared/public-header';
+import { PublicFrame } from '@/shared/public-frame';
 import { activateRequestLocale, type LocaleParams } from '@/i18n/page';
-import styles from './layout.module.css';
 
 /**
- * The public surface — marketing, legal, help centre (IMPLEMENTATION_PLAN Phase 10).
+ * The public surface — marketing and legal (IMPLEMENTATION_PLAN Phase 10); the help centre is `(help)`'s since task 77.
  *
  * This is the **only** part of the application the framework may cache. §14.2 names the exception
  * precisely: "fully static, tenant-independent content". Everywhere else a cache key that knows
@@ -21,12 +19,15 @@ import styles from './layout.module.css';
  *
  * **The chrome is rendered here, not per screen (task 74.1)** — the mirror of `(app)`'s layout
  * holding `GlobalTier`, and for the same reason: "on every screen in the group" is a property of
- * the layout, and a header composed per page is one a new page can be added without. `/`, `/help`
- * and `/legal/*` are all inside the group, so all three gain it at once.
+ * the layout, and a header composed per page is one a new page can be added without. `/` and
+ * `/legal/*` are inside the group, so both gain it at once.
  *
  * **And the footer since 9 Oct 2026** (74.1's other half; `architecture.md` §12.5.6's task-74 row, item (1)). It was
  * held back on 4 Sep because its three legal links returned `null`; since task 103 they answered a designed *not yet
  * available* with a way back, and since task 75 all three open their document.
+ *
+ * **The frame is `shared/public-frame.tsx` since task 77**, which the help centre's layout draws too for a reader with no
+ * session — and the help centre left this group then, since its chrome follows the session (§12.5.6's task-77 row (10)).
  */
 export default async function PublicLayout({
   children,
@@ -41,11 +42,5 @@ export default async function PublicLayout({
   // included, with no error and no warning. Found by reading the build's route table, which drew `/[locale]` as `ƒ`.
   await activateRequestLocale(params);
 
-  return (
-    <div className={styles.frame}>
-      <PublicHeader />
-      {children}
-      <PublicFooter />
-    </div>
-  );
+  return <PublicFrame>{children}</PublicFrame>;
 }

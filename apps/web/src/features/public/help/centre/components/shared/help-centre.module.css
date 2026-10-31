@@ -1,0 +1,67 @@
+/* S-32's regions (task 77) — read by the section, the filter, the library and the support prompt, so in `shared/` on
+   the admission test; values through tier-3 tokens, never copied from the prototype's markup (OQ-10). */
+
+.regions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+.filterField {
+  flex: 1 1 16rem;
+  min-inline-size: 0;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.groupSummary {
+  color: var(--text-muted);
+}
+
+.articles {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 52rem) {
+  .articles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  block-size: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-raised);
+}
+
+.cardModule {
+  color: var(--text-muted);
+}
+
+.support {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--border-default);
+}

@@ -138,8 +138,9 @@ test.describe('the public footer', () => {
 
   test('sits at the foot of the window on a page shorter than it', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
-    // `/help` rather than `/` since task 74.3 built the home, which is longer than any window.
-    await page.goto('/help');
+    // A search that matches nothing: `/` since task 74.3 and the whole library since task 77 are longer than any window,
+    // and this is the help centre's frame with nothing but its heading, its filter and two short notices in it.
+    await page.goto('/help?q=nimic-de-gasit');
     const box = await page.getByRole('contentinfo').boundingBox();
     expect(box).not.toBeNull();
     // The column fills the window and the footer takes the space left over above it, so its edge is the window's.

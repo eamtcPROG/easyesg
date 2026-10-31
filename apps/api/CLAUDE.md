@@ -19,7 +19,8 @@ roll-up since task 41, over `@easyesg/validation`'s interpreter, and NFR-87's ve
 task 201, and FR-164's and FR-165's notices on the worker's first scheduled job since task 51.2 — and the cookie banner's answers purged by its second since task 223 — and the PDF export's job on the worker since
 task 44 — printed by the renderer service, stored and recorded — and the Excel export's beside it since task 46, the report
 written into the EFRAG template it pins through a map per template version, and since task 47 an export's request, its history, its
-file and the filed mark, and since task 84 the change trail's three reads, every entry worded; billing, the console's
+file and the filed mark, and since task 84 the change trail's three reads, every entry worded, and since tasks 76 and 77 the help centre's published content
+and the request to support; billing, the console's
 screens, edge and deploy, the public tier and the Comprehensive Module are not. `docs/archived_tasks.md` says what each closed task
 shipped and `docs/task.md` what each remaining one must, `docs/build-log.md` what it cost, and `architecture.md` §12.5.6 holds the decisions. What
 follows is what a reader needs in hand: the foundation's guarantees, the live slices' shape, and the
@@ -190,8 +191,20 @@ traps each one left — grouped by area rather than by the task that built it.
   `CONTENT_FALLBACK_REPORTER`; the queue, `config.content_fallback`, gathers in the process and writes every five seconds,
   and `ContentTranslationWatch` clears what is translated whenever the store's version moves — so **a suite calls the
   queue's `write()` and the watch's `settleIfMoved()`** rather than waiting out either (§12.5.6's task-76 row).
+- **Support** (`platform/support`; task 77): UC-182's request, `POST /support/requests` — `@AdmitsVisitor`'s second
+  route — recorded in `identity.support_request` under a reference, `SR-` and six digits from its own sequence, with its
+  mail queued on the same transaction (`support.request_received`). The worker hands that mail to `NOTIFICATION_DELIVERY`
+  addressed to the `support_channel` artefact's mailbox, in Romanian, its Reply-To the reader's address — `replyTo` on
+  `EmailMessage`, the port's third provider-neutral addition. **A member is named from the account and the bound
+  organization, whatever the body says**; a visitor gives a name and an address. One window per sender, the account or
+  the lowercased address, 5 per 15 min through `admitAuthAttempt`. The channel fails closed, 503
+  `support-channel-unavailable`, and the worker's `support.request_purge` (03:30 Chișinău) deletes requests past 24
+  months. **`SUPPORT_TICKETS` is what support access reads**: A-07's raise refuses a ticket reference naming no request on
+  record, 422 `ticket-reference-unknown`, so a suite raising support access first records a request and cites its
+  reference — `test/support-access.e2e-spec.ts` through the route, the browser suite through `recordSupportRequest`
+  (§12.5.6's task-77 row).
 - **Not live**: billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18, A-19 and A-21 (67 … 70), the production edge and
-  deploy (71 … 73, staging's three sub-steps aside — architecture.md §10.5), the public tier's support channel (77), the Comprehensive Module's plan scope (81) — its nine forms shipped with task 79, and its applicability, validation and both exports with task 80 —, the advisor domain
+  deploy (71 … 73, staging's three sub-steps aside — architecture.md §10.5), the Comprehensive Module's plan scope (81) — its nine forms shipped with task 79, and its applicability, validation and both exports with task 80 —, the advisor domain
   (116 … 121).
 
 ### Traps and load-bearing facts, by area
@@ -1076,7 +1089,7 @@ src/
 ├─ app/          cross-cutting only: dto/ filters/ interceptors/ guards/ decorators/ constants/ interfaces/ messages/
 ├─ config/       ConfigService schema. Never process.env in business logic
 ├─ contracts/    the ONLY cross-context surface: ports, events/, types/
-├─ modules/      core/(9) identity/(6) billing/(13) platform/(11) — 39, plus the four context modules: 43 `*.module.ts`
+├─ modules/      core/(9) identity/(6) billing/(13) platform/(12) — 40, plus the four context modules: 44 `*.module.ts`
 └─ infrastructure/  persistence/ outbox/ queue/ adapters/ openapi/ observability/ configuration/ provisioning/
 ```
 

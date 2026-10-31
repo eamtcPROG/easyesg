@@ -28,7 +28,7 @@ export class SupportAccessRequestResponseDto {
   })
   readonly requesterEmail: string | null;
 
-  @ApiProperty({ example: 'SUP-4417' })
+  @ApiProperty({ example: 'SR-000042' })
   readonly ticketReference: string;
 
   @ApiProperty({ description: 'Why access is asked for, as the operator wrote it for the organization.' })

@@ -1,4 +1,5 @@
 import type { Clock } from '@api/contracts/clock.port';
+import type { SupportTickets } from '@api/contracts/support-tickets.port';
 import {
   SUPPORT_ACCESS_HORIZON_MS,
   SUPPORT_ACCESS_LAPSE_MS,
@@ -8,6 +9,7 @@ import {
 import {
   SupportAccessOrganizationNotFoundError,
   SupportAccessOutstandingError,
+  SupportAccessTicketUnknownError,
 } from '../errors/support-access.errors';
 import type { SupportAccessLedger } from '../interfaces/support-access-ledger.interface';
 
@@ -35,14 +37,22 @@ export interface RaisedSupportAccessRequest {
  * **One request at a time, per operator and organization.** A request still waiting, or a grant still
  * running, holds the operator's place: a second would ask the organization the same question twice, and the
  * owner's *extend with a new request* means a new request once the first has ended.
+ *
+ * **The ticket must be one support holds** (task 77; §12.5.6's task-77 row (9)): a reference no support request on
+ * record carries is refused before anything else is asked, so access is only ever requested against a person's
+ * question the platform received.
  */
 export class RaiseSupportAccessRequest {
   constructor(
     private readonly ledger: SupportAccessLedger,
+    private readonly tickets: SupportTickets,
     private readonly now: Clock,
   ) {}
 
   async execute(command: RaiseSupportAccessRequestCommand): Promise<RaisedSupportAccessRequest> {
+    if (!(await this.tickets.isOnRecord({ reference: command.ticketReference }))) {
+      throw new SupportAccessTicketUnknownError();
+    }
     const at = this.now();
     const history = await this.ledger.operatorHistory({
       organizationId: command.organizationId,

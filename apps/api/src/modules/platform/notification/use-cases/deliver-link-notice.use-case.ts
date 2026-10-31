@@ -101,6 +101,7 @@ export class DeliverLinkNotice {
         locale: recipient.locale,
         params: { ...command.params, link },
         idempotencyKey: command.issuanceKey,
+        ...(command.replyTo === undefined ? {} : { replyTo: command.replyTo }),
       });
       await this.store.recordEmailAccepted({ ...ref, recipient: recipient.recorded, outcome });
     }

@@ -34,6 +34,8 @@ export const EMAIL_LAYOUT: Readonly<Record<NotificationCategoryKey, EmailLayout>
     card: EMAIL_CARD.FILE,
     tone: (params) => (params.outcome === EXPORT_STATUS.FAILED ? EMAIL_TONE.ERROR : EMAIL_TONE.SUCCESS),
   },
+  // The request itself is the message — its words in the intro, its reference and topic as facts (task 77).
+  [NOTIFICATION_CATEGORY.SUPPORT_REQUEST]: PLAIN,
 };
 
 const isCategoryKey = (key: string): key is NotificationCategoryKey => Object.hasOwn(EMAIL_LAYOUT, key);

@@ -2,6 +2,7 @@ import { SUPPORT_ACCESS_GRANT_MS, SUPPORT_ACCESS_LAPSE_MS } from '../domain/supp
 import {
   SupportAccessOrganizationNotFoundError,
   SupportAccessOutstandingError,
+  SupportAccessTicketUnknownError,
 } from '../errors/support-access.errors';
 import { FakeSupportAccessLedger } from '../testing/support-access-ledger.fake';
 import { RaiseSupportAccessRequest } from './raise-support-access-request.use-case';
@@ -14,13 +15,15 @@ describe('RaiseSupportAccessRequest (task 67.9; UC-85)', () => {
   let now: Date;
   let raise: RaiseSupportAccessRequest;
 
-  const command = { operatorId: 'operator-1', organizationId: 'organization-1', ticketReference: 'SUP-1', reason: 'why' };
+  const command = { operatorId: 'operator-1', organizationId: 'organization-1', ticketReference: 'SR-000001', reason: 'why' };
+  /** Support's requests on record (task 77): the one the command cites. */
+  const tickets = { isOnRecord: ({ reference }: { reference: string }) => Promise.resolve(reference === 'SR-000001') };
 
   beforeEach(() => {
     ledger = new FakeSupportAccessLedger();
     ledger.organizations.add('organization-1');
     now = start;
-    raise = new RaiseSupportAccessRequest(ledger, () => now);
+    raise = new RaiseSupportAccessRequest(ledger, tickets, () => now);
   });
 
   it('records a request and grants nothing — the organization answers it', async () => {
@@ -33,9 +36,16 @@ describe('RaiseSupportAccessRequest (task 67.9; UC-85)', () => {
       lapsesAt: new Date(start.getTime() + SUPPORT_ACCESS_LAPSE_MS),
     });
     expect(ledger.requests).toEqual([
-      expect.objectContaining({ id: 'request-1', requesterId: 'operator-1', ticketReference: 'SUP-1', reason: 'why' }),
+      expect.objectContaining({ id: 'request-1', requesterId: 'operator-1', ticketReference: 'SR-000001', reason: 'why' }),
     ]);
     expect(ledger.decisions).toEqual([]);
+  });
+
+  it('refuses a ticket no support request on record carries, and records nothing (task 77)', async () => {
+    await expect(raise.execute({ ...command, ticketReference: 'SUP-4417' })).rejects.toBeInstanceOf(
+      SupportAccessTicketUnknownError,
+    );
+    expect(ledger.requests).toEqual([]);
   });
 
   it('refuses an organization that does not exist, and records nothing', async () => {

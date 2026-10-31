@@ -52,6 +52,12 @@ export interface EmailMessage {
    * be read**, and the message goes without the line: the footer is not what a recipient acts on.
    */
   readonly operator?: EmailOperator;
+  /**
+   * Where a reply goes — the third addition, provider-neutral like the two before it: `Reply-To` is the internet's,
+   * not a vendor's (task 77; §12.5.6's task-77 row (8)). Set on the mail to support alone, to the reader's address, so
+   * support answers by replying. **Never logged** (NFR-30).
+   */
+  readonly replyTo?: string;
 }
 
 /** Who sends the platform's mail, as registered — one value each, not per locale (the task-75 row (7)). */

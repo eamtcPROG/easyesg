@@ -17,6 +17,20 @@ export class SupportAccessOrganizationNotFoundError extends DomainError {
 }
 
 /**
+ * The ticket reference names no support request on record (task 77; FR-78; §12.5.6's task-77 row (9), revisiting
+ * 182/7) — a typo, a ticket from somewhere else, or one purged after its 24 months. Its own slug, so A-07 says it at the
+ * field beside the reference typed; nothing was recorded.
+ */
+export class SupportAccessTicketUnknownError extends DomainError {
+  readonly problemType: ProblemTypeSlug = ProblemType.TicketReferenceUnknown;
+  readonly status = 422;
+
+  constructor() {
+    super('platform.support_access.ticket_unknown');
+  }
+}
+
+/**
  * The operator already has a request with this organization that is waiting for an answer or running.
  * One at a time: a second would ask the organization the same question twice, and an extension is a new
  * request only once the first has ended.

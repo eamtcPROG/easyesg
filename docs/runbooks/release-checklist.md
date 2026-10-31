@@ -89,3 +89,24 @@ HTML tag (row (3)). **This item binds the release that opens the pilot (task 48)
    the codes 53.1 creates.
 
 Record the reviewers and the articles each signed off in the release's notes.
+
+## Support requests and the privacy notice's version 1.1, before the pilot (FR-212, FR-205, FR-207; task 77)
+
+**Why by hand.** A request to support is delivered to the address the `support_channel` artefact holds, seeded with
+`ajutor@easyesg.md` (`architecture.md` §12.5.6's task-77 row (5)); whether that mailbox exists and a person reads it is a
+fact about the operator, not the build. The privacy notice says what a request keeps as version **1.1, provisional** until
+counsel approves it (row (11)), as version 1.0 was until task 226. **This item binds the release that opens the pilot
+(task 48).**
+
+**Before that release:**
+
+1. **The support address is a mailbox someone reads**, and a request sent from S-34 on the release candidate arrives in
+   it, in Romanian, with its reference in the subject and the reader's address as its Reply-To — so pressing *Reply*
+   writes to the reader. A different address is published to the `support_channel` artefact, not edited in the seed.
+2. **Counsel has approved version 1.1 of the privacy notice** in Romanian, English and Russian — what a support request
+   keeps, why and for 24 months — and `packages/i18n/src/legal-standing.ts` gives it `provisional: false` and the date
+   counsel sets. Every account that accepted 1.0 is sent to S-43 to accept 1.1 (task 195).
+3. **The data-subject request check is in the runbook** (73.3): a request is acted on only once it is confirmed from the
+   address registered on the account it concerns (FR-207 behaviour 2).
+
+Record the mailbox checked, the reference of the test request, and counsel's approval of 1.1, in the release's notes.

@@ -5,7 +5,7 @@ Part 8 of the eleven parts of [`functional_requirements.md`](../functional_requi
 | Index § | Requirements |
 |---|---|
 | 3.29 Cross-cutting | FR-153 … FR-159 |
-| 3.33 Public tier *(new; added with FR-204 … FR-206)* | FR-204 … FR-206 |
+| 3.33 Public tier *(new; added with FR-204 … FR-206)* | FR-204 … FR-206, FR-212 |
 | 3.34 Data-subject requests *(new; added with FR-207)* | FR-207 |
 
 Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
@@ -288,7 +288,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-205 — The legal documents
 
-**Status.** Delivered — 74.1 and 74.2 (the chrome and the archetype it is drawn on), 75.1 (the decisions written), 75.3 (the set drawn), 75.4 (the text in three locales, drafted in the repository and provisional until counsel approves it — a release-checklist item before the pilot), 75.6 (the operator the documents name, kept on A-21), 195 (the recorded acceptance, AC-8, AC-9, AC-15, AC-16), 226 (counsel's approval: the marking dropped, version 1.0's effective date kept)
+**Status.** Delivered — 74.1 and 74.2 (the chrome and the archetype it is drawn on), 75.1 (the decisions written), 75.3 (the set drawn), 75.4 (the text in three locales, drafted in the repository and provisional until counsel approves it — a release-checklist item before the pilot), 75.6 (the operator the documents name, kept on A-21), 195 (the recorded acceptance, AC-8, AC-9, AC-15, AC-16), 226 (counsel's approval: the marking dropped, version 1.0's effective date kept), 77 (the privacy notice's version 1.1, provisional until counsel approves it: what a support request keeps)
 
 **Obligation.** The system shall publish the terms of service, the privacy notice and the cookie policy as one set, readable without signing in and from the footer of every screen, each with a plain-language summary above its formal text, a version and an effective date, in each of the three locales, so that a person is told what is agreed to and how personal data is handled before any is collected.
 
@@ -384,9 +384,53 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - 5 Oct 2026 · project owner · S-31 folds into the cookie policy, with no first-arrival overlay · §12.5.6 task-182 public tier row (182/117)
 - 23 Oct 2026 · project owner · a banner and cookie settings on the tenant site, each answer recorded, though nothing optional is set; 182/117 reversed · `design_spec.md` OQ-27; §12.5.6's task-223 row
 
+### FR-212 — Write to support
+
+**Status.** Built — delivered 77
+
+**Obligation.** The system shall let a reader, signed in or not, send a question to support from the help centre and show them a reference to quote, recording the request and delivering it to the platform's support address, without asking a signed-in reader for anything the platform already holds.
+
+| | |
+|---|---|
+| **Actors** | VI and every signed-in reader send. The platform's support team reads the mail and replies from its own mailbox. |
+| **Traces** | UC-182 · UC-85 · FR-207 · FR-78 · UX-109 · NFR-28, NFR-30 · `architecture.md` §12.5.6's task-77 row, §12.5.7 |
+| **Surfaces** | S-34 · `POST /support/requests` · the mail to the `support_channel` address |
+
+**Inputs.** A topic — one of six: a figure or a module, a finding, exports, users and access, invoices and plan, something else — a question of at most 5,000 characters, and the language to reply in. A visitor also gives a name of at most 200 characters and an email address (§12.5.6's task-77 row (3)).
+
+**Behaviour.**
+1. The request is recorded and given a reference — `SR-` and six digits — which S-34 shows once it is sent. It is a reference a person quotes, which the user-facing-text rule permits (S-34).
+2. **A signed-in reader is not asked for their name, their address or their organization**: the account's, and the active organization's name, travel with the request and are shown before sending (UX-109's Redundant Entry).
+3. The request is delivered by the worker, through the outbox, to the address the `support_channel` artefact holds, as a platform notice in Romanian, with the reader's address as its Reply-To. **The reader is not mailed**: support's reply carries the reference (§12.5.6's task-77 row (1), (8)).
+4. A sender may send five requests in fifteen minutes — the account for a signed-in reader, the address for a visitor (row (6)).
+5. With no readable support address, nothing is recorded (row (5)).
+6. A request is kept 24 months and then deleted (§12.5.7).
+7. A data-subject request arrives this way. Its 30 days run from its reference, and it is acted on only once confirmed from the address registered on the account it concerns (FR-207 behaviour 2; row (7)).
+8. The reference is what a support-access request cites (FR-78).
+
+**Refusals.**
+- A field missing or over its length, a topic outside the six, a language the platform does not publish in, or a visitor's address that is not one → 400 `validation-failed`
+- A sixth request from one sender within fifteen minutes → 429 `rate-limited`, nothing recorded
+- No readable support address → 503 `support-channel-unavailable`, nothing recorded
+
+**Effects.** A support request with its reference; an outbox event; a platform notice and its email delivery to the support address.
+
+**Boundaries.** Support's replies are its mailbox's, not the platform's. How a data-subject request is fulfilled is FR-207's. Support access is FR-77 … FR-79. The help centre the reader writes from is FR-61's.
+
+**Acceptance criteria.**
+- **AC-1** Given a visitor who gives a name, an address, a topic, a question and a reply language, when the request is sent, then its reference is shown and the request reaches the support address carrying it. *(source: UC-182; S-34)*
+- **AC-2** Given a signed-in reader, then the form asks for no name or address, shows what travels with the request, and the request names the account. *(source: UX-109; §12.5.6's task-77 row (3))*
+- **AC-3** Given a sixth request from one sender within fifteen minutes, then it is refused with 429 and nothing is recorded. *(source: §12.5.6's task-77 row (6))*
+- **AC-4** Given no readable support address, then the request is refused with 503 and nothing is recorded. *(source: §12.5.6's task-77 row (5))*
+- **AC-5** Given a request older than 24 months, then the nightly purge deletes it. *(source: §12.5.7; §12.5.6's task-77 row (4))*
+- **AC-6** Given the mail to support, then its Reply-To is the reader's address, and the reader receives no mail from the platform. *(source: §12.5.6's task-77 row (1), (8))*
+
+**History.**
+- 30 Oct 2026 · project owner (task 77) · written to close G-9 once the support channel was decided: a form the api records and mails, with a reference · §12.5.6's task-77 row
+
 ### FR-207 — Data-subject requests: access, rectification, erasure and portability
 
-**Status.** Not started — delivered none · remaining 73.3 (the runbook), 77.1 (the support channel a request arrives by), 163 (retention of one category), 196 (the record of a request), 197 (erasure of account data), 198 (the member's data export)
+**Status.** Partial — delivered 77 (the support channel a request arrives by, and how its sender is checked) · remaining 73.3 (the runbook), 163 (retention of one category), 196 (the record of a request), 197 (erasure of account data), 198 (the member's data export)
 
 **Obligation.** The system shall permit a data subject's request for access, rectification, erasure or portability of their personal data to be fulfilled within 30 calendar days, retaining a record of what was disclosed. On an erasure request it shall retain what statute requires (issued fiscal documents and their transmission receipts for six years, and the disclosure audit trail for the life of the report) and report the retained categories to the requester.
 
@@ -394,11 +438,11 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 |---|---|
 | **Actors** | The data subject makes the request, through support (UC-182). The platform carries it out for the data of the requester's account (a Platform Administrator, by runbook), and the organization for report content (its Organization Administrator, through the product) (§12.5.6 task-182 data-subject requests row, 182/123, 182/124). |
 | **Traces** | NFR-5 · NFR-27 … NFR-32 · NFR scenario 5.3 · UC-182, FR-81 · FR-130, BR-INV-7, UC-135 · FR-54, FR-55, FR-59, BR-ACC-4 · D-13 · P-12 · `architecture.md` §12.5.7, OQ-20 · index §9.4 G-4, §10 OQ-5 |
-| **Surfaces** | None built. A request arrives through the support channel (UC-182, task 77.1). The runbook (task 73.3) and the three tasks it rests on are the artefacts the plan names: the record of a request (196), the erasure of account data (197) and the member's data export (198). |
+| **Surfaces** | A request arrives through S-34, the support channel (UC-182, FR-212; task 77). The runbook (task 73.3) and the three tasks it rests on are the artefacts the plan names: the record of a request (196), the erasure of account data (197) and the member's data export (198). |
 
 **Behaviour.**
 1. The four kinds of request are access, rectification, erasure and portability (NFR-28; task 73.3 row). Export is NFR-28's portability. Rectifying a member's own account data is the profile edit (S-27, task 52.3), with no request; anything else is a request to the Organization Administrator or to support (§12.5.6 task-182 data-subject requests row, 182/129).
-2. A request is fulfillable within 30 calendar days, and a record of what was disclosed is retained (NFR-28). **A request reaches the platform through support (UC-182), and the 30 days run from its ticket reference** (§12.5.6 task-182 data-subject requests row, 182/123). How the requester's identity is checked is not decided here: it is written with the support channel in task 77.1 and with the runbook in task 73.3, and until then this requirement specifies no check. **The record of what was disclosed is one new append-only row in the platform audit log per request**. It names the request by its ticket reference, its kind, the date it was fulfilled and the categories disclosed or retained, and holds no personal data itself, as the `subject` hash of task 28.4 holds none. A Platform Administrator reads it on A-08 with the rest of the log (FR-81), and it is kept for **6 years**, the fiscal floor (BR-INV-7) — longer than the 24 months of the system audit it sits in, so an erasure dispute stays answerable while the fiscal records the erasure spared exist (`architecture.md` §12.5.7; §12.5.6 task-182 starting-values row, 182/127).
+2. A request is fulfillable within 30 calendar days, and a record of what was disclosed is retained (NFR-28). **A request reaches the platform through support (UC-182), and the 30 days run from its ticket reference** (§12.5.6 task-182 data-subject requests row, 182/123). **A request is acted on only once it is confirmed from the email address registered on the account it concerns**: a signed-in reader's request already is, and a visitor's is answered by writing to that address and acted on from the reply (§12.5.6's task-77 row (7); the runbook of 73.3 repeats it). **The record of what was disclosed is one new append-only row in the platform audit log per request**. It names the request by its ticket reference, its kind, the date it was fulfilled and the categories disclosed or retained, and holds no personal data itself, as the `subject` hash of task 28.4 holds none. A Platform Administrator reads it on A-08 with the rest of the log (FR-81), and it is kept for **6 years**, the fiscal floor (BR-INV-7) — longer than the 24 months of the system audit it sits in, so an erasure dispute stays answerable while the fiscal records the erasure spared exist (`architecture.md` §12.5.7; §12.5.6 task-182 starting-values row, 182/127).
 3. **What fiscal retention keeps.** Issued fiscal documents and their transmission receipts are retained in immutable storage for the statutory period, at least six years for Moldovan VAT records, and this takes precedence over a customer's erasure request (FR-130; BR-INV-7; UC-135; NFR-29).
 4. **What the audit trail keeps.** The disclosure audit trail is retained for the life of the report (NFR-29). It cannot be mutated to effect an erasure, because append-only is enforced at database privilege level (NFR-33; scenario 5.3). Historical attribution survives the removal of a user's access (FR-55; FR-59).
 5. **How an attribution outlives a person.** `core.field_change.actor_id` carries no foreign key, by design, so an attribution outlives the account it names (task 14; NFR-28 cited). The read then shows the attribution with a nullable address (build-log, task 30.3 entry). A membership row leaves only on the cascade from its account or its organization, and no runtime role may delete it otherwise (`architecture.md` §6.5, citing NFR-28's erasure). **The trail lives and dies with its report**, and a report with its organization: it is kept for the organization's life plus one year (`architecture.md` §12.5.7, which now has a row for it). The bare actor id stays for as long as the trail does, and a person's erasure does not overwrite it, because overwriting would be an exception to append-only (NFR-33) (§12.5.6 task-182 data-subject requests row, 182/126).
@@ -421,12 +465,12 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - **AC-1** Given an organization that holds issued fiscal documents, when a data subject's erasure request is fulfilled, then the documents and their transmission receipts remain, and the requester is told they were retained. *(source: NFR-29; FR-130; scenario 5.3)*
 - **AC-2** Given a completed report with a disclosure audit trail, when an erasure request is fulfilled, then the trail's rows are not mutated and remain attributed. *(source: NFR-29; NFR-33; FR-55)*
 - **AC-3** Given a request is fulfilled, then a record of what was disclosed has been retained as a row in the audit log that holds no personal data. *(source: NFR-28; §12.5.6 task-182 data-subject requests row, 182/127)* Unmet until 196.
-- **AC-4** Given a request is made, then it is fulfilled within 30 calendar days. *(source: NFR-28; §12.5.6 task-182 data-subject requests row, 182/123)* Unmet until 73.3 and 77.1.
+- **AC-4** Given a request is made, then it is fulfilled within 30 calendar days. *(source: NFR-28; §12.5.6 task-182 data-subject requests row, 182/123)* Unmet until 73.3.
 - **AC-5** Given an erasure request, then the categories that were retained are reported to the requester. *(source: NFR-29)* Unmet until 73.3.
 - **AC-6** Given the annual rehearsal against a seeded tenant, then access, rectification, erasure and portability are each carried out and NFR-29 is rehearsed with it. *(source: NFR-28 and NFR-29 verification; task 73.3 row)* Unmet until 73.3.
 - **AC-7** Given a removed member or an erased account, then the account's attributed history persists as an attribution without the person. *(source: FR-55; FR-59; task 14 row)*
 - **AC-8** Given an erasure request, when it is fulfilled, then the requester's profile, memberships, sessions, preferences and notification deliveries are removed and every other category is kept to the end of its retention period. *(source: §12.5.6 task-182 data-subject requests row, 182/125)* Unmet until 197.
-- **AC-9** Given a request made through support, then its 30 days run from its ticket reference. *(source: §12.5.6 task-182 data-subject requests row, 182/123)* Unmet until 77.1 and 73.3.
+- **AC-9** Given a request made through support, then its 30 days run from its ticket reference. *(source: §12.5.6 task-182 data-subject requests row, 182/123)* Unmet until 73.3; the reference is S-34's since task 77.
 - **AC-10** Given a portability request, then the member receives their profile, memberships and attributed changes as a JSON file. *(source: §12.5.6 task-182 data-subject requests row, 182/128)* Unmet until 198.
 - **AC-11** Given a member who corrects their own name, job title or phone on the profile screen, then that is the rectification of their account data and no request is raised. *(source: §12.5.6 task-182 data-subject requests row, 182/129; task 52.3)*
 - **AC-12** Given the disclosure audit trail, when its person's account is erased, then the rows are unaltered and keep their actor id for as long as the trail is kept, which is the organization's life plus one year. *(source: §12.5.6 task-182 data-subject requests row, 182/126; NFR-33)*
@@ -441,6 +485,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - 5 Oct 2026 · project owner · portability is the member's own data in JSON · §12.5.6 task-182 data-subject requests row (182/128)
 - 5 Oct 2026 · project owner · rectifying one's own account data is the profile edit · §12.5.6 task-182 data-subject requests row (182/129)
 - 5 Oct 2026 · project owner · the request record is kept 6 years (182/127) · §12.5.6 task-182 starting-values row
+- 30 Oct 2026 · project owner (task 77) · a request arrives through S-34 and is acted on once confirmed from the account's registered address · §12.5.6's task-77 row (7)
 
 ## 4. Business rules held in this part
 

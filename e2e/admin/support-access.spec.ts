@@ -5,7 +5,9 @@ import { settleAnimations } from '../web/support/animations';
 import {
   cleanupAccounts,
   cleanupOrganizations as cleanupTenantOrganizations,
+  cleanupSupportRequests,
   grantMembership,
+  recordSupportRequest,
   seedReport,
   verificationTokenFor,
 } from '../web/support/db';
@@ -40,12 +42,18 @@ const randomOf = (alphabet: string, length: number) =>
 const TOKEN = `sa${randomOf('abcdefghijklmnopqrstuvwxyz', 10)}`;
 const ORGANIZATION = `Acces e2e ${TOKEN}`;
 const ENTITY = 'Brutăria Lina';
-const TICKET = 'SUP-4417';
+/** The support request the access request cites — one on record, which A-07 requires since task 77. */
+let TICKET = '';
 const REASON = 'Proprietarul raportează că cifra pentru Scope 2 lipsește din export după recalculare.';
 
 const organizations: string[] = [];
 
+test.beforeAll(async () => {
+  TICKET = await recordSupportRequest({ senderEmail: `${RUN_PREFIX}-ticket@example.md` });
+});
+
 test.afterAll(async () => {
+  await cleanupSupportRequests(RUN_PREFIX);
   await cleanupOperators(RUN_PREFIX);
   await cleanupTenantOrganizations(organizations);
   await cleanupAccounts(RUN_PREFIX);

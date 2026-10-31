@@ -72,6 +72,13 @@ export async function GlobalTier() {
       }
       actions={
         <>
+          {/* Help first, as in every chrome (UX-109, WCAG 2.2 3.2.6; task 77.5) — at `medium` and `wide`, where the
+              bar has room for words; the drawer opens with it at `compact`, so neither frame offers it twice. */}
+          <span className={styles.wide}>
+            <Link className={styles.help} href={ROUTES.HELP_CENTRE}>
+              {t('helpCentre')}
+            </Link>
+          </span>
           {/* The bell at every frame — the compact bar draws it beside the drawer's trigger, as the
               wider ones draw it beside the avatar. */}
           {active ? <NotificationsPanel organizationId={active.organizationId} /> : null}

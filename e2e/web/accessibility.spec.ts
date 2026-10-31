@@ -46,6 +46,13 @@ const SCREENS = [
   '/legal/privacy',
   '/en/legal/privacy',
   '/ru/legal/terms',
+  // The help centre since task 77, a visitor's: the library with its search form, an article — a Content page whose
+  // disclosed section is a native `<details>` — in two of its languages, and S-34's form with its two selects.
+  '/help',
+  '/ru/help',
+  '/help/electricity-and-fuel',
+  '/ru/help/why-a-question-appears',
+  '/help/contact',
 ];
 
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -335,6 +342,39 @@ test('axe finds no violations on the choose-organization screen', async ({ page 
   await page.getByRole('banner').getByRole('button', { name: /^Organizația activă: / }).click();
   await expect(page.getByRole('menuitemradio')).toHaveCount(2);
   await scan(page);
+});
+
+/**
+ * The help centre under the global tier (task 77; `architecture.md` §12.5.6's task-77 row (10)) — the visitor's content
+ * in the member's frame, which is a different pairing of banner and main from either alone, and S-34's known facts in
+ * place of the two fields a visitor fills.
+ */
+test('axe finds no violations on the help centre a member reads', async ({ page }) => {
+  const email = `${RUN_PREFIX}-help@example.md`;
+
+  await page.goto('/register');
+  await page.getByLabel('Prenume').fill('Ana');
+  await page.getByLabel('Nume de familie').fill('Popescu');
+  await page.getByLabel('E-mail de serviciu').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('checkbox', { name: /Am citit și accept/ }).check();
+  await page.getByRole('button', { name: 'Creați contul' }).click();
+  await page.waitForURL('**/verify');
+  await page.goto(`/verify?token=${await verificationTokenFor(email)}`);
+  await page.getByRole('button', { name: 'Confirmați adresa' }).click();
+  organizations.push(await grantMembership({ email, organizationName: `${RUN_PREFIX}-help` }));
+
+  await page.goto('/sign-in');
+  await page.getByLabel('Adresa de e-mail').fill(email);
+  await page.getByLabel('Parolă', { exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Intrați în cont' }).click();
+  await page.waitForURL('**/home');
+
+  for (const screen of ['/help', '/help/locking-a-period', '/help/contact']) {
+    await page.goto(screen);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await scan(page);
+  }
 });
 
 /**

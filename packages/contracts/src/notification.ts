@@ -38,6 +38,8 @@ export const NOTIFICATION_CATEGORY = {
   OUTSTANDING_REPORT: 'reporting.outstanding_report',
   REPORT_DEADLINE: 'reporting.report_deadline',
   EXPORT_FINISHED: 'reporting.export_finished',
+  /** A reader's request to support, mailed to the support address (task 77). */
+  SUPPORT_REQUEST: 'platform.support_request',
 } as const;
 
 export type NotificationCategoryKey = (typeof NOTIFICATION_CATEGORY)[keyof typeof NOTIFICATION_CATEGORY];

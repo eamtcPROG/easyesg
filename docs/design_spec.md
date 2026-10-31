@@ -1481,7 +1481,7 @@ acceptance checkbox.
 
 ### 5.1b Public tier screens
 
-`S-29 … S-34` are the unauthenticated surface — `architecture.md` §15.4's ninth step, `design/IMPLEMENTATION_PLAN.md` Phase 10, and the `(public)` route group in `apps/web`. Two properties hold across all six and are stated once here rather than per screen. They are the **only** screens `architecture.md` §14.2 permits the framework to cache, because they are the only tenant-independent ones. And they carry no session: nothing on them may read or imply an active organization, which is what keeps `web-public-is-a-leaf` — the CI rule forbidding `features/public` from importing an authenticated feature — enforceable rather than aspirational.
+`S-29 … S-34` are the unauthenticated surface — `architecture.md` §15.4's ninth step, `design/IMPLEMENTATION_PLAN.md` Phase 10, and the `(public)` route group in `apps/web`. Two properties hold across all six and are stated once here rather than per screen. They are the **only** screens `architecture.md` §14.2 permits the framework to cache, because they are the only tenant-independent ones. And they carry no session: nothing on them may read or imply an active organization, which is what keeps `web-public-is-a-leaf` — the CI rule forbidding `features/public` from importing an authenticated feature — enforceable rather than aspirational. **Amended 30 Oct 2026** (project owner, task 77; `architecture.md` §12.5.6's task-77 row (10)): **S-32 … S-34's chrome follows the session and their content does not** — their layout reads the session only to draw the global tier for a signed-in reader and the public band for a visitor, as S-32's one-screen rule asks, and S-34's route hands the form what a signed-in reader is not asked; nothing under `features/public` reads a session.
 
 **Three of the six are the reason §4.6 has ten archetypes rather than nine.** `S-29`, `S-30` and `S-33` are long-form reading surfaces, and the nine — derived from an authenticated application — had no template for one. §4.6 makes that an escalation rather than a licence to invent; it was escalated as **OQ-17** and closed the same day with the **Content** archetype, drawn from the delivered prototypes. `S-31` and `S-34` are Focus, `S-32` is Index.
 
@@ -1570,14 +1570,14 @@ acceptance checkbox.
 - **Archetype:** Focus.
 - **Entry points:** S-32; S-33.
 - **Layout and regions:** Focus fixed elements — single column, one primary action.
-- **Content and data shown:** what to say, and what the reader will get back. For a signed-in reader, what the platform already knows and will not re-request (**UX-109**, Redundant Entry).
+- **Content and data shown:** what to say, and what the reader will get back. For a signed-in reader, what the platform already knows and will not re-request (**UX-109**, Redundant Entry). **Settled 30 Oct 2026** (project owner, task 77; `architecture.md` §12.5.6's task-77 row (1), (3)): a topic of six, the question and the language to reply in; a visitor also gives a name and an address, and a signed-in reader is shown the account's name and address and the active organization's name, which travel with the request. That a person replies from support's mailbox, quoting the reference, is said before sending.
 - **Controls and actions:** send the request.
 - **States:** ready; loading — submitting; error — recoverable; ready — sent, showing the reference the reader can quote.
 - **Validation behaviour:** the reference shown on success is a reference the reader is expected to cite, which the user-facing-text rule permits explicitly — it is not internal jargon.
 - **Exits:** back to S-32.
 - **Use cases:** UC-182.
-- **FRs:** — (see `functional_requirements.md` G-9).
-- **Open:** **the channel is undecided** — an address the screen publishes, a form posting to the API and dispatching through the outbox, or an external helpdesk (`task.md` task 77). UC-85's precondition that "a support request exists with a ticket reference" has never had a source that creates one; this screen is where that gap becomes a build decision.
+- **FRs:** FR-212. **Also** FR-207 — a data-subject request arrives by this screen (added 30 Oct 2026, task 77).
+- **The channel — decided 30 Oct 2026** (project owner, task 77.1; `architecture.md` §12.5.6's task-77 row (1)): a form posting to the API, which records the request, gives it its reference and delivers it to the support address through the outbox. UC-85's precondition that "a support request exists with a ticket reference" now has its source, and a support-access request must cite one (FR-78).
 
 ### 5.2 Administrative screens
 
@@ -2788,7 +2788,7 @@ This governs A-10, A-11, A-13 and A-14.
 
 Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations reproduce each screen's own *FRs* line in §5, which names the same links as the requirements' Surfaces rows (§5.0); **regenerated 6 Oct 2026** from those lines, when it still read from the FR register's `Source UC` column and stopped at `FR-173`.
 
-**One row cites no FR, and the dash is a record rather than an omission.** S-34 serves UC-182, which originates no functional requirement — `functional_requirements.md` §9.4 **G-9** records that as a real gap, waiting on task 77.1's choice of channel, with the acceptance criteria living in §5.1b of this document instead. S-29, S-30 and S-31 cite FR-204, FR-205 and FR-206, written for UC-177, UC-178 and UC-179 on 5 Oct 2026 (project owner, task 182); S-30's quality obligation remains NFR-5. *(The six public-tier rows were added 25 Aug 2026: they entered §4.4 with §5.1b on 24 Aug and this table was not updated in the same edit.)*
+**Every public-tier row cites a requirement.** S-34 cited none until 30 Oct 2026, when task 77.1 decided UC-182's channel and FR-212 was written for it, closing `functional_requirements.md` §9.4 **G-9**. S-29, S-30 and S-31 cite FR-204, FR-205 and FR-206, written for UC-177, UC-178 and UC-179 on 5 Oct 2026 (project owner, task 182); S-30's quality obligation remains NFR-5. *(The six public-tier rows were added 25 Aug 2026: they entered §4.4 with §5.1b on 24 Aug and this table was not updated in the same edit.)*
 
 | Screen | Name | Actors | Use cases | Functional requirements |
 |---|---|---|---|---|
@@ -2825,7 +2825,7 @@ Use case citations reproduce the *Serves* column of §4.4 verbatim. FR citations
 | S-31 | Cookie choice | VI | UC-179 | FR-205, FR-206 |
 | S-32 | Help centre | VI, CA | UC-180 | FR-61, FR-204 |
 | S-33 | Help article | VI, CA | UC-181 | FR-61, FR-64 |
-| S-34 | Write to support | VI, CA | UC-182 | — |
+| S-34 | Write to support | VI, CA | UC-182 | FR-212 |
 | S-35 | Organization unavailable | CA | UC-16 (failure path) | FR-12 |
 | S-36 | Complete your account | CA | UC-02, UC-03 | FR-2, FR-3, FR-9 |
 | S-37 | Choose organization | CA | UC-16, UC-203 | FR-12, FR-197 |
