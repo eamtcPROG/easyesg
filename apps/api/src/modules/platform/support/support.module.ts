@@ -6,6 +6,7 @@ import { SupportRequestStoreRepository } from '@api/infrastructure/persistence/p
 import { NotificationModule } from '@api/modules/platform/notification/notification.module';
 import { SupportRequestEmailHandler } from './consumers/support-request-email.handler';
 import { SupportRequestPurgeHandler } from './consumers/support-request-purge.handler';
+import { SupportChannelController } from './controllers/support-channel.controller';
 import { SupportRequestsController } from './controllers/support-requests.controller';
 import { SUPPORT_CHANNEL_READER, type SupportChannelReader } from './interfaces/support-channel-reader.interface';
 import { SUPPORT_REQUEST_STORE, type SupportRequestStore } from './interfaces/support-request-store.interface';
@@ -24,7 +25,7 @@ import { SubmitSupportRequest } from './use-cases/submit-support-request.use-cas
  * console's request runs on — so neither module imports the other.
  *
  * **Both modes, each its half**: the worker mails and purges, and holds the store and the channel for it; the request
- * tier records and answers. `NotificationModule` gives the worker `NOTIFICATION_DELIVERY`, the one mail path (AD-11).
+ * tier records and answers, and since task 227 names the channel to the help centre with no session. `NotificationModule` gives the worker `NOTIFICATION_DELIVERY`, the one mail path (AD-11).
  */
 const { mode } = configuration();
 
@@ -61,7 +62,7 @@ const workerProviders: Provider[] = [
 
 @Module({
   imports: mode === APP_MODE.WORKER ? [NotificationModule] : [],
-  controllers: mode === APP_MODE.WORKER ? [] : [SupportRequestsController],
+  controllers: mode === APP_MODE.WORKER ? [] : [SupportChannelController, SupportRequestsController],
   providers: mode === APP_MODE.WORKER ? workerProviders : httpProviders,
   exports: mode === APP_MODE.WORKER ? [] : [SUPPORT_TICKETS],
 })

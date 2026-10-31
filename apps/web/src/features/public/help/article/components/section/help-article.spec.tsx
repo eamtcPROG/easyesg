@@ -1,83 +1,98 @@
-import { API_OUTCOME, type HelpArticle as HelpArticleRead } from '@easyesg/contracts';
+import { API_OUTCOME } from '@easyesg/contracts';
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { readHelpArticle } from '@/server/data/help-content';
+import { readHelpArticle, readHelpTopics } from '@/server/data/help-content';
 import { HelpArticle } from './help-article';
 
 /**
- * S-33's article in the language it came in (task 77; UC-181; WCAG 2.2 3.1.2): an article the store holds only in
- * Romanian is served to an English reader in Romanian, and every part of it — the eyebrow, the title, the lede, each
- * heading and each body — says so in `lang`, while the page's own words around it stay in the page's language. The
- * browser suite cannot reach this arm: every seeded article is written in all three languages.
+ * S-33's arms (tasks 77, 227): an article the library does not hold answers the not-found surface, any other failed
+ * read the unavailable state, and a read article is read in the help's language the address chose (`architecture.md`
+ * §12.5.6's task-227 row (2)) — with the account card for a visitor alone. The parts each read their own words, which
+ * an async component cannot do under a client render, so each is drawn by a stand-in here and specified on its own.
  */
-vi.mock('@/server/data/help-content', () => ({ readHelpArticle: vi.fn() }));
-vi.mock('next-intl/server', () => ({ getTranslations: () => Promise.resolve((key: string) => key) }));
+vi.mock('@/server/data/help-content', () => ({ readHelpArticle: vi.fn(), readHelpTopics: vi.fn() }));
 vi.mock('next/navigation', () => ({
   notFound: vi.fn(() => {
     throw new Error('NEXT_NOT_FOUND');
   }),
 }));
-vi.mock('@/i18n/navigation', () => ({
-  Link: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={String(href)}>{children}</a>,
+vi.mock('../bar/article-bar', () => ({ ArticleBar: () => <nav>bar</nav> }));
+vi.mock('../body/article-card', () => ({
+  ArticleCard: ({ lang }: { lang: string | undefined }) => <article>card {lang ?? 'page'}</article>,
 }));
-// Both read their own words, which an async component cannot do under a client render; each is drawn on its own.
-vi.mock('../next/article-read-next', () => ({ READ_NEXT_ID: 'read-next', ArticleReadNext: () => null }));
+vi.mock('../side/article-contents', () => ({ ArticleContents: () => null }));
+vi.mock('../side/article-applies-to', () => ({ ArticleAppliesTo: () => null }));
+vi.mock('../rail/article-read-next', () => ({ ArticleReadNext: () => null }));
+vi.mock('../rail/still-not-sure', () => ({ StillNotSure: () => null }));
+vi.mock('../../../shared/help-account-card', () => ({ HelpAccountCard: () => <p>account card</p> }));
 vi.mock('../states/article-unavailable', () => ({ ArticleUnavailable: () => <p>unavailable</p> }));
 
-const read = vi.mocked(readHelpArticle);
+const readArticle = vi.mocked(readHelpArticle);
+const readTopics = vi.mocked(readHelpTopics);
 
-const ARTICLE: HelpArticleRead = {
+const ARTICLE = {
   key: 'energy',
   topic: 'figures',
-  locale: 'ro',
+  locale: 'ro' as const,
   module: 'B3',
   title: 'Facturile de energie',
   summary: 'Pe scurt.',
-  sections: [
-    { heading: 'Pe scurt', body: 'Calculul **începe** din facturi.', disclosed: false },
-    { heading: 'Pragurile', body: 'Un detaliu.', disclosed: true },
-  ],
+  sections: [],
   related: [],
 };
 
-const draw = async (locale: 'ro' | 'en') => render(await HelpArticle({ articleKey: 'energy', locale }));
+const draw = async (input: { requestedContent?: string; signedIn?: boolean }) =>
+  render(
+    await HelpArticle({
+      articleKey: 'energy',
+      page: 'en',
+      requestedContent: input.requestedContent,
+      signedIn: input.signedIn ?? false,
+    }),
+  );
 
 afterEach(() => vi.clearAllMocks());
 
-describe('HelpArticle (S-33; task 77)', () => {
-  it('marks every part of an article that fell back to Romanian, and none of the page’s own words', async () => {
-    read.mockResolvedValue({ status: API_OUTCOME.Ok, value: ARTICLE, messages: [] });
-    await draw('en');
+describe('HelpArticle (S-33; tasks 77, 227)', () => {
+  it('reads the article in the help’s language the address chose, and marks it where it is not the page’s', async () => {
+    readArticle.mockResolvedValue({ status: API_OUTCOME.Ok, value: ARTICLE, messages: [] });
+    readTopics.mockResolvedValue({ status: API_OUTCOME.Problem, problem: { type: 'about:blank', status: 500 } });
+    await draw({ requestedContent: 'ro' });
 
-    for (const words of ['B3', 'Facturile de energie', 'Pe scurt.']) {
-      expect(screen.getByText(words).closest('[lang]')).toHaveAttribute('lang', 'ro');
-    }
-    expect(screen.getByRole('heading', { name: 'Pe scurt' }).querySelector('[lang="ro"]')).not.toBeNull();
-    expect(screen.getByText('începe').closest('[lang]')).toHaveAttribute('lang', 'ro');
-    // A disclosed section's body is in the article's language too, inside its disclosure.
-    expect(screen.getByText('Un detaliu.').closest('[lang]')).toHaveAttribute('lang', 'ro');
-    // The page's words are not the article's: the contents' label and the way back carry no marking.
-    // Two lists, docked and disclosed, one hidden per frame by the stylesheet jsdom does not apply.
-    const contents = screen.getAllByRole('navigation', { name: 'contents' });
-    expect(contents).toHaveLength(2);
-    for (const list of contents) expect(list.closest('[lang]')).toBeNull();
-    expect(screen.getByRole('link', { name: 'back' }).closest('[lang]')).toBeNull();
+    expect(readArticle).toHaveBeenCalledWith('energy', 'ro');
+    expect(screen.getByRole('article')).toHaveTextContent('card ro');
   });
 
-  it('marks nothing where the article is in the page’s language', async () => {
-    read.mockResolvedValue({ status: API_OUTCOME.Ok, value: ARTICLE, messages: [] });
-    const { container } = await draw('ro');
-    expect(container.querySelector('[lang]')).toBeNull();
+  it('reads it in the page’s language where the address names none, or one not published', async () => {
+    readArticle.mockResolvedValue({ status: API_OUTCOME.Ok, value: { ...ARTICLE, locale: 'en' }, messages: [] });
+    readTopics.mockResolvedValue({ status: API_OUTCOME.Unreachable });
+    await draw({ requestedContent: 'de' });
+
+    expect(readArticle).toHaveBeenCalledWith('energy', 'en');
+    expect(screen.getByRole('article')).toHaveTextContent('card page');
+  });
+
+  it('offers a visitor the account card, and a signed-in reader none', async () => {
+    readArticle.mockResolvedValue({ status: API_OUTCOME.Ok, value: ARTICLE, messages: [] });
+    readTopics.mockResolvedValue({ status: API_OUTCOME.Unreachable });
+    const visitor = await draw({});
+    expect(screen.getByText('account card')).toBeInTheDocument();
+    visitor.unmount();
+
+    await draw({ signedIn: true });
+    expect(screen.queryByText('account card')).toBeNull();
   });
 
   it('answers the not-found surface for an article the library does not hold', async () => {
-    read.mockResolvedValue({ status: API_OUTCOME.Problem, problem: { type: 'about:blank', status: 404 } });
-    await expect(draw('ro')).rejects.toThrow('NEXT_NOT_FOUND');
+    readArticle.mockResolvedValue({ status: API_OUTCOME.Problem, problem: { type: 'about:blank', status: 404 } });
+    readTopics.mockResolvedValue({ status: API_OUTCOME.Unreachable });
+    await expect(draw({})).rejects.toThrow('NEXT_NOT_FOUND');
   });
 
   it('draws its unavailable state for any other failed read', async () => {
-    read.mockResolvedValue({ status: API_OUTCOME.Unreachable });
-    await draw('ro');
+    readArticle.mockResolvedValue({ status: API_OUTCOME.Unreachable });
+    readTopics.mockResolvedValue({ status: API_OUTCOME.Unreachable });
+    await draw({});
     expect(screen.getByText('unavailable')).toBeInTheDocument();
   });
 });

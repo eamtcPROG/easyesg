@@ -1,6 +1,6 @@
 'use client';
 
-import { API_OUTCOME, SUPPORT_TOPIC } from '@easyesg/contracts';
+import { API_OUTCOME } from '@easyesg/contracts';
 import { LOCALES, type Locale } from '@easyesg/i18n';
 import { Button, Callout } from '@easyesg/ui';
 import { FormSelect, FormSummary, FormTextArea, FormTextField } from '@easyesg/ui/forms';
@@ -14,6 +14,8 @@ import type { KnownReader } from '../../tools/known-reader';
 import { ContactSent } from '../sent/contact-sent';
 import { CONTACT_MESSAGES } from '../shared/contact-messages';
 import styles from '../shared/contact.module.css';
+import { KnownFacts } from './known-facts';
+import { TopicChoice } from './topic-choice';
 
 /** The api's cost bounds (`SubmitSupportRequestDto`), restated so a reader meets them before sending. */
 const QUESTION_MAX = 5000;
@@ -27,15 +29,26 @@ type Outcome =
   | { readonly kind: typeof CONTACT_OUTCOME.REFUSED; readonly notice: Notice };
 
 /**
- * S-34 — UC-182's form (task 77.4; FR-212; `design_spec.md` S-34, Focus archetype). **A visitor gives a name and an
- * address; a signed-in reader is shown what travels instead** (UX-109's Redundant Entry), handed by the route as
- * `reader`, never read here. The topic decides only who reads it first, and the reply comes in the language chosen,
- * which starts from the page's.
+ * S-34 — UC-182's form (tasks 77.4, 227; FR-212; `design_spec.md` S-34, as artboard 04 draws it). **A visitor gives a
+ * name and an address; a signed-in reader is shown what travels instead** (UX-109's Redundant Entry), handed by the
+ * route as `reader`, never read here. The topic, drawn as six choices, decides only who reads it first, and the reply
+ * comes in the language chosen, which starts from the page's. **The card's foot says where it goes** — support's
+ * mailbox, read with no session (`architecture.md` §12.5.6's task-227 row (4)), left unnamed where it could not be read —
+ * beside the one primary action.
  *
  * **Sent, it gives way to the reference** (S-34's `ready — sent`): the form is gone, so it cannot be sent twice by a
  * second press; a refusal stays above the form with the api's own words, and the fields keep what was typed.
  */
-export function ContactForm({ reader, locale }: { readonly reader: KnownReader | null; readonly locale: Locale }) {
+export function ContactForm({
+  reader,
+  locale,
+  address,
+}: {
+  readonly reader: KnownReader | null;
+  readonly locale: Locale;
+  /** Support's mailbox, or `null` where it could not be read. */
+  readonly address: string | null;
+}) {
   const t = useTranslations(CONTACT_MESSAGES);
   const tLocales = useTranslations(`${CONTACT_MESSAGES}.replyLocale.options`);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
@@ -45,7 +58,13 @@ export function ContactForm({ reader, locale }: { readonly reader: KnownReader |
     defaultValues: { topic: '', question: '', replyLocale: locale, name: '', email: '' },
   });
 
-  if (outcome?.kind === CONTACT_OUTCOME.SENT) return <ContactSent reference={outcome.reference} />;
+  if (outcome?.kind === CONTACT_OUTCOME.SENT) {
+    return (
+      <div className={styles.fields}>
+        <ContactSent reference={outcome.reference} />
+      </div>
+    );
+  }
 
   const submit = handleSubmit((fields) => {
     const request = contactRequestOf({ fields, signedIn: reader !== null });
@@ -62,90 +81,78 @@ export function ContactForm({ reader, locale }: { readonly reader: KnownReader |
 
   return (
     <form method="post" noValidate className={styles.form} onSubmit={(event) => void submit(event)}>
-      {outcome?.kind === CONTACT_OUTCOME.REFUSED ? (
-        <Callout intent={outcome.notice.intent} title={outcome.notice.title} action={null}>
-          {outcome.notice.body}
-        </Callout>
-      ) : null}
-      <FormSummary control={control} title={t('summaryTitle')} />
+      <div className={styles.fields}>
+        {outcome?.kind === CONTACT_OUTCOME.REFUSED ? (
+          <Callout intent={outcome.notice.intent} title={outcome.notice.title} action={null}>
+            {outcome.notice.body}
+          </Callout>
+        ) : null}
+        <FormSummary control={control} title={t('summaryTitle')} />
 
-      <FormSelect
-        control={control}
-        name="topic"
-        label={t('topic.label')}
-        help={t('topic.help')}
-        placeholder={t('topic.placeholder')}
-        options={Object.values(SUPPORT_TOPIC).map((topic) => ({ value: topic, label: t(`topic.options.${topic}`) }))}
-        rules={{ required: t('topic.missing') }}
-      />
+        <TopicChoice control={control} />
 
-      <FormTextArea
-        control={control}
-        name="question"
-        label={t('question.label')}
-        help={t('question.help')}
-        rules={{
-          required: t('question.missing'),
-          validate: (value) => value.trim() !== '' || t('question.missing'),
-          maxLength: { value: QUESTION_MAX, message: t('question.tooLong') },
-        }}
-      />
+        <div className={styles.row}>
+          {reader === null ? (
+            <>
+              <div className={styles.rowField}>
+                <FormTextField
+                  control={control}
+                  name="name"
+                  label={t('name.label')}
+                  autoComplete="name"
+                  rules={{
+                    required: t('name.missing'),
+                    validate: (value) => value.trim() !== '' || t('name.missing'),
+                    maxLength: { value: NAME_MAX, message: t('name.tooLong') },
+                  }}
+                />
+              </div>
+              <div className={styles.rowField}>
+                <FormTextField
+                  control={control}
+                  name="email"
+                  type="email"
+                  label={t('email.label')}
+                  autoComplete="email"
+                  rules={{
+                    required: t('email.missing'),
+                    validate: (value) => looksLikeEmail(value) || t('email.invalid'),
+                  }}
+                />
+              </div>
+            </>
+          ) : null}
+          <div className={styles.reply}>
+            <FormSelect
+              control={control}
+              name="replyLocale"
+              label={t('replyLocale.label')}
+              help={t('replyLocale.help')}
+              options={LOCALES.map((code) => ({ value: code, label: tLocales(code) }))}
+            />
+          </div>
+        </div>
 
-      <FormSelect
-        control={control}
-        name="replyLocale"
-        label={t('replyLocale.label')}
-        help={t('replyLocale.help')}
-        options={LOCALES.map((code) => ({ value: code, label: tLocales(code) }))}
-      />
+        <FormTextArea
+          control={control}
+          name="question"
+          label={t('question.label')}
+          help={t('question.help')}
+          rows={7}
+          rules={{
+            required: t('question.missing'),
+            validate: (value) => value.trim() !== '' || t('question.missing'),
+            maxLength: { value: QUESTION_MAX, message: t('question.tooLong') },
+          }}
+        />
 
-      {reader === null ? (
-        <>
-          <FormTextField
-            control={control}
-            name="name"
-            label={t('name.label')}
-            autoComplete="name"
-            rules={{
-              required: t('name.missing'),
-              validate: (value) => value.trim() !== '' || t('name.missing'),
-              maxLength: { value: NAME_MAX, message: t('name.tooLong') },
-            }}
-          />
-          <FormTextField
-            control={control}
-            name="email"
-            type="email"
-            label={t('email.label')}
-            autoComplete="email"
-            rules={{
-              required: t('email.missing'),
-              validate: (value) => looksLikeEmail(value) || t('email.invalid'),
-            }}
-          />
-        </>
-      ) : (
-        <section aria-labelledby="contact-known" className={styles.known}>
-          <h2 id="contact-known" className="t-heading-3">
-            {t('known.heading')}
-          </h2>
-          <dl className={styles.facts}>
-            <dt>{t('known.name')}</dt>
-            <dd>{reader.name}</dd>
-            <dt>{t('known.email')}</dt>
-            <dd>{reader.email}</dd>
-            {reader.organizationName === null ? null : (
-              <>
-                <dt>{t('known.organization')}</dt>
-                <dd>{reader.organizationName}</dd>
-              </>
-            )}
-          </dl>
-        </section>
-      )}
+        {reader === null ? null : <KnownFacts reader={reader} />}
+      </div>
 
-      <p className="t-body">{t('promise')}</p>
-      <div>
+      <div className={styles.foot}>
+        <p className={styles.footNote}>
+          {address === null ? t('promise') : `${t('sentTo', { address })} ${t('promise')}`}
+        </p>
         <Button type="submit" busy={pending}>
           {t('submit')}
         </Button>

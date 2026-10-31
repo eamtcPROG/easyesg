@@ -30,3 +30,10 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* In the help centre the band's *Help centre* is drawn as its artboards draw it there: on the band's control plate
+   (task 227; artboards 01, 03, 04). */
+.help[aria-current='page'] {
+  padding: var(--space-2) var(--space-3);
+  background: var(--globalbar-control-surface);
+}

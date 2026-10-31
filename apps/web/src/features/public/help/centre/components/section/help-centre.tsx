@@ -1,69 +1,144 @@
 import { API_OUTCOME } from '@easyesg/contracts';
 import type { Locale } from '@easyesg/i18n';
-import { FOCUS_MEASURE, FocusColumn, PageHeading } from '@easyesg/ui';
-import { getTranslations } from 'next-intl/server';
+import { MAIN_CONTENT_ID } from '@easyesg/ui';
+import type { ReactNode } from 'react';
 import { readHelpArticles, readHelpTopics } from '@/server/data/help-content';
-import { libraryOf, topicOf } from '../../tools/help-library';
-import { HelpFilter } from '../filter/help-filter';
-import { HelpLibrary } from '../library/help-library';
-import { HELP_CENTRE_MESSAGES } from '../shared/help-centre-messages';
-import styles from '../shared/help-centre.module.css';
+import { readSupportChannel } from '@/server/data/support-channel';
+import { HelpAccountCard } from '../../../shared/help-account-card';
+import { helpLanguageOf, helpLanguageQuery } from '../../../shared/help-language';
+import pageStyles from '../../../shared/help-page.module.css';
+import {
+  askedBeforeSigningUpOf,
+  fallbackCountOf,
+  libraryOf,
+  topicCardsOf,
+  topicOf,
+} from '../../tools/help-library';
+import { AskedBeforeSigningUp } from '../asked/asked-before-signing-up';
+import { CARDS_FOR, TopicCards } from '../library/topic-cards';
+import { LibraryResults } from '../library/library-results';
+import { MemberOpening } from '../opening/member-opening';
+import { VisitorOpening } from '../opening/visitor-opening';
+import { AskAPerson } from '../rail/ask-a-person';
+import { AskDirectly } from '../rail/ask-directly';
 import { CentreUnavailable } from '../states/centre-unavailable';
 import { LibraryEmpty } from '../states/library-empty';
 import { LibraryNoMatch } from '../states/library-no-match';
-import { HelpSupportPrompt } from '../support/help-support-prompt';
 
 /**
- * S-32 — UC-180 (task 77.2; FR-61; `design_spec.md` S-32, Index archetype). **The section reads; the parts render**:
- * this file makes the two reads — the topics and the library, from task 76's public routes — narrows the library by
- * what the address holds (UX-4), and picks the arm: the groups, the first-use state, *nothing matches*, or the read
- * failed. **The same screen whatever the session** (S-32): it reads none, and the layout above it draws the chrome a
- * signed-in reader or a visitor is owed (§12.5.6's task-77 row (10)).
+ * S-32 — UC-180 (tasks 77, 227; FR-61; `design_spec.md` S-32, as `EasyESG Help Centre.dc.html`'s artboards 01 and 02
+ * draw it — `architecture.md` §12.5.6's task-227 row (1)). **The section reads; the parts render**: the topics and the
+ * library in the help's language (row (2)), and for a visitor the support channel (row (4)); then it narrows by what the
+ * address holds (UX-4) and picks the arm — the topic cards, what a topic or a search kept, the first-use state, *nothing
+ * matches*, or the read failed.
+ *
+ * **Two artboards, one screen** (S-32's one screen with a session-dependent shell): a signed-in reader, named by the
+ * route, is greeted on a white band and offered *Ask a person*; a visitor meets the band's pine opening, *Asked before
+ * signing up* (row (3)) and the account card. **It reads no session**: the route hands it the reader's name, or `null`.
  */
 export async function HelpCentre({
-  locale,
+  page,
+  requestedContent,
   topic,
   query,
+  reader,
 }: {
-  readonly locale: Locale;
+  /** The page's language — the interface's. */
+  readonly page: Locale;
+  /** The help's language the address names, as given. */
+  readonly requestedContent: string | undefined;
   /** The topic the address narrows to, as given. */
   readonly topic: string | undefined;
   /** What the reader searched for, as given. */
   readonly query: string;
+  /** A signed-in reader's name, or `null` for a visitor. */
+  readonly reader: { readonly name: string } | null;
 }) {
-  const [t, topics, articles] = await Promise.all([
-    getTranslations(HELP_CENTRE_MESSAGES),
-    readHelpTopics(locale),
-    readHelpArticles(locale),
+  const content = helpLanguageOf({ requested: requestedContent, page });
+  const [topics, articles, channel] = await Promise.all([
+    readHelpTopics(content),
+    readHelpArticles(content),
+    reader === null ? readSupportChannel() : null,
   ]);
+  const words = query.trim();
+  const linkQuery = helpLanguageQuery({ content, page });
+  const library =
+    topics.status === API_OUTCOME.Ok && articles.status === API_OUTCOME.Ok
+      ? { topics: topics.value.items, articles: articles.value.items }
+      : null;
+  const whole =
+    library === null ? null : libraryOf({ ...library, topic: null, query: '', locale: content });
+  const total = whole?.total ?? 0;
 
-  const heading = <PageHeading title={t('title')} summary={t('lede')} />;
-  if (topics.status !== API_OUTCOME.Ok || articles.status !== API_OUTCOME.Ok) {
-    return (
-      <FocusColumn measure={FOCUS_MEASURE.WIDE}>
-        {heading}
-        <CentreUnavailable />
-      </FocusColumn>
+  const opening =
+    reader === null ? (
+      <VisitorOpening query={words} total={total} content={content} page={page} />
+    ) : (
+      <MemberOpening
+        name={reader.name}
+        query={words}
+        total={total}
+        content={content}
+        page={page}
+        fallbackCount={library === null ? 0 : fallbackCountOf({ articles: library.articles, content })}
+      />
+    );
+
+  const rail =
+    reader === null ? (
+      <>
+        <HelpAccountCard />
+        <AskDirectly address={channel?.status === API_OUTCOME.Ok ? channel.value.address : null} />
+      </>
+    ) : (
+      <AskAPerson />
+    );
+
+  // The arm the main column draws: the read failed, nothing published yet, a narrowing and what it kept, or the whole
+  // library — the visitor's questions over the topic cards.
+  let arm: ReactNode;
+  const chosen = library === null ? null : topicOf({ requested: topic, topics: library.topics });
+  if (library === null || whole === null) {
+    arm = <CentreUnavailable />;
+  } else if (whole.total === 0) {
+    arm = <LibraryEmpty />;
+  } else if (chosen !== null || words !== '') {
+    const kept = libraryOf({ ...library, topic: chosen?.key ?? null, query: words, locale: content });
+    arm =
+      kept.matched === 0 ? (
+        <LibraryNoMatch query={linkQuery} />
+      ) : (
+        <LibraryResults
+          articles={kept.groups.flatMap((group) => group.articles)}
+          topic={chosen}
+          words={words}
+          page={page}
+          query={linkQuery}
+        />
+      );
+  } else {
+    const asked = reader === null ? askedBeforeSigningUpOf(library) : [];
+    arm = (
+      <>
+        {asked.length === 0 ? null : <AskedBeforeSigningUp articles={asked} page={page} query={linkQuery} />}
+        <TopicCards
+          cards={topicCardsOf(whole)}
+          total={whole.total}
+          page={page}
+          query={linkQuery}
+          drawnFor={reader === null ? CARDS_FOR.VISITOR : CARDS_FOR.MEMBER}
+        />
+      </>
     );
   }
 
-  const chosen = topicOf({ requested: topic, topics: topics.value.items });
-  const library = libraryOf({ topics: topics.value.items, articles: articles.value.items, topic: chosen, query, locale });
-
   return (
-    <FocusColumn measure={FOCUS_MEASURE.WIDE}>
-      {heading}
-      <div className={styles.regions}>
-        {library.total === 0 ? null : <HelpFilter topics={topics.value.items} topic={chosen} query={query} />}
-        {library.total === 0 ? (
-          <LibraryEmpty />
-        ) : library.matched === 0 ? (
-          <LibraryNoMatch />
-        ) : (
-          <HelpLibrary groups={library.groups} locale={locale} />
-        )}
-        <HelpSupportPrompt />
+    <main id={MAIN_CONTENT_ID} tabIndex={-1} className={pageStyles.page}>
+      {opening}
+      <div className={`${pageStyles.columns} ${pageStyles.inner}`}>
+        <div className={pageStyles.mainColumn}>{arm}</div>
+        <div className={pageStyles.rail}>{rail}</div>
       </div>
-    </FocusColumn>
+    </main>
   );
 }

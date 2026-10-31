@@ -11,9 +11,9 @@ import { asOrganization, connectAs } from './support/database';
 import { cleanupSignedInAccounts, REGISTERED_NAME, signInFreshAccount } from './support/signed-in-account';
 
 /**
- * UC-182 over real HTTP (task 77; FR-212; `architecture.md` §12.5.6's task-77 row (1) … (6)) — a request recorded with its
+ * UC-182 over real HTTP (tasks 77, 227; FR-212; `architecture.md` §12.5.6's task-77 row (1) … (6)) — a request recorded with its
  * reference and its mail queued on the same transaction, a signed-in reader named by the account rather than by what
- * the body says, the sender's window, and a visitor who gave no address refused.
+ * the body says, the sender's window, and a visitor who gave no address refused, and since task 227 the channel named with no session.
  *
  * **What it needs and does not create**: the `support_channel` artefact in force, which `pretest:e2e`'s `config:seed`
  * publishes. **What it leaves**: nothing — every request it sent and the outbox row each queued are deleted as the owner,
@@ -143,5 +143,10 @@ describe('a request to support (UC-182, FR-212; task 77)', () => {
     await send({ ...VISITOR, question: '   ', name: 'Ion Rusu', email: visitorAddress('blank') }).expect(400);
     await send({ ...VISITOR, topic: 'gossip', name: 'Ion Rusu', email: visitorAddress('topic') }).expect(400);
     expect(await sentFrom(visitorAddress('blank'))).toEqual([{ count: 0 }]);
+  });
+
+  it('names the support channel in force to a reader with no session (task 227; FR-212 behaviour 9)', async () => {
+    const response = await http().get('/api/v1/support/channel').expect(200);
+    expect(objectOf<{ address: string }>(response)).toEqual({ address: 'ajutor@easyesg.md' });
   });
 });

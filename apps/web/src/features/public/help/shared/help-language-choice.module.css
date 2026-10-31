@@ -1,0 +1,38 @@
+/* The help's language as a segmented control (artboards 01 and 03): three links in one bordered strip, the one in force
+   filled with the accent. Its own stylesheet, since only the choice reads it. */
+
+.choice {
+  display: inline-flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  background: var(--surface-default);
+}
+
+.choice > li + li {
+  border-inline-start: 1px solid var(--border-default);
+}
+
+.option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 44px;
+  min-block-size: 32px;
+  padding-inline: var(--space-4);
+  color: var(--text-body);
+  text-decoration: none;
+}
+
+.option:hover {
+  background: var(--accent-tint);
+}
+
+.option[aria-current='true'] {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-weight: 600;
+}

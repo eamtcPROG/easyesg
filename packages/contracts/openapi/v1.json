@@ -8111,6 +8111,46 @@
         ]
       }
     },
+    "/api/v1/support/channel": {
+      "get": {
+        "description": "UC-180, UC-182. The support mailbox a request to support is delivered to. Changed without a deploy; a change is served within seconds.",
+        "operationId": "SupportChannelController_read",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The support channel in force.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultObjectDto"
+                    },
+                    {
+                      "properties": {
+                        "object": {
+                          "$ref": "#/components/schemas/SupportChannelResponseDto"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No readable support address is in force (problem type support-channel-unavailable).",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "summary": "Read the support channel",
+        "tags": [
+          "support"
+        ]
+      }
+    },
     "/api/v1/support/requests": {
       "post": {
         "description": "UC-182. The question is recorded with a reference the reader quotes, and delivered to the support address; support replies by email, quoting the reference. A signed-in reader is not asked their name or address — the account’s, and the active organization’s name, travel with the request. A visitor gives both.",
@@ -15846,6 +15886,20 @@
           "registeredAddress",
           "dataProtectionEmail",
           "revision"
+        ]
+      },
+      "SupportChannelResponseDto": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "format": "email",
+            "example": "ajutor@easyesg.md",
+            "description": "The support mailbox in force."
+          }
+        },
+        "required": [
+          "address"
         ]
       },
       "SupportRequestReceiptDto": {

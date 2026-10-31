@@ -19,7 +19,7 @@ Business rules held here: BR-VER-1, BR-VER-3, BR-ID-6, BR-ACC-6 (§5). Entities 
 
 ### FR-61 — Help-centre articles and plan copy as versioned data
 
-**Status.** Partial — delivered 76 (the published read path, its shape, and a starter help library seeded) · remaining 53.3 (plan presentation copy seeded against 53.1's plans), 67.5 (A-03's editor), 71.1 (the edge enforcing AC-5). The substrate is task 16's generic store, with immutable versions, publish and revert.
+**Status.** Partial — delivered 76 (the published read path, its shape, and a starter help library seeded) · remaining 53.3 (plan presentation copy seeded against 53.1's plans), 67.5 (A-03's editor), 71.1 (the edge enforcing AC-5), 229 (an article's modules, fields, taxonomy version and reading time; §12.5.6's task-227 row (6)). The substrate is task 16's generic store, with immutable versions, publish and revert.
 
 **Obligation.** The system shall hold help-centre articles and plan presentation copy, the text edited by people who cannot deploy, as versioned data editable through an administrative console, so that a wording correction by support or marketing reaches users without a release.
 

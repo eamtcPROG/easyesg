@@ -199,6 +199,7 @@ export const SURFACE: Readonly<Record<string, Permission>> = {
   // Task 223: the cookie banner's answer — a visitor's with no session, a member's with theirs.
   'POST /legal/cookie-choices': PERMISSION.VISITOR,
   // Task 77: a request to support — a visitor's with no session, a member's naming their account and organization.
+  'GET /support/channel': PERMISSION.PUBLIC,
   'POST /support/requests': PERMISSION.VISITOR,
   'POST /auth/social/:provider/challenge': PERMISSION.PUBLIC,
   'POST /auth/social/:provider/session': PERMISSION.PUBLIC,

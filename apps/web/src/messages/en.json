@@ -2686,15 +2686,7 @@
     "centre": {
       "metaTitle": "Help centre",
       "title": "How can we help?",
-      "lede": "Written for people who run a business, not for people who read standards. Every article says which part of the report it belongs to.",
-      "filter": {
-        "label": "Narrow the library",
-        "topic": "Topic",
-        "everyTopic": "Every topic",
-        "search": "Search the articles",
-        "submit": "Search",
-        "clear": "Clear the search"
-      },
+      "lede": "Written for people who run a business, not for people who read standards. Every article names the part of the report it belongs to.",
       "other": "Other articles",
       "count": "{count, plural, one {# article} other {# articles}}",
       "loading": "Loading the library",
@@ -2712,43 +2704,77 @@
         "title": "The library cannot be read right now",
         "body": "The articles could not be loaded, so the library is not shown. Reload the page a little later, or write to support."
       },
-      "support": {
-        "title": "Did not find the answer?",
-        "body": "Write to us in your own words. A person replies, in the language you choose.",
+      "greeting": "How can we help, {name}?",
+      "search": {
+        "label": "Search the help centre",
+        "placeholder": "Search {count, plural, one {# article} other {# articles}}",
+        "submit": "Search"
+      },
+      "browse": {
+        "title": "Browse by what you are doing",
+        "total": "{count, plural, one {# article} other {# articles}}"
+      },
+      "results": {
+        "words": "{count, plural, one {# article} other {# articles}} for “{query}”",
+        "all": "Show the whole library"
+      },
+      "ask": {
+        "title": "Ask a person",
+        "body": "In Romanian, Russian or English. A person replies to the question you asked, not with a link.",
         "action": "Write to support"
+      },
+      "guest": {
+        "eyebrow": "Help centre · open to everyone",
+        "title": "Read everything before you decide anything",
+        "lede": "The whole library — what VSME asks, section by section, and how the reporting works — with no account and no email address. Written for owners and accountants, in Romanian, Russian and English.",
+        "asked": {
+          "title": "Asked before signing up",
+          "aside": "Answered without a sales call"
+        },
+        "library": {
+          "title": "The whole library",
+          "aside": "{count, plural, one {# article} other {# articles}} · nothing behind an account"
+        }
+      },
+      "direct": {
+        "eyebrow": "Ask us directly",
+        "body": "Whether this fits your company is a question a person answers.",
+        "languages": "In Romanian, Russian and English"
       }
     },
     "article": {
       "breadcrumb": "Help centre",
       "contents": "On this page",
       "readNext": "Read next",
-      "support": {
-        "title": "Still not clear?",
-        "body": "Write to us and a person replies.",
-        "action": "Write to support"
-      },
-      "back": "Back to the help centre",
       "loading": "Loading the article",
       "unavailable": {
         "title": "The article cannot be read right now",
         "body": "The article could not be loaded, so it is not shown. Reload the page a little later, or go back to the help centre."
       },
       "show": "Show this section",
-      "metaTitle": "{title} · Help centre"
+      "metaTitle": "{title} · Help centre",
+      "shortAnswer": "The short answer",
+      "appliesTo": "Applies to",
+      "still": {
+        "title": "Still not sure?",
+        "body": "Write to us in your own words. A person replies, in the language you choose.",
+        "action": "Write to support"
+      },
+      "back": "Back to the help centre"
     },
     "contact": {
       "metaTitle": "Write to support",
       "title": "Write to support",
-      "lede": "Describe the problem in your own words. A person replies by email, in the language you choose.",
+      "lede": "Describe it in your own words — we would rather read “the electricity figure looks wrong” than a form filled in correctly. A person replies, in the language you choose below.",
       "topic": {
         "label": "What is it about?",
         "help": "This only decides who reads it first.",
         "placeholder": "Choose a topic",
         "missing": "The topic is missing, and it is how the request reaches the right person. Choose one.",
         "options": {
-          "reporting": "A figure, or a question in a module",
+          "reporting": "A figure or a question in a module",
           "findings": "A finding that will not clear",
-          "exports": "Exports",
+          "exports": "Exports and sharing",
           "access": "Users and access",
           "billing": "Invoices and plan",
           "other": "Something else"
@@ -2761,7 +2787,7 @@
         "tooLong": "The question is longer than 5,000 characters, so it cannot be sent. Shorten it to what we need to know."
       },
       "replyLocale": {
-        "label": "Reply to me in",
+        "label": "Reply in",
         "help": "The reply’s language, whatever the interface’s.",
         "options": {
           "ro": "Romanian",
@@ -2780,7 +2806,7 @@
         "invalid": "This is not an email address, so the reply would not arrive. Check it."
       },
       "known": {
-        "heading": "Sent with your request, so you need not write it",
+        "heading": "Sent with your message, so you do not have to describe it",
         "name": "Name",
         "email": "The reply goes to",
         "organization": "Organisation"
@@ -2798,7 +2824,28 @@
       "unreachable": {
         "title": "The request could not be sent",
         "body": "The platform did not answer, so we cannot tell whether your request arrived. Try again in a few moments; if it did arrive, we reply only once."
+      },
+      "sentTo": "Sent to {address}.",
+      "urgent": {
+        "title": "Urgent and about a deadline?",
+        "body": "Say so in the first line, with the date. A person reads every request, and those naming a filing or a bank’s deadline are answered first."
       }
+    },
+    "language": {
+      "label": "Help content language",
+      "interfaceNote": "The interface stays in English",
+      "fallbackNote": "{count, plural, one {# article is in Romanian only} other {# articles are in Romanian only}}",
+      "names": {
+        "ro": "Română",
+        "en": "English",
+        "ru": "Русский"
+      }
+    },
+    "account": {
+      "title": "Reading it is one thing",
+      "body": "An account gives you the report’s wizard, and your figures saved as you type.",
+      "register": "Create an account",
+      "signIn": "Already invited by a colleague? <link>Sign in instead</link>."
     }
   },
   "history": {

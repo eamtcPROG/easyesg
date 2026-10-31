@@ -1,0 +1,78 @@
+/* S-32's topic cards (task 227; artboards 01 and 02) — three to a row at the widest frame, two at `medium`, one at
+   `compact`. Read by the cards and their grid. */
+
+.cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 40rem) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 80rem) {
+  .cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  block-size: 100%;
+  padding: var(--space-5) var(--space-6) var(--space-5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+.cardTitle {
+  margin: 0;
+}
+
+.cardLink {
+  color: var(--text-default);
+  text-decoration: none;
+  border-radius: var(--radius-1);
+}
+
+.cardLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cardSummary {
+  margin: 0;
+  color: var(--text-body);
+}
+
+/* The card's foot sits at its bottom, so a row of cards lines their links up whatever their summaries' length. */
+.cardFoot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-block-start: auto;
+}
+
+.featured {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 400 13.5px/20px var(--font-text);
+}
+
+.count {
+  margin: 0;
+  font: 400 12px/16px var(--font-mono);
+  color: var(--text-muted);
+}

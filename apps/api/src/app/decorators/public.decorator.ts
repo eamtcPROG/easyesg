@@ -28,6 +28,8 @@ export const IS_PUBLIC = 'easyesg:public';
  *    `GET /legal/controller`, which discloses only what those documents publish. **And since task 76 FR-61's published
  *    content** (§12.5.6's task-76 row (1)): the help centre puts nothing behind the account (S-32), and the home's
  *    pricing section reads a plan's copy before anyone has one — `/content/*`, which serves only what is in force.
+ *    **And since task 227 the support channel** (§12.5.6's task-227 row (4)): a visitor is shown where to write —
+ *    `GET /support/channel`, the mailbox the platform publishes for that purpose and nothing else.
  *
  * Swagger's `/docs` needs no marker: `SwaggerModule.setup` mounts express middleware rather than a
  * Nest route, so no `APP_GUARD` ever runs for it.

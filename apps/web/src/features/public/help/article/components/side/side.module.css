@@ -1,0 +1,59 @@
+/* S-33's left-hand column (task 227; artboard 03): *On this page*, ruled at its start, the current entry ruled in the
+   accent, and *Applies to* beneath it. */
+
+.contents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.eyebrow {
+  margin: 0;
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  display: block;
+  padding: var(--space-2) 0 var(--space-2) var(--space-4);
+  box-shadow: inset 1px 0 0 var(--border-default);
+  color: var(--text-body);
+  font: 400 13.5px/20px var(--font-text);
+  text-decoration: none;
+}
+
+.entry:hover {
+  color: var(--text-default);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.entry[aria-current='location'] {
+  box-shadow: inset 2px 0 0 var(--accent);
+  color: var(--text-default);
+  font-weight: 600;
+}
+
+.applies {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--border-default);
+}
+
+.module {
+  margin: 0;
+  color: var(--text-body);
+}

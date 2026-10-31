@@ -169,6 +169,8 @@ export type PlanCopy = components['schemas']['PlanCopyResponseDto'];
 export { SUPPORT_TOPIC, SUPPORT_TOPIC_MIRRORS_WIRE, isSupportTopic, type SupportTopic } from './support';
 export type SubmitSupportRequest = components['schemas']['SubmitSupportRequestDto'];
 export type SupportRequestReceipt = components['schemas']['SupportRequestReceiptDto'];
+/** Support's mailbox as `GET /support/channel` names it to the help centre, with no session (task 227). */
+export type SupportChannel = components['schemas']['SupportChannelResponseDto'];
 
 // core — the organization (FR-13 … FR-16; task 29). `Organization` is the whole profile; S-04
 // creates it with four of those fields and S-15 fills in the rest, so the create request is its

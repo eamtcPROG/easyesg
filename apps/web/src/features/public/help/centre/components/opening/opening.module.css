@@ -1,0 +1,227 @@
+/* S-32's two openings and the search they share (task 227; artboards 01 and 02). Read by the three files beside it. */
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  inline-size: 100%;
+  max-inline-size: 83rem;
+  margin-inline: auto;
+}
+
+/* Artboard 01: a white band beneath the workspace tier, ruled off from the columns below. */
+.memberBand {
+  padding: var(--space-8) var(--page-gutter) var(--space-6);
+  border-block-end: 1px solid var(--border-default);
+  background: var(--surface-default);
+}
+
+.memberTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6) var(--space-8);
+}
+
+.memberWords {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-inline-size: 62ch;
+}
+
+.title {
+  margin: 0;
+  color: var(--text-default);
+  overflow-wrap: break-word;
+}
+
+.lede {
+  margin: 0;
+  color: var(--text-body);
+}
+
+.language {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.languageLabel {
+  margin: 0;
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.note {
+  margin: 0;
+  color: var(--text-muted);
+  text-align: end;
+}
+
+@media (max-width: 47.99rem) {
+  .language {
+    align-items: flex-start;
+  }
+
+  .note {
+    text-align: start;
+  }
+}
+
+/* Artboard 02: the public band continued — its surface and its text pair (`hero.module.css` reasons the same way). */
+.visitorBand {
+  padding: var(--space-8) var(--page-gutter);
+  background: var(--globalbar-surface);
+  color: var(--globalbar-text);
+  overflow-wrap: break-word;
+}
+
+.visitorWords {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-inline-size: 70ch;
+}
+
+.visitorEyebrow {
+  margin: 0;
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--globalbar-text-muted);
+}
+
+.visitorTitle {
+  margin: 0;
+  color: var(--globalbar-text);
+  text-wrap: balance;
+}
+
+.visitorLede {
+  max-inline-size: 62ch;
+  margin: 0;
+  color: var(--globalbar-text-muted);
+  text-wrap: pretty;
+}
+
+/* The search: one wide field, its glyph at the start and its submit at the end, drawn as the artboards' key hint. */
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-inline-size: 51.25rem;
+  min-block-size: 56px;
+  padding-inline: var(--space-5) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+.search:focus-within {
+  box-shadow: 0 0 0 2px var(--border-focus), 0 0 0 4px var(--border-focus-halo);
+}
+
+.input {
+  flex: 1;
+  min-inline-size: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-default);
+  font: 400 16.5px/24px var(--font-text);
+}
+
+/* The field's own ring would sit inside the form's; the form draws the one ring (`:focus-within` above). */
+.input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+/* A magnifier in two strokes: the lens as a ring, the handle as a short bar off its corner. */
+.glyph {
+  position: relative;
+  flex-shrink: 0;
+  inline-size: 20px;
+  block-size: 20px;
+}
+
+.glyph::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-start: 2px;
+  inline-size: 12px;
+  block-size: 12px;
+  border: 1.8px solid currentColor;
+  border-radius: 50%;
+}
+
+.glyph::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 15px;
+  inset-inline-start: 14px;
+  inline-size: 6px;
+  block-size: 1.8px;
+  background: currentColor;
+  transform: rotate(45deg);
+  transform-origin: 0 50%;
+}
+
+.submit {
+  flex-shrink: 0;
+  min-block-size: 32px;
+  padding-inline: var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  background: transparent;
+  color: var(--text-muted);
+  font: 500 11px/16px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.submit:hover {
+  border-color: var(--border-strong);
+  color: var(--text-default);
+}
+
+.page .glyph {
+  color: var(--text-muted);
+}
+
+/* On the pine band: the plate's border and fill, the band's text. */
+.band {
+  border-color: var(--globalbar-plate-border);
+  background: var(--globalbar-plate-hover);
+}
+
+.band .glyph,
+.band .submit {
+  color: var(--globalbar-text-muted);
+}
+
+.band .input {
+  color: var(--globalbar-text);
+}
+
+.band .input::placeholder {
+  color: var(--globalbar-text-muted);
+}
+
+.band .submit {
+  border-color: var(--globalbar-plate-border);
+}
+
+.band .submit:hover {
+  color: var(--globalbar-text);
+}

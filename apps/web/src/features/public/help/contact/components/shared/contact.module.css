@@ -1,33 +1,218 @@
-/* S-34's form and the facts a signed-in reader is shown (task 77) — read by the section and the form, so in `shared/`
-   on the admission test; values through tier-3 tokens (OQ-10). */
+/* S-34's card, its form and the facts a signed-in reader is shown (tasks 77, 227; artboard 04) — read by the section,
+   the form, the topic's choices and the facts, so in `shared/` on the admission test; values through the token
+   cascade (OQ-10). */
+
+.card {
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+.cardHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-7) var(--space-6);
+  border-block-end: 1px solid var(--border-default);
+}
+
+.title {
+  margin: 0;
+  color: var(--text-default);
+}
+
+.lede {
+  max-inline-size: 70ch;
+  margin: 0;
+  color: var(--text-body);
+}
 
 .form {
   display: flex;
   flex-direction: column;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-6) var(--space-7);
+}
+
+@media (max-width: 39.99rem) {
+  .cardHead,
+  .fields {
+    padding-inline: var(--space-5);
+  }
+}
+
+/* The fields beside one another on one row (artboard 04) — the reply language at its end, narrower. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: var(--space-5);
 }
 
-.known {
+.rowField {
+  flex: 1 1 16rem;
+  min-inline-size: 0;
+}
+
+.reply {
+  flex: 0 1 12.5rem;
+  min-inline-size: 12.5rem;
+}
+
+/* The topic's six choices, drawn as the artboard's chips, the chosen one filled. */
+.topic {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.topicLegend {
+  padding: 0;
+  font: 600 14px/20px var(--font-text);
+  color: var(--text-default);
+}
+
+.hint {
+  margin: 0;
+  font: 400 13px/19px var(--font-text);
+  color: var(--text-muted);
+}
+
+.error {
+  margin: 0;
+  font: 400 13px/19px var(--font-text);
+  color: var(--state-error);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-block-start: var(--space-2);
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+}
+
+.chipInput {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.chipLabel {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 36px;
+  padding-inline: var(--space-5);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-2);
+  border-radius: var(--radius-pill);
+  background: var(--surface-default);
+  color: var(--text-body);
+  font: 400 14px/20px var(--font-text);
+}
+
+.chipInput:hover + .chipLabel {
+  border-color: var(--border-strong);
+}
+
+.chipInput:checked + .chipLabel {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-weight: 500;
+}
+
+.chipInput:focus-visible + .chipLabel {
+  box-shadow: 0 0 0 2px var(--border-focus), 0 0 0 4px var(--border-focus-halo);
+}
+
+.chips[data-invalid='true'] .chipLabel {
+  border-color: var(--state-error);
+}
+
+/* What travels with the request, on the page's ground beneath the question (artboard 04). */
+.known {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  background: var(--surface-sunken);
+}
+
+.knownHeading {
+  margin: 0;
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .facts {
-  display: grid;
-  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-  gap: var(--space-1) var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-7);
   margin: 0;
+  font: 400 13px/19px var(--font-text);
+}
+
+.facts > div {
+  display: flex;
+  gap: var(--space-2);
+  min-inline-size: 0;
 }
 
 .facts dt {
   color: var(--text-muted);
 }
 
+.facts dt::after {
+  content: ':';
+}
+
 .facts dd {
   margin: 0;
+  color: var(--text-body);
   overflow-wrap: anywhere;
+}
+
+/* The card's foot: where it goes, and the one primary action. */
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+  padding: var(--space-5) var(--space-7) var(--space-6);
+  border-block-start: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+}
+
+@media (max-width: 39.99rem) {
+  .foot {
+    padding-inline: var(--space-5);
+  }
+}
+
+.footNote {
+  flex: 1 1 20rem;
+  max-inline-size: 60ch;
+  margin: 0;
+  font: 400 13.5px/20px var(--font-text);
+  color: var(--text-muted);
 }

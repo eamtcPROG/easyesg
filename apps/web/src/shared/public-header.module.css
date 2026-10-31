@@ -20,6 +20,14 @@
   text-underline-offset: 2px;
 }
 
+/* In the help centre the band's *Help centre* is underlined as the current page (task 227; artboard 02). */
+.link[aria-current='page'] {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  text-decoration-color: var(--globalbar-text-muted);
+}
+
 /* **The actions region wraps, and the authenticated band's does not.** `GlobalBar` keeps its own
    two regions on one row at every frame — a wrapping *global tier* would read as two tiers, and
    §4.2 says there are three. That argument is about the band's regions, not about how many nodes a

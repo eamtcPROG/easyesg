@@ -7,6 +7,7 @@ import { LocaleChoice } from './locale-choice';
 import { LocaleChoiceMenu } from './locale-choice-menu';
 import { PublicDrawer } from './public-drawer';
 import { PublicDrawerMenu } from './public-drawer-menu';
+import { HelpCentreLink } from './help-centre-link';
 import styles from './public-header.module.css';
 
 /**
@@ -67,9 +68,9 @@ export async function PublicHeader() {
           <div className={styles.actions}>
             {/* Help first, as in every chrome (UX-109, WCAG 2.2 3.2.6; task 77.5): the identity header, this band and
                 the global tier open their actions with it, so it is where a reader left it whichever screen they are on. */}
-            <Link className={styles.link} href={ROUTES.HELP_CENTRE}>
+            <HelpCentreLink className={styles.link}>
               {t('helpCentre')}
-            </Link>
+            </HelpCentreLink>
             <Suspense fallback={<LocaleChoiceMenu query="" />}>
               <LocaleChoice />
             </Suspense>

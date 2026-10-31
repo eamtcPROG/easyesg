@@ -191,7 +191,7 @@ traps each one left — grouped by area rather than by the task that built it.
   `CONTENT_FALLBACK_REPORTER`; the queue, `config.content_fallback`, gathers in the process and writes every five seconds,
   and `ContentTranslationWatch` clears what is translated whenever the store's version moves — so **a suite calls the
   queue's `write()` and the watch's `settleIfMoved()`** rather than waiting out either (§12.5.6's task-76 row).
-- **Support** (`platform/support`; task 77): UC-182's request, `POST /support/requests` — `@AdmitsVisitor`'s second
+- **Support** (`platform/support`; tasks 77, 227): UC-182's request, `POST /support/requests` — `@AdmitsVisitor`'s second
   route — recorded in `identity.support_request` under a reference, `SR-` and six digits from its own sequence, with its
   mail queued on the same transaction (`support.request_received`). The worker hands that mail to `NOTIFICATION_DELIVERY`
   addressed to the `support_channel` artefact's mailbox, in Romanian, its Reply-To the reader's address — `replyTo` on
@@ -202,7 +202,9 @@ traps each one left — grouped by area rather than by the task that built it.
   months. **`SUPPORT_TICKETS` is what support access reads**: A-07's raise refuses a ticket reference naming no request on
   record, 422 `ticket-reference-unknown`, so a suite raising support access first records a request and cites its
   reference — `test/support-access.e2e-spec.ts` through the route, the browser suite through `recordSupportRequest`
-  (§12.5.6's task-77 row).
+  (§12.5.6's task-77 row). **Since task 227 the channel is read with no session**, `GET /support/channel` — `@Public()`'s
+  fourth kind — answering the address the help centre names, or 503 `support-channel-unavailable` (§12.5.6's task-227
+  row (4)).
 - **Not live**: billing (53 … 66), the console's screens beyond A-02, A-07, A-08, A-17, A-18, A-19 and A-21 (67 … 70), the production edge and
   deploy (71 … 73, staging's three sub-steps aside — architecture.md §10.5), the Comprehensive Module's plan scope (81) — its nine forms shipped with task 79, and its applicability, validation and both exports with task 80 —, the advisor domain
   (116 … 121).

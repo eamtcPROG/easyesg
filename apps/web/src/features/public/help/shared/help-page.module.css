@@ -1,0 +1,198 @@
+/* The help centre's page, as `EasyESG Help Centre.dc.html`'s four artboards draw it (task 227; `architecture.md`
+   §12.5.6's task-227 row (1)) — read by S-32, S-33 and S-34, so in the help's `shared/` on the admission test. Values
+   through the token cascade (UX-127), never copied from the artboards' markup (OQ-10).
+
+   **One measure for the three screens**: the artboards' content runs 1,328 px at the 1440 frame, the main column and
+   the right-hand one with a gutter between; `--content-max` is the workspace's 1,200 px, which would draw the help
+   narrower than its own artboards. The right-hand column is the artboards' 340 px at every screen. */
+
+.page {
+  --help-max: 83rem;
+  --help-rail: 21.25rem;
+
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  background: var(--surface-sunken);
+}
+
+/* What spans the window — the opening band, the trail bar — holds its content to the measure, centred. */
+.inner {
+  inline-size: 100%;
+  max-inline-size: var(--help-max);
+  margin-inline: auto;
+}
+
+/* The two columns beneath the opening (artboards 01, 02, 04): the main one, and the right-hand one beside it from
+   1024 px; below, the right-hand column follows the main one (the task-227 row (1)). */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-7);
+  align-items: start;
+  padding: var(--space-7) var(--page-gutter) var(--space-8);
+}
+
+.columns > * {
+  min-inline-size: 0;
+}
+
+@media (min-width: 64rem) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr) var(--help-rail);
+  }
+}
+
+.columns.inner {
+  box-sizing: border-box;
+  max-inline-size: calc(var(--help-max) + 2 * var(--page-gutter));
+}
+
+.mainColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* A region of the main column: its name in the artboards' small capitals, an aside to its right, then its body. */
+.region {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.regionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+}
+
+.regionTitle {
+  margin: 0;
+  font: 500 13px/18px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.eyebrow {
+  margin: 0;
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.muted {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.body {
+  margin: 0;
+  color: var(--text-body);
+}
+
+/* A card of the right-hand column, or a list's frame: the surface the artboards draw on the sunken page. */
+.card {
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+/* The one card a column leads with, drawn with the stronger edge the artboards give it. */
+.card.lead {
+  border-color: var(--border-strong);
+}
+
+/* *Nothing here answered it?* and its kin: advice rather than an action, on the page's own ground. */
+.card.quiet {
+  background: var(--surface-sunken);
+}
+
+.cardHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  border-block-end: 1px solid var(--border-default);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6) var(--space-5);
+}
+
+.cardOnly {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
+}
+
+/* A list drawn as rows in a card — *Asked most this month*, the results, *Read next*. */
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rows > li + li {
+  border-block-start: 1px solid var(--border-default);
+}
+
+/* A row's link covers the row: the row is the target, at least 40 px tall (UX targets). */
+.rowLink {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-6);
+  color: var(--text-default);
+  text-decoration: none;
+}
+
+.rowLink:hover .rowTitle {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rowTitle {
+  font-weight: 500;
+  color: var(--text-default);
+}
+
+/* The trail bar beneath the chrome (artboards 03 and 04): the way back at the start, the screen's own controls at the
+   end. */
+.bar {
+  padding-inline: var(--page-gutter);
+  border-block-end: 1px solid var(--border-default);
+  background: var(--surface-default);
+}
+
+.barRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  min-block-size: 52px;
+  padding-block: var(--space-3);
+}
+
+.barEnd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}

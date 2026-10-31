@@ -16,7 +16,7 @@ export async function CentreUnavailable() {
       title={t('unavailable.title')}
       action={
         <TextLink asChild>
-          <Link href={ROUTES.HELP_CONTACT}>{t('support.action')}</Link>
+          <Link href={ROUTES.HELP_CONTACT}>{t('ask.action')}</Link>
         </TextLink>
       }
     >

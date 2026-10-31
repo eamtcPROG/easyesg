@@ -2686,15 +2686,7 @@
     "centre": {
       "metaTitle": "Centrul de ajutor",
       "title": "Cu ce vă putem ajuta?",
-      "lede": "Scris pentru cei care conduc o afacere, nu pentru cei care citesc standarde. Fiecare articol spune din ce parte a raportului face parte.",
-      "filter": {
-        "label": "Restrângeți biblioteca",
-        "topic": "Subiectul",
-        "everyTopic": "Toate subiectele",
-        "search": "Căutați în articole",
-        "submit": "Căutați",
-        "clear": "Ștergeți căutarea"
-      },
+      "lede": "Scris pentru cei care conduc o afacere, nu pentru cei care citesc standarde. Fiecare articol numește partea raportului din care face parte.",
       "other": "Alte articole",
       "count": "{count, plural, one {# articol} few {# articole} other {# de articole}}",
       "loading": "Se încarcă biblioteca",
@@ -2712,34 +2704,68 @@
         "title": "Biblioteca nu poate fi citită acum",
         "body": "Articolele nu au putut fi încărcate, așa că biblioteca nu este afișată. Reîncărcați pagina puțin mai târziu sau scrieți asistenței."
       },
-      "support": {
-        "title": "Nu ați găsit răspunsul?",
-        "body": "Scrieți-ne cu cuvintele dumneavoastră. Vă răspunde o persoană, în limba aleasă.",
+      "greeting": "Cu ce vă putem ajuta, {name}?",
+      "search": {
+        "label": "Căutați în centrul de ajutor",
+        "placeholder": "Căutați în {count, plural, one {# articol} few {# articole} other {# de articole}}",
+        "submit": "Căutați"
+      },
+      "browse": {
+        "title": "Răsfoiți după ce aveți de făcut",
+        "total": "{count, plural, one {# articol} few {# articole} other {# de articole}}"
+      },
+      "results": {
+        "words": "{count, plural, one {# articol} few {# articole} other {# de articole}} pentru „{query}”",
+        "all": "Arătați toată biblioteca"
+      },
+      "ask": {
+        "title": "Întrebați o persoană",
+        "body": "În română, rusă sau engleză. Vă răspunde o persoană, la întrebarea pusă, nu cu un link.",
         "action": "Scrieți asistenței"
+      },
+      "guest": {
+        "eyebrow": "Centrul de ajutor · deschis tuturor",
+        "title": "Citiți totul înainte de a decide ceva",
+        "lede": "Toată biblioteca — ce cere VSME, secțiune cu secțiune, și cum se face raportarea — fără cont și fără adresă de e-mail. Scrisă pentru proprietari și contabili, în română, rusă și engleză.",
+        "asked": {
+          "title": "Întrebări de dinainte de înregistrare",
+          "aside": "Răspunsuri fără apel de vânzări"
+        },
+        "library": {
+          "title": "Toată biblioteca",
+          "aside": "{count, plural, one {# articol} few {# articole} other {# de articole}} · nimic ascuns după un cont"
+        }
+      },
+      "direct": {
+        "eyebrow": "Întrebați-ne direct",
+        "body": "Dacă platforma se potrivește companiei dumneavoastră vă spune o persoană.",
+        "languages": "În română, rusă și engleză"
       }
     },
     "article": {
       "breadcrumb": "Centrul de ajutor",
       "contents": "Pe această pagină",
       "readNext": "Citiți în continuare",
-      "support": {
-        "title": "Nu v-a lămurit?",
-        "body": "Scrieți-ne și vă răspunde o persoană.",
-        "action": "Scrieți asistenței"
-      },
-      "back": "Înapoi la centrul de ajutor",
       "loading": "Se încarcă articolul",
       "unavailable": {
         "title": "Articolul nu poate fi citit acum",
         "body": "Articolul nu a putut fi încărcat, așa că nu este afișat. Reîncărcați pagina puțin mai târziu sau întoarceți-vă la centrul de ajutor."
       },
       "show": "Afișați secțiunea",
-      "metaTitle": "{title} · Centrul de ajutor"
+      "metaTitle": "{title} · Centrul de ajutor",
+      "shortAnswer": "Răspunsul pe scurt",
+      "appliesTo": "Se aplică la",
+      "still": {
+        "title": "Încă aveți nelămuriri?",
+        "body": "Scrieți-ne cu cuvintele dumneavoastră. Vă răspunde o persoană, în limba aleasă.",
+        "action": "Scrieți asistenței"
+      },
+      "back": "Înapoi la centrul de ajutor"
     },
     "contact": {
       "metaTitle": "Scrieți asistenței",
       "title": "Scrieți asistenței",
-      "lede": "Descrieți problema cu cuvintele dumneavoastră. Vă răspunde o persoană, prin e-mail, în limba pe care o alegeți.",
+      "lede": "Descrieți-o cu cuvintele dumneavoastră — preferăm să citim „cifra la energie pare greșită” decât un formular completat corect. Vă răspunde o persoană, în limba pe care o alegeți mai jos.",
       "topic": {
         "label": "Despre ce este vorba?",
         "help": "Hotărăște doar cine o citește primul.",
@@ -2748,7 +2774,7 @@
         "options": {
           "reporting": "O cifră sau o întrebare dintr-un modul",
           "findings": "O constatare care nu dispare",
-          "exports": "Exporturi",
+          "exports": "Exporturi și transmiterea raportului",
           "access": "Utilizatori și acces",
           "billing": "Facturi și plan",
           "other": "Altceva"
@@ -2780,7 +2806,7 @@
         "invalid": "Aceasta nu este o adresă de e-mail, așa că răspunsul nu ar ajunge. Verificați-o."
       },
       "known": {
-        "heading": "Trimis împreună cu cererea, ca să nu fie nevoie să le scrieți",
+        "heading": "Se trimit odată cu mesajul, ca să nu fie nevoie să le descrieți",
         "name": "Numele",
         "email": "Răspunsul ajunge la",
         "organization": "Organizația"
@@ -2798,7 +2824,28 @@
       "unreachable": {
         "title": "Cererea nu a putut fi trimisă",
         "body": "Platforma nu a răspuns, așa că nu știm dacă cererea a ajuns. Încercați din nou peste câteva momente; dacă a ajuns, vă răspundem o singură dată."
+      },
+      "sentTo": "Se trimite la {address}.",
+      "urgent": {
+        "title": "Urgent și legat de un termen?",
+        "body": "Spuneți-o în primul rând, cu data. O persoană citește fiecare cerere, iar cele care numesc un termen de depunere sau al unei bănci primesc răspuns primele."
       }
+    },
+    "language": {
+      "label": "Limba articolelor",
+      "interfaceNote": "Interfața rămâne în limba română",
+      "fallbackNote": "{count, plural, one {# articol există doar în română} few {# articole există doar în română} other {# de articole există doar în română}}",
+      "names": {
+        "ro": "Română",
+        "en": "English",
+        "ru": "Русский"
+      }
+    },
+    "account": {
+      "title": "Una e să citiți",
+      "body": "Cu un cont aveți asistentul raportului, iar cifrele se salvează pe măsură ce le scrieți.",
+      "register": "Creați un cont",
+      "signIn": "Ați fost invitat de un coleg? <link>Intrați în cont</link>."
     }
   },
   "history": {

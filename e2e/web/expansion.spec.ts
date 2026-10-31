@@ -21,9 +21,10 @@ const FRAMES = [
 const SCREENS = [
   { path: '/register', heading: 'Creați-vă contul', action: 'Creați contul' },
   { path: '/verify', heading: 'Confirmați-vă adresa de e-mail', action: 'Trimiteți linkul' },
-  // The help centre since task 77: S-32's filter and S-34's form are catalogue text, which the padding reaches; the
-  // articles themselves are the store's, which it does not, so S-33 has nothing here to measure.
-  { path: '/help', heading: 'Cu ce vă putem ajuta?', action: 'Căutați' },
+  // The help centre since task 77, drawn as its artboards since task 227: S-32's opening and search and S-34's form are
+  // catalogue text, which the padding reaches; the articles themselves are the store's, which it does not, so S-33 has
+  // nothing here to measure.
+  { path: '/help', heading: 'Citiți totul înainte de a decide ceva', action: 'Căutați' },
   { path: '/help/contact', heading: 'Scrieți asistenței', action: 'Trimiteți asistenței' },
 ];
 

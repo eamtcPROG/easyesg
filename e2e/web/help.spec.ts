@@ -10,16 +10,17 @@ import {
 import { REGISTERED_DISPLAY_NAME, accountTrigger } from './support/session';
 
 /**
- * The help centre in a real browser (task 77; UC-180 … UC-182; S-32, S-33, S-34): the library laid out and narrowed on
- * the server, an article in the reader's language, a request to support sent and given its reference, and help first
- * in every chrome's actions (UX-109).
+ * The help centre in a real browser (tasks 77, 227; UC-180 … UC-182; S-32, S-33, S-34), as `EasyESG Help
+ * Centre.dc.html`'s artboards draw it: the library as topic cards and narrowed on the server, an article with its short
+ * answer first and in the help's language the address chose, a request to support sent and given its reference, and
+ * help first in every chrome's actions (UX-109), marked current inside the help centre.
  *
  * **The chrome is the session's and the content is not** (`architecture.md` §12.5.6's task-77 row (10)): a visitor
  * reads the help centre under the public band and footer, a member under the global tier — the same library either way,
  * and S-34 names a member from the account rather than asking. Each journey says which it is.
  *
  * Reads task 76's seeded library: six topics, an article in each, every one in all three languages. An article that
- * fell back to Romanian is `help-article.spec.tsx`'s, since no seeded article can.
+ * fell back to Romanian is `article-card.spec.tsx`'s, since no seeded article can.
  */
 const RUN_PREFIX = `e2e-web-help-${process.pid}-${Date.now()}`;
 const PASSWORD = 'Parola123!';
@@ -33,6 +34,8 @@ const TOPICS = [
   'Cont și utilizatori',
 ];
 const ENERGY = 'Cum devin facturile de energie emisiile din B3';
+const ENERGY_RU = 'Как счета за энергию превращаются в выбросы раздела B3';
+const ASKS = 'Ce vă cere raportul și ce să pregătiți';
 const ROLES = 'Ce poate face fiecare rol';
 const HELP = 'Centrul de ajutor';
 
@@ -87,61 +90,99 @@ async function choose(page: Page, input: { readonly field: string; readonly opti
 }
 
 test.describe('S-32, the library', () => {
-  test('is laid out by topic, in the topics’ order, under the public chrome for a visitor', async ({ page }) => {
+  test('is laid out as artboard 02 for a visitor: the questions, the topic cards, the account and the address', async ({
+    page,
+  }) => {
     await page.goto('/help');
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Cu ce vă putem ajuta?' })).toBeVisible();
-    await expect(sectionHeadings(page)).toHaveText([...TOPICS, 'Nu ați găsit răspunsul?']);
-    await expect(page.getByRole('main').getByRole('link', { name: ENERGY })).toHaveAttribute(
-      'href',
-      '/help/electricity-and-fuel',
+    await expect(page.getByRole('heading', { level: 1, name: 'Citiți totul înainte de a decide ceva' })).toBeVisible();
+    await expect(sectionHeadings(page)).toHaveText([
+      'Întrebări de dinainte de înregistrare',
+      'Toată biblioteca',
+      'Una e să citiți',
+      'Întrebați-ne direct',
+    ]);
+    // The first-report topic's article, its title the question (the task-227 row (3)).
+    await expect(
+      page.getByRole('region', { name: 'Întrebări de dinainte de înregistrare' }).getByRole('link', { name: ASKS }),
+    ).toHaveAttribute('href', '/help/what-the-report-asks');
+    await expect(page.getByRole('region', { name: 'Toată biblioteca' }).getByRole('heading', { level: 3 })).toHaveText(
+      TOPICS,
     );
-    // The visitor's frame: the band offers sign-in, and the footer stands once.
-    await expect(page.getByRole('banner').getByRole('link', { name: 'Autentificare' })).toBeVisible();
+    // Support's mailbox, read with no session (row (4)).
+    await expect(page.getByRole('link', { name: 'ajutor@easyesg.md' })).toHaveAttribute('href', 'mailto:ajutor@easyesg.md');
+    // The visitor's frame: the band offers sign-in and marks the help centre current, and the footer stands once.
+    const banner = page.getByRole('banner');
+    await expect(banner.getByRole('link', { name: 'Autentificare' })).toBeVisible();
+    await expect(banner.getByRole('link', { name: HELP })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('contentinfo')).toHaveCount(1);
   });
 
-  test('narrows to a topic, then to words, and says when nothing matches', async ({ page }) => {
+  test('narrows to a topic from its card, then to words, and says when nothing matches', async ({ page }) => {
     await page.goto('/help');
-    await choose(page, { field: 'Subiectul', option: 'Cifre, unități, calcule' });
-    await page.getByRole('button', { name: 'Căutați' }).click();
+    await page.getByRole('link', { name: 'Cifre, unități, calcule', exact: true }).click();
 
-    // A GET form: the narrowing is the address, so it can be shared and survives a reload.
+    // The narrowing is the address, so it can be shared and survives a reload.
     await expect(page).toHaveURL(/[?&]topic=figures-and-calculations(&|$)/);
-    await expect(sectionHeadings(page)).toHaveText(['Cifre, unități, calcule', 'Nu ați găsit răspunsul?']);
-    await expect(page.getByRole('main').getByRole('link', { name: ROLES })).toHaveCount(0);
+    await expect(page.getByRole('main').getByRole('heading', { level: 2, name: 'Cifre, unități, calcule' })).toBeVisible();
+    await expect(page.getByRole('main').getByRole('link', { name: new RegExp(ENERGY) })).toBeVisible();
+    await expect(page.getByRole('main').getByRole('link', { name: new RegExp(ROLES) })).toHaveCount(0);
 
-    // Words, without their marks: *facturile* finds the energy article's title, and nothing else.
-    await page.goto('/help?q=FACTURILE');
-    await expect(page.getByRole('main').getByRole('link', { name: ENERGY })).toBeVisible();
-    await expect(page.getByRole('main').getByRole('listitem')).toHaveCount(1);
+    // Words, without their marks: *facturile* finds the energy article's title, and nothing else. A GET form.
+    await page.getByRole('searchbox', { name: 'Căutați în centrul de ajutor' }).fill('FACTURILE');
+    await page.getByRole('button', { name: 'Căutați', exact: true }).click();
+    await expect(page).toHaveURL(/[?&]q=FACTURILE(&|$)/);
+    const results = page.getByRole('region', { name: '1 articol pentru „FACTURILE”' });
+    await expect(results.getByRole('listitem')).toHaveCount(1);
+    await expect(results.getByRole('link', { name: new RegExp(ENERGY) })).toHaveAttribute(
+      'href',
+      '/help/electricity-and-fuel',
+    );
 
     await page.goto('/help?q=nimic-de-gasit');
     // The inventory's empty state: a status region, its title a line of it rather than a heading.
     await expect(page.getByRole('main').getByRole('status')).toContainText('Niciun articol nu se potrivește');
     await page.getByRole('link', { name: 'Arătați toată biblioteca' }).click();
     await expect(page).toHaveURL(/\/help$/);
-    await expect(sectionHeadings(page)).toHaveText([...TOPICS, 'Nu ați găsit răspunsul?']);
+    await expect(page.getByRole('region', { name: 'Toată biblioteca' })).toBeVisible();
   });
 });
 
 test.describe('S-33, an article', () => {
-  test('reads in the page’s language, its contents leading to each section', async ({ page }) => {
+  test('reads as artboard 03: the trail, the contents leading to each section, the short answer first', async ({ page }) => {
     await page.goto('/help/electricity-and-fuel');
 
     await expect(page.getByRole('heading', { level: 1, name: ENERGY })).toBeVisible();
-    // The docked list at this window; the disclosed one is the narrow frames'.
-    const contents = page.getByRole('navigation', { name: 'Pe această pagină' }).filter({ visible: true });
+    const trail = page.getByRole('navigation', { name: 'Firimituri' });
+    await expect(trail.getByRole('link')).toHaveText([HELP, 'Cifre, unități, calcule']);
+    // The summary is the short answer, above the sections (the task-227 row (6)).
+    await expect(page.getByRole('heading', { level: 2, name: 'Răspunsul pe scurt' })).toBeVisible();
+    const contents = page.getByRole('navigation', { name: 'Pe această pagină' });
     await expect(contents).toHaveCount(1);
+    await expect(contents.getByRole('link').first()).toHaveText('Răspunsul pe scurt');
     await contents.getByRole('link', { name: 'Factorii folosiți' }).click();
     await expect(page).toHaveURL(/#section-2$/);
     await expect(page.getByRole('heading', { level: 2, name: 'Factorii folosiți' })).toBeInViewport();
 
     await page.goto('/ru/help/electricity-and-fuel');
-    await expect(page.getByRole('heading', { level: 1, name: 'Как счета за энергию превращаются в выбросы раздела B3' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: ENERGY_RU })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
     // Written in Russian, so nothing in it is marked as another language.
     await expect(page.getByRole('main').locator('[lang]')).toHaveCount(0);
+  });
+
+  test('reads in the help’s language the address chose, marked as written in it (the task-227 row (2))', async ({
+    page,
+  }) => {
+    await page.goto('/help/electricity-and-fuel');
+    await page.getByRole('link', { name: 'Русский' }).click();
+
+    await expect(page).toHaveURL(/[?&]content=ru(&|$)/);
+    const title = page.getByRole('heading', { level: 1, name: ENERGY_RU });
+    await expect(title).toHaveAttribute('lang', 'ru');
+    // The page's own words stay the page's: the interface is Romanian.
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ro');
+    await expect(page.getByRole('heading', { level: 2, name: 'Răspunsul pe scurt' })).toBeVisible();
   });
 
   test('that the library does not hold answers the not-found surface', async ({ page }) => {
@@ -160,9 +201,11 @@ test.describe('S-34, writing to support', () => {
     // Nothing filled: the form refuses on the page, and sends nothing.
     await page.getByRole('button', { name: 'Trimiteți asistenței' }).click();
     await expect(page.getByText('Câteva câmpuri au nevoie de atenție înainte de a putea trimite cererea')).toBeVisible();
+    // The card's foot names where it goes: support's mailbox, read with no session (the task-227 row (4)).
+    await expect(page.getByText('Se trimite la ajutor@easyesg.md.', { exact: false })).toBeVisible();
     expect(await supportRequestsFrom(email)).toEqual([]);
 
-    await choose(page, { field: 'Despre ce este vorba?', option: 'Exporturi' });
+    await page.getByRole('radio', { name: 'Exporturi și transmiterea raportului' }).check();
     await page.getByLabel('Întrebarea dumneavoastră').fill('Raportul nu se descarcă în Excel.');
     await choose(page, { field: 'Răspundeți-mi în', option: 'Rusă' });
     await page.getByLabel('Numele dumneavoastră').fill('Ion Rusu');
@@ -198,20 +241,35 @@ test.describe('S-34, writing to support', () => {
 
     await page.getByRole('banner').getByRole('link', { name: HELP }).click();
     await page.waitForURL('**/help');
-    // The library is the visitor's; the frame is the workspace's.
-    await expect(sectionHeadings(page)).toHaveText([...TOPICS, 'Nu ați găsit răspunsul?']);
+    // Artboard 01: the library greets the member by name under the global and workspace tiers, help marked current.
+    await expect(page.getByRole('heading', { level: 1, name: `Cu ce vă putem ajuta, ${REGISTERED_DISPLAY_NAME}?` })).toBeVisible();
+    await expect(sectionHeadings(page)).toHaveText(['Răsfoiți după ce aveți de făcut', 'Întrebați o persoană']);
+    await expect(page.getByRole('region', { name: 'Răsfoiți după ce aveți de făcut' }).getByRole('heading', { level: 3 })).toHaveText(
+      TOPICS,
+    );
     await expect(accountTrigger(page, { email })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Secțiunile organizației' })).toBeVisible();
+    await expect(page.getByRole('banner').getByRole('link', { name: HELP })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('contentinfo')).toHaveCount(0);
+
+    // The help's language, chosen apart from the interface's (the task-227 row (2)).
+    await page.getByRole('link', { name: 'Русский' }).click();
+    await expect(page).toHaveURL(/[?&]content=ru(&|$)/);
+    await expect(page.getByText('Interfața rămâne în limba română')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 3, name: 'Цифры, единицы, расчёты' }).locator('xpath=ancestor::*[@lang][1]')).toHaveAttribute(
+      'lang',
+      'ru',
+    );
 
     await page.getByRole('main').getByRole('link', { name: 'Scrieți asistenței' }).click();
     await page.waitForURL('**/help/contact');
-    const known = page.getByRole('region', { name: 'Trimis împreună cu cererea, ca să nu fie nevoie să le scrieți' });
+    const known = page.getByRole('region', { name: 'Se trimit odată cu mesajul, ca să nu fie nevoie să le descrieți' });
     await expect(known).toContainText(REGISTERED_DISPLAY_NAME);
     await expect(known).toContainText(email);
     await expect(known).toContainText(organizationName);
     await expect(page.getByLabel('Numele dumneavoastră')).toHaveCount(0);
 
-    await choose(page, { field: 'Despre ce este vorba?', option: 'Utilizatori și acces' });
+    await page.getByRole('radio', { name: 'Utilizatori și acces' }).check();
     await page.getByLabel('Întrebarea dumneavoastră').fill('Nu pot invita un coleg.');
     await page.getByRole('button', { name: 'Trimiteți asistenței' }).click();
 

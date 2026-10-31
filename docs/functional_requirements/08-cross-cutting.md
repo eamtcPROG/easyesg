@@ -386,7 +386,7 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 
 ### FR-212 — Write to support
 
-**Status.** Built — delivered 77
+**Status.** Partial — delivered 77, 227 (the channel read with no session) · remaining 228 (the channel's promise), 236 (the request's context and the sender's copy), 237 (attachments), 238 (support access granted with the request), 239 (each request's status)
 
 **Obligation.** The system shall let a reader, signed in or not, send a question to support from the help centre and show them a reference to quote, recording the request and delivering it to the platform's support address, without asking a signed-in reader for anything the platform already holds.
 
@@ -396,17 +396,19 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 | **Traces** | UC-182 · UC-85 · FR-207 · FR-78 · UX-109 · NFR-28, NFR-30 · `architecture.md` §12.5.6's task-77 row, §12.5.7 |
 | **Surfaces** | S-34 · `POST /support/requests` · the mail to the `support_channel` address |
 
-**Inputs.** A topic — one of six: a figure or a module, a finding, exports, users and access, invoices and plan, something else — a question of at most 5,000 characters, and the language to reply in. A visitor also gives a name of at most 200 characters and an email address (§12.5.6's task-77 row (3)).
+**Inputs.** A topic — one of six: a figure or a module, a finding, exports, users and access, invoices and plan, something else — a question of at most 5,000 characters, and the language to reply in. A visitor also gives a name of at most 200 characters and an email address (§12.5.6's task-77 row (3)). **From tasks 236 … 238** a member also names a report and, if they know it, a section, may attach files, and an Organization Administrator may let support read that report (§12.5.6's task-227 row (13) … (15)).
 
 **Behaviour.**
 1. The request is recorded and given a reference — `SR-` and six digits — which S-34 shows once it is sent. It is a reference a person quotes, which the user-facing-text rule permits (S-34).
 2. **A signed-in reader is not asked for their name, their address or their organization**: the account's, and the active organization's name, travel with the request and are shown before sending (UX-109's Redundant Entry).
-3. The request is delivered by the worker, through the outbox, to the address the `support_channel` artefact holds, as a platform notice in Romanian, with the reader's address as its Reply-To. **The reader is not mailed**: support's reply carries the reference (§12.5.6's task-77 row (1), (8)).
+3. The request is delivered by the worker, through the outbox, to the address the `support_channel` artefact holds, as a platform notice in Romanian, with the reader's address as its Reply-To. **The sender is mailed their question and its reference** (from task 236), Reply-To support's mailbox and the reference in its subject, so a reply continues the thread — which reverses the task-77 row (1)'s *the reader is not mailed* (§12.5.6's task-227 row (13)).
 4. A sender may send five requests in fifteen minutes — the account for a signed-in reader, the address for a visitor (row (6)).
 5. With no readable support address, nothing is recorded (row (5)).
 6. A request is kept 24 months and then deleted (§12.5.7).
 7. A data-subject request arrives this way. Its 30 days run from its reference, and it is acted on only once confirmed from the address registered on the account it concerns (FR-207 behaviour 2; row (7)).
 8. The reference is what a support-access request cites (FR-78).
+9. **Support's address is readable with no session** (`GET /support/channel`), and from task 228 its office hours and its reply promise, from which S-34 computes the reply to expect (§12.5.6's task-227 row (4), (5)).
+10. **A request has a status an operator sets**, *answered* or *closed*, which S-34 shows the sender beside their earlier requests (task 239; §12.5.6's task-227 row (16)).
 
 **Refusals.**
 - A field missing or over its length, a topic outside the six, a language the platform does not publish in, or a visitor's address that is not one → 400 `validation-failed`
@@ -423,10 +425,11 @@ Business rules held here: BR-ACC-5 (§4). Entities held here: none (§5).
 - **AC-3** Given a sixth request from one sender within fifteen minutes, then it is refused with 429 and nothing is recorded. *(source: §12.5.6's task-77 row (6))*
 - **AC-4** Given no readable support address, then the request is refused with 503 and nothing is recorded. *(source: §12.5.6's task-77 row (5))*
 - **AC-5** Given a request older than 24 months, then the nightly purge deletes it. *(source: §12.5.7; §12.5.6's task-77 row (4))*
-- **AC-6** Given the mail to support, then its Reply-To is the reader's address, and the reader receives no mail from the platform. *(source: §12.5.6's task-77 row (1), (8))*
+- **AC-6** Given the mail to support, then its Reply-To is the reader's address; and the sender's copy carries the reference, with Reply-To support's address. *(source: §12.5.6's task-77 row (8); task-227 row (13))*
 
 **History.**
 - 30 Oct 2026 · project owner (task 77) · written to close G-9 once the support channel was decided: a form the api records and mails, with a reference · §12.5.6's task-77 row
+- 31 Oct 2026 · project owner (tasks 227 … 239) · the help centre built to its artboards: the channel readable, its promise, the request's context and the sender's copy, attachments, a grant with the request, a status · §12.5.6's task-227 row
 
 ### FR-207 — Data-subject requests: access, rectification, erasure and portability
 

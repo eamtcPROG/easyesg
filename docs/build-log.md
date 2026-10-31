@@ -34668,3 +34668,108 @@ the router prefetches. A first targeted run also failed `address-states.spec.ts`
 band's overflow before the fix, which is the measurement the fix answers to. **Skipped**, as a task's close does:
 `image:check`, `facade:check`, `eslint:prove`, `boundaries:prove`, `test:coverage`, `gates:clean` and the three
 reviews, which are Stage 6's end — task 77 is not its last row; task 222 is.
+
+## Task 227 — the help centre as drawn · 2026-10-31
+
+The owner found that task 77 had not respected `EasyESG Help Centre.dc.html` *at all* and asked for the UI to be
+refactored to it. They were right: task 77 read the prototype for its content and built the three screens in the stock
+Index, Content and Focus templates — a filter row of a select and a text field, article cards in a two-column list, an
+article in the legal set's frame, a one-column form — while the four artboards draw a different page on every count.
+Reading the artboards against the code found the layout wrong everywhere and about fifteen things drawn over data
+nothing records. **Three batches of questions** (three, four, four and three) settled the effort before any of it was
+built; the owner chose **to build everything drawn** over building the layout and appending the rest, and the
+recommended option on every other question. The answers are `architecture.md` §12.5.6's new task-227 row (1) … (16),
+which revisits three items of the task-77 row with dated notes — (1)'s *the reader is not mailed*, (3)'s declined
+report, section, attachments and grant, (13)'s missing most-read set. **Tasks 227 … 239 were appended to Stage 6 and
+240 to Stage 4**, one per thing the artboards draw over missing data; FR-212's Status names them and its behaviours 3,
+9, 10 and AC-6 are amended; FR-61's names 229; S-32, S-33 and S-34 each carry a dated amendment saying the artboards
+govern and which task builds each region. This task is the layout over what the api serves, plus the one read row (4)
+asked for.
+
+### Decided (project owner)
+
+- **The artboards govern** (row (1)), and everything they draw is built, one task each — this one, then 228 … 239.
+- **The visitor's *Asked before signing up* is the first-report topic** (row (3)): its articles' titles as the
+  questions, their summaries as the answers. Declined: the four answers as drawn, which state facts no document
+  confirms (a free first report, three to six hours, nothing filed on your behalf).
+- **Support's mailbox is readable with no session** (row (4)) — `GET /support/channel`, `@Public()`'s fourth kind.
+- Rows (5) … (16) are the later tasks' and are recorded there; none of them is built here.
+
+### What followed from a source, said rather than asked
+
+- **The help's language is chosen apart from the interface's** (row (2)) — artboard 01's own note; the choice is
+  `content` in the address (UX-4), so a link carries it and a reload keeps it.
+- **The summary is *the short answer*** (row (6)): the article model has a summary and sections, and artboard 03 puts
+  the answer above the explanation. The starter library's articles open with an *In short* section, which now reads
+  after the summary; that is content for task 229's rewrite of the six, not a layout question.
+- **The guest band does not grow the artboard's *How it works · The questions · Plans***: task 74 declined those
+  entries because the sections do not exist, and the help centre's artboard is not the header's authority. *Help
+  centre* is marked current in both bands, which the artboards do draw.
+- **Nothing the artboards draw over missing data is drawn early**: no plan, hours, grant, status, downloads, feedback,
+  draft card, chips or earlier requests — each region waits for its task, so no card shows a number nobody computed.
+
+### What the building decided within that
+
+- **S-32 has a group of its own, `(help)/(centre)`**, whose layout draws the workspace tier above the page for a member
+  acting for an organization — artboard 01 draws it there, and S-33 and S-34 draw the trail bar in its place, so it
+  could not be `(help)`'s. The frame is the `(workspace)` layout's: the tier stays, the page scrolls beneath it.
+- **The route reads the reader's name**, `readKnownReader` as S-34's route already did, and hands it down; the screens
+  still read no session. S-33's route reads only whether a session is held, for the visitor's account card.
+- **The search is a `GET` form with its glyph drawn in CSS**: this app draws no icon of its own, and the boundary rules
+  keep `lucide-react` in `packages/ui`. It searches every topic and keeps the help's language.
+- **A topic narrows from its card**, so the filter row's select is gone; what a topic or a search keeps is drawn as
+  *Asked most this month*'s rows (artboard 01), since no artboard draws results. The visitor's cards name no articles,
+  artboard 02's, through an empty list rather than a flag.
+- **S-33's contents mark the section in view**, a Client Component over an `IntersectionObserver` — the Content
+  archetype declines the mark because its pages must stay cacheable; the help renders per request. `ARIA_CURRENT`
+  gains `LOCATION` in `packages/ui` for it. Below the widest frame the contents lead the article; S-33's amendment says
+  so (it first said they follow, and was corrected before the close).
+- **A disclosed section is a `<details>` whose `<summary>` holds its `h2`**, which the content model admits, so the
+  contents still land on a heading; its *Show* word is handed down by the card, which made the section synchronous and
+  its language marking testable in jsdom.
+- **The anchors live in a directive-free `shared/article-anchors.ts`**: the short answer's id was first exported from
+  the client contents module, which a Server Component would have read as `undefined` — the root file's trap, caught
+  on writing rather than on rendering.
+- **S-34's topic is six chips** — `TopicChoice`, this app's (UX-89 as amended: only S-34 asks this way), bound through
+  `useBoundField` so the id, error and summary link come from one `control`; a radio takes no `aria-invalid`
+  (`jsx-a11y` refused it), so the group's description carries the error and the chips draw it. The reply language
+  shares a row with a visitor's name and address; the card's foot names the mailbox.
+- **The design's mono eyebrows** are the Content archetype's `400 11px/16px var(--font-mono)`, the precedent already in
+  `packages/ui`; the chips' pill radius is `--radius-pill`, which tokens.css reserves for status chips — the artboard
+  draws a pill and there is no other radius for one.
+
+### Skills read against the diff
+
+`vercel-react-best-practices` (the sections' reads run in parallel; nothing is memoized, none of the three new client
+modules feeds a memoized child or a dependency list but `ArticleContents`' effect, whose list is the server's prop),
+`one-idea-per-file` (each route a shell — S-32's and S-33's carry the one read `(help)`'s amendment puts there; one
+part per file), `one-kind-per-folder` (S-32's and S-33's trees mirror their `return`; the help's `shared/` admits only
+what two screens read; `folder-shape.spec.ts` passes), `nestjs-best-practices` for the channel controller.
+
+### What the gates found
+
+- **Axe's `landmark-unique` on `/ru/help/why-a-question-appears`**: the short answer was a region named by the page's
+  word, and the Russian word, *Коротко*, is also the heading of the starter article's first section — two regions, one
+  name. Two fixes, one per side: the Russian word is now *Короткий ответ*, the better reading of *the short answer*;
+  and the short answer is a heading, not a landmark, so no section an editor heads the same way can collide with it.
+  Searched for the shape: S-32's regions are named by page words and its topic cards and questions are not landmarks;
+  an article's own sections are regions named by its headings, which two identical headings would collide on — an
+  editor's content, which A-03's validation (67.5) is the place for.
+- **S-16's socket journey failed once**, the run's first test, its push missing its 3 s window on a cold server; it
+  passed on the re-run with the two help files. S-16 is untouched here.
+
+### Verified
+
+`pnpm lint`; `pnpm typecheck` across the workspace; `docs:check` (48 claims — the forms import sites 48 → 49, the
+route groups eight → nine, the contract's paths 138 → 139 and the client modules 255 → 258 moved, and the prose with
+them); `boundaries`; `openapi:check` (139 paths, `GET /support/channel` new); unit suites — web 2,245 (then the help's
+8 files and the catalogue parity again after the fix, 54), ui 510, admin 324, api 2,749; `pnpm e2e` 79 suites, 2,065
+cases (the channel's case new), its log's three errors the `MessageCatalogue` lines task 77 recorded;
+`pnpm e2e:web` identity, expansion and admin, 427 cases with the two failures above, then the three affected files
+again, 43 passed. The browser log's `⨯` lines are all digest `2667547900`, the abandoned stream this app's notes
+document. **Seen against the artboards in a browser** at 1440, as a visitor and as a member of an organization: S-32
+(both openings, the cards, the questions, the right-hand column, the help's language with its note, a search in
+Russian), S-33 (the trail, the contents marking the section in view, the short answer, a disclosed row), S-34 (the card,
+the chips, the foot naming the mailbox). **Skipped**, as a task's close does: `e2e:worker` (no consumer changed),
+`image:check`, `facade:check`, `eslint:prove`, `boundaries:prove`, `test:coverage`, `gates:clean` and the three reviews,
+which are Stage 6's end — 222 and 228 … 239 are still its rows.

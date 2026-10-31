@@ -1,0 +1,148 @@
+/* S-33's article card (tasks 77, 227; artboard 03) — read by the card, its sections and the body beneath them: the
+   module above the title, the short answer in the accent's tint, the sections at reading size, a disclosed one as a row
+   the reader opens. Values through the token cascade, never copied from the artboard's markup (OQ-10). */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-8) var(--space-8) var(--space-8);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-2);
+  background: var(--surface-default);
+}
+
+@media (max-width: 39.99rem) {
+  .card {
+    padding: var(--space-6) var(--space-5);
+  }
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-block-end: var(--space-6);
+  border-block-end: 1px solid var(--border-default);
+}
+
+.eyebrow {
+  margin: 0;
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.title {
+  margin: 0;
+  color: var(--text-default);
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+}
+
+/* The answer above the explanation (artboard 03's note): the accent's rule and tint. */
+.shortAnswer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-6);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: 0 var(--radius-1) var(--radius-1) 0;
+  background: var(--accent-tint);
+  scroll-margin-block-start: var(--space-6);
+}
+
+.shortAnswerLabel {
+  margin: 0;
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--state-ok);
+}
+
+.shortAnswerText {
+  margin: 0;
+  color: var(--text-default);
+  font: 400 16px/26px var(--font-text);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  scroll-margin-block-start: var(--space-6);
+}
+
+.sectionHeading {
+  margin: 0;
+  color: var(--text-default);
+}
+
+/* A disclosed section (UX-17): a row naming it, with *Show* at its end, opening onto its body. */
+.disclosure {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  background: var(--surface-sunken);
+  scroll-margin-block-start: var(--space-6);
+}
+
+.disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  min-block-size: 44px;
+  padding: var(--space-4) var(--space-5);
+  cursor: pointer;
+  list-style: none;
+}
+
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosureHeading {
+  margin: 0;
+  font: 500 14.5px/20px var(--font-text);
+  color: var(--text-default);
+}
+
+.show {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-1);
+  font: 400 11px/16px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.disclosure[open] .show {
+  display: none;
+}
+
+.disclosureBody {
+  padding: 0 var(--space-5) var(--space-5);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  color: var(--text-body);
+  font: 400 16px/27px var(--font-text);
+}
+
+.body p {
+  margin: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding-inline-start: var(--space-6);
+}

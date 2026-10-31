@@ -2683,6 +2683,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/support/channel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the support channel
+         * @description UC-180, UC-182. The support mailbox a request to support is delivered to. Changed without a deploy; a change is served within seconds.
+         */
+        get: operations["SupportChannelController_read"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/support/requests": {
         parameters: {
             query?: never;
@@ -5900,6 +5920,14 @@ export interface components {
             dataProtectionEmail: string;
             /** @description The revision this change was made against — the one the reading answered. A newer one in force refuses the change (problem type legal-controller-changed). */
             revision: number;
+        };
+        SupportChannelResponseDto: {
+            /**
+             * Format: email
+             * @description The support mailbox in force.
+             * @example ajutor@easyesg.md
+             */
+            address: string;
         };
         SupportRequestReceiptDto: {
             /**
@@ -12341,6 +12369,37 @@ export interface operations {
             };
             /** @description A newer revision is in force (problem type legal-controller-changed), or the values are those in force (problem type conflict). */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                };
+            };
+        };
+    };
+    SupportChannelController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The support channel in force. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultObjectDto"] & {
+                        object?: components["schemas"]["SupportChannelResponseDto"];
+                    };
+                };
+            };
+            /** @description No readable support address is in force (problem type support-channel-unavailable). */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
